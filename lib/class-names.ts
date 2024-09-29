@@ -16,6 +16,7 @@ export const classNames: { [locale: string]: { [className: string]: string } } =
       foreigner: 'フォーリナー',
       pretender: 'プリテンダー',
       beast: 'ビースト',
+      beastEresh: 'ビースト(エレシュ)',
     },
     en: {
       saber: 'Saber',
@@ -33,6 +34,7 @@ export const classNames: { [locale: string]: { [className: string]: string } } =
       foreigner: 'Foreigner',
       pretender: 'Pretender',
       beast: 'beast',
+      beastEresh: 'beastEresh',
     },
   }
 
