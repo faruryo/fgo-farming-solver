@@ -1,9 +1,16 @@
+import path from 'path'
+import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { Result } from '../interfaces/api'
 import { getDynamoDb } from './dynamodb'
+import { readJson } from './read-json'
 
 export const getResult = async (id: string) =>
-  getDynamoDb({
-    region: 'ap-northeast-1',
-    tableName: 'fgo-farming-solver-results',
-    key: { id },
-  }) as Promise<Result>
+  process.env.NODE_ENV === 'development'
+    ? (readJson(path.resolve('mocks', 'result.json')).then((data) =>
+        unmarshall(data as any),
+      ) as Promise<Result>)
+    : (getDynamoDb({
+        region: 'ap-northeast-1',
+        tableName: 'fgo-farming-solver-results',
+        key: { id },
+      }) as Promise<Result>)
