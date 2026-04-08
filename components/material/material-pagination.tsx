@@ -1,5 +1,5 @@
 import { Link } from '../common/link'
-import { HStack, Stack } from '@chakra-ui/layout'
+import { HStack, Stack } from '@chakra-ui/react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
 import React from 'react'
 import { Box, Text } from '@chakra-ui/react'

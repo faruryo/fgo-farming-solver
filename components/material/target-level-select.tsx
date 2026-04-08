@@ -16,7 +16,7 @@ const maxs: { [key: string]: number } = {
   appendSkill: 10,
 }
 
-const _TargetLevelSelect = ({
+const TargetLevelSelectComponent = ({
   id,
   target,
   state: { disabled, ranges },
@@ -73,4 +73,4 @@ const _TargetLevelSelect = ({
   )
 }
 
-export const TargetLevelSelect = memo(_TargetLevelSelect)
+export const TargetLevelSelect = memo(TargetLevelSelectComponent)

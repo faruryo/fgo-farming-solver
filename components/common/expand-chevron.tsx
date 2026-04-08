@@ -1,5 +1,5 @@
 import { ChevronDownIcon, IconProps } from '@chakra-ui/icons'
-import { ComponentWithAs } from '@chakra-ui/system'
+import { ComponentWithAs } from '@chakra-ui/react'
 
 export const ExpandChevronIcon: ComponentWithAs<
   'svg',

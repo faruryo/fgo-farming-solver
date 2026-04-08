@@ -1,5 +1,5 @@
-import { FormControl, FormLabel } from '@chakra-ui/form-control'
-import { VStack } from '@chakra-ui/layout'
+import { FormControl, FormLabel } from '@chakra-ui/react'
+import { VStack } from '@chakra-ui/react'
 import { Box } from '@chakra-ui/react'
 import React from 'react'
 import { ItemInput } from './item-input'

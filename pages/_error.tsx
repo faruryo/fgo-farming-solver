@@ -3,6 +3,8 @@ import React from 'react'
 import { Head } from '../components/common/head'
 import { useRouter } from 'next/router'
 import { TopLink } from '../components/common/top-link'
+import * as Sentry from '@sentry/nextjs'
+import { NextPageContext } from 'next'
 
 const statusCodes: { [code: number]: string } = {
   400: 'Bad Request',
@@ -28,14 +30,16 @@ const messages: { [code: number]: { [locale: string]: string | string[] } } = {
   },
 }
 
-const Error = ({
+const ErrorPage = ({
   statusCode,
   title,
   message,
+  err,
 }: {
   statusCode: number
   title?: string
   message?: string | string[]
+  err?: Error
 }) => {
   const { locale } = useRouter()
   title = title || statusCodes[statusCode] || 'An unexpected error has occured'
@@ -62,4 +66,26 @@ const Error = ({
   )
 }
 
-export default Error
+ErrorPage.getInitialProps = async (context: NextPageContext) => {
+  const { res, err, asPath } = context
+  const statusCode = res ? res.statusCode : err ? (err as any).statusCode : 404
+
+  if (res?.statusCode === 404) {
+    return { statusCode: 404 }
+  }
+
+  if (err) {
+    Sentry.captureException(err)
+    await Sentry.flush(2000)
+    return { statusCode, err }
+  }
+
+  Sentry.captureException(
+    new Error(`_error.tsx getInitialProps missing data at path: ${asPath}`)
+  )
+  await Sentry.flush(2000)
+
+  return { statusCode }
+}
+
+export default ErrorPage

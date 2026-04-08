@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Table, Thead, Tr, Th, Tbody, Td } from '@chakra-ui/table'
+import { Table, Thead, Tr, Th, Tbody, Td } from '@chakra-ui/react'
 import { DropRate, Item } from '../../interfaces/api'
 import { ItemLink } from '../common/item-link'
 

@@ -1,4 +1,4 @@
-import { Input } from '@chakra-ui/input'
+import { Input } from '@chakra-ui/react'
 import {
   ChangeEventHandler,
   Dispatch,
@@ -87,7 +87,7 @@ export const MsServantsIo = ({
           return
         }
         msServants_ = parsed
-      } catch (e) {
+      } catch {
         return
       }
       setState((state) => ({

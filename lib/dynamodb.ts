@@ -17,7 +17,9 @@ export async function getDynamoDb({
   const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID
   const secretAccessKey = process.env.MY_AWS_SECRET_ACCESS_KEY
   if (accessKeyId == null || secretAccessKey == null) {
-    throw 'Environment variables MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_ACESS_KEY are not set'
+    throw new Error(
+      'Environment variables MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_ACESS_KEY are not set'
+    )
   }
 
   const command = new GetItemCommand({
@@ -47,7 +49,9 @@ export async function putDynamoDb({
   const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID
   const secretAccessKey = process.env.MY_AWS_SECRET_ACCESS_KEY
   if (accessKeyId == null || secretAccessKey == null) {
-    throw 'Environment variables MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_ACESS_KEY are not set'
+    throw new Error(
+      'Environment variables MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_ACESS_KEY are not set'
+    )
   }
   const command = new PutItemCommand({
     TableName: tableName,

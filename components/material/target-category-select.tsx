@@ -1,7 +1,6 @@
-import { CheckboxGroup, Checkbox } from '@chakra-ui/checkbox'
-import { FormControl, FormLabel } from '@chakra-ui/form-control'
-import { HStack } from '@chakra-ui/layout'
-import { StringOrNumber } from '@chakra-ui/utils'
+import { CheckboxGroup, Checkbox } from '@chakra-ui/react'
+import { FormControl, FormLabel } from '@chakra-ui/react'
+import { HStack } from '@chakra-ui/react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -14,7 +13,7 @@ export const TargetCategorySelect = ({
   targetCategories: string[]
   setTargetCategories: (targetCategories: string[]) => void
 }) => {
-  const onChange = (a: StringOrNumber[]) => {
+  const onChange = (a: (string | number)[]) => {
     setTargetCategories(a.map((v) => v.toString()))
   }
   const { t } = useTranslation(['common', 'material'])

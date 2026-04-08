@@ -1,5 +1,5 @@
-import { Checkbox } from '@chakra-ui/checkbox'
-import { VStack } from '@chakra-ui/layout'
+import { Checkbox } from '@chakra-ui/react'
+import { VStack } from '@chakra-ui/react'
 import {
   Skeleton,
   Stat,

@@ -1,5 +1,5 @@
-import { Heading, HeadingProps } from '@chakra-ui/layout'
-import { ComponentWithAs } from '@chakra-ui/system'
+import { Heading, HeadingProps } from '@chakra-ui/react'
+import { ComponentWithAs } from '@chakra-ui/react'
 import { Head } from './head'
 
 export const Title: ComponentWithAs<

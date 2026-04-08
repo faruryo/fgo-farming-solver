@@ -1,4 +1,4 @@
-import { IconButton } from '@chakra-ui/button'
+import { IconButton } from '@chakra-ui/react'
 import { MdTranslate } from 'react-icons/md'
 import { useToggleLocale } from '../../hooks/use-toggle-locale'
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box } from '@chakra-ui/layout'
+import { Box } from '@chakra-ui/react'
 import { FaTwitter } from 'react-icons/fa'
 import { Button } from '@chakra-ui/react'
 import { useRouter } from 'next/router'

@@ -4,7 +4,7 @@ import {
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
-} from '@chakra-ui/accordion'
+} from '@chakra-ui/react'
 import React from 'react'
 import { Item, Params } from '../../interfaces/api'
 import { Localized } from '../../lib/get-local-items'

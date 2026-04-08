@@ -1,11 +1,11 @@
-import { ButtonProps, IconButton, IconButtonProps } from '@chakra-ui/button'
+import { ButtonProps, IconButton, IconButtonProps } from '@chakra-ui/react'
 import {
   Menu,
   MenuButton,
   MenuButtonProps,
   MenuItem,
   MenuList,
-} from '@chakra-ui/menu'
+} from '@chakra-ui/react'
 import { useRouter } from 'next/router'
 
 const repos: { repo: string; label: { [locale: string]: string } }[] = [

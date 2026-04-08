@@ -12,7 +12,7 @@ import { TargetKey } from '../../interfaces/atlas-academy'
 import { entries } from '../../utils/typed-entries'
 import { TargetLevelSelect } from './target-level-select'
 
-const _ServantLevelSelect = ({
+const ServantLevelSelectComponent = ({
   id,
   servantState,
   setState,
@@ -70,4 +70,4 @@ const _ServantLevelSelect = ({
   )
 }
 
-export const ServantLevelSelect = memo(_ServantLevelSelect)
+export const ServantLevelSelect = memo(ServantLevelSelectComponent)
