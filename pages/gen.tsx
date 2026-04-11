@@ -12,4 +12,5 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const ItemIds = () => <></>
+export const runtime = 'edge'
 export default ItemIds

@@ -41,4 +41,6 @@ export const getStaticProps: GetStaticProps<MaterialProps> = async ({
   }
 }
 
+export const runtime = 'edge'
+
 export default Material

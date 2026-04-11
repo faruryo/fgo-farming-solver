@@ -19,7 +19,7 @@ export const getStaticPaths: GetStaticPaths = async ({ locales = ['ja'] }) => {
   )
   return {
     paths,
-    fallback: true,
+    fallback: false,
   }
 }
 
@@ -48,5 +48,7 @@ export const getStaticProps: GetStaticProps<ItemProps> = async ({
     revalidate: 86400,
   }
 }
+
+export const runtime = 'edge'
 
 export default Page

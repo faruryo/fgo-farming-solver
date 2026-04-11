@@ -15,4 +15,6 @@ export const getStaticProps: GetStaticProps<ServantIndexProps> = async ({
   return { props: { servants }, revalidate }
 }
 
+export const runtime = 'edge'
+
 export default Index

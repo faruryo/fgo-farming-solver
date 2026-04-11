@@ -15,7 +15,7 @@ export const getStaticPaths: GetStaticPaths = async ({ locales = ['ja'] }) => {
       locale,
     }))
   )
-  return { paths, fallback: true }
+  return { paths, fallback: false }
 }
 
 export const getStaticProps: GetStaticProps<ServantProps> = async ({
@@ -30,5 +30,7 @@ export const getStaticProps: GetStaticProps<ServantProps> = async ({
   ])
   return servant == null ? { notFound: true } : { props: { servant, items } }
 }
+
+export const runtime = 'edge'
 
 export default Page

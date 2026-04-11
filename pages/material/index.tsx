@@ -29,4 +29,6 @@ export const getStaticProps: GetStaticProps<MaterialIndexProps> = async ({
   }
 }
 
+export const runtime = 'edge'
+
 export default Index

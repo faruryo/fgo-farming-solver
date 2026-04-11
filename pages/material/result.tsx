@@ -15,4 +15,6 @@ export const getStaticProps: GetStaticProps<MaterialResultProps> = async ({
   return { props: { items }, revalidate }
 }
 
+export const runtime = 'edge'
+
 export default Result

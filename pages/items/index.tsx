@@ -14,4 +14,6 @@ export const getStaticProps: GetStaticProps<ItemIndexProps> = async ({
   return { props: { items: localItems } }
 }
 
+export const runtime = 'edge'
+
 export default Index

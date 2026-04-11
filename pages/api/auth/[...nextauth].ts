@@ -1,6 +1,8 @@
 import NextAuth, { NextAuthOptions } from 'next-auth'
 import TwitterProvider from 'next-auth/providers/twitter'
 
+export const runtime = 'edge'
+
 export const options: NextAuthOptions = {
   providers: [
     TwitterProvider({
