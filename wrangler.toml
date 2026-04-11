@@ -1,8 +1,4 @@
 name = "fgo-farming-solver"
-main = ".vercel/output/static/_worker.js"
+pages_build_output_dir = ".vercel/output"
 compatibility_date = "2024-04-03"
 compatibility_flags = ["nodejs_compat"]
-
-[assets]
-directory = ".vercel/output/static"
-binding = "ASSETS"
