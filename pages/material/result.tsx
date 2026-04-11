@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { GetStaticProps } from 'next'
 import { getItems } from '../../lib/get-items'
 import { revalidate } from '../../constants/revalidate'

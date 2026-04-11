@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { getDrops } from '../../lib/get-drops'
 import { Page } from '../../components/items/item'

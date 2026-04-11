@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { GetServerSideProps } from 'next'
 import { DBError } from '../../../lib/dynamodb'
 import { Page } from '../../../components/farming/result'
