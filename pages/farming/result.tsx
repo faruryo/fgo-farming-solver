@@ -1,7 +1,6 @@
 import { GetServerSideProps } from 'next'
 import { Page } from '../../components/farming/result'
 
-export const runtime = 'experimental-edge'
 import { getDrops } from '../../lib/get-drops'
 import { getLocalItems } from '../../lib/get-local-items'
 import { getLocalQuests } from '../../lib/get-local-quests'

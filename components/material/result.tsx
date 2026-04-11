@@ -13,7 +13,7 @@ import { Title } from '../common/title'
 import { ResultAccordion } from './result-accordion'
 import { TargetCategorySelect } from './target-category-select'
 
-export const Result: NextPage<MaterialResultProps> = ({ items }) => {
+export const Result: NextPage<MaterialResultProps> = ({ items = [] }) => {
   const router = useRouter()
   const initialAmounts = Object.fromEntries(
     Object.entries(router.query).map(([k, v]) => [

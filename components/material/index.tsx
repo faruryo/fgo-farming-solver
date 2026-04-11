@@ -19,9 +19,9 @@ import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/router'
 
 export const Index: NextPage<MaterialIndexProps> = ({
-  servants,
-  materials,
-  items,
+  servants = [],
+  materials = {},
+  items = [],
 }) => {
   const { locale } = useRouter()
   const { t } = useTranslation('material')

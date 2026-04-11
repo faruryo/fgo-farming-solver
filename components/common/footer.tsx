@@ -16,7 +16,7 @@ import { GithubMenu } from './github-menu'
 import { Link, ExternalLink } from './link'
 import { menuGroups } from './nav'
 
-export const Footer = (): JSX.Element => {
+export const Footer = () => {
   const { locale } = useRouter()
   return (
     <footer>

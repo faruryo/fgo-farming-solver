@@ -6,7 +6,6 @@ import { TopLink } from '../components/common/top-link'
 import * as Sentry from '@sentry/nextjs'
 import { NextPageContext } from 'next'
 
-export const runtime = 'experimental-edge'
 
 const statusCodes: { [code: number]: string } = {
   400: 'Bad Request',

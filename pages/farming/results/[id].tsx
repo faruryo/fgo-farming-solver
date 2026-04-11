@@ -34,6 +34,5 @@ export const getServerSideProps: GetServerSideProps<ResultProps> = async ({
   }
 }
 
-export const runtime = 'experimental-edge'
 
 export default Page

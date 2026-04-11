@@ -7,16 +7,18 @@ const fetchAndWriteJson = async <T>(
   hashPath: string,
   cachePath: string
 ) => {
-  const fs = await import(/* webpackIgnore: true */ 'fs')
-  const path = await import(/* webpackIgnore: true */ 'path')
+  const fsModule = await import(/* webpackIgnore: true */ 'fs')
+  const fs = fsModule.default?.promises || fsModule.promises || fsModule
+  const pathModule = await import(/* webpackIgnore: true */ 'path')
+  const path = pathModule.default || pathModule
   console.log(`fetching ${url}`)
   const res = await fetch(url)
   const text = await res.text()
-  await fs.default.promises
-    .mkdir(path.default.dirname(hashPath), { recursive: true })
+  await fs
+    .mkdir(path.dirname(hashPath), { recursive: true })
     .catch((e: unknown) => console.error(e))
-  fs.default.promises.writeFile(hashPath, hash, 'utf-8').catch((e: unknown) => console.error(e))
-  fs.default.promises.writeFile(cachePath, text, 'utf-8').catch((e: unknown) => console.error(e))
+  fs.writeFile(hashPath, hash, 'utf-8').catch((e: unknown) => console.error(e))
+  fs.writeFile(cachePath, text, 'utf-8').catch((e: unknown) => console.error(e))
   return JSON.parse(text) as T
 }
 
@@ -29,21 +31,30 @@ export const fetchJsonWithCache = async <T>(url: string) => {
     return fetch(url).then((r) => r.json() as Promise<T>)
   }
 
-  const path = await import(/* webpackIgnore: true */ 'path')
-  const cacheDir = path.default.resolve('.next/cache/atlasacademy')
-  const stem = path.default.basename(url, '.json')
-  const hashPath = path.default.resolve(cacheDir, `${stem}.hash.txt`)
-  const cachePath = path.default.resolve(cacheDir, `${stem}.json`)
+  const pathModule = await import(/* webpackIgnore: true */ 'path')
+  const path = pathModule.default || pathModule
+  const cacheDir = path.resolve('.next/cache/atlasacademy')
+  const stem = path.basename(url, '.json')
+  const hashPath = path.resolve(cacheDir, `${stem}.hash.txt`)
+  const cachePath = path.resolve(cacheDir, `${stem}.json`)
   const hash = await getHash()
 
-  const fs = await import(/* webpackIgnore: true */ 'fs')
-  const obj = fs.default.promises
+  const fsModule = await import(/* webpackIgnore: true */ 'fs')
+  const fs = fsModule.default?.promises || fsModule.promises || fsModule
+  const obj = fs
     .readFile(hashPath, 'utf-8')
-    .then((localHash) =>
+    .then((localHash: string) =>
       localHash == hash
         ? readJson<T>(cachePath)
         : fetchAndWriteJson<T>(url, hash, hashPath, cachePath)
     )
-    .catch(async () => fetchAndWriteJson<T>(url, hash, hashPath, cachePath))
+    .catch(async (e: unknown) => {
+      console.warn(`Cache read failed or entry missing for ${url}, fetching fresh...`, e)
+      return fetchAndWriteJson<T>(url, hash, hashPath, cachePath)
+    })
+    .catch((e: unknown) => {
+      console.error(`fetchJsonWithCache for ${url} failed completely:`, e)
+      throw e
+    })
   return obj
 }
