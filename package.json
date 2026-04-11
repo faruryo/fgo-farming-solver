@@ -54,6 +54,8 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.9"
+    "vercel": "^47.0.4",
+    "vitest": "^2.1.9",
+    "wrangler": "^4.81.1"
   }
 }
