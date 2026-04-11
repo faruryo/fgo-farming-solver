@@ -4,13 +4,13 @@ export const getQuestTranslation = async (): Promise<{
   const isEdge = process.env.NEXT_RUNTIME === 'edge'
 
   if (!isEdge) {
-    const fs = await import('fs/promises')
-    const path = await import('path')
-    const cacheDir = path.resolve('cache')
-    const cachePath = path.resolve(cacheDir, 'quests.json')
+    const fs = await import(/* webpackIgnore: true */ 'fs/promises')
+    const path = await import(/* webpackIgnore: true */ 'path')
+    const cacheDir = path.default.resolve('cache')
+    const cachePath = path.default.resolve(cacheDir, 'quests.json')
 
     try {
-      const value = await fs.readFile(cachePath, 'utf-8')
+      const value = await fs.default.readFile(cachePath, 'utf-8')
       return JSON.parse(value) as Record<string, string>
     } catch {
       // ignore
@@ -40,14 +40,16 @@ export const getQuestTranslation = async (): Promise<{
     )
 
     if (!isEdge) {
-      const fs = await import('fs/promises')
-      const path = await import('path')
-      const cacheDir = path.resolve('cache')
-      const cachePath = path.resolve(cacheDir, 'quests.json')
+      const fs = await import(/* webpackIgnore: true */ 'fs/promises')
+      const path = await import(/* webpackIgnore: true */ 'path')
+      const cacheDir = path.default.resolve('cache')
+      const cachePath = path.default.resolve(cacheDir, 'quests.json')
 
       fs.default
         .mkdir(cacheDir, { recursive: true })
-        .then(() => fs.default.writeFile(cachePath, JSON.stringify(map), 'utf-8'))
+        .then(() =>
+          fs.default.writeFile(cachePath, JSON.stringify(map), 'utf-8')
+        )
         .catch(() => {})
     }
 

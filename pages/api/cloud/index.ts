@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
+import { getToken } from 'next-auth/jwt'
 import { DBError, getDynamoDb, putDynamoDb } from '../../../lib/dynamodb'
-import { options } from '../auth/[...nextauth]'
 
 export const runtime = 'experimental-edge'
 
@@ -37,12 +36,16 @@ async function decompress(data: Uint8Array | string): Promise<string> {
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const session = await getServerSession(req, res, options)
-  if (session == null) {
+  const token = await getToken({ req })
+  if (token == null) {
     res.status(401).send(null)
     return
   }
-  const { id } = session.user
+  const id = token.sub
+  if (!id) {
+    res.status(401).send(null)
+    return
+  }
   const savedTime = Math.floor(Date.now() / 1000)
 
   if (req.method == 'POST') {

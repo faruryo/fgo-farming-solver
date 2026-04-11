@@ -7,16 +7,16 @@ const fetchAndWriteJson = async <T>(
   hashPath: string,
   cachePath: string
 ) => {
-  const fs = await import('fs')
-  const path = await import('path')
+  const fs = await import(/* webpackIgnore: true */ 'fs')
+  const path = await import(/* webpackIgnore: true */ 'path')
   console.log(`fetching ${url}`)
   const res = await fetch(url)
   const text = await res.text()
-  await fs.promises
+  await fs.default.promises
     .mkdir(path.default.dirname(hashPath), { recursive: true })
-    .catch((e) => console.error(e))
-  fs.promises.writeFile(hashPath, hash, 'utf-8').catch((e) => console.error(e))
-  fs.promises.writeFile(cachePath, text, 'utf-8').catch((e) => console.error(e))
+    .catch((e: unknown) => console.error(e))
+  fs.default.promises.writeFile(hashPath, hash, 'utf-8').catch((e: unknown) => console.error(e))
+  fs.default.promises.writeFile(cachePath, text, 'utf-8').catch((e: unknown) => console.error(e))
   return JSON.parse(text) as T
 }
 
@@ -29,15 +29,15 @@ export const fetchJsonWithCache = async <T>(url: string) => {
     return fetch(url).then((r) => r.json() as Promise<T>)
   }
 
-  const path = await import('path')
+  const path = await import(/* webpackIgnore: true */ 'path')
   const cacheDir = path.default.resolve('.next/cache/atlasacademy')
   const stem = path.default.basename(url, '.json')
   const hashPath = path.default.resolve(cacheDir, `${stem}.hash.txt`)
   const cachePath = path.default.resolve(cacheDir, `${stem}.json`)
   const hash = await getHash()
 
-  const fs = await import('fs')
-  const obj = fs.promises
+  const fs = await import(/* webpackIgnore: true */ 'fs')
+  const obj = fs.default.promises
     .readFile(hashPath, 'utf-8')
     .then((localHash) =>
       localHash == hash

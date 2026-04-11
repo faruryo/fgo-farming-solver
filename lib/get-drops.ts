@@ -1,8 +1,6 @@
-import path from 'path'
 import { bucket, key, region } from '../constants/fgodrop'
 import { DropRate, Item, Quest } from '../interfaces/fgodrop'
 import { getGzip } from './get-s3'
-import { readJson } from './read-json'
 
 export type Drops = {
   items: Item[]
@@ -11,9 +9,20 @@ export type Drops = {
 }
 
 export const getDrops = async (): Promise<Drops> => {
-  const data = (await (process.env.NODE_ENV == 'development'
-    ? readJson(path.resolve('mocks', 'all.json'))
-    : getGzip(region, bucket, key))) as Partial<Drops>
+  const isDev = process.env.NODE_ENV == 'development'
+  const isEdge = process.env.NEXT_RUNTIME == 'edge'
+
+  let data: Partial<Drops>
+  if (isDev && !isEdge) {
+    const path = await import(/* webpackIgnore: true */ 'path')
+    const { readJson } = await import('./read-json')
+    data = await readJson<Partial<Drops>>(
+      path.default.resolve('mocks', 'all.json')
+    )
+  } else {
+    data = (await getGzip(region, bucket, key)) as Partial<Drops>
+  }
+
   return {
     items: data.items || [],
     quests: data.quests || [],
