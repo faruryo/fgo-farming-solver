@@ -25,12 +25,14 @@ const pages: {
   },
 }
 
-export const getStaticPaths: GetStaticPaths = () => {
-  const paths = Object.entries(pages).flatMap(([page, locales]) =>
-    Object.keys(locales).map((locale) => ({
-      params: { page },
-      locale,
-    }))
+export const getStaticPaths: GetStaticPaths = ({ locales = ['ja'] }) => {
+  const paths = Object.entries(pages).flatMap(([page, pageLocales]) =>
+    Object.keys(pageLocales)
+      .filter((locale) => locales.includes(locale))
+      .map((locale) => ({
+        params: { page },
+        locale,
+      }))
   )
   return {
     paths,
