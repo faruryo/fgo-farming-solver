@@ -1,5 +1,5 @@
 import { extendTheme } from '@chakra-ui/react'
-import { Noto_Sans_JP } from '@next/font/google'
+import { Noto_Sans_JP } from 'next/font/google'
 
 const font = Noto_Sans_JP({
   weight: ['400', '700'],

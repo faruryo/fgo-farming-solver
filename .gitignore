@@ -44,3 +44,7 @@ tsconfig.tsbuildinfo
 
 # Sentry
 .sentryclirc
+
+# Cloudflare / Build
+build.log
+.wrangler
