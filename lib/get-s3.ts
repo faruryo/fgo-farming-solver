@@ -34,10 +34,13 @@ export const getGzip = async (region: string, bucket: string, key: string) => {
     let data = ''
     const decoder = new TextDecoder()
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      data += decoder.decode(value, { stream: true })
+    let done = false
+    while (!done) {
+      const { done: _done, value } = await reader.read()
+      done = _done
+      if (value) {
+        data += decoder.decode(value, { stream: true })
+      }
     }
     data += decoder.decode()
 

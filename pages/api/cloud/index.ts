@@ -56,7 +56,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   } else if (req.method == 'GET') {
     try {
       const item = await getDynamoDb({ region, tableName, key: { id } })
-      const decompressedInput = await decompress(item.input as any)
+      const decompressedInput = await decompress(
+        item.input as string | Uint8Array
+      )
       res.status(200).send(decompressedInput)
     } catch (error) {
       if (error instanceof DBError) {
