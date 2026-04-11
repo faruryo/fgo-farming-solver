@@ -34,12 +34,10 @@ const ErrorPage = ({
   statusCode,
   title,
   message,
-  err,
 }: {
   statusCode: number
   title?: string
   message?: string | string[]
-  err?: Error
 }) => {
   const { locale } = useRouter()
   title = title || statusCodes[statusCode] || 'An unexpected error has occured'
@@ -68,7 +66,7 @@ const ErrorPage = ({
 
 ErrorPage.getInitialProps = async (context: NextPageContext) => {
   const { res, err, asPath } = context
-  const statusCode = res ? res.statusCode : err ? (err as any).statusCode : 404
+  const statusCode = res?.statusCode ?? (err as (Error & { statusCode?: number }) | null)?.statusCode ?? 404
 
   if (res?.statusCode === 404) {
     return { statusCode: 404 }
@@ -77,7 +75,7 @@ ErrorPage.getInitialProps = async (context: NextPageContext) => {
   if (err) {
     Sentry.captureException(err)
     await Sentry.flush(2000)
-    return { statusCode, err }
+    return { statusCode }
   }
 
   Sentry.captureException(

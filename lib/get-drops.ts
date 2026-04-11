@@ -10,7 +10,13 @@ export type Drops = {
   drop_rates: DropRate[]
 }
 
-export const getDrops = async () =>
-  (process.env.NODE_ENV == 'development'
+export const getDrops = async (): Promise<Drops> => {
+  const data = (await (process.env.NODE_ENV == 'development'
     ? readJson(path.resolve('mocks', 'all.json'))
-    : getGzip(region, bucket, key)) as Promise<Drops>
+    : getGzip(region, bucket, key))) as Partial<Drops>
+  return {
+    items: data.items || [],
+    quests: data.quests || [],
+    drop_rates: data.drop_rates || [],
+  }
+}
