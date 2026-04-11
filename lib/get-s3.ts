@@ -3,8 +3,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
-import { PassThrough, Readable } from 'stream'
-import { createGunzip, createGzip } from 'zlib'
 
 export const getGzip = async (region: string, bucket: string, key: string) => {
   const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID
@@ -22,21 +20,26 @@ export const getGzip = async (region: string, bucket: string, key: string) => {
 
   try {
     const response = await client.send(command)
-    const src = response.Body as Readable
-
-    if (src == null) {
+    if (response.Body == null) {
       console.error('Response body is empty')
       return {}
     }
 
-    const gunzip = createGunzip()
-    const dst = new PassThrough()
-    src.pipe(gunzip).pipe(dst)
+    // Convert response.Body to a ReadableStream (Web API)
+    const stream = response.Body.transformToWebStream()
+    const decompressionStream = new DecompressionStream('gzip')
+    const decompressedStream = stream.pipeThrough(decompressionStream)
 
+    const reader = decompressedStream.getReader()
     let data = ''
-    for await (const chunk of dst) {
-      data += chunk
+    const decoder = new TextDecoder()
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      data += decoder.decode(value, { stream: true })
     }
+    data += decoder.decode()
 
     return JSON.parse(data) as Record<string, unknown>
   } catch (e) {
@@ -60,15 +63,32 @@ export const putGzip = async (
     return
   }
 
-  const gzip = createGzip()
-  const dst = new PassThrough()
-  Readable.from(body).pipe(gzip).pipe(dst)
-
   const client = new S3Client({
     credentials: { accessKeyId, secretAccessKey },
     region,
   })
-  const command = new PutObjectCommand({ Bucket: bucket, Key: key, Body: dst })
+
+  // Convert string to ReadableStream and compress with gzip
+  const encoder = new TextEncoder()
+  const readableStream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(body))
+      controller.close()
+    },
+  })
+  const compressionStream = new CompressionStream('gzip')
+  const compressedStream = readableStream.pipeThrough(compressionStream)
+
+  // AWS SDK PutObject accepts Uint8Array or ReadableStream
+  // In Edge/Browser, we need a Uint8Array or a compatible stream
+  const response = new Response(compressedStream)
+  const blob = await response.blob()
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: blob,
+  })
 
   try {
     await client.send(command)

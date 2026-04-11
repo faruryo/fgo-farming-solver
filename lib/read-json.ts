@@ -1,4 +1,7 @@
-import fs from 'fs/promises'
-
-export const readJson = async <T>(path: string) =>
-  fs.readFile(path, 'utf-8').then((file) => JSON.parse(file) as T)
+export const readJson = async <T>(path: string) => {
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    throw new Error('readJson is not supported in edge runtime')
+  }
+  const fs = await import('fs/promises')
+  return fs.default.readFile(path, 'utf-8').then((file) => JSON.parse(file) as T)
+}

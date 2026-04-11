@@ -1,13 +1,5 @@
-import { promises as fs } from 'fs'
-import got, { OptionsOfJSONResponseBody, OptionsOfTextResponseBody } from 'got'
-import path from 'path'
 import { getHash } from './get-hash'
 import { readJson } from './read-json'
-
-const option: OptionsOfTextResponseBody & OptionsOfJSONResponseBody = {
-  timeout: { request: 60000 },
-  retry: { limit: 10 },
-}
 
 const fetchAndWriteJson = async <T>(
   url: string,
@@ -15,25 +7,37 @@ const fetchAndWriteJson = async <T>(
   hashPath: string,
   cachePath: string
 ) => {
+  const fs = await import('fs')
+  const path = await import('path')
   console.log(`fetching ${url}`)
-  const res = await got(url, option)
-  await fs
-    .mkdir(path.dirname(hashPath), { recursive: true })
+  const res = await fetch(url)
+  const text = await res.text()
+  await fs.promises
+    .mkdir(path.default.dirname(hashPath), { recursive: true })
     .catch((e) => console.error(e))
-  fs.writeFile(hashPath, hash, 'utf-8').catch((e) => console.error(e))
-  fs.writeFile(cachePath, res.body, 'utf-8').catch((e) => console.error(e))
-  return JSON.parse(res.body) as T
+  fs.promises.writeFile(hashPath, hash, 'utf-8').catch((e) => console.error(e))
+  fs.promises.writeFile(cachePath, text, 'utf-8').catch((e) => console.error(e))
+  return JSON.parse(text) as T
 }
 
 export const fetchJsonWithCache = async <T>(url: string) => {
-  if (process.env.NODE_ENV == 'production' && process.env.CI != '1')
-    return got(url, option).json<T>()
-  const cacheDir = path.resolve('.next/cache/atlasacademy')
-  const stem = path.basename(url, '.json')
-  const hashPath = path.resolve(cacheDir, `${stem}.hash.txt`)
-  const cachePath = path.resolve(cacheDir, `${stem}.json`)
+  const isEdge = process.env.NEXT_RUNTIME === 'edge'
+  const isCI = process.env.CI === '1'
+  const isProd = process.env.NODE_ENV === 'production'
+
+  if (isEdge || (isProd && !isCI)) {
+    return fetch(url).then((r) => r.json() as Promise<T>)
+  }
+
+  const path = await import('path')
+  const cacheDir = path.default.resolve('.next/cache/atlasacademy')
+  const stem = path.default.basename(url, '.json')
+  const hashPath = path.default.resolve(cacheDir, `${stem}.hash.txt`)
+  const cachePath = path.default.resolve(cacheDir, `${stem}.json`)
   const hash = await getHash()
-  const obj = fs
+
+  const fs = await import('fs')
+  const obj = fs.promises
     .readFile(hashPath, 'utf-8')
     .then((localHash) =>
       localHash == hash
