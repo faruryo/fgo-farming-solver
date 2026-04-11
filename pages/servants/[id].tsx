@@ -31,6 +31,6 @@ export const getStaticProps: GetStaticProps<ServantProps> = async ({
   return servant == null ? { notFound: true } : { props: { servant, items } }
 }
 
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 export default Page

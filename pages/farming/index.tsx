@@ -28,6 +28,6 @@ export const getStaticProps: GetStaticProps<FarmingIndexProps> = async ({
   }
 }
 
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 export default Index

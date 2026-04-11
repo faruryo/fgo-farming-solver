@@ -49,6 +49,6 @@ export const getStaticProps: GetStaticProps<ItemProps> = async ({
   }
 }
 
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 export default Page

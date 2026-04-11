@@ -4,7 +4,7 @@ import { gunzipSync, gzipSync } from 'zlib'
 import { DBError, getDynamoDb, putDynamoDb } from '../../../lib/dynamodb'
 import { options } from '../auth/[...nextauth]'
 
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 const region = 'ap-northeast-1'
 const tableName = 'fgo-farming-solver-input'
