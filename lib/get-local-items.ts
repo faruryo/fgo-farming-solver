@@ -1,4 +1,4 @@
-import { getItems } from './get-items'
+import { getItems, EnrichedItem } from './get-items'
 import { toApiItemId } from './to-api-item-id'
 
 type Item = { id: string; category: string; name: string }
@@ -14,7 +14,7 @@ export const getLocalItems = async <I extends Item>(
   const atlasItems = await getItems(locale)
   const atlasItemMap = atlasItems.reduce(
     (map, item) => map.set(toApiItemId(item, atlasItems), item),
-    new Map<string, (typeof atlasItems)[number]>()
+    new Map<string, EnrichedItem>()
   )
   return items.map(({ id, category, name, ...rest }) => {
     const atlasItem = atlasItemMap.get(id)

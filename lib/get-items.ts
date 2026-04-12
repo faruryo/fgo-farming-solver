@@ -22,7 +22,12 @@ const categories: { [locale: string]: { [background: string]: string }[] } = {
   ],
 }
 
-const getCategory = (item: Item, locale: string) => {
+export type EnrichedItem = Item & {
+  largeCategory: string
+  category: string
+}
+
+const getCategory = (item: Item, locale: string): { largeCategory: string; category: string } => {
   const index = Math.floor(item.priority / 100)
   const largeCategory =
     largeCategories[locale]?.[index] ??
@@ -49,7 +54,7 @@ export const getItems = async (locale = 'ja') => {
           type,
           background,
           ...getCategory(item, locale),
-        } as unknown as Item
+        } as EnrichedItem
       })
       .sort(orderBy(({ priority }) => priority, 'asc'))
   )
