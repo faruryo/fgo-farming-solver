@@ -39,7 +39,18 @@ export const getItems = async (locale = 'ja') => {
   const items = fetchJsonWithCache<Item[]>(url).then((items) =>
     items
       .filter((item) => targetTypes.includes(item.type))
-      .map((item) => ({ ...item, ...getCategory(item, locale) }))
+      .map((item) => {
+        const { id, name, icon, priority, type, background } = item
+        return {
+          id,
+          name,
+          icon,
+          priority,
+          type,
+          background,
+          ...getCategory(item, locale),
+        } as unknown as Item
+      })
       .sort(orderBy(({ priority }) => priority, 'asc'))
   )
   return items

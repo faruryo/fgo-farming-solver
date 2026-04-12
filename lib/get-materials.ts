@@ -39,7 +39,7 @@ const reduceServant = (servant: MaterialsRecord): ReducedMaterialsRecord =>
 
 export const getMaterialsForServants =
   async (): Promise<MaterialsForServants> => {
-    const servants = await getNiceServants()
+    const servants = await getNiceServants(undefined, true)
     return Object.fromEntries(
       servants.map((servant) => [servant.id, reduceServant(servant)])
     )

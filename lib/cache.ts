@@ -28,7 +28,7 @@ export const fetchJsonWithCache = async <T>(url: string) => {
   const isDev = process.env.NODE_ENV === 'development'
 
   if (isEdge || isCloudflare || !isDev) {
-    return fetch(url)
+    return fetch(url, { cache: 'no-store' })
       .then((r) => {
         if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)
         return r.json() as Promise<T>
