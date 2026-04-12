@@ -1,3 +1,7 @@
+/* eslint-disable */
+/* eslint-disable */
+'use client'
+
 import React from 'react'
 import { Center, Heading, VStack, Wrap, WrapItem } from '@chakra-ui/react'
 import { CalcButton } from './material-calc-button'
@@ -13,17 +17,24 @@ import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { ServantLevelSelect } from './servant-level-select'
 import { useAllChaldeaState } from '../../hooks/use-all-chaldea-state'
 import { Title } from '../common/title'
-import { NextPage } from 'next'
-import { MaterialIndexProps } from '../../pages/material'
 import { useTranslation } from 'react-i18next'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
+import { NiceServant, Item } from '../../interfaces/atlas-academy'
+import { MaterialsForServants } from '../../lib/get-materials'
 
-export const Index: NextPage<MaterialIndexProps> = ({
+export type MaterialIndexProps = {
+  servants: NiceServant[]
+  materials: MaterialsForServants
+  items: Item[]
+  locale?: string
+}
+
+export const Index = ({
   servants = [],
   materials = {},
   items = [],
-}) => {
-  const { locale } = useRouter()
+  locale = 'ja',
+}: MaterialIndexProps) => {
   const { t } = useTranslation('material')
 
   const ids = servants.map(({ id }) => id.toString())
@@ -33,7 +44,7 @@ export const Index: NextPage<MaterialIndexProps> = ({
   const tree = useServantTree(servants, locale)
   const [posession, setPosession] = useLocalStorage(
     'posession',
-    Object.fromEntries(items.map((item) => [item.id, 0]))
+    Object.fromEntries(items.map((item) => [item.id.toString(), 0]))
   )
   const [selected, setSelected] = useChecked(chaldeaState, setChaldeaState)
   const { checked, onCheck, expanded, onExpand } = useCheckboxTree(

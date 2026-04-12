@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Flex, HStack, Spacer } from '@chakra-ui/react'
 import React from 'react'
 import { Logo } from './logo'

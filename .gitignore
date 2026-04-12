@@ -33,17 +33,11 @@ yarn-error.log*
 # vercel
 .vercel
 
-# Sentry
-.sentryclirc
-
 # project
 /.vscode/
 /dev/
 /cache/
 tsconfig.tsbuildinfo
-
-# Sentry
-.sentryclirc
 
 # Cloudflare / Build
 build.log

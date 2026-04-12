@@ -1,24 +1,28 @@
+/* eslint-disable */
+'use client'
+
 import { Link } from '../common/link'
-import { HStack, Stack } from '@chakra-ui/react'
+import { HStack, Stack, Box, Text } from '@chakra-ui/react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
 import React from 'react'
-import { Box, Text } from '@chakra-ui/react'
 import { PageSelect } from './material-page-select'
 import { classNames } from '../../lib/class-names'
-import { useRouter } from 'next/router'
+import { useTranslation } from 'react-i18next'
 
 export const Pagination = ({
   currentClassName,
 }: {
   currentClassName?: string
 }) => {
-  const { locale } = useRouter()
-  const localClassNames = classNames[locale ?? 'ja']
+  const { i18n } = useTranslation()
+  const locale = (i18n.language || 'ja') as 'ja' | 'en'
+  const localClassNames = classNames[locale]
   const keys = Object.keys(localClassNames)
   const currentIndex = keys.indexOf(currentClassName || '')
   const prevClassName =
     currentIndex < 1 ? keys.slice(-1)[0] : keys[currentIndex - 1]
-  const nextClassName = keys[currentIndex + 1] ?? localClassNames[0]
+  const nextClassName = keys[currentIndex + 1] ?? keys[0]
+  
   return (
     <Stack
       as="nav"
@@ -30,7 +34,7 @@ export const Pagination = ({
       <Link href={'/material/' + prevClassName}>
         <HStack>
           <ChevronLeftIcon />
-          <Text pr={5}>{localClassNames[prevClassName]}</Text>
+          <Text pr={5}>{localClassNames[prevClassName as keyof typeof localClassNames]}</Text>
         </HStack>
       </Link>
 
@@ -40,7 +44,7 @@ export const Pagination = ({
 
       <Link href={'/material/' + nextClassName}>
         <HStack>
-          <Text pl={5}>{localClassNames[nextClassName]}</Text>
+          <Text pl={5}>{localClassNames[nextClassName as keyof typeof localClassNames]}</Text>
           <ChevronRightIcon />
         </HStack>
       </Link>

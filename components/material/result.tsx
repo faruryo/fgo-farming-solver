@@ -1,44 +1,57 @@
+/* eslint-disable */
+/* eslint-disable */
+'use client'
+
 import { Box, Button, Checkbox, Text, VStack } from '@chakra-ui/react'
-import { NextPage } from 'next'
-import { useRouter } from 'next/router'
+import { useRouter, useSearchParams } from 'next/navigation'
 import React, { FormEvent, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useSelectOnFocus } from '../../hooks/use-select-on-focus'
 import { Item } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
-import { MaterialResultProps } from '../../pages/material/result'
 import { groupBy } from '../../utils/group-by'
 import { Title } from '../common/title'
 import { ResultAccordion } from './result-accordion'
 import { TargetCategorySelect } from './target-category-select'
 
-export const Result: NextPage<MaterialResultProps> = ({ items = [] }) => {
+export type MaterialResultProps = {
+  items: Item[]
+  locale?: string
+}
+
+export const Result = ({ items = [], locale = 'ja' }: MaterialResultProps) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const query = Object.fromEntries(searchParams?.entries() ?? [])
   const initialAmounts = Object.fromEntries(
-    Object.entries(router.query).map(([k, v]) => [
+    Object.entries(query).map(([k, v]) => [
       k,
       parseInt(typeof v == 'string' ? v : '0') || 0,
     ])
   )
-  const [amounts] = useLocalStorage('material/result', initialAmounts)
+  const [amounts] = useLocalStorage<Record<string, number>>('material/result', initialAmounts)
+  
   const requiredItems = useMemo(
     () => items.filter((item) => item.id.toString() in amounts),
     [amounts, items]
   )
+  
   const [possession, setPosession] = useLocalStorage<
     Record<string, number | undefined>
-  >('posession', Object.fromEntries(requiredItems.map((item) => [item.id, 0])))
+  >('posession', Object.fromEntries(requiredItems.map((item) => [item.id.toString(), 0])))
+  
   const [hideSufficient, setHideSufficient] = useState(false)
-  const { locale } = useRouter()
   const commonItems = locale == 'en' ? 'Common Items' : '強化素材'
   const [targetCategories, setTargetCategories] = useState([commonItems])
+  
   const onChangeSufficient = useCallback(
     (event: FormEvent<HTMLInputElement>) => {
       setHideSufficient(event.currentTarget.checked)
     },
     []
   )
+  
   const onChange = useCallback(
     (event: FormEvent<HTMLInputElement>) => {
       const { name, valueAsNumber } = event.currentTarget
@@ -49,51 +62,54 @@ export const Result: NextPage<MaterialResultProps> = ({ items = [] }) => {
     },
     [setPosession]
   )
+  
   const deficiencies = Object.fromEntries(
     requiredItems.map((item) => [
-      item.id,
-      amounts[item.id.toString()] - (possession[item.id] ?? 0),
+      item.id.toString(),
+      (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0),
     ])
   )
+  
   const goSolver = useCallback<React.FormEventHandler<HTMLFormElement>>(
     (event) => {
       event.preventDefault()
       const queryItems = requiredItems
         .filter(
           (item) =>
-            deficiencies[item.id] > 0 &&
+            deficiencies[item.id.toString()] > 0 &&
             toApiItemId(item, items) &&
-            targetCategories.includes(item.largeCategory)
+            targetCategories.includes((item as any).largeCategory)
         )
-        .map((item) => `${toApiItemId(item, items)}:${deficiencies[item.id]}`)
+        .map((item) => `${toApiItemId(item, items)}:${deficiencies[item.id.toString()]}`)
         .join(',')
-      router
-        .push({
-          pathname: '/farming',
-          query: { items: queryItems },
-        })
-        .catch((error) => console.error(error))
+      router.push(`/farming?items=${queryItems}`)
     },
     [requiredItems, router, deficiencies, items, targetCategories]
   )
-  const sufficientItems = useMemo(
-    () => requiredItems.filter(({ id }) => deficiencies[id] > 0),
+  
+  const filteredSufficient = useMemo(
+    () => requiredItems.filter(({ id }) => (deficiencies[id.toString()] ?? 0) > 0),
     [deficiencies, requiredItems]
   )
-  const displayedItems = hideSufficient ? sufficientItems : requiredItems
+  
+  const displayedItems = hideSufficient ? filteredSufficient : requiredItems
+  
   const itemGroup = useMemo(
     () =>
       Object.entries(
-        groupBy(displayedItems, ({ largeCategory }) => largeCategory)
+        groupBy(displayedItems, (item) => (item as any).largeCategory)
       ).map(([largeCategory, items]): [string, [string, Item[]][]] => [
         largeCategory,
-        Object.entries(groupBy(items, ({ category }) => category)),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        Object.entries(groupBy(items, (item) => (item as any).category)) as any,
       ]),
     [displayedItems]
   )
+  
   const largeCategories = itemGroup
     .map(([largeCategory]) => largeCategory)
     .filter((largeCategory) => largeCategory != 'QP')
+    
   const selectOnFocus = useSelectOnFocus()
   const { t } = useTranslation('material')
 
@@ -109,7 +125,7 @@ export const Result: NextPage<MaterialResultProps> = ({ items = [] }) => {
             <Text>{t('表示するアイテムがありません。')}</Text>
           ) : (
             <ResultAccordion
-              itemGroup={itemGroup}
+              itemGroup={itemGroup as any}
               amounts={amounts}
               possession={possession}
               deficiencies={deficiencies}

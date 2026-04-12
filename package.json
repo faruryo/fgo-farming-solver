@@ -31,7 +31,6 @@
     "@cloudflare/next-on-pages": "^1.13.16",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@sentry/nextjs": "^10.47.0",
     "@types/react-dom": "^19.2.3",
     "framer-motion": "^11.18.2",
     "got": "^15.0.1",

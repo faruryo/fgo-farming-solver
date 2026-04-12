@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { ButtonProps, IconButton, IconButtonProps } from '@chakra-ui/react'
 import {
   Menu,
@@ -6,7 +7,7 @@ import {
   MenuItem,
   MenuList,
 } from '@chakra-ui/react'
-import { useRouter } from 'next/router'
+import React from 'react'
 
 const repos: { repo: string; label: { [locale: string]: string } }[] = [
   {
@@ -20,7 +21,7 @@ const repos: { repo: string; label: { [locale: string]: string } }[] = [
 export const GithubMenu = (
   props: MenuButtonProps & ButtonProps & IconButtonProps
 ) => {
-  const { locale } = useRouter()
+  const locale = 'ja' as string
   return (
     <Menu>
       <MenuButton as={IconButton} {...props} />

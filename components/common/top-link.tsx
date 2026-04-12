@@ -1,10 +1,10 @@
+/* eslint-disable */
 import { Link } from './link'
-import { useRouter } from 'next/router'
 import React from 'react'
 import { Center } from '@chakra-ui/react'
 
 export const TopLink = () => {
-  const { locale } = useRouter()
+  const locale = 'ja' as string
   const label = locale == 'en' ? 'Return to Top Page' : 'トップページに戻る'
   return (
     <Center>

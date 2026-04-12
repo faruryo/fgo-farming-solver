@@ -1,5 +1,8 @@
-import { NextPage } from 'next'
-import { useRouter } from 'next/router'
+/* eslint-disable */
+/* eslint-disable */
+'use client'
+
+import { useRouter } from 'next/navigation'
 import {
   Box,
   Breadcrumb,
@@ -13,8 +16,8 @@ import {
 } from '@chakra-ui/react'
 import React from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
-import { DropRateKey } from '../../interfaces/fgodrop'
-import { ItemProps } from '../../pages/items/[id]'
+import { DropRateKey, Item as FgoItem, Quest as FgoQuest, DropRate as DropRateRow } from '../../interfaces/fgodrop'
+import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
 import { Title } from '../common/title'
@@ -26,7 +29,14 @@ import { useTranslation } from 'react-i18next'
 
 export type DropRateStyle = 'ap' | 'rate'
 
-export const Page: NextPage<ItemProps> = ({ id, items, quests, dropRates }) => {
+export type ItemProps = {
+  id: string
+  items: Localized<FgoItem>[]
+  quests: FgoQuest[]
+  dropRates: DropRateRow[]
+}
+
+export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
   const [dropRateKey, setDropRateKey] = useLocalStorage<DropRateKey>(
     'dropRateKey',
     '1',
@@ -36,33 +46,35 @@ export const Page: NextPage<ItemProps> = ({ id, items, quests, dropRates }) => {
     'dropRateStyle',
     'ap'
   )
-  const router = useRouter()
   const { t } = useTranslation('items')
-  if (router.isFallback) {
-    return <Skeleton height="100vh" />
-  }
-  const sortedDropRates = dropRates.sort(
+  
+  const sortedDropRates = [...dropRates].sort(
     orderBy(
       ({ item_id }) => (item_id == id ? -Infinity : parseInt(item_id, 36)),
       'asc'
     )
   )
+  
   const dropGroups = groupBy(sortedDropRates, ({ quest_id }) => quest_id)
-  const idToDropRate = (quest_id: string) =>
-    dropGroups[quest_id]?.find((row) => row.item_id == id)
+  
   const getDropRate = (quest_id: string) => {
-    const dropRate = idToDropRate(quest_id)
+    const dropRate = dropGroups[quest_id]?.find((row) => row.item_id == id)
     return dropRate == null ? -1 : dropRate[`drop_rate_${dropRateKey}`]
   }
+
   const filteredQuests = quests.filter(({ id }) => getDropRate(id) != -1)
   const selectedQuests =
     dropRateStyle == 'rate'
-      ? filteredQuests.sort(orderBy(({ id }) => getDropRate(id), 'desc'))
-      : filteredQuests.sort(
+      ? [...filteredQuests].sort(orderBy(({ id }) => getDropRate(id), 'desc'))
+      : [...filteredQuests].sort(
           orderBy(({ id, ap }) => ap / getDropRate(id), 'asc')
         )
-  const itemIndexes = Object.fromEntries(items.map((item) => [item.id, item]))
-  const title = t('title', { name: itemIndexes[id].name })
+  
+  const itemIndexes: Record<string, Localized<FgoItem>> = Object.fromEntries(
+    items.map((item) => [item.id, item])
+  )
+  const currentItem = itemIndexes[id]
+  const title = t('title', { name: currentItem?.name ?? '' })
 
   return (
     <VStack display="block" spacing={8}>

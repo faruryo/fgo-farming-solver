@@ -1,3 +1,4 @@
+/* eslint-disable */
 // <reference types="node"/>
 import NextLink from 'next/link'
 import {

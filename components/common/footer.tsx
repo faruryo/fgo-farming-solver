@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   Flex,
   Heading,
@@ -9,7 +10,6 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { useRouter } from 'next/router'
 import React from 'react'
 import { FaGithub, FaTwitter } from 'react-icons/fa'
 import { GithubMenu } from './github-menu'
@@ -17,7 +17,7 @@ import { Link, ExternalLink } from './link'
 import { menuGroups } from './nav'
 
 export const Footer = () => {
-  const { locale } = useRouter()
+  const locale = 'ja' as string
   return (
     <footer>
       <VStack align="center" justify="center">

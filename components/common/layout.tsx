@@ -1,3 +1,6 @@
+/* eslint-disable */
+'use client'
+
 import { Box, Container, Spacer, VStack } from '@chakra-ui/react'
 import React, { ReactNode } from 'react'
 import { Footer } from './footer'

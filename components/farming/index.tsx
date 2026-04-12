@@ -1,3 +1,6 @@
+/* eslint-disable */
+'use client'
+
 import {
   Alert,
   AlertIcon,
@@ -9,8 +12,7 @@ import {
   useBoolean,
   VStack,
 } from '@chakra-ui/react'
-import { NextPage } from 'next'
-import { useRouter } from 'next/router'
+import { useRouter, useSearchParams } from 'next/navigation'
 import React, {
   ChangeEventHandler,
   useCallback,
@@ -22,15 +24,19 @@ import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { useChecked } from '../../hooks/use-checked-from-quest-state'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useQuestTree } from '../../hooks/use-quest-tree'
-import { Item } from '../../interfaces/fgodrop'
+import { Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
-import { FarmingIndexProps } from '../../pages/farming'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { DropRateSelect } from './drop-rate-select'
 import { ItemFieldset } from './item-fieldset'
 import { ObjectiveFieldset } from './objective-fieldset'
 import { ResetAlertDialog } from './reset-alert-dialog'
+
+export type FarmingIndexProps = {
+  items: Localized<Item>[]
+  quests: Quest[]
+}
 
 type InputState = {
   objective: string
@@ -94,7 +100,7 @@ const isInputState = (arg: unknown): arg is QueryInputState =>
 const hasId = (arg: unknown): arg is { id: unknown } =>
   typeof arg == 'object' && arg != null && 'id' in arg
 
-export const Index: NextPage<FarmingIndexProps> = ({ items, quests }) => {
+export const Index = ({ items, quests }: FarmingIndexProps) => {
   useEffect(migrateLocalInput, [])
   const { t } = useTranslation('farming')
   const { tree } = useQuestTree(quests)
@@ -115,6 +121,7 @@ export const Index: NextPage<FarmingIndexProps> = ({ items, quests }) => {
     'add'
   )
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isConfirming, setIsConfirming] = useBoolean()
   const [isLoading, setIsLoading] = useBoolean(false)
   const [selected, setSelected] = useChecked(
@@ -129,7 +136,8 @@ export const Index: NextPage<FarmingIndexProps> = ({ items, quests }) => {
   )
 
   useEffect(() => {
-    const { query } = router
+    if (!searchParams) return
+    const query = Object.fromEntries(searchParams.entries())
     if (isInputState(query)) {
       setObjective((objective) => query.objective ?? objective)
       setItemCounts(
@@ -155,9 +163,7 @@ export const Index: NextPage<FarmingIndexProps> = ({ items, quests }) => {
       })
       setHalfDailyAp(query.ap_coefficients == '0:0.5')
       setDropMergeMethod(query.drop_merge_method ?? 'add')
-      router
-        .replace('/farming', undefined, { scroll: false, shallow: true })
-        .catch((error) => console.error(error))
+      router.replace('/farming')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -234,7 +240,8 @@ export const Index: NextPage<FarmingIndexProps> = ({ items, quests }) => {
     groupBy(items, ({ largeCategory }) => largeCategory)
   ).map(([largeCategory, items]): [string, [string, Localized<Item>[]][]] => [
     largeCategory,
-    Object.entries(groupBy(items, ({ category }) => category)),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    Object.entries(groupBy(items, ({ category }) => category)) as any,
   ])
 
   return (

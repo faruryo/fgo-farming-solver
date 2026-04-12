@@ -1,59 +1,60 @@
-import { NextPage } from 'next'
-import React from 'react'
-import {
-  Heading,
-  HStack,
-  VStack,
-  Text,
-  Wrap,
-  WrapItem,
-  Center,
-} from '@chakra-ui/react'
-import { groupBy } from '../../utils/group-by'
-import { Title } from '../common/title'
-import { ItemLink } from '../common/item-link'
+/* eslint-disable */
+/* eslint-disable */
+'use client'
+
+import { Heading, List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
+import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ItemIndexProps } from '../../pages/items'
 import { Item } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
+import { groupBy } from '../../utils/group-by'
+import { Link } from '../common/link'
+import { Title } from '../common/title'
 
-export const Index: NextPage<ItemIndexProps> = ({ items }) => {
-  const itemGroups = Object.entries(
-    groupBy(items, ({ largeCategory }) => largeCategory)
-  ).map(([largeCategory, items]): [string, [string, Localized<Item>[]][]] => [
-    largeCategory,
-    Object.entries(groupBy(items, ({ category }) => category)),
-  ])
+export type ItemIndexProps = {
+  items: Localized<Item>[]
+  locale?: string
+}
+
+export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
   const { t } = useTranslation('items')
+  const itemGroup = useMemo(
+    () =>
+      Object.entries(
+        groupBy(items, ({ largeCategory }) => largeCategory)
+      ).map(([largeCategory, items]): [string, [string, Localized<Item>[]][]] => [
+        largeCategory,
+        Object.entries(groupBy(items, ({ category }) => category)),
+      ]),
+    [items]
+  )
 
   return (
-    <VStack spacing={10} align="stretch">
-      <Center>
-        <Title>{t('アイテム一覧')}</Title>
-      </Center>
-      <Wrap spacing={10} justify="space-around">
-        {itemGroups.map(([largeCategory, itemGroup]) => (
-          <WrapItem key={largeCategory}>
-            <VStack align="start">
-              <Heading size="md">{largeCategory}</Heading>
-              <HStack align="start" spacing={10}>
-                {itemGroup.map(([category, items]) => (
-                  <VStack align="start" key={category}>
-                    <Heading as="h3" size="sm">
-                      {category}
-                    </Heading>
+    <VStack alignItems="stretch" spacing={8}>
+      <Title>{t('アイテム一覧')}</Title>
+      <SimpleGrid minChildWidth="300px" spacingX={3} spacingY={8}>
+        {itemGroup.map(([largeCategory, itemGroups]) => (
+          <VStack align="start" key={largeCategory}>
+            <Heading size="lg">{largeCategory}</Heading>
+            <VStack spacing={4} align="start">
+              {itemGroups.map(([category, items]) => (
+                <VStack key={category} align="start">
+                  <Heading size="sm" color="gray.500">
+                    {category}
+                  </Heading>
+                  <List spacing={1}>
                     {items.map((item) => (
-                      <Text key={item.id}>
-                        <ItemLink id={item.id} name={item.name} />
-                      </Text>
+                      <ListItem key={item.id}>
+                        <Link href={`/items/${item.id}`}>{item.name}</Link>
+                      </ListItem>
                     ))}
-                  </VStack>
-                ))}
-              </HStack>
+                  </List>
+                </VStack>
+              ))}
             </VStack>
-          </WrapItem>
+          </VStack>
         ))}
-      </Wrap>
+      </SimpleGrid>
     </VStack>
   )
 }

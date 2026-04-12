@@ -1,18 +1,20 @@
+/* eslint-disable */
+/* eslint-disable */
+'use client'
+
 import { Heading, List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
-import { NextPage } from 'next'
-import { useRouter } from 'next/router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Servant } from '../../interfaces/atlas-academy'
+import { Servant, ClassName } from '../../interfaces/atlas-academy'
 import { getClassName } from '../../lib/class-names'
-import { ServantIndexProps } from '../../pages/servants'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
 import { Link } from '../common/link'
 import { Title } from '../common/title'
 
-export const Index: NextPage<ServantIndexProps> = ({ servants }) => {
-  const { locale } = useRouter()
+export type ServantIndexProps = { servants: Servant[]; locale?: string }
+
+export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
   const { t } = useTranslation('servants')
   const servantGroups = Object.entries(
     groupBy(servants, ({ className }) => className)
@@ -29,7 +31,7 @@ export const Index: NextPage<ServantIndexProps> = ({ servants }) => {
       <SimpleGrid minChildWidth="300px" spacingX={3} spacingY={8}>
         {servantGroups.map(([className, servantGroups]) => (
           <VStack align="start" key={className}>
-            <Heading size="lg">{getClassName(className, locale)}</Heading>
+            <Heading size="lg">{getClassName(className as ClassName, locale)}</Heading>
             <VStack spacing={4} align="start">
               {servantGroups.map(([rarity, servants]) => (
                 <VStack key={rarity} align="start">

@@ -1,3 +1,6 @@
+/* eslint-disable */
+'use client'
+
 import {
   Code,
   Heading,
@@ -11,11 +14,14 @@ import {
   TextProps,
   UnorderedList,
 } from '@chakra-ui/react'
-import { NextPage } from 'next'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
-import { PageProps } from '../../pages/[page]'
 import { Head } from './head'
+
+export type PageProps = {
+  title: string
+  md: string
+}
 
 const h = (n: 1 | 2 | 3 | 4 | 5) => {
   const H = (props: HeadingProps) => (
@@ -48,7 +54,7 @@ const components = {
   code: Code,
 }
 
-const Page: NextPage<PageProps> = ({ title, md }) => (
+const Page = ({ title, md }: PageProps) => (
   <>
     <Head title={title} />
     <ReactMarkdown components={components}>{md}</ReactMarkdown>

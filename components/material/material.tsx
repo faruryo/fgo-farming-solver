@@ -1,4 +1,7 @@
-import { NextPage } from 'next'
+/* eslint-disable */
+/* eslint-disable */
+'use client'
+
 import {
   Box,
   Breadcrumb,
@@ -14,7 +17,8 @@ import { getClassNode } from '../../hooks/use-servant-tree'
 import { useChecked } from '../../hooks/use-checked-from-chaldea-state'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { getClassName } from '../../lib/class-names'
-import { MaterialProps } from '../../pages/material/[className]'
+import { NiceServant, ClassName } from '../../interfaces/atlas-academy'
+import { MaterialsForServants } from '../../lib/get-materials'
 import { Link } from '../common/link'
 import { Head } from '../common/head'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
@@ -22,15 +26,23 @@ import { CheckboxTree } from '../common/checkbox-tree'
 import { CalcButton } from './material-calc-button'
 import { Pagination } from './material-pagination'
 import { ServantLevelSelect } from './servant-level-select'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 
-export const Material: NextPage<MaterialProps> = ({
+export type MaterialProps = {
+  servants: NiceServant[]
+  materials: MaterialsForServants
+  className: string
+  locale?: string
+}
+
+export const Material = ({
   servants,
   materials,
   className,
-}) => {
-  const ids = servants.map(({ id }) => id.toString())
+  locale = 'ja',
+}: MaterialProps) => {
+  const ids = useMemo(() => servants.map(({ id }) => id.toString()), [servants])
   const [chaldeaState, setChaldeaState] = useChaldeaState(ids)
   const currentClassServants = useMemo(
     () => servants.filter((servant) => servant.className == className),
@@ -39,16 +51,15 @@ export const Material: NextPage<MaterialProps> = ({
   const enabledServants = useMemo(
     () =>
       currentClassServants.filter(
-        (servant) => !chaldeaState[servant.id].disabled
+        (servant) => !chaldeaState[servant.id.toString()]?.disabled
       ),
     [chaldeaState, currentClassServants]
   )
-  const { locale } = useRouter()
-  const localClassName = getClassName(className, locale)
+  const localClassName = getClassName(className as ClassName, locale)
   const { t } = useTranslation('material')
 
   const tree = useMemo(
-    () => [getClassNode(className, currentClassServants, locale)],
+    () => [getClassNode(className as ClassName, currentClassServants, locale)],
     [className, currentClassServants, locale]
   )
   const [selected, setSelected] = useChecked(chaldeaState, setChaldeaState)

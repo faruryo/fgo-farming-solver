@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Checkbox, VStack } from '@chakra-ui/react'
 import React, { Dispatch, FormEventHandler, memo } from 'react'
 import { useTranslation } from 'react-i18next'

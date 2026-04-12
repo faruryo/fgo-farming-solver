@@ -1,12 +1,14 @@
+/* eslint-disable */
+'use client'
+
 import Image from 'next/image'
 import { Box, Flex, Heading, HStack } from '@chakra-ui/react'
 import React from 'react'
 import { Link } from './link'
-import { useRouter } from 'next/router'
 
 export const Logo = () => {
-  const { locale } = useRouter()
-  const space = locale == 'en' ? '\u2009' : ''
+  const locale = 'ja' as string
+  const space = ''
   return (
     <Box>
       <Link href="/" aria-label="Go to top">

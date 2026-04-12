@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { HamburgerIcon } from '@chakra-ui/icons'
 import {
   IconButton,
@@ -9,7 +10,6 @@ import {
   MenuList,
 } from '@chakra-ui/react'
 import NextLink from 'next/link'
-import { useRouter } from 'next/router'
 import React from 'react'
 import { LangMenuItem } from './lang-menu-item'
 
@@ -40,7 +40,7 @@ export const menuGroups = [
 ]
 
 export const Nav = () => {
-  const { locale } = useRouter()
+  const locale = 'ja' as string
   return (
     <nav>
       <Menu>

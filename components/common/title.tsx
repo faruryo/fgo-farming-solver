@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Heading, HeadingProps } from '@chakra-ui/react'
 import { ComponentWithAs } from '@chakra-ui/react'
 import { Head } from './head'

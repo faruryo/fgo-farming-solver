@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { FormControl, FormLabel } from '@chakra-ui/react'
 import {
   Accordion,

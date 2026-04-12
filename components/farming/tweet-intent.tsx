@@ -1,13 +1,17 @@
+/* eslint-disable */
+'use client'
+
 import React from 'react'
-import { Box } from '@chakra-ui/react'
+import { Box, Button } from '@chakra-ui/react'
 import { FaTwitter } from 'react-icons/fa'
-import { Button } from '@chakra-ui/react'
-import { useRouter } from 'next/router'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 
 export const TweetIntent = ({ text }: { text: string }) => {
-  const router = useRouter()
-  const url = `https://fgo-farming-solver.vercel.app${router.asPath}`
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const asPath = `${pathname}${searchParams?.toString() ? '?' + searchParams.toString() : ''}`
+  const url = `https://fgo-farming-solver.vercel.app${asPath}`
   const hashtags = 'FGO周回ソルバー'
   const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     text

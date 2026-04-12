@@ -1,8 +1,10 @@
+'use client'
+
 import { Button, Heading, HStack, Text, VStack } from '@chakra-ui/react'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AuthButton } from '../components/common/auth-button'
+import { AuthButton } from '../common/auth-button'
 
 const keys = [
   'material',
@@ -23,7 +25,7 @@ const save = async () => {
   const body = JSON.stringify(
     Object.fromEntries(
       keys
-        .map((key) => [key, localStorage.getItem(key)])
+        .map((key) => [key, localStorage.getItem(key)] as const)
         .filter(([, value]) => value)
     )
   )
@@ -59,9 +61,10 @@ const Cloud = () => {
 
       <Text>{t('cloud-description')}</Text>
 
-      <AuthButton />
-      {session && (
-        <HStack>
+      {session == null ? (
+        <AuthButton />
+      ) : (
+        <HStack spacing={8}>
           <Button
             onClick={() => {
               setIsSaving(true)

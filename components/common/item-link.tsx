@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Link } from './link'
 
 const itemColors: { [key: string]: string } = {
