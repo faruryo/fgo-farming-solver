@@ -3,8 +3,7 @@ import { getLocalQuests } from '../../lib/get-local-quests'
 import { getLocalItems } from '../../lib/get-local-items'
 import { Index } from '../../components/farming'
 
-export const runtime = 'edge'
-export const revalidate = 86400
+export const dynamic = 'force-dynamic'
 
 export default async function FarmingPage() {
   const locale = 'ja' // TODO: locale handling

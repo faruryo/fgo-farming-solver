@@ -1,8 +1,8 @@
+export const dynamic = 'force-dynamic'
 import { getDrops } from '../../lib/get-drops'
 import { getLocalItems } from '../../lib/get-local-items'
 import { Index } from '../../components/items'
 
-export const runtime = 'edge'
 
 export default async function ItemsPage() {
   const locale = 'ja'

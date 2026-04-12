@@ -1,52 +1,54 @@
-# FGO Solver edge 移行・デプロイガイド
+# FGO Solver OpenNext 移行・デプロイガイド
 
-このドキュメントでは、FGO Farming Solver を Cloudflare Pages (edge ランタイム) へ移行するためのステータスと、最終的なデプロイ手順をまとめています。
+このドキュメントでは、FGO Farming Solver を最新の **Cloudflare Workers (with Static Assets)** 環境へ OpenNext を使用してデプロイするための手順をまとめています。従来の Pages から、より制御性の高い Workers ベースのデプロイ方式へ移行しました。
 
-## 🚀 推奨：Cloudflare Pages でのセットアップ手順
+## 🚀 推奨：Cloudflare Workers でのデプロイ手順
 
-Next.js アプリを Cloudflare で運用する場合、**Pages** プロジェクトとして作成するのが最も標準的で確実です。
+Cloudflare の最新の推奨（Workers Assets）に基づき、OpenNext を使用して Workers としてデプロイします。
 
-### 1. プロジェクトの新規作成
-1. [Cloudflare ダッシュボード](https://dash.cloudflare.com/)にログインします。
-2. **[Workers & Pages]** > **[作成]** > **[Pages]** > **[Git に接続]** を選択します。
-3. 対象のリポジトリ (`fgo-farming-solver`) を選択します。
+### 1. ビルドとデプロイ
 
-### 2. ビルド設定
-ビルド設定（Build settings）のステップで、以下の値を入力します：
-- **フレームワーク プリセット**: `Next.js`
-- **ビルド コマンド**: `npx @cloudflare/next-on-pages`
-- **ビルド出力ディレクトリ**: `.vercel/output`
+ターミナルで以下のコマンドを実行するだけで、ビルドとデプロイが一括で行われます：
 
-### 3. 関数（Functions）の互換性設定（重要）
-プロジェクトが作成されたら（最初のビルドが失敗してもOK）、プロジェクトの管理画面へ移動します：
-1. **[設定]** > **[Functions]** > **[互換性フラグ]** を開きます。
-2. **「本番環境」**と**「プレビュー環境」**の両方のフラグに `nodejs_compat` を追加して保存します。
-   - *注意: これがないと AWS SDK や Auth.js が正常に動作しません。*
+```bash
+npm run deploy
+```
 
-### 4. 環境変数の設定
-**[設定]** > **[環境変数]** で、以下の変数を追加します：
-- `AUTH_SECRET`: 適当な32文字のランダムな文字列（Auth.js v5 の暗号化に必要）。
-- `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET`: Twitter API の認証情報。
+内部的には以下の処理が行われます：
+1. `next build`: Next.js の標準ビルド。
+2. `npx @opennextjs/cloudflare build`: OpenNext による Cloudflare Worker 形式への変換。
+3. `wrangler deploy`: Workers Assets を含むプロジェクトのデプロイ。
+
+### 2. 環境変数の設定
+
+Workers としてデプロイするため、[Cloudflare ダッシュボード](https://dash.cloudflare.com/) の **[Workers & Pages]** > **(プロジェクト名)** > **[設定]** > **[変数とシークレット]** で以下の変数を追加してください：
+
+- `AUTH_SECRET`: Auth.js v5 用のシークレット文字列。
+- `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET`: Twitter API 認証情報。
 - `MY_AWS_ACCESS_KEY_ID` / `MY_AWS_SECRET_ACCESS_KEY`: DynamoDB 用の AWS 認証情報。
-- `NEXT_PUBLIC_BASE_URL`: デプロイ後の URL（例: `https://fgo-farming-solver.pages.dev`）。
+- `NEXT_PUBLIC_BASE_URL`: 本番環境の URL。
+
+> [!IMPORTANT]
+> すでに Pages プロジェクトとして運用している場合は、Workers プロジェクトとして新しく認識されるため、環境変数を再設定する必要があります。
 
 ---
 
-## 🛠️ 現在の Workers 設定のまま修正する場合
+## 🛠️ ローカル開発
 
-Workers 側の CI/CD 設定（Workers Builds）を使い続けたい場合は、以下の修正を行ってください：
+OpenNext の環境をローカルでシミュレートして動作確認を行う場合は、以下のコマンドを使用します：
 
-1. 対象 Worker の **[設定]** > **[ビルド]** を開きます。
-2. **ビルド コマンド**: `npx @cloudflare/next-on-pages`
-3. **デプロイ コマンド**: `npx wrangler pages deploy .vercel/output --project-name fgo-farming-solver`
+```bash
+npx wrangler dev
+```
 
-> [!WARNING]
-> Workers の画面から Pages をデプロイする設定は、Cloudflare の標準的な構成ではありません。環境変数の反映などでトラブルが起きやすいため、上記 **[推奨：Pages]** の手順でプロジェクトを作り直すことを強くおすすめします。
+これにより、Cloudflare 実際のランタイムに近い環境（workerd）で Next.js アプリをプレビューできます。
 
 ---
 
-## ✅ 完了済みの修正内容
-- **Auth.js の移行**: `next-auth@beta` (v5) にアップグレードし、edge ランタイムでのセッション管理に対応させました。
-- **edge API へのリライト**: `pages/api/cloud/index.ts` を Web 標準の Request/Response API を使うように修正し、`Buffer` 依存を解消しました。
-- **競合の解消**: 新しい App Router 形式の認証ハンドラーと競合していた古い Pages Router 側のファイルを削除しました。
-- **Wrangler 設定の準備**: 互換性フラグなどを管理するための `wrangler.toml` を作成しました。
+## ✅ 移行完了済みの内容
+
+- **OpenNext への移行**: 非推奨の `@cloudflare/next-on-pages` から最新の `@opennextjs/cloudflare` へ移行しました。
+- **Workers Assets への対応**: `wrangler.toml` を更新し、静的ファイルを Workers 側でホストする新方式に変更しました。
+- **Edge Runtime 設定の削除**: OpenNext での互換性を高めるため、各ページの `export const runtime = "edge"` を削除し、Node.js 規格のライブラリ（AWS SDK等）が使いやすい構成にしました。
+- **ビルドエラーの回避**: ビルド時に外部 API (AtlasAcademy 等) や AWS 認証が必要なページにおいて、`export const dynamic = 'force-dynamic'` を設定することで、ビルド時の Prerender エラーを解消しました。
+- **依存関係の整理**: `package.json` の `overrides` を用いて、Cloudflare 環境で問題を起こしやすかった `esbuild` や `yaml` のバージョン競合を解決しました。

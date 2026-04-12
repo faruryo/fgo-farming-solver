@@ -1,8 +1,7 @@
 import { getItems } from '../../../lib/get-items'
 import { Result } from '../../../components/material/result'
 
-export const runtime = 'edge'
-export const revalidate = 1800
+export const dynamic = 'force-dynamic'
 
 export default async function MaterialResultPage() {
   const locale = 'ja'

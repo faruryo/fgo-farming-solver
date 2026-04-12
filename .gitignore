@@ -42,3 +42,4 @@ tsconfig.tsbuildinfo
 # Cloudflare / Build
 build.log
 .wrangler
+.open-next

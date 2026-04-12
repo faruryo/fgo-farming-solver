@@ -6,7 +6,6 @@ import { Page } from '../../../../components/farming/result'
 import { notFound } from 'next/navigation'
 import { DBError } from '../../../../lib/dynamodb'
 
-export const runtime = 'edge'
 
 export default async function ResultPage({
   params,

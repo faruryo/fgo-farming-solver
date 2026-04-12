@@ -1,9 +1,9 @@
+export const dynamic = 'force-dynamic'
 import { getNiceServants } from '../../lib/get-nice-servants'
 import { getMaterialsForServants } from '../../lib/get-materials'
 import { getItems } from '../../lib/get-items'
 import { Index } from '../../components/material/index'
 
-export const runtime = 'edge'
 export const revalidate = 1800
 
 export default async function MaterialPage() {

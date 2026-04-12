@@ -24,11 +24,19 @@ const fetchAndWriteJson = async <T>(
 
 export const fetchJsonWithCache = async <T>(url: string) => {
   const isEdge = process.env.NEXT_RUNTIME === 'edge'
-  const isCI = process.env.CI === '1'
-  const isProd = process.env.NODE_ENV === 'production'
+  const isCloudflare = process.env.CF_PAGES === '1' || process.env.OPEN_NEXT === '1'
+  const isDev = process.env.NODE_ENV === 'development'
 
-  if (isEdge || (isProd && !isCI)) {
-    return fetch(url).then((r) => r.json() as Promise<T>)
+  if (isEdge || isCloudflare || !isDev) {
+    return fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)
+        return r.json() as Promise<T>
+      })
+      .catch((e) => {
+        console.error(`Fetch failed for ${url}:`, e)
+        throw e
+      })
   }
 
   const pathModule = await import(/* webpackIgnore: true */ 'path')
