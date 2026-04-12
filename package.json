@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "deploy": "npx @opennextjs/cloudflare build && wrangler deploy",
+    "build": "next build && npx @opennextjs/cloudflare build --skipBuild",
+    "deploy": "npm run build && wrangler deploy",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",

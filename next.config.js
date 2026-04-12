@@ -3,6 +3,7 @@
  */
 
 const nextConfig = {
+  output: 'standalone',
   async redirects() {
     return [
       {
