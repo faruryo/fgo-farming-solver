@@ -41,4 +41,6 @@ export const classNames: { [locale: string]: { [className: string]: string } } =
   }
 
 export const getClassName = (className: string, locale = 'ja', def?: string) =>
-  classNames[locale][className] || def || className
+  classNames[locale]?.[className] || def || className
+
+

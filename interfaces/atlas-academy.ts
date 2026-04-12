@@ -1,7 +1,7 @@
 export type ClassName =
   | 'saber'
   | 'archer'
-  | 'lanver'
+  | 'lancer'
   | 'rider'
   | 'caster'
   | 'assassin'
@@ -13,6 +13,10 @@ export type ClassName =
   | 'moonCancer'
   | 'foreigner'
   | 'pretender'
+  | 'beast'
+  | 'beastEresh'
+  | 'unBeastOlgaMarie'
+
 
 export type TargetKey = 'ascension' | 'skill' | 'appendSkill'
 export type MaterialsKey = `${TargetKey}Materials`
