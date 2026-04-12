@@ -5,10 +5,6 @@
 const { withSentryConfig } = require('@sentry/nextjs')
 
 const nextConfig = {
-  i18n: {
-    defaultLocale: 'ja',
-    locales: ['ja'],
-  },
   async redirects() {
     return [
       {

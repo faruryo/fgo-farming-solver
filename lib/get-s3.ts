@@ -83,7 +83,7 @@ export const putGzip = async (
   const compressedStream = readableStream.pipeThrough(compressionStream)
 
   // AWS SDK PutObject accepts Uint8Array or ReadableStream
-  // In experimental-edge/Browser, we need a Uint8Array or a compatible stream
+  // In edge/Browser, we need a Uint8Array or a compatible stream
   const response = new Response(compressedStream)
   const blob = await response.blob()
 

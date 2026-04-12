@@ -1,7 +1,7 @@
 export const getQuestTranslation = async (): Promise<{
   [jpQuestName: string]: string
 }> => {
-  const isEdge = process.env.NEXT_RUNTIME === 'experimental-edge'
+  const isEdge = process.env.NEXT_RUNTIME === 'edge'
 
   if (!isEdge) {
     const fs = await import(/* webpackIgnore: true */ 'fs/promises')

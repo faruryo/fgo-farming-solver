@@ -1,4 +1,6 @@
-export const runtime = 'experimental-edge';
+export const config = {
+  runtime: 'experimental-edge',
+};
 import { GetStaticProps } from 'next'
 import { getItems } from '../../lib/get-items'
 import { revalidate } from '../../constants/revalidate'

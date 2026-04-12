@@ -10,7 +10,7 @@ export type Drops = {
 
 export const getDrops = async (): Promise<Drops> => {
   const isDev = process.env.NODE_ENV == 'development'
-  const isEdge = process.env.NEXT_RUNTIME == 'experimental-edge'
+  const isEdge = process.env.NEXT_RUNTIME == 'edge'
 
   let data: Partial<Drops>
   if (isDev && !isEdge) {

@@ -1,4 +1,6 @@
-export const runtime = 'experimental-edge';
+export const config = {
+  runtime: 'experimental-edge',
+};
 import { GetServerSideProps } from 'next'
 import { Page } from '../../components/farming/result'
 

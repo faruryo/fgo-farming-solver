@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { DBError, getDynamoDb, putDynamoDb } from '../../../lib/dynamodb'
 
-export const runtime = 'experimental-edge'
+export const runtime = 'edge'
 
 const region = 'ap-northeast-1'
 const tableName = 'fgo-farming-solver-input'

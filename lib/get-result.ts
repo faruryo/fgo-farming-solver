@@ -4,7 +4,7 @@ import { getDynamoDb } from './dynamodb'
 
 export const getResult = async (id: string): Promise<Result> => {
   const isDev = process.env.NODE_ENV === 'development'
-  const isEdge = process.env.NEXT_RUNTIME === 'experimental-edge'
+  const isEdge = process.env.NEXT_RUNTIME === 'edge'
 
   if (isDev && !isEdge) {
     const path = await import(/* webpackIgnore: true */ 'path')
