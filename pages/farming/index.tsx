@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = 'experimental-edge';
 import { Index } from '../../components/farming'
 import { Drops, getDrops } from '../../lib/get-drops'
 import { GetStaticProps } from 'next'

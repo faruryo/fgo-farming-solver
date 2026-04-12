@@ -1,6 +1,6 @@
-# FGO Solver Edge 移行・デプロイガイド
+# FGO Solver experimental-edge 移行・デプロイガイド
 
-このドキュメントでは、FGO Farming Solver を Cloudflare Pages (Edge ランタイム) へ移行するためのステータスと、最終的なデプロイ手順をまとめています。
+このドキュメントでは、FGO Farming Solver を Cloudflare Pages (experimental-edge ランタイム) へ移行するためのステータスと、最終的なデプロイ手順をまとめています。
 
 ## 🚀 推奨：Cloudflare Pages でのセットアップ手順
 
@@ -46,7 +46,7 @@ Workers 側の CI/CD 設定（Workers Builds）を使い続けたい場合は、
 ---
 
 ## ✅ 完了済みの修正内容
-- **Auth.js の移行**: `next-auth@beta` (v5) にアップグレードし、Edge ランタイムでのセッション管理に対応させました。
-- **Edge API へのリライト**: `pages/api/cloud/index.ts` を Web 標準の Request/Response API を使うように修正し、`Buffer` 依存を解消しました。
+- **Auth.js の移行**: `next-auth@beta` (v5) にアップグレードし、experimental-edge ランタイムでのセッション管理に対応させました。
+- **experimental-edge API へのリライト**: `pages/api/cloud/index.ts` を Web 標準の Request/Response API を使うように修正し、`Buffer` 依存を解消しました。
 - **競合の解消**: 新しい App Router 形式の認証ハンドラーと競合していた古い Pages Router 側のファイルを削除しました。
 - **Wrangler 設定の準備**: 互換性フラグなどを管理するための `wrangler.toml` を作成しました。

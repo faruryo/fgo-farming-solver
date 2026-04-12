@@ -1,7 +1,7 @@
 export const getQuestTranslation = async (): Promise<{
   [jpQuestName: string]: string
 }> => {
-  const isEdge = process.env.NEXT_RUNTIME === 'edge'
+  const isEdge = process.env.NEXT_RUNTIME === 'experimental-edge'
 
   if (!isEdge) {
     const fs = await import(/* webpackIgnore: true */ 'fs/promises')
@@ -50,7 +50,7 @@ export const getQuestTranslation = async (): Promise<{
         .then(() =>
           fs.default.writeFile(cachePath, JSON.stringify(map), 'utf-8')
         )
-        .catch(() => {})
+        .catch(() => { })
     }
 
     return map

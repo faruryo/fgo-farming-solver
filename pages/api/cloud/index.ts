@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { DBError, getDynamoDb, putDynamoDb } from '../../../lib/dynamodb'
 
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 const region = 'ap-northeast-1'
 const tableName = 'fgo-farming-solver-input'
@@ -71,7 +71,7 @@ export default async function handler(req: NextRequest) {
       })
     }
   }
- else if (req.method === 'GET') {
+  else if (req.method === 'GET') {
     try {
       const item = (await getDynamoDb({ region, tableName, key: { id } })) as {
         input: string

@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = 'experimental-edge';
 import { GetServerSideProps } from 'next'
 import { DBError } from '../../../lib/dynamodb'
 import { Page } from '../../../components/farming/result'

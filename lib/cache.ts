@@ -23,7 +23,7 @@ const fetchAndWriteJson = async <T>(
 }
 
 export const fetchJsonWithCache = async <T>(url: string) => {
-  const isEdge = process.env.NEXT_RUNTIME === 'edge'
+  const isEdge = process.env.NEXT_RUNTIME === 'experimental-edge'
   const isCI = process.env.CI === '1'
   const isProd = process.env.NODE_ENV === 'production'
 
