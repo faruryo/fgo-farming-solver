@@ -2,7 +2,7 @@
 import { Button, Image } from '@chakra-ui/react'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useTranslation } from 'react-i18next'
-import { FaTwitter } from 'react-icons/fa'
+import { FaGoogle } from 'react-icons/fa'
 
 export const AuthButton = () => {
   const { data: session } = useSession()
@@ -16,7 +16,7 @@ export const AuthButton = () => {
           })
         }}
         size="lg"
-        colorScheme="twitter"
+        colorScheme="red"
         leftIcon={
           <Image
             boxSize={8}
@@ -33,11 +33,11 @@ export const AuthButton = () => {
   return (
     <Button
       onClick={() => {
-        signIn('twitter').catch((error) => console.error(error))
+        signIn('google').catch((error) => console.error(error))
       }}
       size="lg"
-      colorScheme="twitter"
-      leftIcon={<FaTwitter />}
+      colorScheme="red"
+      leftIcon={<FaGoogle />}
     >
       {t('サインイン')}
     </Button>

@@ -10,3 +10,7 @@ binding = "ASSETS"
 [[services]]
 binding = "WORKER_SELF_REFERENCE"
 service = "fgo-farming-solver"
+
+[[kv_namespaces]]
+binding = "CLOUD_SAVE"
+id = "YOUR_KV_NAMESPACE_ID"

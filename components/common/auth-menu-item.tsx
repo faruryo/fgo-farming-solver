@@ -27,7 +27,7 @@ export const AuthMenuItem = () => {
   return (
     <MenuItem
       onClick={() => {
-        signIn('twitter').catch((error) => console.error(error))
+        signIn('google').catch((error) => console.error(error))
       }}
     >
       {t('サインイン')}
