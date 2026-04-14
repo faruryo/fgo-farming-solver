@@ -1,6 +1,6 @@
 # FGO Solver OpenNext 移行・デプロイガイド
 
-このドキュメントでは、FGO Farming Solver を最新の **Cloudflare Workers (with Static Assets)** 環境へ OpenNext を使用してデプロイするための手順をまとめています。従来の Pages から、より制御性の高い Workers ベースのデプロイ方式へ移行しました。
+このドキュメントでは、FGO Farming Solver を最新の **Cloudflare Workers (with Static Assets)** 環境へ OpenNext を使用してデプロイするための手順をまとめています。
 
 ## 🚀 推奨：Cloudflare Workers でのデプロイ手順
 
@@ -70,24 +70,49 @@ pnpm run deploy
 
 ※内部的には `package.json` で設定した通り `pnpm exec @opennextjs/cloudflare build` と `pnpm exec wrangler deploy` が順番に実行されます。
 
-### 3. 環境変数の設定
+### 3. クラウドセーブのセットアップ
 
-Workers としてデプロイするため、[Cloudflare ダッシュボード](https://dash.cloudflare.com/) の **[Workers & Pages]** > **(プロジェクト名)** > **[設定]** > **[変数とシークレット]** で以下の変数を追加してください：
+クラウドセーブ機能は **Google OAuth 認証** + **Cloudflare KV** で実装されています。
 
-- `AUTH_SECRET`: Auth.js v5 用のシークレット文字列。
-- `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET`: Twitter API 認証情報。
-- `MY_AWS_ACCESS_KEY_ID` / `MY_AWS_SECRET_ACCESS_KEY`: DynamoDB 用の AWS 認証情報。
-- `NEXT_PUBLIC_BASE_URL`: 本番環境の URL。
+#### A. Cloudflare KV の作成
 
-> [!IMPORTANT]
-> すでに Pages プロジェクトとして運用している場合は、Workers プロジェクトとして新しく認識されるため、環境変数を再設定する必要があります。
+```bash
+npx wrangler kv namespace create "CLOUD_SAVE"
+```
 
-### 4. 推奨される Wrangler 設定 (Best Practices)
+出力された `id` を `wrangler.toml` の該当箇所に記入してください：
+
+```toml
+[[kv_namespaces]]
+binding = "CLOUD_SAVE"
+id = "ここに出力されたIDを貼り付ける"
+```
+
+#### B. Google OAuth クライアントの発行
+
+1. [Google Cloud Console](https://console.cloud.google.com/) > **API とサービス** > **認証情報** > **OAuth 2.0 クライアント ID** を作成。
+2. 承認済みリダイレクト URI に以下を追加：
+   ```
+   https://<your-domain>/api/auth/callback/google
+   ```
+
+#### C. シークレットの設定
+
+`npx wrangler secret put` またはダッシュボードの **[Workers & Pages]** > **(プロジェクト名)** > **[設定]** > **[変数とシークレット]** で設定します。
+
+| 変数名 | 説明 | コマンド例 |
+|---|---|---|
+| `AUTH_SECRET` | Auth.js v5 用シークレット | `openssl rand -base64 32 \| npx wrangler secret put AUTH_SECRET` |
+| `GOOGLE_CLIENT_ID` | Google OAuth クライアント ID | `npx wrangler secret put GOOGLE_CLIENT_ID` |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth クライアントシークレット | `npx wrangler secret put GOOGLE_CLIENT_SECRET` |
+
+### 5. 推奨される Wrangler 設定 (Best Practices)
 
 公式ガイドに基づき、`wrangler.toml` に以下の設定を追加してあります：
 
 - **Compatibility Flags**: `nodejs_compat` に加え、外部への fetch を安定させる `global_fetch_strictly_public` を有効化。
 - **Service Bindings**: 自己参照用の `WORKER_SELF_REFERENCE` を設定（Next.js の特定の機能で必要になる場合があります）。
+- **KV Bindings**: クラウドセーブ用に `CLOUD_SAVE` KV namespace を設定。
 
 ---
 
@@ -100,13 +125,3 @@ npx wrangler dev
 ```
 
 これにより、Cloudflare 実際のランタイムに近い環境（workerd）で Next.js アプリをプレビューできます。
-
----
-
-## ✅ 移行完了済みの内容
-
-- **OpenNext への移行**: 非推奨の `@cloudflare/next-on-pages` から最新の `@opennextjs/cloudflare` へ移行しました。
-- **Workers Assets への対応**: `wrangler.toml` を更新し、静的ファイルを Workers 側でホストする新方式に変更しました。
-- **Edge Runtime 設定の削除**: OpenNext での互換性を高めるため、各ページの `export const runtime = "edge"` を削除し、Node.js 規格のライブラリ（AWS SDK等）が使いやすい構成にしました。
-- **ビルドエラーの回避**: ビルド時に外部 API (AtlasAcademy 等) や AWS 認証が必要なページにおいて、`export const dynamic = 'force-dynamic'` を設定することで、ビルド時の Prerender エラーを解消しました。
-- **依存関係の整理**: `package.json` の `overrides` を用いて、Cloudflare 環境で問題を起こしやすかった `esbuild` や `yaml` のバージョン競合を解決しました。
