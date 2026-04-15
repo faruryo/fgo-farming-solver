@@ -18,7 +18,7 @@
         "サインイン": "Sign in",
         "サインアウト": "Sign out",
         "クラウドセーブ": "Save to cloud",
-        "cloud-description": "Saves input data to server tagged with your Twitter account.",
+        "cloud-description": "Saves input data to server linked to your Google account.",
         "保存": "Save",
         "保存しました": "Saved",
         "保存に失敗しました": "Failed to save",

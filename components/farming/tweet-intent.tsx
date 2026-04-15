@@ -3,7 +3,7 @@
 
 import React from 'react'
 import { Box, Button } from '@chakra-ui/react'
-import { FaTwitter } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 
@@ -25,8 +25,8 @@ export const TweetIntent = ({ text }: { text: string }) => {
         href={intentUrl}
         target="_blank"
         rel="noopener noreferrer"
-        leftIcon={<FaTwitter />}
-        colorScheme="twitter"
+        leftIcon={<FaXTwitter />}
+        colorScheme="gray"
         variant="solid"
         p={2}
       >

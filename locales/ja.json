@@ -9,7 +9,7 @@
         "servant-list-description": "サーヴァントの育成に必要な素材を確認できます。",
         "item-list-description": "アイテムのクエストごとのドロップ率を確認できます。",
         "shared-results-description": "Twitterに投稿された計算結果を見られます。",
-        "cloud-description": "入力内容をTwitterアカウントに紐づけてサーバーに保存します。"
+        "cloud-description": "入力内容をGoogleアカウントに紐づけてサーバーに保存します。"
     },
     "farming": {
         "1": "旧データを優先",

@@ -11,7 +11,8 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import React from 'react'
-import { FaGithub, FaTwitter } from 'react-icons/fa'
+import { FaGithub } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 import { GithubMenu } from './github-menu'
 import { Link, ExternalLink } from './link'
 import { menuGroups } from './nav'
@@ -55,12 +56,12 @@ export const Footer = () => {
             />
             <IconButton
               as="a"
-              href="https://twitter.com/antenna_games"
+              href="https://x.com/antenna_games"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Twitter"
-              icon={<Icon as={FaTwitter} boxSize={6} />}
-              colorScheme="twitter"
+              aria-label="X (Twitter)"
+              icon={<Icon as={FaXTwitter} boxSize={6} />}
+              colorScheme="gray"
               variant="ghost"
               size="sm"
               isRound
