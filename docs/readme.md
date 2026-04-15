@@ -38,7 +38,7 @@ A website to calculate the most efficient combination of quest runs from items y
 
 - Form inputs will be automatically saved to browser.
 - "Export" page is useful when you save inputs, or import/export inputs to other devices or browsers.
-- You can share results on Twitter.
+- You can share results on X (Twitter).
 
 ## Privacy Policy
 
@@ -56,11 +56,11 @@ A website to calculate the most efficient combination of quest runs from items y
 
 ## Feedback/Bugs
 
-Contact me on [Twitter](https://twitter.com/antenna_games) or [GitHub](https://github.com/antenna-three/fgo-farming-solver/issues)
+Contact me on [X](https://x.com/antenna_games) or [GitHub](https://github.com/antenna-three/fgo-farming-solver/issues)
 
 ## Contact
 
-[@antenna_games](https://twitter.com/antenna_games)
+[@antenna_games](https://x.com/antenna_games)
 
 ## Contributing
 
