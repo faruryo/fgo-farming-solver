@@ -1,7 +1,4 @@
-declare global {
-  interface CloudflareEnv {
-    CLOUD_SAVE: KVNamespace
-  }
+export interface CloudflareEnv {
+  CLOUD_SAVE: KVNamespace
 }
 
-export {}
