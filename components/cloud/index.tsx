@@ -37,7 +37,7 @@ const load = async () => {
   if (res.status != 200) {
     throw new Error()
   }
-  const obj = (await res.json()) as Record<string, string>
+  const obj = await res.json<Record<string, string>>()
   keys.forEach((key) => {
     if (obj[key] != null) {
       localStorage.setItem(key, obj[key])

@@ -30,14 +30,15 @@ export const getQuestTranslation = async (): Promise<{
 
   try {
     const res = await fetch(url).then((r) =>
-      r.json() as Promise<{ values: [string, string][] }>
+      r.json<{ values: [string, string][] }>()
     )
     const map = Object.fromEntries(
       res.values
-        .filter((row) => row.length == 2)
+        .filter((row: string[]) => row.length == 2)
         .slice(1)
-        .map(([enName, jpName]) => [jpName, enName])
+        .map(([enName, jpName]: string[]) => [jpName, enName])
     )
+
 
     if (!isEdge) {
       const fs = await import(/* webpackIgnore: true */ 'fs/promises')

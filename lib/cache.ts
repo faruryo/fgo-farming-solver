@@ -31,7 +31,7 @@ export const fetchJsonWithCache = async <T>(url: string) => {
     return fetch(url, { cache: 'no-store' })
       .then((r) => {
         if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)
-        return r.json() as Promise<T>
+        return r.json<T>()
       })
       .catch((e) => {
         console.error(`Fetch failed for ${url}:`, e)
