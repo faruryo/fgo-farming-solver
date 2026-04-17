@@ -70,25 +70,29 @@ pnpm run deploy
 
 ※内部的には `package.json` で設定した通り `pnpm exec @opennextjs/cloudflare build` と `pnpm exec wrangler deploy` が順番に実行されます。
 
-### 3. クラウドセーブのセットアップ
+### 🚩 事前準備（重要）
 
-クラウドセーブ機能は **Google OAuth 認証** + **Cloudflare KV** で実装されています。
+デプロイ前に **Cloudflare KV** の作成が必要です。これを行わないと `pnpm run deploy` がエラー（code: 10042）で失敗します。
 
-#### A. Cloudflare KV の作成
+#### 1. Cloudflare KV の作成
+
+ターミナルで以下のコマンドを実行します：
 
 ```bash
-npx wrangler kv namespace create "CLOUD_SAVE"
+pnpm exec wrangler kv namespace create "CLOUD_SAVE"
 ```
 
-出力された `id` を `wrangler.toml` の該当箇所に記入してください：
+実行後、以下のような出力が表示されます：
 
-```toml
+```text
 [[kv_namespaces]]
 binding = "CLOUD_SAVE"
-id = "ここに出力されたIDを貼り付ける"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
-#### B. Google OAuth クライアントの発行
+この `id` をコピーして、プロジェクト直下の **`wrangler.toml`** の該当箇所を上書きしてください。
+
+#### 2. Google OAuth クライアントの発行
 
 1. [Google Cloud Console](https://console.cloud.google.com/) > **API とサービス** > **認証情報** > **OAuth 2.0 クライアント ID** を作成。
 2. 承認済みリダイレクト URI に以下を追加：
@@ -96,23 +100,38 @@ id = "ここに出力されたIDを貼り付ける"
    https://<your-domain>/api/auth/callback/google
    ```
 
-#### C. シークレットの設定
+#### 3. シークレットの設定
 
-`npx wrangler secret put` またはダッシュボードの **[Workers & Pages]** > **(プロジェクト名)** > **[設定]** > **[変数とシークレット]** で設定します。
+以下のシークレットを `pnpm exec wrangler secret put <変数名>` コマンド、または Cloudflare ダッシュボードから設定してください。
 
-| 変数名 | 説明 | コマンド例 |
+| 変数名 | 説明 | 生成・取得方法 |
 |---|---|---|
-| `AUTH_SECRET` | Auth.js v5 用シークレット | `openssl rand -base64 32 \| npx wrangler secret put AUTH_SECRET` |
-| `GOOGLE_CLIENT_ID` | Google OAuth クライアント ID | `npx wrangler secret put GOOGLE_CLIENT_ID` |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth クライアントシークレット | `npx wrangler secret put GOOGLE_CLIENT_SECRET` |
+| `AUTH_SECRET` | Auth.js 用シークレット | `openssl rand -base64 32` で生成 |
+| `GOOGLE_CLIENT_ID` | Google OAuth ID | Google Cloud Console から取得 |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Secret | Google Cloud Console から取得 |
 
-### 5. 推奨される Wrangler 設定 (Best Practices)
+---
 
-公式ガイドに基づき、`wrangler.toml` に以下の設定を追加してあります：
+## 🚀 デプロイ手順
 
-- **Compatibility Flags**: `nodejs_compat` に加え、外部への fetch を安定させる `global_fetch_strictly_public` を有効化。
-- **Service Bindings**: 自己参照用の `WORKER_SELF_REFERENCE` を設定（Next.js の特定の機能で必要になる場合があります）。
-- **KV Bindings**: クラウドセーブ用に `CLOUD_SAVE` KV namespace を設定。
+### 1. ビルドとデプロイ
+
+一度 `wrangler.toml` の `id` を更新すれば、以下のコマンドで自動的にビルドとデプロイが行われます：
+
+```bash
+pnpm run deploy
+```
+
+---
+
+## ❓ トラブルシューティング
+
+### `KV namespace 'YOUR_KV_NAMESPACE_ID' is not valid. [code: 10042]`
+`wrangler.toml` の `id` がデフォルトの `"YOUR_KV_NAMESPACE_ID"` のままになっています。「事前準備」の手順に従って KV namespace を作成し、ID を書き換えてください。
+
+### `Auth.js: AUTH_SECRET is missing` (実行時エラー)
+`AUTH_SECRET` がシークレットとして設定されていません。`pnpm exec wrangler secret put AUTH_SECRET` を実行して設定してください。
+
 
 ---
 
@@ -121,7 +140,7 @@ id = "ここに出力されたIDを貼り付ける"
 OpenNext の環境をローカルでシミュレートして動作確認を行う場合は、以下のコマンドを使用します：
 
 ```bash
-npx wrangler dev
+pnpm exec wrangler dev
 ```
 
 これにより、Cloudflare 実際のランタイムに近い環境（workerd）で Next.js アプリをプレビューできます。
