@@ -68,4 +68,4 @@ See [CONTRIBUTING](contributing.md).
 
 ## License
 
-MIT License. See [LICENSE](../LICENSE) for more information.
+MIT License. See [LICENSE](../LICENSE.md) for more information.

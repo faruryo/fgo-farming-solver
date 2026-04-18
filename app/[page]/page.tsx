@@ -1,27 +1,33 @@
-import { getMd } from '../../lib/get-md'
 import Page from '../../components/common/doc'
 import { notFound } from 'next/navigation'
+
+import readmeEn from '../../docs/readme.md'
+import readmeJa from '../../docs/readme-ja.md'
+import newsEn from '../../docs/news.md'
+import newsJa from '../../docs/news-ja.md'
+import contributing from '../../docs/contributing.md'
+import license from '../../LICENSE.md.md'
 
 
 const pages: Record<
   string,
-  Record<string, { path: string; title: string }>
+  Record<string, { md: string; title: string }>
 > = {
   docs: {
-    en: { path: 'docs/readme.md', title: 'About' },
-    ja: { path: 'docs/readme-ja.md', title: 'このサイトについて' },
+    en: { md: readmeEn, title: 'About' },
+    ja: { md: readmeJa, title: 'このサイトについて' },
   },
   news: {
-    en: { path: 'docs/news.md', title: 'News' },
-    ja: { path: 'docs/news-ja.md', title: 'お知らせ' },
+    en: { md: newsEn, title: 'News' },
+    ja: { md: newsJa, title: 'お知らせ' },
   },
   contributing: {
-    en: { path: 'docs/contributing.md', title: 'Contributing' },
-    ja: { path: 'docs/contributing.md', title: 'Contributing' },
+    en: { md: contributing, title: 'Contributing' },
+    ja: { md: contributing, title: 'Contributing' },
   },
   LICENSE: {
-    en: { path: 'LICENSE', title: 'License' },
-    ja: { path: 'LICENSE', title: 'License' },
+    en: { md: license, title: 'License' },
+    ja: { md: license, title: 'License' },
   },
 }
 
@@ -32,14 +38,13 @@ export default async function DynamicPage({
 }) {
   const { page } = await params
   const locale = 'ja'
-  
+
   if (!(page in pages)) {
     return notFound()
   }
 
   const localeToPage = pages[page]
-  const { path, title } = localeToPage[locale] || localeToPage['en']
-  const md = getMd(path)
+  const { md, title } = localeToPage[locale] || localeToPage['en']
 
   return <Page title={title} md={md} />
 }
@@ -47,3 +52,4 @@ export default async function DynamicPage({
 export function generateStaticParams() {
   return Object.keys(pages).map((page) => ({ page }))
 }
+

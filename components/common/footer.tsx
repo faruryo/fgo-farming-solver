@@ -68,7 +68,7 @@ export const Footer = () => {
             />
           </HStack>
           <Text>
-            <Link href="/LICENSE" color="inherit">
+            <Link href="/LICENSE.md" color="inherit">
               © 2021 antenna-three
             </Link>
           </Text>
