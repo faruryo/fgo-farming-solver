@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { getNiceServants } from '../../lib/get-nice-servants'
 import { getMaterialsForServants } from '../../lib/get-materials'
 import { getItems } from '../../lib/get-items'
