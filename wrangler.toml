@@ -14,3 +14,6 @@ service = "fgo-farming-solver"
 [[kv_namespaces]]
 binding = "CLOUD_SAVE"
 id = "c621d47e509445a3a7f713702b3cb07e"
+
+[observability]
+enabled = true
