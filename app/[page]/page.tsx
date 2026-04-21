@@ -6,7 +6,7 @@ import readmeJa from '../../docs/readme-ja.md'
 import newsEn from '../../docs/news.md'
 import newsJa from '../../docs/news-ja.md'
 import contributing from '../../docs/contributing.md'
-import license from '../../LICENSE.md.md'
+import license from '../../LICENSE.md'
 
 
 const pages: Record<
