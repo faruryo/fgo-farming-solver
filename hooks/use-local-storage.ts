@@ -12,14 +12,19 @@ export const useLocalStorage = <T>(
   const [state, setState] = useState(initialState)
   useEffect(() => {
     if (options?.useInitial) return
-    const json = localStorage.getItem(key)
-    if (json) {
-      let obj = JSON.parse(json) as T
-      if (options?.onGet != null) {
-        obj = options.onGet(obj)
+    const read = () => {
+      const json = localStorage.getItem(key)
+      if (json) {
+        let obj = JSON.parse(json) as T
+        if (options?.onGet != null) {
+          obj = options.onGet(obj)
+        }
+        setState(obj)
       }
-      setState(obj)
     }
+    read()
+    window.addEventListener('localStorageUpdated', read)
+    return () => window.removeEventListener('localStorageUpdated', read)
   }, [key])
   useEffect(() => localStorage.setItem(key, JSON.stringify(state)), [state])
   return [state, setState]

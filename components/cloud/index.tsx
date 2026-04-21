@@ -45,6 +45,7 @@ const load = async () => {
       localStorage.removeItem(key)
     }
   })
+  window.dispatchEvent(new Event('localStorageUpdated'))
 }
 
 const Cloud = () => {
