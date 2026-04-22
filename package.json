@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx @opennextjs/cloudflare build --skipBuild",
+    "build": "next build && npx @opennextjs/cloudflare build --skipBuild && node scripts/remove-fetch-cache.mjs",
     "deploy": "npm run build && wrangler deploy",
     "start": "next start",
     "lint": "next lint",
