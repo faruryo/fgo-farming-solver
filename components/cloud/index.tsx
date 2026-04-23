@@ -35,16 +35,39 @@ const save = async () => {
 
 const load = async () => {
   const res = await fetch(`/api/cloud`, { credentials: 'include' })
+  console.log('[cloud load] API status:', res.status)
   if (res.status != 200) {
     throw new Error()
   }
   const obj = await res.json<Record<string, string>>()
+  const cloudKeys = Object.keys(obj)
+  console.log('[cloud load] keys in cloud:', cloudKeys)
+
   keys.forEach((key) => {
     if (obj[key] != null) {
       localStorage.setItem(key, obj[key])
+      const len = obj[key].length
+      console.log(`[cloud load] set "${key}" (${len} chars)`)
+    } else {
+      console.log(`[cloud load] skip "${key}" (not in cloud)`)
     }
-    // Don't remove local keys missing from cloud — preserve local state
   })
+
+  // Show material summary
+  const mat = localStorage.getItem('material')
+  if (mat) {
+    try {
+      const parsed = JSON.parse(mat) as Record<string, { disabled: boolean }>
+      const total = Object.keys(parsed).length
+      const enabled = Object.values(parsed).filter((s) => s?.disabled === false).length
+      console.log(`[cloud load] material in localStorage: ${total} entries, ${enabled} enabled`)
+    } catch {
+      console.log('[cloud load] material parse error')
+    }
+  } else {
+    console.log('[cloud load] material not in localStorage after load')
+  }
+
   window.dispatchEvent(new Event('localStorageUpdated'))
 }
 
