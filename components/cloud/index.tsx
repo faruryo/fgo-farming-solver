@@ -23,14 +23,31 @@ const keys = [
 ]
 
 const save = async () => {
-  const body = JSON.stringify(
-    Object.fromEntries(
-      keys
-        .map((key) => [key, localStorage.getItem(key)] as const)
-        .filter(([, value]) => value)
-    )
-  )
-  await fetch(`/api/cloud`, { method: 'POST', body, credentials: 'include' })
+  const entries = keys.map((key) => [key, localStorage.getItem(key)] as const)
+  console.log('[cloud save] localStorage values:')
+  entries.forEach(([key, value]) => {
+    if (value == null) {
+      console.log(`  "${key}": null (missing)`)
+    } else if (key === 'material') {
+      try {
+        const mat = JSON.parse(value) as Record<string, { disabled: boolean }>
+        const total = Object.keys(mat).length
+        const enabled = Object.values(mat).filter((s) => s?.disabled === false).length
+        console.log(`  "${key}": ${total} entries, ${enabled} enabled`)
+      } catch {
+        console.log(`  "${key}": parse error (length=${value.length})`)
+      }
+    } else {
+      console.log(`  "${key}": ${value.length} chars`)
+    }
+  })
+
+  const filtered = Object.fromEntries(entries.filter(([, value]) => value))
+  console.log('[cloud save] keys to save:', Object.keys(filtered))
+
+  const body = JSON.stringify(filtered)
+  const res = await fetch(`/api/cloud`, { method: 'POST', body, credentials: 'include' })
+  console.log('[cloud save] API status:', res.status)
 }
 
 const load = async () => {
@@ -75,6 +92,10 @@ const Cloud = () => {
   const { t } = useTranslation('common')
   const { data: session } = useSession()
   const router = useRouter()
+  // Debug: log which user is logged in
+  if (session?.user) {
+    console.log('[cloud] logged in as:', session.user.name, 'id:', (session.user as { id?: string }).id)
+  }
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaved, setIsSaved] = useState(false as boolean | 'failed')
