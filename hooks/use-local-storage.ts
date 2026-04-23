@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react'
 
 export const useLocalStorage = <T>(
   key: string,
@@ -10,14 +10,18 @@ export const useLocalStorage = <T>(
   }
 ): [T, Dispatch<SetStateAction<T>>] => {
   const [state, setState] = useState(initialState)
+  // Keep a ref to options so the event listener always uses the latest onGet
+  const optionsRef = useRef(options)
+  optionsRef.current = options
+
   useEffect(() => {
-    if (options?.useInitial) return
+    if (optionsRef.current?.useInitial) return
     const read = () => {
       const json = localStorage.getItem(key)
       if (json) {
         let obj = JSON.parse(json) as T
-        if (options?.onGet != null) {
-          obj = options.onGet(obj)
+        if (optionsRef.current?.onGet != null) {
+          obj = optionsRef.current.onGet(obj)
         }
         setState(obj)
       }

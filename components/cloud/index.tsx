@@ -2,6 +2,7 @@
 
 import { Button, Heading, HStack, Text, VStack } from '@chakra-ui/react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AuthButton } from '../common/auth-button'
@@ -51,6 +52,7 @@ const load = async () => {
 const Cloud = () => {
   const { t } = useTranslation('common')
   const { data: session } = useSession()
+  const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaved, setIsSaved] = useState(false as boolean | 'failed')
@@ -89,7 +91,10 @@ const Cloud = () => {
             onClick={() => {
               setIsLoading(true)
               load()
-                .then(() => setIsLoaded(true))
+                .then(() => {
+                  setIsLoaded(true)
+                  router.refresh()
+                })
                 .catch(() => setIsLoaded('failed'))
                 .finally(() => setIsLoading(false))
             }}
