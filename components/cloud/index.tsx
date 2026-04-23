@@ -42,9 +42,8 @@ const load = async () => {
   keys.forEach((key) => {
     if (obj[key] != null) {
       localStorage.setItem(key, obj[key])
-    } else {
-      localStorage.removeItem(key)
     }
+    // Don't remove local keys missing from cloud — preserve local state
   })
   window.dispatchEvent(new Event('localStorageUpdated'))
 }

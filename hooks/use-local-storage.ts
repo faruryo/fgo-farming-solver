@@ -10,7 +10,6 @@ export const useLocalStorage = <T>(
   }
 ): [T, Dispatch<SetStateAction<T>>] => {
   const [state, setState] = useState(initialState)
-  // Keep a ref to options so the event listener always uses the latest onGet
   const optionsRef = useRef(options)
   optionsRef.current = options
 
