@@ -23,18 +23,21 @@ export const sumMaterials = (
             !disabled && `${target}Materials` in servant
         )
         .forEach(([target, { ranges }]) => {
-          const materials = servant[`${target}Materials`]
-          ranges.forEach(({ start, end }) =>
+          ranges.forEach(({ start, end }, idx) => {
+            const key = target === 'appendSkill' ? `appendSkill${idx + 1}Materials` : `${target}Materials`
+            const materials = servant[key as keyof typeof servant]
+            if (!materials) return
+
             range(start, end)
-              .filter((i) => i in materials)
+              .filter((i) => i in (materials as any))
               .forEach((i) => {
-                const { items, qp } = materials[i]
-                items.forEach(({ item, amount }) => {
+                const { items, qp } = (materials as any)[i]
+                items.forEach(({ item, amount }: any) => {
                   sum[item.id] += amount
                 })
                 sum[1] += qp
               })
-          )
+          })
         })
     })
   return sum

@@ -30,7 +30,7 @@ const levels: { [key in TargetKey]: [number, number] } = {
 const arrays: { [key in TargetKey]: number[] } = {
   ascension: [1],
   skill: [1, 2, 3],
-  appendSkill: [1, 2, 3],
+  appendSkill: [1, 2, 3, 4, 5],
 }
 
 export const createServantState = (): ServantState => {
