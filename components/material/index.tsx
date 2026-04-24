@@ -31,6 +31,8 @@ export const Index = ({
   const [selRarities, setSelRarities] = useState<number[]>([])
   const [hideUnowned, setHideUnowned] = useState(false)
   const [showGlobal, setShowGlobal] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const gtAsc    = chaldeaState.all?.targets.ascension.ranges[0]?.end ?? 4
   const gtSkill  = chaldeaState.all?.targets.skill.ranges[0]?.end ?? 10
@@ -114,6 +116,8 @@ export const Index = ({
   }
 
   const globalState = chaldeaState.all ?? DEFAULT_SERVANT_STATE
+
+  if (!mounted) return <div className="c-page" />
 
   return (
     <div className="c-page">

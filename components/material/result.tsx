@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
@@ -103,6 +103,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   )
 
   const [shortOnly, setShortOnly] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const deficiencies = useMemo(
     () => Object.fromEntries(
@@ -137,6 +139,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
       .join(',')
     router.push(`/farming?items=${queryItems}`)
   }, [requiredItems, router, deficiencies, items])
+
+  if (!mounted) return null
 
   return (
     <div className="c-page">
