@@ -52,72 +52,99 @@ const Cloud = () => {
   const [isLoaded, setIsLoaded] = useState(false as boolean | 'failed')
 
   return (
-    <VStack spacing={12} mt={12}>
-      <Heading size="xl">{t('クラウドセーブ')}</Heading>
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">CLOUD SYNC</div>
+            <h1 className="c-page-title">{t('クラウドセーブ')}</h1>
+          </div>
+        </div>
 
-      <Text>{t('cloud-description')}</Text>
+        <VStack spacing={12} py={8}>
+          <div className="c-card" style={{ maxWidth: '600px', width: '100%', padding: '40px', textAlign: 'center' }}>
+            <VStack spacing={6}>
+              <Text color="var(--text2)">{t('cloud-description')}</Text>
 
-      {session == null ? (
-        <AuthButton />
-      ) : (
-        <VStack spacing={4}>
-          <Text fontSize="sm" color="gray.500">
-            {session.user?.name}
-          </Text>
-          <HStack spacing={8}>
-            <Button
-              onClick={() => {
-                setIsSaving(true)
-                save()
-                  .then(() => setIsSaved(true))
-                  .catch(() => setIsSaved('failed'))
-                  .finally(() => setIsSaving(false))
-              }}
-              isLoading={isSaving}
-              isDisabled={isSaved !== false}
-            >
-              {t(
-                isSaved === false
-                  ? '保存'
-                  : isSaved === true
-                  ? '保存しました'
-                  : '保存に失敗しました'
+              {session == null ? (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <AuthButton />
+                </div>
+              ) : (
+                <VStack spacing={6} width="100%">
+                  <div style={{ padding: '4px 12px', background: 'rgba(30,46,74,0.05)', borderRadius: '20px' }}>
+                    <Text fontSize="sm" color="var(--navy)" fontWeight="bold">
+                      {session.user?.name}
+                    </Text>
+                  </div>
+                  <HStack spacing={4} width="100%">
+                    <Button
+                      flex={1}
+                      height="50px"
+                      colorScheme="gold"
+                      variant="outline"
+                      borderColor="var(--gold-dim)"
+                      color="var(--gold)"
+                      onClick={() => {
+                        setIsSaving(true)
+                        save()
+                          .then(() => setIsSaved(true))
+                          .catch(() => setIsSaved('failed'))
+                          .finally(() => setIsSaving(false))
+                      }}
+                      isLoading={isSaving}
+                      isDisabled={isSaved !== false}
+                    >
+                      {t(
+                        isSaved === false
+                          ? '保存'
+                          : isSaved === true
+                          ? '保存しました'
+                          : '保存に失敗しました'
+                      )}
+                    </Button>
+                    <Button
+                      flex={1}
+                      height="50px"
+                      colorScheme="blue"
+                      onClick={() => {
+                        setIsLoading(true)
+                        load()
+                          .then(() => {
+                            setIsLoaded(true)
+                            router.refresh()
+                          })
+                          .catch(() => setIsLoaded('failed'))
+                          .finally(() => setIsLoading(false))
+                      }}
+                      isLoading={isLoading}
+                      isDisabled={isLoaded !== false}
+                    >
+                      {t(
+                        isLoaded == false
+                          ? '読み込み'
+                          : isLoaded == true
+                          ? '読み込みました'
+                          : 'データがありません'
+                      )}
+                    </Button>
+                  </HStack>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    color="var(--text3)"
+                    onClick={() => signOut()}
+                    _hover={{ color: 'var(--red)', bg: 'rgba(176,48,48,0.05)' }}
+                  >
+                    {t('サインアウト')}
+                  </Button>
+                </VStack>
               )}
-            </Button>
-            <Button
-              onClick={() => {
-                setIsLoading(true)
-                load()
-                  .then(() => {
-                    setIsLoaded(true)
-                    router.refresh()
-                  })
-                  .catch(() => setIsLoaded('failed'))
-                  .finally(() => setIsLoading(false))
-              }}
-              isLoading={isLoading}
-              isDisabled={isLoaded !== false}
-            >
-              {t(
-                isLoaded == false
-                  ? '読み込み'
-                  : isLoaded == true
-                  ? '読み込みました'
-                  : 'データがありません'
-              )}
-            </Button>
-          </HStack>
-          <Button
-            variant="ghost"
-            size="sm"
-            colorScheme="gray"
-            onClick={() => signOut()}
-          >
-            {t('サインアウト')}
-          </Button>
+            </VStack>
+          </div>
         </VStack>
-      )}
-    </VStack>
+      </div>
+    </div>
   )
 }
 

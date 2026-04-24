@@ -1,6 +1,15 @@
 import { Metadata } from 'next'
+import { Cinzel } from 'next/font/google'
 import { Providers } from './providers'
 import { Layout } from '../components/common/layout'
+import './globals.css'
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-cinzel',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'FGO周回ソルバー',
@@ -13,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ja">
+    <html lang="ja" className={cinzel.variable}>
       <body>
         <Providers>
           <Layout>

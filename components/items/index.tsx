@@ -28,33 +28,54 @@ export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
       ]),
     [items]
   )
-
   return (
-    <VStack alignItems="stretch" spacing={8}>
-      <Title>{t('アイテム一覧')}</Title>
-      <SimpleGrid minChildWidth="300px" spacingX={3} spacingY={8}>
-        {itemGroup.map(([largeCategory, itemGroups]) => (
-          <VStack align="start" key={largeCategory}>
-            <Heading size="lg">{largeCategory}</Heading>
-            <VStack spacing={4} align="start">
-              {itemGroups.map(([category, items]) => (
-                <VStack key={category} align="start">
-                  <Heading size="sm" color="gray.500">
-                    {category}
-                  </Heading>
-                  <List spacing={1}>
-                    {items.map((item) => (
-                      <ListItem key={item.id}>
-                        <Link href={`/items/${item.id}`}>{item.name}</Link>
-                      </ListItem>
-                    ))}
-                  </List>
-                </VStack>
-              ))}
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">ITEM LIST</div>
+            <h1 className="c-page-title">{t('アイテム一覧')}</h1>
+          </div>
+        </div>
+
+        <SimpleGrid minChildWidth="300px" spacingX={6} spacingY={10}>
+          {itemGroup.map(([largeCategory, itemGroups]) => (
+            <VStack align="start" key={largeCategory} spacing={4}>
+              <div className="c-settings-section-label" style={{ width: '100%', display: 'flex' }}>
+                {largeCategory}
+              </div>
+              <VStack spacing={6} align="stretch" width="100%">
+                {itemGroups.map(([category, items]) => (
+                  <div key={category} className="c-card" style={{ padding: '16px' }}>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--steel)',
+                        marginBottom: '10px',
+                        fontFamily: 'var(--serif)',
+                        letterSpacing: '1px',
+                        borderBottom: '1px solid var(--border)',
+                        paddingBottom: '4px'
+                      }}
+                    >
+                      {category}
+                    </div>
+                    <List spacing={2}>
+                      {items.map((item) => (
+                        <ListItem key={item.id}>
+                          <Link href={`/items/${item.id}`} color="var(--text)" _hover={{ color: 'var(--gold)', textDecoration: 'none' }}>
+                            {item.name}
+                          </Link>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </div>
+                ))}
+              </VStack>
             </VStack>
-          </VStack>
-        ))}
-      </SimpleGrid>
-    </VStack>
+          ))}
+        </SimpleGrid>
+      </div>
+    </div>
   )
 }

@@ -33,7 +33,8 @@ export const menuGroups = [
   {
     title: 'Docs',
     items: [
-      { href: '/docs', label: { ja: '使い方', en: 'About' } },
+      { href: '/contributing', label: { ja: 'Docs', en: 'Documentation' } },
+      { href: '/docs', label: { ja: '使い方', en: 'Usage' } },
       { href: '/news', label: { ja: 'お知らせ', en: 'News' } },
     ],
   },
@@ -48,20 +49,31 @@ export const Nav = () => {
           as={IconButton}
           aria-label="Menu"
           icon={<HamburgerIcon />}
-          size="lg"
+          size="md"
           variant="ghost"
+          color="var(--gold)"
+          _hover={{ color: 'var(--gold2)', bg: 'rgba(154,114,36,0.1)' }}
+          _active={{ color: 'var(--gold2)', bg: 'rgba(154,114,36,0.15)' }}
         />
-        <MenuList>
+        <MenuList bg="var(--panel)" borderColor="var(--gold-dim)" backdropFilter="blur(20px)" py={2}>
           {menuGroups.map(({ title, items }) => (
-            <MenuGroup title={title} key={title}>
+            <MenuGroup title={title} key={title} color="var(--gold)" fontSize="10px" letterSpacing="0.1em">
               {items.map(({ href, label }) => (
                 <NextLink href={href} key={href}>
-                  <MenuItem>{label[(locale ?? 'ja') as 'en' | 'ja']}</MenuItem>
+                  <MenuItem
+                    bg="transparent"
+                    color="var(--text)"
+                    fontSize="13px"
+                    _hover={{ bg: 'rgba(154,114,36,0.15)', color: 'var(--gold2)' }}
+                    _focus={{ bg: 'rgba(154,114,36,0.15)', color: 'var(--gold2)' }}
+                  >
+                    {label[(locale ?? 'ja') as 'en' | 'ja']}
+                  </MenuItem>
                 </NextLink>
               ))}
             </MenuGroup>
           ))}
-          <MenuDivider />
+          <MenuDivider borderColor="rgba(154,114,36,0.2)" />
           <LangMenuItem />
         </MenuList>
       </Menu>

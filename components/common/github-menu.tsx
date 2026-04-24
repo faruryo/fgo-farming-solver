@@ -28,7 +28,7 @@ export const GithubMenu = (
       <MenuList>
         {repos.map(({ repo, label }) => (
           <a
-            href={`https://github.com/antenna-three/${repo}`}
+            href={`https://github.com/faruryo/${repo}`}
             target="_blank"
             rel="noopener noreferrer"
             key={repo}

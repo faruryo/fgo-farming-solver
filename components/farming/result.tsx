@@ -59,31 +59,53 @@ export const Page = ({
   }
 
   return (
-    <>
-      <VStack spacing="8">
-        <Title>{t('計算結果')}</Title>
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">RESULT</div>
+            <h1 className="c-page-title">{t('計算結果')}</h1>
+          </div>
+          <div className="c-stats">
+            <div className="c-stat">
+              <div className="c-stat-num">{total_lap}</div>
+              <div className="c-stat-label">LAP</div>
+            </div>
+            <div className="c-stat">
+              <div className="c-stat-num">{total_ap}</div>
+              <div className="c-stat-label">AP</div>
+            </div>
+          </div>
+        </div>
 
-        <Heading size="lg">{t('クエスト周回数')}</Heading>
+        <VStack spacing={12} align="stretch">
+          <div className="c-card" style={{ padding: '24px', overflowX: 'auto' }}>
+            <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex' }}>
+              {t('クエスト周回数')}
+            </div>
+            <Center>
+              <QuestTable items={items as any} quests={quests as any} dropRates={drop_rates as any} />
+            </Center>
+          </div>
 
-        <Center w="sm">
-          <QuestTable items={items as any} quests={quests as any} dropRates={drop_rates as any} />
-        </Center>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <TweetIntent text={text} />
+          </div>
 
-        <VStack>
-          <Heading as="h3" size="md">
-            {t('合計')}
-          </Heading>
-          <ResultStat totalLap={total_lap} totalAp={total_ap} />
+          <div className="c-card" style={{ padding: '24px' }}>
+            <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex' }}>
+              {t('アイテム獲得数')}
+            </div>
+            <ResultAccordion items={items as any} params={params as any} />
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/farming" className="c-back-btn">
+              {t('戻って条件を調整する')}
+            </Link>
+          </div>
         </VStack>
-
-        <TweetIntent text={text} />
-
-        <Heading size="lg">{t('アイテム獲得数')}</Heading>
-
-        <Container maxW="container.xl">
-          <ResultAccordion items={items as any} params={params as any} />
-        </Container>
-      </VStack>
-    </>
+      </div>
+    </div>
   )
 }

@@ -35,17 +35,23 @@ export const theme = extendTheme({
   },
   styles: {
     global: {
+      body: {
+        bg: 'transparent',
+      },
+      main: {
+        bg: 'transparent',
+      },
       table: {
         borderRadius: 'xl',
         overflow: 'hidden',
         thead: {
           th: {
-            bg: 'blue.200',
+            bg: 'var(--panel)',
           },
         },
         tbody: {
           th: {
-            bg: 'gray.100',
+            bg: 'rgba(30,46,74,0.04)',
           },
         },
       },

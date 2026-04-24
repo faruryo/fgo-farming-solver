@@ -245,70 +245,97 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   ])
 
   return (
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    <form onSubmit={handleSubmit}>
-      <VStack alignItems="start" spacing={8}>
-        <ObjectiveFieldset objective={objective} setObjective={setObjective} />
-        <ItemFieldset
-          itemGroups={itemGroups}
-          inputItems={itemCounts}
-          handleChange={handleItemChange}
-        />
-        {Object.values(itemCounts).every((count) => count == '') && (
-          <Alert status="error">
-            <AlertIcon />
-            {t('集めたいアイテムの数を最低1つ入力してください。')}
-          </Alert>
-        )}
-        <FormControl as="fieldset">
-          <FormLabel as="legend">{t('周回対象に含めるクエスト')}</FormLabel>
-          <CheckboxTree
-            tree={tree}
-            checked={checked}
-            onCheck={onCheck}
-            expanded={expanded}
-            onExpand={onExpand}
-          />
-        </FormControl>
-        {checkedQuests.length == 0 && (
-          <Alert status="error">
-            <AlertIcon />
-            {t('周回対象に含めるクエストを最低1つ選択してください。')}
-          </Alert>
-        )}
-        <FormControl as="fieldset">
-          <FormLabel as="legend">{t('キャンペーン')}</FormLabel>
-          <Checkbox isChecked={halfDailyAp} onChange={handleHalfDailyApChange}>
-            {t('修練場AP半減')}
-          </Checkbox>
-        </FormControl>
-        <DropRateSelect
-          dropMergeMethod={dropMergeMethod}
-          setDropMergeMethod={setDropMergeMethod}
-        />
-        <ButtonGroup>
-          <Button
-            type="submit"
-            disabled={
-              Object.values(itemCounts).every((count) => count == '') ||
-              checkedQuests.length == 0
-            }
-            colorScheme="blue"
-            isLoading={isLoading}
-            p={8}
-          >
-            {t('周回数を求める')}
-          </Button>
-          <Button type="button" onClick={setIsConfirming.on} p={8}>
-            {t('リセット')}
-          </Button>
-        </ButtonGroup>
-        <ResetAlertDialog
-          isOpen={isConfirming}
-          onClose={setIsConfirming.off}
-          onReset={onReset}
-        />
-      </VStack>
-    </form>
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">FARMING SOLVER</div>
+            <h1 className="c-page-title">{t('周回効率計算')}</h1>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <VStack alignItems="start" spacing={8}>
+            <ObjectiveFieldset objective={objective} setObjective={setObjective} />
+            <ItemFieldset
+              itemGroups={itemGroups}
+              inputItems={itemCounts}
+              handleChange={handleItemChange}
+            />
+            {Object.values(itemCounts).every((count) => count == '') && (
+              <Alert status="error">
+                <AlertIcon />
+                {t('集めたいアイテムの数を最低1つ入力してください。')}
+              </Alert>
+            )}
+            <FormControl as="fieldset">
+              <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">
+                {t('周回対象に含めるクエスト')}
+              </FormLabel>
+              <div className="c-card" style={{ width: '100%', padding: '20px' }}>
+                <CheckboxTree
+                  tree={tree}
+                  checked={checked}
+                  onCheck={onCheck}
+                  expanded={expanded}
+                  onExpand={onExpand}
+                />
+              </div>
+            </FormControl>
+            {checkedQuests.length == 0 && (
+              <Alert status="error">
+                <AlertIcon />
+                {t('周回対象に含めるクエストを最低1つ選択してください。')}
+              </Alert>
+            )}
+
+            <div className="c-card" style={{ width: '100%', padding: '20px', background: 'rgba(30,46,74,0.02)' }}>
+              <VStack align="start" spacing={6}>
+                <FormControl as="fieldset">
+                  <FormLabel as="legend" className="c-settings-section-label" m={0} mb={3} display="flex">
+                    {t('キャンペーン')}
+                  </FormLabel>
+                  <Checkbox colorScheme="blue" isChecked={halfDailyAp} onChange={handleHalfDailyApChange}>
+                    {t('修練場AP半減')}
+                  </Checkbox>
+                </FormControl>
+
+                <DropRateSelect
+                  dropMergeMethod={dropMergeMethod}
+                  setDropMergeMethod={setDropMergeMethod}
+                />
+              </VStack>
+            </div>
+
+            <div className="c-farming-footer">
+              <ButtonGroup spacing={4}>
+                <Button
+                  type="submit"
+                  disabled={
+                    Object.values(itemCounts).every((count) => count == '') ||
+                    checkedQuests.length == 0
+                  }
+                  className="c-farming-btn"
+                  isLoading={isLoading}
+                  p={8}
+                >
+                  <span className="c-farming-btn-en">SOLVE FARMING</span>
+                  <span className="c-farming-btn-jp">{t('周回数を求める')}</span>
+                </Button>
+                <Button type="button" onClick={setIsConfirming.on} p={8} variant="outline" borderColor="var(--border2)">
+                  {t('リセット')}
+                </Button>
+              </ButtonGroup>
+            </div>
+
+            <ResetAlertDialog
+              isOpen={isConfirming}
+              onClose={setIsConfirming.off}
+              onReset={onReset}
+            />
+          </VStack>
+        </form>
+      </div>
+    </div>
   )
 }

@@ -77,43 +77,61 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
   const title = t('title', { name: currentItem?.name ?? '' })
 
   return (
-    <VStack display="block" spacing={8}>
-      <Breadcrumb>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/items">{t('アイテム一覧')}</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem isCurrentPage>
-          <Text>{title}</Text>
-        </BreadcrumbItem>
-      </Breadcrumb>
-      <Center>
-        <Title>{title}</Title>
-      </Center>
-      <form>
-        <Wrap justify="space-evenly" spacing={8}>
-          <WrapItem>
-            <DropRateKeyRadio
-              dropRateKey={dropRateKey}
-              setDropRateKey={setDropRateKey}
-            />
-          </WrapItem>
-          <WrapItem>
-            <DropRateStyleRadio
-              dropRateStyle={dropRateStyle}
-              setDropRateStyle={setDropRateStyle}
-            />
-          </WrapItem>
-        </Wrap>
-      </form>
-      <Box whiteSpace="nowrap" overflowX="scroll" borderRadius="xl">
-        <DropTable
-          itemIndexes={itemIndexes}
-          quests={selectedQuests}
-          dropGroups={dropGroups}
-          dropRateKey={dropRateKey}
-          dropRateStyle={dropRateStyle}
-        />
-      </Box>
-    </VStack>
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">ITEM DETAIL</div>
+            <h1 className="c-page-title">{title}</h1>
+          </div>
+        </div>
+
+        <VStack align="stretch" spacing={8}>
+          <Breadcrumb>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/items">{t('アイテム一覧')}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbItem isCurrentPage>
+              <Text color="var(--text3)">{title}</Text>
+            </BreadcrumbItem>
+          </Breadcrumb>
+
+          <div className="c-card" style={{ padding: '24px' }}>
+            <form>
+              <Wrap justify="center" spacing={8}>
+                <WrapItem>
+                  <DropRateKeyRadio
+                    dropRateKey={dropRateKey}
+                    setDropRateKey={setDropRateKey}
+                  />
+                </WrapItem>
+                <WrapItem>
+                  <DropRateStyleRadio
+                    dropRateStyle={dropRateStyle}
+                    setDropRateStyle={setDropRateStyle}
+                  />
+                </WrapItem>
+              </Wrap>
+            </form>
+          </div>
+
+          <div className="c-card" style={{ padding: '0', overflow: 'hidden' }}>
+            <div className="c-global-header" style={{ cursor: 'default', background: 'var(--panel)' }}>
+              <div className="c-global-header-title">{t('DROP DATA')}</div>
+              <div className="c-global-header-line"></div>
+            </div>
+            <Box whiteSpace="nowrap" overflowX="auto">
+              <DropTable
+                itemIndexes={itemIndexes}
+                quests={selectedQuests}
+                dropGroups={dropGroups}
+                dropRateKey={dropRateKey}
+                dropRateStyle={dropRateStyle}
+              />
+            </Box>
+          </div>
+        </VStack>
+      </div>
+    </div>
   )
 }

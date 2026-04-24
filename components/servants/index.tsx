@@ -24,39 +24,53 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
       orderBy(([rarity]) => parseInt(rarity), 'desc')
     ),
   ])
-
   return (
-    <VStack spacing={8} align="stretch">
-      <Title>{t('サーヴァント一覧')}</Title>
-      <SimpleGrid minChildWidth="300px" spacingX={3} spacingY={8}>
-        {servantGroups.map(([className, servantGroups]) => (
-          <VStack align="start" key={className}>
-            <Heading size="lg">{getClassName(className as ClassName, locale)}</Heading>
-            <VStack spacing={4} align="start">
-              {servantGroups.map(([rarity, servants]) => (
-                <VStack key={rarity} align="start">
-                  <Heading
-                    size="sm"
-                    color="yellow.500"
-                    aria-label={`Rarity ${rarity}`}
-                  >
-                    {'★'.repeat(parseInt(rarity))}
-                  </Heading>
-                  <List spacing={1}>
-                    {servants.map((servant) => (
-                      <ListItem key={servant.id}>
-                        <Link href={`/servants/${servant.id}`}>
-                          {servant.name}
-                        </Link>
-                      </ListItem>
-                    ))}
-                  </List>
-                </VStack>
-              ))}
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">SERVANT LIST</div>
+            <h1 className="c-page-title">{t('サーヴァント一覧')}</h1>
+          </div>
+        </div>
+
+        <SimpleGrid minChildWidth="300px" spacingX={6} spacingY={10}>
+          {servantGroups.map(([className, servantGroups]) => (
+            <VStack align="start" key={className} spacing={4}>
+              <div className="c-settings-section-label" style={{ width: '100%', display: 'flex' }}>
+                {getClassName(className as ClassName, locale)}
+              </div>
+              <VStack spacing={6} align="stretch" width="100%">
+                {servantGroups.map(([rarity, servants]) => (
+                  <div key={rarity} className="c-card" style={{ padding: '12px 16px' }}>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--gold)',
+                        marginBottom: '8px',
+                        fontFamily: 'var(--serif)',
+                        letterSpacing: '2px'
+                      }}
+                      aria-label={`Rarity ${rarity}`}
+                    >
+                      {'✦'.repeat(parseInt(rarity))}
+                    </div>
+                    <List spacing={2}>
+                      {servants.map((servant) => (
+                        <ListItem key={servant.id}>
+                          <Link href={`/servants/${servant.id}`} color="var(--text)" _hover={{ color: 'var(--gold)', textDecoration: 'none' }}>
+                            {servant.name}
+                          </Link>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </div>
+                ))}
+              </VStack>
             </VStack>
-          </VStack>
-        ))}
-      </SimpleGrid>
-    </VStack>
+          ))}
+        </SimpleGrid>
+      </div>
+    </div>
   )
 }

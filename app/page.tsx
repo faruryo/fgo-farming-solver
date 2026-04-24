@@ -16,60 +16,65 @@ import { useTranslation } from 'react-i18next'
 export default function HomePage() {
   const { t } = useTranslation()
   return (
-    <VStack spacing={10} alignItems="stretch">
-      <SimpleGrid columns={[1, 1, 2]} spacing={10}>
-        <GridItem>
-          <Card>
-            <Link href="/farming" variant="unstyled" _hover={{ textDecoration: 'none' }}>
-              <CardBody>
-                <Heading size="lg">{t('周回効率計算')}</Heading>
-                <Text>{t('farming-description')}</Text>
-              </CardBody>
-            </Link>
-          </Card>
-        </GridItem>
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="c-page-header">
+          <div>
+            <div className="c-page-en">DASHBOARD</div>
+            <h1 className="c-page-title">{t('FGO周回ソルバー')}</h1>
+          </div>
+        </div>
 
-        <GridItem>
-          <Card>
-            <Link href="/material" variant="unstyled" _hover={{ textDecoration: 'none' }}>
-              <CardBody>
-                <Heading size="lg">{t('必要素材計算')}</Heading>
-                <Text>{t('material-description')}</Text>
-              </CardBody>
+        <SimpleGrid columns={[1, 1, 2]} spacing={6}>
+          <GridItem>
+            <Link href="/material" className="c-card" display="block" p={6} _hover={{ textDecoration: 'none' }}>
+              <VStack align="start" spacing={2}>
+                <div className="c-page-en" style={{ fontSize: '10px', color: 'var(--gold)' }}>MATERIAL</div>
+                <Heading size="md" color="var(--navy)">{t('必要素材計算')}</Heading>
+                <Text fontSize="sm" color="var(--text2)">{t('material-description')}</Text>
+              </VStack>
             </Link>
-          </Card>
-        </GridItem>
+          </GridItem>
 
-        <GridItem>
-          <Card>
-            <Link href="/cloud" variant="unstyled" _hover={{ textDecoration: 'none' }}>
-              <CardBody>
-                <Heading size="lg">{t('クラウドセーブ')}</Heading>
-                <Text>{t('cloud-description')}</Text>
-              </CardBody>
+          <GridItem>
+            <Link href="/farming" className="c-card" display="block" p={6} _hover={{ textDecoration: 'none' }}>
+              <VStack align="start" spacing={2}>
+                <div className="c-page-en" style={{ fontSize: '10px', color: 'var(--gold)' }}>SOLVER</div>
+                <Heading size="md" color="var(--navy)">{t('周回効率計算')}</Heading>
+                <Text fontSize="sm" color="var(--text2)">{t('farming-description')}</Text>
+              </VStack>
             </Link>
-          </Card>
-        </GridItem>
+          </GridItem>
 
-        <GridItem>
-          <Card>
+          <GridItem>
+            <Link href="/cloud" className="c-card" display="block" p={6} _hover={{ textDecoration: 'none' }}>
+              <VStack align="start" spacing={2}>
+                <div className="c-page-en" style={{ fontSize: '10px', color: 'var(--gold)' }}>CLOUD</div>
+                <Heading size="md" color="var(--navy)">{t('クラウドセーブ')}</Heading>
+                <Text fontSize="sm" color="var(--text2)">{t('cloud-description')}</Text>
+              </VStack>
+            </Link>
+          </GridItem>
+
+          <GridItem>
             <ExternalLink
-              href={`https://twitter.com/search?q=${encodeURIComponent(
-                '#FGO周回ソルバー'
-              )}`}
-              variant="unstyled"
+              href={`https://twitter.com/search?q=${encodeURIComponent('#FGO周回ソルバー')}`}
+              className="c-card"
+              display="block"
+              p={6}
             >
-              <VStack p={5} spacing={5} align="start">
-                <Heading size="lg">
+              <VStack align="start" spacing={2}>
+                <div className="c-page-en" style={{ fontSize: '10px', color: 'var(--gold)' }}>COMMUNITY</div>
+                <Heading size="md" color="var(--navy)">
                   {t('みんなの結果')}
-                  <ExternalLinkIcon mx={2} />
+                  <ExternalLinkIcon mx={2} boxSize={3} />
                 </Heading>
-                <Text>{t('shared-results-description')}</Text>
+                <Text fontSize="sm" color="var(--text2)">{t('shared-results-description')}</Text>
               </VStack>
             </ExternalLink>
-          </Card>
-        </GridItem>
-      </SimpleGrid>
-    </VStack>
+          </GridItem>
+        </SimpleGrid>
+      </div>
+    </div>
   )
 }
