@@ -56,7 +56,7 @@ export const Footer = () => {
             />
             <IconButton
               as="a"
-              href="https://x.com/antenna_games"
+              href="https://x.com/TechFaru"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="X (Twitter)"

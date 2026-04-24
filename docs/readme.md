@@ -56,11 +56,11 @@ A website to calculate the most efficient combination of quest runs from items y
 
 ## Feedback/Bugs
 
-Contact me on [X](https://x.com/antenna_games) or [GitHub](https://github.com/antenna-three/fgo-farming-solver/issues)
+Contact me on [X](https://x.com/TechFaru) or [GitHub](https://github.com/faruryo/fgo-farming-solver/issues)
 
 ## Contact
 
-[@antenna_games](https://x.com/antenna_games)
+[@TechFaru](https://x.com/TechFaru)
 
 ## Contributing
 
