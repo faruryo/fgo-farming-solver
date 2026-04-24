@@ -88,7 +88,7 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
   const face = servant.extraAssets.faces.ascension?.[1] || Object.values(servant.extraAssets.faces.ascension || {})[0]
 
   return (
-    <div className={`c-servant-card${tierClass ? ` ${tierClass}` : ''}`}>
+    <div className={`c-servant-card${state.disabled ? ' unowned' : ''}${tierClass ? ` ${tierClass}` : ''}`}>
       <div className="c-card-bar">
         <div className={`c-bar-seg${ascDone ? ' done-asc' : ''}`} />
         <div className={`c-bar-seg${skillDone ? ' done-skill' : ''}`} />

@@ -200,8 +200,14 @@ body {
 .c-servant-card {
   background: var(--panel); border: 1px solid var(--border);
   box-shadow: 0 1px 3px rgba(30,46,74,0.06);
-  position: relative; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+  position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.c-servant-card.unowned {
+  opacity: 0.55;
+  filter: grayscale(1);
+  border-color: var(--border);
+}
+.c-servant-card.unowned:hover { opacity: 0.8; filter: grayscale(0.5); }
 
 /* 3-segment bar */
 .c-card-bar { display: flex; height: 3px; }
