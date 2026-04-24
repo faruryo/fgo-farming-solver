@@ -1,8 +1,6 @@
 'use client'
 
 import {
-  Card,
-  CardBody,
   GridItem,
   Heading,
   SimpleGrid,

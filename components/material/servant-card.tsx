@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useState } from 'react'
+import { memo, useCallback } from 'react'
 import { NiceServant } from '../../interfaces/atlas-academy'
 import { ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'

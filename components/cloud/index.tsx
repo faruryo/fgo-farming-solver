@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Heading, HStack, Text, VStack } from '@chakra-ui/react'
+import { Button, HStack, Text, VStack } from '@chakra-ui/react'
 import { signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'

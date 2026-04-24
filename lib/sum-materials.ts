@@ -1,7 +1,7 @@
 import { range } from '../utils/range'
 import { entries } from '../utils/typed-entries'
 import { ChaldeaState } from '../hooks/create-chaldea-state'
-import { MaterialsForServants } from './get-materials'
+import { MaterialsForServants, ReducedMaterials } from './get-materials'
 
 export const sumMaterials = (
   state: ChaldeaState,
@@ -10,7 +10,10 @@ export const sumMaterials = (
   const sum = new Proxy<{ [itemId: string | symbol]: number }>(
     {},
     {
-      get: (target, name) => (name in target ? target[name] : 0),
+      get: (target, name) => {
+        const val = target[name as keyof typeof target]
+        return val !== undefined ? val : 0
+      },
     }
   )
   Object.entries(state)
@@ -25,15 +28,17 @@ export const sumMaterials = (
         .forEach(([target, { ranges }]) => {
           ranges.forEach(({ start, end }, idx) => {
             const key = target === 'appendSkill' ? `appendSkill${idx + 1}Materials` : `${target}Materials`
-            const materials = servant[key as keyof typeof servant]
+            const materials = servant[key as keyof typeof servant] as ReducedMaterials | undefined
             if (!materials) return
 
             range(start, end)
-              .filter((i) => i in (materials as any))
+              .filter((i) => i.toString() in materials)
               .forEach((i) => {
-                const { items, qp } = (materials as any)[i]
-                items.forEach(({ item, amount }: any) => {
-                  sum[item.id] += amount
+                const { items, qp } = materials[i.toString()]
+                items.forEach(({ item, amount }) => {
+                  if (item && item.id) {
+                    sum[item.id] += amount
+                  }
                 })
                 sum[1] += qp
               })

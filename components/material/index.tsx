@@ -7,7 +7,7 @@ import { MaterialsForServants } from '../../lib/get-materials'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { sumMaterials } from '../../lib/sum-materials'
-import { CLASS_LIST, MAIN_CLASSES, ClassId } from '../../constants/classes'
+import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { ServantCard } from './servant-card'
 
 export type MaterialIndexProps = {
@@ -197,7 +197,7 @@ export const Index = ({
                 key={cls.id}
                 className={`c-class-tab${selClass === cls.id ? ' active' : ''}`}
                 style={selClass === cls.id ? { color: cls.color } : {}}
-                onClick={() => setSelClass(cls.id as ClassId)}
+                onClick={() => setSelClass(cls.id)}
               >
                 <span className="c-tab-abbr">{cls.abbr}</span>
                 <span className="c-tab-label">{cls.label}</span>
