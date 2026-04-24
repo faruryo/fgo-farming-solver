@@ -15,7 +15,7 @@ const pages: Record<
 > = {
   docs: {
     en: { md: readmeEn, title: 'About' },
-    ja: { md: readmeJa, title: 'このサイトについて' },
+    ja: { md: readmeJa, title: '使い方' },
   },
   news: {
     en: { md: newsEn, title: 'News' },
