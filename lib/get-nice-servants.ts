@@ -10,12 +10,13 @@ export const getNiceServants = async (locale?: string, original = false) => {
       ['normal', 'heroine'].includes(servant.type) && servant.collectionNo > 0
   )
   if (original) return filtered
-  return filtered.map(({ id, name, className, collectionNo, type, rarity }) => ({
+  return filtered.map(({ id, name, className, collectionNo, type, rarity, extraAssets }) => ({
     id,
     name,
     className,
     collectionNo,
     type,
     rarity,
-  })) as unknown as NiceServant[]
+    extraAssets,
+  })) as NiceServant[]
 }

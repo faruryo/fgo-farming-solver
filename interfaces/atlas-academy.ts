@@ -30,6 +30,16 @@ export type Servant = {
   className: ClassName
   attribute: string
   rarity: number
+  extraAssets: {
+    faces: {
+      ascension?: Record<string, string>
+      costume?: Record<string, string>
+    }
+    charaGraph: {
+      ascension?: Record<string, string>
+      costume?: Record<string, string>
+    }
+  }
 }
 
 export type MaterialsRecord = Record<MaterialsKey, Materials>

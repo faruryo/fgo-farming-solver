@@ -85,6 +85,8 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
     else setAppend(idx, next)
   }
 
+  const face = servant.extraAssets.faces.ascension?.[1] || Object.values(servant.extraAssets.faces.ascension || {})[0]
+
   return (
     <div className={`c-servant-card${tierClass ? ` ${tierClass}` : ''}`}>
       <div className="c-card-bar">
@@ -97,7 +99,15 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
         className="c-servant-portrait"
         style={{ background: `linear-gradient(150deg,${cc}22 0%,${cc}08 100%)` }}
       >
-        <div className="c-portrait-hex" style={{ color: cc }} />
+        {face ? (
+          <img 
+            src={face} 
+            alt={servant.name} 
+            className="c-servant-face-img"
+          />
+        ) : (
+          <div className="c-portrait-hex" style={{ color: cc }} />
+        )}
         <div className="c-portrait-class" style={{ color: cc }}>
           {cls.abbr}
         </div>

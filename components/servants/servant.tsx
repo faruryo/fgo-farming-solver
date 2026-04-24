@@ -33,6 +33,7 @@ export const Page = ({
 }: ServantProps) => {
   const { t } = useTranslation(['servants', 'common'])
   const title = t('title', { name: servant.name })
+  const portrait = servant.extraAssets.charaGraph.ascension?.[4] || Object.values(servant.extraAssets.charaGraph.ascension || {}).pop()
 
   return (
     <div className="c-page">
@@ -54,17 +55,27 @@ export const Page = ({
           </div>
         </div>
 
-        <VStack align="stretch" spacing={8}>
-          <Breadcrumb>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/servants">
-                {t('サーヴァント一覧')}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem isCurrentPage>
-              <Text color="var(--text3)">{title}</Text>
-            </BreadcrumbItem>
-          </Breadcrumb>
+        <div className="c-servant-detail-top">
+          {portrait && (
+            <div className="c-servant-detail-portrait">
+              <img src={portrait} alt={servant.name} />
+            </div>
+          )}
+          <VStack align="stretch" spacing={8} flex={1}>
+            <Breadcrumb>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/servants">
+                  {t('サーヴァント一覧')}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem isCurrentPage>
+                <Text color="var(--text3)">{title}</Text>
+              </BreadcrumbItem>
+            </Breadcrumb>
+            
+            {/* ... other info can go here ... */}
+          </VStack>
+        </div>
 
           <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
             {[

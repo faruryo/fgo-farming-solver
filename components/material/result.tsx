@@ -40,7 +40,7 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
       <div className="c-mat-icon-area">
         {item.icon ? (
           <img
-            src={`https://static.atlasacademy.io/JP/Items/${item.icon}.png`}
+            src={item.icon.startsWith('http') ? item.icon : `https://static.atlasacademy.io/JP/Items/${item.icon}.png`}
             alt={item.name}
             className="c-mat-icon"
             loading="lazy"
