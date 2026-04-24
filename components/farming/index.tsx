@@ -322,7 +322,12 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   <span className="c-farming-btn-en">SOLVE FARMING</span>
                   <span className="c-farming-btn-jp">{t('周回数を求める')}</span>
                 </Button>
-                <Button type="button" onClick={setIsConfirming.on} p={8} variant="outline" borderColor="var(--border2)">
+                <Button
+                  type="button"
+                  onClick={setIsConfirming.on}
+                  p={8}
+                  className="c-farming-btn-reset"
+                >
                   {t('リセット')}
                 </Button>
               </ButtonGroup>

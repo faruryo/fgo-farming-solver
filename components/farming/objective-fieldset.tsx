@@ -20,7 +20,9 @@ export const ObjectiveFieldset = ({
 
   return (
     <FormControl as="fieldset">
-      <FormLabel as="legend">{t('最小化')}</FormLabel>
+      <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">
+        {t('最小化')}
+      </FormLabel>
       <RadioGroup name="objective" value={objective} onChange={setObjective}>
         <HStack spacing={4}>
           {values.map(([value, description]) => (

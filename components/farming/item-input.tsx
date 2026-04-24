@@ -1,24 +1,32 @@
-/* eslint-disable */
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { HStack, Input } from '@chakra-ui/react'
+import { FormControl, FormLabel, HStack, Input } from '@chakra-ui/react'
 import React from 'react'
+import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
 export const ItemInput = ({
   id,
   name,
+  icon,
   inputValues,
   handleChange,
 }: {
   id: string
   name: string
+  icon?: string
   inputValues: { [key: string]: string }
   handleChange: React.FormEventHandler
 }) => {
   if (!(id in inputValues)) inputValues[id] = ''
   return (
     <FormControl id={`item-${id}`}>
-      <HStack align="center" justify="end">
-        <FormLabel textAlign="right" fontWeight="normal">
+      <HStack align="center" justify="end" spacing={3}>
+        {icon && (
+          <img
+            src={getItemIconUrl(icon)}
+            alt={name}
+            style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+          />
+        )}
+        <FormLabel textAlign="right" fontWeight="600" fontSize="13px" color="var(--text2)" m={0}>
           {name}
         </FormLabel>
         <Input

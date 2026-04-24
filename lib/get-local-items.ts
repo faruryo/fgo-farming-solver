@@ -5,6 +5,7 @@ type Item = { id: string; category: string; name: string }
 export type Localized<I extends Item> = I & {
   largeCategory: string
   shortName: string
+  icon?: string
 }
 
 export const getLocalItems = async <I extends Item>(
@@ -24,6 +25,7 @@ export const getLocalItems = async <I extends Item>(
       largeCategory: atlasItem?.largeCategory ?? '',
       shortName: name,
       name: atlasItem?.name ?? name,
+      icon: atlasItem?.icon,
       ...rest,
     } as Localized<I>
   })

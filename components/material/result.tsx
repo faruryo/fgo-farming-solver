@@ -28,6 +28,8 @@ type MatCardProps = {
   onChange: (id: string, val: number) => void
 }
 
+import { getItemIconUrl } from '../../lib/get-item-icon-url'
+
 const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: MatCardProps) => {
   const [editing, setEditing] = useState(false)
   const isShort = deficiency > 0
@@ -40,7 +42,7 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
       <div className="c-mat-icon-area">
         {item.icon ? (
           <img
-            src={item.icon.startsWith('http') ? item.icon : `https://static.atlasacademy.io/JP/Items/${item.icon}.png`}
+            src={getItemIconUrl(item.icon)}
             alt={item.name}
             className="c-mat-icon"
             loading="lazy"

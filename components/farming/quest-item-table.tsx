@@ -11,7 +11,7 @@ export const QuestItemTable = ({
   lap,
 }: {
   dropRates: DropRate[]
-  itemIndexes: { [id: string]: Item }
+  itemIndexes: { [id: string]: Item & { icon?: string } }
   lap: number
 }) => {
   const { t } = useTranslation('farming')
@@ -27,7 +27,11 @@ export const QuestItemTable = ({
         {dropRates.map(({ item_id, drop_rate }) => (
           <Tr key={item_id}>
             <Td>
-              <ItemLink id={item_id} name={itemIndexes[item_id]?.name} />
+              <ItemLink
+                id={item_id}
+                name={itemIndexes[item_id]?.name}
+                icon={itemIndexes[item_id]?.icon}
+              />
             </Td>
             <Td isNumeric>
               {Math.round(

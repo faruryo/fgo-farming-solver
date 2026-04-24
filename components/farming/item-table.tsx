@@ -45,7 +45,7 @@ export const ItemTable = ({
               {items.map((item) => (
                 <Tr key={item.id}>
                   <Td px={4}>
-                    <ItemLink id={item.id} name={item.name} />
+                    <ItemLink id={item.id} name={item.name} icon={item.icon} />
                   </Td>
                   <Td px={2} isNumeric>
                     {item.count}

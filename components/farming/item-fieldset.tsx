@@ -27,7 +27,7 @@ export const ItemFieldset = ({
 
   return (
     <FormControl as="fieldset">
-      <FormLabel as="legend">{t('farming:集めたいアイテムの数')}</FormLabel>
+      <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">{t('farming:集めたいアイテムの数')}</FormLabel>
       <Accordion defaultIndex={[0]} allowMultiple>
         {itemGroups.map(([largeCategory, itemGroup]) => (
           <AccordionItem key={largeCategory}>

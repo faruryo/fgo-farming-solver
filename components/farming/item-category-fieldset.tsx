@@ -12,7 +12,7 @@ export const ItemCategoryFieldset = ({
   handleChange,
 }: {
   category: string
-  items: { name: string; id: string }[]
+  items: { name: string; id: string; icon?: string }[]
   inputValues: { [key: string]: string }
   handleChange: React.FormEventHandler
 }) => {
@@ -22,11 +22,12 @@ export const ItemCategoryFieldset = ({
         <VStack>
           <FormLabel as="legend">{category}</FormLabel>
           <VStack align="end">
-            {items.map(({ id, name }) => (
+            {items.map(({ id, name, icon }) => (
               <ItemInput
                 key={id}
                 id={id}
                 name={name}
+                icon={icon}
                 inputValues={inputValues}
                 handleChange={handleChange}
               />

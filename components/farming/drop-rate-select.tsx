@@ -21,7 +21,7 @@ export const DropRateSelect = ({
   const { t } = useTranslation('farming')
   return (
     <FormControl as="fieldset">
-      <FormLabel as="legend">{t('ドロップ率')}</FormLabel>
+      <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">{t('ドロップ率')}</FormLabel>
       <RadioGroup value={dropMergeMethod} onChange={setDropMergeMethod}>
         <VStack alignItems="start" spacing={4}>
           {options.map((value) => (
