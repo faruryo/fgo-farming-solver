@@ -5,7 +5,6 @@ import readmeEn from '../../docs/readme.md'
 import readmeJa from '../../docs/readme-ja.md'
 import newsEn from '../../docs/news.md'
 import newsJa from '../../docs/news-ja.md'
-import contributing from '../../docs/contributing.md'
 import license from '../../LICENSE.md'
 
 
@@ -20,10 +19,6 @@ const pages: Record<
   news: {
     en: { md: newsEn, title: 'News' },
     ja: { md: newsJa, title: 'お知らせ' },
-  },
-  contributing: {
-    en: { md: contributing, title: 'Contributing' },
-    ja: { md: contributing, title: 'Contributing' },
   },
   LICENSE: {
     en: { md: license, title: 'License' },

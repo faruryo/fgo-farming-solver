@@ -35,7 +35,6 @@ export const menuGroups = [
     items: [
       { href: '/docs', label: { ja: '使い方', en: 'About' } },
       { href: '/news', label: { ja: 'お知らせ', en: 'News' } },
-      { href: '/contributing', label: { ja: 'Contributing', en: 'Contributing' } },
       { href: '/LICENSE', label: { ja: 'License', en: 'License' } },
     ],
   },
