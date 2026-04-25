@@ -17,7 +17,8 @@ export interface Quest {
 export interface DropRate {
   quest_id: string
   item_id: string
-  drop_rate: number
+  drop_rate_1: number
+  drop_rate_2: number
 }
 
 export interface MasterData {
@@ -76,7 +77,7 @@ const NAME_OVERRIDES: Record<string, string> = {
 }
 
 // Special normalization for class items
-function normalizeItemName(shortName: string): string {
+export function normalizeItemName(shortName: string): string {
   if (NAME_OVERRIDES[shortName]) return NAME_OVERRIDES[shortName]
   
   const classMap: Record<string, string> = {
@@ -190,33 +191,69 @@ export async function fetchAndTransformData(): Promise<MasterData> {
           all_drop_rates.push({
             quest_id: questId,
             item_id: itemId,
-            drop_rate: rate / 100 // Convert percentage to raw expectation
+            drop_rate_1: rate / 100, // Convert percentage to raw expectation
+            drop_rate_2: 0
           })
         }
       }
     }
   }
 
-  // 5. Filter: Keep only Top 5 quests per item (by drop rate)
-  const filtered_drop_rates: DropRate[] = []
-  const itemToRates: Record<string, DropRate[]> = {}
+  // 5. Filter Candidates
+  // Strategy:
+  // A. Keep Top 5 quests per item (by absolute drop rate) to ensure each item is farmable efficiently
+  // B. Keep Top 30 quests by 'Total Efficiency' (sum of all drop rates / AP) to include multi-drop heavens
+  
+  const selectedQuestIds = new Set<string>()
 
+  // A. Top 5 per item
+  const itemToRates: Record<string, DropRate[]> = {}
   for (const dr of all_drop_rates) {
     if (!itemToRates[dr.item_id]) itemToRates[dr.item_id] = []
     itemToRates[dr.item_id].push(dr)
   }
 
   for (const itemId in itemToRates) {
-    const rates = itemToRates[itemId]
-    // Sort descending by drop rate
-    rates.sort((a, b) => b.drop_rate - a.drop_rate)
-    // Keep top 5
-    filtered_drop_rates.push(...rates.slice(0, 5))
+    const rates = [...itemToRates[itemId]]
+    rates.sort((a, b) => b.drop_rate_1 - a.drop_rate_1)
+    rates.slice(0, 5).forEach(dr => selectedQuestIds.add(dr.quest_id))
   }
 
-  // Also filter quests: keep only those that are referenced in filtered_drop_rates
-  const activeQuestIds = new Set(filtered_drop_rates.map(dr => dr.quest_id))
-  const finalQuests = quests.filter(q => activeQuestIds.has(q.id))
+  // B. Relative Efficiency Score (Multi-drop heaven)
+  // This metric treats every item as equally important by normalizing its efficiency
+  // relative to the best known quest for that specific item.
+  
+  // 1. Find the best efficiency (drop/AP) for each item
+  const bestEfficiencyPerItem: Record<string, number> = {}
+  for (const dr of all_drop_rates) {
+    const quest = quests.find(q => q.id === dr.quest_id)
+    if (quest) {
+      const efficiency = dr.drop_rate_1 / quest.ap
+      bestEfficiencyPerItem[dr.item_id] = Math.max(bestEfficiencyPerItem[dr.item_id] || 0, efficiency)
+    }
+  }
+
+  // 2. Score each quest by the sum of its relative efficiencies
+  const questToRelativeScore: Record<string, number> = {}
+  for (const dr of all_drop_rates) {
+    const quest = quests.find(q => q.id === dr.quest_id)
+    const bestEff = bestEfficiencyPerItem[dr.item_id]
+    if (quest && bestEff > 0) {
+      const relativeEff = (dr.drop_rate_1 / quest.ap) / bestEff
+      questToRelativeScore[dr.quest_id] = (questToRelativeScore[dr.quest_id] || 0) + relativeEff
+    }
+  }
+
+  // 3. Take Top 100 quests by relative score
+  const sortedByScore = Object.entries(questToRelativeScore)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 100)
+  
+  sortedByScore.forEach(([qid]) => selectedQuestIds.add(qid))
+
+  // Final Filter: Include all drop rates for selected quests
+  const filtered_drop_rates = all_drop_rates.filter(dr => selectedQuestIds.has(dr.quest_id))
+  const finalQuests = quests.filter(q => selectedQuestIds.has(q.id))
 
   return {
     items,
