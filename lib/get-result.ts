@@ -1,6 +1,6 @@
-import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { Result } from '../interfaces/api'
-import { getDynamoDb } from './dynamodb'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
+import type { CloudflareEnv } from '../types/cloudflare-env'
 
 export const getResult = async (id: string): Promise<Result> => {
   const isDev = process.env.NODE_ENV === 'development'
@@ -9,14 +9,27 @@ export const getResult = async (id: string): Promise<Result> => {
   if (isDev && !isEdge) {
     const path = await import(/* webpackIgnore: true */ 'path')
     const { readJson } = await import('./read-json')
-    const data = await readJson<unknown>(path.default.resolve('mocks', 'result.json'))
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-    return unmarshall(data as any) as Result
+    const data = await readJson<any>(path.default.resolve('mocks', 'result.json'))
+    return data as Result
   }
 
-  return getDynamoDb({
-    region: 'ap-northeast-1',
-    tableName: 'fgo-farming-solver-results',
-    key: { id },
-  }) as Promise<Result>
+  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
+    env: CloudflareEnv
+  }
+
+  if (!env.DB) {
+    throw new Error('Database not available')
+  }
+
+  const result = await env.DB.prepare(
+    'SELECT result_data FROM farming_results WHERE id = ?'
+  )
+    .bind(id)
+    .first<{ result_data: string }>()
+
+  if (!result) {
+    throw new Error(`Result not found for id ${id}`)
+  }
+
+  return JSON.parse(result.result_data) as Result
 }

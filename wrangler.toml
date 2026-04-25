@@ -15,5 +15,14 @@ service = "fgo-farming-solver"
 binding = "CLOUD_SAVE"
 id = "c621d47e509445a3a7f713702b3cb07e"
 
+[[kv_namespaces]]
+binding = "MASTER_DATA"
+id = "306bbe537e9d4907809f82468df500e4"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fgo-farming-solver-db"
+database_id = "4bb0a615-9079-4233-b57f-a5725b9eb4da"
+
 [observability]
 enabled = true
