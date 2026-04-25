@@ -46,13 +46,12 @@ body {
 .c-header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 56px;
   background: rgba(30,46,74,0.97); border-bottom: 1px solid rgba(154,114,36,0.45);
-  display: flex; align-items: center; padding: 0 24px; backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: space-between; 
+  padding: 0 12px 0 24px; backdrop-filter: blur(12px);
 }
-.c-header::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-  height: 1px; background: linear-gradient(90deg, transparent, var(--gold2), transparent);
-}
-.c-logo { display: flex; align-items: center; gap: 12px; margin-right: 32px; flex-shrink: 0; cursor: pointer; text-decoration: none; }
+.c-header-left { width: 44px; display: flex; align-items: center; }
+.c-header-right { width: 44px; display: flex; align-items: center; justify-content: flex-end; }
+.c-logo { display: flex; align-items: center; gap: 12px; flex-shrink: 0; cursor: pointer; text-decoration: none; }
 .c-logo-emblem {
   width: 34px; height: 34px; border: 1.5px solid rgba(192,144,48,0.5); border-radius: 50%;
   display: flex; align-items: center; justify-content: center; position: relative;

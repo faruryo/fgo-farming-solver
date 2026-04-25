@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { HamburgerIcon } from '@chakra-ui/icons'
 import {
   IconButton,
@@ -8,9 +7,19 @@ import {
   MenuGroup,
   MenuItem,
   MenuList,
+  Box,
+  Text,
+  HStack,
+  Switch,
+  FormControl,
+  FormLabel,
+  Button,
+  Spinner,
 } from '@chakra-ui/react'
 import NextLink from 'next/link'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { useCloudSync } from '../../hooks/use-cloud-sync'
 import { LangMenuItem } from './lang-menu-item'
 
 export const menuGroups = [
@@ -24,10 +33,10 @@ export const menuGroups = [
       { href: '/farming', label: { ja: '周回ソルバー', en: 'Farming Solver' } },
       {
         href: '/servants',
-        label: { ja: 'サーヴァント一覧', en: 'Sarvant List' },
+        label: { ja: 'サーヴァント一覧', en: 'Servant List' },
       },
       { href: '/items', label: { ja: 'アイテム一覧', en: 'Item List' } },
-      { href: '/cloud', label: { ja: 'クラウドセーブ', en: 'Save to Cloud' } },
+      { href: '/cloud', label: { ja: 'データ管理', en: 'Data Management' } },
     ],
   },
   {
@@ -40,8 +49,84 @@ export const menuGroups = [
   },
 ]
 
+const CloudSyncContent = () => {
+  const { t } = useTranslation('common')
+  const {
+    session,
+    cloudData,
+    isSaving,
+    saveStatus,
+    autoSyncEnabled,
+    toggleAutoSync,
+    handleSave,
+    hasConflict,
+  } = useCloudSync()
+
+  if (!session && process.env.NODE_ENV !== 'development') return null
+
+  const isUpToDate = (saveStatus === true || !cloudData) && !hasConflict
+
+  return (
+    <Box px={3} py={2} mb={1}>
+      <HStack justify="space-between" mb={3}>
+        <HStack spacing={2}>
+          <Box position="relative">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={hasConflict ? 'var(--red)' : isUpToDate ? 'var(--gold-dim)' : 'var(--gold)'} strokeWidth="2">
+              <path d="M17.5 19c.7 0 1.3-.2 1.8-.7.5-.5.7-1.1.7-1.8 0-.5-.1-.9-.4-1.3-.2-.4-.6-.7-1-.9 0-.1 0-.2.1-.3 0-1.4-.5-2.6-1.5-3.5-1-.9-2.1-1.4-3.5-1.4-.9 0-1.8.2-2.6.7-.8.5-1.4 1.1-1.8 1.9-.3-.1-.6-.2-.9-.2-1.1 0-2.1.4-2.8 1.2s-1.1 1.7-1.1 2.8c0 1.1.4 2.1 1.2 2.8.8.8 1.7 1.2 2.8 1.2h10z" />
+            </svg>
+            {hasConflict && (
+              <Box position="absolute" top="-2px" right="-2px" w="6px" h="6px" bg="var(--red)" borderRadius="50%" border="1px solid var(--panel)" animation="pulse 2s infinite" />
+            )}
+          </Box>
+          <Text fontSize="10px" color={hasConflict ? 'var(--red)' : 'var(--gold)'} fontWeight="bold" letterSpacing="0.05em">
+            {hasConflict ? 'SYNC CONFLICT' : 'CLOUD SYNC'}
+          </Text>
+        </HStack>
+        {isSaving && <Spinner size="xs" color="var(--gold)" />}
+      </HStack>
+
+      {hasConflict ? (
+        <NextLink href="/cloud">
+          <Button
+            width="100%"
+            size="xs"
+            variant="ghost"
+            bg="rgba(255,0,0,0.1)"
+            color="var(--red)"
+            fontSize="10px"
+            height="32px"
+            _hover={{ bg: 'rgba(255,0,0,0.15)' }}
+          >
+            解決のためにデータ管理へ
+          </Button>
+        </NextLink>
+      ) : (
+        <FormControl display="flex" alignItems="center">
+          <FormLabel htmlFor="nav-auto-sync" mb="0" fontSize="11px" color="var(--text2)" flex="1">
+            {t('auto-sync-label', '同期の自動化')}
+          </FormLabel>
+          <Switch
+            id="nav-auto-sync"
+            isChecked={autoSyncEnabled}
+            onChange={toggleAutoSync}
+            colorScheme="gold"
+            size="sm"
+            sx={{
+              'span.chakra-switch__track:not([data-checked])': {
+                bg: 'rgba(154,114,36,0.15)',
+              },
+            }}
+          />
+        </FormControl>
+      )}
+    </Box>
+  )
+}
+
 export const Nav = () => {
-  const locale = 'ja' as string
+  const { i18n } = useTranslation()
+  const locale = i18n.language
+  
   return (
     <nav>
       <Menu>
@@ -55,17 +140,23 @@ export const Nav = () => {
           _hover={{ color: 'var(--gold2)', bg: 'rgba(154,114,36,0.1)' }}
           _active={{ color: 'var(--gold2)', bg: 'rgba(154,114,36,0.15)' }}
         />
-        <MenuList bg="var(--panel)" borderColor="var(--gold-dim)" backdropFilter="blur(20px)" py={2}>
+        <MenuList bg="var(--panel)" borderColor="var(--gold-dim)" backdropFilter="blur(20px)" py={2} width="220px">
+          <CloudSyncContent />
+          <MenuDivider borderColor="rgba(154,114,36,0.1)" />
+          
           {menuGroups.map(({ title, items }) => (
             <MenuGroup title={title} key={title} color="var(--gold)" fontSize="10px" letterSpacing="0.1em">
               {items.map(({ href, label }) => (
-                <NextLink href={href} key={href}>
+                <NextLink href={href} key={href} passHref>
                   <MenuItem
+                    as="span"
                     bg="transparent"
                     color="var(--text)"
                     fontSize="13px"
                     _hover={{ bg: 'rgba(154,114,36,0.15)', color: 'var(--gold2)' }}
                     _focus={{ bg: 'rgba(154,114,36,0.15)', color: 'var(--gold2)' }}
+                    display="block"
+                    py={2}
                   >
                     {label[(locale ?? 'ja') as 'en' | 'ja']}
                   </MenuItem>
@@ -73,7 +164,7 @@ export const Nav = () => {
               ))}
             </MenuGroup>
           ))}
-          <MenuDivider borderColor="rgba(154,114,36,0.2)" />
+          <MenuDivider borderColor="rgba(154,114,36,0.1)" />
           <LangMenuItem />
         </MenuList>
       </Menu>

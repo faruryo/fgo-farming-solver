@@ -6,9 +6,7 @@ import { Nav } from './nav'
 export const Header = () => {
   return (
     <header className="c-header">
-      <div className="c-header-left">
-        <Nav />
-      </div>
+      <div className="c-header-left" />
       <Link href="/material" className="c-logo">
         <div className="c-logo-emblem">
           <svg viewBox="0 0 24 24" fill="none" stroke="#c09030" strokeWidth="1.5">
@@ -21,6 +19,9 @@ export const Header = () => {
           <div className="c-logo-sub">FGO周回ソルバー</div>
         </div>
       </Link>
+      <div className="c-header-right">
+        <Nav />
+      </div>
     </header>
   )
 }
