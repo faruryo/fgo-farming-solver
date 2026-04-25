@@ -31,6 +31,7 @@ export const menuGroups = [
         label: { ja: '育成素材計算機', en: 'Material Calculator' },
       },
       { href: '/farming', label: { ja: '周回ソルバー', en: 'Farming Solver' } },
+      { href: '/farming/history', label: { ja: '計算履歴・進捗', en: 'Farming History' } },
       {
         href: '/servants',
         label: { ja: 'サーヴァント一覧', en: 'Servant List' },

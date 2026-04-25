@@ -180,9 +180,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         dropMergeMethod,
       })
       const params = new URLSearchParams({ ...query, fields: 'id' })
-      const apiEndpoint =
-        'https://pgdz683mk2.execute-api.ap-northeast-1.amazonaws.com/fgo-farming-solver'
-      const url = `${apiEndpoint}?${params.toString()}`
+      const url = `/api/solve?${params.toString()}`
       const result = await fetch(url).then((res) => res.json() as unknown)
       if (hasId(result) && typeof result.id == 'string') {
         const url = `/farming/results/${result.id}`
