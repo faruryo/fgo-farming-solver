@@ -1,12 +1,10 @@
-/* eslint-disable */
 'use client'
 
 import React from 'react'
+import Image from 'next/image'
 import {
   Breadcrumb,
   BreadcrumbItem,
-  Heading,
-  HStack,
   SimpleGrid,
   Text,
   VStack,
@@ -14,17 +12,14 @@ import {
 import { BreadcrumbLink } from '../common/breadcrumb-link'
 import { MaterialList } from './material-list'
 import { useTranslation } from 'react-i18next'
-import { TargetKey, NiceServant, Item } from '../../interfaces/atlas-academy'
+import { NiceServant, Item, Materials } from '../../interfaces/atlas-academy'
 import { getClassName } from '../../lib/class-names'
-import { Title } from '../common/title'
 
 export type ServantProps = {
   servant: NiceServant
   items: Item[]
   locale?: string
 }
-
-const keys: TargetKey[] = ['ascension', 'skill', 'appendSkill']
 
 export const Page = ({
   servant,
@@ -58,7 +53,13 @@ export const Page = ({
         <div className="c-servant-detail-top">
           {portrait && (
             <div className="c-servant-detail-portrait">
-              <img src={portrait} alt={servant.name} />
+              <Image 
+                src={portrait} 
+                alt={servant.name} 
+                width={240} 
+                height={340}
+                style={{ height: 'auto', width: '100%', display: 'block' }}
+              />
             </div>
           )}
           <VStack align="stretch" spacing={8} flex={1}>
@@ -87,7 +88,7 @@ export const Page = ({
               { id: 'app4', label: 'アペンド 4', key: 'appendSkill4Materials' },
               { id: 'app5', label: 'アペンド 5', key: 'appendSkill5Materials' },
             ].map((section) => {
-              const materials = servant[section.key as keyof NiceServant] as any
+              const materials = servant[section.key as keyof NiceServant] as unknown as Materials
               if (!materials || Object.keys(materials).length === 0) return null
 
               return (
@@ -102,8 +103,7 @@ export const Page = ({
                 </div>
               )
             })}
-          </SimpleGrid>
-        </VStack>
+        </SimpleGrid>
       </div>
     </div>
   )

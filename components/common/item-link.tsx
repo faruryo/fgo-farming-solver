@@ -12,15 +12,18 @@ const itemColors: { [key: string]: string } = {
   7: 'item.gold',
 }
 
+import Image from 'next/image'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
 export const ItemLink = ({ id, name, icon }: { id: string; name: string; icon?: string }) => (
   <HStack spacing={2} display="inline-flex" align="center">
     {icon && (
-      <img
+      <Image
         src={getItemIconUrl(icon)}
         alt={name}
-        style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+        width={24}
+        height={24}
+        style={{ objectFit: 'contain' }}
       />
     )}
     <Link href={`/items/${id}`} color={itemColors[id[0]]}>

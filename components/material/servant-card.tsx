@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useCallback } from 'react'
+import Image from 'next/image'
 import { NiceServant } from '../../interfaces/atlas-academy'
 import { ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'
@@ -100,9 +101,11 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
         style={{ background: `linear-gradient(150deg,${cc}22 0%,${cc}08 100%)` }}
       >
         {face ? (
-          <img 
+          <Image 
             src={face} 
             alt={servant.name} 
+            width={72}
+            height={72}
             className="c-servant-face-img"
           />
         ) : (

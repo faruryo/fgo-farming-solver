@@ -4,6 +4,19 @@
 
 const nextConfig = {
   output: 'standalone',
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'static.atlasacademy.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'assets.gamepress.gg',
+      },
+    ],
+  },
   webpack: (config) => {
     config.module.rules.push({
       test: /\.md$|LICENSE$/,

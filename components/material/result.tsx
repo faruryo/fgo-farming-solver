@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
@@ -41,12 +42,12 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
     >
       <div className="c-mat-icon-area">
         {item.icon ? (
-          <img
+          <Image
             src={getItemIconUrl(item.icon)}
             alt={item.name}
+            width={48}
+            height={48}
             className="c-mat-icon"
-            loading="lazy"
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
           <div className="c-mat-icon-placeholder" />

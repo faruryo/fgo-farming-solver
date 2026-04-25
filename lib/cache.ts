@@ -27,7 +27,8 @@ export const fetchJsonWithCache = async <T>(url: string) => {
   const isCloudflare = process.env.CF_PAGES === '1' || process.env.OPEN_NEXT === '1'
   const isDev = process.env.NODE_ENV === 'development'
 
-  if (isEdge || isCloudflare || !isDev) {
+  const isBrowser = typeof window !== 'undefined'
+  if (isBrowser || isEdge || isCloudflare || !isDev) {
     return fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)

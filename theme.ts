@@ -17,6 +17,18 @@ export const theme = extendTheme({
       blue: '#3182ce',
       red: '#e53e3e',
     },
+    gold: {
+      50: '#fff9e6',
+      100: '#ffedb3',
+      200: '#ffe180',
+      300: '#ffd54d',
+      400: '#ffc91a',
+      500: '#e6b000',
+      600: '#b38900',
+      700: '#806200',
+      800: '#4d3b00',
+      900: '#1a1400',
+    },
   },
   components: {
     Link: {

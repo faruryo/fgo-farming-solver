@@ -1,5 +1,6 @@
 import { FormControl, FormLabel, HStack, Input } from '@chakra-ui/react'
 import React from 'react'
+import Image from 'next/image'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
 export const ItemInput = ({
@@ -20,10 +21,12 @@ export const ItemInput = ({
     <FormControl id={`item-${id}`}>
       <HStack align="center" justify="end" spacing={3}>
         {icon && (
-          <img
+          <Image
             src={getItemIconUrl(icon)}
             alt={name}
-            style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+            width={28}
+            height={28}
+            style={{ objectFit: 'contain' }}
           />
         )}
         <FormLabel textAlign="right" fontWeight="600" fontSize="13px" color="var(--text2)" m={0}>

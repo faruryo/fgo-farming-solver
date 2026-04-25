@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   chakra,
   Heading,
@@ -8,6 +7,7 @@ import {
   StatNumber,
   VStack,
 } from '@chakra-ui/react'
+import Image from 'next/image'
 import React from 'react'
 import type { Item, Materials } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
@@ -31,7 +31,7 @@ export const MaterialList = ({
             {materials.items.map(({ item, amount }) => (
               <Stat key={item.id} mx={2}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img src={item.icon} alt={item.name} style={{ width: '32px', height: '32px' }} />
+                  <Image src={item.icon} alt={item.name} width={32} height={32} />
                   <StatLabel>
                     <ItemLink id={toApiItemId(item, items)} name={item.name} />
                   </StatLabel>
