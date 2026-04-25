@@ -12,7 +12,7 @@ declare module 'javascript-lp-solver' {
     feasible: boolean
     result: number
     bounded: boolean
-    [key: string]: any
+    [key: string]: number | boolean | undefined
   }
 
   export function Solve(model: Model): Result

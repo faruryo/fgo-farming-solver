@@ -28,16 +28,18 @@ export interface MasterData {
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1CmH3z71ymRJMlBO11cBthABxKuqdHrzXwiKa3cqRrMQ/export?format=csv&gid=201578503'
 
+interface AAItem {
+  id: number
+  name: string
+  type: string
+}
+
 export async function fetchAndTransformData(): Promise<MasterData> {
   // 1. Fetch Item metadata from Atlas Academy
   const itemsResponse = await fetch(`${origin}/export/${region}/nice_item.json`)
-  const aaItems = (await itemsResponse.json()) as any[]
+  const aaItems: AAItem[] = await itemsResponse.json()
   
-  // 2. Fetch Quest metadata from Atlas Academy (for area names etc)
-  const warsResponse = await fetch(`${origin}/export/${region}/nice_war.json`)
-  const aaWars = (await warsResponse.json()) as any[]
-
-  // 3. Fetch Drop Data from Spreadsheet
+  // 2. Fetch Drop Data from Spreadsheet
   const sheetResponse = await fetch(SHEET_URL)
   const csv = await sheetResponse.text()
   const rows = parseCSV(csv)
@@ -70,8 +72,6 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     const area = row[0]
     const questName = row[1]
     const ap = parseInt(row[2])
-    const sample = row[3]
-
     if (!questName || isNaN(ap) || ap < 20) continue
 
     const questId = `${area}_${questName}`.replace(/\s/g, '_')

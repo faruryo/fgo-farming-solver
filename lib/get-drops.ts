@@ -20,7 +20,7 @@ export const getDrops = async (env?: CloudflareEnv): Promise<Drops> => {
     try {
       const kvData = await env.MASTER_DATA.get(MASTER_DATA_KEY)
       if (kvData) {
-        data = JSON.parse(kvData)
+        data = JSON.parse(kvData) as Drops
       }
     } catch (e) {
       console.error('Failed to fetch from KV:', e)

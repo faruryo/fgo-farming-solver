@@ -9,8 +9,8 @@ export const getResult = async (id: string): Promise<Result> => {
   if (isDev && !isEdge) {
     const path = await import(/* webpackIgnore: true */ 'path')
     const { readJson } = await import('./read-json')
-    const data = await readJson<any>(path.default.resolve('mocks', 'result.json'))
-    return data as Result
+    const data = await readJson<Result>(path.default.resolve('mocks', 'result.json'))
+    return data
   }
 
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {

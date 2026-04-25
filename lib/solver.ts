@@ -72,13 +72,13 @@ export const solve = (
 
   // Format result
   const resultQuests = availableQuests
-    .filter((q) => solveResult[q.id] > 0)
+    .filter((q) => typeof solveResult[q.id] === 'number' && (solveResult[q.id] as number) > 0)
     .map((q) => ({
       id: q.id,
       section: q.section,
       area: q.area,
       name: q.name,
-      lap: solveResult[q.id],
+      lap: Number(solveResult[q.id] || 0),
     }))
 
   const resultItems = drops.items
