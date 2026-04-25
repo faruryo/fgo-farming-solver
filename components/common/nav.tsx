@@ -58,7 +58,6 @@ const CloudSyncContent = () => {
     saveStatus,
     autoSyncEnabled,
     toggleAutoSync,
-    handleSave,
     hasConflict,
   } = useCloudSync()
 

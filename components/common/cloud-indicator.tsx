@@ -144,7 +144,7 @@ export const CloudIndicator = () => {
                 borderColor={hasConflict ? 'var(--red)' : 'var(--gold-dim)'}
                 color={hasConflict ? 'var(--red)' : 'var(--gold)'}
                 fontSize="11px"
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 isLoading={isSaving}
                 isDisabled={hasConflict}
                 _hover={{ bg: hasConflict ? 'rgba(255,0,0,0.05)' : 'rgba(154,114,36,0.1)' }}

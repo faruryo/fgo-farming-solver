@@ -221,7 +221,7 @@ export const useCloudSync = () => {
     setSaveStatus(false)
     try {
       const entries = KEYS.map((key) => [key, localStorage.getItem(key)] as const)
-      const dataObj = Object.fromEntries(entries.filter(([, value]) => value))
+      const dataObj = Object.fromEntries(entries.filter(([, value]) => value !== null)) as Record<string, string>
       
       const local = getLocalMetadata()
       const now = new Date().toISOString()
