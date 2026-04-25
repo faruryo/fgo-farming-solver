@@ -10,6 +10,7 @@
     "lint": "next lint",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",
     "type-check": "tsc --noEmit",
+    "test": "vitest",
     "update-data": "tsx scripts/update-data.ts",
     "prepare": "husky"
   },
