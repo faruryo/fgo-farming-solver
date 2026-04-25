@@ -9,7 +9,20 @@
         "servant-list-description": "サーヴァントの育成に必要な素材を確認できます。",
         "item-list-description": "アイテムのクエストごとのドロップ率を確認できます。",
         "shared-results-description": "Twitterに投稿された計算結果を見られます。",
-        "cloud-description": "入力内容をGoogleアカウントに紐づけてサーバーに保存します。"
+        "cloud-description": "入力内容をGoogleアカウントに紐づけてサーバーに保存します。",
+        "local-backup-title": "ローカルバックアップ / 復元",
+        "local-backup-description": "データをファイル（JSON）として自身のPC/端末に保存します。クラウドセーブを使いたくない場合や、オフラインでのバックアップに利用してください。",
+        "export-to-file": "ファイルに書き出し",
+        "import-from-file": "ファイルから読み込み",
+        "import-confirm": "現在のデータが上書きされます。よろしいですか？",
+        "import-success": "データを正常に復元しました。",
+        "import-error": "ファイルの読み込みに失敗しました。正しいバックアップファイルを選択してください。",
+        "auto-sync-label": "クラウド同期を自動化する",
+        "data-comparison": "データの比較",
+        "cloud-load-confirm-message": "クラウド上のデータを読み込みます。現在のデータは上書きされますがよろしいですか？",
+        "データを適用する": "データを適用する",
+        "キャンセル": "キャンセル",
+        "auto-load-success": "最新データを自動読み込みしました"
     },
     "farming": {
         "1": "旧データを優先",
