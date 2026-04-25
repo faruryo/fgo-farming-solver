@@ -10,7 +10,8 @@
     "lint": "next lint",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",
     "type-check": "tsc --noEmit",
-    "update-data": "tsx scripts/update-data.ts"
+    "update-data": "tsx scripts/update-data.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1026.0",
@@ -55,6 +56,8 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.1.7",
     "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.7.3",
@@ -80,5 +83,10 @@
         "arm64"
       ]
     }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "next lint --fix"
+    ]
   }
 }
