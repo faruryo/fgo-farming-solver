@@ -26,7 +26,88 @@ export interface MasterData {
   drop_rates: DropRate[]
 }
 
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1CmH3z71ymRJMlBO11cBthABxKuqdHrzXwiKa3cqRrMQ/export?format=csv&gid=201578503'
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQerC77YrlI1wQaJHUlDl3VBNh3zx6YDWbF8syDM3DsoG3npubnlG68VY9GlYwRAiP5RCOqQEHZoF4c/pub?gid=1085791724&output=csv'
+
+// Short name mapping for items that don't match by simple substring
+const NAME_OVERRIDES: Record<string, string> = {
+  '証': '英雄の証',
+  '骨': '凶骨',
+  '牙': '竜の牙',
+  '塵': '虚影の塵',
+  '鎖': '死の棲む鎖',
+  '毒針': '万死の毒針',
+  '髄液': '魔術髄液',
+  '鉄杭': '宵哭きの鉄杭',
+  '火薬': '励振火薬',
+  '小鐘': '赦免の小鐘',
+  '剣': '黄昏の儀式剣',
+  '灰': '忘れじの灰',
+  '刃': '黒曜鋭刃',
+  '残滓': '狂気の残滓',
+  '種': '世界樹の種',
+  'ﾗﾝﾀﾝ': 'ゴーストランタン',
+  '八連': '八連双晶',
+  '蛇玉': '蛇の宝玉',
+  '羽根': '鳳凰の羽根',
+  '頁': '禁じられた頁',
+  '歯車': '無間の歯車',
+  '幼角': '戦馬の幼角',
+  '脂': '黒獣脂',
+  'ﾗﾝﾌﾟ': '封魔のランプ',
+  'ｽｶﾗﾍﾞ': '智慧のスカラベ',
+  'カケラ': '煌星のカケラ',
+  '実': '悠久の実',
+  '鬼灯': '禍罪の鬼灯',
+  '釜': '夢幻の鱗粉',
+  '月光': '月光核',
+  '聖水': '神輝聖晶石',
+  '箱': '未知の箱',
+  'ホム': 'ホムンクルスベビー',
+  '蹄鉄': '隕蹄鉄',
+  '勲章': '大騎士勲章',
+  '勾玉': '枯淡勾玉',
+  '結氷': '永遠結氷',
+  'ｵｰﾛﾗ': 'オーロラ鋼',
+  '矢尻': '禍罪の矢尻',
+  '冠': '光銀の冠',
+  '霊子': '神脈霊子',
+  '糸玉': '虹の糸玉',
+  '鱗粉': '夢幻の鱗粉',
+}
+
+// Special normalization for class items
+function normalizeItemName(shortName: string): string {
+  if (NAME_OVERRIDES[shortName]) return NAME_OVERRIDES[shortName]
+  
+  const classMap: Record<string, string> = {
+    '剣': 'セイバー',
+    '弓': 'アーチャー',
+    '槍': 'ランサー',
+    '騎': 'ライダー',
+    '術': 'キャスター',
+    '殺': 'アサシン',
+    '狂': 'バーサーカー'
+  }
+
+  const suffixMap: Record<string, string> = {
+    '輝': 'の輝石',
+    '魔': 'の魔石',
+    '秘': 'の秘石',
+    'ピ': 'ピース',
+    'モ': 'モニュメント'
+  }
+
+  for (const [s, fullSuffix] of Object.entries(suffixMap)) {
+    if (shortName.endsWith(s)) {
+      const prefix = shortName.slice(0, -s.length)
+      if (classMap[prefix]) {
+        return classMap[prefix] + fullSuffix
+      }
+    }
+  }
+
+  return shortName
+}
 
 interface AAItem {
   id: number
@@ -47,51 +128,66 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   // 4. Transform
   const items: Item[] = []
   const quests: Quest[] = []
-  const drop_rates: DropRate[] = []
+  const all_drop_rates: DropRate[] = []
 
-  // Skip header rows (assuming row 0 is title, row 1 is item names)
-  const itemNamesInHeader = rows[1].slice(4) // Columns from index 4 are items
+  // Item names are in row index 2, starting from column index 4
+  const itemNamesInHeader = rows[2].slice(4)
   
   // Create item mapping
   const itemMap = new Map<string, string>()
-  for (const name of itemNamesInHeader) {
-    if (!name) continue
-    const aaItem = aaItems.find(i => i.name === name)
+  for (const shortName of itemNamesInHeader) {
+    if (!shortName || shortName === 'AP' || shortName === 'データ数') continue
+    
+    // Try to find matching AA item
+    const fullName = normalizeItemName(shortName)
+    let aaItem = aaItems.find(i => i.name === fullName)
+    
+    // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
+    if (!aaItem) {
+      aaItem = aaItems.find(i => i.name.includes(shortName) && (i.type === 'material' || i.type === 'skill' || i.type === 'qp'))
+    }
+
     if (aaItem) {
       const id = aaItem.id.toString()
-      items.push({ category: aaItem.type, name, id })
-      itemMap.set(name, id)
+      // Avoid duplicates
+      if (!items.find(i => i.id === id)) {
+        items.push({ category: aaItem.type, name: aaItem.name, id })
+      }
+      itemMap.set(shortName, id)
     }
   }
 
   // Parse quests and drop rates
-  for (let i = 2; i < rows.length; i++) {
+  for (let i = 3; i < rows.length; i++) {
     const row = rows[i]
     if (row.length < 4) continue
 
     const area = row[0]
     const questName = row[1]
     const ap = parseInt(row[2])
-    if (!questName || isNaN(ap) || ap < 20) continue
+    if (!questName || isNaN(ap) || ap < 5) continue
 
     const questId = `${area}_${questName}`.replace(/\s/g, '_')
-    quests.push({
-      area,
-      ap,
-      name: questName,
-      id: questId,
-      section: area.includes('修練場') ? 'Daily' : 'Free'
-    })
+    if (!quests.find(q => q.id === questId)) {
+      quests.push({
+        area,
+        ap,
+        name: questName,
+        id: questId,
+        section: area.includes('修練場') ? 'Daily' : 'Free'
+      })
+    }
 
     // Drop rates
     for (let j = 4; j < row.length; j++) {
       const rateStr = row[j]
-      const rate = parseFloat(rateStr)
+      if (!rateStr) continue
+      const rate = parseFloat(rateStr.replace(/,/g, ''))
       if (!isNaN(rate) && rate > 0) {
-        const itemName = itemNamesInHeader[j - 4]
-        const itemId = itemMap.get(itemName)
+        const shortName = itemNamesInHeader[j - 4]
+        const itemId = itemMap.get(shortName)
         if (itemId) {
-          drop_rates.push({
+          all_drop_rates.push({
             quest_id: questId,
             item_id: itemId,
             drop_rate: rate / 100 // Convert percentage to raw expectation
@@ -101,7 +197,32 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     }
   }
 
-  return { items, quests, drop_rates }
+  // 5. Filter: Keep only Top 5 quests per item (by drop rate)
+  const filtered_drop_rates: DropRate[] = []
+  const itemToRates: Record<string, DropRate[]> = {}
+
+  for (const dr of all_drop_rates) {
+    if (!itemToRates[dr.item_id]) itemToRates[dr.item_id] = []
+    itemToRates[dr.item_id].push(dr)
+  }
+
+  for (const itemId in itemToRates) {
+    const rates = itemToRates[itemId]
+    // Sort descending by drop rate
+    rates.sort((a, b) => b.drop_rate - a.drop_rate)
+    // Keep top 5
+    filtered_drop_rates.push(...rates.slice(0, 5))
+  }
+
+  // Also filter quests: keep only those that are referenced in filtered_drop_rates
+  const activeQuestIds = new Set(filtered_drop_rates.map(dr => dr.quest_id))
+  const finalQuests = quests.filter(q => activeQuestIds.has(q.id))
+
+  return {
+    items,
+    quests: finalQuests,
+    drop_rates: filtered_drop_rates
+  }
 }
 
 function parseCSV(csv: string): string[][] {
