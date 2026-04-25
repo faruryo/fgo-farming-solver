@@ -46,7 +46,7 @@ export const solve = (
         } else if (dropMergeMethod === '1') {
           rate = dr.drop_rate_1 || 0
         } else if (dropMergeMethod === '2') {
-          rate = dr.drop_rate_2 || 0
+          rate = dr.drop_rate_2 || dr.drop_rate_1 || 0
         }
 
         if (rate > 0 && model.constraints[dr.item_id]) {
@@ -97,7 +97,7 @@ export const solve = (
           } else if (dropMergeMethod === '1') {
             rate = dr.drop_rate_1 || 0
           } else if (dropMergeMethod === '2') {
-            rate = dr.drop_rate_2 || 0
+            rate = dr.drop_rate_2 || dr.drop_rate_1 || 0
           }
           actualCount += rate * rq.lap
         }
@@ -123,7 +123,7 @@ export const solve = (
       } else if (dropMergeMethod === '1') {
         rate = dr.drop_rate_1 || 0
       } else if (dropMergeMethod === '2') {
-        rate = dr.drop_rate_2 || 0
+        rate = dr.drop_rate_2 || dr.drop_rate_1 || 0
       }
       return {
         quest_id: dr.quest_id,

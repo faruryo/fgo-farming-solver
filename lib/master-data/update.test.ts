@@ -26,49 +26,60 @@ describe('fetchAndTransformData', () => {
     vi.stubGlobal('fetch', vi.fn())
   })
 
-  it('transforms CSV data and applies Top 5 filtering', async () => {
+  it('generates short item IDs via toApiItemId and applies Top 5 filtering', async () => {
+    // background + priority are required for toApiItemId to produce a non-empty short ID
+    // priority floor 2 + bronze background → intercept 0 → IDs "00", "01"
     const mockAAItems = [
-      { id: 6001, name: '英雄の証', type: 'material' },
-      { id: 1, name: 'QP', type: 'qp' }
+      { id: 6001, name: '英雄の証', type: 'material', background: 'bronze', priority: 200 },
+      { id: 6002, name: '凶骨',     type: 'material', background: 'bronze', priority: 201 },
     ]
 
     const mockCSV = `周回あたりのドロップ率（％）,,Best5表はこちら
-エリア,クエスト名,,,銅素材,,,QP
-,,AP,データ数,証,骨,QP
-エリア1,クエストA,20,100,50,10,1000
-エリア1,クエストB,20,100,60,5,500
-エリア1,クエストC,20,100,40,2,200
-エリア2,クエストD,21,100,70,1,100
-エリア2,クエストE,22,100,80,0,50
-エリア2,クエストF,23,100,90,0,10
+エリア,クエスト名,,,銅素材,,,銅素材2
+,,AP,データ数,証,骨
+エリア1,クエストA,20,100,50,10
+エリア1,クエストB,20,100,60,5
+エリア1,クエストC,20,100,40,2
+エリア2,クエストD,21,100,70,1
+エリア2,クエストE,22,100,80,0
+エリア2,クエストF,23,100,90,0
 `
 
-    // Setup mocks
     vi.mocked(fetch)
-      .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response) // AA items
-      .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response)    // Spreadsheet
+      .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response)
+      .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response)
 
     const data = await fetchAndTransformData()
 
-    // 1. Check matched items
-    expect(data.items.find(i => i.name === '英雄の証')).toBeDefined()
-    expect(data.items.find(i => i.name === 'QP')).toBeDefined()
+    // 1. Items have short IDs ("00", "01"), not Atlas Academy numeric IDs
+    const proofItem = data.items.find(i => i.name === '英雄の証')
+    expect(proofItem).toBeDefined()
+    expect(proofItem!.id).toBe('00')
 
-    // 2. Check Top 5 filtering for '英雄の証' (ID: 6001)
-    const proofRates = data.drop_rates.filter(dr => dr.item_id === '6001')
-    expect(proofRates).toHaveLength(5)
-    // Should keep 90, 80, 70, 60, 50 (sorted by drop_rate)
-    expect(proofRates[0].drop_rate).toBe(0.9)
-    expect(proofRates[4].drop_rate).toBe(0.5)
+    const boneItem = data.items.find(i => i.name === '凶骨')
+    expect(boneItem).toBeDefined()
+    expect(boneItem!.id).toBe('01')
 
-    // 3. Check QP (ID: 1)
-    const qpRates = data.drop_rates.filter(dr => dr.item_id === '1')
-    expect(qpRates).toHaveLength(5)
-    expect(qpRates[0].drop_rate).toBe(10.0) // 1000% / 100 = 10.0
+    // 2. Quests have short 3-char IDs: Free areas get prefix "1X"
+    //    エリア1 → prefix "10", エリア2 → prefix "11"
+    expect(data.quests.every(q => q.id.length === 3)).toBe(true)
+    const questA = data.quests.find(q => q.name === 'クエストA')
+    expect(questA?.id).toBe('100')
+    const questD = data.quests.find(q => q.name === 'クエストD')
+    expect(questD?.id).toBe('110')
 
-    // 4. Check quests: only referenced quests should remain
-    // Quests F, E, D, B, A (for 6001 top 5) and potentially others for QP
-    // All 6 quests are in top 5 for either 6001 or 1, so all should remain
-    expect(data.quests).toHaveLength(6)
+    // 3. Drop rates reference the new short IDs
+    const proofRates = data.drop_rates.filter(dr => dr.item_id === '00')
+    expect(proofRates.length).toBeGreaterThan(0)
+    expect(proofRates.every(dr => dr.quest_id.length === 3)).toBe(true)
+
+    // 4. Top 5 filtering:
+    //    証 top5: F(90),E(80),D(70),B(60),A(50) — excludes C(40%)
+    //    骨 top5: A(10),B(5),C(2),D(1) — only 4 quests have drops
+    //    Union: all 6 selected → all 6 proof drop rates included
+    expect(proofRates).toHaveLength(6)
+    const sortedProof = [...proofRates].sort((a, b) => b.drop_rate_1 - a.drop_rate_1)
+    expect(sortedProof[0].drop_rate_1).toBe(0.9)
+    expect(sortedProof[5].drop_rate_1).toBe(0.4)
   })
 })

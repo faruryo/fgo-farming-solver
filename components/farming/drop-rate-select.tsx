@@ -9,7 +9,7 @@ import {
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-const options = ['add', '1', '2']
+const options = ['add', '1']
 
 export const DropRateSelect = ({
   dropMergeMethod,

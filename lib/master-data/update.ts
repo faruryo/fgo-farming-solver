@@ -1,4 +1,6 @@
 import { origin, region } from '../../constants/atlasacademy'
+import { Item as AtlasItem } from '../../interfaces/atlas-academy'
+import { toApiItemId } from '../to-api-item-id'
 
 export interface Item {
   category: string
@@ -110,11 +112,8 @@ export function normalizeItemName(shortName: string): string {
   return shortName
 }
 
-interface AAItem {
-  id: number
-  name: string
-  type: string
-}
+// Subset of AtlasItem fields returned by nice_item.json that we need
+type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority'> & { type: string }
 
 export async function fetchAndTransformData(): Promise<MasterData> {
   // 1. Fetch Item metadata from Atlas Academy
@@ -149,8 +148,9 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     }
 
     if (aaItem) {
-      const id = aaItem.id.toString()
-      // Avoid duplicates
+      // Use toApiItemId for short stable IDs (e.g. "00", "1h") matching frontend expectations
+      const id = toApiItemId(aaItem as AtlasItem, aaItems as AtlasItem[])
+      if (!id) continue
       if (!items.find(i => i.id === id)) {
         items.push({ category: aaItem.type, name: aaItem.name, id })
       }
@@ -199,11 +199,31 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     }
   }
 
-  // 5. Filter Candidates
+  // 5. Assign short quest IDs: "{sectionChar}{areaChar}{questIndexChar}" in base-36
+  //    Prefix "0X" = Daily (修練場), "1X"/"2X"/... = Free (by area order)
+  //    This keeps IDs compact for URL params and matches the frontend's prefix-based quest grouping.
+  const dailyAreas = [...new Set(quests.filter(q => q.section === 'Daily').map(q => q.area))].sort()
+  const freeAreas = [...new Set(quests.filter(q => q.section !== 'Daily').map(q => q.area))].sort()
+  const areaPrefix = new Map<string, string>()
+  dailyAreas.forEach((area, i) => areaPrefix.set(area, '0' + i.toString(36)))
+  freeAreas.forEach((area, i) => {
+    areaPrefix.set(area, (Math.floor(i / 36) + 1).toString(36) + (i % 36).toString(36))
+  })
+  const questIndexInArea = new Map<string, number>()
+  const longToShortQuestId = new Map<string, string>()
+  for (const q of quests) {
+    const idx = questIndexInArea.get(q.area) ?? 0
+    longToShortQuestId.set(q.id, (areaPrefix.get(q.area) ?? '?') + idx.toString(36))
+    questIndexInArea.set(q.area, idx + 1)
+  }
+  quests.forEach(q => { q.id = longToShortQuestId.get(q.id) ?? q.id })
+  all_drop_rates.forEach(dr => { dr.quest_id = longToShortQuestId.get(dr.quest_id) ?? dr.quest_id })
+
+  // 6. Filter Candidates
   // Strategy:
   // A. Keep Top 5 quests per item (by absolute drop rate) to ensure each item is farmable efficiently
-  // B. Keep Top 30 quests by 'Total Efficiency' (sum of all drop rates / AP) to include multi-drop heavens
-  
+  // B. Keep Top 100 quests by 'Relative Efficiency Score' to include multi-drop heavens
+
   const selectedQuestIds = new Set<string>()
 
   // A. Top 5 per item
