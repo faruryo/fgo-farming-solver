@@ -32,11 +32,12 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQerC77YrlI1w
 
 // Short name mapping for items that don't match by simple substring
 const NAME_OVERRIDES: Record<string, string> = {
+  // 汎用素材
   '証': '英雄の証',
   '骨': '凶骨',
   '牙': '竜の牙',
   '塵': '虚影の塵',
-  '鎖': '死の棲む鎖',
+  '鎖': '愚者の鎖',         // 旧: 死の棲む鎖
   '毒針': '万死の毒針',
   '髄液': '魔術髄液',
   '鉄杭': '宵哭きの鉄杭',
@@ -51,7 +52,7 @@ const NAME_OVERRIDES: Record<string, string> = {
   '八連': '八連双晶',
   '蛇玉': '蛇の宝玉',
   '羽根': '鳳凰の羽根',
-  '頁': '禁じられた頁',
+  '頁': '禁断の頁',          // 旧: 禁じられた頁
   '歯車': '無間の歯車',
   '幼角': '戦馬の幼角',
   '脂': '黒獣脂',
@@ -59,11 +60,11 @@ const NAME_OVERRIDES: Record<string, string> = {
   'ｽｶﾗﾍﾞ': '智慧のスカラベ',
   'カケラ': '煌星のカケラ',
   '実': '悠久の実',
-  '鬼灯': '禍罪の鬼灯',
+  '鬼灯': '鬼炎鬼灯',        // 旧: 禍罪の鬼灯
   '釜': '夢幻の鱗粉',
   '月光': '月光核',
-  '聖水': '神輝聖晶石',
-  '箱': '未知の箱',
+  '聖水': '天命の聖水',      // 旧: 神輝聖晶石
+  '箱': '遺霊箱',            // 旧: 未知の箱
   'ホム': 'ホムンクルスベビー',
   '蹄鉄': '隕蹄鉄',
   '勲章': '大騎士勲章',
@@ -75,6 +76,23 @@ const NAME_OVERRIDES: Record<string, string> = {
   '霊子': '神脈霊子',
   '糸玉': '虹の糸玉',
   '鱗粉': '夢幻の鱗粉',
+  // 新追加素材
+  '貝殻': '追憶の貝殻',
+  '指輪': '巨人の指輪',
+  '鈴': '閑古鈴',
+  '皮': '太陽皮',
+  '花': '終の花',
+  '爪': '混沌の爪',
+  '心臓': '蛮神の心臓',
+  '逆鱗': '竜の逆鱗',
+  '根': '精霊根',
+  '涙石': '血の涙石',
+  '産毛': '原初の産毛',
+  '胆石': '呪獣胆石',
+  '神酒': '奇奇神酒',
+  '炉心': '暁光炉心',
+  '鏡': '九十九鏡',
+  '卵': '真理の卵',
 }
 
 // Special normalization for class items
@@ -145,8 +163,13 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     let aaItem = aaItems.find(i => i.name === fullName)
     
     // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
+    // Exclude eventItem and high-priority items (priority > 9900 = events, > 399 = non-farmable)
     if (!aaItem) {
-      aaItem = aaItems.find(i => i.name.includes(shortName) && (i.type === 'material' || i.type === 'skill' || i.type === 'qp'))
+      aaItem = aaItems.find(i =>
+        i.name.includes(shortName) &&
+        (i.type === 'material' || i.type === 'skill' || i.type === 'qp' || i.type === 'skillLvUp') &&
+        i.priority < 400
+      )
     }
 
     if (aaItem) {
