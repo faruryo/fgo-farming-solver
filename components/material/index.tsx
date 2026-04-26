@@ -38,12 +38,24 @@ export const Index = ({
   const gtSkill  = chaldeaState.all?.targets.skill.ranges[0]?.end ?? 10
   const gtAppend = chaldeaState.all?.targets.appendSkill.ranges[0]?.end ?? 10
 
-  const [draftGt, setDraftGt] = useState({ asc: gtAsc, skill: gtSkill, append: gtAppend })
-
-  // Sync draft when panel opens so it always reflects the current committed target
-  useEffect(() => {
-    if (showGlobal) setDraftGt({ asc: gtAsc, skill: gtSkill, append: gtAppend })
-  }, [showGlobal, gtAsc, gtSkill, gtAppend])
+  // Apply a global target field to all servants immediately on change
+  const applyGlobal = useCallback((field: 'asc' | 'skill' | 'append', value: number) => {
+    setChaldeaState(prev =>
+      Object.fromEntries(
+        Object.entries(prev).map(([id, s]) => [id, {
+          ...s,
+          targets: {
+            ascension:   { ...s.targets.ascension,   ranges: s.targets.ascension.ranges.map(r => ({ ...r, end: field === 'asc'    ? value : r.end })) },
+            skill:       { ...s.targets.skill,       ranges: s.targets.skill.ranges.map(r =>       ({ ...r, end: field === 'skill'  ? value : r.end })) },
+            appendSkill: { ...s.targets.appendSkill, ranges: Array.from({ length: 5 }, (_, i) => ({
+              start: s.targets.appendSkill.ranges[i]?.start ?? 1,
+              end:   field === 'append' ? value : (s.targets.appendSkill.ranges[i]?.end ?? 10),
+            }))},
+          },
+        }])
+      )
+    )
+  }, [setChaldeaState])
 
   const { ownedCount, doneCount } = useMemo(() => {
     let owned = 0, done = 0
@@ -79,28 +91,6 @@ export const Index = ({
     }),
     [servants, selClass, selRarities, hideUnowned, chaldeaState]
   )
-
-  const applyGlobalTarget = () => {
-    setChaldeaState(prev =>
-      Object.fromEntries(
-        Object.entries(prev).map(([id, s]) => [id, {
-          ...s,
-          targets: {
-            ascension:   { ...s.targets.ascension,   ranges: s.targets.ascension.ranges.map(r => ({ ...r, end: draftGt.asc })) },
-            skill:       { ...s.targets.skill,       ranges: s.targets.skill.ranges.map(r => ({ ...r, end: draftGt.skill })) },
-            appendSkill: {
-              ...s.targets.appendSkill,
-              ranges: Array.from({ length: 5 }, (_, i) => ({
-                start: s.targets.appendSkill.ranges[i]?.start ?? 1,
-                end: draftGt.append,
-              })),
-            },
-          },
-        }])
-      )
-    )
-    setShowGlobal(false)
-  }
 
   const handleSetServantState = useCallback(
     (id: string) => (update: (prev: ServantState) => ServantState) => {
@@ -157,8 +147,8 @@ export const Index = ({
               <div className="c-global-row">
                 <select
                   className="c-global-dd"
-                  value={draftGt.asc}
-                  onChange={e => setDraftGt(d => ({ ...d, asc: Number(e.target.value) }))}
+                  value={gtAsc}
+                  onChange={e => applyGlobal('asc', Number(e.target.value))}
                 >
                   {[0, 1, 2, 3, 4].map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -168,8 +158,8 @@ export const Index = ({
               <div className="c-global-row">
                 <select
                   className="c-global-dd"
-                  value={draftGt.skill}
-                  onChange={e => setDraftGt(d => ({ ...d, skill: Number(e.target.value) }))}
+                  value={gtSkill}
+                  onChange={e => applyGlobal('skill', Number(e.target.value))}
                 >
                   {Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
                 </select>
@@ -179,16 +169,13 @@ export const Index = ({
               <div className="c-global-row">
                 <select
                   className="c-global-dd"
-                  value={draftGt.append}
-                  onChange={e => setDraftGt(d => ({ ...d, append: Number(e.target.value) }))}
+                  value={gtAppend}
+                  onChange={e => applyGlobal('append', Number(e.target.value))}
                 >
                   {Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
                 </select>
                 <span className="c-global-note">全アペンド共通</span>
               </div>
-              <button className="c-global-apply-btn" onClick={applyGlobalTarget}>
-                ✓ 目標を更新する
-              </button>
             </div>
           )}
         </div>

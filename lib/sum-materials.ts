@@ -18,8 +18,9 @@ export const sumMaterials = (
     entries(s.targets).forEach(([target, t]) => {
       if (t.disabled) return
       
-      t.ranges.forEach(({ start, end }, idx) => {
-        const key = (target === 'appendSkill' ? `appendSkill${idx + 1}Materials` : `${target}Materials`) as keyof typeof servant
+      t.ranges.forEach(({ start, end }) => {
+        // appendSkill: all 5 slots share the same material table (appendSkillMaterials)
+        const key = (target === 'appendSkill' ? 'appendSkillMaterials' : `${target}Materials`)
         const materials = servant[key] as ReducedMaterials | undefined
         if (!materials) return
 
