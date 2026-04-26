@@ -29,7 +29,7 @@ export const Index = ({
 
   const [selClass, setSelClass] = useState<ClassId>('all')
   const [selRarities, setSelRarities] = useState<number[]>([])
-  const [hideUnowned, setHideUnowned] = useState(false)
+  const [ownedFilter, setOwnedFilter] = useState<'all' | 'hide' | 'only'>('all')
   const [showGlobal, setShowGlobal] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -85,10 +85,12 @@ export const Index = ({
         if (selClass !== targetClass) return false
       }
       if (selRarities.length > 0 && !selRarities.includes(Number(s.rarity))) return false
-      if (hideUnowned && chaldeaState[s.id]?.disabled) return false
+      const unowned = chaldeaState[s.id]?.disabled ?? true
+      if (ownedFilter === 'hide' && unowned) return false
+      if (ownedFilter === 'only' && !unowned) return false
       return true
     }),
-    [servants, selClass, selRarities, hideUnowned, chaldeaState]
+    [servants, selClass, selRarities, ownedFilter, chaldeaState]
   )
 
   const handleSetServantState = useCallback(
@@ -211,10 +213,10 @@ export const Index = ({
 
           <div className="c-filter-right">
             <button
-              className={`c-hide-toggle${hideUnowned ? ' active' : ''}`}
-              onClick={() => setHideUnowned(v => !v)}
+              className={`c-hide-toggle${ownedFilter !== 'all' ? ' active' : ''}`}
+              onClick={() => setOwnedFilter(v => v === 'all' ? 'hide' : v === 'hide' ? 'only' : 'all')}
             >
-              {hideUnowned ? '全て表示' : '未所持を隠す'}
+              {ownedFilter === 'all' ? '全表示' : ownedFilter === 'hide' ? '未所持を隠す' : '未所持のみ'}
             </button>
           </div>
         </div>
