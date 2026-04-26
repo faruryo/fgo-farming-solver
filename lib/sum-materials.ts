@@ -20,8 +20,10 @@ export const sumMaterials = (
       
       t.ranges.forEach(({ start, end }) => {
         // appendSkill: all 5 slots share the same material table (appendSkillMaterials)
-        const key = (target === 'appendSkill' ? 'appendSkillMaterials' : `${target}Materials`)
-        const materials = servant[key] as ReducedMaterials | undefined
+        const materials: ReducedMaterials | undefined =
+          target === 'appendSkill'   ? servant.appendSkillMaterials :
+          target === 'skill'         ? servant.skillMaterials :
+                                       servant.ascensionMaterials
         if (!materials) return
 
         range(start, end).forEach((lv) => {
