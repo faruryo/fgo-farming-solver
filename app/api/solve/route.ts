@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     env: CloudflareEnv
   }
 
-  const drops = await getDrops(env)
+  const drops = await getDrops()
   
   // Apply AP coefficients (e.g., 0:0.5 for half AP on training grounds)
   if (apCoefficients) {

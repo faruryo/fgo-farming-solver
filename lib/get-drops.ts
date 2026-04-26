@@ -1,3 +1,4 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { DropRate, Item, Quest } from '../interfaces/fgodrop'
 import type { CloudflareEnv } from '../types/cloudflare-env'
 
@@ -9,15 +10,16 @@ export type Drops = {
 
 const MASTER_DATA_KEY = 'all_drops_json'
 
-export const getDrops = async (env?: CloudflareEnv): Promise<Drops> => {
+export const getDrops = async (): Promise<Drops> => {
   const isDev = process.env.NODE_ENV == 'development'
   const isEdge = process.env.NEXT_RUNTIME == 'edge'
 
   let data: Partial<Drops> | null = null
 
-  // 1. Try to get from Cloudflare KV if in production/edge
-  if (env?.MASTER_DATA) {
+  // 1. Try to get from Cloudflare KV
+  if (!isDev || isEdge) {
     try {
+      const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: CloudflareEnv }
       const kvData = await env.MASTER_DATA.get(MASTER_DATA_KEY)
       if (kvData) {
         data = JSON.parse(kvData) as Drops
@@ -36,7 +38,6 @@ export const getDrops = async (env?: CloudflareEnv): Promise<Drops> => {
         path.default.resolve('mocks', 'all.json')
       )
     } else {
-      // Return empty drops if everything fails
       return { items: [], quests: [], drop_rates: [] }
     }
   }
