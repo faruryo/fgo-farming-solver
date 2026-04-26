@@ -80,9 +80,8 @@ export const Index = ({
     servants.filter(s => {
       if (selClass !== 'all') {
         let targetClass = s.className as string
-        if (targetClass.startsWith('beast')) targetClass = 'beast'
-        // Handle shielder by grouping with one of the extra classes or treat as special
-        // For now, let's keep it simple: if selClass matches targetClass
+        // beastEresh starts with 'beast'; unBeastOlgaMarie contains 'Beast'
+        if (targetClass.toLowerCase().includes('beast')) targetClass = 'beast'
         if (selClass !== targetClass) return false
       }
       if (selRarities.length > 0 && !selRarities.includes(Number(s.rarity))) return false
