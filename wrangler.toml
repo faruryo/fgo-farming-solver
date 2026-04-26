@@ -24,5 +24,8 @@ binding = "DB"
 database_name = "fgo-farming-solver-db"
 database_id = "4bb0a615-9079-4233-b57f-a5725b9eb4da"
 
+[vars]
+NEXT_PUBLIC_SITE_URL = "https://fgo-farming-solver.faru.jp"
+
 [observability]
 enabled = true

@@ -56,7 +56,7 @@ export default function HomePage() {
 
           <GridItem>
             <ExternalLink
-              href={`https://twitter.com/search?q=${encodeURIComponent('#FGO周回ソルバー')}`}
+              href={`https://x.com/search?q=${encodeURIComponent('#FGO周回ソルバー')}`}
               className="c-card"
               display="block"
               p={6}

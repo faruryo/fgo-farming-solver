@@ -11,11 +11,18 @@ export const TweetIntent = ({ text }: { text: string }) => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const asPath = `${pathname}${searchParams?.toString() ? '?' + searchParams.toString() : ''}`
-  const url = `https://fgo-farming-solver.vercel.app${asPath}`
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  const url = siteUrl ? `${siteUrl}${asPath}` : ''
   const hashtags = 'FGO周回ソルバー'
-  const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-    text
-  )}&url=${encodeURIComponent(url)}&hashtags=${encodeURIComponent(hashtags)}`
+
+  const params = new URLSearchParams()
+  params.append('text', text)
+  if (url) {
+    params.append('url', url)
+  }
+  params.append('hashtags', hashtags)
+
+  const intentUrl = `https://x.com/intent/tweet?${params.toString()}`
   const { t } = useTranslation('farming')
 
   return (
