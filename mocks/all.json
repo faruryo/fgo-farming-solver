@@ -187,6 +187,16 @@
     },
     {
       "category": "skillLvUp",
+      "name": "ユニバーサルキューブ",
+      "id": "1o"
+    },
+    {
+      "category": "skillLvUp",
+      "name": "神彩のレンズ",
+      "id": "1p"
+    },
+    {
+      "category": "skillLvUp",
       "name": "混沌の爪",
       "id": "20"
     },
@@ -269,6 +279,11 @@
       "category": "skillLvUp",
       "name": "鬼炎鬼灯",
       "id": "2h"
+    },
+    {
+      "category": "skillLvUp",
+      "name": "黄金釜",
+      "id": "2i"
     },
     {
       "category": "skillLvUp",
@@ -2019,6 +2034,13 @@
     {
       "area": "オーディール・コール",
       "ap": 40,
+      "name": "賞金稼ぎに幾光年",
+      "id": "19h",
+      "section": "Free"
+    },
+    {
+      "area": "オーディール・コール",
+      "ap": 40,
       "name": "月光採掘場",
       "id": "19i",
       "section": "Free"
@@ -2129,6 +2151,41 @@
       "section": "Free"
     },
     {
+      "area": "イド",
+      "ap": 22,
+      "name": "バードウォッチング",
+      "id": "159",
+      "section": "Free"
+    },
+    {
+      "area": "イド",
+      "ap": 21,
+      "name": "たびだちの駅",
+      "id": "15a",
+      "section": "Free"
+    },
+    {
+      "area": "イド",
+      "ap": 21,
+      "name": "あいにくの空模様",
+      "id": "15b",
+      "section": "Free"
+    },
+    {
+      "area": "アーキタイプ",
+      "ap": 22,
+      "name": "トップ・オブ・ザ・ムーン",
+      "id": "140",
+      "section": "Free"
+    },
+    {
+      "area": "アーキタイプ",
+      "ap": 21,
+      "name": "ラグジュアリー・ビュッフェ",
+      "id": "143",
+      "section": "Free"
+    },
+    {
       "area": "アーキタイプ",
       "ap": 21,
       "name": "ワームズ・サンドボックス",
@@ -2178,6 +2235,13 @@
       "section": "Free"
     },
     {
+      "area": "アーキタイプ",
+      "ap": 22,
+      "name": "セレブリティ・ボート",
+      "id": "14e",
+      "section": "Free"
+    },
+    {
       "area": "トリニティ",
       "ap": 22,
       "name": "悪しきは罰せよ",
@@ -2196,6 +2260,20 @@
       "ap": 21,
       "name": "禁じられた果実の園",
       "id": "1g3",
+      "section": "Free"
+    },
+    {
+      "area": "トリニティ",
+      "ap": 21,
+      "name": "愛に溺れた罪人たち",
+      "id": "1g5",
+      "section": "Free"
+    },
+    {
+      "area": "トリニティ",
+      "ap": 21,
+      "name": "獄犬の縄張り",
+      "id": "1g6",
       "section": "Free"
     },
     {
@@ -7696,6 +7774,16 @@
       "drop_rate": 2.418
     },
     {
+      "quest_id": "19h",
+      "item_id": "15",
+      "drop_rate": 0.27699999999999997
+    },
+    {
+      "quest_id": "19h",
+      "item_id": "1o",
+      "drop_rate": 1.265
+    },
+    {
       "quest_id": "19i",
       "item_id": "12",
       "drop_rate": 0.276
@@ -7832,7 +7920,7 @@
     },
     {
       "quest_id": "151",
-      "item_id": "1k",
+      "item_id": "2i",
       "drop_rate": 0.141
     },
     {
@@ -7852,7 +7940,7 @@
     },
     {
       "quest_id": "152",
-      "item_id": "1k",
+      "item_id": "2i",
       "drop_rate": 0.125
     },
     {
@@ -7986,6 +8074,116 @@
       "drop_rate": 0.45899999999999996
     },
     {
+      "quest_id": "159",
+      "item_id": "1n",
+      "drop_rate": 0.168
+    },
+    {
+      "quest_id": "159",
+      "item_id": "2i",
+      "drop_rate": 0.179
+    },
+    {
+      "quest_id": "159",
+      "item_id": "46",
+      "drop_rate": 0.114
+    },
+    {
+      "quest_id": "159",
+      "item_id": "51",
+      "drop_rate": 0.092
+    },
+    {
+      "quest_id": "15a",
+      "item_id": "03",
+      "drop_rate": 0.29
+    },
+    {
+      "quest_id": "15a",
+      "item_id": "19",
+      "drop_rate": 0.233
+    },
+    {
+      "quest_id": "15a",
+      "item_id": "2i",
+      "drop_rate": 0.10300000000000001
+    },
+    {
+      "quest_id": "15a",
+      "item_id": "40",
+      "drop_rate": 0.34700000000000003
+    },
+    {
+      "quest_id": "15a",
+      "item_id": "51",
+      "drop_rate": 0.049
+    },
+    {
+      "quest_id": "15b",
+      "item_id": "10",
+      "drop_rate": 0.3
+    },
+    {
+      "quest_id": "15b",
+      "item_id": "2i",
+      "drop_rate": 0.134
+    },
+    {
+      "quest_id": "15b",
+      "item_id": "33",
+      "drop_rate": 0.355
+    },
+    {
+      "quest_id": "15b",
+      "item_id": "51",
+      "drop_rate": 0.042
+    },
+    {
+      "quest_id": "140",
+      "item_id": "03",
+      "drop_rate": 0.397
+    },
+    {
+      "quest_id": "140",
+      "item_id": "1o",
+      "drop_rate": 0.298
+    },
+    {
+      "quest_id": "140",
+      "item_id": "35",
+      "drop_rate": 0.245
+    },
+    {
+      "quest_id": "140",
+      "item_id": "45",
+      "drop_rate": 0.225
+    },
+    {
+      "quest_id": "143",
+      "item_id": "15",
+      "drop_rate": 0.312
+    },
+    {
+      "quest_id": "143",
+      "item_id": "1o",
+      "drop_rate": 0.295
+    },
+    {
+      "quest_id": "143",
+      "item_id": "35",
+      "drop_rate": 0.23600000000000002
+    },
+    {
+      "quest_id": "143",
+      "item_id": "45",
+      "drop_rate": 0.222
+    },
+    {
+      "quest_id": "143",
+      "item_id": "51",
+      "drop_rate": 0.047
+    },
+    {
       "quest_id": "144",
       "item_id": "12",
       "drop_rate": 0.28600000000000003
@@ -8054,6 +8252,11 @@
       "quest_id": "146",
       "item_id": "55",
       "drop_rate": 0.048
+    },
+    {
+      "quest_id": "148",
+      "item_id": "1o",
+      "drop_rate": 0.303
     },
     {
       "quest_id": "148",
@@ -8132,6 +8335,11 @@
     },
     {
       "quest_id": "14d",
+      "item_id": "1o",
+      "drop_rate": 0.17
+    },
+    {
+      "quest_id": "14d",
       "item_id": "2j",
       "drop_rate": 0.179
     },
@@ -8144,6 +8352,21 @@
       "quest_id": "14d",
       "item_id": "55",
       "drop_rate": 0.091
+    },
+    {
+      "quest_id": "14e",
+      "item_id": "1o",
+      "drop_rate": 0.455
+    },
+    {
+      "quest_id": "14e",
+      "item_id": "45",
+      "drop_rate": 0.518
+    },
+    {
+      "quest_id": "1g0",
+      "item_id": "1p",
+      "drop_rate": 0.28800000000000003
     },
     {
       "quest_id": "1g0",
@@ -8182,6 +8405,11 @@
     },
     {
       "quest_id": "1g3",
+      "item_id": "1p",
+      "drop_rate": 0.26899999999999996
+    },
+    {
+      "quest_id": "1g3",
       "item_id": "26",
       "drop_rate": 0.213
     },
@@ -8199,6 +8427,46 @@
       "quest_id": "1g3",
       "item_id": "45",
       "drop_rate": 0.107
+    },
+    {
+      "quest_id": "1g5",
+      "item_id": "07",
+      "drop_rate": 0.439
+    },
+    {
+      "quest_id": "1g5",
+      "item_id": "1p",
+      "drop_rate": 0.28300000000000003
+    },
+    {
+      "quest_id": "1g5",
+      "item_id": "31",
+      "drop_rate": 0.24
+    },
+    {
+      "quest_id": "1g5",
+      "item_id": "41",
+      "drop_rate": 0.172
+    },
+    {
+      "quest_id": "1g5",
+      "item_id": "45",
+      "drop_rate": 0.115
+    },
+    {
+      "quest_id": "1g6",
+      "item_id": "1p",
+      "drop_rate": 0.299
+    },
+    {
+      "quest_id": "1g6",
+      "item_id": "41",
+      "drop_rate": 0.34600000000000003
+    },
+    {
+      "quest_id": "1g6",
+      "item_id": "51",
+      "drop_rate": 0.049
     },
     {
       "quest_id": "1g8",
@@ -8249,6 +8517,11 @@
       "quest_id": "1g9",
       "item_id": "44",
       "drop_rate": 0.054000000000000006
+    },
+    {
+      "quest_id": "1ga",
+      "item_id": "1p",
+      "drop_rate": 0.287
     },
     {
       "quest_id": "1ga",
@@ -8304,6 +8577,11 @@
       "quest_id": "1gb",
       "item_id": "52",
       "drop_rate": 0.018000000000000002
+    },
+    {
+      "quest_id": "1gc",
+      "item_id": "1p",
+      "drop_rate": 0.451
     },
     {
       "quest_id": "1gc",

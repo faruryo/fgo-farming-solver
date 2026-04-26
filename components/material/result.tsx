@@ -20,6 +20,9 @@ const RARITY_SECTIONS = [
   { bg: 'gold',   label: 'ゴールド素材 ／ 魔法石',     color: '#9a7224' },
 ]
 
+// 輝石/魔石/秘石は priority floor=1 (100–199)
+const isGem = (item: Item) => Math.floor(item.priority / 100) === 1
+
 type MatCardProps = {
   item: Item
   required: number
@@ -127,9 +130,12 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
     : requiredItems
 
+  const gemItems    = useMemo(() => displayedItems.filter(isGem)
+    .sort((a, b) => a.priority - b.priority), [displayedItems])
+  const nonGemItems = useMemo(() => displayedItems.filter(i => !isGem(i)), [displayedItems])
   const itemsByBg = useMemo(
-    () => groupBy(displayedItems, item => item.background) as Partial<Record<string, Item[]>>,
-    [displayedItems]
+    () => groupBy(nonGemItems, item => item.background) as Partial<Record<string, Item[]>>,
+    [nonGemItems]
   )
 
   const totalShort = requiredItems.filter(item => deficiencies[item.id.toString()] > 0).length
@@ -172,7 +178,33 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             </div>
           </div>
         ) : (
-          RARITY_SECTIONS.map(({ bg, label, color }) => {
+          <>
+          {gemItems.length > 0 && (
+            <div className="c-mat-section">
+              <div className="c-mat-section-title" style={{ color: '#5566aa' }}>
+                <span className="c-mat-section-line" style={{ background: '#5566aa' }} />
+                輝石 ／ 魔石 ／ 秘石
+                <span className="c-mat-section-line" style={{ background: '#5566aa' }} />
+              </div>
+              <div className="c-mat-grid">
+                {gemItems.map((item: Item) => {
+                  const gemColor = item.background === 'bronze' ? '#b06030' : item.background === 'silver' ? '#6878a8' : '#9a7224'
+                  return (
+                    <MatCard
+                      key={item.id}
+                      item={item}
+                      required={amounts[item.id.toString()] ?? 0}
+                      owned={possession[item.id.toString()]}
+                      deficiency={deficiencies[item.id.toString()] ?? 0}
+                      rarityColor={gemColor}
+                      onChange={onChange}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {RARITY_SECTIONS.map(({ bg, label, color }) => {
             const sectionItems = itemsByBg[bg] ?? []
             if (sectionItems.length === 0) return null
             return (
@@ -197,7 +229,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                 </div>
               </div>
             )
-          })
+          })}
+          </>
         )}
       </div>
 
