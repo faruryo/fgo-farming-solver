@@ -50,9 +50,13 @@ export default function HistoryPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const apTrend = history.length > 0 
-    ? [...history].reverse().map(h => h.total_ap)
+  // Filter out failed results (ap=0) and use integers for display
+  const apTrend = history.length > 0
+    ? [...history].reverse().filter(h => h.total_ap > 0).map(h => Math.round(h.total_ap))
     : []
+  const maxAp = apTrend.length > 0 ? Math.max(...apTrend) : 1
+  const minAp = apTrend.length > 0 ? Math.min(...apTrend) : 0
+  const apRange = maxAp - minAp || 1
 
   if (loading) {
     return (
@@ -90,25 +94,40 @@ export default function HistoryPage() {
                   <Text fontWeight="bold" color="var(--gold)">{t('AP推移')}</Text>
                 </HStack>
                 <Box h="150px" w="100%" position="relative">
-                  <svg viewBox={`0 0 ${apTrend.length - 1} ${Math.max(...apTrend)}`} width="100%" height="100%" preserveAspectRatio="none">
+                  <svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none">
+                    {/* Fill area under the line */}
+                    <polygon
+                      fill="var(--gold)"
+                      fillOpacity={0.15}
+                      points={[
+                        ...apTrend.map((ap, i) => {
+                          const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
+                          const y = 100 - ((ap - minAp) / apRange * 90 + 5)
+                          return `${x},${y}`
+                        }),
+                        `${apTrend.length === 1 ? 50 : 100},100`,
+                        '0,100',
+                      ].join(' ')}
+                    />
                     <polyline
                       fill="none"
                       stroke="var(--gold)"
-                      strokeWidth={Math.max(...apTrend) / 50}
-                      points={apTrend.map((ap, i) => `${i},${Math.max(...apTrend) - ap}`).join(' ')}
+                      strokeWidth="1.5"
+                      points={apTrend.map((ap, i) => {
+                        const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
+                        const y = 100 - ((ap - minAp) / apRange * 90 + 5)
+                        return `${x},${y}`
+                      }).join(' ')}
                       strokeLinejoin="round"
                     />
-                    {apTrend.map((ap, i) => (
-                      <circle
-                        key={i}
-                        cx={i}
-                        cy={Math.max(...apTrend) - ap}
-                        r={Math.max(...apTrend) / 100}
-                        fill="var(--bg)"
-                        stroke="var(--gold)"
-                        strokeWidth={Math.max(...apTrend) / 200}
-                      />
-                    ))}
+                    {apTrend.map((ap, i) => {
+                      const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
+                      const y = 100 - ((ap - minAp) / apRange * 90 + 5)
+                      return (
+                        <circle key={i} cx={x} cy={y} r="1.5"
+                          fill="var(--bg)" stroke="var(--gold)" strokeWidth="1" />
+                      )
+                    })}
                   </svg>
                   <HStack justify="space-between" mt={2} fontSize="10px" color="var(--gold-dim)">
                     <Text>{new Date(history[history.length - 1].created_at).toLocaleDateString()}</Text>
@@ -142,10 +161,10 @@ export default function HistoryPage() {
                       </Badge>
                     </Td>
                     <Td isNumeric fontWeight="bold" color="var(--gold)">
-                      {item.total_ap}
+                      {Math.round(item.total_ap).toLocaleString()}
                     </Td>
                     <Td isNumeric color="var(--text2)">
-                      {item.total_lap}
+                      {Math.round(item.total_lap).toLocaleString()}
                     </Td>
                     <Td>
                       <Tooltip label={t('結果を見る')}>
