@@ -14,14 +14,14 @@ export type MaterialResultProps = {
   locale?: string
 }
 
-const RARITY_SECTIONS = [
-  { bg: 'bronze', label: 'ブロンズ素材',              color: '#b06030' },
-  { bg: 'silver', label: 'シルバー素材 ／ 欠片',       color: '#6878a8' },
-  { bg: 'gold',   label: 'ゴールド素材 ／ 魔法石',     color: '#9a7224' },
+// priority floor で largeCategory を決定（get-items.ts と同じロジック）
+const LARGE_SECTIONS = [
+  { floor: 1, label: 'スキル石',  color: '#5566aa' },  // 輝石/魔石/秘石
+  { floor: 2, label: '強化素材',  color: '#7a5c34' },  // 汎用強化素材
+  { floor: 3, label: 'モニュピ', color: '#9a7224' },  // ピース/モニュメント
 ]
-
-// 輝石/魔石/秘石は priority floor=1 (100–199)
-const isGem = (item: Item) => Math.floor(item.priority / 100) === 1
+const bgColor = (bg: string) =>
+  bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
 
 type MatCardProps = {
   item: Item
@@ -130,12 +130,12 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
     : requiredItems
 
-  const gemItems    = useMemo(() => displayedItems.filter(isGem)
-    .sort((a, b) => a.priority - b.priority), [displayedItems])
-  const nonGemItems = useMemo(() => displayedItems.filter(i => !isGem(i)), [displayedItems])
-  const itemsByBg = useMemo(
-    () => groupBy(nonGemItems, item => item.background) as Partial<Record<string, Item[]>>,
-    [nonGemItems]
+  const itemsByFloor = useMemo(
+    () => groupBy(
+      [...displayedItems].sort((a, b) => a.priority - b.priority),
+      item => String(Math.floor(item.priority / 100))
+    ) as Partial<Record<string, Item[]>>,
+    [displayedItems]
   )
 
   const totalShort = requiredItems.filter(item => deficiencies[item.id.toString()] > 0).length
@@ -179,36 +179,11 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           </div>
         ) : (
           <>
-          {gemItems.length > 0 && (
-            <div className="c-mat-section">
-              <div className="c-mat-section-title" style={{ color: '#5566aa' }}>
-                <span className="c-mat-section-line" style={{ background: '#5566aa' }} />
-                輝石 ／ 魔石 ／ 秘石
-                <span className="c-mat-section-line" style={{ background: '#5566aa' }} />
-              </div>
-              <div className="c-mat-grid">
-                {gemItems.map((item: Item) => {
-                  const gemColor = item.background === 'bronze' ? '#b06030' : item.background === 'silver' ? '#6878a8' : '#9a7224'
-                  return (
-                    <MatCard
-                      key={item.id}
-                      item={item}
-                      required={amounts[item.id.toString()] ?? 0}
-                      owned={possession[item.id.toString()]}
-                      deficiency={deficiencies[item.id.toString()] ?? 0}
-                      rarityColor={gemColor}
-                      onChange={onChange}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          )}
-          {RARITY_SECTIONS.map(({ bg, label, color }) => {
-            const sectionItems = itemsByBg[bg] ?? []
+          {LARGE_SECTIONS.map(({ floor, label, color }) => {
+            const sectionItems = itemsByFloor[String(floor)] ?? []
             if (sectionItems.length === 0) return null
             return (
-              <div key={bg} className="c-mat-section">
+              <div key={floor} className="c-mat-section">
                 <div className="c-mat-section-title" style={{ color }}>
                   <span className="c-mat-section-line" style={{ background: color }} />
                   {label}
@@ -222,7 +197,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                       required={amounts[item.id.toString()] ?? 0}
                       owned={possession[item.id.toString()]}
                       deficiency={deficiencies[item.id.toString()] ?? 0}
-                      rarityColor={color}
+                      rarityColor={bgColor(item.background)}
                       onChange={onChange}
                     />
                   ))}
