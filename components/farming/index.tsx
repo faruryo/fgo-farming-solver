@@ -28,7 +28,6 @@ import { Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
-import { DropRateSelect } from './drop-rate-select'
 import { ItemFieldset } from './item-fieldset'
 import { ObjectiveFieldset } from './objective-fieldset'
 import { ResetAlertDialog } from './reset-alert-dialog'
@@ -43,14 +42,12 @@ type InputState = {
   itemCounts: { [key: string]: string }
   checkedQuests: string[]
   halfDailyAp: boolean
-  dropMergeMethod: string
 }
 type QueryInputState = {
   objective?: string
   items: string
   quests?: string
   ap_coefficients?: string
-  drop_merge_method?: string
 }
 
 const inputToQuery = ({
@@ -58,7 +55,6 @@ const inputToQuery = ({
   itemCounts,
   checkedQuests,
   halfDailyAp,
-  dropMergeMethod,
 }: InputState) => ({
   objective,
   items: Object.entries(itemCounts)
@@ -75,7 +71,6 @@ const inputToQuery = ({
     )
     .join(','),
   ap_coefficients: halfDailyAp ? '0:0.5' : '',
-  drop_merge_method: dropMergeMethod,
 })
 
 const migrateLocalInput = () => {
@@ -116,10 +111,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   )
   const [checkedQuests, setCheckedQuests] = useLocalStorage('quests', questIds)
   const [halfDailyAp, setHalfDailyAp] = useLocalStorage('halfDailyAp', false)
-  const [dropMergeMethod, setDropMergeMethod] = useLocalStorage(
-    'dropMergeMethod',
-    'add'
-  )
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isConfirming, setIsConfirming] = useBoolean()
@@ -162,7 +153,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         }
       })
       setHalfDailyAp(query.ap_coefficients == '0:0.5')
-      setDropMergeMethod(query.drop_merge_method ?? 'add')
       router.replace('/farming')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +167,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         itemCounts,
         checkedQuests,
         halfDailyAp,
-        dropMergeMethod,
       })
       const params = new URLSearchParams({ ...query, fields: 'id' })
       const url = `/api/solve?${params.toString()}`
@@ -192,7 +181,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     },
     [
       checkedQuests,
-      dropMergeMethod,
       halfDailyAp,
       itemCounts,
       objective,
@@ -206,12 +194,10 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     setItemCounts(initialItemCounts)
     setCheckedQuests(questIds)
     setHalfDailyAp(false)
-    setDropMergeMethod('add')
   }, [
     initialItemCounts,
     questIds,
     setCheckedQuests,
-    setDropMergeMethod,
     setHalfDailyAp,
     setItemCounts,
     setObjective,
@@ -298,10 +284,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   </Checkbox>
                 </FormControl>
 
-                <DropRateSelect
-                  dropMergeMethod={dropMergeMethod}
-                  setDropMergeMethod={setDropMergeMethod}
-                />
               </VStack>
             </div>
 

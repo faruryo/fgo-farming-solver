@@ -27,8 +27,6 @@ describe('fetchAndTransformData', () => {
   })
 
   it('generates short item IDs via toApiItemId and applies Top 5 filtering', async () => {
-    // background + priority are required for toApiItemId to produce a non-empty short ID
-    // priority floor 2 + bronze background → intercept 0 → IDs "00", "01"
     const mockAAItems = [
       { id: 6001, name: '英雄の証', type: 'material', background: 'bronze', priority: 200 },
       { id: 6002, name: '凶骨',     type: 'material', background: 'bronze', priority: 201 },
@@ -51,35 +49,25 @@ describe('fetchAndTransformData', () => {
 
     const data = await fetchAndTransformData()
 
-    // 1. Items have short IDs ("00", "01"), not Atlas Academy numeric IDs
-    const proofItem = data.items.find(i => i.name === '英雄の証')
-    expect(proofItem).toBeDefined()
-    expect(proofItem!.id).toBe('00')
+    // Items have short IDs
+    expect(data.items.find(i => i.name === '英雄の証')?.id).toBe('00')
+    expect(data.items.find(i => i.name === '凶骨')?.id).toBe('01')
 
-    const boneItem = data.items.find(i => i.name === '凶骨')
-    expect(boneItem).toBeDefined()
-    expect(boneItem!.id).toBe('01')
-
-    // 2. Quests have short 3-char IDs: Free areas get prefix "1X"
-    //    エリア1 → prefix "10", エリア2 → prefix "11"
+    // Quests have 3-char short IDs
     expect(data.quests.every(q => q.id.length === 3)).toBe(true)
-    const questA = data.quests.find(q => q.name === 'クエストA')
-    expect(questA?.id).toBe('100')
-    const questD = data.quests.find(q => q.name === 'クエストD')
-    expect(questD?.id).toBe('110')
+    expect(data.quests.find(q => q.name === 'クエストA')?.id).toBe('100')
+    expect(data.quests.find(q => q.name === 'クエストD')?.id).toBe('110')
 
-    // 3. Drop rates reference the new short IDs
+    // Drop rates use single drop_rate field
     const proofRates = data.drop_rates.filter(dr => dr.item_id === '00')
     expect(proofRates.length).toBeGreaterThan(0)
-    expect(proofRates.every(dr => dr.quest_id.length === 3)).toBe(true)
+    expect(proofRates.every(dr => 'drop_rate' in dr)).toBe(true)
+    expect(proofRates.every(dr => !('drop_rate_1' in dr))).toBe(true)
 
-    // 4. Top 5 filtering:
-    //    証 top5: F(90),E(80),D(70),B(60),A(50) — excludes C(40%)
-    //    骨 top5: A(10),B(5),C(2),D(1) — only 4 quests have drops
-    //    Union: all 6 selected → all 6 proof drop rates included
+    // Top 5 filtering: all 6 quests selected (union of both items' top5)
     expect(proofRates).toHaveLength(6)
-    const sortedProof = [...proofRates].sort((a, b) => b.drop_rate_1 - a.drop_rate_1)
-    expect(sortedProof[0].drop_rate_1).toBe(0.9)
-    expect(sortedProof[5].drop_rate_1).toBe(0.4)
+    const sorted = [...proofRates].sort((a, b) => b.drop_rate - a.drop_rate)
+    expect(sorted[0].drop_rate).toBe(0.9)
+    expect(sorted[5].drop_rate).toBe(0.4)
   })
 })

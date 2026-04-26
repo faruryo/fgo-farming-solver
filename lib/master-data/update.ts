@@ -19,8 +19,7 @@ export interface Quest {
 export interface DropRate {
   quest_id: string
   item_id: string
-  drop_rate_1: number
-  drop_rate_2: number
+  drop_rate: number
 }
 
 export interface MasterData {
@@ -194,8 +193,7 @@ export async function fetchAndTransformData(): Promise<MasterData> {
           all_drop_rates.push({
             quest_id: questId,
             item_id: itemId,
-            drop_rate_1: rate / 100, // Convert percentage to raw expectation
-            drop_rate_2: 0
+            drop_rate: rate / 100,
           })
         }
       }
@@ -240,7 +238,7 @@ export async function fetchAndTransformData(): Promise<MasterData> {
 
   for (const itemId in itemToRates) {
     const rates = [...itemToRates[itemId]]
-    rates.sort((a, b) => b.drop_rate_1 - a.drop_rate_1)
+    rates.sort((a, b) => b.drop_rate - a.drop_rate)
     rates.slice(0, 5).forEach(dr => selectedQuestIds.add(dr.quest_id))
   }
 
@@ -253,7 +251,7 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   for (const dr of all_drop_rates) {
     const quest = quests.find(q => q.id === dr.quest_id)
     if (quest) {
-      const efficiency = dr.drop_rate_1 / quest.ap
+      const efficiency = dr.drop_rate / quest.ap
       bestEfficiencyPerItem[dr.item_id] = Math.max(bestEfficiencyPerItem[dr.item_id] || 0, efficiency)
     }
   }
@@ -264,7 +262,7 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     const quest = quests.find(q => q.id === dr.quest_id)
     const bestEff = bestEfficiencyPerItem[dr.item_id]
     if (quest && bestEff > 0) {
-      const relativeEff = (dr.drop_rate_1 / quest.ap) / bestEff
+      const relativeEff = (dr.drop_rate / quest.ap) / bestEff
       questToRelativeScore[dr.quest_id] = (questToRelativeScore[dr.quest_id] || 0) + relativeEff
     }
   }

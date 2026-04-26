@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
   const objective = searchParams.get('objective') || 'ap'
   const itemsRaw = searchParams.get('items') || ''
   const questsRaw = searchParams.get('quests') || ''
-  const dropMergeMethod = searchParams.get('drop_merge_method') || 'add'
   const apCoefficients = searchParams.get('ap_coefficients') || ''
 
   const itemCounts = Object.fromEntries(
@@ -55,7 +54,7 @@ export async function GET(req: NextRequest) {
     quests: allowedQuests,
   }
 
-  const result = solve(drops, params, dropMergeMethod)
+  const result = solve(drops, params)
   const id = crypto.randomUUID()
 
   // Save to D1 if available

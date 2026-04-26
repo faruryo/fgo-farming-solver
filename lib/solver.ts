@@ -5,7 +5,6 @@ import { Result, Params } from '../interfaces/api'
 export const solve = (
   drops: Drops,
   params: Params,
-  dropMergeMethod: string
 ): Result => {
   const { objective, items: targetItems, quests: allowedQuestIds } = params
 
@@ -44,21 +43,11 @@ export const solve = (
       totalAp: quest.ap,
     }
 
-    // Add drop rates for this quest
     drops.drop_rates
       .filter((dr) => dr.quest_id === quest.id)
       .forEach((dr) => {
-        let rate = 0
-        if (dropMergeMethod === 'add') {
-          rate = (dr.drop_rate_1 || 0) + (dr.drop_rate_2 || 0)
-        } else if (dropMergeMethod === '1') {
-          rate = dr.drop_rate_1 || 0
-        } else if (dropMergeMethod === '2') {
-          rate = dr.drop_rate_2 || dr.drop_rate_1 || 0
-        }
-
-        if (rate > 0 && model.constraints[dr.item_id]) {
-          variable[dr.item_id] = rate
+        if (dr.drop_rate > 0 && model.constraints[dr.item_id]) {
+          variable[dr.item_id] = dr.drop_rate
         }
       })
 
@@ -79,7 +68,6 @@ export const solve = (
     }
   }
 
-  // Format result
   const resultQuests = availableQuests
     .filter((q) => typeof solveResult[q.id] === 'number' && (solveResult[q.id] as number) > 0)
     .map((q) => ({
@@ -93,25 +81,15 @@ export const solve = (
   const resultItems = drops.items
     .filter((item) => targetItems[item.id] > 0)
     .map((item) => {
-      // Calculate actual count obtained
       let actualCount = 0
       resultQuests.forEach((rq) => {
         const dr = drops.drop_rates.find(
           (dr) => dr.quest_id === rq.id && dr.item_id === item.id
         )
         if (dr) {
-          let rate = 0
-          if (dropMergeMethod === 'add') {
-            rate = (dr.drop_rate_1 || 0) + (dr.drop_rate_2 || 0)
-          } else if (dropMergeMethod === '1') {
-            rate = dr.drop_rate_1 || 0
-          } else if (dropMergeMethod === '2') {
-            rate = dr.drop_rate_2 || dr.drop_rate_1 || 0
-          }
-          actualCount += rate * rq.lap
+          actualCount += dr.drop_rate * rq.lap
         }
       })
-
       return {
         id: item.id,
         category: item.category,
@@ -121,27 +99,17 @@ export const solve = (
     })
 
   const resultDropRates = drops.drop_rates
-    .filter((dr) => 
-      resultQuests.some(rq => rq.id === dr.quest_id) && 
+    .filter((dr) =>
+      resultQuests.some(rq => rq.id === dr.quest_id) &&
       resultItems.some(ri => ri.id === dr.item_id)
     )
-    .map(dr => {
-      let rate = 0
-      if (dropMergeMethod === 'add') {
-        rate = (dr.drop_rate_1 || 0) + (dr.drop_rate_2 || 0)
-      } else if (dropMergeMethod === '1') {
-        rate = dr.drop_rate_1 || 0
-      } else if (dropMergeMethod === '2') {
-        rate = dr.drop_rate_2 || dr.drop_rate_1 || 0
-      }
-      return {
-        quest_id: dr.quest_id,
-        quest_name: drops.quests.find(q => q.id === dr.quest_id)?.name || '',
-        item_id: dr.item_id,
-        item_name: drops.items.find(i => i.id === dr.item_id)?.name || '',
-        drop_rate: rate
-      }
-    })
+    .map(dr => ({
+      quest_id: dr.quest_id,
+      quest_name: drops.quests.find(q => q.id === dr.quest_id)?.name || '',
+      item_id: dr.item_id,
+      item_name: drops.items.find(i => i.id === dr.item_id)?.name || '',
+      drop_rate: dr.drop_rate,
+    }))
 
   return {
     params,
