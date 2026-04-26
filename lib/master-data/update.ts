@@ -109,19 +109,31 @@ export function normalizeItemName(shortName: string): string {
     '狂': 'バーサーカー'
   }
 
-  const suffixMap: Record<string, string> = {
-    '輝': 'の輝石',
-    '魔': 'の魔石',
-    '秘': 'の秘石',
+  // ピース/モニュメントはクラス名を使う（セイバーピース）
+  const classNameSuffixes: Record<string, string> = {
     'ピ': 'ピース',
     'モ': 'モニュメント'
   }
+  // 輝石/魔石/秘石は兵種名をそのまま使う（剣の輝石、弓の魔石）
+  const weaponNameSuffixes: Record<string, string> = {
+    '輝': 'の輝石',
+    '魔': 'の魔石',
+    '秘': 'の秘石',
+  }
 
-  for (const [s, fullSuffix] of Object.entries(suffixMap)) {
+  for (const [s, fullSuffix] of Object.entries(classNameSuffixes)) {
     if (shortName.endsWith(s)) {
       const prefix = shortName.slice(0, -s.length)
       if (classMap[prefix]) {
         return classMap[prefix] + fullSuffix
+      }
+    }
+  }
+  for (const [s, fullSuffix] of Object.entries(weaponNameSuffixes)) {
+    if (shortName.endsWith(s)) {
+      const prefix = shortName.slice(0, -s.length)
+      if (classMap[prefix]) {
+        return prefix + fullSuffix  // 剣 + の輝石 = 剣の輝石
       }
     }
   }
@@ -137,6 +149,13 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   const itemsResponse = await fetch(`${origin}/export/${region}/nice_item.json`)
   const aaItems: AAItem[] = await itemsResponse.json()
   console.log(`Fetched ${aaItems.length} items from Atlas Academy.`)
+
+  // Use the same type filter and sort order as getLocalItems() so that toApiItemId()
+  // produces identical IDs on both the KV-write side and the page-display side.
+  const FARMING_ITEM_TYPES = new Set(['qp', 'skillLvUp', 'tdLvUp'])
+  const aaItemsForId = aaItems
+    .filter(i => FARMING_ITEM_TYPES.has(i.type))
+    .sort((a, b) => a.priority - b.priority)
   
   // 2. Fetch Drop Data from Spreadsheet
   console.log('Fetching drop data from spreadsheet...')
@@ -173,8 +192,9 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     }
 
     if (aaItem) {
-      // Use toApiItemId for short stable IDs (e.g. "00", "1h") matching frontend expectations
-      const id = toApiItemId(aaItem as AtlasItem, aaItems as AtlasItem[])
+      // Use toApiItemId with the same filtered+sorted list that getLocalItems() uses,
+      // so IDs are consistent between KV data and the farming page display.
+      const id = toApiItemId(aaItem as AtlasItem, aaItemsForId as AtlasItem[])
       if (!id) continue
       if (!items.find(i => i.id === id)) {
         items.push({ category: aaItem.type, name: aaItem.name, id })

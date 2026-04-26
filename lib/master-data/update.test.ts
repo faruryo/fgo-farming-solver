@@ -9,9 +9,11 @@ describe('normalizeItemName', () => {
   })
 
   it('normalizes class items correctly', () => {
-    expect(normalizeItemName('剣輝')).toBe('セイバーの輝石')
-    expect(normalizeItemName('弓魔')).toBe('アーチャーの魔石')
-    expect(normalizeItemName('槍秘')).toBe('ランサーの秘石')
+    // 輝石/魔石/秘石: AA名は兵種名そのまま（剣の輝石, 弓の魔石）
+    expect(normalizeItemName('剣輝')).toBe('剣の輝石')
+    expect(normalizeItemName('弓魔')).toBe('弓の魔石')
+    expect(normalizeItemName('槍秘')).toBe('槍の秘石')
+    // ピース/モニュメント: AA名はクラス名（セイバーピース）
     expect(normalizeItemName('騎ピ')).toBe('ライダーピース')
     expect(normalizeItemName('術モ')).toBe('キャスターモニュメント')
   })
@@ -28,8 +30,8 @@ describe('fetchAndTransformData', () => {
 
   it('generates short item IDs via toApiItemId and applies Top 5 filtering', async () => {
     const mockAAItems = [
-      { id: 6001, name: '英雄の証', type: 'material', background: 'bronze', priority: 200 },
-      { id: 6002, name: '凶骨',     type: 'material', background: 'bronze', priority: 201 },
+      { id: 6001, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 },
+      { id: 6002, name: '凶骨',     type: 'skillLvUp', background: 'bronze', priority: 201 },
     ]
 
     const mockCSV = `周回あたりのドロップ率（％）,,Best5表はこちら
