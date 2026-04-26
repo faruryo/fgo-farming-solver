@@ -94,8 +94,9 @@ export default function HistoryPage() {
                   <Text fontWeight="bold" color="var(--gold)">{t('AP推移')}</Text>
                 </HStack>
                 <Box h="150px" w="100%" position="relative">
-                  <svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none">
-                    {/* Fill area under the line */}
+                  {/* SVG for fill area and line — preserveAspectRatio="none" stretches correctly */}
+                  <svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none"
+                       style={{ position: 'absolute', top: 0, left: 0 }}>
                     <polygon
                       fill="var(--gold)"
                       fillOpacity={0.15}
@@ -120,15 +121,26 @@ export default function HistoryPage() {
                       }).join(' ')}
                       strokeLinejoin="round"
                     />
-                    {apTrend.map((ap, i) => {
-                      const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
-                      const y = 100 - ((ap - minAp) / apRange * 90 + 5)
-                      return (
-                        <circle key={i} cx={x} cy={y} r="1.5"
-                          fill="var(--bg)" stroke="var(--gold)" strokeWidth="1" />
-                      )
-                    })}
                   </svg>
+                  {/* Dots as HTML elements so they stay round regardless of SVG stretch */}
+                  {apTrend.map((ap, i) => {
+                    const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
+                    const y = 100 - ((ap - minAp) / apRange * 90 + 5)
+                    return (
+                      <Box
+                        key={i}
+                        position="absolute"
+                        left={`${x}%`}
+                        top={`${y}%`}
+                        w="8px"
+                        h="8px"
+                        borderRadius="50%"
+                        bg="var(--bg)"
+                        border="1.5px solid var(--gold)"
+                        transform="translate(-50%, -50%)"
+                      />
+                    )
+                  })}
                   <HStack justify="space-between" mt={2} fontSize="10px" color="var(--gold-dim)">
                     <Text>{new Date(history[history.length - 1].created_at).toLocaleDateString()}</Text>
                     <Text>{new Date(history[0].created_at).toLocaleDateString()}</Text>
