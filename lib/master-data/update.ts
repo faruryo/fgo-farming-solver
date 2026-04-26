@@ -116,14 +116,17 @@ export function normalizeItemName(shortName: string): string {
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority'> & { type: string }
 
 export async function fetchAndTransformData(): Promise<MasterData> {
-  // 1. Fetch Item metadata from Atlas Academy
+  console.log('Fetching item metadata from Atlas Academy...')
   const itemsResponse = await fetch(`${origin}/export/${region}/nice_item.json`)
   const aaItems: AAItem[] = await itemsResponse.json()
+  console.log(`Fetched ${aaItems.length} items from Atlas Academy.`)
   
   // 2. Fetch Drop Data from Spreadsheet
+  console.log('Fetching drop data from spreadsheet...')
   const sheetResponse = await fetch(SHEET_URL)
   const csv = await sheetResponse.text()
   const rows = parseCSV(csv)
+  console.log(`Fetched and parsed spreadsheet data: ${rows.length} rows.`)
 
   // 4. Transform
   const items: Item[] = []
@@ -198,6 +201,8 @@ export async function fetchAndTransformData(): Promise<MasterData> {
       }
     }
   }
+
+  console.log(`Matched ${items.length} items and ${quests.length} raw quests.`)
 
   // 5. Assign short quest IDs: "{sectionChar}{areaChar}{questIndexChar}" in base-36
   //    Prefix "0X" = Daily (修練場), "1X"/"2X"/... = Free (by area order)
@@ -274,6 +279,8 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   // Final Filter: Include all drop rates for selected quests
   const filtered_drop_rates = all_drop_rates.filter(dr => selectedQuestIds.has(dr.quest_id))
   const finalQuests = quests.filter(q => selectedQuestIds.has(q.id))
+
+  console.log(`Filtering complete: ${finalQuests.length} quests and ${filtered_drop_rates.length} drop rate records selected.`)
 
   return {
     items,

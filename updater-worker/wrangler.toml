@@ -8,3 +8,6 @@ crons = ["0 0 * * *"] # 毎日 0:00 (UTC) に実行
 [[kv_namespaces]]
 binding = "MASTER_DATA"
 id = "306bbe537e9d4907809f82468df500e4"
+
+[observability]
+enabled = true
