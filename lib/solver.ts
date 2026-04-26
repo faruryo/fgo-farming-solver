@@ -76,6 +76,7 @@ export const solve = (
       section: q.section,
       area: q.area,
       name: q.name,
+      ap: q.ap,
       lap: Math.ceil(Number(solveResult[q.id] || 0)),
     }))
 

@@ -79,7 +79,7 @@
         "runs": "{{area}} {{name}} x{{lap}}",
         "total": "In total: x{{lap}}",
         "and-so-on": "...",
-        "text": "I have to run\n{{quests}}{{qaso}}\n{{total}}\nto collect {{items}}{{iaso}}\nDetails:\n",
+        "text": "{{lap}} runs / {{ap}} AP / ¥{{yen}}\nTo collect {{items}}{{iaso}}:\n{{quests}}{{qaso}}\nDetails:",
         "入力画面に戻る": "Return to Item Input",
         "入力内容のインポート・エクスポート": "Import/Export",
         "フォームの入力内容を他のデバイスやブラウザとやり取りできます。": "You can import/export form inputs from/to other devices or browsers.",
@@ -87,7 +87,12 @@
         "export-device-description": "Bookmark this page by browsers with bookmarks sync such as Chrome or Safari. After that, open the bookmark in the device you want to import data.",
         "他のブラウザへのエクスポート": "Export to other browsers",
         "export-browser-description": "Copy this page's URL to another browser.",
-        "入力内容のインポート": "Import form input"
+        "入力内容のインポート": "Import form input",
+        "tooltip-total-lap": "Total runs across all quests",
+        "tooltip-total-ap": "Total AP consumed (Saint Quartz: AP÷144)",
+        "tooltip-cost": "Estimated cost based on 168 SQ for ¥10,000 pack (totalAP÷144÷168×10000 yen)",
+        "tooltip-ap": "AP cost per run of this quest",
+        "tooltip-lap": "Number of runs required for this quest"
     },
     "items": {
         "アイテム一覧": "Item List",

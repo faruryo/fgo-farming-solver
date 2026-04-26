@@ -8,6 +8,7 @@ import {
   Td,
   Collapse,
   IconButton,
+  Tooltip,
 } from '@chakra-ui/react'
 import React, { FormEventHandler, Fragment, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -58,18 +59,25 @@ export const QuestTable = ({
           <Th key="quest-header" colSpan={2}>
             {t('クエスト')}
           </Th>
-          <Th key="lap-header" isNumeric>
-            {t('周回数')}
-          </Th>
+          <Tooltip label={t('tooltip-ap')} placement="top">
+            <Th key="ap-header" isNumeric style={{ cursor: 'help' }}>
+              AP
+            </Th>
+          </Tooltip>
+          <Tooltip label={t('tooltip-lap')} placement="top">
+            <Th key="lap-header" isNumeric style={{ cursor: 'help' }}>
+              {t('周回数')}
+            </Th>
+          </Tooltip>
         </Tr>
       </Thead>
       <Tbody>
         {Object.entries(questGroups).map(([area, questGroup]) => (
           <Fragment key={area}>
             <Tr key={area}>
-              <Th colSpan={3}>{area}</Th>
+              <Th colSpan={4}>{area}</Th>
             </Tr>
-            {questGroup.map(({ name, id, lap }) => (
+            {questGroup.map(({ name, id, ap, lap }) => (
               <Fragment key={id}>
                 <Tr>
                   <Td px={1} py={0}>
@@ -82,11 +90,12 @@ export const QuestTable = ({
                     />
                   </Td>
                   <Td px={1}>{name}</Td>
+                  <Td isNumeric color="gray.500" fontSize="sm">{ap}</Td>
                   <Td isNumeric>{lap}</Td>
                 </Tr>
 
                 <Tr>
-                  <Td colSpan={3} py={0}>
+                  <Td colSpan={4} py={0}>
                     <Collapse in={isOpen[id]} animateOpacity>
                       <QuestItemTable
                         dropRates={questToDrops[id]}

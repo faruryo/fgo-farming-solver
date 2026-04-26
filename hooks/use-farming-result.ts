@@ -6,7 +6,10 @@ import { orderBy } from '../utils/order-by'
 export const useFarmingResult = (
   items: Item[],
   paramItems: { [id: string]: number },
-  quests: Quest[]
+  quests: Quest[],
+  totalLap: number,
+  totalAp: number,
+  yen: number
 ) => {
   const { t } = useTranslation('farming')
   return useMemo(() => {
@@ -25,17 +28,16 @@ export const useFarmingResult = (
       .slice(0, 3)
       .map(({ area, name, lap }) => t('runs', { area, name, lap }))
       .join('\r\n')
-    const total = t('total', {
-      lap: quests.map(({ lap }) => lap).reduce((acc, cur) => acc + cur, 0),
-    })
     const iaso = items.length > 3 ? t('and-so-on') : ''
     const qaso = quests.length > 3 ? t('and-so-on') : ''
     return t('text', {
+      lap: totalLap,
+      ap: totalAp,
+      yen: yen.toLocaleString(),
       items: displayedItems,
       iaso,
       quests: displayedLaps,
       qaso,
-      total,
     })
-  }, [items, paramItems, quests, t])
+  }, [items, paramItems, quests, totalLap, totalAp, yen, t])
 }

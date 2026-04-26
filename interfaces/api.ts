@@ -8,6 +8,7 @@ export type Quest = {
   section: string
   area: string
   name: string
+  ap: number
   lap: number
 }
 export type Item = { id: string; category: string; name: string; count: number }

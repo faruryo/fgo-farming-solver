@@ -8,6 +8,7 @@ import {
   Container,
   Heading,
   Text,
+  Tooltip,
   VStack,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
@@ -39,8 +40,10 @@ export const Page = ({
 }: ResultProps) => {
   const router = useRouter()
   const { t } = useTranslation(['farming', 'common'])
+  const stones = Math.round(total_ap / 144)
+  const yen = Math.round(total_ap / 144 / 168 * 10000)
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const text = useFarmingResult(items as any, params.items as any, quests as any)
+  const text = useFarmingResult(items as any, params.items as any, quests as any, total_lap, total_ap, yen)
 
   if (!quests || quests.length == 0) {
     return (
@@ -67,14 +70,24 @@ export const Page = ({
             <h1 className="c-page-title">{t('計算結果')}</h1>
           </div>
           <div className="c-stats">
-            <div className="c-stat">
-              <div className="c-stat-num">{total_lap}</div>
-              <div className="c-stat-label">LAP</div>
-            </div>
-            <div className="c-stat">
-              <div className="c-stat-num">{total_ap}</div>
-              <div className="c-stat-label">AP</div>
-            </div>
+            <Tooltip label={t('tooltip-total-lap')} placement="bottom">
+              <div className="c-stat" style={{ cursor: 'help' }}>
+                <div className="c-stat-num">{total_lap}</div>
+                <div className="c-stat-label">LAP</div>
+              </div>
+            </Tooltip>
+            <Tooltip label={t('tooltip-total-ap')} placement="bottom">
+              <div className="c-stat" style={{ cursor: 'help' }}>
+                <div className="c-stat-num">{total_ap}</div>
+                <div className="c-stat-label">AP</div>
+              </div>
+            </Tooltip>
+            <Tooltip label={t('tooltip-cost')} placement="bottom">
+              <div className="c-stat" style={{ cursor: 'help' }}>
+                <div className="c-stat-num">¥{yen.toLocaleString()}</div>
+                <div className="c-stat-label">{t('費用')}</div>
+              </div>
+            </Tooltip>
           </div>
         </div>
 
