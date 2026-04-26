@@ -68,6 +68,7 @@ export const solve = (
     }
   }
 
+  // Ceil each quest's lap count — LP gives continuous solution, we need integers
   const resultQuests = availableQuests
     .filter((q) => typeof solveResult[q.id] === 'number' && (solveResult[q.id] as number) > 0)
     .map((q) => ({
@@ -75,9 +76,10 @@ export const solve = (
       section: q.section,
       area: q.area,
       name: q.name,
-      lap: Number(solveResult[q.id] || 0),
+      lap: Math.ceil(Number(solveResult[q.id] || 0)),
     }))
 
+  // Recalculate item counts based on ceiled laps, then round to nearest integer
   const resultItems = drops.items
     .filter((item) => targetItems[item.id] > 0)
     .map((item) => {
@@ -94,7 +96,7 @@ export const solve = (
         id: item.id,
         category: item.category,
         name: item.name,
-        count: actualCount,
+        count: Math.round(actualCount),
       }
     })
 
@@ -111,13 +113,16 @@ export const solve = (
       drop_rate: dr.drop_rate,
     }))
 
+  const total_lap = resultQuests.reduce((acc, q) => acc + q.lap, 0)
+  const total_ap = resultQuests.reduce((acc, q) => acc + q.lap * (availableQuests.find(aq => aq.id === q.id)?.ap || 0), 0)
+
   return {
     params,
     quests: resultQuests,
     items: resultItems,
     drop_rates: resultDropRates,
-    total_lap: solveResult.result && objective === 'lap' ? solveResult.result : resultQuests.reduce((acc, q) => acc + q.lap, 0),
-    total_ap: solveResult.result && objective === 'ap' ? solveResult.result : resultQuests.reduce((acc, q) => acc + (availableQuests.find(aq => aq.id === q.id)?.ap || 0) * q.lap, 0),
+    total_lap,
+    total_ap,
     skipped_items: skippedItems,
   }
 }
