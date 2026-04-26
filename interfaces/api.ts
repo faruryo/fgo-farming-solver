@@ -25,4 +25,5 @@ export type Result = {
   drop_rates: DropRate[]
   total_lap: number
   total_ap: number
+  skipped_items?: string[]
 }

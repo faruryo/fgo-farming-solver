@@ -17,10 +17,18 @@ export const solve = (
     ints: {},
   }
 
-  // Set constraints for each target item
+  // Build set of item IDs that actually have drop rate data
+  const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
+
+  // Set constraints only for items that have drop rate data; collect skipped ones
+  const skippedItems: string[] = []
   Object.entries(targetItems).forEach(([itemId, count]) => {
     if (count > 0) {
-      model.constraints[itemId] = { min: count }
+      if (itemsWithDropData.has(itemId)) {
+        model.constraints[itemId] = { min: count }
+      } else {
+        skippedItems.push(itemId)
+      }
     }
   })
 
@@ -67,6 +75,7 @@ export const solve = (
       drop_rates: [],
       total_lap: 0,
       total_ap: 0,
+      skipped_items: skippedItems,
     }
   }
 
@@ -141,5 +150,6 @@ export const solve = (
     drop_rates: resultDropRates,
     total_lap: solveResult.result && objective === 'lap' ? solveResult.result : resultQuests.reduce((acc, q) => acc + q.lap, 0),
     total_ap: solveResult.result && objective === 'ap' ? solveResult.result : resultQuests.reduce((acc, q) => acc + (availableQuests.find(aq => aq.id === q.id)?.ap || 0) * q.lap, 0),
+    skipped_items: skippedItems,
   }
 }
