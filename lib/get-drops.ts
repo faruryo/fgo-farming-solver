@@ -1,4 +1,3 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { DropRate, Item, Quest } from '../interfaces/fgodrop'
 import type { CloudflareEnv } from '../types/cloudflare-env'
 
@@ -16,9 +15,10 @@ export const getDrops = async (): Promise<Drops> => {
 
   let data: Partial<Drops> | null = null
 
-  // 1. Try to get from Cloudflare KV
+  // 1. Try to get from Cloudflare KV (production / edge only)
   if (!isDev || isEdge) {
     try {
+      const { getCloudflareContext } = await import('@opennextjs/cloudflare')
       const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: CloudflareEnv }
       const kvData = await env.MASTER_DATA.get(MASTER_DATA_KEY)
       if (kvData) {
