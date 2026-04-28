@@ -5,6 +5,13 @@ import type { CloudflareEnv } from '../../../../types/cloudflare-env'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'development') {
+    const path = await import(/* webpackIgnore: true */ 'path')
+    const { readJson } = await import('../../../../lib/read-json')
+    const data = await readJson(path.default.resolve('mocks', 'history.json'))
+    return Response.json(data)
+  }
+
   const session = await auth()
   if (!session?.user?.id) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })

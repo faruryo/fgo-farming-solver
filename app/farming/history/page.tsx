@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Container,
-  Heading,
   Text,
   VStack,
   HStack,
@@ -19,10 +18,19 @@ import {
   IconButton,
   Tooltip,
 } from '@chakra-ui/react'
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+} from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { Link } from '../../../components/common/link'
 import { motion } from 'framer-motion'
-import { FaExternalLinkAlt, FaHistory, FaChartLine } from 'react-icons/fa'
+import { FaExternalLinkAlt, FaHistory } from 'react-icons/fa'
 
 type HistoryItem = {
   id: string
@@ -33,30 +41,69 @@ type HistoryItem = {
   created_at: string
 }
 
+type TooltipPayloadEntry = { name: string; value: number; color: string }
+
+const CustomTooltip = ({ active, payload, label }: {
+  active?: boolean
+  payload?: TooltipPayloadEntry[]
+  label?: string
+}) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: 'rgba(18,28,48,0.97)',
+      border: '1px solid rgba(154,114,36,0.4)',
+      borderRadius: 4,
+      padding: '8px 12px',
+      fontSize: 12,
+    }}>
+      <div style={{ color: 'rgba(200,180,140,0.7)', marginBottom: 4 }}>{label}</div>
+      {payload.map(entry => (
+        <div key={entry.name} style={{ color: entry.color, fontWeight: 600 }}>
+          {entry.name}: {entry.value.toLocaleString()}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const OBJECTIVE_BADGE: Record<string, string> = {
+  ap:   'AP MIN',
+  lap:  'LAP MIN',
+  both: 'AP+LAP',
+}
+
+type ChartTab = 'ap' | 'lap'
+
+const CHART_CONFIG: Record<ChartTab, { label: string; dataKey: string; color: string; gradId: string }> = {
+  ap:  { label: '消費AP推移',  dataKey: '消費AP',  color: '#9a7224', gradId: 'gradHistAP' },
+  lap: { label: '周回数推移',  dataKey: '周回数',  color: '#4a6888', gradId: 'gradHistLap' },
+}
+
 export default function HistoryPage() {
   const { t } = useTranslation(['farming', 'common'])
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [chartTab, setChartTab] = useState<ChartTab>('ap')
 
   useEffect(() => {
     fetch('/api/farming/history')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setHistory(data)
-        }
-      })
-      .catch((err) => console.error(err))
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setHistory(data) })
+      .catch(err => console.error(err))
       .finally(() => setLoading(false))
   }, [])
 
-  // Filter out failed results (ap=0) and use integers for display
-  const apTrend = history.length > 0
-    ? [...history].reverse().filter(h => h.total_ap > 0).map(h => Math.round(h.total_ap))
-    : []
-  const maxAp = apTrend.length > 0 ? Math.max(...apTrend) : 1
-  const minAp = apTrend.length > 0 ? Math.min(...apTrend) : 0
-  const apRange = maxAp - minAp || 1
+  const chartData = useMemo(() => [...history]
+    .reverse()
+    .filter(h => h.total_ap > 0)
+    .map(h => ({
+      date: new Date(h.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
+      消費AP: Math.round(h.total_ap),
+      周回数: Math.round(h.total_lap),
+    })), [history])
+
+  const cfg = CHART_CONFIG[chartTab]
 
   if (loading) {
     return (
@@ -76,76 +123,63 @@ export default function HistoryPage() {
           <HStack justify="space-between">
             <VStack align="start" spacing={0}>
               <Text className="c-page-en" letterSpacing="0.2em">FARMING HISTORY</Text>
-              <Heading as="h1" className="c-page-title" display="flex" alignItems="center">
-                <Box as={FaHistory} mr={3} size="24px" color="var(--gold)" />
+              <Text as="h1" className="c-page-title" display="flex" alignItems="center">
+                <Box as={FaHistory} mr={3} color="var(--gold)" />
                 {t('common:計算履歴')}
-              </Heading>
+              </Text>
             </VStack>
           </HStack>
 
-          {history.length > 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+          {chartData.length > 1 && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <Box className="c-card" p={6}>
-                <HStack mb={4}>
-                  <Box as={FaChartLine} color="var(--gold)" />
-                  <Text fontWeight="bold" color="var(--gold)">{t('AP推移')}</Text>
+                <HStack spacing={2} mb={4}>
+                  {(['ap', 'lap'] as ChartTab[]).map(tab => (
+                    <button
+                      key={tab}
+                      className={`c-filter-toggle${chartTab === tab ? ' active' : ''}`}
+                      onClick={() => setChartTab(tab)}
+                      style={{ fontSize: 11, padding: '4px 12px' }}
+                    >
+                      {CHART_CONFIG[tab].label}
+                    </button>
+                  ))}
                 </HStack>
-                <Box h="150px" w="100%" position="relative">
-                  {/* SVG for fill area and line — preserveAspectRatio="none" stretches correctly */}
-                  <svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none"
-                       style={{ position: 'absolute', top: 0, left: 0 }}>
-                    <polygon
-                      fill="var(--gold)"
-                      fillOpacity={0.15}
-                      points={[
-                        ...apTrend.map((ap, i) => {
-                          const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
-                          const y = 100 - ((ap - minAp) / apRange * 90 + 5)
-                          return `${x},${y}`
-                        }),
-                        `${apTrend.length === 1 ? 50 : 100},100`,
-                        '0,100',
-                      ].join(' ')}
+
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id={cfg.gradId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={cfg.color} stopOpacity={0.35} />
+                        <stop offset="95%" stopColor={cfg.color} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,104,136,0.18)" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fill: 'rgba(200,218,240,0.45)', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
                     />
-                    <polyline
-                      fill="none"
-                      stroke="var(--gold)"
-                      strokeWidth="1.5"
-                      points={apTrend.map((ap, i) => {
-                        const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
-                        const y = 100 - ((ap - minAp) / apRange * 90 + 5)
-                        return `${x},${y}`
-                      }).join(' ')}
-                      strokeLinejoin="round"
+                    <YAxis
+                      tick={{ fill: `${cfg.color}b0`, fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                      width={36}
                     />
-                  </svg>
-                  {/* Dots as HTML elements so they stay round regardless of SVG stretch */}
-                  {apTrend.map((ap, i) => {
-                    const x = apTrend.length === 1 ? 50 : i * 100 / (apTrend.length - 1)
-                    const y = 100 - ((ap - minAp) / apRange * 90 + 5)
-                    return (
-                      <Box
-                        key={i}
-                        position="absolute"
-                        left={`${x}%`}
-                        top={`${y}%`}
-                        w="8px"
-                        h="8px"
-                        borderRadius="50%"
-                        bg="var(--bg)"
-                        border="1.5px solid var(--gold)"
-                        transform="translate(-50%, -50%)"
-                      />
-                    )
-                  })}
-                  <HStack justify="space-between" mt={2} fontSize="10px" color="var(--gold-dim)">
-                    <Text>{new Date(history[history.length - 1].created_at).toLocaleDateString()}</Text>
-                    <Text>{new Date(history[0].created_at).toLocaleDateString()}</Text>
-                  </HStack>
-                </Box>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey={cfg.dataKey}
+                      stroke={cfg.color}
+                      strokeWidth={2}
+                      fill={`url(#${cfg.gradId})`}
+                      dot={{ r: 3, fill: '#121c30', stroke: cfg.color, strokeWidth: 1.5 }}
+                      activeDot={{ r: 5, fill: cfg.color }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </Box>
             </motion.div>
           )}
@@ -156,26 +190,30 @@ export default function HistoryPage() {
                 <Tr>
                   <Th color="var(--gold-dim)">{t('日時')}</Th>
                   <Th color="var(--gold-dim)">{t('目的')}</Th>
-                  <Th color="var(--gold-dim)" isNumeric>{t('合計AP')}</Th>
-                  <Th color="var(--gold-dim)" isNumeric>{t('合計周回数')}</Th>
-                  <Th></Th>
+                  <Th color={chartTab === 'ap' ? 'var(--gold)' : 'var(--gold-dim)'} isNumeric>合計消費AP</Th>
+                  <Th color={chartTab === 'lap' ? 'var(--gold)' : 'var(--gold-dim)'} isNumeric>合計周回数</Th>
+                  <Th />
                 </Tr>
               </Thead>
               <Tbody>
-                {history.map((item) => (
+                {history.map(item => (
                   <Tr key={item.id} _hover={{ bg: 'rgba(154,114,36,0.05)' }}>
                     <Td fontSize="sm" color="var(--text)">
                       {new Date(item.created_at).toLocaleString()}
                     </Td>
                     <Td>
-                      <Badge colorScheme={item.objective === 'ap' ? 'blue' : 'orange'} variant="outline" fontSize="10px">
-                        {item.objective === 'ap' ? 'AP MIN' : 'LAP MIN'}
+                      <Badge
+                        colorScheme={item.objective === 'ap' ? 'orange' : item.objective === 'lap' ? 'blue' : 'purple'}
+                        variant="outline"
+                        fontSize="10px"
+                      >
+                        {OBJECTIVE_BADGE[item.objective] ?? item.objective}
                       </Badge>
                     </Td>
-                    <Td isNumeric fontWeight="bold" color="var(--gold)">
+                    <Td isNumeric fontWeight={chartTab === 'ap' ? 'bold' : 'normal'} color={chartTab === 'ap' ? 'var(--gold)' : 'var(--text2)'}>
                       {Math.round(item.total_ap).toLocaleString()}
                     </Td>
-                    <Td isNumeric color="var(--text2)">
+                    <Td isNumeric fontWeight={chartTab === 'lap' ? 'bold' : 'normal'} color={chartTab === 'lap' ? 'var(--gold)' : 'var(--text2)'}>
                       {Math.round(item.total_lap).toLocaleString()}
                     </Td>
                     <Td>

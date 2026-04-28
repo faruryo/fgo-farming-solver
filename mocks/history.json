@@ -1,0 +1,42 @@
+[
+  {
+    "id": "e3fcaca7-3170-4804-943d-b071c3611080",
+    "objective": "both",
+    "target_items": "証×123,骨×101,小鐘×475",
+    "total_ap": 35769,
+    "total_lap": 1062,
+    "created_at": "2026-04-27T10:00:00.000Z"
+  },
+  {
+    "id": "b2a1d3e4-5678-4abc-9def-c0ffee001234",
+    "objective": "both",
+    "target_items": "狂輝×50,狂魔×80",
+    "total_ap": 12600,
+    "total_lap": 480,
+    "created_at": "2026-04-25T14:30:00.000Z"
+  },
+  {
+    "id": "f9e8d7c6-b5a4-4321-8765-feedface5678",
+    "objective": "both",
+    "target_items": "矢尻×73,鱗粉×146,鬼灯×55",
+    "total_ap": 22050,
+    "total_lap": 820,
+    "created_at": "2026-04-20T08:15:00.000Z"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "objective": "ap",
+    "target_items": "証×200,骨×150,塵×100",
+    "total_ap": 18900,
+    "total_lap": 900,
+    "created_at": "2026-04-15T20:45:00.000Z"
+  },
+  {
+    "id": "deadbeef-cafe-4bad-babe-c0ffee999888",
+    "objective": "lap",
+    "target_items": "剣魔×117,弓魔×72,槍魔×53",
+    "total_ap": 8400,
+    "total_lap": 400,
+    "created_at": "2026-04-10T12:00:00.000Z"
+  }
+]
