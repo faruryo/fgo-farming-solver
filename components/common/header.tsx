@@ -7,7 +7,7 @@ export const Header = () => {
   return (
     <header className="c-header">
       <div className="c-header-left" />
-      <Link href="/material" className="c-logo">
+      <Link href="/" className="c-logo">
         <div className="c-logo-emblem">
           <svg viewBox="0 0 24 24" fill="none" stroke="#c09030" strokeWidth="1.5">
             <circle cx="12" cy="12" r="4" />

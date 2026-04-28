@@ -26,29 +26,59 @@ export const menuGroups = [
   {
     title: 'Tools',
     items: [
-      {
-        href: '/material',
-        label: { ja: '育成素材計算機', en: 'Material Calculator' },
-      },
-      { href: '/farming', label: { ja: '周回ソルバー', en: 'Farming Solver' } },
-      { href: '/farming/history', label: { ja: '計算履歴・進捗', en: 'Farming History' } },
-      {
-        href: '/servants',
-        label: { ja: 'サーヴァント一覧', en: 'Servant List' },
-      },
-      { href: '/items', label: { ja: 'アイテム一覧', en: 'Item List' } },
+      { href: '/material',         label: { ja: '育成素材計算機', en: 'Material Calculator' } },
+      { href: '/farming',          label: { ja: '周回ソルバー',   en: 'Farming Solver' } },
+      { href: '/farming/history',  label: { ja: '計算履歴',       en: 'History' } },
+    ],
+  },
+  {
+    title: 'Reference',
+    items: [
+      { href: '/servants', label: { ja: 'サーヴァント一覧', en: 'Servants' } },
+      { href: '/items',    label: { ja: 'アイテム一覧',     en: 'Items' } },
+    ],
+  },
+  {
+    title: 'Account',
+    items: [
       { href: '/cloud', label: { ja: 'データ管理', en: 'Data Management' } },
     ],
   },
   {
     title: 'Docs',
     items: [
-      { href: '/docs', label: { ja: '使い方', en: 'About' } },
-      { href: '/news', label: { ja: 'お知らせ', en: 'News' } },
-      { href: '/LICENSE', label: { ja: 'License', en: 'License' } },
+      { href: '/docs',    label: { ja: '使い方',    en: 'About' } },
+      { href: '/news',    label: { ja: 'お知らせ',  en: 'News' } },
+      { href: '/LICENSE', label: { ja: 'License',   en: 'License' } },
     ],
   },
 ]
+
+const AuthStatus = () => {
+  const { session } = useCloudSync()
+  return (
+    <Box px={3} py={2}>
+      <HStack spacing={2}>
+        <Box w="7px" h="7px" borderRadius="50%" flexShrink={0}
+          bg={session?.user ? 'var(--ok)' : 'var(--text3)'} />
+        {session?.user ? (
+          <Text fontSize="11px" color="var(--text2)" noOfLines={1} flex={1}>
+            {session.user.name}
+          </Text>
+        ) : (
+          <>
+            <Text fontSize="11px" color="var(--text3)">未ログイン</Text>
+            <NextLink href="/cloud">
+              <Text fontSize="10px" color="var(--steel)" textDecoration="underline" _hover={{ color: 'var(--gold)' }}>
+                ログイン
+              </Text>
+            </NextLink>
+          </>
+        )}
+      </HStack>
+    </Box>
+  )
+}
 
 const CloudSyncContent = () => {
   const { t } = useTranslation('common')
@@ -141,6 +171,8 @@ export const Nav = () => {
           _active={{ color: 'var(--gold2)', bg: 'rgba(154,114,36,0.15)' }}
         />
         <MenuList bg="var(--panel)" borderColor="var(--gold-dim)" backdropFilter="blur(20px)" py={2} width="220px">
+          <AuthStatus />
+          <MenuDivider borderColor="rgba(154,114,36,0.1)" />
           <CloudSyncContent />
           <MenuDivider borderColor="rgba(154,114,36,0.1)" />
           
