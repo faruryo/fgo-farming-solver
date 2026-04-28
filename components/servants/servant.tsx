@@ -14,6 +14,7 @@ import { MaterialList } from './material-list'
 import { useTranslation } from 'react-i18next'
 import { NiceServant, Item, Materials } from '../../interfaces/atlas-academy'
 import { getClassName } from '../../lib/class-names'
+import { getClassIconUrl } from '../../lib/get-class-icon-url'
 
 export type ServantProps = {
   servant: NiceServant
@@ -29,6 +30,7 @@ export const Page = ({
   const { t } = useTranslation(['servants', 'common'])
   const title = t('title', { name: servant.name })
   const portrait = servant.extraAssets.charaGraph.ascension?.[4] || Object.values(servant.extraAssets.charaGraph.ascension || {}).pop()
+  const classIconUrl = getClassIconUrl(servant.className, servant.rarity)
 
   return (
     <div className="c-page">
@@ -44,7 +46,19 @@ export const Page = ({
               <div className="c-stat-label">STARS</div>
             </div>
             <div className="c-stat">
-              <div className="c-stat-num" style={{ fontSize: '14px' }}>{getClassName(servant.className, locale)}</div>
+              {classIconUrl ? (
+                <Image
+                  src={classIconUrl}
+                  alt={getClassName(servant.className, locale)}
+                  width={32}
+                  height={32}
+                  style={{ objectFit: 'contain' }}
+                />
+              ) : (
+                <div className="c-stat-num" style={{ fontSize: '14px' }}>
+                  {getClassName(servant.className, locale)}
+                </div>
+              )}
               <div className="c-stat-label">CLASS</div>
             </div>
           </div>
@@ -53,10 +67,10 @@ export const Page = ({
         <div className="c-servant-detail-top">
           {portrait && (
             <div className="c-servant-detail-portrait">
-              <Image 
-                src={portrait} 
-                alt={servant.name} 
-                width={240} 
+              <Image
+                src={portrait}
+                alt={servant.name}
+                width={240}
                 height={340}
                 style={{ height: 'auto', width: '100%', display: 'block' }}
               />
@@ -73,36 +87,27 @@ export const Page = ({
                 <Text color="var(--text3)">{title}</Text>
               </BreadcrumbItem>
             </Breadcrumb>
-            
-            {/* ... other info can go here ... */}
           </VStack>
         </div>
 
-          <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
-            {[
-              { id: 'ascension', label: '霊基再臨', key: 'ascensionMaterials' },
-              { id: 'skill', label: 'スキル', key: 'skillMaterials' },
-              { id: 'app1', label: 'アペンド 1', key: 'appendSkill1Materials' },
-              { id: 'app2', label: 'アペンド 2', key: 'appendSkill2Materials' },
-              { id: 'app3', label: 'アペンド 3', key: 'appendSkill3Materials' },
-              { id: 'app4', label: 'アペンド 4', key: 'appendSkill4Materials' },
-              { id: 'app5', label: 'アペンド 5', key: 'appendSkill5Materials' },
-            ].map((section) => {
-              const materials = servant[section.key as keyof NiceServant] as unknown as Materials
-              if (!materials || Object.keys(materials).length === 0) return null
+        <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+          {[
+            { id: 'ascension',   label: t('common:ascension'),   key: 'ascensionMaterials' },
+            { id: 'skill',       label: t('common:skill'),        key: 'skillMaterials' },
+            { id: 'appendSkill', label: t('common:appendSkill'),  key: 'appendSkillMaterials' },
+          ].map((section) => {
+            const materials = servant[section.key as keyof NiceServant] as unknown as Materials
+            if (!materials || Object.keys(materials).length === 0) return null
 
-              return (
-                <div key={section.id} className="c-card" style={{ padding: '24px' }}>
-                  <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex', color: 'var(--gold2)' }}>
-                    {section.label}
-                  </div>
-                  <MaterialList
-                    materials={materials}
-                    items={items}
-                  />
+            return (
+              <div key={section.id} className="c-card" style={{ padding: '24px' }}>
+                <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex', color: 'var(--gold2)' }}>
+                  {section.label}
                 </div>
-              )
-            })}
+                <MaterialList materials={materials} items={items} />
+              </div>
+            )
+          })}
         </SimpleGrid>
       </div>
     </div>

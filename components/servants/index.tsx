@@ -5,8 +5,10 @@
 import { Heading, List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import Image from 'next/image'
 import { Servant, ClassName } from '../../interfaces/atlas-academy'
 import { getClassName } from '../../lib/class-names'
+import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
 import { Link } from '../common/link'
@@ -37,7 +39,13 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
         <SimpleGrid minChildWidth="300px" spacingX={6} spacingY={10}>
           {servantGroups.map(([className, servantGroups]) => (
             <VStack align="start" key={className} spacing={4}>
-              <div className="c-settings-section-label" style={{ width: '100%', display: 'flex' }}>
+              <div className="c-settings-section-label" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {(() => {
+                  const iconUrl = getClassIconUrl(className as ClassName, 5)
+                  return iconUrl
+                    ? <Image src={iconUrl} alt={className} width={20} height={20} style={{ objectFit: 'contain' }} />
+                    : null
+                })()}
                 {getClassName(className as ClassName, locale)}
               </div>
               <VStack spacing={6} align="stretch" width="100%">

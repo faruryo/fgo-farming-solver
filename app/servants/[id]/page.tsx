@@ -12,7 +12,7 @@ export default async function ServantDetailPage({
   const { id } = await params
   const locale = 'ja'
   const [servant, items] = await Promise.all([
-    getNiceServants(locale).then((servants) =>
+    getNiceServants(locale, true).then((servants) =>
       servants.find(({ id: sid }) => sid.toString() == id)
     ),
     getItems(locale),
