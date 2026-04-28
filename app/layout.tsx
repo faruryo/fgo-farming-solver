@@ -14,6 +14,10 @@ const cinzel = Cinzel({
 export const metadata: Metadata = {
   title: 'FGO周回ソルバー',
   description: 'FGOの周回効率を計算するツール',
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 }
 
 export default function RootLayout({
