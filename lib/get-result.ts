@@ -1,15 +1,15 @@
-import { Result } from '../interfaces/api'
+import { Result, BothResult } from '../interfaces/api'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import type { CloudflareEnv } from '../types/cloudflare-env'
 
-export const getResult = async (id: string): Promise<Result> => {
+export const getResult = async (id: string): Promise<Result | BothResult> => {
   const isDev = process.env.NODE_ENV === 'development'
   const isEdge = process.env.NEXT_RUNTIME === 'edge'
 
   if (isDev && !isEdge) {
     const path = await import(/* webpackIgnore: true */ 'path')
     const { readJson } = await import('./read-json')
-    const data = await readJson<Result>(path.default.resolve('mocks', 'result.json'))
+    const data = await readJson<Result | BothResult>(path.default.resolve('mocks', 'result.json'))
     return data
   }
 
@@ -31,5 +31,5 @@ export const getResult = async (id: string): Promise<Result> => {
     throw new Error(`Result not found for id ${id}`)
   }
 
-  return JSON.parse(result.result_data) as Result
+  return JSON.parse(result.result_data) as Result | BothResult
 }

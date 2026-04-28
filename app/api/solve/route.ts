@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { getDrops } from '../../../lib/get-drops'
-import { solve } from '../../../lib/solver'
+import { solveBoth } from '../../../lib/solver'
 import { Params } from '../../../interfaces/api'
 import { auth } from '../../../lib/auth'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
@@ -10,7 +10,6 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams
-  const objective = searchParams.get('objective') || 'ap'
   const itemsRaw = searchParams.get('items') || ''
   const questsRaw = searchParams.get('quests') || ''
   const apCoefficients = searchParams.get('ap_coefficients') || ''
@@ -29,7 +28,7 @@ export async function GET(req: NextRequest) {
   }
 
   const drops = await getDrops()
-  
+
   // Apply AP coefficients (e.g., 0:0.5 for half AP on training grounds)
   if (apCoefficients) {
     const coeffs = Object.fromEntries(
@@ -39,7 +38,6 @@ export async function GET(req: NextRequest) {
       })
     )
     drops.quests = drops.quests.map((q) => {
-      // Check if quest ID starts with any of the coefficient IDs
       const coeffId = Object.keys(coeffs).find((id) => q.id.startsWith(id))
       if (coeffId) {
         return { ...q, ap: q.ap * coeffs[coeffId] }
@@ -49,12 +47,12 @@ export async function GET(req: NextRequest) {
   }
 
   const params: Params = {
-    objective,
+    objective: 'both',
     items: itemCounts,
     quests: allowedQuests,
   }
 
-  const result = solve(drops, params)
+  const result = solveBoth(drops, params)
   const id = crypto.randomUUID()
 
   // Save to D1 if available
@@ -67,10 +65,10 @@ export async function GET(req: NextRequest) {
         .bind(
           id,
           session?.user?.id || 'anonymous',
-          objective,
+          'both',
           JSON.stringify(itemCounts),
-          result.total_ap,
-          result.total_lap,
+          result.ap.total_ap,
+          result.lap.total_lap,
           JSON.stringify(result)
         )
         .run()

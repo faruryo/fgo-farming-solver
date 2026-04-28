@@ -1,6 +1,6 @@
 import solver from 'javascript-lp-solver'
 import { Drops } from './get-drops'
-import { Result, Params } from '../interfaces/api'
+import { Result, BothResult, Params } from '../interfaces/api'
 
 export const solve = (
   drops: Drops,
@@ -127,3 +127,8 @@ export const solve = (
     skipped_items: skippedItems,
   }
 }
+
+export const solveBoth = (drops: Drops, params: Params): BothResult => ({
+  ap:  solve(drops, { ...params, objective: 'ap' }),
+  lap: solve(drops, { ...params, objective: 'lap' }),
+})

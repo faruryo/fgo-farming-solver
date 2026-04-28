@@ -28,3 +28,11 @@ export type Result = {
   total_ap: number
   skipped_items?: string[]
 }
+
+export type BothResult = {
+  ap: Result
+  lap: Result
+}
+
+export const isBothResult = (r: Result | BothResult): r is BothResult =>
+  'ap' in r && 'lap' in r

@@ -6,19 +6,13 @@ import {
   AlertIcon,
   Button,
   ButtonGroup,
-  Checkbox,
   FormControl,
   FormLabel,
   useBoolean,
   VStack,
 } from '@chakra-ui/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, {
-  ChangeEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-} from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { useChecked } from '../../hooks/use-checked-from-quest-state'
@@ -29,7 +23,6 @@ import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { ItemFieldset } from './item-fieldset'
-import { ObjectiveFieldset } from './objective-fieldset'
 import { ResetAlertDialog } from './reset-alert-dialog'
 
 export type FarmingIndexProps = {
@@ -38,25 +31,15 @@ export type FarmingIndexProps = {
 }
 
 type InputState = {
-  objective: string
   itemCounts: { [key: string]: string }
   checkedQuests: string[]
-  halfDailyAp: boolean
 }
 type QueryInputState = {
-  objective?: string
   items: string
   quests?: string
-  ap_coefficients?: string
 }
 
-const inputToQuery = ({
-  objective,
-  itemCounts,
-  checkedQuests,
-  halfDailyAp,
-}: InputState) => ({
-  objective,
+const inputToQuery = ({ itemCounts, checkedQuests }: InputState) => ({
   items: Object.entries(itemCounts)
     .filter(([, count]) => count != '')
     .map(([item, count]) => item + ':' + count)
@@ -70,7 +53,6 @@ const inputToQuery = ({
       [] as string[]
     )
     .join(','),
-  ap_coefficients: halfDailyAp ? '0:0.5' : '',
 })
 
 const migrateLocalInput = () => {
@@ -104,13 +86,11 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     () => Object.fromEntries(items.map((item) => [item.id, ''])),
     [items]
   )
-  const [objective, setObjective] = useLocalStorage('objective', 'ap')
   const [itemCounts, setItemCounts] = useLocalStorage(
     'items',
     initialItemCounts
   )
   const [checkedQuests, setCheckedQuests] = useLocalStorage('quests', questIds)
-  const [halfDailyAp, setHalfDailyAp] = useLocalStorage('halfDailyAp', false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isConfirming, setIsConfirming] = useBoolean()
@@ -130,7 +110,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     if (!searchParams) return
     const query = Object.fromEntries(searchParams.entries())
     if (isInputState(query)) {
-      setObjective((objective) => query.objective ?? objective)
       setItemCounts(
         (itemCounts) =>
           Object.fromEntries(
@@ -152,7 +131,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
           )
         }
       })
-      setHalfDailyAp(query.ap_coefficients == '0:0.5')
       router.replace('/farming')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,12 +140,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       setIsLoading.on()
-      const query = inputToQuery({
-        objective,
-        itemCounts,
-        checkedQuests,
-        halfDailyAp,
-      })
+      const query = inputToQuery({ itemCounts, checkedQuests })
       const params = new URLSearchParams({ ...query, fields: 'id' })
       const url = `/api/solve?${params.toString()}`
       const result = await fetch(url).then((res) => res.json() as unknown)
@@ -179,29 +152,13 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         await router.push('/500')
       }
     },
-    [
-      checkedQuests,
-      halfDailyAp,
-      itemCounts,
-      objective,
-      router,
-      setIsLoading,
-    ]
+    [checkedQuests, itemCounts, router, setIsLoading]
   )
 
   const onReset = useCallback(() => {
-    setObjective('ap')
     setItemCounts(initialItemCounts)
     setCheckedQuests(questIds)
-    setHalfDailyAp(false)
-  }, [
-    initialItemCounts,
-    questIds,
-    setCheckedQuests,
-    setHalfDailyAp,
-    setItemCounts,
-    setObjective,
-  ])
+  }, [initialItemCounts, questIds, setCheckedQuests, setItemCounts])
 
   const handleItemChange = useCallback(
     (event: React.FormEvent<HTMLInputElement>) => {
@@ -209,15 +166,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       setItemCounts((itemCounts) => ({ ...itemCounts, [name]: value }))
     },
     [setItemCounts]
-  )
-  const handleHalfDailyApChange = useCallback<
-    ChangeEventHandler<HTMLInputElement>
-  >(
-    (event) => {
-      const { checked } = event.currentTarget
-      setHalfDailyAp(checked)
-    },
-    [setHalfDailyAp]
   )
 
   const itemGroups = Object.entries(
@@ -240,7 +188,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
 
         <form onSubmit={handleSubmit}>
           <VStack alignItems="start" spacing={8}>
-            <ObjectiveFieldset objective={objective} setObjective={setObjective} />
             <ItemFieldset
               itemGroups={itemGroups}
               inputItems={itemCounts}
@@ -272,20 +219,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                 {t('周回対象に含めるクエストを最低1つ選択してください。')}
               </Alert>
             )}
-
-            <div className="c-card" style={{ width: '100%', padding: '20px', background: 'rgba(30,46,74,0.02)' }}>
-              <VStack align="start" spacing={6}>
-                <FormControl as="fieldset">
-                  <FormLabel as="legend" className="c-settings-section-label" m={0} mb={3} display="flex">
-                    {t('キャンペーン')}
-                  </FormLabel>
-                  <Checkbox colorScheme="blue" isChecked={halfDailyAp} onChange={handleHalfDailyApChange}>
-                    {t('修練場AP半減')}
-                  </Checkbox>
-                </FormControl>
-
-              </VStack>
-            </div>
 
             <div className="c-farming-footer">
               <ButtonGroup spacing={4}>
