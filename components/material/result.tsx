@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item } from '../../interfaces/atlas-academy'
-import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 
 export type MaterialResultProps = {
@@ -78,7 +77,10 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
           ) : (
             <span
               className={`c-mat-count-val owned${isShort ? ' insufficient' : ''}`}
+              tabIndex={0}
               onClick={() => setEditing(true)}
+              onFocus={() => setEditing(true)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(true) } }}
             >
               {owned ?? 0}
             </span>
@@ -90,7 +92,6 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
 }
 
 export const Result = ({ items = [] }: MaterialResultProps) => {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const query = Object.fromEntries(searchParams?.entries() ?? [])
   const initialAmounts = Object.fromEntries(
@@ -141,14 +142,6 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   const totalShort = requiredItems.filter(item => deficiencies[item.id.toString()] > 0).length
   const totalMet   = requiredItems.filter(item => (amounts[item.id.toString()] ?? 0) > 0 && deficiencies[item.id.toString()] === 0).length
 
-  const goSolver = useCallback(() => {
-    const queryItems = requiredItems
-      .filter(item => deficiencies[item.id.toString()] > 0 && toApiItemId(item, items))
-      .map(item => `${toApiItemId(item, items)}:${deficiencies[item.id.toString()]}`)
-      .join(',')
-    router.push(`/farming?items=${queryItems}`)
-  }, [requiredItems, router, deficiencies, items])
-
   if (!mounted) return null
 
   return (
@@ -160,6 +153,16 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             <h1 className="c-page-title">アイテム必要数</h1>
           </div>
           <div className="c-result-actions">
+            {totalShort > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600, letterSpacing: '0.02em' }}>
+                不足 {totalShort}種
+              </span>
+            )}
+            {totalShort === 0 && totalMet > 0 && (
+              <span style={{ fontSize: 12, color: '#60c890', fontWeight: 600 }}>
+                充足 {totalMet}種
+              </span>
+            )}
             <button
               className={`c-filter-toggle${shortOnly ? ' active' : ''}`}
               onClick={() => setShortOnly(v => !v)}
@@ -207,23 +210,6 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           })}
           </>
         )}
-      </div>
-
-      <div className="c-farming-footer">
-        <div className="c-summary-row">
-          <div className="c-summary-item">
-            <div className={`c-summary-num${totalShort > 0 ? ' short' : ' ok'}`}>{totalShort}</div>
-            <div className="c-summary-label">不足種類</div>
-          </div>
-          <div className="c-summary-item">
-            <div className="c-summary-num ok">{totalMet}</div>
-            <div className="c-summary-label">充足種類</div>
-          </div>
-        </div>
-        <button className="c-farming-btn" onClick={goSolver}>
-          <span className="c-farming-btn-en">SOLVE FARMING ROUTE</span>
-          <span className="c-farming-btn-jp">周回数を求める</span>
-        </button>
       </div>
     </div>
   )

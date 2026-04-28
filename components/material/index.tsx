@@ -7,7 +7,10 @@ import { MaterialsForServants } from '../../lib/get-materials'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { sumMaterials } from '../../lib/sum-materials'
+import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
+import { ClassName } from '../../interfaces/atlas-academy'
+import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { ServantCard } from './servant-card'
 
 export type MaterialIndexProps = {
@@ -173,7 +176,7 @@ export const Index = ({
                   value={gtAppend}
                   onChange={e => applyGlobal('append', Number(e.target.value))}
                 >
-                  {Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+                  {Array.from({ length: 11 }, (_, i) => <option key={i} value={i}>{i}</option>)}
                 </select>
                 <span className="c-global-note">全アペンド共通</span>
               </div>
@@ -184,17 +187,32 @@ export const Index = ({
         {/* Filter bar */}
         <div className="c-filter-bar">
           <div className="c-filter-group" style={{ flexWrap: 'wrap', gap: 2 }}>
-            {CLASS_LIST.map(cls => (
-              <button
-                key={cls.id}
-                className={`c-class-tab${selClass === cls.id ? ' active' : ''}`}
-                style={selClass === cls.id ? { color: cls.color } : {}}
-                onClick={() => setSelClass(cls.id)}
-              >
-                <span className="c-tab-abbr">{cls.abbr}</span>
-                <span className="c-tab-label">{cls.label}</span>
-              </button>
-            ))}
+            {CLASS_LIST.map(cls => {
+              const iconUrl = cls.id !== 'all' ? getClassIconUrl(cls.id as ClassName, 5) : ''
+              const isActive = selClass === cls.id
+              return (
+                <button
+                  key={cls.id}
+                  className={`c-class-tab${isActive ? ' active' : ''}`}
+                  style={isActive ? { borderColor: cls.color } : {}}
+                  onClick={() => setSelClass(cls.id)}
+                  title={cls.label}
+                >
+                  {iconUrl ? (
+                    <Image
+                      src={iconUrl}
+                      alt={cls.label}
+                      width={24}
+                      height={24}
+                      style={{ objectFit: 'contain', opacity: isActive ? 1 : 0.55 }}
+                    />
+                  ) : (
+                    <span className="c-tab-abbr" style={isActive ? { color: cls.color } : {}}>{cls.abbr}</span>
+                  )}
+                  <span className="c-tab-label">{cls.label}</span>
+                </button>
+              )
+            })}
           </div>
 
           <div className="c-filter-sep" />

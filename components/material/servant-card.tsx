@@ -21,8 +21,9 @@ const updateRangeStart = (
   val: number
 ): ServantState => {
   const ranges = [...s.targets[targetKey].ranges]
+  const defaultStart = targetKey === 'appendSkill' ? 0 : 1
   while (ranges.length <= idx) {
-    ranges.push({ start: 1, end: 10 })
+    ranges.push({ start: defaultStart, end: 10 })
   }
   ranges[idx] = { ...ranges[idx], start: val }
   return {
@@ -44,7 +45,7 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
   const owned = !state.disabled
   const ascCur = state.targets.ascension.ranges[0]?.start ?? 0
   const skillCur = state.targets.skill.ranges.map(r => r.start)
-  const appendCur = Array.from({ length: 5 }, (_, i) => state.targets.appendSkill.ranges[i]?.start ?? 1)
+  const appendCur = Array.from({ length: 5 }, (_, i) => state.targets.appendSkill.ranges[i]?.start ?? 0)
 
   const gtAsc    = globalState.targets.ascension.ranges[0]?.end ?? 4
   const gtSkill  = globalState.targets.skill.ranges[0]?.end ?? 10
@@ -81,7 +82,8 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
   }
 
   const handleChipClick = (key: 'skill' | 'appendSkill', idx: number, cur: number, max: number) => {
-    const next = cur >= max ? 1 : cur + 1
+    const min = key === 'appendSkill' ? 0 : 1
+    const next = cur >= max ? min : cur + 1
     if (key === 'skill') setSkill(idx, next)
     else setAppend(idx, next)
   }

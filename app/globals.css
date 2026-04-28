@@ -18,6 +18,7 @@
   --text3:    #8898b8;
   --red:      #b03030;
   --green:    #1e7040;
+  --ok:       #60c890;
   --purple:   #7040a8;
   --serif:    var(--font-cinzel, 'Cinzel'), serif;
   --sans:     'Noto Sans JP', sans-serif;
@@ -479,7 +480,7 @@ body {
 .c-summary-item { display: flex; flex-direction: column; align-items: center; }
 .c-summary-num { font-family: var(--serif); font-size: 18px; font-weight: 600; line-height: 1; }
 .c-summary-num.short { color: #e06060; }
-.c-summary-num.ok    { color: #60c890; }
+.c-summary-num.ok    { color: var(--ok); }
 .c-summary-label { font-size: 9px; color: rgba(200,218,240,0.5); letter-spacing: 0.08em; }
 
 /* ===== RESULT ACTIONS ===== */
@@ -540,8 +541,9 @@ body {
 .c-mat-count-label { font-size: 9px; color: var(--text2); letter-spacing: 0.05em; }
 .c-mat-count-val { font-size: 14px; font-weight: 700; font-family: var(--serif); }
 .c-mat-count-val.required { color: var(--rarity-color, var(--navy)); }
-.c-mat-count-val.owned { color: var(--text2); cursor: pointer; transition: color 0.15s; }
+.c-mat-count-val.owned { color: var(--text2); cursor: pointer; transition: color 0.15s; outline: none; }
 .c-mat-count-val.owned:hover { color: var(--navy); }
+.c-mat-count-val.owned:focus-visible { color: var(--navy); box-shadow: 0 0 0 2px var(--steel); border-radius: 2px; }
 .c-mat-count-val.insufficient { color: var(--red); }
 .c-mat-count-input {
   background: var(--panel2); border: 1px solid var(--steel); color: var(--text);
