@@ -46,24 +46,28 @@ export const fetchJsonWithCache = async <T>(url: string) => {
   const stem = path.basename(url, '.json')
   const hashPath = path.resolve(cacheDir, `${stem}.hash.txt`)
   const cachePath = path.resolve(cacheDir, `${stem}.json`)
-  const hash = await getHash()
 
   const fsModule = await import(/* webpackIgnore: true */ 'fs')
   const fs = fsModule.default?.promises || fsModule.promises || fsModule
-  const obj = fs
-    .readFile(hashPath, 'utf-8')
-    .then((localHash: string) =>
-      localHash == hash
-        ? readJson<T>(cachePath)
-        : fetchAndWriteJson<T>(url, hash, hashPath, cachePath)
+
+  const [hash, localHash] = await Promise.all([
+    getHash().catch(() => null),
+    fs.readFile(hashPath, 'utf-8').catch(() => null),
+  ])
+
+  if (hash !== null && localHash === hash) {
+    return readJson<T>(cachePath).catch(() =>
+      fetchAndWriteJson<T>(url, hash, hashPath, cachePath)
     )
-    .catch(async (e: unknown) => {
-      console.warn(`Cache read failed or entry missing for ${url}, fetching fresh...`, e)
-      return fetchAndWriteJson<T>(url, hash, hashPath, cachePath)
-    })
-    .catch((e: unknown) => {
-      console.error(`fetchJsonWithCache for ${url} failed completely:`, e)
-      throw e
-    })
-  return obj
+  }
+
+  return fetchAndWriteJson<T>(url, hash ?? '', hashPath, cachePath).catch(async (e: unknown) => {
+    const stale = await readJson<T>(cachePath).catch(() => null)
+    if (stale !== null) {
+      console.warn(`Network unavailable for ${url}, using stale cache`)
+      return stale
+    }
+    console.error(`fetchJsonWithCache for ${url} failed:`, e)
+    throw e
+  })
 }
