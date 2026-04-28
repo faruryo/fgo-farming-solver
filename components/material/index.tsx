@@ -32,7 +32,7 @@ export const Index = ({
 
   const [selClass, setSelClass] = useState<ClassId>('all')
   const [selRarities, setSelRarities] = useState<number[]>([])
-  const [ownedFilter, setOwnedFilter] = useState<'all' | 'hide' | 'only'>('all')
+  const [servantFilter, setServantFilter] = useState<'all' | 'hide-unowned' | 'only-unowned' | 'hide-done' | 'only-done'>('all')
   const [showGlobal, setShowGlobal] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -88,12 +88,22 @@ export const Index = ({
         if (selClass !== targetClass) return false
       }
       if (selRarities.length > 0 && !selRarities.includes(Number(s.rarity))) return false
-      const unowned = chaldeaState[s.id]?.disabled ?? true
-      if (ownedFilter === 'hide' && unowned) return false
-      if (ownedFilter === 'only' && !unowned) return false
+      const st = chaldeaState[s.id]
+      const unowned = st?.disabled ?? true
+      if (servantFilter === 'hide-unowned' && unowned) return false
+      if (servantFilter === 'only-unowned' && !unowned) return false
+      if (servantFilter === 'hide-done' || servantFilter === 'only-done') {
+        const appends = Array.from({ length: 5 }, (_, i) => st?.targets.appendSkill.ranges[i]?.start ?? 1)
+        const done = !unowned &&
+          (st?.targets.ascension.ranges[0]?.start ?? 0) >= gtAsc &&
+          (st?.targets.skill.ranges.every(r => r.start >= gtSkill) ?? false) &&
+          appends.every(v => v >= gtAppend)
+        if (servantFilter === 'hide-done' && done) return false
+        if (servantFilter === 'only-done' && !done) return false
+      }
       return true
     }),
-    [servants, selClass, selRarities, ownedFilter, chaldeaState]
+    [servants, selClass, selRarities, servantFilter, chaldeaState, gtAsc, gtSkill, gtAppend]
   )
 
   const handleSetServantState = useCallback(
@@ -230,12 +240,17 @@ export const Index = ({
           </div>
 
           <div className="c-filter-right">
-            <button
-              className={`c-hide-toggle${ownedFilter !== 'all' ? ' active' : ''}`}
-              onClick={() => setOwnedFilter(v => v === 'all' ? 'hide' : v === 'hide' ? 'only' : 'all')}
+            <select
+              className={`c-filter-select${servantFilter !== 'all' ? ' active' : ''}`}
+              value={servantFilter}
+              onChange={e => setServantFilter(e.target.value as typeof servantFilter)}
             >
-              {ownedFilter === 'all' ? '全表示' : ownedFilter === 'hide' ? '未所持を隠す' : '未所持のみ'}
-            </button>
+              <option value="all">全表示</option>
+              <option value="hide-unowned">未所持を隠す</option>
+              <option value="only-unowned">未所持のみ</option>
+              <option value="hide-done">育成完了を隠す</option>
+              <option value="only-done">育成完了のみ</option>
+            </select>
           </div>
         </div>
 
