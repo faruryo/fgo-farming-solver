@@ -11,6 +11,7 @@ import {
   useBoolean,
   VStack,
 } from '@chakra-ui/react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -221,6 +222,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
             )}
 
             <div className="c-farming-footer">
+              <Link href="/farming/history" className="c-farming-btn-reset" style={{ padding: '8px 20px', fontSize: 13 }}>
+                {t('計算履歴')}
+              </Link>
               <ButtonGroup spacing={4}>
                 <Button
                   type="submit"
