@@ -46,7 +46,7 @@ export const useCloudSync = () => {
   const { i18n, t } = useTranslation('common')
   const router = useRouter()
   const toast = useToast()
-  
+
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [saveStatus, setSaveStatus] = useState<false | true | 'failed'>(false)
@@ -55,18 +55,20 @@ export const useCloudSync = () => {
   const [isInitializing, setIsInitializing] = useState(true)
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
   const [hasConflict, setHasConflict] = useState(false)
-  
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // Prevents the local-modification listener from marking data dirty while applyData is writing
+  const isApplyingCloudDataRef = useRef(false)
 
   // Local metadata tracking
   const getLocalMetadata = useCallback((): LocalMetadata => {
     if (typeof window === 'undefined') return { updatedAt: new Date(0).toISOString(), deviceId: 'server' }
     const raw = localStorage.getItem(LOCAL_METADATA_KEY)
     if (raw) return JSON.parse(raw) as unknown as LocalMetadata
-    
-    // Initialize
+
+    // Initialize with epoch so cloud data is always recognized as newer on first login
     const meta: LocalMetadata = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(0).toISOString(),
       deviceId: Math.random().toString(36).substring(2, 10)
     }
     localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(meta))
@@ -98,36 +100,41 @@ export const useCloudSync = () => {
   }
 
   const applyData = useCallback((data: Record<string, string>, metadata: CloudData['metadata'], silent = false) => {
-    KEYS.forEach((key) => {
-      const val = data[key]
-      if (typeof val === 'string') {
-        localStorage.setItem(key, val)
-      }
-    })
-    
-    // Sync metadata (resolves conflict)
-    const local = getLocalMetadata()
-    const newLocalMeta: LocalMetadata = {
-      updatedAt: metadata.updatedAt, // Record this as our current state
-      deviceId: local.deviceId,
-      lastSyncedAt: metadata.updatedAt
-    }
-    localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newLocalMeta))
-
-    if (!silent) {
-      toast({
-        title: t('読み込みました'),
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-        position: 'top'
+    isApplyingCloudDataRef.current = true
+    try {
+      KEYS.forEach((key) => {
+        const val = data[key]
+        if (typeof val === 'string') {
+          localStorage.setItem(key, val)
+        }
       })
-    }
 
-    setHasConflict(false)
-    window.dispatchEvent(new Event('localStorageUpdated'))
-    window.dispatchEvent(new CustomEvent('ls-sync'))
-    router.refresh()
+      // Sync metadata (resolves conflict)
+      const local = getLocalMetadata()
+      const newLocalMeta: LocalMetadata = {
+        updatedAt: metadata.updatedAt,
+        deviceId: local.deviceId,
+        lastSyncedAt: metadata.updatedAt
+      }
+      localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newLocalMeta))
+
+      if (!silent) {
+        toast({
+          title: t('読み込みました'),
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+          position: 'top'
+        })
+      }
+
+      setHasConflict(false)
+      window.dispatchEvent(new Event('localStorageUpdated'))
+      window.dispatchEvent(new CustomEvent('ls-sync'))
+      router.refresh()
+    } finally {
+      isApplyingCloudDataRef.current = false
+    }
   }, [getLocalMetadata, router, toast, t])
 
   const checkConflict = useCallback((cloud: CloudData) => {
@@ -183,13 +190,13 @@ export const useCloudSync = () => {
     try {
       const res = await fetch(`/api/cloud`, { credentials: 'include' })
       if (res.status === 200) {
-        const rawData = (await res.json()) as Record<string, unknown>
+        const rawData = (await res.json())
         let parsed: CloudData
         if (rawData.metadata && rawData.storage) {
-          parsed = rawData as unknown as CloudData
+          parsed = rawData as CloudData
         } else {
           parsed = {
-            storage: rawData as unknown as Record<string, string>,
+            storage: rawData as Record<string, string>,
             metadata: { updatedAt: new Date(0).toISOString(), deviceId: 'unknown' }
           }
         }
@@ -264,8 +271,10 @@ export const useCloudSync = () => {
   // Track local modifications
   useEffect(() => {
     const listener = (e: Event) => {
-      if (e instanceof CustomEvent && e.detail?.key === LOCAL_METADATA_KEY) return
-      
+      if (e instanceof CustomEvent && (e.detail as { key?: string } | null)?.key === LOCAL_METADATA_KEY) return
+      // Skip updates triggered by applyData to keep updatedAt === lastSyncedAt (clean state)
+      if (isApplyingCloudDataRef.current) return
+
       const meta = getLocalMetadata()
       const newMeta = { ...meta, updatedAt: new Date().toISOString() }
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newMeta))
