@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item } from '../../interfaces/atlas-academy'
+import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 
 export type MaterialResultProps = {
@@ -92,6 +93,7 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
 }
 
 export const Result = ({ items = [] }: MaterialResultProps) => {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const query = Object.fromEntries(searchParams?.entries() ?? [])
   const initialAmounts = Object.fromEntries(
@@ -126,6 +128,14 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   const onChange = useCallback((id: string, val: number) => {
     setPossession(prev => ({ ...prev, [id]: val }))
   }, [setPossession])
+
+  const goSolver = useCallback(() => {
+    const queryItems = requiredItems
+      .filter(item => deficiencies[item.id.toString()] > 0 && toApiItemId(item, items))
+      .map(item => `${toApiItemId(item, items)}:${deficiencies[item.id.toString()]}`)
+      .join(',')
+    router.push(`/farming?items=${queryItems}`)
+  }, [requiredItems, router, deficiencies, items])
 
   const displayedItems = shortOnly
     ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
@@ -210,6 +220,23 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           })}
           </>
         )}
+      </div>
+
+      <div className="c-farming-footer">
+        <div className="c-summary-row">
+          <div className="c-summary-item">
+            <div className={`c-summary-num${totalShort > 0 ? ' short' : ' ok'}`}>{totalShort}</div>
+            <div className="c-summary-label">不足種類</div>
+          </div>
+          <div className="c-summary-item">
+            <div className="c-summary-num ok">{totalMet}</div>
+            <div className="c-summary-label">充足種類</div>
+          </div>
+        </div>
+        <button className="c-farming-btn" onClick={goSolver}>
+          <span className="c-farming-btn-en">SOLVE FARMING ROUTE</span>
+          <span className="c-farming-btn-jp">周回数を求める</span>
+        </button>
       </div>
     </div>
   )
