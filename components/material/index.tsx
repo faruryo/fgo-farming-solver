@@ -33,6 +33,8 @@ export const Index = ({
   const [selClass, setSelClass] = useState<ClassId>('all')
   const [selRarities, setSelRarities] = useState<number[]>([])
   const [servantFilter, setServantFilter] = useState<'all' | 'hide-unowned' | 'only-unowned' | 'hide-done' | 'only-done'>('all')
+  type ServantSortMode = 'collectionNo' | 'new' | 'rarity-desc' | 'rarity-asc'
+  const [sortMode, setSortMode] = useState<ServantSortMode>('collectionNo')
   const [showGlobal, setShowGlobal] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -105,6 +107,23 @@ export const Index = ({
     }),
     [servants, selClass, selRarities, servantFilter, chaldeaState, gtAsc, gtSkill, gtAppend]
   )
+
+  const sorted = useMemo(() => {
+    if (sortMode === 'new') {
+      return [...filtered].sort((a, b) => b.collectionNo - a.collectionNo)
+    }
+    if (sortMode === 'rarity-desc') {
+      return [...filtered].sort((a, b) =>
+        b.rarity !== a.rarity ? b.rarity - a.rarity : a.collectionNo - b.collectionNo
+      )
+    }
+    if (sortMode === 'rarity-asc') {
+      return [...filtered].sort((a, b) =>
+        a.rarity !== b.rarity ? a.rarity - b.rarity : a.collectionNo - b.collectionNo
+      )
+    }
+    return filtered
+  }, [filtered, sortMode])
 
   const handleSetServantState = useCallback(
     (id: string) => (update: (prev: ServantState) => ServantState) => {
@@ -241,6 +260,16 @@ export const Index = ({
 
           <div className="c-filter-right">
             <select
+              className={`c-filter-select${sortMode !== 'collectionNo' ? ' active' : ''}`}
+              value={sortMode}
+              onChange={e => setSortMode(e.target.value as ServantSortMode)}
+            >
+              <option value="collectionNo">図鑑No.順</option>
+              <option value="new">新しい順</option>
+              <option value="rarity-desc">レアリティ↓</option>
+              <option value="rarity-asc">レアリティ↑</option>
+            </select>
+            <select
               className={`c-filter-select${servantFilter !== 'all' ? ' active' : ''}`}
               value={servantFilter}
               onChange={e => setServantFilter(e.target.value as typeof servantFilter)}
@@ -262,7 +291,7 @@ export const Index = ({
           </div>
         ) : (
           <div className="c-servant-grid">
-            {filtered.map(s => (
+            {sorted.map(s => (
               <ServantCard
                 key={s.id}
                 servant={s}
