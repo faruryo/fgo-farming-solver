@@ -190,13 +190,13 @@ export const useCloudSync = () => {
     try {
       const res = await fetch(`/api/cloud`, { credentials: 'include' })
       if (res.status === 200) {
-        const rawData = (await res.json())
+        const rawData: Record<string, unknown> = await res.json()
         let parsed: CloudData
         if (rawData.metadata && rawData.storage) {
-          parsed = rawData as CloudData
+          parsed = rawData as unknown as CloudData
         } else {
           parsed = {
-            storage: rawData as Record<string, string>,
+            storage: rawData as unknown as Record<string, string>,
             metadata: { updatedAt: new Date(0).toISOString(), deviceId: 'unknown' }
           }
         }
