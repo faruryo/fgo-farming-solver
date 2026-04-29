@@ -103,6 +103,9 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
               <div className="c-page-en">RESULT</div>
               <h1 className="c-page-title">{t('計算結果')}</h1>
             </div>
+            <div className="c-result-actions">
+              <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
+            </div>
           </div>
           <ResultPanel result={legacyResult} />
           <div style={{ textAlign: 'center', marginTop: 32 }}>
@@ -122,6 +125,9 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
           <div>
             <div className="c-page-en">RESULT</div>
             <h1 className="c-page-title">{t('計算結果')}</h1>
+          </div>
+          <div className="c-result-actions">
+            <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
           </div>
         </div>
 
