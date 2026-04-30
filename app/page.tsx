@@ -16,6 +16,7 @@ import { GachaSection } from '../components/dashboard/GachaSection'
 import { ProgressSection } from '../components/dashboard/ProgressSection'
 import { RecommendedQuest } from '../components/dashboard/RecommendedQuest'
 import { FarmingWizard } from '../components/dashboard/FarmingWizard'
+import { HistoryGraph } from '../components/dashboard/HistoryGraph'
 import { Link } from '../components/common/link'
 
 const MotionBox = motion.create(Box)
@@ -80,6 +81,11 @@ export default function HomePage() {
                       <RecommendedQuest />
                     </VStack>
                   </SimpleGrid>
+                </MotionBox>
+
+                {/* History Graph Section */}
+                <MotionBox variants={item}>
+                  <HistoryGraph />
                 </MotionBox>
 
                 {/* Gacha Section */}
