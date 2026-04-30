@@ -1,5 +1,6 @@
 import { getHash } from './get-hash'
 import { readJson } from './read-json'
+import { canAccessFs } from './data-source'
 
 const fetchAndWriteJson = async <T>(
   url: string,
@@ -23,12 +24,11 @@ const fetchAndWriteJson = async <T>(
 }
 
 export const fetchJsonWithCache = async <T>(url: string) => {
-  const isEdge = process.env.NEXT_RUNTIME === 'edge'
-  const isCloudflare = process.env.CF_PAGES === '1' || process.env.OPEN_NEXT === '1'
-  const isDev = process.env.NODE_ENV === 'development'
-
+  const hasFs = await canAccessFs()
   const isBrowser = typeof window !== 'undefined'
-  if (isBrowser || isEdge || isCloudflare || !isDev) {
+
+  // In edge/cloudflare/browser/prod — just fetch directly
+  if (isBrowser || !hasFs) {
     return fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)
@@ -40,6 +40,7 @@ export const fetchJsonWithCache = async <T>(url: string) => {
       })
   }
 
+  // Dev with filesystem access — use disk cache
   const pathModule = await import(/* webpackIgnore: true */ 'path')
   const path = pathModule.default || pathModule
   const cacheDir = path.resolve('.next/cache/atlasacademy')

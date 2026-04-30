@@ -1,22 +1,23 @@
+import { canAccessFs } from './data-source'
+
 export const getQuestTranslation = async (): Promise<{
   [jpQuestName: string]: string
 }> => {
-  const isEdge = process.env.NEXT_RUNTIME === 'edge'
-
-  if (!isEdge) {
-    const fs = await import(/* webpackIgnore: true */ 'fs/promises')
-    const path = await import(/* webpackIgnore: true */ 'path')
-    const cacheDir = path.default.resolve('cache')
-    const cachePath = path.default.resolve(cacheDir, 'quests.json')
-
+  // 1. Try local cache file
+  const hasFs = await canAccessFs()
+  if (hasFs) {
     try {
+      const fs = await import(/* webpackIgnore: true */ 'fs/promises')
+      const path = await import(/* webpackIgnore: true */ 'path')
+      const cachePath = path.default.resolve('cache', 'quests.json')
       const value = await fs.default.readFile(cachePath, 'utf-8')
       return JSON.parse(value) as Record<string, string>
     } catch {
-      // ignore
+      // cache miss — continue to fetch
     }
   }
 
+  // 2. Fetch from Google Sheets
   const key = process.env.GOOGLE_SHEETS_API_KEY
   if (!key) {
     console.warn(
@@ -39,19 +40,18 @@ export const getQuestTranslation = async (): Promise<{
         .map(([enName, jpName]: string[]) => [jpName, enName])
     )
 
-
-    if (!isEdge) {
-      const fs = await import(/* webpackIgnore: true */ 'fs/promises')
-      const path = await import(/* webpackIgnore: true */ 'path')
-      const cacheDir = path.default.resolve('cache')
-      const cachePath = path.default.resolve(cacheDir, 'quests.json')
-
-      fs.default
-        .mkdir(cacheDir, { recursive: true })
-        .then(() =>
-          fs.default.writeFile(cachePath, JSON.stringify(map), 'utf-8')
-        )
-        .catch(() => { })
+    // 3. Write cache (best-effort, only if fs is available)
+    if (hasFs) {
+      try {
+        const fs = await import(/* webpackIgnore: true */ 'fs/promises')
+        const path = await import(/* webpackIgnore: true */ 'path')
+        const cacheDir = path.default.resolve('cache')
+        const cachePath = path.default.resolve(cacheDir, 'quests.json')
+        await fs.default.mkdir(cacheDir, { recursive: true })
+        await fs.default.writeFile(cachePath, JSON.stringify(map), 'utf-8')
+      } catch {
+        // write failed — no problem
+      }
     }
 
     return map

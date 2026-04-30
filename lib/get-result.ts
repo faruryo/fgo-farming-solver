@@ -1,35 +1,34 @@
 import { Result, BothResult } from '../interfaces/api'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
-import type { CloudflareEnv } from '../types/cloudflare-env'
+import { readLocalJson } from './data-source'
 
 export const getResult = async (id: string): Promise<Result | BothResult> => {
-  const isDev = process.env.NODE_ENV === 'development'
-  const isEdge = process.env.NEXT_RUNTIME === 'edge'
+  // 1. Try local mock (dev)
+  const mock = await readLocalJson<Result | BothResult>('mocks/result.json')
+  if (mock) return mock
 
-  if (isDev && !isEdge) {
-    const path = await import(/* webpackIgnore: true */ 'path')
-    const { readJson } = await import('./read-json')
-    const data = await readJson<Result | BothResult>(path.default.resolve('mocks', 'result.json'))
-    return data
+  // 2. Try Cloudflare D1 (production)
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare')
+    const ctx = (await getCloudflareContext({ async: true })) as unknown as {
+      env: { DB: D1Database }
+    }
+
+    if (!ctx.env.DB) {
+      throw new Error('Database not available')
+    }
+
+    const result = await ctx.env.DB.prepare(
+      'SELECT result_data FROM farming_results WHERE id = ?'
+    )
+      .bind(id)
+      .first<{ result_data: string }>()
+
+    if (!result) {
+      throw new Error(`Result not found for id ${id}`)
+    }
+
+    return JSON.parse(result.result_data) as Result | BothResult
+  } catch (e) {
+    throw e instanceof Error ? e : new Error(String(e))
   }
-
-  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-    env: CloudflareEnv
-  }
-
-  if (!env.DB) {
-    throw new Error('Database not available')
-  }
-
-  const result = await env.DB.prepare(
-    'SELECT result_data FROM farming_results WHERE id = ?'
-  )
-    .bind(id)
-    .first<{ result_data: string }>()
-
-  if (!result) {
-    throw new Error(`Result not found for id ${id}`)
-  }
-
-  return JSON.parse(result.result_data) as Result | BothResult
 }
