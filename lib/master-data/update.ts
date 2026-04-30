@@ -401,13 +401,13 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   const allEvents: AtlasEvent[] = await eventsRes.json()
   const allGachas: AtlasGacha[] = await gachaRes.json()
   
-  // Filter active events
+  // Filter active events (require banner)
   const activeEvents = allEvents
-    .filter(e => e.startedAt <= now && e.shopFinishedAt > now)
+    .filter(e => e.startedAt <= now && e.shopFinishedAt > now && e.banner)
     .map(e => ({
       id: e.id,
       name: e.name,
-      banner: e.banner,
+      banner: e.banner as string,
       startedAt: e.startedAt,
       endedAt: e.endedAt,
       shopFinishedAt: e.shopFinishedAt,
@@ -418,13 +418,13 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
       ).values())
     }))
 
-  // Filter active gachas
+  // Filter active gachas (require banner)
   const activeGachas = allGachas
-    .filter(g => g.openedAt <= now && g.closedAt > now)
+    .filter(g => g.openedAt <= now && g.closedAt > now && g.banner)
     .map(g => ({
       id: g.id,
       name: g.name,
-      banner: g.banner,
+      banner: g.banner as string,
       openedAt: g.openedAt,
       closedAt: g.closedAt,
       pickupServants: (g.pickupServants || []).map(s => ({
