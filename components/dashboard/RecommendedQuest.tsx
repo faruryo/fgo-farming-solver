@@ -7,7 +7,7 @@ import { ChaldeaState } from '../../hooks/create-chaldea-state'
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
-  const [chaldea] = useLocalStorage<ChaldeaState>('chaldea', {})
+  const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
   const { items, quests, drop_rates, isLoading } = useDrops()
 
   // Find most needed items

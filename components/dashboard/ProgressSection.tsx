@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { CHART_COLORS } from '../../constants/chart-colors'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
+import NextLink from 'next/link'
+import { Button } from '@chakra-ui/react'
 
 export const ProgressSection: React.FC = () => {
-  const { t } = useTranslation(['dashboard'])
-  const [chaldea] = useLocalStorage<ChaldeaState>('chaldea', {})
+  const { t } = useTranslation(['dashboard', 'common'])
+  const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
 
   const stats = useMemo(() => {
     if (!chaldea || Object.keys(chaldea).length === 0) return []
@@ -67,7 +69,19 @@ export const ProgressSection: React.FC = () => {
           <div className="u-section-header-line" />
         </div>
         <Box p={8} className="u-fgo-card" bg="var(--panel2)" textAlign="center" borderRadius="xl">
-          <Text color="var(--text3)">{t('目標が設定されていません')}</Text>
+          <VStack spacing={4}>
+            <Text color="var(--text2)" fontWeight="bold">
+              {t('目標が設定されていません')}
+            </Text>
+            <Text color="var(--text3)" fontSize="sm">
+              {t('育成素材計算機で目標レベルを設定すると、全体の進捗がグラフで表示されます。')}
+            </Text>
+            <NextLink href="/material" passHref>
+              <Button as="a" colorScheme="yellow" size="sm" mt={2}>
+                {t('common:育成素材計算機へ')}
+              </Button>
+            </NextLink>
+          </VStack>
         </Box>
       </VStack>
     )
