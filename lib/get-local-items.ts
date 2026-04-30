@@ -12,11 +12,19 @@ export const getLocalItems = async <I extends Item>(
   items: I[],
   locale = 'ja'
 ): Promise<Localized<I>[]> => {
-  const atlasItems = await getItems(locale)
-  const atlasItemMap = atlasItems.reduce(
-    (map, item) => map.set(toApiItemId(item, atlasItems), item),
-    new Map<string, EnrichedItem>()
-  )
+  if (items.length === 0) return []
+
+  let atlasItemMap = new Map<string, EnrichedItem>()
+  try {
+    const atlasItems = await getItems(locale)
+    atlasItemMap = atlasItems.reduce(
+      (map, item) => map.set(toApiItemId(item, atlasItems), item),
+      new Map<string, EnrichedItem>()
+    )
+  } catch {
+    // Atlas Academy unavailable — fall back to master data names
+  }
+
   return items.map(({ id, category, name, ...rest }) => {
     const atlasItem = atlasItemMap.get(id)
     return {

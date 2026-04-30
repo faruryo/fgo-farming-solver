@@ -82,12 +82,19 @@ export async function fetchData<T>(
 
 /**
  * Check whether Node.js file-system APIs are available.
+ * Probes with readFile rather than just importing the module, because
+ * Cloudflare Workers with nodejs_compat allows the import to succeed
+ * (via unenv shims) but throws "[unenv] not implemented" on actual calls.
  */
 export async function canAccessFs(): Promise<boolean> {
   try {
-    await import(/* webpackIgnore: true */ 'fs/promises')
+    const fsMod = await import(/* webpackIgnore: true */ 'fs/promises')
+    const fs = (fsMod.default ?? fsMod) as { readFile: (p: string, e: string) => Promise<string> }
+    await fs.readFile('/__canAccessFs__', 'utf-8')
     return true
-  } catch {
-    return false
+  } catch (e: unknown) {
+    // Real Node.js fs throws ENOENT for a missing file — fs IS available.
+    // unenv stubs throw "[unenv] … not implemented" with no code — fs is NOT available.
+    return e instanceof Error && (e as NodeJS.ErrnoException).code === 'ENOENT'
   }
 }
