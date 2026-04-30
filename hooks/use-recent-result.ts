@@ -3,6 +3,7 @@ import { Result, BothResult } from '../interfaces/api'
 
 export function useRecentResult() {
   const [result, setResult] = useState<Result | BothResult | null>(null)
+  const [historyCount, setHistoryCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -15,15 +16,14 @@ export function useRecentResult() {
           id = url.split('/farming/results/')[1]
         }
         
-        // If no local history, try fetching from api
-        if (!id) {
-          const res = await fetch('/api/farming/history')
-          if (res.ok) {
-            const json = await res.json()
-            const history = json as { id: string }[]
-            if (history && Array.isArray(history) && history.length > 0) {
-              id = history[0].id
-            }
+        // Fetch history count and first ID
+        const resHistory = await fetch('/api/farming/history')
+        if (resHistory.ok) {
+          const json = await resHistory.json()
+          const history = json as { id: string }[]
+          setHistoryCount(history.length)
+          if (!id && history && history.length > 0) {
+            id = history[0].id
           }
         }
 
@@ -47,5 +47,5 @@ export function useRecentResult() {
     void fetchRecent()
   }, [])
 
-  return { result, loading }
+  return { result, historyCount, loading }
 }

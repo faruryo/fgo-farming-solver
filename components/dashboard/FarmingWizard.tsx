@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { FaChevronLeft, FaArrowRight } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
+import { useRecentResult } from '../../hooks/use-recent-result'
 
 const MotionBox = motion.create(Box)
 
@@ -11,9 +12,12 @@ export const FarmingWizard: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
   const [step, setStep] = useState(1)
   const router = useRouter()
+  const { historyCount, loading } = useRecentResult()
 
   const nextStep = () => setStep(s => s + 1)
   const prevStep = () => setStep(s => s - 1)
+
+  if (loading || historyCount >= 3) return null
 
   const variants = {
     enter: (direction: number) => ({
