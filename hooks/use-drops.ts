@@ -10,8 +10,8 @@ export const useDrops = () => {
       try {
         const response = await fetch('/api/drops')
         if (response.ok) {
-          const json = (await response.json())
-          setData(json)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          setData(await response.json())
         }
       } catch (e) {
         console.error(e)
