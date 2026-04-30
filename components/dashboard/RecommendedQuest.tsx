@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useDrops } from '../../hooks/use-drops'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
+import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
@@ -56,7 +57,7 @@ export const RecommendedQuest: React.FC = () => {
             gap={4}
           >
             <Box width="48px" height="48px" flexShrink={0}>
-               <Image src={`/assets/items/${item.id}.webp`} alt={item.name} fallbackSrc="https://via.placeholder.com/48" />
+               <Image src={getItemIconUrl(item.icon)} alt={item.name} fallbackSrc="https://via.placeholder.com/48" />
             </Box>
             <VStack align="start" spacing={0} flex={1}>
               <Text fontSize="xs" color="var(--text3)">{t('不足素材')}: {item.name}</Text>
