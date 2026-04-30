@@ -24,7 +24,17 @@ export const RecommendedQuest: React.FC = () => {
       const targetDropRates = isBothResult(recentResult) ? recentResult.ap.drop_rates : recentResult.drop_rates
 
       if (targetQuests && targetQuests.length > 0) {
-        return targetQuests.slice(0, 4).map((q: Quest) => {
+        return targetQuests
+          .sort((a, b) => {
+            const getPriority = (q: Quest) => {
+              if (q.area?.includes('冠位研鑽戦')) return 1
+              if (q.area?.includes('オーディール・コール')) return 2
+              return 3
+            }
+            return getPriority(a) - getPriority(b)
+          })
+          .slice(0, 4)
+          .map((q: Quest) => {
           // Find the primary item being farmed in this quest
           const relatedRates = targetDropRates.filter(dr => dr.quest_id === q.id)
           // Find which target item has the highest drop rate here
