@@ -1,0 +1,90 @@
+
+> fgo-farming-solver@0.1.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+
+./components/dashboard/FarmingWizard.tsx
+8:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+8:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+8:35  Error: Unsafe member access .create on an `any` value.  @typescript-eslint/no-unsafe-member-access
+8:44  Error: Unsafe call of an `any` typed value.  @typescript-eslint/no-unsafe-call
+8:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+8:60  Error: Unsafe member access .create on an `any` value.  @typescript-eslint/no-unsafe-member-access
+
+./components/dashboard/RecommendedQuest.tsx
+2:29  Error: 'HStack' is defined but never used.  @typescript-eslint/no-unused-vars
+12:69  Error: 'dashboardMeta' is defined but never used.  @typescript-eslint/no-unused-vars
+14:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/get-dashboard-meta.ts
+35:14  Error: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/master-data/update.ts
+370:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+371:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+376:20  Error: Unsafe member access .startedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+376:42  Error: Unsafe member access .shopFinishedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+378:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+378:13  Error: Unsafe member access .id on an `any` value.  @typescript-eslint/no-unsafe-member-access
+379:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+379:15  Error: Unsafe member access .name on an `any` value.  @typescript-eslint/no-unsafe-member-access
+380:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+380:17  Error: Unsafe member access .banner on an `any` value.  @typescript-eslint/no-unsafe-member-access
+381:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+381:20  Error: Unsafe member access .startedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+382:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+382:18  Error: Unsafe member access .endedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+383:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+383:25  Error: Unsafe member access .shopFinishedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+384:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+384:15  Error: Unsafe member access .type on an `any` value.  @typescript-eslint/no-unsafe-member-access
+387:9  Error: Unsafe argument of type `any` assigned to a parameter of type `Iterable<readonly [unknown, unknown]> | null | undefined`.  @typescript-eslint/no-unsafe-argument
+387:9  Error: Unsafe call of an `any` typed value.  @typescript-eslint/no-unsafe-call
+387:9  Error: Unsafe call of an `any` typed value.  @typescript-eslint/no-unsafe-call
+387:12  Error: Unsafe member access .quests on an `any` value.  @typescript-eslint/no-unsafe-member-access
+387:26  Error: Unsafe member access .flatMap on an `any` value.  @typescript-eslint/no-unsafe-member-access
+387:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+387:46  Error: Unsafe return of a value of type `any`.  @typescript-eslint/no-unsafe-return
+387:48  Error: Unsafe member access .drops on an `any` value.  @typescript-eslint/no-unsafe-member-access
+388:12  Error: Unsafe member access .map on an `any` value.  @typescript-eslint/no-unsafe-member-access
+388:20  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+388:28  Error: Unsafe return of a value of type `any[]`.  @typescript-eslint/no-unsafe-return
+388:31  Error: Unsafe member access .objectId on an `any` value.  @typescript-eslint/no-unsafe-member-access
+388:43  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+388:49  Error: Unsafe member access .objectId on an `any` value.  @typescript-eslint/no-unsafe-member-access
+388:59  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+388:67  Error: Unsafe member access .name on an `any` value.  @typescript-eslint/no-unsafe-member-access
+388:73  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+388:81  Error: Unsafe member access .icon on an `any` value.  @typescript-eslint/no-unsafe-member-access
+394:20  Error: Unsafe member access .openedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+394:41  Error: Unsafe member access .closedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+396:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+396:13  Error: Unsafe member access .id on an `any` value.  @typescript-eslint/no-unsafe-member-access
+397:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+397:15  Error: Unsafe member access .name on an `any` value.  @typescript-eslint/no-unsafe-member-access
+398:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+398:17  Error: Unsafe member access .banner on an `any` value.  @typescript-eslint/no-unsafe-member-access
+399:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+399:19  Error: Unsafe member access .openedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+400:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+400:19  Error: Unsafe member access .closedAt on an `any` value.  @typescript-eslint/no-unsafe-member-access
+401:7  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+401:23  Error: Unsafe call of an `any` typed value.  @typescript-eslint/no-unsafe-call
+401:26  Error: Unsafe member access .pickupServants on an `any` value.  @typescript-eslint/no-unsafe-member-access
+401:48  Error: Unsafe member access .map on an `any` value.  @typescript-eslint/no-unsafe-member-access
+401:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+402:9  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+402:15  Error: Unsafe member access .id on an `any` value.  @typescript-eslint/no-unsafe-member-access
+403:9  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+403:17  Error: Unsafe member access .name on an `any` value.  @typescript-eslint/no-unsafe-member-access
+404:9  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+404:19  Error: Unsafe member access .rarity on an `any` value.  @typescript-eslint/no-unsafe-member-access
+405:9  Error: Unsafe assignment of an `any` value.  @typescript-eslint/no-unsafe-assignment
+405:17  Error: Unsafe member access .face on an `any` value.  @typescript-eslint/no-unsafe-member-access
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

@@ -129,6 +129,30 @@
     },
     "servants": {
         "サーヴァント一覧": "Servant List",
-        "title": "Materials for {{name}}"
+        "title": "{{name}}'s Upgrade Materials"
+    },
+    "dashboard": {
+        "FGO周回ダッシュボード": "FGO Farming Dashboard",
+        "開催中のイベント": "Active Events",
+        "開催中の召喚": "Active Banners",
+        "あなたの育成進捗": "Your Progress",
+        "推奨周回クエスト": "Recommended Quests",
+        "クイックアクセス": "Quick Access",
+        "クエスト終了まで": "Quest ends in",
+        "アイテム交換終了まで": "Shop ends in",
+        "獲得可能アイテム": "Obtainable Items",
+        "ピックアップ対象": "Pickup Servants",
+        "目標が設定されていません": "No targets set. Please set targets from the servant list.",
+        "再臨": "Ascension",
+        "スキル": "Skills",
+        "アペンド": "Appends",
+        "不足素材": "Missing",
+        "QUICK_START_WIZARD": "Quick Start",
+        "wizard-q1-title": "What would you like to do?",
+        "育成素材の必要数を計算したい": "Calculate material requirements",
+        "今の素材状況で最適な周回場所を探したい": "Find optimal farming locations",
+        "wizard-q2-title": "Material Calculation",
+        "どのサーヴァントを育てたいですか？": "Which servant do you want to train?",
+        "サーヴァント一覧から選択する": "Select from servant list"
     }
 }

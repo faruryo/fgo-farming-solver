@@ -2,6 +2,9 @@
  * @type {import('next').NextConfig}
  */
 
+const { initOpenNextCloudflareForDev } = require("@opennextjs/cloudflare");
+initOpenNextCloudflareForDev();
+
 const nextConfig = {
   output: 'standalone',
   images: {

@@ -1,0 +1,30 @@
+{
+  "events": [
+    {
+      "id": 90001,
+      "name": "【期間限定】復刻:カルデア・スプリング・フェスティバル 2026",
+      "banner": "https://static.atlasacademy.io/JP/Banner/event_war_80572.png",
+      "startedAt": 1777424400,
+      "endedAt": 1778633999,
+      "shopFinishedAt": 1779238799,
+      "drops": [
+        { "id": 6501, "name": "宵哭きの鉄杭", "icon": "https://static.atlasacademy.io/JP/Items/6501.png" },
+        { "id": 6516, "name": "励起双晶", "icon": "https://static.atlasacademy.io/JP/Items/6516.png" }
+      ]
+    }
+  ],
+  "gachas": [
+    {
+      "id": 10001,
+      "name": "2026 GWキャンペーン ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/event_war_80575.png",
+      "openedAt": 1777232400,
+      "closedAt": 1778633999,
+      "pickupServants": [
+        { "id": 604800, "name": "サンプルサーヴァントA", "face": "https://static.atlasacademy.io/JP/Faces/f_6048000.png" },
+        { "id": 604900, "name": "サンプルサーヴァントB", "face": "https://static.atlasacademy.io/JP/Faces/f_6049000.png" }
+      ]
+    }
+  ],
+  "updatedAt": 1777482000
+}

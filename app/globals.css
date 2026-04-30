@@ -567,3 +567,103 @@ body {
 .c-empty-msg { font-size: 14px; color: var(--text2); }
 
 button, select { font-family: var(--sans); }
+
+/* ===== PREMIUM DASHBOARD UTILITIES ===== */
+
+/* Glassmorphism */
+.u-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+/* Dark Glass (for Navy background) */
+.u-glass-dark {
+  background: rgba(30, 46, 74, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(154, 114, 36, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* FGO Gold Ornament Border */
+.u-fgo-card {
+  position: relative;
+  background: var(--panel2);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.u-fgo-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1px solid rgba(192, 144, 48, 0.15);
+  margin: 3px;
+  pointer-events: none;
+}
+
+/* Gold Gradient Text */
+.u-gold-text {
+  background: linear-gradient(to bottom, #f0e0a0 0%, #d4af37 50%, #9a7224 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
+}
+
+/* Shimmer / Glow Animations */
+@keyframes u-shimmer-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--gold-dim)); }
+  50% { filter: drop-shadow(0 0 8px var(--gold)); }
+}
+
+.u-glow {
+  animation: u-shimmer-glow 3s ease-in-out infinite;
+}
+
+/* Dashboard Section Title Decor */
+.u-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.u-section-header-title {
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  color: var(--navy);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.u-section-header-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold-dim), transparent);
+}
+
+/* Face Icon Frame */
+.u-face-frame {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold-dim);
+  padding: 2px;
+  background: radial-gradient(circle, var(--gold-dim) 0%, transparent 80%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.u-face-frame img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}

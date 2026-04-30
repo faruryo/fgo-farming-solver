@@ -28,6 +28,32 @@ export interface MasterData {
   drop_rates: DropRate[]
 }
 
+export interface DashboardEvent {
+  id: number
+  name: string
+  banner: string
+  startedAt: number
+  endedAt: number
+  shopFinishedAt: number
+  type: string
+  drops: { id: number; name: string; icon: string }[]
+}
+
+export interface DashboardGacha {
+  id: number
+  name: string
+  banner: string
+  openedAt: number
+  closedAt: number
+  pickupServants: { id: number; name: string; rarity: number; face: string }[]
+}
+
+export interface DashboardMeta {
+  events: DashboardEvent[]
+  gachas: DashboardGacha[]
+  updatedAt: number
+}
+
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQerC77YrlI1wQaJHUlDl3VBNh3zx6YDWbF8syDM3DsoG3npubnlG68VY9GlYwRAiP5RCOqQEHZoF4c/pub?gid=1085791724&output=csv'
 
 // Short name mapping for items that don't match by simple substring
@@ -326,9 +352,93 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   console.log(`Filtering complete: ${finalQuests.length} quests and ${filtered_drop_rates.length} drop rate records selected.`)
 
   return {
-    items,
+    items: items,
     quests: finalQuests,
     drop_rates: filtered_drop_rates
+  }
+}
+
+interface AtlasEvent {
+  id: number
+  name: string
+  banner?: string
+  startedAt: number
+  endedAt: number
+  shopFinishedAt: number
+  type: string
+  quests?: {
+    drops?: {
+      objectId: number
+      name: string
+      icon: string
+    }[]
+  }[]
+}
+
+interface AtlasGacha {
+  id: number
+  name: string
+  banner?: string
+  openedAt: number
+  closedAt: number
+  pickupServants?: {
+    id: number
+    name: string
+    rarity: number
+    face: string
+  }[]
+}
+
+export async function fetchDashboardMeta(): Promise<DashboardMeta> {
+  const now = Math.floor(Date.now() / 1000)
+  
+  console.log('Fetching event and gacha data from Atlas Academy...')
+  const [eventsRes, gachaRes] = await Promise.all([
+    fetch(`${origin}/export/${region}/nice_event.json`),
+    fetch(`${origin}/export/${region}/nice_gacha.json`)
+  ])
+  
+  const allEvents: AtlasEvent[] = await eventsRes.json()
+  const allGachas: AtlasGacha[] = await gachaRes.json()
+  
+  // Filter active events
+  const activeEvents = allEvents
+    .filter(e => e.startedAt <= now && e.shopFinishedAt > now)
+    .map(e => ({
+      id: e.id,
+      name: e.name,
+      banner: e.banner,
+      startedAt: e.startedAt,
+      endedAt: e.endedAt,
+      shopFinishedAt: e.shopFinishedAt,
+      type: e.type,
+      drops: Array.from(new Map(
+        (e.quests || []).flatMap(q => q.drops || [])
+          .map(d => [d.objectId, { id: d.objectId, name: d.name, icon: d.icon }])
+      ).values())
+    }))
+
+  // Filter active gachas
+  const activeGachas = allGachas
+    .filter(g => g.openedAt <= now && g.closedAt > now)
+    .map(g => ({
+      id: g.id,
+      name: g.name,
+      banner: g.banner,
+      openedAt: g.openedAt,
+      closedAt: g.closedAt,
+      pickupServants: (g.pickupServants || []).map(s => ({
+        id: s.id,
+        name: s.name,
+        rarity: s.rarity,
+        face: s.face
+      }))
+    }))
+
+  return {
+    events: activeEvents,
+    gachas: activeGachas,
+    updatedAt: Date.now()
   }
 }
 
