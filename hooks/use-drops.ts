@@ -10,7 +10,7 @@ export const useDrops = () => {
       try {
         const response = await fetch('/api/drops')
         if (response.ok) {
-          const json = await response.json()
+          const json = (await response.json())
           setData(json)
         }
       } catch (e) {

@@ -14,7 +14,7 @@ export const useDashboardMeta = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard meta')
         }
-        const json = await response.json()
+        const json = (await response.json())
         setData(json)
       } catch (e) {
         setError(e instanceof Error ? e : new Error('Unknown error'))
