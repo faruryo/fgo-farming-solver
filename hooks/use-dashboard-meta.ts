@@ -14,8 +14,8 @@ export const useDashboardMeta = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard meta')
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        setData(await response.json())
+        const json: DashboardMeta = await response.json()
+        setData(json)
       } catch (e) {
         setError(e instanceof Error ? e : new Error('Unknown error'))
       } finally {
