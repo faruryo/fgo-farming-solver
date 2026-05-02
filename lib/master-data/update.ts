@@ -213,17 +213,18 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   const aaItems: AAItem[] = await itemsResponse.json()
   console.log(`Fetched ${aaItems.length} items from Atlas Academy.`)
 
-  console.log('Reading quest metadata (Wars) from /tmp/nice_war.json...')
-  const aaWars: any[] = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
-  const aaQuests = aaWars.flatMap(war => 
-    (war.spots || []).flatMap((spot: any) => 
-      (spot.quests || []).map((q: any) => ({ ...q, warLongName: war.longName }))
+  let aaQuests: any[] = []
+  try {
+    const aaWars: any[] = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
+    aaQuests = aaWars.flatMap(war =>
+      (war.spots || []).flatMap((spot: any) =>
+        (spot.quests || []).map((q: any) => ({ ...q, warLongName: war.longName }))
+      )
     )
-  )
-  if (aaQuests.length > 0) {
-      console.log(`Sample quest keys: ${Object.keys(aaQuests[0]).join(', ')}`)
+    console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
+  } catch {
+    console.log('No /tmp/nice_war.json found, skipping war quest metadata')
   }
-  console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
 
   // Use the same type filter and sort order as getLocalItems() so that toApiItemId()
   // produces identical IDs on both the KV-write side and the page-display side.
