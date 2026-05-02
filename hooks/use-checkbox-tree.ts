@@ -57,18 +57,6 @@ const getNodeState = (tree: Node[], leafState: LeafState): NodeState =>
     })
     .reduce((acc, cur) => ({ ...acc, ...cur }), {})
 
-const createCheckedTree = (tree: Node[], nodeState: NodeState): CheckedTree =>
-  tree
-    .map(({ value, children }) => {
-      if (children == null) {
-        return { [value]: { checked: nodeState[value] } }
-      } else {
-        const checkedChildren = createCheckedTree(children, nodeState)
-        const checked: Checked = nodeState[value]
-        return { [value]: { checked, children: checkedChildren } }
-      }
-    })
-    .reduce((acc, cur) => Object.assign(acc, cur), {})
 
 const getBranches = (tree: Node[]): string[] =>
   tree.flatMap(({ value, children }) =>

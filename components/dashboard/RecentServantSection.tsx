@@ -1,7 +1,7 @@
 import React from 'react'
 import { Box, Image, Text, SimpleGrid, VStack, HStack, Badge } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { RecentServant } from '../../lib/master-data/update'
+import { RecentServant } from '../../lib/master-data/types'
 import { motion } from 'framer-motion'
 import { Link } from '../common/link'
 

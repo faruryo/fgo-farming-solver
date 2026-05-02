@@ -4,80 +4,31 @@ import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../to-api-item-id'
 
-export interface Item {
-  category: string
-  name: string
-  id: string
-}
+export type {
+  Item,
+  Enemy,
+  Wave,
+  Quest,
+  DropRate,
+  MasterData,
+  DashboardEvent,
+  DashboardGacha,
+  RecentServant,
+  DashboardMeta,
+} from './types'
 
-export interface Enemy {
-  name: string
-  className: string
-  hp: number
-  attribute: string
-}
-
-export interface Wave {
-  enemies: Enemy[]
-}
-
-export interface Quest {
-  area: string
-  ap: number
-  name: string
-  id: string
-  section: string
-  waves?: Wave[]
-}
-
-export interface DropRate {
-  quest_id: string
-  item_id: string
-  drop_rate: number
-}
-
-export interface MasterData {
-  items: Item[]
-  quests: Quest[]
-  drop_rates: DropRate[]
-}
-
-export interface DashboardEvent {
-  id: number
-  name: string
-  banner: string
-  startedAt: number
-  endedAt: number
-  shopFinishedAt: number
-  type: string
-  drops: { id: number; name: string; icon: string }[]
-}
-
-export interface DashboardGacha {
-  id: number
-  name: string
-  banner: string
-  fallbackBanner?: string | null
-  openedAt: number
-  closedAt: number
-  pickupServants: { id: number; name: string; rarity: number; face: string }[]
-}
-
-export interface RecentServant {
-  id: number
-  name: string
-  rarity: number
-  face: string
-  releasedAt: number
-  collectionNo: number
-}
-
-export interface DashboardMeta {
-  events: DashboardEvent[]
-  gachas: DashboardGacha[]
-  recentServants: RecentServant[]
-  updatedAt: number
-}
+import type {
+  Item,
+  Enemy,
+  Wave,
+  Quest,
+  DropRate,
+  MasterData,
+  DashboardEvent,
+  DashboardGacha,
+  RecentServant,
+  DashboardMeta,
+} from './types'
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQerC77YrlI1wQaJHUlDl3VBNh3zx6YDWbF8syDM3DsoG3npubnlG68VY9GlYwRAiP5RCOqQEHZoF4c/pub?gid=1085791724&output=csv'
 

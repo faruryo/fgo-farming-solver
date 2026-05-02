@@ -25,7 +25,7 @@ const _setChaldeaStateToChecked = (
           },
         ])
       ),
-    }))
+    } as ChaldeaState))
   return functionToAction(functional)
 }
 

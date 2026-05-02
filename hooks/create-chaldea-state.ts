@@ -41,7 +41,7 @@ export const createServantState = (): ServantState => {
         target,
         {
           disabled: false,
-          ranges: arrays[target].map((i) => ({ start: min, end: max })),
+          ranges: arrays[target].map(() => ({ start: min, end: max })),
         },
       ])
     ),

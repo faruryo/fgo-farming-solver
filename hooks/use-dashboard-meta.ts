@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DashboardMeta } from '../lib/master-data/update'
+import { DashboardMeta } from '../lib/master-data/types'
 
 export const useDashboardMeta = () => {
   const [data, setData] = useState<DashboardMeta | null>(null)

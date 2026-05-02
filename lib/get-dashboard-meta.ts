@@ -1,4 +1,4 @@
-import { DashboardMeta } from './master-data/update'
+import { DashboardMeta } from './master-data/types'
 import { fetchData } from './data-source'
 
 const DASHBOARD_META_KEY = 'dashboard_meta'

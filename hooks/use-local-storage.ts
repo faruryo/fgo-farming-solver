@@ -47,7 +47,7 @@ export const useLocalStorage = <T>(
     const handleUpdate = (e: Event) => {
       // If it's our own custom sync event, verify it's for this key
       if (e instanceof CustomEvent && e.type === 'ls-sync') {
-        if (e.detail?.key !== key) return
+        if ((e.detail as { key?: string })?.key !== key) return
       }
 
       const json = localStorage.getItem(key)

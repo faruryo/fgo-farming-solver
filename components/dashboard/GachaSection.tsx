@@ -1,7 +1,7 @@
 import React from 'react'
 import { Box, Image, Text, SimpleGrid, VStack, HStack, Badge, Tooltip } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { DashboardGacha } from '../../lib/master-data/update'
+import { DashboardGacha } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
 
 interface GachaSectionProps {

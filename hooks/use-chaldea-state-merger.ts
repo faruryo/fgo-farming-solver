@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { ChaldeaState } from './create-chaldea-state'
+import { ChaldeaState, ServantState } from './create-chaldea-state'
 
 export const useChaldeaStateMarger = (initialState: ChaldeaState) =>
   useCallback(
@@ -11,7 +11,7 @@ export const useChaldeaStateMarger = (initialState: ChaldeaState) =>
                 id,
                 {
                   disabled,
-                  targets: JSON.parse(JSON.stringify(state.all.targets)),
+                  targets: JSON.parse(JSON.stringify(state.all.targets)) as ServantState['targets'],
                 },
               ])
             ),
@@ -21,7 +21,7 @@ export const useChaldeaStateMarger = (initialState: ChaldeaState) =>
 
       // Force 5 appendSkill ranges for all servants
       return Object.fromEntries(
-        Object.entries(merged).map(([id, servant]) => {
+        Object.entries(merged as ChaldeaState).map(([id, servant]) => {
           const app = servant.targets?.appendSkill
           if (app && app.ranges.length < 5) {
             const nextRanges = [...app.ranges]
