@@ -43,6 +43,7 @@ export interface DashboardGacha {
   id: number
   name: string
   banner: string
+  fallbackBanner?: string | null
   openedAt: number
   closedAt: number
   pickupServants: { id: number; name: string; rarity: number; face: string }[]
@@ -420,19 +421,31 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   // Filter active limited gachas (pickupId > 0 = limited/pickup banner, not permanent FP summon)
   const activeGachas = allGachas
     .filter(g => g.openedAt <= now && g.closedAt > now && g.pickupId > 0)
-    .map(g => ({
-      id: g.id,
-      name: g.name,
-      banner: `${staticOrigin}/JP/Banner/summon_${g.imageId}.png`,
-      openedAt: g.openedAt,
-      closedAt: g.closedAt,
-      pickupServants: (g.featuredSvtIds || []).map(svtId => ({
-        id: svtId,
-        name: '',
-        rarity: 5,
-        face: `${staticOrigin}/JP/Faces/f_${svtId * 10}.png`
-      }))
-    }))
+    .map(g => {
+      // Try to find an event that matches this gacha's timing or name
+      const relatedEvent = allEvents.find(e => 
+        (e.startedAt <= g.openedAt && e.finishedAt >= g.closedAt) ||
+        (g.name.includes(e.name.substring(0, 5)))
+      );
+
+      return {
+        id: g.id,
+        name: g.name,
+        // Pattern 1: New Atlas Academy pattern gacha_banner_{id}
+        // Pattern 2: Old Atlas Academy pattern summon_{imageId}
+        // We'll pass the imageId so the frontend can try multiple patterns
+        banner: `${staticOrigin}/JP/Banner/summon_${g.imageId}.png`,
+        fallbackBanner: relatedEvent?.banner || null,
+        openedAt: g.openedAt,
+        closedAt: g.closedAt,
+        pickupServants: (g.featuredSvtIds || []).map(svtId => ({
+          id: svtId,
+          name: '',
+          rarity: 5,
+          face: `${staticOrigin}/JP/Faces/f_${svtId * 10}.png`
+        }))
+      };
+    })
 
   console.log(`Dashboard meta: ${activeEvents.length} active events, ${activeGachas.length} active gachas`)
 

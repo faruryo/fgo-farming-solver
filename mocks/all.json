@@ -1131,6 +1131,13 @@
     {
       "area": "下総国",
       "ap": 21,
+      "name": "庵",
+      "id": "1m2",
+      "section": "Free"
+    },
+    {
+      "area": "下総国",
+      "ap": 21,
       "name": "城下町",
       "id": "1m3",
       "section": "Free"
@@ -2391,6 +2398,13 @@
     {
       "area": "冠位研鑽戦",
       "ap": 40,
+      "name": "〔エクストラⅠ〕火 Ⅵ",
+      "id": "1nq",
+      "section": "Free"
+    },
+    {
+      "area": "冠位研鑽戦",
+      "ap": 40,
       "name": "〔エクストラⅠ〕火 Ⅶ",
       "id": "1nr",
       "section": "Free"
@@ -2412,8 +2426,29 @@
     {
       "area": "冠位研鑽戦",
       "ap": 40,
+      "name": "〔エクストラⅡ〕風 Ⅵ",
+      "id": "1n14",
+      "section": "Free"
+    },
+    {
+      "area": "冠位研鑽戦",
+      "ap": 40,
       "name": "〔エクストラⅡ〕風 Ⅶ",
       "id": "1n15",
+      "section": "Free"
+    },
+    {
+      "area": "冠位研鑽戦",
+      "ap": 40,
+      "name": "〔エクストラⅡ〕水 Ⅴ",
+      "id": "1n1a",
+      "section": "Free"
+    },
+    {
+      "area": "冠位研鑽戦",
+      "ap": 40,
+      "name": "〔エクストラⅡ〕水 Ⅵ",
+      "id": "1n1b",
       "section": "Free"
     },
     {
@@ -4726,12 +4761,12 @@
     {
       "quest_id": "1ab",
       "item_id": "19",
-      "drop_rate": 0.389
+      "drop_rate": 0.38799999999999996
     },
     {
       "quest_id": "1ab",
       "item_id": "40",
-      "drop_rate": 0.275
+      "drop_rate": 0.276
     },
     {
       "quest_id": "1ab",
@@ -4746,12 +4781,12 @@
     {
       "quest_id": "1ac",
       "item_id": "18",
-      "drop_rate": 0.509
+      "drop_rate": 0.511
     },
     {
       "quest_id": "1ac",
       "item_id": "31",
-      "drop_rate": 0.087
+      "drop_rate": 0.086
     },
     {
       "quest_id": "1ac",
@@ -4761,7 +4796,7 @@
     {
       "quest_id": "1ac",
       "item_id": "43",
-      "drop_rate": 0.061
+      "drop_rate": 0.06
     },
     {
       "quest_id": "1ac",
@@ -5141,7 +5176,7 @@
     {
       "quest_id": "1r9",
       "item_id": "34",
-      "drop_rate": 0.086
+      "drop_rate": 0.087
     },
     {
       "quest_id": "1r9",
@@ -5151,7 +5186,7 @@
     {
       "quest_id": "1r9",
       "item_id": "44",
-      "drop_rate": 0.233
+      "drop_rate": 0.23199999999999998
     },
     {
       "quest_id": "1r9",
@@ -5346,22 +5381,42 @@
     {
       "quest_id": "1m0",
       "item_id": "10",
-      "drop_rate": 0.45399999999999996
+      "drop_rate": 0.442
     },
     {
       "quest_id": "1m0",
       "item_id": "11",
-      "drop_rate": 0.293
+      "drop_rate": 0.284
     },
     {
       "quest_id": "1m0",
       "item_id": "32",
-      "drop_rate": 0.28300000000000003
+      "drop_rate": 0.282
     },
     {
       "quest_id": "1m0",
       "item_id": "35",
-      "drop_rate": 0.35600000000000004
+      "drop_rate": 0.355
+    },
+    {
+      "quest_id": "1m2",
+      "item_id": "11",
+      "drop_rate": 0.289
+    },
+    {
+      "quest_id": "1m2",
+      "item_id": "1b",
+      "drop_rate": 0.268
+    },
+    {
+      "quest_id": "1m2",
+      "item_id": "35",
+      "drop_rate": 0.446
+    },
+    {
+      "quest_id": "1m2",
+      "item_id": "40",
+      "drop_rate": 0.24100000000000002
     },
     {
       "quest_id": "1m3",
@@ -5426,27 +5481,27 @@
     {
       "quest_id": "1m7",
       "item_id": "03",
-      "drop_rate": 0.316
+      "drop_rate": 0.314
     },
     {
       "quest_id": "1m7",
       "item_id": "1b",
-      "drop_rate": 0.23
+      "drop_rate": 0.231
     },
     {
       "quest_id": "1m7",
       "item_id": "2a",
-      "drop_rate": 0.133
+      "drop_rate": 0.134
     },
     {
       "quest_id": "1m7",
       "item_id": "40",
-      "drop_rate": 0.28300000000000003
+      "drop_rate": 0.282
     },
     {
       "quest_id": "1m7",
       "item_id": "56",
-      "drop_rate": 0.036000000000000004
+      "drop_rate": 0.035
     },
     {
       "quest_id": "1m8",
@@ -5961,7 +6016,7 @@
     {
       "quest_id": "1ba",
       "item_id": "1e",
-      "drop_rate": 0.289
+      "drop_rate": 0.28800000000000003
     },
     {
       "quest_id": "1ba",
@@ -5976,7 +6031,7 @@
     {
       "quest_id": "1ba",
       "item_id": "50",
-      "drop_rate": 0.049
+      "drop_rate": 0.048
     },
     {
       "quest_id": "1c0",
@@ -6326,12 +6381,12 @@
     {
       "quest_id": "114",
       "item_id": "03",
-      "drop_rate": 0.31
+      "drop_rate": 0.311
     },
     {
       "quest_id": "114",
       "item_id": "1h",
-      "drop_rate": 0.22899999999999998
+      "drop_rate": 0.23
     },
     {
       "quest_id": "114",
@@ -6341,12 +6396,12 @@
     {
       "quest_id": "114",
       "item_id": "40",
-      "drop_rate": 0.34299999999999997
+      "drop_rate": 0.342
     },
     {
       "quest_id": "114",
       "item_id": "50",
-      "drop_rate": 0.038
+      "drop_rate": 0.037000000000000005
     },
     {
       "quest_id": "115",
@@ -6591,12 +6646,12 @@
     {
       "quest_id": "1q2",
       "item_id": "1b",
-      "drop_rate": 0.294
+      "drop_rate": 0.295
     },
     {
       "quest_id": "1q2",
       "item_id": "1j",
-      "drop_rate": 0.29
+      "drop_rate": 0.292
     },
     {
       "quest_id": "1q2",
@@ -6606,7 +6661,7 @@
     {
       "quest_id": "1q2",
       "item_id": "42",
-      "drop_rate": 0.22699999999999998
+      "drop_rate": 0.228
     },
     {
       "quest_id": "1q3",
@@ -6761,7 +6816,7 @@
     {
       "quest_id": "1qc",
       "item_id": "56",
-      "drop_rate": 0.05
+      "drop_rate": 0.049
     },
     {
       "quest_id": "130",
@@ -7881,7 +7936,7 @@
     {
       "quest_id": "1i8",
       "item_id": "36",
-      "drop_rate": 0.54
+      "drop_rate": 0.539
     },
     {
       "quest_id": "1i8",
@@ -8266,7 +8321,7 @@
     {
       "quest_id": "148",
       "item_id": "45",
-      "drop_rate": 0.462
+      "drop_rate": 0.467
     },
     {
       "quest_id": "148",
@@ -8276,17 +8331,17 @@
     {
       "quest_id": "148",
       "item_id": "54",
-      "drop_rate": 0.011000000000000001
+      "drop_rate": 0.01
     },
     {
       "quest_id": "148",
       "item_id": "55",
-      "drop_rate": 0.012
+      "drop_rate": 0.011000000000000001
     },
     {
       "quest_id": "148",
       "item_id": "56",
-      "drop_rate": 0.015
+      "drop_rate": 0.013999999999999999
     },
     {
       "quest_id": "149",
@@ -8581,12 +8636,12 @@
     {
       "quest_id": "1gc",
       "item_id": "1p",
-      "drop_rate": 0.451
+      "drop_rate": 0.45
     },
     {
       "quest_id": "1gc",
       "item_id": "31",
-      "drop_rate": 0.47100000000000003
+      "drop_rate": 0.47
     },
     {
       "quest_id": "1gc",
@@ -8681,97 +8736,97 @@
     {
       "quest_id": "1n2",
       "item_id": "00",
-      "drop_rate": 0.235
+      "drop_rate": 0.263
     },
     {
       "quest_id": "1n2",
       "item_id": "02",
-      "drop_rate": 0.27
+      "drop_rate": 0.267
     },
     {
       "quest_id": "1n2",
       "item_id": "04",
-      "drop_rate": 0.235
+      "drop_rate": 0.271
     },
     {
       "quest_id": "1n2",
       "item_id": "0a",
-      "drop_rate": 0.34
+      "drop_rate": 0.28300000000000003
     },
     {
       "quest_id": "1n2",
       "item_id": "18",
-      "drop_rate": 0.235
+      "drop_rate": 0.203
     },
     {
       "quest_id": "1n2",
       "item_id": "19",
-      "drop_rate": 0.175
+      "drop_rate": 0.179
     },
     {
       "quest_id": "1n2",
       "item_id": "1e",
-      "drop_rate": 0.22
+      "drop_rate": 0.207
     },
     {
       "quest_id": "1n2",
       "item_id": "1i",
-      "drop_rate": 0.235
+      "drop_rate": 0.218
     },
     {
       "quest_id": "1n2",
       "item_id": "22",
-      "drop_rate": 0.065
+      "drop_rate": 0.067
     },
     {
       "quest_id": "1n2",
       "item_id": "24",
-      "drop_rate": 0.105
+      "drop_rate": 0.099
     },
     {
       "quest_id": "1n2",
       "item_id": "29",
-      "drop_rate": 0.085
+      "drop_rate": 0.094
     },
     {
       "quest_id": "1n2",
       "item_id": "2h",
-      "drop_rate": 0.085
+      "drop_rate": 0.086
     },
     {
       "quest_id": "1n2",
       "item_id": "30",
-      "drop_rate": 0.39
+      "drop_rate": 0.401
     },
     {
       "quest_id": "1n2",
       "item_id": "40",
-      "drop_rate": 0.455
+      "drop_rate": 0.529
     },
     {
       "quest_id": "1n2",
       "item_id": "50",
-      "drop_rate": 0.4
+      "drop_rate": 0.423
     },
     {
       "quest_id": "1n2",
       "item_id": "60",
-      "drop_rate": 0.26
+      "drop_rate": 0.233
     },
     {
       "quest_id": "1n2",
       "item_id": "70",
-      "drop_rate": 0.74
+      "drop_rate": 0.767
     },
     {
       "quest_id": "1n3",
       "item_id": "00",
-      "drop_rate": 0.28600000000000003
+      "drop_rate": 0.289
     },
     {
       "quest_id": "1n3",
       "item_id": "02",
-      "drop_rate": 0.281
+      "drop_rate": 0.276
     },
     {
       "quest_id": "1n3",
@@ -8781,52 +8836,52 @@
     {
       "quest_id": "1n3",
       "item_id": "0a",
-      "drop_rate": 0.3
+      "drop_rate": 0.308
     },
     {
       "quest_id": "1n3",
       "item_id": "18",
-      "drop_rate": 0.22399999999999998
+      "drop_rate": 0.221
     },
     {
       "quest_id": "1n3",
       "item_id": "19",
-      "drop_rate": 0.191
+      "drop_rate": 0.188
     },
     {
       "quest_id": "1n3",
       "item_id": "1e",
-      "drop_rate": 0.21100000000000002
+      "drop_rate": 0.217
     },
     {
       "quest_id": "1n3",
       "item_id": "1i",
-      "drop_rate": 0.23199999999999998
+      "drop_rate": 0.23399999999999999
     },
     {
       "quest_id": "1n3",
       "item_id": "22",
-      "drop_rate": 0.085
+      "drop_rate": 0.087
     },
     {
       "quest_id": "1n3",
       "item_id": "24",
-      "drop_rate": 0.12
+      "drop_rate": 0.11800000000000001
     },
     {
       "quest_id": "1n3",
       "item_id": "29",
-      "drop_rate": 0.10300000000000001
+      "drop_rate": 0.10800000000000001
     },
     {
       "quest_id": "1n3",
       "item_id": "2h",
-      "drop_rate": 0.067
+      "drop_rate": 0.068
     },
     {
       "quest_id": "1n3",
       "item_id": "30",
-      "drop_rate": 0.408
+      "drop_rate": 0.40299999999999997
     },
     {
       "quest_id": "1n3",
@@ -8836,17 +8891,17 @@
     {
       "quest_id": "1n3",
       "item_id": "50",
-      "drop_rate": 0.467
+      "drop_rate": 0.47
     },
     {
       "quest_id": "1n3",
       "item_id": "60",
-      "drop_rate": 0.22399999999999998
+      "drop_rate": 0.22
     },
     {
       "quest_id": "1n3",
       "item_id": "70",
-      "drop_rate": 0.7759999999999999
+      "drop_rate": 0.78
     },
     {
       "quest_id": "1n4",
@@ -8941,27 +8996,27 @@
     {
       "quest_id": "1n5",
       "item_id": "00",
-      "drop_rate": 0.353
+      "drop_rate": 0.35
     },
     {
       "quest_id": "1n5",
       "item_id": "02",
-      "drop_rate": 0.336
+      "drop_rate": 0.332
     },
     {
       "quest_id": "1n5",
       "item_id": "04",
-      "drop_rate": 0.361
+      "drop_rate": 0.359
     },
     {
       "quest_id": "1n5",
       "item_id": "0a",
-      "drop_rate": 0.371
+      "drop_rate": 0.374
     },
     {
       "quest_id": "1n5",
       "item_id": "18",
-      "drop_rate": 0.24
+      "drop_rate": 0.239
     },
     {
       "quest_id": "1n5",
@@ -8971,152 +9026,152 @@
     {
       "quest_id": "1n5",
       "item_id": "1e",
-      "drop_rate": 0.255
+      "drop_rate": 0.254
     },
     {
       "quest_id": "1n5",
       "item_id": "1i",
-      "drop_rate": 0.28600000000000003
+      "drop_rate": 0.285
     },
     {
       "quest_id": "1n5",
       "item_id": "22",
-      "drop_rate": 0.096
+      "drop_rate": 0.09699999999999999
     },
     {
       "quest_id": "1n5",
       "item_id": "24",
-      "drop_rate": 0.128
+      "drop_rate": 0.127
     },
     {
       "quest_id": "1n5",
       "item_id": "29",
-      "drop_rate": 0.126
+      "drop_rate": 0.127
     },
     {
       "quest_id": "1n5",
       "item_id": "2h",
-      "drop_rate": 0.10400000000000001
+      "drop_rate": 0.107
     },
     {
       "quest_id": "1n5",
       "item_id": "2l",
-      "drop_rate": 0.385
+      "drop_rate": 0.375
     },
     {
       "quest_id": "1n5",
       "item_id": "30",
-      "drop_rate": 0.44799999999999995
+      "drop_rate": 0.46
     },
     {
       "quest_id": "1n5",
       "item_id": "40",
-      "drop_rate": 0.659
+      "drop_rate": 0.657
     },
     {
       "quest_id": "1n5",
       "item_id": "50",
-      "drop_rate": 0.542
+      "drop_rate": 0.5429999999999999
     },
     {
       "quest_id": "1n5",
       "item_id": "60",
-      "drop_rate": 0.235
+      "drop_rate": 0.23399999999999999
     },
     {
       "quest_id": "1n5",
       "item_id": "70",
-      "drop_rate": 0.767
+      "drop_rate": 0.768
     },
     {
       "quest_id": "1n6",
       "item_id": "00",
-      "drop_rate": 0.35200000000000004
+      "drop_rate": 0.365
     },
     {
       "quest_id": "1n6",
       "item_id": "02",
-      "drop_rate": 0.34600000000000003
+      "drop_rate": 0.359
     },
     {
       "quest_id": "1n6",
       "item_id": "04",
-      "drop_rate": 0.385
+      "drop_rate": 0.38299999999999995
     },
     {
       "quest_id": "1n6",
       "item_id": "0a",
-      "drop_rate": 0.386
+      "drop_rate": 0.392
     },
     {
       "quest_id": "1n6",
       "item_id": "18",
-      "drop_rate": 0.24600000000000002
+      "drop_rate": 0.247
     },
     {
       "quest_id": "1n6",
       "item_id": "19",
-      "drop_rate": 0.252
+      "drop_rate": 0.253
     },
     {
       "quest_id": "1n6",
       "item_id": "1e",
-      "drop_rate": 0.272
+      "drop_rate": 0.273
     },
     {
       "quest_id": "1n6",
       "item_id": "1i",
-      "drop_rate": 0.29600000000000004
+      "drop_rate": 0.305
     },
     {
       "quest_id": "1n6",
       "item_id": "22",
-      "drop_rate": 0.102
+      "drop_rate": 0.10300000000000001
     },
     {
       "quest_id": "1n6",
       "item_id": "24",
-      "drop_rate": 0.129
-    },
-    {
-      "quest_id": "1n6",
-      "item_id": "29",
       "drop_rate": 0.131
     },
     {
       "quest_id": "1n6",
+      "item_id": "29",
+      "drop_rate": 0.135
+    },
+    {
+      "quest_id": "1n6",
       "item_id": "2h",
-      "drop_rate": 0.113
+      "drop_rate": 0.111
     },
     {
       "quest_id": "1n6",
       "item_id": "2l",
-      "drop_rate": 0.409
+      "drop_rate": 0.41100000000000003
     },
     {
       "quest_id": "1n6",
       "item_id": "30",
-      "drop_rate": 0.433
+      "drop_rate": 0.446
     },
     {
       "quest_id": "1n6",
       "item_id": "40",
-      "drop_rate": 0.65
+      "drop_rate": 0.6609999999999999
     },
     {
       "quest_id": "1n6",
       "item_id": "50",
-      "drop_rate": 0.561
+      "drop_rate": 0.564
     },
     {
       "quest_id": "1n6",
       "item_id": "60",
-      "drop_rate": 0.233
+      "drop_rate": 0.23
     },
     {
       "quest_id": "1n6",
       "item_id": "70",
-      "drop_rate": 0.731
+      "drop_rate": 0.753
     },
     {
       "quest_id": "1nc",
@@ -9251,7 +9306,7 @@
     {
       "quest_id": "1nd",
       "item_id": "2a",
-      "drop_rate": 0.1
+      "drop_rate": 0.10099999999999999
     },
     {
       "quest_id": "1nd",
@@ -9486,7 +9541,7 @@
     {
       "quest_id": "1nk",
       "item_id": "0b",
-      "drop_rate": 0.38299999999999995
+      "drop_rate": 0.384
     },
     {
       "quest_id": "1nk",
@@ -9559,24 +9614,189 @@
       "drop_rate": 0.7659999999999999
     },
     {
+      "quest_id": "1nq",
+      "item_id": "03",
+      "drop_rate": 0.332
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "04",
+      "drop_rate": 0.3
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "06",
+      "drop_rate": 0.376
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "09",
+      "drop_rate": 0.414
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "15",
+      "drop_rate": 0.21600000000000003
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "16",
+      "drop_rate": 0.256
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "1e",
+      "drop_rate": 0.23399999999999999
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "1k",
+      "drop_rate": 0.292
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "26",
+      "drop_rate": 0.122
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "2a",
+      "drop_rate": 0.11
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "2c",
+      "drop_rate": 0.11800000000000001
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "2d",
+      "drop_rate": 0.11
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "2l",
+      "drop_rate": 0.41200000000000003
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "30",
+      "drop_rate": 0.276
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "31",
+      "drop_rate": 0.114
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "32",
+      "drop_rate": 0.122
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "36",
+      "drop_rate": 0.102
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "40",
+      "drop_rate": 0.174
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "41",
+      "drop_rate": 0.166
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "42",
+      "drop_rate": 0.138
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "46",
+      "drop_rate": 0.16399999999999998
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "50",
+      "drop_rate": 0.138
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "51",
+      "drop_rate": 0.13
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "52",
+      "drop_rate": 0.13
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "56",
+      "drop_rate": 0.124
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "60",
+      "drop_rate": 0.042
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "61",
+      "drop_rate": 0.046
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "62",
+      "drop_rate": 0.046
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "66",
+      "drop_rate": 0.05
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "70",
+      "drop_rate": 0.212
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "71",
+      "drop_rate": 0.184
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "72",
+      "drop_rate": 0.162
+    },
+    {
+      "quest_id": "1nq",
+      "item_id": "76",
+      "drop_rate": 0.17800000000000002
+    },
+    {
       "quest_id": "1nr",
       "item_id": "03",
-      "drop_rate": 0.369
+      "drop_rate": 0.368
     },
     {
       "quest_id": "1nr",
       "item_id": "04",
-      "drop_rate": 0.374
+      "drop_rate": 0.37799999999999995
     },
     {
       "quest_id": "1nr",
       "item_id": "06",
-      "drop_rate": 0.39399999999999996
+      "drop_rate": 0.385
     },
     {
       "quest_id": "1nr",
       "item_id": "09",
-      "drop_rate": 0.41600000000000004
+      "drop_rate": 0.40399999999999997
     },
     {
       "quest_id": "1nr",
@@ -9586,47 +9806,47 @@
     {
       "quest_id": "1nr",
       "item_id": "16",
-      "drop_rate": 0.248
+      "drop_rate": 0.255
     },
     {
       "quest_id": "1nr",
       "item_id": "1e",
-      "drop_rate": 0.271
+      "drop_rate": 0.266
     },
     {
       "quest_id": "1nr",
       "item_id": "1k",
-      "drop_rate": 0.292
+      "drop_rate": 0.298
     },
     {
       "quest_id": "1nr",
       "item_id": "26",
-      "drop_rate": 0.139
+      "drop_rate": 0.136
     },
     {
       "quest_id": "1nr",
       "item_id": "2a",
-      "drop_rate": 0.109
+      "drop_rate": 0.106
     },
     {
       "quest_id": "1nr",
       "item_id": "2c",
-      "drop_rate": 0.14
+      "drop_rate": 0.13699999999999998
     },
     {
       "quest_id": "1nr",
       "item_id": "2d",
-      "drop_rate": 0.111
+      "drop_rate": 0.11199999999999999
     },
     {
       "quest_id": "1nr",
       "item_id": "2l",
-      "drop_rate": 0.39
+      "drop_rate": 0.391
     },
     {
       "quest_id": "1nr",
       "item_id": "30",
-      "drop_rate": 0.11699999999999999
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1nr",
@@ -9646,87 +9866,87 @@
     {
       "quest_id": "1nr",
       "item_id": "40",
-      "drop_rate": 0.177
-    },
-    {
-      "quest_id": "1nr",
-      "item_id": "41",
       "drop_rate": 0.172
     },
     {
       "quest_id": "1nr",
+      "item_id": "41",
+      "drop_rate": 0.17300000000000001
+    },
+    {
+      "quest_id": "1nr",
       "item_id": "42",
-      "drop_rate": 0.17
+      "drop_rate": 0.174
     },
     {
       "quest_id": "1nr",
       "item_id": "46",
-      "drop_rate": 0.17
+      "drop_rate": 0.17300000000000001
     },
     {
       "quest_id": "1nr",
       "item_id": "50",
-      "drop_rate": 0.135
+      "drop_rate": 0.141
     },
     {
       "quest_id": "1nr",
       "item_id": "51",
-      "drop_rate": 0.14400000000000002
+      "drop_rate": 0.145
     },
     {
       "quest_id": "1nr",
       "item_id": "52",
-      "drop_rate": 0.128
+      "drop_rate": 0.132
     },
     {
       "quest_id": "1nr",
       "item_id": "56",
-      "drop_rate": 0.149
+      "drop_rate": 0.146
     },
     {
       "quest_id": "1nr",
       "item_id": "60",
-      "drop_rate": 0.061
+      "drop_rate": 0.062
     },
     {
       "quest_id": "1nr",
       "item_id": "61",
-      "drop_rate": 0.06
+      "drop_rate": 0.062
     },
     {
       "quest_id": "1nr",
       "item_id": "62",
-      "drop_rate": 0.055999999999999994
+      "drop_rate": 0.055
     },
     {
       "quest_id": "1nr",
       "item_id": "66",
-      "drop_rate": 0.061
+      "drop_rate": 0.059000000000000004
     },
     {
       "quest_id": "1nr",
       "item_id": "70",
-      "drop_rate": 0.191
+      "drop_rate": 0.19
     },
     {
       "quest_id": "1nr",
       "item_id": "71",
-      "drop_rate": 0.19399999999999998
+      "drop_rate": 0.195
     },
     {
       "quest_id": "1nr",
       "item_id": "72",
-      "drop_rate": 0.188
+      "drop_rate": 0.193
     },
     {
       "quest_id": "1nr",
       "item_id": "76",
-      "drop_rate": 0.19
+      "drop_rate": 0.185
     },
     {
       "quest_id": "1ny",
       "item_id": "03",
-      "drop_rate": 0.34299999999999997
+      "drop_rate": 0.34700000000000003
     },
     {
       "quest_id": "1ny",
@@ -9736,7 +9956,7 @@
     {
       "quest_id": "1ny",
       "item_id": "06",
-      "drop_rate": 0.377
+      "drop_rate": 0.379
     },
     {
       "quest_id": "1ny",
@@ -9746,22 +9966,22 @@
     {
       "quest_id": "1ny",
       "item_id": "15",
-      "drop_rate": 0.256
+      "drop_rate": 0.258
     },
     {
       "quest_id": "1ny",
       "item_id": "16",
-      "drop_rate": 0.261
+      "drop_rate": 0.263
     },
     {
       "quest_id": "1ny",
       "item_id": "1e",
-      "drop_rate": 0.272
+      "drop_rate": 0.27399999999999997
     },
     {
       "quest_id": "1ny",
       "item_id": "1k",
-      "drop_rate": 0.295
+      "drop_rate": 0.294
     },
     {
       "quest_id": "1ny",
@@ -9776,37 +9996,37 @@
     {
       "quest_id": "1ny",
       "item_id": "2c",
-      "drop_rate": 0.133
+      "drop_rate": 0.132
     },
     {
       "quest_id": "1ny",
       "item_id": "2d",
-      "drop_rate": 0.11900000000000001
+      "drop_rate": 0.12
     },
     {
       "quest_id": "1ny",
       "item_id": "2l",
-      "drop_rate": 0.42700000000000005
+      "drop_rate": 0.423
     },
     {
       "quest_id": "1ny",
       "item_id": "30",
-      "drop_rate": 0.11599999999999999
+      "drop_rate": 0.11699999999999999
     },
     {
       "quest_id": "1ny",
       "item_id": "31",
-      "drop_rate": 0.11199999999999999
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1ny",
       "item_id": "32",
-      "drop_rate": 0.115
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1ny",
       "item_id": "36",
-      "drop_rate": 0.11699999999999999
+      "drop_rate": 0.11800000000000001
     },
     {
       "quest_id": "1ny",
@@ -9816,12 +10036,12 @@
     {
       "quest_id": "1ny",
       "item_id": "41",
-      "drop_rate": 0.16699999999999998
+      "drop_rate": 0.165
     },
     {
       "quest_id": "1ny",
       "item_id": "42",
-      "drop_rate": 0.166
+      "drop_rate": 0.165
     },
     {
       "quest_id": "1ny",
@@ -9831,47 +10051,47 @@
     {
       "quest_id": "1ny",
       "item_id": "50",
-      "drop_rate": 0.14300000000000002
+      "drop_rate": 0.142
     },
     {
       "quest_id": "1ny",
       "item_id": "51",
-      "drop_rate": 0.14
+      "drop_rate": 0.138
     },
     {
       "quest_id": "1ny",
       "item_id": "52",
-      "drop_rate": 0.14400000000000002
+      "drop_rate": 0.14300000000000002
     },
     {
       "quest_id": "1ny",
       "item_id": "56",
-      "drop_rate": 0.146
+      "drop_rate": 0.147
     },
     {
       "quest_id": "1ny",
       "item_id": "60",
-      "drop_rate": 0.06
+      "drop_rate": 0.059000000000000004
     },
     {
       "quest_id": "1ny",
       "item_id": "61",
-      "drop_rate": 0.059000000000000004
+      "drop_rate": 0.057999999999999996
     },
     {
       "quest_id": "1ny",
       "item_id": "62",
-      "drop_rate": 0.059000000000000004
+      "drop_rate": 0.06
     },
     {
       "quest_id": "1ny",
       "item_id": "66",
-      "drop_rate": 0.064
+      "drop_rate": 0.063
     },
     {
       "quest_id": "1ny",
       "item_id": "70",
-      "drop_rate": 0.187
+      "drop_rate": 0.18899999999999997
     },
     {
       "quest_id": "1ny",
@@ -9881,12 +10101,12 @@
     {
       "quest_id": "1ny",
       "item_id": "72",
-      "drop_rate": 0.198
+      "drop_rate": 0.196
     },
     {
       "quest_id": "1ny",
       "item_id": "76",
-      "drop_rate": 0.20199999999999999
+      "drop_rate": 0.201
     },
     {
       "quest_id": "1n13",
@@ -10049,9 +10269,169 @@
       "drop_rate": 0.183
     },
     {
+      "quest_id": "1n14",
+      "item_id": "00",
+      "drop_rate": 0.342
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "05",
+      "drop_rate": 0.32
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "07",
+      "drop_rate": 0.36200000000000004
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "0a",
+      "drop_rate": 0.379
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "11",
+      "drop_rate": 0.267
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "1b",
+      "drop_rate": 0.245
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "1f",
+      "drop_rate": 0.245
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "1j",
+      "drop_rate": 0.256
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "20",
+      "drop_rate": 0.122
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "27",
+      "drop_rate": 0.11699999999999999
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "2b",
+      "drop_rate": 0.099
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "2l",
+      "drop_rate": 0.39399999999999996
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "33",
+      "drop_rate": 0.10400000000000001
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "34",
+      "drop_rate": 0.121
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "35",
+      "drop_rate": 0.10800000000000001
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "36",
+      "drop_rate": 0.109
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "43",
+      "drop_rate": 0.159
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "44",
+      "drop_rate": 0.16
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "45",
+      "drop_rate": 0.157
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "46",
+      "drop_rate": 0.16699999999999998
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "53",
+      "drop_rate": 0.14300000000000002
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "54",
+      "drop_rate": 0.132
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "55",
+      "drop_rate": 0.14800000000000002
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "56",
+      "drop_rate": 0.133
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "63",
+      "drop_rate": 0.064
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "64",
+      "drop_rate": 0.057
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "65",
+      "drop_rate": 0.055999999999999994
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "66",
+      "drop_rate": 0.052000000000000005
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "73",
+      "drop_rate": 0.195
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "74",
+      "drop_rate": 0.198
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "75",
+      "drop_rate": 0.184
+    },
+    {
+      "quest_id": "1n14",
+      "item_id": "76",
+      "drop_rate": 0.19699999999999998
+    },
+    {
       "quest_id": "1n15",
       "item_id": "00",
-      "drop_rate": 0.377
+      "drop_rate": 0.379
     },
     {
       "quest_id": "1n15",
@@ -10071,112 +10451,112 @@
     {
       "quest_id": "1n15",
       "item_id": "11",
-      "drop_rate": 0.255
+      "drop_rate": 0.262
     },
     {
       "quest_id": "1n15",
       "item_id": "1b",
-      "drop_rate": 0.268
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "1f",
       "drop_rate": 0.266
     },
     {
       "quest_id": "1n15",
+      "item_id": "1f",
+      "drop_rate": 0.272
+    },
+    {
+      "quest_id": "1n15",
       "item_id": "1j",
-      "drop_rate": 0.309
+      "drop_rate": 0.302
     },
     {
       "quest_id": "1n15",
       "item_id": "20",
-      "drop_rate": 0.14
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "27",
-      "drop_rate": 0.138
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "2b",
-      "drop_rate": 0.1
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "2l",
-      "drop_rate": 0.418
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "33",
-      "drop_rate": 0.113
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "34",
-      "drop_rate": 0.11599999999999999
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "35",
-      "drop_rate": 0.12
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "36",
-      "drop_rate": 0.114
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "43",
-      "drop_rate": 0.172
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "44",
-      "drop_rate": 0.166
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "45",
-      "drop_rate": 0.166
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "46",
-      "drop_rate": 0.174
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "53",
-      "drop_rate": 0.147
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "54",
       "drop_rate": 0.136
     },
     {
       "quest_id": "1n15",
-      "item_id": "55",
-      "drop_rate": 0.138
-    },
-    {
-      "quest_id": "1n15",
-      "item_id": "56",
+      "item_id": "27",
       "drop_rate": 0.13699999999999998
     },
     {
       "quest_id": "1n15",
+      "item_id": "2b",
+      "drop_rate": 0.10099999999999999
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "2l",
+      "drop_rate": 0.413
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "33",
+      "drop_rate": 0.11199999999999999
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "34",
+      "drop_rate": 0.114
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "35",
+      "drop_rate": 0.11699999999999999
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "36",
+      "drop_rate": 0.11199999999999999
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "43",
+      "drop_rate": 0.171
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "44",
+      "drop_rate": 0.16699999999999998
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "45",
+      "drop_rate": 0.16699999999999998
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "46",
+      "drop_rate": 0.17300000000000001
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "53",
+      "drop_rate": 0.145
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "54",
+      "drop_rate": 0.14
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "55",
+      "drop_rate": 0.141
+    },
+    {
+      "quest_id": "1n15",
+      "item_id": "56",
+      "drop_rate": 0.14
+    },
+    {
+      "quest_id": "1n15",
       "item_id": "63",
-      "drop_rate": 0.06
+      "drop_rate": 0.057999999999999996
     },
     {
       "quest_id": "1n15",
       "item_id": "64",
-      "drop_rate": 0.059000000000000004
+      "drop_rate": 0.06
     },
     {
       "quest_id": "1n15",
@@ -10186,17 +10566,17 @@
     {
       "quest_id": "1n15",
       "item_id": "66",
-      "drop_rate": 0.06
+      "drop_rate": 0.059000000000000004
     },
     {
       "quest_id": "1n15",
       "item_id": "73",
-      "drop_rate": 0.19399999999999998
+      "drop_rate": 0.195
     },
     {
       "quest_id": "1n15",
       "item_id": "74",
-      "drop_rate": 0.18899999999999997
+      "drop_rate": 0.188
     },
     {
       "quest_id": "1n15",
@@ -10206,117 +10586,437 @@
     {
       "quest_id": "1n15",
       "item_id": "76",
-      "drop_rate": 0.18600000000000003
+      "drop_rate": 0.188
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "00",
-      "drop_rate": 0.384
+      "drop_rate": 0.345
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "05",
-      "drop_rate": 0.35100000000000003
+      "drop_rate": 0.317
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "07",
-      "drop_rate": 0.373
+      "drop_rate": 0.32799999999999996
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "0a",
-      "drop_rate": 0.39799999999999996
+      "drop_rate": 0.33399999999999996
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "11",
-      "drop_rate": 0.275
+      "drop_rate": 0.231
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "1b",
-      "drop_rate": 0.26
+      "drop_rate": 0.22899999999999998
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "1f",
-      "drop_rate": 0.257
+      "drop_rate": 0.231
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "1j",
-      "drop_rate": 0.299
+      "drop_rate": 0.242
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "20",
-      "drop_rate": 0.133
+      "drop_rate": 0.102
     },
     {
-      "quest_id": "1n1c",
+      "quest_id": "1n1a",
       "item_id": "27",
       "drop_rate": 0.11900000000000001
     },
     {
+      "quest_id": "1n1a",
+      "item_id": "2b",
+      "drop_rate": 0.08199999999999999
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "2l",
+      "drop_rate": 0.358
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "33",
+      "drop_rate": 0.107
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "34",
+      "drop_rate": 0.109
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "35",
+      "drop_rate": 0.11599999999999999
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "36",
+      "drop_rate": 0.105
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "43",
+      "drop_rate": 0.15
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "44",
+      "drop_rate": 0.155
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "45",
+      "drop_rate": 0.155
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "46",
+      "drop_rate": 0.153
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "53",
+      "drop_rate": 0.109
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "54",
+      "drop_rate": 0.131
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "55",
+      "drop_rate": 0.13
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "56",
+      "drop_rate": 0.147
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "63",
+      "drop_rate": 0.059000000000000004
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "64",
+      "drop_rate": 0.061
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "65",
+      "drop_rate": 0.057999999999999996
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "66",
+      "drop_rate": 0.054000000000000006
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "73",
+      "drop_rate": 0.201
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "74",
+      "drop_rate": 0.185
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "75",
+      "drop_rate": 0.19899999999999998
+    },
+    {
+      "quest_id": "1n1a",
+      "item_id": "76",
+      "drop_rate": 0.183
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "00",
+      "drop_rate": 0.348
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "05",
+      "drop_rate": 0.32299999999999995
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "07",
+      "drop_rate": 0.353
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "0a",
+      "drop_rate": 0.37200000000000005
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "11",
+      "drop_rate": 0.249
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "1b",
+      "drop_rate": 0.23600000000000002
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "1f",
+      "drop_rate": 0.257
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "1j",
+      "drop_rate": 0.28800000000000003
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "20",
+      "drop_rate": 0.122
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "27",
+      "drop_rate": 0.129
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "2b",
+      "drop_rate": 0.099
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "2l",
+      "drop_rate": 0.376
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "33",
+      "drop_rate": 0.113
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "34",
+      "drop_rate": 0.11
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "35",
+      "drop_rate": 0.011000000000000001
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "36",
+      "drop_rate": 0.011000000000000001
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "43",
+      "drop_rate": 0.165
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "44",
+      "drop_rate": 0.16899999999999998
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "45",
+      "drop_rate": 0.16899999999999998
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "46",
+      "drop_rate": 0.174
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "53",
+      "drop_rate": 0.134
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "54",
+      "drop_rate": 0.13699999999999998
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "55",
+      "drop_rate": 0.13699999999999998
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "56",
+      "drop_rate": 0.138
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "63",
+      "drop_rate": 0.006
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "64",
+      "drop_rate": 0.055999999999999994
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "65",
+      "drop_rate": 0.006
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "66",
+      "drop_rate": 0.005
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "73",
+      "drop_rate": 0.02
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "74",
+      "drop_rate": 0.02
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "75",
+      "drop_rate": 0.018000000000000002
+    },
+    {
+      "quest_id": "1n1b",
+      "item_id": "76",
+      "drop_rate": 0.019
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "00",
+      "drop_rate": 0.39799999999999996
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "05",
+      "drop_rate": 0.35700000000000004
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "07",
+      "drop_rate": 0.371
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "0a",
+      "drop_rate": 0.405
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "11",
+      "drop_rate": 0.257
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "1b",
+      "drop_rate": 0.268
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "1f",
+      "drop_rate": 0.264
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "1j",
+      "drop_rate": 0.312
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "20",
+      "drop_rate": 0.134
+    },
+    {
+      "quest_id": "1n1c",
+      "item_id": "27",
+      "drop_rate": 0.124
+    },
+    {
       "quest_id": "1n1c",
       "item_id": "2b",
-      "drop_rate": 0.08800000000000001
+      "drop_rate": 0.095
     },
     {
       "quest_id": "1n1c",
       "item_id": "2l",
-      "drop_rate": 0.41700000000000004
+      "drop_rate": 0.41200000000000003
     },
     {
       "quest_id": "1n1c",
       "item_id": "33",
-      "drop_rate": 0.109
+      "drop_rate": 0.105
     },
     {
       "quest_id": "1n1c",
       "item_id": "34",
-      "drop_rate": 0.094
+      "drop_rate": 0.11699999999999999
     },
     {
       "quest_id": "1n1c",
       "item_id": "35",
-      "drop_rate": 0.12
+      "drop_rate": 0.12300000000000001
     },
     {
       "quest_id": "1n1c",
       "item_id": "36",
-      "drop_rate": 0.091
+      "drop_rate": 0.10400000000000001
     },
     {
       "quest_id": "1n1c",
       "item_id": "43",
-      "drop_rate": 0.18
+      "drop_rate": 0.174
     },
     {
       "quest_id": "1n1c",
       "item_id": "44",
-      "drop_rate": 0.177
+      "drop_rate": 0.165
     },
     {
       "quest_id": "1n1c",
       "item_id": "45",
-      "drop_rate": 0.157
+      "drop_rate": 0.159
     },
     {
       "quest_id": "1n1c",
       "item_id": "46",
-      "drop_rate": 0.188
+      "drop_rate": 0.171
     },
     {
       "quest_id": "1n1c",
       "item_id": "53",
-      "drop_rate": 0.162
+      "drop_rate": 0.156
     },
     {
       "quest_id": "1n1c",
       "item_id": "54",
-      "drop_rate": 0.149
+      "drop_rate": 0.14
     },
     {
       "quest_id": "1n1c",
@@ -10326,47 +11026,47 @@
     {
       "quest_id": "1n1c",
       "item_id": "56",
-      "drop_rate": 0.146
+      "drop_rate": 0.142
     },
     {
       "quest_id": "1n1c",
       "item_id": "63",
-      "drop_rate": 0.06
+      "drop_rate": 0.065
     },
     {
       "quest_id": "1n1c",
       "item_id": "64",
-      "drop_rate": 0.048
+      "drop_rate": 0.054000000000000006
     },
     {
       "quest_id": "1n1c",
       "item_id": "65",
-      "drop_rate": 0.047
+      "drop_rate": 0.052000000000000005
     },
     {
       "quest_id": "1n1c",
       "item_id": "66",
-      "drop_rate": 0.059000000000000004
+      "drop_rate": 0.06
     },
     {
       "quest_id": "1n1c",
       "item_id": "73",
-      "drop_rate": 0.21100000000000002
+      "drop_rate": 0.18899999999999997
     },
     {
       "quest_id": "1n1c",
       "item_id": "74",
-      "drop_rate": 0.168
+      "drop_rate": 0.19399999999999998
     },
     {
       "quest_id": "1n1c",
       "item_id": "75",
-      "drop_rate": 0.198
+      "drop_rate": 0.191
     },
     {
       "quest_id": "1n1c",
       "item_id": "76",
-      "drop_rate": 0.209
+      "drop_rate": 0.196
     },
     {
       "quest_id": "1n1h",
@@ -11001,52 +11701,52 @@
     {
       "quest_id": "1n1w",
       "item_id": "05",
-      "drop_rate": 0.341
+      "drop_rate": 0.319
     },
     {
       "quest_id": "1n1w",
       "item_id": "07",
-      "drop_rate": 0.325
+      "drop_rate": 0.305
     },
     {
       "quest_id": "1n1w",
       "item_id": "08",
-      "drop_rate": 0.327
+      "drop_rate": 0.316
     },
     {
       "quest_id": "1n1w",
       "item_id": "0c",
-      "drop_rate": 0.327
+      "drop_rate": 0.307
     },
     {
       "quest_id": "1n1w",
       "item_id": "14",
-      "drop_rate": 0.22
+      "drop_rate": 0.207
     },
     {
       "quest_id": "1n1w",
       "item_id": "15",
-      "drop_rate": 0.22
+      "drop_rate": 0.215
     },
     {
       "quest_id": "1n1w",
       "item_id": "1d",
-      "drop_rate": 0.223
+      "drop_rate": 0.209
     },
     {
       "quest_id": "1n1w",
       "item_id": "1g",
-      "drop_rate": 0.21100000000000002
+      "drop_rate": 0.20199999999999999
     },
     {
       "quest_id": "1n1w",
       "item_id": "21",
-      "drop_rate": 0.096
+      "drop_rate": 0.092
     },
     {
       "quest_id": "1n1w",
       "item_id": "25",
-      "drop_rate": 0.121
+      "drop_rate": 0.11199999999999999
     },
     {
       "quest_id": "1n1w",
@@ -11056,67 +11756,67 @@
     {
       "quest_id": "1n1w",
       "item_id": "2g",
-      "drop_rate": 0.106
+      "drop_rate": 0.107
     },
     {
       "quest_id": "1n1w",
       "item_id": "2l",
-      "drop_rate": 0.36700000000000005
+      "drop_rate": 0.35
     },
     {
       "quest_id": "1n1w",
       "item_id": "31",
-      "drop_rate": 0.402
+      "drop_rate": 0.391
     },
     {
       "quest_id": "1n1w",
       "item_id": "41",
-      "drop_rate": 0.598
+      "drop_rate": 0.5760000000000001
     },
     {
       "quest_id": "1n1w",
       "item_id": "51",
-      "drop_rate": 0.467
+      "drop_rate": 0.45299999999999996
     },
     {
       "quest_id": "1n1w",
       "item_id": "61",
-      "drop_rate": 0.215
+      "drop_rate": 0.214
     },
     {
       "quest_id": "1n1w",
       "item_id": "71",
-      "drop_rate": 0.785
+      "drop_rate": 0.7859999999999999
     },
     {
       "quest_id": "1n1x",
       "item_id": "05",
-      "drop_rate": 0.359
+      "drop_rate": 0.366
     },
     {
       "quest_id": "1n1x",
       "item_id": "07",
-      "drop_rate": 0.35100000000000003
+      "drop_rate": 0.359
     },
     {
       "quest_id": "1n1x",
       "item_id": "08",
-      "drop_rate": 0.369
+      "drop_rate": 0.358
     },
     {
       "quest_id": "1n1x",
       "item_id": "0c",
-      "drop_rate": 0.369
+      "drop_rate": 0.361
     },
     {
       "quest_id": "1n1x",
       "item_id": "14",
-      "drop_rate": 0.23600000000000002
+      "drop_rate": 0.242
     },
     {
       "quest_id": "1n1x",
       "item_id": "15",
-      "drop_rate": 0.237
+      "drop_rate": 0.23800000000000002
     },
     {
       "quest_id": "1n1x",
@@ -11126,12 +11826,12 @@
     {
       "quest_id": "1n1x",
       "item_id": "1g",
-      "drop_rate": 0.23600000000000002
+      "drop_rate": 0.23800000000000002
     },
     {
       "quest_id": "1n1x",
       "item_id": "21",
-      "drop_rate": 0.111
+      "drop_rate": 0.10800000000000001
     },
     {
       "quest_id": "1n1x",
@@ -11141,42 +11841,42 @@
     {
       "quest_id": "1n1x",
       "item_id": "2c",
-      "drop_rate": 0.11900000000000001
+      "drop_rate": 0.121
     },
     {
       "quest_id": "1n1x",
       "item_id": "2g",
-      "drop_rate": 0.115
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1n1x",
       "item_id": "2l",
-      "drop_rate": 0.401
+      "drop_rate": 0.402
     },
     {
       "quest_id": "1n1x",
       "item_id": "31",
-      "drop_rate": 0.396
+      "drop_rate": 0.40700000000000003
     },
     {
       "quest_id": "1n1x",
       "item_id": "41",
-      "drop_rate": 0.5820000000000001
+      "drop_rate": 0.591
     },
     {
       "quest_id": "1n1x",
       "item_id": "51",
-      "drop_rate": 0.493
+      "drop_rate": 0.49700000000000005
     },
     {
       "quest_id": "1n1x",
       "item_id": "61",
-      "drop_rate": 0.21100000000000002
+      "drop_rate": 0.21899999999999997
     },
     {
       "quest_id": "1n1x",
       "item_id": "71",
-      "drop_rate": 0.784
+      "drop_rate": 0.78
     },
     {
       "quest_id": "1n20",
@@ -11626,7 +12326,7 @@
     {
       "quest_id": "1n24",
       "item_id": "74",
-      "drop_rate": 0.77
+      "drop_rate": 0.7709999999999999
     }
   ]
 }

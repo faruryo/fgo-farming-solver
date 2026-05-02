@@ -1,30 +1,105 @@
 {
   "events": [
     {
-      "id": 90001,
-      "name": "【期間限定】復刻:カルデア・スプリング・フェスティバル 2026",
-      "banner": "https://static.atlasacademy.io/JP/Banner/event_war_80572.png",
-      "startedAt": 1777424400,
-      "endedAt": 1778633999,
-      "shopFinishedAt": 1779238799,
-      "drops": [
-        { "id": 6501, "name": "宵哭きの鉄杭", "icon": "https://static.atlasacademy.io/JP/Items/6501.png" },
-        { "id": 6516, "name": "励起双晶", "icon": "https://static.atlasacademy.io/JP/Items/6516.png" }
-      ]
+      "id": 80608,
+      "name": "剽滅十字前線 アンティオキア",
+      "banner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "startedAt": 1777114800,
+      "endedAt": 1778903999,
+      "shopFinishedAt": 1779508799,
+      "type": "eventQuest",
+      "drops": []
     }
   ],
   "gachas": [
     {
-      "id": 10001,
-      "name": "2026 GWキャンペーン ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/event_war_80575.png",
-      "openedAt": 1777232400,
-      "closedAt": 1778633999,
+      "id": 50041601,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nフランソワ･プレラーティ(フランチェスカ･プレラーティ)\nピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83596.png",
+      "fallbackBanner": null,
+      "openedAt": 1777114800,
+      "closedAt": 1778903999,
       "pickupServants": [
-        { "id": 604800, "name": "サンプルサーヴァントA", "face": "https://static.atlasacademy.io/JP/Faces/f_6048000.png" },
-        { "id": 604900, "name": "サンプルサーヴァントB", "face": "https://static.atlasacademy.io/JP/Faces/f_6049000.png" }
+        {
+          "id": 500200,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5002000.png"
+        },
+        {
+          "id": 505600,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5056000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041611,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nリチャードⅠ世ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83597.png",
+      "fallbackBanner": null,
+      "openedAt": 1777280400,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 702700,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7027000.png"
+        },
+        {
+          "id": 106100,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1061000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041621,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \n諸葛孔明〔エルメロイⅡ世〕ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83598.png",
+      "fallbackBanner": null,
+      "openedAt": 1777280400,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 501900,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5019000.png"
+        },
+        {
+          "id": 702700,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7027000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041631,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \n女教皇ヨハンナピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83599.png",
+      "fallbackBanner": null,
+      "openedAt": 1777453200,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 600300,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_6003000.png"
+        },
+        {
+          "id": 901600,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_9016000.png"
+        }
       ]
     }
   ],
-  "updatedAt": 1777482000
+  "updatedAt": 1777695660509
 }
