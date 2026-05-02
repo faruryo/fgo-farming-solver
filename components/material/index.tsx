@@ -62,7 +62,7 @@ export const Index = ({
             ascension:   { ...s.targets.ascension,   ranges: s.targets.ascension.ranges.map(r => ({ ...r, end: field === 'asc'    ? value : r.end })) },
             skill:       { ...s.targets.skill,       ranges: s.targets.skill.ranges.map(r =>       ({ ...r, end: field === 'skill'  ? value : r.end })) },
             appendSkill: { ...s.targets.appendSkill, ranges: Array.from({ length: 5 }, (_, i) => ({
-              start: s.targets.appendSkill.ranges[i]?.start ?? 1,
+              start: s.targets.appendSkill.ranges[i]?.start ?? 0,
               end:   field === 'append' ? value : (s.targets.appendSkill.ranges[i]?.end ?? 10),
             }))},
           },
@@ -77,7 +77,7 @@ export const Index = ({
       const st = chaldeaState[s.id]
       if (!st || st.disabled) return
       owned++
-      const appends = Array.from({ length: 5 }, (_, i) => st.targets.appendSkill.ranges[i]?.start ?? 1)
+      const appends = Array.from({ length: 5 }, (_, i) => st.targets.appendSkill.ranges[i]?.start ?? 0)
       if (
         (st.targets.ascension.ranges[0]?.start ?? 0) >= gtAsc &&
         st.targets.skill.ranges.every(r => r.start >= gtSkill) &&
@@ -104,7 +104,7 @@ export const Index = ({
       if (servantFilter === 'hide-unowned' && unowned) return false
       if (servantFilter === 'only-unowned' && !unowned) return false
       if (servantFilter === 'hide-done' || servantFilter === 'only-done') {
-        const appends = Array.from({ length: 5 }, (_, i) => st?.targets.appendSkill.ranges[i]?.start ?? 1)
+        const appends = Array.from({ length: 5 }, (_, i) => st?.targets.appendSkill.ranges[i]?.start ?? 0)
         const done = !unowned &&
           (st?.targets.ascension.ranges[0]?.start ?? 0) >= gtAsc &&
           (st?.targets.skill.ranges.every(r => r.start >= gtSkill) ?? false) &&
