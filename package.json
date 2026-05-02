@@ -2,6 +2,9 @@
   "name": "fgo-farming-solver",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build && npx @opennextjs/cloudflare build --skipBuild && node scripts/remove-fetch-cache.mjs",
@@ -36,7 +39,6 @@
     "@emotion/styled": "^11.14.1",
     "@types/react-dom": "^19.2.3",
     "framer-motion": "^11.18.2",
-    "got": "^15.0.1",
     "i18next": "^26.0.4",
     "javascript-lp-solver": "^1.0.3",
     "next": "^15.5.15",
@@ -49,7 +51,7 @@
     "recharts": "^3.8.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260417.1",
+    "@cloudflare/workers-types": "^4.20260502.1",
     "@opennextjs/cloudflare": "^1.19.5",
     "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
