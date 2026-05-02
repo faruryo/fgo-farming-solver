@@ -1,5 +1,5 @@
 /* eslint-disable */
-import fs from 'fs/promises'
+import fs from 'node:fs/promises'
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../to-api-item-id'

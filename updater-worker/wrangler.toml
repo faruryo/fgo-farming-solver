@@ -1,6 +1,7 @@
 name = "fgo-data-updater"
 main = "index.ts"
 compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 [triggers]
 crons = ["0 * * * *"] # 毎時 0分に実行
