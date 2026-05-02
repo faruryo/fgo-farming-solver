@@ -161,7 +161,7 @@ export const Index = ({
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         el.classList.add('u-highlight')
-        setTimeout(() => el.classList.remove('u-highlight'), 3000)
+        setTimeout(() => el.classList.remove('u-highlight'), 5000)
       }
     }, 400)
     return () => clearTimeout(timer)

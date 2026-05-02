@@ -212,6 +212,7 @@ body {
   background: var(--panel); border: 1px solid var(--border);
   box-shadow: 0 1px 3px rgba(30,46,74,0.06);
   position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  scroll-margin-top: 100px;
 }
 .c-servant-card.unowned {
   opacity: 0.55;
@@ -669,11 +670,34 @@ button, select { font-family: var(--sans); }
 }
 
 /* u-highlight animation */
-@keyframes u-highlight-flash {
-  0% { box-shadow: 0 0 0 4px var(--gold); background-color: rgba(154, 114, 36, 0.15); }
-  100% { box-shadow: 0 0 0 0px transparent; background-color: transparent; }
+@keyframes u-highlight-glow {
+  0% { box-shadow: 0 0 0 0px var(--gold), 0 0 0 0px var(--gold); background-color: rgba(154, 114, 36, 0); }
+  15% { box-shadow: 0 0 0 4px var(--gold), 0 0 20px 8px rgba(192, 144, 48, 0.4); background-color: rgba(154, 114, 36, 0.2); }
+  30% { box-shadow: 0 0 0 2px var(--gold), 0 0 10px 4px rgba(192, 144, 48, 0.2); background-color: rgba(154, 114, 36, 0.1); }
+  45% { box-shadow: 0 0 0 4px var(--gold), 0 0 20px 8px rgba(192, 144, 48, 0.4); background-color: rgba(154, 114, 36, 0.2); }
+  60% { box-shadow: 0 0 0 2px var(--gold), 0 0 10px 4px rgba(192, 144, 48, 0.2); background-color: rgba(154, 114, 36, 0.1); }
+  75% { box-shadow: 0 0 0 4px var(--gold), 0 0 20px 8px rgba(192, 144, 48, 0.4); background-color: rgba(154, 114, 36, 0.2); }
+  100% { box-shadow: 0 0 0 0px transparent, 0 0 0 0px transparent; background-color: transparent; }
 }
+
 .u-highlight {
-  animation: u-highlight-flash 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: u-highlight-glow 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   z-index: 10;
+  position: relative;
+}
+
+/* Dim surrounding cards when one is highlighted */
+.c-servant-grid:has(.u-highlight) .c-servant-card:not(.u-highlight) {
+  opacity: 0.3;
+  filter: grayscale(0.8) blur(1.5px);
+  pointer-events: none;
+  transition: all 0.5s ease;
+}
+
+/* Ensure the highlighted card is clear */
+.u-highlight {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: scale(1.02);
+  transition: transform 0.5s ease;
 }
