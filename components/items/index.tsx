@@ -2,14 +2,13 @@
 /* eslint-disable */
 'use client'
 
-import { Heading, List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
+import { List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Item } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
-import { Link } from '../common/link'
-import { Title } from '../common/title'
+import { ItemLink } from '../common/item-link'
 
 export type ItemIndexProps = {
   items: Localized<Item>[]
@@ -63,9 +62,7 @@ export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
                     <List spacing={2}>
                       {items.map((item) => (
                         <ListItem key={item.id}>
-                          <Link href={`/items/${item.id}`} color="var(--text)" _hover={{ color: 'var(--gold)', textDecoration: 'none' }}>
-                            {item.name}
-                          </Link>
+                          <ItemLink id={item.id} name={item.name} icon={item.icon} />
                         </ListItem>
                       ))}
                     </List>
