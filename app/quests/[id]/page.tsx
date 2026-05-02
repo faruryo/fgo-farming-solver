@@ -3,7 +3,7 @@
 
 import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Box, Container, IconButton, Heading, Text, VStack, HStack, SimpleGrid, Badge, Image, Divider, Card, CardBody, Spinner, Flex } from '@chakra-ui/react'
+import { Box, Container, IconButton, Heading, Text, VStack, HStack, SimpleGrid, Badge, Image, Divider, Card, CardBody, Spinner, Flex, Link } from '@chakra-ui/react'
 import { FaChevronLeft, FaInfoCircle, FaMapMarkerAlt, FaBolt, FaLayerGroup } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
 import { useDrops } from '../../../hooks/use-drops'
@@ -46,7 +46,7 @@ export default function QuestDetailPage() {
   }
 
   return (
-    <Box minH="100vh" bg="var(--bg)" pb={10}>
+    <Box minH="100vh" bg="var(--bg)" pt="56px" pb={10}>
       {/* Header */}
       <Box 
         bg="var(--panel)" 
@@ -144,7 +144,16 @@ export default function QuestDetailPage() {
                       </VStack>
                     ) : (
                       <Box p={8} textAlign="center" border="2px dashed var(--border)" borderRadius="xl">
-                        <Text color="var(--text3)">Enemy data not available for this quest.</Text>
+                        <Text color="var(--text3)" mb={3}>Enemy data not available for this quest.</Text>
+                        <Link
+                          href={`https://www.google.com/search?q=${encodeURIComponent(`FGO ${quest.name}`)}`}
+                          isExternal
+                          color="var(--gold)"
+                          fontSize="sm"
+                          _hover={{ textDecoration: 'underline' }}
+                        >
+                          「{quest.name}」をGoogleで検索 →
+                        </Link>
                       </Box>
                     )}
                   </Box>
