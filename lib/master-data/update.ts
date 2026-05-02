@@ -1,4 +1,4 @@
-import { origin, region } from '../../constants/atlasacademy'
+import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../to-api-item-id'
 
@@ -364,7 +364,7 @@ interface AtlasEvent {
   banner?: string
   startedAt: number
   endedAt: number
-  shopFinishedAt: number
+  finishedAt: number
   type: string
   quests?: {
     drops?: {
@@ -378,15 +378,11 @@ interface AtlasEvent {
 interface AtlasGacha {
   id: number
   name: string
-  banner?: string
+  imageId: number
+  pickupId: number
   openedAt: number
   closedAt: number
-  pickupServants?: {
-    id: number
-    name: string
-    rarity: number
-    face: string
-  }[]
+  featuredSvtIds?: number[]
 }
 
 export async function fetchDashboardMeta(): Promise<DashboardMeta> {
@@ -401,16 +397,19 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   const allEvents: AtlasEvent[] = await eventsRes.json()
   const allGachas: AtlasGacha[] = await gachaRes.json()
   
-  // Filter active events (require banner)
+  // Atlas Academy uses 1893423600 as a sentinel for permanently available content
+  const PERMANENT_SENTINEL = 1893423600
+
+  // Filter active events: require banner, time-limited (not permanent content), and shop still open
   const activeEvents = allEvents
-    .filter(e => e.startedAt <= now && e.shopFinishedAt > now && e.banner)
+    .filter(e => e.startedAt <= now && e.finishedAt > now && e.finishedAt < PERMANENT_SENTINEL && e.banner)
     .map(e => ({
       id: e.id,
       name: e.name,
       banner: e.banner as string,
       startedAt: e.startedAt,
       endedAt: e.endedAt,
-      shopFinishedAt: e.shopFinishedAt,
+      shopFinishedAt: e.finishedAt,
       type: e.type,
       drops: Array.from(new Map(
         (e.quests || []).flatMap(q => q.drops || [])
@@ -418,22 +417,24 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
       ).values())
     }))
 
-  // Filter active gachas (require banner)
+  // Filter active limited gachas (pickupId > 0 = limited/pickup banner, not permanent FP summon)
   const activeGachas = allGachas
-    .filter(g => g.openedAt <= now && g.closedAt > now && g.banner)
+    .filter(g => g.openedAt <= now && g.closedAt > now && g.pickupId > 0)
     .map(g => ({
       id: g.id,
       name: g.name,
-      banner: g.banner as string,
+      banner: `${staticOrigin}/JP/Banner/summon_${g.imageId}.png`,
       openedAt: g.openedAt,
       closedAt: g.closedAt,
-      pickupServants: (g.pickupServants || []).map(s => ({
-        id: s.id,
-        name: s.name,
-        rarity: s.rarity,
-        face: s.face
+      pickupServants: (g.featuredSvtIds || []).map(svtId => ({
+        id: svtId,
+        name: '',
+        rarity: 5,
+        face: `${staticOrigin}/JP/Faces/f_${svtId * 10}.png`
       }))
     }))
+
+  console.log(`Dashboard meta: ${activeEvents.length} active events, ${activeGachas.length} active gachas`)
 
   return {
     events: activeEvents,
