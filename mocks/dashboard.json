@@ -101,5 +101,39 @@
       ]
     }
   ],
+  "recentServants": [
+    {
+      "id": 505600,
+      "name": "フランソワ・プレラーティ",
+      "rarity": 5,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_5056000.png",
+      "releasedAt": 1777084800,
+      "collectionNo": 467
+    },
+    {
+      "id": 405600,
+      "name": "ヒッポリュテ",
+      "rarity": 4,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_4056000.png",
+      "releasedAt": 1777084800,
+      "collectionNo": 468
+    },
+    {
+      "id": 106600,
+      "name": "ジャック・ド・モレー",
+      "rarity": 5,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_1066000.png",
+      "releasedAt": 1773273600,
+      "collectionNo": 466
+    },
+    {
+      "id": 306400,
+      "name": "デメテル",
+      "rarity": 5,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_3064000.png",
+      "releasedAt": 1770854400,
+      "collectionNo": 465
+    }
+  ],
   "updatedAt": 1777695660509
 }

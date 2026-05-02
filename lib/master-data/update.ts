@@ -49,9 +49,19 @@ export interface DashboardGacha {
   pickupServants: { id: number; name: string; rarity: number; face: string }[]
 }
 
+export interface RecentServant {
+  id: number
+  name: string
+  rarity: number
+  face: string
+  releasedAt: number
+  collectionNo: number
+}
+
 export interface DashboardMeta {
   events: DashboardEvent[]
   gachas: DashboardGacha[]
+  recentServants: RecentServant[]
   updatedAt: number
 }
 
@@ -374,6 +384,7 @@ interface AtlasEvent {
       icon: string
     }[]
   }[]
+  svts?: { svtId: number }[]
 }
 
 interface AtlasGacha {
@@ -389,15 +400,56 @@ interface AtlasGacha {
 export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   const now = Math.floor(Date.now() / 1000)
   
-  console.log('Fetching event and gacha data from Atlas Academy...')
-  const [eventsRes, gachaRes] = await Promise.all([
+  console.log('Fetching event, gacha and servant data from Atlas Academy...')
+  const [eventsRes, gachaRes, servantRes] = await Promise.all([
     fetch(`${origin}/export/${region}/nice_event.json`),
-    fetch(`${origin}/export/${region}/nice_gacha.json`)
+    fetch(`${origin}/export/${region}/nice_gacha.json`),
+    fetch(`${origin}/export/${region}/basic_servant.json`)
   ])
   
   const allEvents: AtlasEvent[] = await eventsRes.json()
   const allGachas: AtlasGacha[] = await gachaRes.json()
+  const allServants: { id: number; name: string; rarity: number; collectionNo: number; type: string }[] = await servantRes.json()
   
+  
+  const threeMonthsAgo = now - (90 * 24 * 60 * 60)
+  const servantReleaseDates = new Map<number, number>()
+
+  // 1. Determine release dates from gachas
+  for (const g of allGachas) {
+    if (!g.featuredSvtIds) continue
+    for (const id of g.featuredSvtIds) {
+      if (!servantReleaseDates.has(id) || servantReleaseDates.get(id)! > g.openedAt) {
+        servantReleaseDates.set(id, g.openedAt)
+      }
+    }
+  }
+
+  // 2. Determine release dates from events (for distribution/welfare servants)
+  for (const e of allEvents) {
+    if (!e.svts) continue
+    for (const es of e.svts) {
+      const id = es.svtId
+      if (!servantReleaseDates.has(id) || servantReleaseDates.get(id)! > e.startedAt) {
+        servantReleaseDates.set(id, e.startedAt)
+      }
+    }
+  }
+
+  // 3. Filter recent servants
+  const recentServants: RecentServant[] = allServants
+    .filter(s => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0)
+    .map(s => ({
+      id: s.id,
+      name: s.name,
+      rarity: s.rarity,
+      collectionNo: s.collectionNo,
+      face: `${staticOrigin}/JP/Faces/f_${s.id * 10}.png`,
+      releasedAt: servantReleaseDates.get(s.id) || 0
+    }))
+    .filter(s => s.releasedAt >= threeMonthsAgo && s.collectionNo > 350) // Filter by date and sanity check for newness
+    .sort((a, b) => b.releasedAt - a.releasedAt || b.collectionNo - a.collectionNo)
+
   // Atlas Academy uses 1893423600 as a sentinel for permanently available content
   const PERMANENT_SENTINEL = 1893423600
 
@@ -447,11 +499,12 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
       };
     })
 
-  console.log(`Dashboard meta: ${activeEvents.length} active events, ${activeGachas.length} active gachas`)
+  console.log(`Dashboard meta: ${activeEvents.length} active events, ${activeGachas.length} active gachas, ${recentServants.length} recent servants`)
 
   return {
     events: activeEvents,
     gachas: activeGachas,
+    recentServants,
     updatedAt: Date.now()
   }
 }

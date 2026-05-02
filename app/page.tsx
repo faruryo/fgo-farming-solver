@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useDashboardMeta } from '../hooks/use-dashboard-meta'
 import { EventSection } from '../components/dashboard/EventSection'
 import { GachaSection } from '../components/dashboard/GachaSection'
+import { RecentServantSection } from '../components/dashboard/RecentServantSection'
 import { ProgressSection } from '../components/dashboard/ProgressSection'
 import { RecommendedQuest } from '../components/dashboard/RecommendedQuest'
 import { FarmingWizard } from '../components/dashboard/FarmingWizard'
@@ -91,6 +92,11 @@ export default function HomePage() {
                 {/* Gacha Section */}
                 <MotionBox variants={item}>
                   <GachaSection gachas={dashboardMeta?.gachas || []} />
+                </MotionBox>
+
+                {/* Recent Servants Section */}
+                <MotionBox variants={item}>
+                  <RecentServantSection servants={dashboardMeta?.recentServants || []} />
                 </MotionBox>
 
                 {/* Navigation Links (Quick Access) */}
