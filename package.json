@@ -67,7 +67,7 @@
     "typescript": "^5.7.3",
     "vitest": "^4.1.4",
     "workerd": "^1.20260411.1",
-    "wrangler": "^4.86.0"
+    "wrangler": "^4.87.0"
   },
   "overrides": {
     "esbuild": "0.28.0",
