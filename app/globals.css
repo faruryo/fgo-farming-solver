@@ -667,3 +667,13 @@ button, select { font-family: var(--sans); }
   border-radius: 50%;
   object-fit: cover;
 }
+
+/* u-highlight animation */
+@keyframes u-highlight-flash {
+  0% { box-shadow: 0 0 0 4px var(--gold); background-color: rgba(154, 114, 36, 0.15); }
+  100% { box-shadow: 0 0 0 0px transparent; background-color: transparent; }
+}
+.u-highlight {
+  animation: u-highlight-flash 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}

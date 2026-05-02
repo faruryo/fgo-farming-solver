@@ -39,6 +39,15 @@ export const Index = ({
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  const [currentHash, setCurrentHash] = useState('')
+  useEffect(() => {
+    const handleHashChange = () => setCurrentHash(window.location.hash)
+    window.addEventListener('hashchange', handleHashChange)
+    setCurrentHash(window.location.hash)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+
   const gtAsc    = chaldeaState.all?.targets.ascension.ranges[0]?.end ?? 4
   const gtSkill  = chaldeaState.all?.targets.skill.ranges[0]?.end ?? 10
   const gtAppend = chaldeaState.all?.targets.appendSkill.ranges[0]?.end ?? 10
@@ -124,6 +133,39 @@ export const Index = ({
     }
     return filtered
   }, [filtered, sortMode])
+
+  // Handle automatic scroll and filter reset based on URL hash
+  useEffect(() => {
+    if (!mounted || !currentHash.startsWith('#svt-')) return
+    
+    const svtId = parseInt(currentHash.replace('#svt-', ''))
+    if (isNaN(svtId)) return
+
+    // Ensure the servant is visible by resetting filters if necessary
+    const isVisible = sorted.some(s => s.id === svtId)
+    if (!isVisible) {
+      const targetExists = servants.some(s => s.id === svtId)
+      if (targetExists) {
+        setSelClass('all')
+        setSelRarities([])
+        setServantFilter('all')
+        setSortMode('collectionNo')
+        return // Effect will re-run after state update
+      }
+    }
+
+    // Scroll after a short delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const elementId = currentHash.substring(1)
+      const el = document.getElementById(elementId)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('u-highlight')
+        setTimeout(() => el.classList.remove('u-highlight'), 3000)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [mounted, servants, sorted, currentHash])
 
   const handleSetServantState = useCallback(
     (id: string) => (update: (prev: ServantState) => ServantState) => {
