@@ -76,6 +76,7 @@ jobs:
           name: open-next-build
           path: .open-next/
           retention-days: 1
+          include-hidden-files: true
 
   deploy-main:
     name: Deploy Main App
@@ -90,7 +91,7 @@ jobs:
           node-version: 24
 
       - name: Download build artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: open-next-build
           path: .open-next/
