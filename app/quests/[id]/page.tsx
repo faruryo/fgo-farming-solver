@@ -146,13 +146,13 @@ export default function QuestDetailPage() {
                       <Box p={8} textAlign="center" border="2px dashed var(--border)" borderRadius="xl">
                         <Text color="var(--text3)" mb={3}>Enemy data not available for this quest.</Text>
                         <Link
-                          href={`https://www.google.com/search?q=${encodeURIComponent(`FGO ${quest.name}`)}`}
+                          href={`https://www.google.com/search?q=${encodeURIComponent(`FGO ${quest.area} ${quest.name} 周回`)}`}
                           isExternal
                           color="var(--gold)"
                           fontSize="sm"
                           _hover={{ textDecoration: 'underline' }}
                         >
-                          「{quest.name}」をGoogleで検索 →
+                          「{quest.area} {quest.name}」をGoogleで検索 →
                         </Link>
                       </Box>
                     )}
