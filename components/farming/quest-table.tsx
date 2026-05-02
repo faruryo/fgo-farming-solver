@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { DropRate, Item, Quest } from '../../interfaces/api'
 import { groupBy } from '../../utils/group-by'
 import { ExpandChevronIcon } from '../common/expand-chevron'
+import { Link } from '../common/link'
 import { QuestItemTable } from './quest-item-table'
 
 export const QuestTable = ({
@@ -42,8 +43,8 @@ export const QuestTable = ({
   const [isOpen, setIsOpen] = useState(
     Object.fromEntries(
       Object.entries(questGroups)
-        .flatMap(([, quests]) => quests.map(({ id }) => id))
-        .map((id) => [id, false])
+        .flatMap(([area, quests]) => quests.map(({ id }, i) => `${area}-${id}-${i}`))
+        .map((key) => [key, false])
     )
   )
   const onToggle: FormEventHandler<HTMLButtonElement> = (event) => {
@@ -77,36 +78,39 @@ export const QuestTable = ({
             <Tr key={area}>
               <Th colSpan={4}>{area}</Th>
             </Tr>
-            {questGroup.map(({ name, id, ap, lap }) => (
-              <Fragment key={id}>
-                <Tr>
-                  <Td px={1} py={0}>
-                    <IconButton
-                      aria-label="toggle collapse"
-                      icon={<ExpandChevronIcon expanded={isOpen[id]} />}
-                      variant="ghost"
-                      value={id}
-                      onClick={onToggle}
-                    />
-                  </Td>
-                  <Td px={1}>{name}</Td>
-                  <Td isNumeric color="gray.500" fontSize="sm">{ap}</Td>
-                  <Td isNumeric>{lap}</Td>
-                </Tr>
-
-                <Tr>
-                  <Td colSpan={4} py={0}>
-                    <Collapse in={isOpen[id]} animateOpacity>
-                      <QuestItemTable
-                        dropRates={questToDrops[id]}
-                        itemIndexes={itemIndexes}
-                        lap={lap}
+            {questGroup.map(({ name, id, ap, lap }, i) => {
+              const rowKey = `${area}-${id}-${i}`
+              return (
+                <Fragment key={rowKey}>
+                  <Tr>
+                    <Td px={1} py={0}>
+                      <IconButton
+                        aria-label="toggle collapse"
+                        icon={<ExpandChevronIcon expanded={isOpen[rowKey]} />}
+                        variant="ghost"
+                        value={rowKey}
+                        onClick={onToggle}
                       />
-                    </Collapse>
-                  </Td>
-                </Tr>
-              </Fragment>
-            ))}
+                    </Td>
+                    <Td px={1}><Link href={`/quests/${id}`}>{name}</Link></Td>
+                    <Td isNumeric color="gray.500" fontSize="sm">{ap}</Td>
+                    <Td isNumeric>{lap}</Td>
+                  </Tr>
+
+                  <Tr>
+                    <Td colSpan={4} py={0}>
+                      <Collapse in={isOpen[rowKey]} animateOpacity>
+                        <QuestItemTable
+                          dropRates={questToDrops[id]}
+                          itemIndexes={itemIndexes}
+                          lap={lap}
+                        />
+                      </Collapse>
+                    </Td>
+                  </Tr>
+                </Fragment>
+              )
+            })}
           </Fragment>
         ))}
       </Tbody>
