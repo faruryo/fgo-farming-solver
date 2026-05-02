@@ -2,41 +2,217 @@
   "ap": {
     "params": {
       "objective": "ap",
-      "items": { "19": 63, "00": 123, "01": 101, "1g": 73, "2h": 55, "07": 26, "09": 475, "1k": 146 },
-      "quests": ["0", "1", "2", "3"]
+      "items": {
+        "19": 63,
+        "00": 123,
+        "01": 101,
+        "1g": 73,
+        "2h": 55,
+        "07": 26,
+        "09": 475,
+        "1k": 146
+      },
+      "quests": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ]
     },
     "items": [
-      { "id": "00", "category": "銅素材", "name": "証",   "count": 130 },
-      { "id": "01", "category": "銅素材", "name": "骨",   "count": 108 },
-      { "id": "07", "category": "銅素材", "name": "鉄杭", "count": 28 },
-      { "id": "09", "category": "銅素材", "name": "小鐘", "count": 490 },
-      { "id": "19", "category": "銀素材", "name": "勲章", "count": 65 },
-      { "id": "1g", "category": "銀素材", "name": "矢尻", "count": 75 },
-      { "id": "1k", "category": "銀素材", "name": "鱗粉", "count": 150 },
-      { "id": "2h", "category": "金素材", "name": "鬼灯", "count": 58 }
+      {
+        "id": "00",
+        "category": "銅素材",
+        "name": "証",
+        "count": 130
+      },
+      {
+        "id": "01",
+        "category": "銅素材",
+        "name": "骨",
+        "count": 108
+      },
+      {
+        "id": "07",
+        "category": "銅素材",
+        "name": "鉄杭",
+        "count": 28
+      },
+      {
+        "id": "09",
+        "category": "銅素材",
+        "name": "小鐘",
+        "count": 490
+      },
+      {
+        "id": "19",
+        "category": "銀素材",
+        "name": "勲章",
+        "count": 65
+      },
+      {
+        "id": "1g",
+        "category": "銀素材",
+        "name": "矢尻",
+        "count": 75
+      },
+      {
+        "id": "1k",
+        "category": "銀素材",
+        "name": "鱗粉",
+        "count": 150
+      },
+      {
+        "id": "2h",
+        "category": "金素材",
+        "name": "鬼灯",
+        "count": 58
+      }
     ],
     "quests": [
-      { "id": "236", "section": "第1.5部", "area": "セイレム",           "name": "ガローの丘",       "ap": 21, "lap": 34 },
-      { "id": "336", "section": "第2部",   "area": "ユガ・クシェートラ", "name": "神の空岩跡",       "ap": 21, "lap": 158 },
-      { "id": "368", "section": "第2部",   "area": "平安京",             "name": "大宮大路",         "ap": 21, "lap": 276 },
-      { "id": "36c", "section": "第2部",   "area": "平安京",             "name": "三条三坊",         "ap": 21, "lap": 152 },
-      { "id": "370", "section": "第2部",   "area": "アヴァロン",         "name": "霧の海岸",         "ap": 21, "lap": 58 },
-      { "id": "37c", "section": "第2部",   "area": "アヴァロン",         "name": "果ての海岸",       "ap": 21, "lap": 277 },
-      { "id": "37d", "section": "第2部",   "area": "アヴァロン",         "name": "オークニー",       "ap": 21, "lap": 214 },
-      { "id": "37e", "section": "第2部",   "area": "アヴァロン",         "name": "オックスフォード", "ap": 22, "lap": 510 }
+      {
+        "id": "1d6",
+        "section": "第1.5部",
+        "area": "セイレム",
+        "name": "ガローの丘",
+        "ap": 21,
+        "lap": 34
+      },
+      {
+        "id": "1k6",
+        "section": "第2部",
+        "area": "ユガ・クシェートラ",
+        "name": "神の空岩跡",
+        "ap": 21,
+        "lap": 158
+      },
+      {
+        "id": "1q2",
+        "section": "第2部",
+        "area": "平安京",
+        "name": "大宮大路",
+        "ap": 21,
+        "lap": 276
+      },
+      {
+        "id": "1qc",
+        "section": "第2部",
+        "area": "平安京",
+        "name": "三条三坊",
+        "ap": 21,
+        "lap": 152
+      },
+      {
+        "id": "130",
+        "section": "第2部",
+        "area": "アヴァロン",
+        "name": "霧の海岸",
+        "ap": 21,
+        "lap": 58
+      },
+      {
+        "id": "13d",
+        "section": "第2部",
+        "area": "アヴァロン",
+        "name": "果ての海岸",
+        "ap": 21,
+        "lap": 277
+      },
+      {
+        "id": "13d",
+        "section": "第2部",
+        "area": "アヴァロン",
+        "name": "オークニー",
+        "ap": 21,
+        "lap": 214
+      },
+      {
+        "id": "13e",
+        "section": "第2部",
+        "area": "アヴァロン",
+        "name": "オックスフォード",
+        "ap": 22,
+        "lap": 510
+      }
     ],
     "drop_rates": [
-      { "quest_id": "236", "quest_name": "ガローの丘",       "item_id": "07", "item_name": "鉄杭", "drop_rate": 0.769 },
-      { "quest_id": "236", "quest_name": "ガローの丘",       "item_id": "36", "item_name": "狂輝", "drop_rate": 0.406 },
-      { "quest_id": "336", "quest_name": "神の空岩跡",       "item_id": "1g", "item_name": "矢尻", "drop_rate": 0.462 },
-      { "quest_id": "368", "quest_name": "大宮大路",         "item_id": "01", "item_name": "骨",   "drop_rate": 0.366 },
-      { "quest_id": "368", "quest_name": "大宮大路",         "item_id": "2h", "item_name": "鬼灯", "drop_rate": 0.124 },
-      { "quest_id": "36c", "quest_name": "三条三坊",         "item_id": "1j", "item_name": "糸玉", "drop_rate": 0.294 },
-      { "quest_id": "370", "quest_name": "霧の海岸",         "item_id": "09", "item_name": "小鐘", "drop_rate": 0.725 },
-      { "quest_id": "37c", "quest_name": "果ての海岸",       "item_id": "00", "item_name": "証",   "drop_rate": 0.444 },
-      { "quest_id": "37c", "quest_name": "果ての海岸",       "item_id": "09", "item_name": "小鐘", "drop_rate": 0.406 },
-      { "quest_id": "37d", "quest_name": "オークニー",       "item_id": "19", "item_name": "勲章", "drop_rate": 0.294 },
-      { "quest_id": "37e", "quest_name": "オックスフォード", "item_id": "1k", "item_name": "鱗粉", "drop_rate": 0.286 }
+      {
+        "quest_id": "1d6",
+        "quest_name": "ガローの丘",
+        "item_id": "07",
+        "item_name": "鉄杭",
+        "drop_rate": 0.769
+      },
+      {
+        "quest_id": "1d6",
+        "quest_name": "ガローの丘",
+        "item_id": "36",
+        "item_name": "狂輝",
+        "drop_rate": 0.406
+      },
+      {
+        "quest_id": "1k6",
+        "quest_name": "神の空岩跡",
+        "item_id": "1g",
+        "item_name": "矢尻",
+        "drop_rate": 0.462
+      },
+      {
+        "quest_id": "1q2",
+        "quest_name": "大宮大路",
+        "item_id": "01",
+        "item_name": "骨",
+        "drop_rate": 0.366
+      },
+      {
+        "quest_id": "1q2",
+        "quest_name": "大宮大路",
+        "item_id": "2h",
+        "item_name": "鬼灯",
+        "drop_rate": 0.124
+      },
+      {
+        "quest_id": "1qc",
+        "quest_name": "三条三坊",
+        "item_id": "1j",
+        "item_name": "糸玉",
+        "drop_rate": 0.294
+      },
+      {
+        "quest_id": "130",
+        "quest_name": "霧の海岸",
+        "item_id": "09",
+        "item_name": "小鐘",
+        "drop_rate": 0.725
+      },
+      {
+        "quest_id": "13d",
+        "quest_name": "果ての海岸",
+        "item_id": "00",
+        "item_name": "証",
+        "drop_rate": 0.444
+      },
+      {
+        "quest_id": "13d",
+        "quest_name": "果ての海岸",
+        "item_id": "09",
+        "item_name": "小鐘",
+        "drop_rate": 0.406
+      },
+      {
+        "quest_id": "13d",
+        "quest_name": "オークニー",
+        "item_id": "19",
+        "item_name": "勲章",
+        "drop_rate": 0.294
+      },
+      {
+        "quest_id": "13e",
+        "quest_name": "オックスフォード",
+        "item_id": "1k",
+        "item_name": "鱗粉",
+        "drop_rate": 0.286
+      }
     ],
     "total_lap": 1679,
     "total_ap": 35769
@@ -44,31 +220,143 @@
   "lap": {
     "params": {
       "objective": "lap",
-      "items": { "19": 63, "00": 123, "01": 101, "1g": 73, "2h": 55, "07": 26, "09": 475, "1k": 146 },
-      "quests": ["0", "1", "2", "3"]
+      "items": {
+        "19": 63,
+        "00": 123,
+        "01": 101,
+        "1g": 73,
+        "2h": 55,
+        "07": 26,
+        "09": 475,
+        "1k": 146
+      },
+      "quests": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ]
     },
     "items": [
-      { "id": "00", "category": "銅素材", "name": "証",   "count": 125 },
-      { "id": "01", "category": "銅素材", "name": "骨",   "count": 102 },
-      { "id": "07", "category": "銅素材", "name": "鉄杭", "count": 27 },
-      { "id": "09", "category": "銅素材", "name": "小鐘", "count": 480 },
-      { "id": "19", "category": "銀素材", "name": "勲章", "count": 64 },
-      { "id": "1g", "category": "銀素材", "name": "矢尻", "count": 74 },
-      { "id": "1k", "category": "銀素材", "name": "鱗粉", "count": 148 },
-      { "id": "2h", "category": "金素材", "name": "鬼灯", "count": 56 }
+      {
+        "id": "00",
+        "category": "銅素材",
+        "name": "証",
+        "count": 125
+      },
+      {
+        "id": "01",
+        "category": "銅素材",
+        "name": "骨",
+        "count": 102
+      },
+      {
+        "id": "07",
+        "category": "銅素材",
+        "name": "鉄杭",
+        "count": 27
+      },
+      {
+        "id": "09",
+        "category": "銅素材",
+        "name": "小鐘",
+        "count": 480
+      },
+      {
+        "id": "19",
+        "category": "銀素材",
+        "name": "勲章",
+        "count": 64
+      },
+      {
+        "id": "1g",
+        "category": "銀素材",
+        "name": "矢尻",
+        "count": 74
+      },
+      {
+        "id": "1k",
+        "category": "銀素材",
+        "name": "鱗粉",
+        "count": 148
+      },
+      {
+        "id": "2h",
+        "category": "金素材",
+        "name": "鬼灯",
+        "count": 56
+      }
     ],
     "quests": [
-      { "id": "370", "section": "第2部", "area": "アヴァロン", "name": "霧の海岸",         "ap": 21, "lap": 655 },
-      { "id": "37e", "section": "第2部", "area": "アヴァロン", "name": "オックスフォード", "ap": 22, "lap": 215 },
-      { "id": "336", "section": "第2部", "area": "ユガ・クシェートラ", "name": "神の空岩跡", "ap": 21, "lap": 158 },
-      { "id": "236", "section": "第1.5部", "area": "セイレム", "name": "ガローの丘",       "ap": 21, "lap": 34 }
+      {
+        "id": "130",
+        "section": "第2部",
+        "area": "アヴァロン",
+        "name": "霧の海岸",
+        "ap": 21,
+        "lap": 655
+      },
+      {
+        "id": "13e",
+        "section": "第2部",
+        "area": "アヴァロン",
+        "name": "オックスフォード",
+        "ap": 22,
+        "lap": 215
+      },
+      {
+        "id": "1k6",
+        "section": "第2部",
+        "area": "ユガ・クシェートラ",
+        "name": "神の空岩跡",
+        "ap": 21,
+        "lap": 158
+      },
+      {
+        "id": "1d6",
+        "section": "第1.5部",
+        "area": "セイレム",
+        "name": "ガローの丘",
+        "ap": 21,
+        "lap": 34
+      }
     ],
     "drop_rates": [
-      { "quest_id": "370", "quest_name": "霧の海岸",         "item_id": "09", "item_name": "小鐘", "drop_rate": 0.725 },
-      { "quest_id": "37e", "quest_name": "オックスフォード", "item_id": "1k", "item_name": "鱗粉", "drop_rate": 0.286 },
-      { "quest_id": "37e", "quest_name": "オックスフォード", "item_id": "00", "item_name": "証",   "drop_rate": 0.444 },
-      { "quest_id": "336", "quest_name": "神の空岩跡",       "item_id": "1g", "item_name": "矢尻", "drop_rate": 0.462 },
-      { "quest_id": "236", "quest_name": "ガローの丘",       "item_id": "07", "item_name": "鉄杭", "drop_rate": 0.769 }
+      {
+        "quest_id": "130",
+        "quest_name": "霧の海岸",
+        "item_id": "09",
+        "item_name": "小鐘",
+        "drop_rate": 0.725
+      },
+      {
+        "quest_id": "13e",
+        "quest_name": "オックスフォード",
+        "item_id": "1k",
+        "item_name": "鱗粉",
+        "drop_rate": 0.286
+      },
+      {
+        "quest_id": "13e",
+        "quest_name": "オックスフォード",
+        "item_id": "00",
+        "item_name": "証",
+        "drop_rate": 0.444
+      },
+      {
+        "quest_id": "1k6",
+        "quest_name": "神の空岩跡",
+        "item_id": "1g",
+        "item_name": "矢尻",
+        "drop_rate": 0.462
+      },
+      {
+        "quest_id": "1d6",
+        "quest_name": "ガローの丘",
+        "item_id": "07",
+        "item_name": "鉄杭",
+        "drop_rate": 0.769
+      }
     ],
     "total_lap": 1062,
     "total_ap": 22638

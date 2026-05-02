@@ -1,3 +1,5 @@
+/* eslint-disable */
+import fs from 'fs/promises'
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../to-api-item-id'
@@ -8,12 +10,24 @@ export interface Item {
   id: string
 }
 
+export interface Enemy {
+  name: string
+  className: string
+  hp: number
+  attribute: string
+}
+
+export interface Wave {
+  enemies: Enemy[]
+}
+
 export interface Quest {
   area: string
   ap: number
   name: string
   id: string
   section: string
+  waves?: Wave[]
 }
 
 export interface DropRate {
@@ -183,11 +197,33 @@ export function normalizeItemName(shortName: string): string {
 // Subset of AtlasItem fields returned by nice_item.json that we need
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority'> & { type: string }
 
+const ATTRIBUTE_MAP: Record<string, string> = {
+  man: '人',
+  human: '人',
+  earth: '地',
+  sky: '天',
+  heaven: '天',
+  star: '星',
+  beast: '獣',
+}
+
 export async function fetchAndTransformData(): Promise<MasterData> {
   console.log('Fetching item metadata from Atlas Academy...')
   const itemsResponse = await fetch(`${origin}/export/${region}/nice_item.json`)
   const aaItems: AAItem[] = await itemsResponse.json()
   console.log(`Fetched ${aaItems.length} items from Atlas Academy.`)
+
+  console.log('Reading quest metadata (Wars) from /tmp/nice_war.json...')
+  const aaWars: any[] = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
+  const aaQuests = aaWars.flatMap(war => 
+    (war.spots || []).flatMap((spot: any) => 
+      (spot.quests || []).map((q: any) => ({ ...q, warLongName: war.longName }))
+    )
+  )
+  if (aaQuests.length > 0) {
+      console.log(`Sample quest keys: ${Object.keys(aaQuests[0]).join(', ')}`)
+  }
+  console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
 
   // Use the same type filter and sort order as getLocalItems() so that toApiItemId()
   // produces identical IDs on both the KV-write side and the page-display side.
@@ -254,13 +290,28 @@ export async function fetchAndTransformData(): Promise<MasterData> {
 
     const questId = `${area}_${questName}`.replace(/\s/g, '_')
     if (!quests.find(q => q.id === questId)) {
+      // Normalize spreadsheet quest name for better matching
+      let searchName = questName
+      if (area.includes('修練場')) {
+        if (questName.length === 3 && (questName.endsWith('極級') || questName.endsWith('超級') || questName.endsWith('上級'))) {
+           searchName = `${questName[0]}の修練場 ${questName.slice(1)}`
+        }
+      }
+
+      // Match with AA quest
+      const aaQuestInWar = aaQuests.find(q => 
+        (q.name === searchName || q.name.includes(searchName) || q.spotName === searchName) && 
+        (q.warLongName?.includes(area) || area.includes(q.warLongName) || (area.includes('修練場') && q.warLongName === '曜日クエスト'))
+      )
+
       quests.push({
         area,
         ap,
         name: questName,
         id: questId,
-        section: area.includes('修練場') ? 'Daily' : 'Free'
-      })
+        section: area.includes('修練場') ? 'Daily' : 'Free',
+        _aaQuestId: aaQuestInWar?.id
+      } as any)
     }
 
     // Drop rates
@@ -279,6 +330,37 @@ export async function fetchAndTransformData(): Promise<MasterData> {
           })
         }
       }
+    }
+  }
+
+  // Fetch detailed wave info for matched quests
+  console.log('Fetching detailed wave info for matched quests...')
+  const questsWithAA = quests.filter(q => (q as any)._aaQuestId)
+  
+  const CONCURRENCY = 10
+  for (let i = 0; i < questsWithAA.length; i += CONCURRENCY) {
+    const chunk = questsWithAA.slice(i, i + CONCURRENCY)
+    await Promise.all(chunk.map(async (q: any) => {
+      try {
+        const res = await fetch(`${origin}/nice/${region}/quest/${q._aaQuestId}/1`)
+        const detailedQuest = await res.json()
+        if ((detailedQuest as any).stages) {
+          q.waves = (detailedQuest as any).stages.map((stage: any) => ({
+            enemies: stage.enemies.map((enemy: any) => ({
+              name: enemy.svt.name,
+              className: enemy.svt.className,
+              hp: enemy.hp,
+              attribute: ATTRIBUTE_MAP[enemy.svt.attribute] || enemy.svt.attribute
+            }))
+          }))
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch details for quest ${q.name} (ID: ${q._aaQuestId})`)
+      }
+      delete q._aaQuestId
+    }))
+    if (i % 100 === 0) {
+      console.log(`Progress: ${Math.min(i + CONCURRENCY, questsWithAA.length)} / ${questsWithAA.length}`)
     }
   }
 

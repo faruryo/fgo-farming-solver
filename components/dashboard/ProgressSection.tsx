@@ -76,11 +76,9 @@ export const ProgressSection: React.FC = () => {
             <Text color="var(--text3)" fontSize="sm">
               {t('育成素材計算機で目標レベルを設定すると、全体の進捗がグラフで表示されます。')}
             </Text>
-            <NextLink href="/material" passHref>
-              <Button as="a" colorScheme="yellow" size="sm" mt={2}>
-                {t('common:育成素材計算機へ')}
-              </Button>
-            </NextLink>
+            <Button as={NextLink} href="/material" colorScheme="yellow" size="sm" mt={2}>
+              {t('common:育成素材計算機へ')}
+            </Button>
           </VStack>
         </Box>
       </VStack>

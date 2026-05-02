@@ -99,41 +99,65 @@
           "face": "https://static.atlasacademy.io/JP/Faces/f_9016000.png"
         }
       ]
+    },
+    {
+      "id": 50041641,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nジョン･ラックランドピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83600.png",
+      "fallbackBanner": null,
+      "openedAt": 1777712400,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 1102000,
+          "name": "",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_11020000.png"
+        }
+      ]
     }
   ],
   "recentServants": [
     {
-      "id": 505600,
-      "name": "フランソワ・プレラーティ",
+      "id": 1102000,
+      "name": "ジョン・ラックランド",
       "rarity": 5,
-      "face": "https://static.atlasacademy.io/JP/Faces/f_5056000.png",
-      "releasedAt": 1777084800,
-      "collectionNo": 467
+      "collectionNo": 469,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_11020000.png",
+      "releasedAt": 1777712400
     },
     {
       "id": 405600,
       "name": "ヒッポリュテ",
       "rarity": 4,
+      "collectionNo": 468,
       "face": "https://static.atlasacademy.io/JP/Faces/f_4056000.png",
-      "releasedAt": 1777084800,
-      "collectionNo": 468
+      "releasedAt": 1777114800
+    },
+    {
+      "id": 505600,
+      "name": "フランソワ・プレラーティ",
+      "rarity": 5,
+      "collectionNo": 467,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_5056000.png",
+      "releasedAt": 1777114800
     },
     {
       "id": 106600,
       "name": "ジャック・ド・モレー",
       "rarity": 5,
+      "collectionNo": 466,
       "face": "https://static.atlasacademy.io/JP/Faces/f_1066000.png",
-      "releasedAt": 1773273600,
-      "collectionNo": 466
+      "releasedAt": 1773219600
     },
     {
       "id": 306400,
       "name": "デメテル",
       "rarity": 5,
+      "collectionNo": 465,
       "face": "https://static.atlasacademy.io/JP/Faces/f_3064000.png",
-      "releasedAt": 1770854400,
-      "collectionNo": 465
+      "releasedAt": 1770973200
     }
   ],
-  "updatedAt": 1777695660509
+  "updatedAt": 1777727126366
 }

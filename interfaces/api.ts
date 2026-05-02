@@ -10,6 +10,7 @@ export type Quest = {
   name: string
   ap: number
   lap: number
+  waves?: { enemies: { name: string; className: string; hp: number; attribute: string }[] }[]
 }
 export type Item = { id: string; category: string; name: string; count: number }
 export type DropRate = {

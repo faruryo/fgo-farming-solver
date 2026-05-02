@@ -59,16 +59,16 @@ export const QuestTable = ({
           <Th key="quest-header" colSpan={2}>
             {t('クエスト')}
           </Th>
-          <Tooltip label={t('tooltip-ap')} placement="top">
-            <Th key="ap-header" isNumeric style={{ cursor: 'help' }}>
-              AP
-            </Th>
-          </Tooltip>
-          <Tooltip label={t('tooltip-lap')} placement="top">
-            <Th key="lap-header" isNumeric style={{ cursor: 'help' }}>
-              {t('周回数')}
-            </Th>
-          </Tooltip>
+          <Th key="ap-header" isNumeric style={{ cursor: 'help' }}>
+            <Tooltip label={t('tooltip-ap')} placement="top">
+              <span>AP</span>
+            </Tooltip>
+          </Th>
+          <Th key="lap-header" isNumeric style={{ cursor: 'help' }}>
+            <Tooltip label={t('tooltip-lap')} placement="top">
+              <span>{t('周回数')}</span>
+            </Tooltip>
+          </Th>
         </Tr>
       </Thead>
       <Tbody>
