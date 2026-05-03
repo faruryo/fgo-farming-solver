@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && npx @opennextjs/cloudflare build --skipBuild && node scripts/remove-fetch-cache.mjs",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "pnpm run build && pnpm exec wrangler deploy",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",

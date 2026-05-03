@@ -135,11 +135,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Deploy Updater to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: updater-worker
-          command: deploy
-          wranglerVersion: "4.87.0"
-          packageManager: pnpm
+        run: pnpm exec wrangler deploy -c updater-worker/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
