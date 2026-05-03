@@ -19,28 +19,31 @@ import type { CloudflareEnv } from '../types/cloudflare-env.d'
  */
 export async function kvGet(key: string): Promise<string | null> {
   try {
-    // 1. Try to get context from @opennextjs/cloudflare
-    // We use a dynamic import wrapped in a function to stay compatible with local dev environments
-    const { getCloudflareContext } = await new Function('return import("@opennextjs/cloudflare")')()
-    const context = await getCloudflareContext()
-    
-    // Support both context.env (newer OpenNext) and direct context (older/other versions)
-    const env = (context.env || context) as CloudflareEnv
-    
-    if (env && env.MASTER_DATA) {
-      return await env.MASTER_DATA.get(key)
-    }
-
-    // 2. Fallback: Check process.env (some OpenNext configurations put bindings here)
+    // 1. Try to get context from process.env (common in many Cloudflare Worker environments)
     const processEnv = (process.env as unknown as CloudflareEnv)
     if (processEnv && processEnv.MASTER_DATA && typeof processEnv.MASTER_DATA.get === 'function') {
       return await processEnv.MASTER_DATA.get(key)
     }
 
+    // 2. Try to get context from @opennextjs/cloudflare
+    // We use a dynamic import to avoid bundling issues in local development
+    try {
+      // Use dynamic import directly. Most modern bundlers handle this fine.
+      const { getCloudflareContext } = await import("@opennextjs/cloudflare")
+      const context = await getCloudflareContext()
+      const env = (context.env || context) as CloudflareEnv
+      
+      if (env && env.MASTER_DATA) {
+        return await env.MASTER_DATA.get(key)
+      }
+    } catch {
+      // Dynamic import or getCloudflareContext might fail in some environments (e.g. local dev)
+      // but that's okay, we'll return null and fall back to local files
+    }
+
     return null
   } catch (e) {
     console.error('KV Access Error:', e)
-    // Silently fail and return null to trigger fallback to local mocks
     return null
   }
 }
