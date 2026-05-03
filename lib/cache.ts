@@ -7,10 +7,34 @@ const fetchAndWriteJson = async <T>(
   hashPath: string,
   cachePath: string
 ) => {
-  const fsModule = await new Function('return import("fs")')()
-  const fs = fsModule.default?.promises || fsModule.promises || fsModule
-  const pathModule = await new Function('return import("path")')()
-  const path = pathModule.default || pathModule
+  const fsMod = await new Function('r', `
+    if (typeof r === 'function') {
+      try {
+        var fs = r("fs");
+        return fs.promises || fs;
+      } catch (e) {}
+    }
+    try {
+      return import("fs");
+    } catch (e) {
+      return null;
+    }
+  `)(typeof require !== 'undefined' ? require : undefined)
+  const fs = fsMod?.default?.promises || fsMod?.promises || fsMod
+
+  const pathMod = await new Function('r', `
+    if (typeof r === 'function') {
+      try {
+        return r("path");
+      } catch (e) {}
+    }
+    try {
+      return import("path");
+    } catch (e) {
+      return null;
+    }
+  `)(typeof require !== 'undefined' ? require : undefined)
+  const path = pathMod?.default || pathMod
   console.log(`fetching ${url}`)
   const res = await fetch(url)
   const text = await res.text()
@@ -54,15 +78,38 @@ export const fetchJsonWithCache = async <T>(url: string) => {
   }
 
   // Dev with filesystem access — use disk cache
-  const pathModule = await new Function('return import("path")')()
-  const path = pathModule.default || pathModule
+  const pathMod = await new Function('r', `
+    if (typeof r === 'function') {
+      try {
+        return r("path");
+      } catch (e) {}
+    }
+    try {
+      return import("path");
+    } catch (e) {
+      return null;
+    }
+  `)(typeof require !== 'undefined' ? require : undefined)
+  const path = pathMod?.default || pathMod
   const cacheDir = path.resolve('.next/cache/atlasacademy')
   const stem = path.basename(url, '.json')
   const hashPath = path.resolve(cacheDir, `${stem}.hash.txt`)
   const cachePath = path.resolve(cacheDir, `${stem}.json`)
 
-  const fsModule = await new Function('return import("fs")')()
-  const fs = fsModule.default?.promises || fsModule.promises || fsModule
+  const fsMod = await new Function('r', `
+    if (typeof r === 'function') {
+      try {
+        var fs = r("fs");
+        return fs.promises || fs;
+      } catch (e) {}
+    }
+    try {
+      return import("fs");
+    } catch (e) {
+      return null;
+    }
+  `)(typeof require !== 'undefined' ? require : undefined)
+  const fs = fsMod?.default?.promises || fsMod?.promises || fsMod
 
   const [hash, localHash] = await Promise.all([
     getHash().catch(() => null),

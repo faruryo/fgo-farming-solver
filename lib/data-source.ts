@@ -87,9 +87,27 @@ export async function fetchData<T>(
  * (via unenv shims) but throws "[unenv] not implemented" on actual calls.
  */
 export async function canAccessFs(): Promise<boolean> {
+  if (typeof window !== 'undefined') return false
   try {
-    const fsMod = await new Function('return import("fs/promises")')()
+    // Use a trick to hide the import from Turbopack/Webpack static analysis
+    // while still working in Node.js/Vitest.
+    const fsMod = await new Function('r', `
+      if (typeof r === 'function') {
+        try {
+          var fs = r("fs");
+          return fs.promises || fs;
+        } catch (e) {}
+      }
+      try {
+        return import("fs/promises");
+      } catch (e) {
+        return null;
+      }
+    `)(typeof require !== 'undefined' ? require : undefined)
+    if (!fsMod) return false
+    
     const fs = (fsMod.default ?? fsMod) as { readFile: (p: string, e: string) => Promise<string> }
+    // Probing a non-existent path to see if it throws ENOENT (real fs) or something else (unenv)
     await fs.readFile('/__canAccessFs__', 'utf-8')
     return true
   } catch (e: unknown) {
