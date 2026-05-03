@@ -25,7 +25,7 @@ export type ChaldeaState = {
 const levels: { [key in TargetKey]: [number, number] } = {
   ascension: [0, 4],
   skill: [1, 10],
-  appendSkill: [1, 10],
+  appendSkill: [0, 10],
 }
 const arrays: { [key in TargetKey]: number[] } = {
   ascension: [1],

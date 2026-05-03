@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Checkbox, VStack } from '@chakra-ui/react'
 import React, { Dispatch, FormEventHandler, memo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +9,7 @@ import { RangeSliderWithInput } from './range-slider-with-input'
 const mins: { [key: string]: number } = {
   ascension: 0,
   skill: 1,
-  appendSkill: 1,
+  appendSkill: 0,
 }
 const maxs: { [key: string]: number } = {
   ascension: 4,

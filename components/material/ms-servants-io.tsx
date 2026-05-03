@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Input } from '@chakra-ui/react'
 import {
   ChangeEventHandler,
@@ -126,7 +126,7 @@ export const MsServantsIo = ({
                         ? state[id.toString()].targets.appendSkill
                         : {
                             disabled: false,
-                            ranges: range(3).map(() => ({ start: 1, end: 10 })),
+                            ranges: range(3).map(() => ({ start: 0, end: 10 })),
                           },
                   },
                 },
