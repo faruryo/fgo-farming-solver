@@ -14,7 +14,7 @@ export const ProgressSection: React.FC = () => {
   const [isMounted, setIsMounted] = React.useState(false)
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 100)
+    const timer = setTimeout(() => setIsMounted(true), 0)
     return () => clearTimeout(timer)
   }, [])
 

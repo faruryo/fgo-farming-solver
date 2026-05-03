@@ -88,7 +88,7 @@ export default function HistoryPage() {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 100)
+    const timer = setTimeout(() => setIsMounted(true), 0)
     fetch('/api/farming/history')
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHistory(data) })
