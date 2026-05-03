@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { useServerInsertedHTML } from 'next/navigation'
-import { cache } from '@emotion/css'
 import { CacheProvider } from '@emotion/react'
 import createCache from '@emotion/cache'
 
