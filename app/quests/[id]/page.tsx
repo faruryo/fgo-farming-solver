@@ -7,6 +7,7 @@ import { Box, Container, IconButton, Heading, Text, VStack, HStack, SimpleGrid, 
 import { FaChevronLeft, FaInfoCircle, FaMapMarkerAlt, FaBolt, FaLayerGroup } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
 import { useDrops } from '../../../hooks/use-drops'
+import { useQuestWave } from '../../../hooks/use-quest-wave'
 import { Quest } from '../../../interfaces/api'
 import { getItemIconUrl } from '../../../lib/get-item-icon-url'
 
@@ -17,6 +18,7 @@ export default function QuestDetailPage() {
   const { quests, isLoading } = useDrops()
 
   const quest = quests?.find(q => q.id === id) as Quest | undefined
+  const { waves, isLoading: isWaveLoading } = useQuestWave(quest?.aaQuestId)
 
   if (isLoading) {
     return (
@@ -102,9 +104,13 @@ export default function QuestDetailPage() {
                       <Heading size="sm" color="var(--navy)">Wave Details</Heading>
                     </HStack>
 
-                    {quest.waves && quest.waves.length > 0 ? (
+                    {isWaveLoading ? (
+                      <Flex justify="center" py={8}>
+                        <Spinner size="md" color="var(--gold)" />
+                      </Flex>
+                    ) : waves && waves.length > 0 ? (
                       <VStack align="stretch" spacing={6}>
-                        {quest.waves.map((wave, wIdx) => (
+                        {waves.map((wave, wIdx) => (
                           <Box key={wIdx} p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl" borderLeft="4px solid var(--gold)">
                             <HStack justify="space-between" mb={3}>
                               <Badge variant="outline" colorScheme="yellow">WAVE {wIdx + 1}</Badge>

@@ -21,7 +21,7 @@ export interface Quest {
   name: string
   id: string
   section: string
-  waves?: Wave[]
+  aaQuestId?: number
 }
 
 export interface DropRate {

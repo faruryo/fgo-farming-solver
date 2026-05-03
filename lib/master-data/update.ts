@@ -1,5 +1,4 @@
 /* eslint-disable */
-import fs from 'node:fs/promises'
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../to-api-item-id'
@@ -148,17 +147,14 @@ export function normalizeItemName(shortName: string): string {
 // Subset of AtlasItem fields returned by nice_item.json that we need
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority'> & { type: string }
 
-const ATTRIBUTE_MAP: Record<string, string> = {
-  man: '人',
-  human: '人',
-  earth: '地',
-  sky: '天',
-  heaven: '天',
-  star: '星',
-  beast: '獣',
-}
-
 export async function fetchAndTransformData(): Promise<MasterData> {
+  let fs: any
+  try {
+    fs = await import('node:fs/promises')
+  } catch {
+    // fs not available (e.g. in Cloudflare Workers)
+  }
+
   console.log('Fetching item metadata from Atlas Academy...')
   const itemsResponse = await fetch(`${origin}/export/${region}/nice_item.json`)
   const aaItems: AAItem[] = await itemsResponse.json()
@@ -166,15 +162,35 @@ export async function fetchAndTransformData(): Promise<MasterData> {
 
   let aaQuests: any[] = []
   try {
-    const aaWars: any[] = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
-    aaQuests = aaWars.flatMap(war =>
-      (war.spots || []).flatMap((spot: any) =>
-        (spot.quests || []).map((q: any) => ({ ...q, warLongName: war.longName }))
+    let aaWars: any[] | null = null
+    if (fs && fs.readFile) {
+      try {
+        aaWars = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
+      } catch {
+        console.log('No /tmp/nice_war.json found locally')
+      }
+    }
+
+    if (!aaWars) {
+      console.log('Fetching war metadata from Atlas Academy (this might be slow)...')
+      // Try to fetch nice_war.json if local file is missing. 
+      // Note: This is 23MB, might hit memory limits in Workers.
+      const warRes = await fetch(`${origin}/export/${region}/nice_war.json`)
+      if (warRes.ok) {
+        aaWars = await warRes.json()
+      }
+    }
+
+    if (aaWars) {
+      aaQuests = aaWars.flatMap(war =>
+        (war.spots || []).flatMap((spot: any) =>
+          (spot.quests || []).map((q: any) => ({ ...q, warLongName: war.longName }))
+        )
       )
-    )
-    console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
-  } catch {
-    console.log('No /tmp/nice_war.json found, skipping war quest metadata')
+      console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
+    }
+  } catch (e) {
+    console.log('Failed to load war quest metadata:', e)
   }
 
   // Use the same type filter and sort order as getLocalItems() so that toApiItemId()
@@ -262,7 +278,7 @@ export async function fetchAndTransformData(): Promise<MasterData> {
         name: questName,
         id: questId,
         section: area.includes('修練場') ? 'Daily' : 'Free',
-        _aaQuestId: aaQuestInWar?.id
+        aaQuestId: aaQuestInWar?.id
       } as any)
     }
 
@@ -282,37 +298,6 @@ export async function fetchAndTransformData(): Promise<MasterData> {
           })
         }
       }
-    }
-  }
-
-  // Fetch detailed wave info for matched quests
-  console.log('Fetching detailed wave info for matched quests...')
-  const questsWithAA = quests.filter(q => (q as any)._aaQuestId)
-  
-  const CONCURRENCY = 10
-  for (let i = 0; i < questsWithAA.length; i += CONCURRENCY) {
-    const chunk = questsWithAA.slice(i, i + CONCURRENCY)
-    await Promise.all(chunk.map(async (q: any) => {
-      try {
-        const res = await fetch(`${origin}/nice/${region}/quest/${q._aaQuestId}/1`)
-        const detailedQuest = await res.json()
-        if ((detailedQuest as any).stages) {
-          q.waves = (detailedQuest as any).stages.map((stage: any) => ({
-            enemies: stage.enemies.map((enemy: any) => ({
-              name: enemy.svt.name,
-              className: enemy.svt.className,
-              hp: enemy.hp,
-              attribute: ATTRIBUTE_MAP[enemy.svt.attribute] || enemy.svt.attribute
-            }))
-          }))
-        }
-      } catch (e) {
-        console.warn(`Failed to fetch details for quest ${q.name} (ID: ${q._aaQuestId})`)
-      }
-      delete q._aaQuestId
-    }))
-    if (i % 100 === 0) {
-      console.log(`Progress: ${Math.min(i + CONCURRENCY, questsWithAA.length)} / ${questsWithAA.length}`)
     }
   }
 
