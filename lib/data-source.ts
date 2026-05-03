@@ -43,7 +43,7 @@ export async function kvGet(key: string): Promise<string | null> {
 
     return null
   } catch (e) {
-    console.error('KV Access Error:', e)
+    // Silently fail and return null to trigger fallback to local mocks
     return null
   }
 }
