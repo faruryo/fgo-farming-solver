@@ -88,7 +88,7 @@ export default function HistoryPage() {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 0)
+    const timer = setTimeout(() => setIsMounted(true), 100)
     fetch('/api/farming/history')
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHistory(data) })
@@ -150,7 +150,7 @@ export default function HistoryPage() {
                 </HStack>
 
                 {isMounted && (
-                  <ResponsiveContainer width="100%" height={180} minHeight={0}>
+                  <ResponsiveContainer width="100%" height={180} minWidth={0} minHeight={0}>
                     <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id={cfg.gradId} x1="0" y1="0" x2="0" y2="1">
