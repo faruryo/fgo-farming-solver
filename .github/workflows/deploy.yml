@@ -101,6 +101,9 @@ jobs:
           name: open-next-build
           path: .open-next/
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
@@ -127,6 +130,9 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Deploy Updater to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
