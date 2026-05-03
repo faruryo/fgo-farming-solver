@@ -1,6 +1,5 @@
 import { getHash } from './get-hash'
 import { readJson } from './read-json'
-import { canAccessFs } from './data-source'
 
 const fetchAndWriteJson = async <T>(
   url: string,
@@ -8,9 +7,9 @@ const fetchAndWriteJson = async <T>(
   hashPath: string,
   cachePath: string
 ) => {
-  const fsModule = await import(/* webpackIgnore: true */ 'fs')
+  const fsModule = await new Function('return import("fs")')()
   const fs = fsModule.default?.promises || fsModule.promises || fsModule
-  const pathModule = await import(/* webpackIgnore: true */ 'path')
+  const pathModule = await new Function('return import("path")')()
   const path = pathModule.default || pathModule
   console.log(`fetching ${url}`)
   const res = await fetch(url)
@@ -22,13 +21,27 @@ const fetchAndWriteJson = async <T>(
   fs.writeFile(cachePath, text, 'utf-8').catch((e: unknown) => console.error(e))
   return JSON.parse(text) as T
 }
-
 export const fetchJsonWithCache = async <T>(url: string) => {
-  const hasFs = await canAccessFs()
   const isBrowser = typeof window !== 'undefined'
 
-  // In edge/cloudflare/browser/prod — just fetch directly
-  if (isBrowser || !hasFs) {
+  // In browser — just fetch directly without checking filesystem
+  if (isBrowser) {
+    return fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)
+        return r.json<T>()
+      })
+      .catch((e) => {
+        console.error(`Fetch failed for ${url}:`, e)
+        throw e
+      })
+  }
+
+  const { canAccessFs } = await import('./data-source')
+  const hasFs = await canAccessFs()
+
+  // In edge/cloudflare/prod (no fs) — just fetch directly
+  if (!hasFs) {
     return fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error(`Fetch failed with status ${r.status}`)
@@ -41,14 +54,14 @@ export const fetchJsonWithCache = async <T>(url: string) => {
   }
 
   // Dev with filesystem access — use disk cache
-  const pathModule = await import(/* webpackIgnore: true */ 'path')
+  const pathModule = await new Function('return import("path")')()
   const path = pathModule.default || pathModule
   const cacheDir = path.resolve('.next/cache/atlasacademy')
   const stem = path.basename(url, '.json')
   const hashPath = path.resolve(cacheDir, `${stem}.hash.txt`)
   const cachePath = path.resolve(cacheDir, `${stem}.json`)
 
-  const fsModule = await import(/* webpackIgnore: true */ 'fs')
+  const fsModule = await new Function('return import("fs")')()
   const fs = fsModule.default?.promises || fsModule.promises || fsModule
 
   const [hash, localHash] = await Promise.all([

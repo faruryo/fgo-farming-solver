@@ -19,7 +19,7 @@ import type { CloudflareEnv } from '../types/cloudflare-env.d'
  */
 export async function kvGet(key: string): Promise<string | null> {
   try {
-    const { getCloudflareContext } = await import('@opennextjs/cloudflare')
+    const { getCloudflareContext } = await new Function('return import("@opennextjs/cloudflare")')()
     const { env } = (await getCloudflareContext({ async: true })) as unknown as {
       env: CloudflareEnv
     }
@@ -47,8 +47,8 @@ export async function kvGetJson<T>(key: string): Promise<T | null> {
  */
 export async function readLocalJson<T>(relativePath: string): Promise<T | null> {
   try {
-    const pathMod = await import(/* webpackIgnore: true */ 'path')
-    const fsMod  = await import(/* webpackIgnore: true */ 'fs/promises')
+    const pathMod = await new Function('return import("path")')()
+    const fsMod  = await new Function('return import("fs/promises")')()
     const fs   = fsMod.default || fsMod
     const abs  = pathMod.default.resolve(process.cwd(), relativePath)
     const text = await fs.readFile(abs, 'utf-8')
@@ -88,7 +88,7 @@ export async function fetchData<T>(
  */
 export async function canAccessFs(): Promise<boolean> {
   try {
-    const fsMod = await import(/* webpackIgnore: true */ 'fs/promises')
+    const fsMod = await new Function('return import("fs/promises")')()
     const fs = (fsMod.default ?? fsMod) as { readFile: (p: string, e: string) => Promise<string> }
     await fs.readFile('/__canAccessFs__', 'utf-8')
     return true

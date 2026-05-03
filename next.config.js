@@ -47,6 +47,18 @@ const nextConfig = {
       },
     ]
   },
+  turbopack: {
+    rules: {
+      '*.md': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+      'LICENSE': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+    },
+  },
 }
 
 module.exports = nextConfig

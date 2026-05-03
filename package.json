@@ -10,7 +10,7 @@
     "build": "next build && npx @opennextjs/cloudflare build --skipBuild && node scripts/remove-fetch-cache.mjs",
     "deploy": "npm run build && wrangler deploy",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",
     "type-check": "tsc --noEmit",
     "test": "vitest",
@@ -31,20 +31,21 @@
     "@chakra-ui/input": "^2.1.2",
     "@chakra-ui/layout": "^2.3.1",
     "@chakra-ui/menu": "^2.2.1",
+    "@chakra-ui/next-js": "^2.4.2",
     "@chakra-ui/react": "^2.10.9",
     "@chakra-ui/system": "^2.6.2",
     "@chakra-ui/table": "^2.1.0",
     "@chakra-ui/utils": "^2.2.5",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@types/react-dom": "^19.2.3",
     "framer-motion": "^11.18.2",
     "i18next": "^26.0.4",
     "javascript-lp-solver": "^1.0.3",
-    "next": "^15.5.15",
+    "next": "16.2.4",
     "next-auth": "^5.0.0-beta.30",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
     "react-i18next": "^17.0.2",
     "react-icons": "^5.6.0",
     "react-markdown": "^9.0.1",
@@ -52,19 +53,25 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260502.1",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
     "@opennextjs/cloudflare": "^1.19.5",
-    "@types/node": "^25.5.2",
-    "@types/react": "^19.2.14",
-    "@typescript-eslint/eslint-plugin": "^8.58.1",
-    "@typescript-eslint/parser": "^8.58.1",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^15.1.7",
+    "@types/node": "^25.6.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "16.2.4",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.3",
+    "raw-loader": "^4.0.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.7.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.4",
     "workerd": "^1.20260411.1",
     "wrangler": "^4.87.0"
@@ -86,11 +93,15 @@
         "x64",
         "arm64"
       ]
+    },
+    "overrides": {
+      "@types/react": "19.2.14",
+      "@types/react-dom": "19.2.3"
     }
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "next lint --fix --file"
+      "eslint --fix"
     ]
   }
 }

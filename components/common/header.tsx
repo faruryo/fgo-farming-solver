@@ -4,9 +4,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Nav } from './nav'
 
+
 export const Header = () => {
   return (
-    <header className="c-header">
+    <header className="c-header" suppressHydrationWarning>
       <div className="c-header-left" />
       <Link href="/" className="c-logo">
         <div className="c-logo-emblem">
