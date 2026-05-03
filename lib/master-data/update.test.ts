@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { normalizeItemName, fetchAndTransformData } from './update'
 
+vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
+}))
+
 describe('normalizeItemName', () => {
   it('maps standard abbreviations correctly', () => {
     expect(normalizeItemName('証')).toBe('英雄の証')
@@ -47,6 +51,7 @@ describe('fetchAndTransformData', () => {
 
     vi.mocked(fetch)
       .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
       .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response)
 
     const data = await fetchAndTransformData()
