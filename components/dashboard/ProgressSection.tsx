@@ -52,8 +52,9 @@ export const ProgressSection: React.FC = () => {
       const ap = servant.targets.appendSkill
       if (ap && !ap.disabled) {
         ap.ranges.forEach(r => {
-          breakdown.append.current += (r.start - 1)
-          breakdown.append.total += (r.end - 1)
+          // Append skills start at level 0
+          breakdown.append.current += r.start
+          breakdown.append.total += r.end
         })
       }
     })
