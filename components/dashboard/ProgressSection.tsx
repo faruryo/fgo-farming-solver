@@ -11,6 +11,11 @@ import { Button } from '@chakra-ui/react'
 export const ProgressSection: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common'])
   const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const stats = useMemo(() => {
     if (!chaldea || Object.keys(chaldea).length === 0) return []
@@ -104,25 +109,27 @@ export const ProgressSection: React.FC = () => {
             <Box key={stat.name} className="u-fgo-card" p={4} bg="var(--panel2)" borderRadius="md" position="relative">
               <VStack spacing={4}>
                 <Box height="100px" width="100%" position="relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={30}
-                        outerRadius={45}
-                        paddingAngle={2}
-                        dataKey="value"
-                        startAngle={90}
-                        endAngle={-270}
-                        isAnimationActive={false}
-                      >
-                        <Cell fill={stat.color} stroke="none" />
-                        <Cell fill="rgba(0,0,0,0.1)" stroke="none" />
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {isMounted && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={30}
+                          outerRadius={45}
+                          paddingAngle={2}
+                          dataKey="value"
+                          startAngle={90}
+                          endAngle={-270}
+                          isAnimationActive={false}
+                        >
+                          <Cell fill={stat.color} stroke="none" />
+                          <Cell fill="rgba(0,0,0,0.1)" stroke="none" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
                   <Box 
                     position="absolute" 
                     top="50%" 

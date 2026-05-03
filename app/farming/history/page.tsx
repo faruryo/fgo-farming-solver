@@ -85,8 +85,10 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [chartTab, setChartTab] = useState<ChartTab>('ap')
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
     fetch('/api/farming/history')
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHistory(data) })
@@ -146,40 +148,42 @@ export default function HistoryPage() {
                   ))}
                 </HStack>
 
-                <ResponsiveContainer width="100%" height={180}>
-                  <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id={cfg.gradId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor={cfg.color} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={cfg.color} stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,104,136,0.18)" vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fill: 'rgba(200,218,240,0.45)', fontSize: 11 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: `${cfg.color}b0`, fontSize: 11 }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                      width={36}
-                    />
-                    <RechartsTooltip content={<CustomTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey={cfg.dataKey}
-                      stroke={cfg.color}
-                      strokeWidth={2}
-                      fill={`url(#${cfg.gradId})`}
-                      dot={{ r: 3, fill: '#121c30', stroke: cfg.color, strokeWidth: 1.5 }}
-                      activeDot={{ r: 5, fill: cfg.color }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {isMounted && (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={cfg.gradId} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%"  stopColor={cfg.color} stopOpacity={0.35} />
+                          <stop offset="95%" stopColor={cfg.color} stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,104,136,0.18)" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fill: 'rgba(200,218,240,0.45)', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: `${cfg.color}b0`, fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                        width={36}
+                      />
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey={cfg.dataKey}
+                        stroke={cfg.color}
+                        strokeWidth={2}
+                        fill={`url(#${cfg.gradId})`}
+                        dot={{ r: 3, fill: '#121c30', stroke: cfg.color, strokeWidth: 1.5 }}
+                        activeDot={{ r: 5, fill: cfg.color }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </Box>
             </motion.div>
           )}

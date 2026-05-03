@@ -76,9 +76,11 @@ export const HistoryGraph: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [chartTab, setChartTab] = useState<ChartTab>('ap')
+  const [isMounted, setIsMounted] = useState(false)
   const chartHeight = useBreakpointValue({ base: 180, md: 220 })
 
   useEffect(() => {
+    setIsMounted(true)
     fetch('/api/farming/history')
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHistory(data) })
@@ -140,40 +142,42 @@ export const HistoryGraph: React.FC = () => {
       </HStack>
 
       <Box className="u-fgo-card" p={4} bg="var(--panel2)" borderRadius="xl">
-        <ResponsiveContainer width="100%" height={chartHeight}>
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id={cfg.gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={cfg.color} stopOpacity={0.4} />
-                <stop offset="95%" stopColor={cfg.color} stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,104,136,0.12)" vertical={false} />
-            <XAxis
-              dataKey="date"
-              tick={{ fill: 'var(--text3)', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fill: 'var(--text3)', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-            />
-            <RechartsTooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey={cfg.dataKey}
-              stroke={cfg.color}
-              strokeWidth={3}
-              fill={`url(#${cfg.gradId})`}
-              dot={{ r: 4, fill: 'var(--bg)', stroke: cfg.color, strokeWidth: 2 }}
-              activeDot={{ r: 6, fill: cfg.color, stroke: 'white', strokeWidth: 2 }}
-              animationDuration={1500}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        {isMounted && chartHeight && (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id={cfg.gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={cfg.color} stopOpacity={0.4} />
+                  <stop offset="95%" stopColor={cfg.color} stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,104,136,0.12)" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: 'var(--text3)', fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: 'var(--text3)', fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+              />
+              <RechartsTooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey={cfg.dataKey}
+                stroke={cfg.color}
+                strokeWidth={3}
+                fill={`url(#${cfg.gradId})`}
+                dot={{ r: 4, fill: 'var(--bg)', stroke: cfg.color, strokeWidth: 2 }}
+                activeDot={{ r: 6, fill: cfg.color, stroke: 'white', strokeWidth: 2 }}
+                animationDuration={1500}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </Box>
     </VStack>
   )
