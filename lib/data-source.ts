@@ -19,12 +19,28 @@ import type { CloudflareEnv } from '../types/cloudflare-env.d'
  */
 export async function kvGet(key: string): Promise<string | null> {
   try {
+    // 1. Try to get context from @opennextjs/cloudflare
+    // We use a dynamic import wrapped in a function to stay compatible with local dev environments
     const { getCloudflareContext } = await new Function('return import("@opennextjs/cloudflare")')()
-    const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-      env: CloudflareEnv
+    const context = await getCloudflareContext()
+    
+    // Support both context.env (newer OpenNext) and direct context (older/other versions)
+    const env = (context.env || context) as CloudflareEnv
+    
+    if (env && env.MASTER_DATA) {
+      return await env.MASTER_DATA.get(key)
     }
-    return await env.MASTER_DATA.get(key)
-  } catch {
+
+    // 2. Fallback: Check process.env (some OpenNext configurations put bindings here)
+    const processEnv = (process.env as unknown as CloudflareEnv)
+    if (processEnv && processEnv.MASTER_DATA && typeof processEnv.MASTER_DATA.get === 'function') {
+      return await processEnv.MASTER_DATA.get(key)
+    }
+
+    return null
+  } catch (e) {
+    console.error('KV Access Error:', e)
+    // Silently fail and return null to trigger fallback to local mocks
     return null
   }
 }

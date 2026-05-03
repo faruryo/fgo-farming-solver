@@ -28,17 +28,17 @@ export default worker
 
 async function updateMasterData(env: Env) {
   try {
-    const [dropsData, dashboardMeta] = await Promise.all([
-      fetchAndTransformData(),
-      fetchDashboardMeta()
-    ])
+    console.log('Fetching and transforming master data (drops)...')
+    const dropsData = await fetchAndTransformData()
+    await env.MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(dropsData))
+    console.log('Successfully updated MASTER_DATA KV')
+
+    console.log('Fetching dashboard metadata...')
+    const dashboardMeta = await fetchDashboardMeta()
+    await env.MASTER_DATA.put(DASHBOARD_META_KEY, JSON.stringify(dashboardMeta))
+    console.log('Successfully updated DASHBOARD_META KV')
     
-    await Promise.all([
-      env.MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(dropsData)),
-      env.MASTER_DATA.put(DASHBOARD_META_KEY, JSON.stringify(dashboardMeta))
-    ])
-    
-    console.log('Successfully updated MASTER_DATA and DASHBOARD_META KV')
+    console.log('All KV data updated successfully')
   } catch (e) {
     console.error('Failed to update KV data:', e)
   }

@@ -419,22 +419,53 @@ interface AtlasGacha {
 export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   const now = Math.floor(Date.now() / 1000)
   
-  console.log('Fetching event, gacha and servant data from Atlas Academy...')
-  const [eventsRes, gachaRes, servantRes] = await Promise.all([
-    fetch(`${origin}/export/${region}/nice_event.json`),
+  console.log('Fetching event summaries, gacha and servant data from Atlas Academy...')
+  // Fetch summaries instead of the full 40MB nice_event.json
+  const [basicEventsRes, gachaRes, servantRes] = await Promise.all([
+    fetch(`${origin}/export/${region}/basic_event.json`),
     fetch(`${origin}/export/${region}/nice_gacha.json`),
     fetch(`${origin}/export/${region}/basic_servant.json`)
   ])
   
-  const allEvents: AtlasEvent[] = await eventsRes.json()
+  const basicEvents: { id: number; startedAt: number; finishedAt: number; type: string; banner?: string }[] = await basicEventsRes.json()
   const allGachas: AtlasGacha[] = await gachaRes.json()
   const allServants: { id: number; name: string; rarity: number; collectionNo: number; type: string }[] = await servantRes.json()
   
+  // Atlas Academy uses 1893423600 as a sentinel for permanently available content
+  const PERMANENT_SENTINEL = 1893423600
+
+  // 1. Identify active events from summaries
+  // Note: basic_event.json doesn't have the banner field, so we filter by time and type first.
+  const EVENT_TYPES = new Set(['eventQuest', 'war', 'questCampaign', 'itemQuest'])
+  const activeEventSummaries = basicEvents.filter(e => 
+    e.startedAt <= now && 
+    e.finishedAt > now && 
+    e.finishedAt < PERMANENT_SENTINEL &&
+    (EVENT_TYPES.has(e.type) || (e as any).warIds?.length > 0)
+  )
+
+  console.log(`Found ${activeEventSummaries.length} potential active events in summaries. Fetching details...`)
+
+  // 2. Fetch full details for potential active events
+  const allActiveDetails: AtlasEvent[] = await Promise.all(
+    activeEventSummaries.map(async (e) => {
+      try {
+        const res = await fetch(`${origin}/nice/${region}/event/${e.id}`)
+        if (!res.ok) return null
+        return res.json()
+      } catch {
+        return null
+      }
+    })
+  ).then(results => results.filter((e): e is AtlasEvent => e !== null))
+  
+  // Filter only those with banners for display
+  const activeEvents = allActiveDetails.filter(e => e.banner)
   
   const threeMonthsAgo = now - (90 * 24 * 60 * 60)
   const servantReleaseDates = new Map<number, number>()
 
-  // 1. Determine release dates from gachas
+  // 3. Determine release dates from gachas
   for (const g of allGachas) {
     if (!g.featuredSvtIds) continue
     for (const id of g.featuredSvtIds) {
@@ -444,8 +475,8 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
     }
   }
 
-  // 2. Determine release dates from events (for distribution/welfare servants)
-  for (const e of allEvents) {
+  // 4. Determine release dates from events (for distribution/welfare servants)
+  for (const e of activeEvents) {
     if (!e.svts) continue
     for (const es of e.svts) {
       const id = es.svtId
@@ -455,7 +486,7 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
     }
   }
 
-  // 3. Filter recent servants
+  // 5. Filter recent servants
   const recentServants: RecentServant[] = allServants
     .filter(s => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0)
     .map(s => ({
@@ -466,35 +497,29 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
       face: `${staticOrigin}/JP/Faces/f_${s.id * 10}.png`,
       releasedAt: servantReleaseDates.get(s.id) || 0
     }))
-    .filter(s => s.releasedAt >= threeMonthsAgo && s.collectionNo > 350) // Filter by date and sanity check for newness
+    .filter(s => s.releasedAt >= threeMonthsAgo && s.collectionNo > 350)
     .sort((a, b) => b.releasedAt - a.releasedAt || b.collectionNo - a.collectionNo)
 
-  // Atlas Academy uses 1893423600 as a sentinel for permanently available content
-  const PERMANENT_SENTINEL = 1893423600
+  // 6. Map active events to dashboard format
+  const mappedEvents = activeEvents.map(e => ({
+    id: e.id,
+    name: e.name,
+    banner: e.banner as string,
+    startedAt: e.startedAt,
+    endedAt: e.endedAt,
+    shopFinishedAt: e.finishedAt,
+    type: e.type,
+    drops: Array.from(new Map(
+      (e.quests || []).flatMap(q => q.drops || [])
+        .map(d => [d.objectId, { id: d.objectId, name: d.name, icon: d.icon }])
+    ).values())
+  }))
 
-  // Filter active events: require banner, time-limited (not permanent content), and shop still open
-  const activeEvents = allEvents
-    .filter(e => e.startedAt <= now && e.finishedAt > now && e.finishedAt < PERMANENT_SENTINEL && e.banner)
-    .map(e => ({
-      id: e.id,
-      name: e.name,
-      banner: e.banner as string,
-      startedAt: e.startedAt,
-      endedAt: e.endedAt,
-      shopFinishedAt: e.finishedAt,
-      type: e.type,
-      drops: Array.from(new Map(
-        (e.quests || []).flatMap(q => q.drops || [])
-          .map(d => [d.objectId, { id: d.objectId, name: d.name, icon: d.icon }])
-      ).values())
-    }))
-
-  // Filter active limited gachas (pickupId > 0 = limited/pickup banner, not permanent FP summon)
+  // Filter active limited gachas
   const activeGachas = allGachas
     .filter(g => g.openedAt <= now && g.closedAt > now && g.pickupId > 0)
     .map(g => {
-      // Try to find an event that matches this gacha's timing or name
-      const relatedEvent = allEvents.find(e => 
+      const relatedEvent = activeEvents.find(e => 
         (e.startedAt <= g.openedAt && e.finishedAt >= g.closedAt) ||
         (g.name.includes(e.name.substring(0, 5)))
       );
@@ -502,9 +527,6 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
       return {
         id: g.id,
         name: g.name,
-        // Pattern 1: New Atlas Academy pattern gacha_banner_{id}
-        // Pattern 2: Old Atlas Academy pattern summon_{imageId}
-        // We'll pass the imageId so the frontend can try multiple patterns
         banner: `${staticOrigin}/JP/Banner/summon_${g.imageId}.png`,
         fallbackBanner: relatedEvent?.banner || null,
         openedAt: g.openedAt,
@@ -518,10 +540,10 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
       };
     })
 
-  console.log(`Dashboard meta: ${activeEvents.length} active events, ${activeGachas.length} active gachas, ${recentServants.length} recent servants`)
+  console.log(`Dashboard meta: ${mappedEvents.length} active events, ${activeGachas.length} active gachas, ${recentServants.length} recent servants`)
 
   return {
-    events: activeEvents,
+    events: mappedEvents,
     gachas: activeGachas,
     recentServants,
     updatedAt: Date.now()

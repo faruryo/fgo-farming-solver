@@ -16,7 +16,7 @@
       "id": 50041601,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nフランソワ･プレラーティ(フランチェスカ･プレラーティ)\nピックアップ召喚",
       "banner": "https://static.atlasacademy.io/JP/Banner/summon_83596.png",
-      "fallbackBanner": null,
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
       "openedAt": 1777114800,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -38,7 +38,7 @@
       "id": 50041611,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nリチャードⅠ世ピックアップ召喚",
       "banner": "https://static.atlasacademy.io/JP/Banner/summon_83597.png",
-      "fallbackBanner": null,
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
       "openedAt": 1777280400,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -60,7 +60,7 @@
       "id": 50041621,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \n諸葛孔明〔エルメロイⅡ世〕ピックアップ召喚",
       "banner": "https://static.atlasacademy.io/JP/Banner/summon_83598.png",
-      "fallbackBanner": null,
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
       "openedAt": 1777280400,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -82,7 +82,7 @@
       "id": 50041631,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \n女教皇ヨハンナピックアップ召喚",
       "banner": "https://static.atlasacademy.io/JP/Banner/summon_83599.png",
-      "fallbackBanner": null,
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
       "openedAt": 1777453200,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -104,7 +104,7 @@
       "id": 50041641,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nジョン･ラックランドピックアップ召喚",
       "banner": "https://static.atlasacademy.io/JP/Banner/summon_83600.png",
-      "fallbackBanner": null,
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
       "openedAt": 1777712400,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -159,5 +159,5 @@
       "releasedAt": 1770973200
     }
   ],
-  "updatedAt": 1777792172433
+  "updatedAt": 1777806299429
 }
