@@ -14,7 +14,8 @@ export const ProgressSection: React.FC = () => {
   const [isMounted, setIsMounted] = React.useState(false)
 
   React.useEffect(() => {
-    setIsMounted(true)
+    const timer = setTimeout(() => setIsMounted(true), 0)
+    return () => clearTimeout(timer)
   }, [])
 
   const stats = useMemo(() => {
@@ -110,7 +111,7 @@ export const ProgressSection: React.FC = () => {
               <VStack spacing={4}>
                 <Box height="100px" width="100%" position="relative">
                   {isMounted && (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={0}>
                       <PieChart>
                         <Pie
                           data={chartData}
