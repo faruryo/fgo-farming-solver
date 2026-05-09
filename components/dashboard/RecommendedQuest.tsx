@@ -21,9 +21,9 @@ export const RecommendedQuest: React.FC = () => {
 
     // 1. 直近の計算結果があればそれを優先して表示
     if (recentResult) {
-      const targetQuests = isBothResult(recentResult) ? recentResult.ap.quests : recentResult.quests
-      const targetItems = isBothResult(recentResult) ? recentResult.ap.items : recentResult.items
-      const targetDropRates = isBothResult(recentResult) ? recentResult.ap.drop_rates : recentResult.drop_rates
+      const targetQuests = isBothResult(recentResult) ? recentResult.lap.quests : recentResult.quests
+      const targetItems = isBothResult(recentResult) ? recentResult.lap.items : recentResult.items
+      const targetDropRates = isBothResult(recentResult) ? recentResult.lap.drop_rates : recentResult.drop_rates
 
       if (targetQuests && targetQuests.length > 0) {
         return targetQuests
@@ -33,7 +33,10 @@ export const RecommendedQuest: React.FC = () => {
               if (q.area?.includes('オーディール・コール')) return 2
               return 3
             }
-            return getPriority(a) - getPriority(b)
+            const pa = getPriority(a)
+            const pb = getPriority(b)
+            if (pa !== pb) return pa - pb
+            return b.lap - a.lap
           })
           .slice(0, 4)
           .map((q: Quest) => {
