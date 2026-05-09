@@ -520,16 +520,33 @@ body {
 .c-mat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 8px; }
 
 .c-mat-card {
-  background: var(--panel); border: 1px solid var(--border);
-  box-shadow: 0 1px 3px rgba(30,46,74,0.05);
+  background: var(--panel2); border: 1px solid var(--border);
+  box-shadow: 0 2px 5px rgba(30,46,74,0.04);
   padding: 11px 9px; position: relative; overflow: hidden;
+  transition: all 0.2s ease;
 }
 .c-mat-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: var(--rarity-color, var(--steel)); opacity: 0.45;
+  background: var(--rarity-color, var(--steel)); opacity: 0.3;
 }
-.c-mat-card.short { border-color: rgba(176,48,48,0.3); }
-.c-mat-card.short::before { background: var(--red); opacity: 0.55; }
+.c-mat-card.short {
+  border-color: rgba(176,48,48,0.35);
+  background: linear-gradient(180deg, rgba(176,48,48,0.04) 0%, var(--panel2) 50%);
+  box-shadow: 0 3px 8px rgba(176,48,48,0.06);
+}
+.c-mat-card.short::before { background: var(--red); opacity: 0.8; }
+
+.c-mat-card.met {
+  border-color: rgba(30,112,64,0.3);
+  background: linear-gradient(180deg, rgba(30,112,64,0.04) 0%, var(--panel2) 50%);
+}
+.c-mat-card.met::before { background: var(--green); opacity: 0.6; }
+
+.c-mat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(30,46,74,0.1);
+}
+
 .c-mat-icon-area { width: 52px; height: 52px; margin: 0 auto 8px; position: relative; display: flex; align-items: center; justify-content: center; }
 .c-mat-icon {
   width: 48px; height: 48px; border-radius: 4px; object-fit: contain;
@@ -544,9 +561,17 @@ body {
 }
 .c-mat-icon-placeholder::after { content: '◆'; font-size: 16px; color: var(--rarity-color, var(--steel)); opacity: 0.5; }
 .c-mat-short-badge {
-  position: absolute; top: -4px; right: -4px; background: var(--red); color: #fff;
-  font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 2px; line-height: 1;
+  position: absolute; top: -1px; right: -1px; background: var(--red); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 0 0 0 4px; line-height: 1; z-index: 2;
+  box-shadow: -1px 1px 4px rgba(0,0,0,0.1);
 }
+.c-mat-met-badge {
+  position: absolute; top: 1px; right: 4px;
+  font-size: 14px; color: var(--green); font-weight: bold;
+  opacity: 0.8;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+}
+
 .c-mat-name { font-size: 11px; color: var(--text); text-align: center; line-height: 1.4; margin-bottom: 8px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .c-mat-counts { display: flex; flex-direction: column; gap: 3px; }
 .c-mat-count-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; background: rgba(30,46,74,0.04); }

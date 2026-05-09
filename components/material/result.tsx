@@ -37,12 +37,14 @@ import { getItemIconUrl } from '../../lib/get-item-icon-url'
 const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: MatCardProps) => {
   const [editing, setEditing] = useState(false)
   const isShort = deficiency > 0
+  const isMet = deficiency === 0 && required > 0
 
   return (
     <div
-      className={`c-mat-card${isShort ? ' short' : ''}`}
+      className={`c-mat-card${isShort ? ' short' : isMet ? ' met' : ''}`}
       style={{ '--rarity-color': rarityColor } as React.CSSProperties}
     >
+      {isMet && <div className="c-mat-met-badge">✓</div>}
       <div className="c-mat-icon-area">
         {item.icon ? (
           <Image
@@ -58,6 +60,7 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
         {isShort && <div className="c-mat-short-badge">−{deficiency}</div>}
       </div>
       <div className="c-mat-name">{item.name}</div>
+
       <div className="c-mat-counts">
         <div className="c-mat-count-row">
           <span className="c-mat-count-label">必要</span>
