@@ -684,8 +684,9 @@ button, select { font-family: var(--sans); }
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   position: relative;
+  /* Allow star to overflow */
+  overflow: visible;
 }
 
 .u-face-frame.rarity-5 {
@@ -698,25 +699,6 @@ button, select { font-family: var(--sans); }
   border-color: #a0aec0;
   box-shadow: 0 0 6px rgba(160, 174, 192, 0.3);
   background: radial-gradient(circle, rgba(160, 174, 192, 0.2) 0%, transparent 80%);
-}
-
-.u-face-star {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  font-size: 10px;
-  line-height: 1;
-  background: var(--navy);
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--gold);
-  z-index: 2;
-  color: var(--gold2);
-  pointer-events: none;
 }
 
 .u-face-frame img {

@@ -22,13 +22,13 @@
       "pickupServants": [
         {
           "id": 500200,
-          "name": "",
-          "rarity": 5,
+          "name": "ジル・ド・レェ",
+          "rarity": 3,
           "face": "https://static.atlasacademy.io/JP/Faces/f_5002000.png"
         },
         {
           "id": 505600,
-          "name": "",
+          "name": "フランソワ・プレラーティ",
           "rarity": 5,
           "face": "https://static.atlasacademy.io/JP/Faces/f_5056000.png"
         }
@@ -44,13 +44,13 @@
       "pickupServants": [
         {
           "id": 702700,
-          "name": "",
-          "rarity": 5,
+          "name": "ペンテシレイア",
+          "rarity": 4,
           "face": "https://static.atlasacademy.io/JP/Faces/f_7027000.png"
         },
         {
           "id": 106100,
-          "name": "",
+          "name": "リチャードⅠ世",
           "rarity": 5,
           "face": "https://static.atlasacademy.io/JP/Faces/f_1061000.png"
         }
@@ -66,14 +66,14 @@
       "pickupServants": [
         {
           "id": 501900,
-          "name": "",
+          "name": "諸葛孔明〔エルメロイⅡ世〕",
           "rarity": 5,
           "face": "https://static.atlasacademy.io/JP/Faces/f_5019000.png"
         },
         {
           "id": 702700,
-          "name": "",
-          "rarity": 5,
+          "name": "ペンテシレイア",
+          "rarity": 4,
           "face": "https://static.atlasacademy.io/JP/Faces/f_7027000.png"
         }
       ]
@@ -88,13 +88,13 @@
       "pickupServants": [
         {
           "id": 600300,
-          "name": "",
-          "rarity": 5,
+          "name": "百貌のハサン",
+          "rarity": 3,
           "face": "https://static.atlasacademy.io/JP/Faces/f_6003000.png"
         },
         {
           "id": 901600,
-          "name": "",
+          "name": "女教皇ヨハンナ",
           "rarity": 5,
           "face": "https://static.atlasacademy.io/JP/Faces/f_9016000.png"
         }
@@ -110,9 +110,97 @@
       "pickupServants": [
         {
           "id": 1102000,
-          "name": "",
+          "name": "ジョン・ラックランド",
           "rarity": 5,
           "face": "https://static.atlasacademy.io/JP/Faces/f_11020000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041651,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nジャック･ザ･リッパーピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83601.png",
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "openedAt": 1777885200,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 600500,
+          "name": "ジャック・ザ・リッパー",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_6005000.png"
+        },
+        {
+          "id": 501800,
+          "name": "ギルガメッシュ",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5018000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041661,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nテュフォン･エフェメロスピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83602.png",
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "openedAt": 1777885200,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 501800,
+          "name": "ギルガメッシュ",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5018000.png"
+        },
+        {
+          "id": 2801100,
+          "name": "テュフォン・エフェメロス",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_28011000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041671,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nイシュタル(アーチャー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83603.png",
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "openedAt": 1778058000,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 700100,
+          "name": "ヘラクレス",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7001000.png"
+        },
+        {
+          "id": 202000,
+          "name": "イシュタル",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2020000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041681,
+      "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nプトレマイオスピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83604.png",
+      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "openedAt": 1778058000,
+      "closedAt": 1778903999,
+      "pickupServants": [
+        {
+          "id": 700100,
+          "name": "ヘラクレス",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7001000.png"
+        },
+        {
+          "id": 205000,
+          "name": "プトレマイオス",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2050000.png"
         }
       ]
     }
@@ -159,5 +247,5 @@
       "releasedAt": 1770973200
     }
   ],
-  "updatedAt": 1777806299429
+  "updatedAt": 1778344860851
 }

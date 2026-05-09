@@ -152,7 +152,6 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
                       <Tooltip key={servant.id} label={servant.name}>
                         <Box className={`u-face-frame rarity-${servant.rarity}`}>
                           <Image src={servant.face} alt={servant.name} />
-                          <Box className="u-face-star">★</Box>
                         </Box>
                       </Tooltip>
                     ))}
