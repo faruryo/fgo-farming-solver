@@ -515,6 +515,9 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
     ).values())
   }))
 
+  // Create a map for servant lookup once
+  const svtLookup = new Map(allServants.map(s => [s.id, s]));
+
   // Filter active limited gachas
   const activeGachas = allGachas
     .filter(g => g.openedAt <= now && g.closedAt > now && g.pickupId > 0)
@@ -531,12 +534,15 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
         fallbackBanner: relatedEvent?.banner || null,
         openedAt: g.openedAt,
         closedAt: g.closedAt,
-        pickupServants: (g.featuredSvtIds || []).map(svtId => ({
-          id: svtId,
-          name: '',
-          rarity: 5,
-          face: `${staticOrigin}/JP/Faces/f_${svtId * 10}.png`
-        }))
+        pickupServants: (g.featuredSvtIds || []).map(svtId => {
+          const svt = svtLookup.get(svtId);
+          return {
+            id: svtId,
+            name: svt?.name || '',
+            rarity: svt?.rarity || 5,
+            face: `${staticOrigin}/JP/Faces/f_${svtId * 10}.png`
+          };
+        })
       };
     })
 
