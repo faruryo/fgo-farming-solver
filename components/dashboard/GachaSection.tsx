@@ -145,13 +145,17 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
                   {t('ピックアップ対象')}
                 </Text>
                 <HStack spacing={2} wrap="wrap">
-                  {gacha.pickupServants.slice(0, 6).map(servant => (
-                    <Tooltip key={servant.id} label={servant.name}>
-                      <Box className="u-face-frame">
-                        <Image src={servant.face} alt={servant.name} />
-                      </Box>
-                    </Tooltip>
-                  ))}
+                  {[...gacha.pickupServants]
+                    .sort((a, b) => b.rarity - a.rarity)
+                    .slice(0, 6)
+                    .map(servant => (
+                      <Tooltip key={servant.id} label={servant.name}>
+                        <Box className={`u-face-frame rarity-${servant.rarity}`}>
+                          <Image src={servant.face} alt={servant.name} />
+                          <Box className="u-face-star">★</Box>
+                        </Box>
+                      </Tooltip>
+                    ))}
                 </HStack>
               </VStack>
             </Box>
