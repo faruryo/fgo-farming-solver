@@ -25,3 +25,9 @@
 - Build is two-step: `next build && npx @opennextjs/cloudflare build --skipBuild`
 - `wrangler.toml` uses `nodejs_compat` and `global_fetch_strictly_public`.
 - Refer to domain-specific rules for implementation details.
+
+## OpenSpec Workflow
+All implementation work MUST be done through OpenSpec to keep specs in sync with code.
+
+- **Large changes** (new features, refactors): use `openspec new change <name>` → see `/opsx-propose` skill for details.
+- **Small changes** (bug fixes, tweaks): edit `openspec/specs/<capability>/spec.md` directly, then run `openspec validate --specs`.
