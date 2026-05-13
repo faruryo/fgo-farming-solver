@@ -101,7 +101,7 @@ export const NearGoalSection: React.FC = () => {
                 </Text>
                 <HStack spacing={1} mt={0.5}>
                   <Text fontSize="10px" color="var(--text3)" noOfLines={1}>
-                    あと{needed}個 · {quest.name}
+                    あと{needed}個 · {quest.area} · {quest.name}
                   </Text>
                 </HStack>
               </Box>
