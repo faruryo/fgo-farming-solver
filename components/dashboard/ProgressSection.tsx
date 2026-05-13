@@ -99,7 +99,8 @@ export const ProgressSection: React.FC = () => {
         <div className="u-section-header-line" />
       </div>
 
-      <SimpleGrid columns={[1, 1, 3]} spacing={6}>
+      {/* 常に3列横並び（モバイルでも縦積みしない） */}
+      <SimpleGrid columns={3} spacing={3}>
         {stats.map(stat => {
           const percent = stat.total > 0 ? Math.round((stat.value / stat.total) * 100) : 0
           const chartData = [
@@ -108,9 +109,9 @@ export const ProgressSection: React.FC = () => {
           ]
 
           return (
-            <Box key={stat.name} className="u-fgo-card" p={4} bg="var(--panel2)" borderRadius="md" position="relative">
-              <VStack spacing={4}>
-                <Box height="100px" width="100%" position="relative">
+            <Box key={stat.name} className="u-fgo-card" p={2} bg="var(--panel2)" borderRadius="md" position="relative">
+              <VStack spacing={1}>
+                <Box height="60px" width="100%" position="relative">
                   {isMounted && (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <PieChart>
@@ -118,8 +119,8 @@ export const ProgressSection: React.FC = () => {
                           data={chartData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={30}
-                          outerRadius={45}
+                          innerRadius={18}
+                          outerRadius={27}
                           paddingAngle={2}
                           dataKey="value"
                           startAngle={90}
@@ -132,19 +133,19 @@ export const ProgressSection: React.FC = () => {
                       </PieChart>
                     </ResponsiveContainer>
                   )}
-                  <Box 
-                    position="absolute" 
-                    top="50%" 
-                    left="50%" 
+                  <Box
+                    position="absolute"
+                    top="50%"
+                    left="50%"
                     transform="translate(-50%, -50%)"
                     textAlign="center"
                   >
-                    <Text fontSize="md" fontWeight="bold" color="var(--navy)">{percent}%</Text>
+                    <Text fontSize="xs" fontWeight="bold" color="var(--navy)">{percent}%</Text>
                   </Box>
                 </Box>
                 <VStack spacing={0}>
-                  <Heading size="xs" color="var(--text2)">{stat.name}</Heading>
-                  <Text fontSize="10px" color="var(--text3)">
+                  <Heading size="xs" color="var(--text2)" fontSize="11px">{stat.name}</Heading>
+                  <Text fontSize="9px" color="var(--text3)">
                     {stat.value} / {stat.total}
                   </Text>
                 </VStack>

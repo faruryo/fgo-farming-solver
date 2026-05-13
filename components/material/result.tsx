@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
@@ -36,11 +36,19 @@ import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
 const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: MatCardProps) => {
   const [editing, setEditing] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
   const isShort = deficiency > 0
   const isMet = deficiency === 0 && required > 0
 
+  useEffect(() => {
+    if (editing && cardRef.current) {
+      cardRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+  }, [editing])
+
   return (
     <div
+      ref={cardRef}
       className={`c-mat-card${isShort ? ' short' : isMet ? ' met' : ''}`}
       style={{ '--rarity-color': rarityColor } as React.CSSProperties}
     >

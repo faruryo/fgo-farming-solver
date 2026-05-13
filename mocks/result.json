@@ -222,7 +222,7 @@
       "objective": "lap",
       "items": {
         "19": 63,
-        "00": 123,
+        "00": 80,
         "01": 101,
         "1g": 73,
         "2h": 55,
@@ -356,6 +356,13 @@
         "item_id": "07",
         "item_name": "鉄杭",
         "drop_rate": 0.769
+      },
+      {
+        "quest_id": "13e",
+        "quest_name": "オックスフォード",
+        "item_id": "19",
+        "item_name": "勲章",
+        "drop_rate": 0.35
       }
     ],
     "total_lap": 1062,

@@ -1,6 +1,6 @@
-/* eslint-disable */
+ 
 import React, { useMemo } from 'react'
-import { Box, Text, VStack, Image, Badge, SimpleGrid, Spinner, LinkBox, LinkOverlay } from '@chakra-ui/react'
+import { Box, Text, VStack, HStack, Image, Badge, SimpleGrid, Spinner } from '@chakra-ui/react'
 import NextLink from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { useDrops } from '../../hooks/use-drops'
@@ -98,50 +98,55 @@ export const RecommendedQuest: React.FC = () => {
   if (recommendations.length === 0) return null
 
   return (
-    <VStack align="stretch" spacing={6}>
+    <VStack align="stretch" spacing={3}>
       <div className="u-section-header">
         <h2 className="u-section-header-title">{recentResult ? t('直近の周回予定') : t('推奨周回クエスト')}</h2>
         <div className="u-section-header-line" />
       </div>
 
-      <SimpleGrid columns={[1, 1, 2]} spacing={4}>
+      <SimpleGrid columns={1} spacing={3}>
         {recommendations.map(({ id, item, quest, rate, lap, isRecent }) => (
-          <Box 
-            key={id} 
+          <Box
+            key={id}
             as={NextLink}
             href={`/quests/${quest?.id}`}
-            className="u-fgo-card" 
-            p={4} 
+            className="u-fgo-card"
+            py={2}
+            px={3}
             bg="var(--panel2)"
             display="flex"
-            alignItems="center"
-            gap={4}
+            alignItems="flex-start"
+            gap={3}
             _hover={{ transform: 'translateY(-2px)', shadow: 'xl', bg: 'var(--panel3)' }}
             transition="all 0.2s"
             cursor="pointer"
           >
-            <Box width="48px" height="48px" flexShrink={0}>
-               {item && <Image src={getItemIconUrl(item.icon)} alt={item.name} fallbackSrc="https://via.placeholder.com/48" />}
+            <Box width="36px" height="36px" flexShrink={0} mt={0.5}>
+              {item && <Image src={getItemIconUrl(item.icon)} alt={item.name} fallbackSrc="https://via.placeholder.com/36" />}
             </Box>
-            <VStack align="start" spacing={0} flex={1}>
-              {item && <Text fontSize="xs" color="var(--text3)">
-                {isRecent ? t('主なドロップ') : t('不足素材')}: {item.name}
-              </Text>}
-              <Text fontSize="md" fontWeight="bold" color="var(--navy)">{quest?.name}</Text>
-              <Text fontSize="xs" color="var(--text2)">{quest?.area}</Text>
-            </VStack>
-            <VStack align="end" spacing={1}>
-              {lap ? (
-                <Badge colorScheme="blue" variant="solid">
-                  {lap} {t('周')}
-                </Badge>
-              ) : (
-                <Badge colorScheme="green" variant="solid">
-                  {Math.round((rate || 0) * 100)}%
-                </Badge>
+            <Box flex={1} minW={0}>
+              {item && (
+                <Text fontSize="10px" color="var(--text3)" noOfLines={1}>
+                  {isRecent ? t('主なドロップ') : t('不足素材')}: {item.name}
+                </Text>
               )}
-              <Text fontSize="10px" color="var(--text3)">{quest?.ap} AP</Text>
-            </VStack>
+              <Text fontSize="sm" fontWeight="bold" color="var(--navy)" noOfLines={1}>
+                {quest?.name}
+              </Text>
+              <HStack spacing={2} mt={0.5} flexWrap="wrap">
+                <Text fontSize="10px" color="var(--text2)">{quest?.area}</Text>
+                <Text fontSize="10px" color="var(--text3)">{quest?.ap} AP</Text>
+                {lap ? (
+                  <Badge colorScheme="blue" variant="solid" fontSize="10px">
+                    {lap} {t('周')}
+                  </Badge>
+                ) : (
+                  <Badge colorScheme="green" variant="solid" fontSize="10px">
+                    {Math.round((rate || 0) * 100)}%
+                  </Badge>
+                )}
+              </HStack>
+            </Box>
           </Box>
         ))}
       </SimpleGrid>
