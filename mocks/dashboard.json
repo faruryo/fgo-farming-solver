@@ -15,8 +15,7 @@
     {
       "id": 50041601,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nフランソワ･プレラーティ(フランチェスカ･プレラーティ)\nピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83596.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83596.png",
       "openedAt": 1777114800,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -37,8 +36,7 @@
     {
       "id": 50041611,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nリチャードⅠ世ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83597.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83597.png",
       "openedAt": 1777280400,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -59,8 +57,7 @@
     {
       "id": 50041621,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \n諸葛孔明〔エルメロイⅡ世〕ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83598.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83598.png",
       "openedAt": 1777280400,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -81,8 +78,7 @@
     {
       "id": 50041631,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \n女教皇ヨハンナピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83599.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83599.png",
       "openedAt": 1777453200,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -103,8 +99,7 @@
     {
       "id": 50041641,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nジョン･ラックランドピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83600.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83600.png",
       "openedAt": 1777712400,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -119,8 +114,7 @@
     {
       "id": 50041651,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nジャック･ザ･リッパーピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83601.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83601.png",
       "openedAt": 1777885200,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -141,8 +135,7 @@
     {
       "id": 50041661,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nテュフォン･エフェメロスピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83602.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83602.png",
       "openedAt": 1777885200,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -163,8 +156,7 @@
     {
       "id": 50041671,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nイシュタル(アーチャー)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83603.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83603.png",
       "openedAt": 1778058000,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -185,8 +177,7 @@
     {
       "id": 50041681,
       "name": "Fate/strange Fake×Fate/Grand Order\nコラボレーションイベント \nプトレマイオスピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/Banner/summon_83604.png",
-      "fallbackBanner": "https://static.atlasacademy.io/JP/Banner/event_war_80580.png",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83604.png",
       "openedAt": 1778058000,
       "closedAt": 1778903999,
       "pickupServants": [
@@ -201,6 +192,405 @@
           "name": "プトレマイオス",
           "rarity": 5,
           "face": "https://static.atlasacademy.io/JP/Faces/f_2050000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041691,
+      "name": "「新章」開幕直前キャンペーン \nジャンヌ･ダルク〔オルタ〕(アヴェンジャー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83615.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 500200,
+          "name": "ジル・ド・レェ",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5002000.png"
+        },
+        {
+          "id": 1100300,
+          "name": "ジャンヌ・ダルク〔オルタ〕",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_11003000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041701,
+      "name": "「新章」開幕直前キャンペーン \nフランシス･ドレイクピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83616.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 200600,
+          "name": "ダビデ",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2006000.png"
+        },
+        {
+          "id": 400300,
+          "name": "フランシス・ドレイク",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_4003000.png"
+        },
+        {
+          "id": 501700,
+          "name": "メディア〔リリィ〕",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5017000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041711,
+      "name": "「新章」開幕直前キャンペーン ニコラ･テスラピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83617.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 700400,
+          "name": "フランケンシュタイン",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7004000.png"
+        },
+        {
+          "id": 501000,
+          "name": "ヴァン・ホーエンハイム・パラケルスス",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5010000.png"
+        },
+        {
+          "id": 201100,
+          "name": "ニコラ・テスラ",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2011000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041721,
+      "name": "「新章」開幕直前キャンペーン \nモードレッド(セイバー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83618.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 100900,
+          "name": "モードレッド",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1009000.png"
+        },
+        {
+          "id": 501100,
+          "name": "チャールズ・バベッジ",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5011000.png"
+        },
+        {
+          "id": 301900,
+          "name": "アルトリア・ペンドラゴン〔オルタ〕",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3019000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041731,
+      "name": "「新章」開幕直前キャンペーン ナイチンゲールピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83619.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 701400,
+          "name": "ナイチンゲール",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7014000.png"
+        },
+        {
+          "id": 101900,
+          "name": "ラーマ",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1019000.png"
+        },
+        {
+          "id": 501600,
+          "name": "ジェロニモ",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5016000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041741,
+      "name": "「新章」開幕直前キャンペーン \nクー･フーリン〔オルタ〕ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83620.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 702000,
+          "name": "クー・フーリン〔オルタ〕",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_7020000.png"
+        },
+        {
+          "id": 301700,
+          "name": "李書文",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3017000.png"
+        },
+        {
+          "id": 201000,
+          "name": "ビリー・ザ・キッド",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2010000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041751,
+      "name": "「新章」開幕直前キャンペーン \n女王メイヴ(ライダー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83621.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 300200,
+          "name": "ディルムッド・オディナ",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3002000.png"
+        },
+        {
+          "id": 401300,
+          "name": "女王メイヴ",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_4013000.png"
+        },
+        {
+          "id": 502500,
+          "name": "トーマス・エジソン",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5025000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041761,
+      "name": "「新章」開幕直前キャンペーン \nアルトリア･ペンドラゴン(ランサー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83622.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 302000,
+          "name": "アルトリア・ペンドラゴン",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3020000.png"
+        },
+        {
+          "id": 100700,
+          "name": "ガウェイン",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1007000.png"
+        },
+        {
+          "id": 101200,
+          "name": "ベディヴィエール",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1012000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041771,
+      "name": "「新章」開幕直前キャンペーン オジマンディアスピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83623.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 401200,
+          "name": "オジマンディアス",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_4012000.png"
+        },
+        {
+          "id": 501200,
+          "name": "ニトクリス",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5012000.png"
+        },
+        {
+          "id": 101200,
+          "name": "ベディヴィエール",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1012000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041781,
+      "name": "「新章」開幕直前キャンペーン “山の翁”ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83624.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 100700,
+          "name": "ガウェイン",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_1007000.png"
+        },
+        {
+          "id": 600900,
+          "name": "静謐のハサン",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_6009000.png"
+        },
+        {
+          "id": 602500,
+          "name": "“山の翁”",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_6025000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041791,
+      "name": "「新章」開幕直前キャンペーン マーリンピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83625.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 501800,
+          "name": "ギルガメッシュ",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5018000.png"
+        },
+        {
+          "id": 302800,
+          "name": "ジャガーマン",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3028000.png"
+        },
+        {
+          "id": 500800,
+          "name": "マーリン",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5008000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041801,
+      "name": "「新章」開幕直前キャンペーン \nイシュタル(アーチャー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83626.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 202000,
+          "name": "イシュタル",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2020000.png"
+        },
+        {
+          "id": 302700,
+          "name": "メドゥーサ",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3027000.png"
+        },
+        {
+          "id": 302800,
+          "name": "ジャガーマン",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3028000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041811,
+      "name": "「新章」開幕直前キャンペーン \nエレシュキガル(ランサー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83627.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 1100400,
+          "name": "ゴルゴーン",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_11004000.png"
+        },
+        {
+          "id": 302800,
+          "name": "ジャガーマン",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3028000.png"
+        },
+        {
+          "id": 303200,
+          "name": "エレシュキガル",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3032000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041821,
+      "name": "「新章」開幕直前キャンペーン エルキドゥピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83628.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 300800,
+          "name": "エルキドゥ",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3008000.png"
+        },
+        {
+          "id": 302700,
+          "name": "メドゥーサ",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3027000.png"
+        },
+        {
+          "id": 302800,
+          "name": "ジャガーマン",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3028000.png"
+        }
+      ]
+    },
+    {
+      "id": 50041831,
+      "name": "「新章」開幕直前キャンペーン ケツァル･コアトルピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83629.png",
+      "openedAt": 1778662800,
+      "closedAt": 1779249599,
+      "pickupServants": [
+        {
+          "id": 401800,
+          "name": "ケツァル・コアトル",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_4018000.png"
+        },
+        {
+          "id": 1100400,
+          "name": "ゴルゴーン",
+          "rarity": 4,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_11004000.png"
+        },
+        {
+          "id": 302800,
+          "name": "ジャガーマン",
+          "rarity": 3,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_3028000.png"
         }
       ]
     }
@@ -237,15 +627,7 @@
       "collectionNo": 466,
       "face": "https://static.atlasacademy.io/JP/Faces/f_1066000.png",
       "releasedAt": 1773219600
-    },
-    {
-      "id": 306400,
-      "name": "デメテル",
-      "rarity": 5,
-      "collectionNo": 465,
-      "face": "https://static.atlasacademy.io/JP/Faces/f_3064000.png",
-      "releasedAt": 1770973200
     }
   ],
-  "updatedAt": 1778344860851
+  "updatedAt": 1778775277615
 }
