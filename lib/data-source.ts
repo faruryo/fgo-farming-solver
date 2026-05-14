@@ -42,7 +42,7 @@ export async function kvGet(key: string): Promise<string | null> {
     }
 
     return null
-  } catch (e) {
+  } catch {
     // Silently fail and return null to trigger fallback to local mocks
     return null
   }

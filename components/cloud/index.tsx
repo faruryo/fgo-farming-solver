@@ -60,7 +60,7 @@ const Cloud = () => {
 
       if (session != null) {
         const res = await fetch(`/api/cloud`, { credentials: 'include' })
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+         
         const rawData = (await res.json()) as { storage?: Record<string, string>; metadata?: { updatedAt: string; deviceId: string } }
         let parsed: CloudData
         if (rawData.metadata && rawData.storage) {

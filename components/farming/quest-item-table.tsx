@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, Thead, Tr, Th, Tbody, Td } from '@chakra-ui/react'

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Input, Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
 import React, { FormEventHandler, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'

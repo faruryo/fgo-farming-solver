@@ -1,5 +1,5 @@
-/* eslint-disable */
-/* eslint-disable */
+ 
+ 
 'use client'
 
 import { HStack, List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'

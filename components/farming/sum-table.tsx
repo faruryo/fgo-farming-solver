@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Table, Tbody, Tr, Td } from '@chakra-ui/react'
 import React from 'react'
 

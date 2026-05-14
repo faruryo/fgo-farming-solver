@@ -133,7 +133,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       })
       router.replace('/farming')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [])
 
   const handleSubmit = useCallback(
@@ -172,7 +172,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     groupBy(items, ({ largeCategory }) => largeCategory)
   ).map(([largeCategory, items]): [string, [string, Localized<Item>[]][]] => [
     largeCategory,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+     
     Object.entries(groupBy(items, ({ category }) => category)) as any,
   ])
 

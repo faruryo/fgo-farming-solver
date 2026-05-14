@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Box, Checkbox, HStack, IconButton, VStack } from '@chakra-ui/react'
 import React, { FormEventHandler } from 'react'
 import { NodeState } from '../../hooks/use-checkbox-tree'

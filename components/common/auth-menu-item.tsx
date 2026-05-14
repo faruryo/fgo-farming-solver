@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Image, MenuItem } from '@chakra-ui/react'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useTranslation } from 'react-i18next'

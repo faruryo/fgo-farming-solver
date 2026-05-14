@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { Link } from './link'
 import React from 'react'
 import { Center } from '@chakra-ui/react'
