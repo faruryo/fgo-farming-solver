@@ -23,7 +23,6 @@ export default defineConfig([globalIgnores([
     "pages/_error.js",
     "next-env.d.ts",
     "scripts/",
-    "scratch/",
     ".open-next/",
     ".wrangler/",
     "eslint.config.mjs",

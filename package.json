@@ -15,6 +15,7 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "update-data": "tsx scripts/update-data.ts",
+    "update:mock:dashboard": "tsx scripts/update-mock-dashboard.ts",
     "prepare": "husky"
   },
   "dependencies": {

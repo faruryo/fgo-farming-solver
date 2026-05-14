@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData } from './update'
+import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
@@ -24,6 +24,107 @@ describe('normalizeItemName', () => {
 
   it('returns same name if no mapping found', () => {
     expect(normalizeItemName('未知の素材')).toBe('未知の素材')
+  })
+})
+
+describe('fetchDashboardMeta', () => {
+  const NOW = 1778773507 // 2026-05-15 (fixed for deterministic tests)
+  const PERMANENT = 1893423600
+  const ACTIVE_CLOSE = NOW + 86400       // closes tomorrow
+  const EXPIRED_CLOSE = NOW - 86400      // closed yesterday
+  const PERMANENT_CLOSE = PERMANENT + 1  // beyond sentinel
+
+  const makeGacha = (id: number, type: string, closedAt = ACTIVE_CLOSE) => ({
+    id,
+    name: `ガチャ${id}`,
+    type,
+    imageId: id + 80000,
+    openedAt: NOW - 3600,
+    closedAt,
+    featuredSvtIds: [100100],
+  })
+
+  const makeEvent = (id: number, banner: string, finishedAt = ACTIVE_CLOSE) => ({
+    id,
+    name: `イベント${id}`,
+    type: 'eventQuest',
+    banner,
+    startedAt: NOW - 3600,
+    endedAt: finishedAt,
+    finishedAt,
+    quests: [],
+    svts: [],
+  })
+
+  const makeServant = (id: number) => ({
+    id,
+    name: `サーヴァント${id}`,
+    rarity: 5,
+    collectionNo: 400,
+    type: 'normal',
+  })
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+    vi.setSystemTime(NOW * 1000)
+  })
+
+  it('includes only stone/chargeStone gachas, excludes friendPoint and permanent', async () => {
+    const gachas = [
+      makeGacha(1, 'stone'),
+      makeGacha(2, 'chargeStone'),
+      makeGacha(3, 'friendPoint'),       // excluded
+      makeGacha(4, 'stone', EXPIRED_CLOSE),  // excluded (expired)
+      makeGacha(5, 'stone', PERMANENT_CLOSE), // excluded (permanent)
+    ]
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([makeEvent(1, 'https://example.com/banner.png')]) } as Response)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(gachas) } as Response)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([makeServant(100100)]) } as Response)
+
+    const result = await fetchDashboardMeta()
+
+    expect(result.gachas).toHaveLength(2)
+    expect(result.gachas.map(g => g.id)).toEqual([1, 2])
+  })
+
+  it('generates correct SummonBanners URL for every gacha', async () => {
+    const gachas = [makeGacha(10, 'stone'), makeGacha(20, 'chargeStone')]
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(gachas) } as Response)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([makeServant(100100)]) } as Response)
+
+    const result = await fetchDashboardMeta()
+
+    for (const g of result.gachas) {
+      expect(g.banner).toMatch(/\/JP\/SummonBanners\/img_summon_\d+\.png$/)
+    }
+  })
+
+  it('output is valid JSON with required DashboardMeta fields', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([makeGacha(1, 'stone')]) } as Response)
+      .mockResolvedValueOnce({ json: () => Promise.resolve([makeServant(100100)]) } as Response)
+
+    const result = await fetchDashboardMeta()
+    const serialized = JSON.stringify(result)
+
+    expect(() => JSON.parse(serialized)).not.toThrow()
+    expect(result).toHaveProperty('events')
+    expect(result).toHaveProperty('gachas')
+    expect(result).toHaveProperty('recentServants')
+    expect(result).toHaveProperty('updatedAt')
+    expect(Array.isArray(result.gachas)).toBe(true)
+    result.gachas.forEach(g => {
+      expect(g).toHaveProperty('id')
+      expect(g).toHaveProperty('name')
+      expect(g).toHaveProperty('banner')
+      expect(g).toHaveProperty('openedAt')
+      expect(g).toHaveProperty('closedAt')
+      expect(g).toHaveProperty('pickupServants')
+    })
   })
 })
 

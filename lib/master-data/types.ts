@@ -51,7 +51,6 @@ export interface DashboardGacha {
   id: number
   name: string
   banner: string
-  fallbackBanner?: string | null
   openedAt: number
   closedAt: number
   pickupServants: { id: number; name: string; rarity: number; face: string }[]

@@ -3,6 +3,7 @@ import { Box, Image, Text, SimpleGrid, VStack, HStack, Badge, Tooltip } from '@c
 import { useTranslation } from 'react-i18next'
 import { DashboardGacha } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
+import { Link } from '../common/link'
 
 interface GachaSectionProps {
   gachas: DashboardGacha[]
@@ -14,18 +15,12 @@ const GachaBanner: React.FC<{ image: DashboardGacha }> = ({ image }) => {
   // Try patterns in order
   const sources = React.useMemo(() => {
     const staticOrigin = image.banner.split('/JP/')[0]
-    const list = [
-      image.banner, // summon_{imageId}.png
+    return [
+      image.banner,
       `${staticOrigin}/JP/Banner/gacha_banner_${image.id}.png`,
       `${staticOrigin}/JP/Banner/gacha_banner_stone_${image.id}.png`,
       `${staticOrigin}/JP/Banner/summon_banner_${image.id}.png`,
     ]
-    
-    if (image.fallbackBanner) {
-      list.push(image.fallbackBanner)
-    }
-    
-    return list
   }, [image])
 
   const handleError = () => {
@@ -150,9 +145,11 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
                     .slice(0, 6)
                     .map(servant => (
                       <Tooltip key={servant.id} label={servant.name}>
-                        <Box className={`u-face-frame rarity-${servant.rarity}`}>
-                          <Image src={servant.face} alt={servant.name} />
-                        </Box>
+                        <Link href={`/material#svt-${servant.id}`} display="block" _hover={{ opacity: 0.8 }}>
+                          <Box className={`u-face-frame rarity-${servant.rarity}`}>
+                            <Image src={servant.face} alt={servant.name} />
+                          </Box>
+                        </Link>
                       </Tooltip>
                     ))}
                 </HStack>

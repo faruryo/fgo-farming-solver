@@ -409,8 +409,8 @@ interface AtlasEvent {
 interface AtlasGacha {
   id: number
   name: string
+  type: string
   imageId: number
-  pickupId: number
   openedAt: number
   closedAt: number
   featuredSvtIds?: number[]
@@ -419,48 +419,31 @@ interface AtlasGacha {
 export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   const now = Math.floor(Date.now() / 1000)
   
-  console.log('Fetching event summaries, gacha and servant data from Atlas Academy...')
-  // Fetch summaries instead of the full 40MB nice_event.json
-  const [basicEventsRes, gachaRes, servantRes] = await Promise.all([
-    fetch(`${origin}/export/${region}/basic_event.json`),
+  console.log('Fetching event, gacha and servant data from Atlas Academy...')
+  const [niceEventsRes, gachaRes, servantRes] = await Promise.all([
+    fetch(`${origin}/export/${region}/nice_event.json`),
     fetch(`${origin}/export/${region}/nice_gacha.json`),
     fetch(`${origin}/export/${region}/basic_servant.json`)
   ])
-  
-  const basicEvents: { id: number; startedAt: number; finishedAt: number; type: string; banner?: string }[] = await basicEventsRes.json()
+
+  const allEvents: AtlasEvent[] = await niceEventsRes.json()
   const allGachas: AtlasGacha[] = await gachaRes.json()
   const allServants: { id: number; name: string; rarity: number; collectionNo: number; type: string }[] = await servantRes.json()
-  
+
   // Atlas Academy uses 1893423600 as a sentinel for permanently available content
   const PERMANENT_SENTINEL = 1893423600
 
-  // 1. Identify active events from summaries
-  // Note: basic_event.json doesn't have the banner field, so we filter by time and type first.
+  // 1. Filter active events with banners in a single pass
   const EVENT_TYPES = new Set(['eventQuest', 'war', 'questCampaign', 'itemQuest'])
-  const activeEventSummaries = basicEvents.filter(e => 
-    e.startedAt <= now && 
-    e.finishedAt > now && 
+  const activeEvents = allEvents.filter(e =>
+    e.startedAt <= now &&
+    e.finishedAt > now &&
     e.finishedAt < PERMANENT_SENTINEL &&
-    (EVENT_TYPES.has(e.type) || (e as any).warIds?.length > 0)
+    EVENT_TYPES.has(e.type) &&
+    e.banner
   )
 
-  console.log(`Found ${activeEventSummaries.length} potential active events in summaries. Fetching details...`)
-
-  // 2. Fetch full details for potential active events
-  const allActiveDetails: AtlasEvent[] = await Promise.all(
-    activeEventSummaries.map(async (e) => {
-      try {
-        const res = await fetch(`${origin}/nice/${region}/event/${e.id}`)
-        if (!res.ok) return null
-        return res.json()
-      } catch {
-        return null
-      }
-    })
-  ).then(results => results.filter((e): e is AtlasEvent => e !== null))
-  
-  // Filter only those with banners for display
-  const activeEvents = allActiveDetails.filter(e => e.banner)
+  console.log(`Found ${activeEvents.length} active events with banners.`)
   
   const threeMonthsAgo = now - (90 * 24 * 60 * 60)
   const servantReleaseDates = new Map<number, number>()
@@ -518,20 +501,19 @@ export async function fetchDashboardMeta(): Promise<DashboardMeta> {
   // Create a map for servant lookup once
   const svtLookup = new Map(allServants.map(s => [s.id, s]));
 
-  // Filter active limited gachas
+  // Filter active limited gachas (stone/chargeStone only, excludes friendPoint and permanent banners)
   const activeGachas = allGachas
-    .filter(g => g.openedAt <= now && g.closedAt > now && g.pickupId > 0)
+    .filter(g =>
+      g.openedAt <= now &&
+      g.closedAt > now &&
+      g.closedAt < PERMANENT_SENTINEL &&
+      (g.type === 'stone' || g.type === 'chargeStone')
+    )
     .map(g => {
-      const relatedEvent = activeEvents.find(e => 
-        (e.startedAt <= g.openedAt && e.finishedAt >= g.closedAt) ||
-        (g.name.includes(e.name.substring(0, 5)))
-      );
-
       return {
         id: g.id,
         name: g.name,
-        banner: `${staticOrigin}/JP/Banner/summon_${g.imageId}.png`,
-        fallbackBanner: relatedEvent?.banner || null,
+        banner: `${staticOrigin}/JP/SummonBanners/img_summon_${g.imageId}.png`,
         openedAt: g.openedAt,
         closedAt: g.closedAt,
         pickupServants: (g.featuredSvtIds || []).map(svtId => {

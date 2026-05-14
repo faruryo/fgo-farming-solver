@@ -2,6 +2,7 @@
 
 import { memo, useCallback } from 'react'
 import Image from 'next/image'
+import NextLink from 'next/link'
 import { NiceServant } from '../../interfaces/atlas-academy'
 import { ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'
@@ -98,14 +99,15 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
         <div className={`c-bar-seg${appendDone ? ' done-append' : ''}`} />
       </div>
 
-      <div
+      <NextLink
+        href={`/servants/${servant.id}`}
         className="c-servant-portrait"
-        style={{ background: `linear-gradient(150deg,${cc}22 0%,${cc}08 100%)` }}
+        style={{ background: `linear-gradient(150deg,${cc}22 0%,${cc}08 100%)`, textDecoration: 'none' }}
       >
         {face ? (
-          <Image 
-            src={face} 
-            alt={servant.name} 
+          <Image
+            src={face}
+            alt={servant.name}
             width={72}
             height={72}
             className="c-servant-face-img"
@@ -117,7 +119,7 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
           {cls.abbr}
         </div>
         <div className="c-portrait-stars">{'★'.repeat(servant.rarity)}</div>
-      </div>
+      </NextLink>
 
       <div className="c-servant-body">
         <div className="c-servant-name">{servant.name}</div>
