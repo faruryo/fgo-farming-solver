@@ -19,11 +19,11 @@
 
 ## 3. Phase 1: シンプルコンポーネント移行
 
-- [ ] 3.1 `components/common/expand-chevron.tsx`: `@chakra-ui/icons` の `ChevronDownIcon` を `lucide-react` の `ChevronDown` に置き換え、`ComponentWithAs` 型を除去する
-- [ ] 3.2 `components/common/breadcrumb-link.tsx`: Chakra `BreadcrumbLink` を shadcn `BreadcrumbLink` に置き換え、`ComponentWithAs` 型を除去する
-- [ ] 3.3 `components/dashboard/HistoryGraph.tsx`: `Box` → `div`、`Button` → shadcn `Button` に置き換える
-- [ ] 3.4 `components/farming/result-stat.tsx`: Chakra `Stat/StatGroup/StatLabel/StatNumber` を `div` + Tailwind クラスで自作する
-- [ ] 3.5 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
+- [x] 3.1 `components/common/expand-chevron.tsx`: `@chakra-ui/icons` の `ChevronDownIcon` を `lucide-react` の `ChevronDown` に置き換え、`ComponentWithAs` 型を除去する
+- [x] 3.2 `components/common/breadcrumb-link.tsx`: Chakra `BreadcrumbLink` を shadcn `BreadcrumbLink` に置き換え、`ComponentWithAs` 型を除去する（shadcn が Base UI ベースのため `render` prop を使用）
+- [x] 3.3 `components/dashboard/HistoryGraph.tsx`: `Box` → `div`、`Button` → shadcn `Button` に置き換える
+- [x] 3.4 `components/farming/result-stat.tsx`: Chakra `Stat/StatGroup/StatLabel/StatNumber` を `div` + Tailwind クラスで自作する
+- [x] 3.5 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する（ベースライン更新済み）
 
 ## 4. Phase 2: テーブル系コンポーネント移行
 

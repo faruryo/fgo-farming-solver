@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import {
-  Box,
-  VStack,
-  HStack,
-  Spinner,
-  Button,
-} from '@chakra-ui/react'
+import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { FaChartLine } from 'react-icons/fa'
 import { Link } from '../common/link'
@@ -26,34 +21,34 @@ export const HistoryGraph: React.FC = () => {
 
   if (loading) {
     return (
-      <Box className="u-fgo-card" p={8} display="flex" justifyContent="center">
-        <Spinner color="var(--gold)" />
-      </Box>
+      <div className="u-fgo-card flex justify-center p-8">
+        <Loader2 className="animate-spin" style={{ color: 'var(--gold)' }} />
+      </div>
     )
   }
 
   if (history.length < 2) return null
 
   return (
-    <VStack align="stretch" spacing={6}>
-      <HStack justify="space-between" align="center">
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center">
         <div className="u-section-header" style={{ marginBottom: 0, flex: 1 }}>
           <h2 className="u-section-header-title">
-            <Box as={FaChartLine} display="inline-block" mr={2} mb={1} />
+            <FaChartLine className="inline-block mr-2 mb-1" />
             {t('計算履歴の推移')}
           </h2>
           <div className="u-section-header-line" />
         </div>
-        <HStack spacing={2}>
+        <div className="flex gap-2">
           <Link href="/farming/history">
-             <Button size="xs" variant="ghost" color="var(--gold-dim)" fontSize="10px">
-               {t('common:すべて見る')}
-             </Button>
+            <Button variant="ghost" className="h-6 px-2 text-[10px]" style={{ color: 'var(--gold-dim)' }}>
+              {t('common:すべて見る')}
+            </Button>
           </Link>
-        </HStack>
-      </HStack>
+        </div>
+      </div>
 
       <FarmingHistoryChart history={history} />
-    </VStack>
+    </div>
   )
 }

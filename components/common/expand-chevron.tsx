@@ -1,19 +1,16 @@
- 
-import { ChevronDownIcon, IconProps } from '@chakra-ui/icons'
-import { ComponentWithAs } from '@chakra-ui/react'
+import { ChevronDown } from 'lucide-react'
+import React from 'react'
 
-export const ExpandChevronIcon: ComponentWithAs<
-  'svg',
-  IconProps & { expanded?: boolean }
-> = ({ expanded, ...props }) => {
-  const rotate = expanded ? '0deg' : '-90deg'
-
-  return (
-    <ChevronDownIcon
-      transform={`rotate(${rotate})`}
-      boxSize={5}
-      color="gray"
-      {...props}
-    />
-  )
-}
+export const ExpandChevronIcon = ({
+  expanded,
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'svg'> & { expanded?: boolean }) => (
+  <ChevronDown
+    size={20}
+    color="gray"
+    style={{ transform: `rotate(${expanded ? '0deg' : '-90deg'})` }}
+    className={className}
+    {...props}
+  />
+)
