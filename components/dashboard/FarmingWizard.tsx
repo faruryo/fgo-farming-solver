@@ -1,12 +1,12 @@
+'use client'
+
 import React, { useState } from 'react'
-import { Box, VStack, HStack, Text, Button, Heading, IconButton } from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { FaChevronLeft, FaArrowRight } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { useRecentResult } from '../../hooks/use-recent-result'
-
-const MotionBox = motion.create(Box)
 
 export const FarmingWizard: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
@@ -20,103 +20,88 @@ export const FarmingWizard: React.FC = () => {
   if (loading || historyCount >= 3) return null
 
   const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 100 : -100,
-      opacity: 0
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1
-    },
-    exit: (direction: number) => ({
-      zIndex: 0,
-      x: direction < 0 ? 100 : -100,
-      opacity: 0
-    })
+    enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0 }),
+    center: { zIndex: 1, x: 0, opacity: 1 },
+    exit: (direction: number) => ({ zIndex: 0, x: direction < 0 ? 100 : -100, opacity: 0 }),
   }
 
   return (
-    <Box className="u-fgo-card" p={8} bg="var(--navy)" color="white" borderRadius="xl" overflow="hidden" position="relative">
+    <div
+      className="u-fgo-card relative overflow-hidden rounded-xl p-8"
+      style={{ background: 'var(--navy)', color: 'white' }}
+    >
       <div className="u-section-header">
         <h2 className="u-section-header-title" style={{ color: 'var(--gold)' }}>{t('QUICK_START_WIZARD')}</h2>
         <div className="u-section-header-line" style={{ background: 'var(--gold-dim)' }} />
       </div>
 
-      <Box height="200px" position="relative">
+      <div className="relative h-[200px]">
         <AnimatePresence initial={false} custom={step}>
           {step === 1 && (
-            <MotionBox
+            <motion.div
               key="step1"
               variants={variants}
               initial="enter"
               animate="center"
               exit="exit"
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              position="absolute"
-              width="100%"
+              className="absolute w-full"
             >
-              <VStack align="start" spacing={6}>
-                <Heading size="md">{t('wizard-q1-title')}</Heading>
-                <VStack align="stretch" width="100%" spacing={3}>
-                  <Button 
-                    variant="outline" 
-                    colorScheme="yellow" 
-                    justifyContent="space-between" 
-                    rightIcon={<FaArrowRight />}
+              <div className="flex flex-col items-start gap-6">
+                <h3 className="text-base font-semibold">{t('wizard-q1-title')}</h3>
+                <div className="flex flex-col w-full gap-3">
+                  <Button
+                    variant="outline"
+                    className="justify-between border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
                     onClick={nextStep}
                   >
                     {t('育成素材の必要数を計算したい')}
+                    <FaArrowRight />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    colorScheme="blue" 
-                    justifyContent="space-between" 
-                    rightIcon={<FaArrowRight />}
+                  <Button
+                    variant="outline"
+                    className="justify-between border-blue-400 text-blue-400 hover:bg-blue-400/10"
                     onClick={() => router.push('/farming')}
                   >
                     {t('今の素材状況で最適な周回場所を探したい')}
+                    <FaArrowRight />
                   </Button>
-                </VStack>
-              </VStack>
-            </MotionBox>
+                </div>
+              </div>
+            </motion.div>
           )}
 
           {step === 2 && (
-            <MotionBox
+            <motion.div
               key="step2"
               variants={variants}
               initial="enter"
               animate="center"
               exit="exit"
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              position="absolute"
-              width="100%"
+              className="absolute w-full"
             >
-              <VStack align="start" spacing={6}>
-                <HStack>
-                  <IconButton 
-                    aria-label="back" 
-                    icon={<FaChevronLeft />} 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={prevStep}
-                  />
-                  <Heading size="md">{t('wizard-q2-title')}</Heading>
-                </HStack>
-                <Text fontSize="sm" color="gray.300">{t('どのサーヴァントを育てたいですか？')}</Text>
-                <Button 
-                  colorScheme="yellow" 
-                  width="100%" 
+              <div className="flex flex-col items-start gap-6">
+                <div className="flex items-center gap-2">
+                  <Button aria-label="back" size="icon" variant="ghost" onClick={prevStep} className="h-8 w-8">
+                    <FaChevronLeft />
+                  </Button>
+                  <h3 className="text-base font-semibold">{t('wizard-q2-title')}</h3>
+                </div>
+                <p className="text-sm" style={{ color: 'rgba(200,218,240,0.7)' }}>
+                  {t('どのサーヴァントを育てたいですか？')}
+                </p>
+                <Button
+                  className="w-full bg-yellow-500 hover:bg-yellow-400 text-black"
                   onClick={() => router.push('/material')}
                 >
                   {t('サーヴァント一覧から選択する')}
                 </Button>
-              </VStack>
-            </MotionBox>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }

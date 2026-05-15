@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
-import { Box, Image, Text, SimpleGrid, VStack, HStack, Badge, Tooltip } from '@chakra-ui/react'
+import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslation } from 'react-i18next'
 import { DashboardGacha } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
@@ -11,8 +14,7 @@ interface GachaSectionProps {
 
 const GachaBanner: React.FC<{ image: DashboardGacha }> = ({ image }) => {
   const [srcIndex, setSrcIndex] = React.useState(0)
-  
-  // Try patterns in order
+
   const sources = React.useMemo(() => {
     const staticOrigin = image.banner.split('/JP/')[0]
     return [
@@ -24,72 +26,31 @@ const GachaBanner: React.FC<{ image: DashboardGacha }> = ({ image }) => {
   }, [image])
 
   const handleError = () => {
-    if (srcIndex < sources.length - 1) {
-      setSrcIndex(srcIndex + 1)
-    } else {
-      setSrcIndex(-1)
-    }
+    if (srcIndex < sources.length - 1) setSrcIndex(srcIndex + 1)
+    else setSrcIndex(-1)
   }
 
   if (srcIndex === -1) {
     return (
-      <Box 
-        width="100%" 
-        height="100%" 
-        bgGradient="linear(to-br, blue.700, purple.800)"
-        position="relative"
-        overflow="hidden"
-      >
-        <Box 
-          position="absolute" 
-          top="-20%" 
-          left="-10%" 
-          width="140%" 
-          height="140%" 
-          bg="radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)"
-          transform="rotate(-15deg)"
-        />
-        <VStack 
-          height="100%" 
-          justify="center" 
-          p={4} 
-          spacing={1}
-          position="relative"
-          zIndex={1}
-        >
-          <Badge 
-            variant="outline" 
-            colorScheme="whiteAlpha" 
-            fontSize="9px" 
-            px={2} 
-            borderRadius="full"
-            color="whiteAlpha.800"
-          >
-            PICKUP SUMMON
-          </Badge>
-          <Text 
-            color="white" 
-            fontSize="11px" 
-            fontWeight="black" 
-            textAlign="center" 
-            noOfLines={2}
-            lineHeight="shorter"
-            textShadow="0 2px 4px rgba(0,0,0,0.3)"
-          >
+      <div className="relative w-full h-full overflow-hidden bg-gradient-to-br from-blue-700 to-purple-800">
+        <div className="absolute top-[-20%] left-[-10%] w-[140%] h-[140%] -rotate-15"
+          style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)' }} />
+        <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1 p-4">
+          <span className="text-[9px] border border-white/50 rounded-full px-2 text-white/80">PICKUP SUMMON</span>
+          <p className="text-[11px] font-black text-center text-white leading-tight line-clamp-2"
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
             {image.name}
-          </Text>
-        </VStack>
-      </Box>
+          </p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Image 
-      src={sources[srcIndex]} 
-      alt={image.name} 
-      width="100%" 
-      height="100%" 
-      objectFit="cover" 
+    <img
+      src={sources[srcIndex]}
+      alt={image.name}
+      className="w-full h-full object-cover"
       onError={handleError}
     />
   )
@@ -101,63 +62,51 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
   if (gachas.length === 0) return null
 
   return (
-    <VStack align="stretch" spacing={6}>
+    <div className="flex flex-col gap-6">
       <div className="u-section-header">
         <h2 className="u-section-header-title">{t('開催中の召喚')}</h2>
         <div className="u-section-header-line" />
       </div>
 
-      <SimpleGrid columns={[1, 1, 2, 3]} spacing={4}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {gachas.map(gacha => (
-          <Box 
-            key={gacha.id} 
-            className="u-fgo-card"
-            borderRadius="md"
-            overflow="hidden"
-            bg="var(--panel2)"
-            display="flex"
-            flexDirection="column"
+          <div
+            key={gacha.id}
+            className="u-fgo-card rounded-md overflow-hidden flex flex-col"
+            style={{ background: 'var(--panel2)' }}
           >
-            {/* Banner */}
-            <Box position="relative" height="120px" bg="var(--panel1)">
+            <div className="relative h-[120px]" style={{ background: 'var(--panel)' }}>
               <GachaBanner image={gacha} />
-              <Box 
-                position="absolute" 
-                top={0} 
-                right={0} 
-                p={1}
-              >
-                <Badge colorScheme="blue" variant="solid" fontSize="10px">
-                  {formatDuration(gacha.closedAt)}
-                </Badge>
-              </Box>
-            </Box>
+              <div className="absolute top-0 right-0 p-1">
+                <Badge className="text-[10px] bg-blue-500 text-white">{formatDuration(gacha.closedAt)}</Badge>
+              </div>
+            </div>
 
-            {/* Pickups */}
-            <Box p={3} flex="1">
-              <VStack align="start" spacing={2}>
-                <Text fontSize="11px" color="var(--text3)" fontWeight="bold">
-                  {t('ピックアップ対象')}
-                </Text>
-                <HStack spacing={2} wrap="wrap">
+            <div className="p-3 flex-1">
+              <div className="flex flex-col gap-2">
+                <p className="text-[11px] font-bold" style={{ color: 'var(--text3)' }}>{t('ピックアップ対象')}</p>
+                <div className="flex flex-wrap gap-2">
                   {[...gacha.pickupServants]
                     .sort((a, b) => b.rarity - a.rarity)
                     .slice(0, 6)
                     .map(servant => (
-                      <Tooltip key={servant.id} label={servant.name}>
-                        <Link href={`/material#svt-${servant.id}`} display="block" _hover={{ opacity: 0.8 }}>
-                          <Box className={`u-face-frame rarity-${servant.rarity}`}>
-                            <Image src={servant.face} alt={servant.name} />
-                          </Box>
-                        </Link>
+                      <Tooltip key={servant.id}>
+                        <TooltipTrigger render={<span />}>
+                          <Link href={`/material#svt-${servant.id}`} display="block">
+                            <div className={`u-face-frame rarity-${servant.rarity}`}>
+                              <img src={servant.face} alt={servant.name} />
+                            </div>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>{servant.name}</TooltipContent>
                       </Tooltip>
                     ))}
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
-      </SimpleGrid>
-    </VStack>
+      </div>
+    </div>
   )
 }

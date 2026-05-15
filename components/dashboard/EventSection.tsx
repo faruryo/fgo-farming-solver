@@ -1,5 +1,8 @@
+'use client'
+
 import React from 'react'
-import { Box, Image, Text, VStack, HStack, Badge, Tooltip } from '@chakra-ui/react'
+import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslation } from 'react-i18next'
 import { DashboardEvent } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
@@ -14,79 +17,66 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
   if (events.length === 0) return null
 
   return (
-    <VStack align="stretch" spacing={3}>
+    <div className="flex flex-col gap-3">
       <div className="u-section-header">
         <h2 className="u-section-header-title">{t('開催中のイベント')}</h2>
         <div className="u-section-header-line" />
       </div>
 
       {events.map(event => (
-        <Box
+        <div
           key={event.id}
-          className="u-fgo-card"
-          borderRadius="md"
-          overflow="hidden"
-          bg="var(--panel2)"
-          transition="transform 0.2s"
-          _hover={{ transform: 'translateY(-2px)' }}
+          className="u-fgo-card rounded-md overflow-hidden transition-transform duration-200 hover:-translate-y-0.5"
+          style={{ background: 'var(--panel2)' }}
         >
-          {/* バナーストリップ（全幅・適度な高さ） */}
-          <Box position="relative" height="110px" bg="var(--panel3)">
-            <Image
+          <div className="relative h-[110px]" style={{ background: 'var(--panel)' }}>
+            <img
               src={event.banner}
               alt={event.name}
-              width="100%"
-              height="100%"
-              objectFit="cover"
-              objectPosition="center center"
-              fallbackSrc="https://via.placeholder.com/800x110?text=Event"
+              className="w-full h-full object-cover object-center"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
-            <Box
-              position="absolute"
-              bottom={0}
-              left={0}
-              right={0}
-              px={3}
-              py={1.5}
-              bg="linear-gradient(transparent, rgba(10,22,34,0.85))"
+            <div
+              className="absolute bottom-0 left-0 right-0 px-3 py-1.5"
+              style={{ background: 'linear-gradient(transparent, rgba(10,22,34,0.85))' }}
             >
-              <Text color="white" fontWeight="bold" fontSize="xs" noOfLines={1}>
-                {event.name}
-              </Text>
-            </Box>
-          </Box>
+              <p className="text-xs font-bold text-white truncate">{event.name}</p>
+            </div>
+          </div>
 
-          {/* 詳細行 */}
-          <Box px={3} py={2}>
-            <HStack spacing={2} justify="space-between" flexWrap="wrap">
-              <HStack spacing={2} flexWrap="wrap">
-                <Badge colorScheme="red" variant="subtle" fontSize="10px">
+          <div className="px-3 py-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="destructive" className="text-[10px]">
                   クエスト {formatDuration(event.endedAt)}
                 </Badge>
                 {event.shopFinishedAt && (
-                  <Badge colorScheme="orange" variant="outline" fontSize="10px">
+                  <Badge variant="outline" className="text-[10px]">
                     交換所 {formatDuration(event.shopFinishedAt)}
                   </Badge>
                 )}
-              </HStack>
+              </div>
               {event.drops.length > 0 && (
-                <HStack spacing={1}>
+                <div className="flex gap-1">
                   {event.drops.slice(0, 8).map(drop => (
-                    <Tooltip key={drop.id} label={drop.name}>
-                      <Box width="22px" height="22px" borderRadius="sm" overflow="hidden" bg="var(--bg2)" flexShrink={0}>
-                        <Image src={drop.icon} alt={drop.name} width="100%" height="100%" />
-                      </Box>
+                    <Tooltip key={drop.id}>
+                      <TooltipTrigger render={<span />}>
+                        <div className="w-[22px] h-[22px] rounded overflow-hidden flex-shrink-0" style={{ background: 'var(--bg2)' }}>
+                          <img src={drop.icon} alt={drop.name} className="w-full h-full" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{drop.name}</TooltipContent>
                     </Tooltip>
                   ))}
                   {event.drops.length > 8 && (
-                    <Text fontSize="10px" color="var(--text3)">+{event.drops.length - 8}</Text>
+                    <span className="text-[10px]" style={{ color: 'var(--text3)' }}>+{event.drops.length - 8}</span>
                   )}
-                </HStack>
+                </div>
               )}
-            </HStack>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
       ))}
-    </VStack>
+    </div>
   )
 }

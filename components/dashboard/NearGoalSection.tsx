@@ -1,6 +1,6 @@
 'use client'
+
 import React, { useMemo } from 'react'
-import { Box, VStack, Text, HStack, SimpleGrid } from '@chakra-ui/react'
 import Image from 'next/image'
 import NextLink from 'next/link'
 import { useDrops } from '../../hooks/use-drops'
@@ -52,31 +52,23 @@ export const NearGoalSection: React.FC = () => {
   if (dropsLoading || resultLoading || nearGoalEntries.length === 0) return null
 
   return (
-    <VStack align="stretch" spacing={3}>
+    <div className="flex flex-col gap-3">
       <div className="u-section-header">
         <h2 className="u-section-header-title">もうすぐ達成！</h2>
         <div className="u-section-header-line" />
       </div>
-      <SimpleGrid columns={1} spacing={3}>
+      <div className="flex flex-col gap-3">
         {nearGoalEntries.map(({ item, quest, needed, lapsNeeded }) => {
           const isVeryClose = lapsNeeded <= 10
           return (
-            <Box
+            <NextLink
               key={item.id}
-              as={NextLink}
               href={`/quests/${quest.id}`}
-              className="u-fgo-card"
-              py={2}
-              px={3}
-              bg="var(--panel2)"
-              borderRadius="md"
-              display="flex"
-              alignItems="flex-start"
-              gap={3}
-              borderLeft="3px solid"
-              borderLeftColor={isVeryClose ? '#60c890' : 'var(--gold)'}
-              _hover={{ bg: 'var(--panel3)', textDecoration: 'none' }}
-              transition="background 0.15s"
+              className="u-fgo-card flex items-start gap-3 py-2 px-3 rounded-md transition-colors duration-150 no-underline hover:no-underline"
+              style={{
+                background: 'var(--panel2)',
+                borderLeft: `3px solid ${isVeryClose ? '#60c890' : 'var(--gold)'}`,
+              }}
             >
               {item.icon && (
                 <Image
@@ -87,28 +79,19 @@ export const NearGoalSection: React.FC = () => {
                   style={{ flexShrink: 0, marginTop: '2px' }}
                 />
               )}
-              <Box flex={1} minW={0}>
-                <Text
-                  fontSize="10px"
-                  color={isVeryClose ? '#60c890' : 'var(--gold)'}
-                  fontWeight="semibold"
-                  noOfLines={1}
-                >
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold truncate" style={{ color: isVeryClose ? '#60c890' : 'var(--gold)' }}>
                   あと{lapsNeeded}周で達成！
-                </Text>
-                <Text fontSize="sm" fontWeight="bold" color="var(--navy)" noOfLines={1}>
-                  {item.name}
-                </Text>
-                <HStack spacing={1} mt={0.5}>
-                  <Text fontSize="10px" color="var(--text3)" noOfLines={1}>
-                    あと{needed}個 · {quest.area} · {quest.name}
-                  </Text>
-                </HStack>
-              </Box>
-            </Box>
+                </p>
+                <p className="text-sm font-bold truncate" style={{ color: 'var(--navy)' }}>{item.name}</p>
+                <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--text3)' }}>
+                  あと{needed}個 · {quest.area} · {quest.name}
+                </p>
+              </div>
+            </NextLink>
           )
         })}
-      </SimpleGrid>
-    </VStack>
+      </div>
+    </div>
   )
 }

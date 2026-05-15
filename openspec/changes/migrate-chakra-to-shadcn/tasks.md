@@ -50,14 +50,14 @@
 
 ## 6. Phase 4: ダッシュボードコンポーネント移行
 
-- [ ] 6.1 `components/dashboard/FarmingWizard.tsx`: `motion.create(Box)` → `motion.div`、Chakra layout props → Tailwind クラスに置き換える
-- [ ] 6.2 `components/dashboard/ProgressSection.tsx`: `VStack`、`SimpleGrid`、`Text`、`Box`、`Heading`、`Button` → `div` + Tailwind + shadcn Button に置き換える
-- [ ] 6.3 `components/dashboard/RecentServantSection.tsx`: `SimpleGrid columns={[2,3,4,5,6]}` → `"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"`、`motion.create(Box)` → `motion.div`、`Badge` → shadcn Badge に置き換える
-- [ ] 6.4 `components/dashboard/GachaSection.tsx`: `SimpleGrid columns={[1,1,2,3]}` → `"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"`、`Badge` → shadcn Badge、Chakra `Image` → Next.js `Image` に置き換える
-- [ ] 6.5 `components/dashboard/EventSection.tsx`: `Badge`、`Tooltip`、`Skeleton` → shadcn 対応に置き換える
-- [ ] 6.6 `components/dashboard/NearGoalSection.tsx`: `SimpleGrid`、`Tooltip` → Tailwind + shadcn Tooltip に置き換える
-- [ ] 6.7 `components/dashboard/RecommendedQuest.tsx`: `Badge`、`SimpleGrid` → shadcn + Tailwind に置き換える
-- [ ] 6.8 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
+- [x] 6.1 `components/dashboard/FarmingWizard.tsx`: `motion.create(Box)` → `motion.div`、Chakra layout props → Tailwind クラスに置き換える
+- [x] 6.2 `components/dashboard/ProgressSection.tsx`: `VStack`、`SimpleGrid`、`Text`、`Box`、`Heading`、`Button` → `div` + Tailwind + shadcn Button に置き換える
+- [x] 6.3 `components/dashboard/RecentServantSection.tsx`: `SimpleGrid columns={[2,3,4,5,6]}` → `"grid grid-cols-2 sm:..."` パターン、`motion.create(Box)` → `motion.div`、`Badge` → shadcn Badge
+- [x] 6.4 `components/dashboard/GachaSection.tsx`: SimpleGrid → Tailwind grid、Badge → shadcn、Chakra Image → img、Tooltip → Base UI render prop
+- [x] 6.5 `components/dashboard/EventSection.tsx`: Badge、Tooltip → shadcn 対応、Chakra Image → img
+- [x] 6.6 `components/dashboard/NearGoalSection.tsx`: Box as={NextLink} → NextLink、SimpleGrid/VStack → div + Tailwind
+- [x] 6.7 `components/dashboard/RecommendedQuest.tsx`: Spinner → Loader2、Box as={NextLink} → NextLink、Badge → shadcn
+- [x] 6.8 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する（material ページの非決定論的ロード問題を waitForSelector で修正済み）
 
 ## 7. Phase 5: 高複雑度コンポーネント移行
 

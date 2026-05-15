@@ -1,6 +1,8 @@
- 
+'use client'
+
 import React, { useMemo } from 'react'
-import { Box, Text, VStack, HStack, Image, Badge, SimpleGrid, Spinner } from '@chakra-ui/react'
+import { Badge } from '@/components/ui/badge'
+import { Loader2 } from 'lucide-react'
 import NextLink from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { useDrops } from '../../hooks/use-drops'
@@ -19,7 +21,6 @@ export const RecommendedQuest: React.FC = () => {
   const recommendations = useMemo(() => {
     if (dropsLoading || !items || !items.length || !quests || !drop_rates) return []
 
-    // 1. 直近の計算結果があればそれを優先して表示
     if (recentResult) {
       const targetQuests = isBothResult(recentResult) ? recentResult.lap.quests : recentResult.quests
       const targetItems = isBothResult(recentResult) ? recentResult.lap.items : recentResult.items
@@ -33,123 +34,91 @@ export const RecommendedQuest: React.FC = () => {
               if (q.area?.includes('オーディール・コール')) return 2
               return 3
             }
-            const pa = getPriority(a)
-            const pb = getPriority(b)
+            const pa = getPriority(a), pb = getPriority(b)
             if (pa !== pb) return pa - pb
             return b.lap - a.lap
           })
           .slice(0, 4)
           .map((q: Quest) => {
-          // Find the primary item being farmed in this quest
-          const relatedRates = targetDropRates.filter(dr => dr.quest_id === q.id)
-          // Find which target item has the highest drop rate here
-          const bestRate = relatedRates
-            .filter(dr => targetItems.some(ti => ti.id === dr.item_id))
-            .sort((a, b) => b.drop_rate - a.drop_rate)[0] || relatedRates[0]
-
-          const item = items.find(i => i.id === bestRate?.item_id)
-          
-          return {
-            id: q.id,
-            item,
-            quest: q,
-            rate: bestRate?.drop_rate,
-            lap: q.lap,
-            isRecent: true
-          }
-        })
+            const relatedRates = targetDropRates.filter(dr => dr.quest_id === q.id)
+            const bestRate = relatedRates
+              .filter(dr => targetItems.some(ti => ti.id === dr.item_id))
+              .sort((a, b) => b.drop_rate - a.drop_rate)[0] || relatedRates[0]
+            const item = items.find(i => i.id === bestRate?.item_id)
+            return { id: q.id, item, quest: q, rate: bestRate?.drop_rate, lap: q.lap, isRecent: true }
+          })
       }
     }
 
-    // 2. 履歴がない場合は簡易ヒューリスティック (目標の素材のドロップ率が高いクエスト)
     const targetServantIds = Object.keys(chaldea)
     if (targetServantIds.length === 0) return []
 
     return items.slice(0, 3).map(item => {
-      const bestRate = drop_rates
-        .filter(dr => dr.item_id === item.id)
-        .sort((a, b) => b.drop_rate - a.drop_rate)[0]
-      
+      const bestRate = drop_rates.filter(dr => dr.item_id === item.id).sort((a, b) => b.drop_rate - a.drop_rate)[0]
       const quest = bestRate ? quests.find(q => q.id === bestRate.quest_id) : null
-      
-      return {
-        id: quest?.id || item.id,
-        item,
-        quest,
-        rate: bestRate?.drop_rate,
-        lap: 0,
-        isRecent: false
-      }
+      return { id: quest?.id || item.id, item, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false }
     }).filter(r => r.quest)
   }, [items, quests, drop_rates, chaldea, dropsLoading, recentResult])
 
   if (dropsLoading || resultLoading) {
     return (
-      <VStack align="stretch" spacing={6}>
+      <div className="flex flex-col gap-6">
         <div className="u-section-header">
           <h2 className="u-section-header-title">{t('推奨周回クエスト')}</h2>
           <div className="u-section-header-line" />
         </div>
-        <Box p={4} textAlign="center"><Spinner color="var(--gold)" /></Box>
-      </VStack>
+        <div className="p-4 text-center">
+          <Loader2 className="animate-spin mx-auto" style={{ color: 'var(--gold)' }} />
+        </div>
+      </div>
     )
   }
 
   if (recommendations.length === 0) return null
 
   return (
-    <VStack align="stretch" spacing={3}>
+    <div className="flex flex-col gap-3">
       <div className="u-section-header">
-        <h2 className="u-section-header-title">{recentResult ? t('直近の周回予定') : t('推奨周回クエスト')}</h2>
+        <h2 className="u-section-header-title">
+          {recentResult ? t('直近の周回予定') : t('推奨周回クエスト')}
+        </h2>
         <div className="u-section-header-line" />
       </div>
 
-      <SimpleGrid columns={1} spacing={3}>
+      <div className="flex flex-col gap-3">
         {recommendations.map(({ id, item, quest, rate, lap, isRecent }) => (
-          <Box
+          <NextLink
             key={id}
-            as={NextLink}
             href={`/quests/${quest?.id}`}
-            className="u-fgo-card"
-            py={2}
-            px={3}
-            bg="var(--panel2)"
-            display="flex"
-            alignItems="flex-start"
-            gap={3}
-            _hover={{ transform: 'translateY(-2px)', shadow: 'xl', bg: 'var(--panel3)' }}
-            transition="all 0.2s"
-            cursor="pointer"
+            className="u-fgo-card flex items-start gap-3 py-2 px-3 rounded-md transition-all duration-200 cursor-pointer no-underline hover:no-underline hover:-translate-y-0.5"
+            style={{ background: 'var(--panel2)' }}
           >
-            <Box width="36px" height="36px" flexShrink={0} mt={0.5}>
-              {item && <Image src={getItemIconUrl(item.icon)} alt={item.name} fallbackSrc="https://via.placeholder.com/36" />}
-            </Box>
-            <Box flex={1} minW={0}>
+            <div className="w-9 h-9 flex-shrink-0 mt-0.5">
               {item && (
-                <Text fontSize="10px" color="var(--text3)" noOfLines={1}>
-                  {isRecent ? t('主なドロップ') : t('不足素材')}: {item.name}
-                </Text>
+                <img src={getItemIconUrl(item.icon)} alt={item.name} className="w-full h-full object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               )}
-              <Text fontSize="sm" fontWeight="bold" color="var(--navy)" noOfLines={1}>
-                {quest?.name}
-              </Text>
-              <HStack spacing={2} mt={0.5} flexWrap="wrap">
-                <Text fontSize="10px" color="var(--text2)">{quest?.area}</Text>
-                <Text fontSize="10px" color="var(--text3)">{quest?.ap} AP</Text>
+            </div>
+            <div className="flex-1 min-w-0">
+              {item && (
+                <p className="text-[10px] truncate" style={{ color: 'var(--text3)' }}>
+                  {isRecent ? t('主なドロップ') : t('不足素材')}: {item.name}
+                </p>
+              )}
+              <p className="text-sm font-bold truncate" style={{ color: 'var(--navy)' }}>{quest?.name}</p>
+              <div className="flex flex-wrap gap-2 mt-0.5">
+                <span className="text-[10px]" style={{ color: 'var(--text2)' }}>{quest?.area}</span>
+                <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{quest?.ap} AP</span>
                 {lap ? (
-                  <Badge colorScheme="blue" variant="solid" fontSize="10px">
-                    {lap} {t('周')}
-                  </Badge>
+                  <Badge className="text-[10px] bg-blue-500 text-white">{lap} {t('周')}</Badge>
                 ) : (
-                  <Badge colorScheme="green" variant="solid" fontSize="10px">
-                    {Math.round((rate || 0) * 100)}%
-                  </Badge>
+                  <Badge className="text-[10px] bg-green-600 text-white">{Math.round((rate || 0) * 100)}%</Badge>
                 )}
-              </HStack>
-            </Box>
-          </Box>
+              </div>
+            </div>
+          </NextLink>
         ))}
-      </SimpleGrid>
-    </VStack>
+      </div>
+    </div>
   )
 }
