@@ -43,7 +43,7 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
 
   return (
     <div className="flex flex-col gap-12">
-      <div className="c-stats" style={{ justifyContent: 'flex-start', gap: 24, paddingBottom: 8 }}>
+      <div className="c-stats" style={{ justifyContent: 'flex-start', gap: 24, paddingBottom: 16 }}>
         <Tooltip>
           <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
             <div className="c-stat-num">{result.total_lap}</div>
@@ -67,8 +67,8 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
         </Tooltip>
       </div>
 
-      <div className="c-card" style={{ padding: '24px', overflowX: 'auto' }}>
-        <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex' }}>
+      <div className="c-card p-6 overflow-x-auto">
+        <div className="c-settings-section-label mb-4 flex">
           {t('クエスト周回数')}
         </div>
         <div className="flex items-center justify-center">
@@ -80,8 +80,8 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
         <TweetIntent text={text} />
       </div>
 
-      <div className="c-card" style={{ padding: '24px' }}>
-        <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex' }}>
+      <div className="c-card p-6">
+        <div className="c-settings-section-label mb-4 flex">
           {t('アイテム獲得数')}
         </div>
         <ResultAccordion items={result.items as any} params={result.params as any} />

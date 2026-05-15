@@ -44,7 +44,7 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
             <div className="flex flex-col gap-4" key={className}>
               <div className="flex flex-col gap-6 w-full">
                 {servantGroups.map(([rarity, servants]) => (
-                  <div key={rarity} className="c-card" style={{ padding: '12px 16px' }}>
+                  <div key={rarity} className="c-card p-4">
                     <div
                       style={{
                         display: 'flex',
@@ -72,7 +72,7 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
                         {'✦'.repeat(parseInt(rarity))}
                       </span>
                     </div>
-                    <ul className="flex flex-col gap-2">
+                    <ul className="flex flex-col gap-3">
                       {servants.map((servant) => {
                         const faceUrl = `${staticOrigin}/${region}/Faces/f_${servant.id * 10}.png`
                         return (

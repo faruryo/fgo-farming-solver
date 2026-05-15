@@ -203,7 +203,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
             <button
               key={opt.value}
               onClick={() => setPeriod(opt.value)}
-              className="text-[10px] px-3 py-1 border transition-colors"
+              className="text-[10px] px-3 py-1 border-y border-r first:border-l transition-colors"
               style={{
                 background: period === opt.value ? 'var(--gold)' : 'transparent',
                 color: period === opt.value ? 'white' : 'var(--text2)',

@@ -42,21 +42,21 @@ export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
               </div>
               <div className="flex flex-col gap-6 w-full">
                 {itemGroups.map(([category, items]) => (
-                  <div key={category} className="c-card" style={{ padding: '16px' }}>
+                  <div key={category} className="c-card p-4">
                     <div
                       style={{
                         fontSize: '11px',
                         color: 'var(--steel)',
-                        marginBottom: '10px',
+                        marginBottom: '12px',
                         fontFamily: 'var(--serif)',
                         letterSpacing: '1px',
                         borderBottom: '1px solid var(--border)',
-                        paddingBottom: '4px'
+                        paddingBottom: '6px'
                       }}
                     >
                       {category}
                     </div>
-                    <ul className="flex flex-col gap-2">
+                    <ul className="flex flex-col gap-3">
                       {items.map((item) => (
                         <li key={item.id}>
                           <ItemLink id={item.id} name={item.name} icon={item.icon} />

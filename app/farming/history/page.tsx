@@ -68,31 +68,31 @@ export default function HistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead style={{ color: 'var(--gold-dim)' }}>{t('日時')}</TableHead>
-                  <TableHead style={{ color: 'var(--gold-dim)' }}>{t('目的')}</TableHead>
-                  <TableHead className="text-right" style={{ color: 'var(--gold)' }}>合計消費AP</TableHead>
-                  <TableHead className="text-right" style={{ color: 'var(--gold)' }}>合計周回数</TableHead>
-                  <TableHead />
+                  <TableHead className="px-4" style={{ color: 'var(--gold-dim)' }}>{t('日時')}</TableHead>
+                  <TableHead className="px-4" style={{ color: 'var(--gold-dim)' }}>{t('目的')}</TableHead>
+                  <TableHead className="text-right px-4" style={{ color: 'var(--gold)' }}>合計消費AP</TableHead>
+                  <TableHead className="text-right px-4" style={{ color: 'var(--gold)' }}>合計周回数</TableHead>
+                  <TableHead className="px-4" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {history.map(item => (
                   <TableRow key={item.id}>
-                    <TableCell className="text-sm" style={{ color: 'var(--text)' }}>
+                    <TableCell className="text-sm py-3 px-4" style={{ color: 'var(--text)' }}>
                       {new Date(item.created_at).toLocaleString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3 px-4">
                       <Badge variant="outline" className="text-[10px]">
                         {OBJECTIVE_BADGE[item.objective] ?? item.objective}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right" style={{ color: 'var(--text2)' }}>
+                    <TableCell className="text-right py-3 px-4" style={{ color: 'var(--text2)' }}>
                       {Math.round(item.total_ap).toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-right" style={{ color: 'var(--text2)' }}>
+                    <TableCell className="text-right py-3 px-4" style={{ color: 'var(--text2)' }}>
                       {Math.round(item.total_lap).toLocaleString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3 px-4">
                       <Tooltip>
                         <TooltipTrigger render={<span />}>
                           <Button

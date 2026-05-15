@@ -59,7 +59,7 @@ export const ResultTable = ({
                 <TableCell className="px-2 md:px-4 py-3 text-right">
                   {amounts[item.id.toString()]}
                 </TableCell>
-                <TableCell className="px-2 md:px-4 py-0">
+                <TableCell className="px-2 md:px-4 py-2">
                   <Input
                     type="number"
                     name={item.id.toString()}

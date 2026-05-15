@@ -93,3 +93,45 @@
 - [x] 9.8 `pnpm build`（Next.js + OpenNext Cloudflare）成功確認
 - [x] 9.9 `pnpm playwright test` で全 6 ページのビジュアル回帰テストが通ることを確認（新ベースライン更新）
 - [ ] 9.10 `pnpm run deploy` で Cloudflare Workers へのデプロイが成功することを確認する
+
+## 10. Phase 8: ビジュアルポリッシュ
+
+移行後のコンポーネントを1つずつ見直し、shadcn/Tailwind らしい自然なスタイルに整える。元の Chakra デザインに戻す必要はなく、読みやすく余白が適切なデザインにすること。
+
+### ダッシュボード
+
+- [x] 10.1 `components/dashboard/ProgressSection.tsx`: stat カードを `p-2 gap-3` → `p-3 gap-4` に広げた
+- [x] 10.2 `components/dashboard/NearGoalSection.tsx`: item カード `py-2 px-3` → `py-3 px-4` に拡大
+- [x] 10.3 `components/dashboard/GachaSection.tsx`: カード本体 `p-3` → `p-4` に拡大
+- [x] 10.4 `components/dashboard/EventSection.tsx`: カード本体 `py-2 px-3` → `py-3 px-4`、アイコン間 `gap-1` → `gap-2`
+
+### 周回ソルバー
+
+- [x] 10.5 `components/farming/quest-table.tsx`: 展開ボタン列 `py-0` → `py-1`、データ列 `px-3 py-2` に統一
+- [ ] 10.6 `components/farming/item-fieldset.tsx`: AccordionContent の `justify-evenly` → `justify-start gap-6` に変更する
+- [x] 10.7 `components/farming/result.tsx`: stat コンテナ `paddingBottom: 8` → 16px、カード `padding: '24px'` → `className="p-6"` Tailwind 化
+- [x] 10.8 `app/farming/history/page.tsx`: セル padding `px-4 py-3` に統一済み（Phase 8 前に対応）
+
+### 素材計算機
+
+- [x] 10.9 `components/material/result-table.tsx`: Input セル `py-0` → `py-2` に変更
+- [x] 10.10 `components/material/index.tsx`: フィルターグループ `gap: 2` (px) → `gap: 8` (px) に修正
+
+### アイテム・サーヴァント
+
+- [x] 10.11 `components/servants/material-list.tsx`: stat グループ `p-2 gap-2` → `p-4 gap-3` に拡大
+- [x] 10.12 `components/servants/index.tsx`: カード `padding: '12px 16px'` → `p-4`、リスト `gap-2` → `gap-3`
+- [x] 10.13 `components/items/index.tsx`: カード `padding: '16px'` → `p-4`、inline margin/padding を整理
+- [ ] 10.14 `components/items/item.tsx`: drop table カードは edge-to-edge が意図的デザイン → スキップ
+
+### shadcn テーマを FGO パレットに合わせる
+
+- [x] 10.15 `app/globals.css`: TableRow hover を `rgba(154,114,36,0.04)` に override、Input focus を gold ring に
+- [x] 10.16 `app/globals.css`: shadcn oklch トークンを FGO カラーに合わせて調整（`--primary: #1e2e4a`、`--ring: rgba(154,114,36,0.5)`、`--muted`、`--accent` 等）
+
+### 共通・仕上げ
+
+- [ ] 10.17 `components/farming/FarmingHistoryChart.tsx`: 期間フィルターボタンの二重ボーダーを `border-y border-r first:border-l` で解消する（部分的に修正済み、動作確認）
+- [ ] 10.18 コード全体のインラインスタイル（`style={{ padding: '24px' }}` 等）を Tailwind クラスに統一する（特に `padding`, `margin`, `gap` の数値指定）
+- [ ] 10.19 各ページで `pnpm dev` を起動し目視確認。問題があれば追加修正する
+- [ ] 10.20 `pnpm type-check && pnpm test --run && pnpm playwright test --update-snapshots` でリグレッションがないことを確認し、コミットする

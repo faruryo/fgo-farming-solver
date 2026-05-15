@@ -103,8 +103,8 @@ export const Page = ({
             if (!materials || Object.keys(materials).length === 0) return null
 
             return (
-              <div key={section.id} className="c-card" style={{ padding: '24px' }}>
-                <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex', color: 'var(--gold2)' }}>
+              <div key={section.id} className="c-card p-6">
+                <div className="c-settings-section-label mb-4 flex" style={{ color: 'var(--gold2)' }}>
                   {section.label}
                 </div>
                 <MaterialList materials={materials} items={items} />

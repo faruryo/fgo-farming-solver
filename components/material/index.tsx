@@ -269,7 +269,7 @@ export const Index = ({
 
         {/* Filter bar */}
         <div className="c-filter-bar">
-          <div className="c-filter-group" style={{ flexWrap: 'wrap', gap: 2 }}>
+          <div className="c-filter-group" style={{ flexWrap: 'wrap', gap: 8 }}>
             {CLASS_LIST.map(cls => {
               const iconUrl = cls.id !== 'all' ? getClassIconUrl(cls.id as ClassName, 5) : ''
               const isActive = selClass === cls.id

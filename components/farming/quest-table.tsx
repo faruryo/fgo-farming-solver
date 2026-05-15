@@ -87,7 +87,7 @@ export const QuestTable = ({
               return (
                 <Fragment key={rowKey}>
                   <TableRow>
-                    <TableCell className="px-1 py-0">
+                    <TableCell className="px-2 py-1">
                       <Button
                         aria-label="toggle collapse"
                         variant="ghost"
@@ -98,16 +98,16 @@ export const QuestTable = ({
                         <ExpandChevronIcon expanded={isOpen[rowKey]} />
                       </Button>
                     </TableCell>
-                    <TableCell className="px-1">
+                    <TableCell className="px-3 py-2">
                       <Link href={`/quests/${id}`}>{name}</Link>
                     </TableCell>
-                    <TableCell className="text-right text-sm" style={{ color: 'var(--text2)' }}>
+                    <TableCell className="text-right text-sm px-3 py-2" style={{ color: 'var(--text2)' }}>
                       {ap}
                     </TableCell>
-                    <TableCell className="text-right">{lap}</TableCell>
+                    <TableCell className="text-right px-3 py-2">{lap}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell colSpan={4} className="py-0">
+                    <TableCell colSpan={4} className="py-0 px-0">
                       <div className={isOpen[rowKey] ? '' : 'hidden'}>
                         <QuestItemTable
                           dropRates={questToDrops[id]}

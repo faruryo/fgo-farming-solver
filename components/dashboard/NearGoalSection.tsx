@@ -52,7 +52,7 @@ export const NearGoalSection: React.FC = () => {
   if (dropsLoading || resultLoading || nearGoalEntries.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="u-section-header">
         <h2 className="u-section-header-title">もうすぐ達成！</h2>
         <div className="u-section-header-line" />
@@ -64,7 +64,7 @@ export const NearGoalSection: React.FC = () => {
             <NextLink
               key={item.id}
               href={`/quests/${quest.id}`}
-              className="u-fgo-card flex items-start gap-3 py-2 px-3 rounded-md transition-colors duration-150 no-underline hover:no-underline"
+              className="u-fgo-card flex items-start gap-3 py-3 px-4 rounded-md transition-colors duration-150 no-underline hover:no-underline"
               style={{
                 background: 'var(--panel2)',
                 borderLeft: `3px solid ${isVeryClose ? '#60c890' : 'var(--gold)'}`,

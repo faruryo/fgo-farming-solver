@@ -39,17 +39,17 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --primary: #1e2e4a;
+  --primary-foreground: #f5f6fb;
+  --secondary: #f0f2f9;
+  --secondary-foreground: #1e2e4a;
+  --muted: #f0f2f9;
+  --muted-foreground: #46607e;
+  --accent: rgba(154,114,36,0.08);
+  --accent-foreground: #1e2e4a;
   --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --input: rgba(42,58,92,0.13);
+  --ring: rgba(154,114,36,0.5);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -426,6 +426,13 @@ body {
   font-weight: 600;
 }
 .c-settings-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); opacity: 0.8; }
+
+/* shadcn Table row hover - FGO gold tint */
+[data-slot="table-row"]:hover { background-color: rgba(154,114,36,0.04) !important; }
+
+/* shadcn Input - FGO themed */
+[data-slot="input"] { background: var(--panel2); border-color: var(--border2); }
+[data-slot="input"]:focus { border-color: var(--gold-dim); outline: none; box-shadow: 0 0 0 2px rgba(154,114,36,0.2); }
 
 /* ===== FOOTERS ===== */
 .c-calc-footer {

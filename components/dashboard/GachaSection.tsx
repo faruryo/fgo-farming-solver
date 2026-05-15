@@ -82,8 +82,8 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
               </div>
             </div>
 
-            <div className="p-3 flex-1">
-              <div className="flex flex-col gap-2">
+            <div className="p-4 flex-1">
+              <div className="flex flex-col gap-3">
                 <p className="text-[11px] font-bold" style={{ color: 'var(--text3)' }}>{t('ピックアップ対象')}</p>
                 <div className="flex flex-wrap gap-2">
                   {[...gacha.pickupServants]

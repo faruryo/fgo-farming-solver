@@ -18,7 +18,7 @@ export const MaterialList = ({
           <h3 className="text-base font-semibold">
             <span className="font-normal">Lv.</span> {lv}
           </h3>
-          <div className="flex flex-wrap gap-2 p-2 rounded-md border" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex flex-wrap gap-3 p-4 rounded-md border" style={{ borderColor: 'var(--border)' }}>
             {mats.items.map(({ item, amount }) => (
               <div key={item.id} className="mx-2">
                 <div className="flex items-center gap-2">

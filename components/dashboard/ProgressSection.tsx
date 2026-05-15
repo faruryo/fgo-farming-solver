@@ -82,7 +82,7 @@ export const ProgressSection: React.FC = () => {
         <div className="u-section-header-line" />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         {stats.map(stat => {
           const percent = stat.total > 0 ? Math.round((stat.value / stat.total) * 100) : 0
           const chartData = [
@@ -90,8 +90,8 @@ export const ProgressSection: React.FC = () => {
             { name: 'Remaining', value: Math.max(0, stat.total - stat.value) },
           ]
           return (
-            <div key={stat.name} className="u-fgo-card relative p-2 rounded-md" style={{ background: 'var(--panel2)' }}>
-              <div className="flex flex-col items-center gap-1">
+            <div key={stat.name} className="u-fgo-card relative p-3 rounded-md" style={{ background: 'var(--panel2)' }}>
+              <div className="flex flex-col items-center gap-2">
                 <div className="relative h-[60px] w-full">
                   {isMounted && (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>

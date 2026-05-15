@@ -35,7 +35,7 @@ export const ItemFieldset = ({
           <AccordionItem key={largeCategory} value={largeCategory}>
             <AccordionTrigger>{largeCategory}</AccordionTrigger>
             <AccordionContent>
-              <div className="flex flex-wrap items-start justify-evenly gap-4">
+              <div className="flex flex-wrap items-start justify-start gap-6">
                 {itemGroup.map(([category, items]) => (
                   <ItemCategoryFieldset
                     key={category}

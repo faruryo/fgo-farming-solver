@@ -44,7 +44,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
             </div>
           </div>
 
-          <div className="px-3 py-2">
+          <div className="px-4 py-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="destructive" className="text-[10px]">
@@ -57,7 +57,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
                 )}
               </div>
               {event.drops.length > 0 && (
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   {event.drops.slice(0, 8).map(drop => (
                     <Tooltip key={drop.id}>
                       <TooltipTrigger render={<span />}>
