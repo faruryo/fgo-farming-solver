@@ -1,8 +1,11 @@
 import { Metadata } from 'next'
-import { Cinzel } from 'next/font/google'
+import { Cinzel, Geist } from 'next/font/google'
 import { Providers } from './providers'
 import { Layout } from '../components/common/layout'
 import './globals.css'
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const cinzel = Cinzel({
   subsets: ['latin'],
@@ -26,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ja" className={cinzel.variable} suppressHydrationWarning>
+    <html lang="ja" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Providers>
           <Layout>

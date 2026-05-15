@@ -10,7 +10,7 @@
 ## Stack Overview
 - **Core**: Next.js App Router
 - **Runtime**: Cloudflare Workers (OpenNext)
-- **UI**: Chakra UI v2
+- **UI**: shadcn/ui + Tailwind CSS
 - **Data**: lib/ & data/
 
 ## Key Commands
