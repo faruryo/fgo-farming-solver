@@ -1,5 +1,7 @@
- 
-import { Box, Checkbox, HStack, IconButton, VStack } from '@chakra-ui/react'
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import React, { FormEventHandler } from 'react'
 import { NodeState } from '../../hooks/use-checkbox-tree'
 import { ExpandChevronIcon } from './expand-chevron'
@@ -22,39 +24,57 @@ export const CheckboxTree = ({
   expanded,
   onExpand,
 }: CheckboxTreeProps) => {
+  const handleCheck = (value: string, isChecked: boolean) => {
+    onCheck({
+      currentTarget: { value, checked: isChecked },
+    } as unknown as React.FormEvent<HTMLInputElement>)
+  }
+
+  const handleExpand = (value: string) => {
+    onExpand({
+      currentTarget: { value },
+    } as unknown as React.FormEvent<HTMLButtonElement>)
+  }
+
   return (
-    <VStack align="start" my={1} spacing={1}>
+    <div className="flex flex-col items-start gap-1 my-1">
       {tree.map(({ value, label, children }) =>
         children == null ? (
-          <Box key={value} pl={12}>
+          <div key={value} className="pl-12 flex items-center gap-2">
             <Checkbox
+              id={`checkbox-${value}`}
               value={value}
-              isChecked={checked[value] == true}
-              onChange={onCheck}
-            >
+              checked={checked[value] === true}
+              indeterminate={checked[value] === 'intermediate'}
+              onCheckedChange={(isChecked) => handleCheck(value, !!isChecked)}
+            />
+            <label htmlFor={`checkbox-${value}`} className="text-sm cursor-pointer">
               {label}
-            </Checkbox>
-          </Box>
+            </label>
+          </div>
         ) : (
-          <Box key={value} pl={4}>
-            <HStack>
-              <IconButton
-                value={value}
-                icon={<ExpandChevronIcon expanded={expanded[value]} />}
-                onClick={onExpand}
-                aria-label="Expand"
+          <div key={value} className="pl-4">
+            <div className="flex items-center gap-2">
+              <Button
                 variant="ghost"
-                size="xs"
-              />
-              <Checkbox
-                value={value}
-                isChecked={checked[value] == true}
-                isIndeterminate={checked[value] == 'intermediate'}
-                onChange={onCheck}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleExpand(value)}
+                aria-label="Expand"
               >
+                <ExpandChevronIcon expanded={expanded[value]} />
+              </Button>
+              <Checkbox
+                id={`checkbox-${value}`}
+                value={value}
+                checked={checked[value] === true}
+                indeterminate={checked[value] === 'intermediate'}
+                onCheckedChange={(isChecked) => handleCheck(value, !!isChecked)}
+              />
+              <label htmlFor={`checkbox-${value}`} className="text-sm cursor-pointer">
                 {label}
-              </Checkbox>
-            </HStack>
+              </label>
+            </div>
             {expanded[value] && (
               <CheckboxTree
                 tree={children}
@@ -64,9 +84,9 @@ export const CheckboxTree = ({
                 onExpand={onExpand}
               />
             )}
-          </Box>
+          </div>
         )
       )}
-    </VStack>
+    </div>
   )
 }

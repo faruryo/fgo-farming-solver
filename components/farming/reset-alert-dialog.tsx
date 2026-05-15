@@ -1,16 +1,16 @@
- 
+'use client'
+
 import {
   AlertDialog,
-  AlertDialogOverlay,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogBody,
+  AlertDialogDescription,
   AlertDialogFooter,
-  Button,
-  HStack,
-  Text,
-} from '@chakra-ui/react'
-import React, { useRef } from 'react'
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 export const ResetAlertDialog = ({
@@ -22,39 +22,33 @@ export const ResetAlertDialog = ({
   onClose: () => void
   onReset: () => void
 }) => {
-  const cancelRef = useRef(null)
   const { t } = useTranslation('farming')
   return (
-    <AlertDialog
-      isOpen={isOpen}
-      onClose={onClose}
-      leastDestructiveRef={cancelRef}
-    >
-      <AlertDialogOverlay>
-        <AlertDialogContent>
-          <AlertDialogHeader>{t('入力内容のリセット')}</AlertDialogHeader>
-          <AlertDialogBody>
-            <Text>{t('本当にリセットしますか？')}</Text>
-            <Text>{t('you-can-use-export')}</Text>
-          </AlertDialogBody>
-          <AlertDialogFooter>
-            <HStack>
-              <Button ref={cancelRef} onClick={onClose}>
-                {t('キャンセル')}
-              </Button>
-              <Button
-                colorScheme="red"
-                onClick={() => {
-                  onReset()
-                  onClose()
-                }}
-              >
-                {t('リセット')}
-              </Button>
-            </HStack>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialogOverlay>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('入力内容のリセット')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('本当にリセットしますか？')}
+            <br />
+            {t('you-can-use-export')}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>
+            {t('キャンセル')}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onReset()
+              onClose()
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {t('リセット')}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
     </AlertDialog>
   )
 }

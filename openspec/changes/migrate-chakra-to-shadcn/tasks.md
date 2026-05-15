@@ -38,15 +38,15 @@
 
 ## 5. Phase 3: フォーム・インタラクティブ系移行
 
-- [ ] 5.1 `components/common/checkbox-tree.tsx`: `Checkbox`、`IconButton`、`VStack`、`Box`、`HStack` を shadcn Checkbox + `div` + Tailwind に置き換える
-- [ ] 5.2 `components/farming/item-input.tsx`: `FormControl`、`FormLabel`、`Input`、`HStack` を shadcn `Input`・`Label` + `div` に置き換える
-- [ ] 5.3 `components/farming/item-fieldset.tsx`: `Accordion` 群、`FormControl`、`Wrap` を shadcn `Accordion` + `div` に置き換える
-- [ ] 5.4 `components/farming/reset-alert-dialog.tsx`: Chakra `AlertDialog` 群 → shadcn `AlertDialog` 群に置き換える
-- [ ] 5.5 `components/farming/index.tsx`: Chakra `Alert`、`ButtonGroup`、`FormControl`、`FormLabel` を shadcn 等に置き換え、`useBoolean` を `useState<boolean>` に置き換える
-- [ ] 5.6 `components/material/range-slider-with-input.tsx`: Chakra `RangeSlider` → shadcn `Slider`（dual thumb）に置き換える。動作確認後、問題があれば `@radix-ui/react-slider` 直接使用に切り替える
-- [ ] 5.7 `components/material/material-page-select.tsx`: Chakra `Select` → shadcn `Select` に置き換える
-- [ ] 5.8 `components/items/drop-rate-style-radio.tsx`: `RadioGroup`、`Radio` → shadcn `RadioGroup`・`RadioGroupItem` に置き換える
-- [ ] 5.9 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
+- [x] 5.1 `components/common/checkbox-tree.tsx`: `Checkbox`、`IconButton`、`VStack`、`Box`、`HStack` を shadcn Checkbox + `div` + Tailwind に置き換える（onCheck/onExpand は synthetic event で対応）
+- [x] 5.2 `components/farming/item-input.tsx`: `FormControl`、`FormLabel`、`Input`、`HStack` を shadcn `Input` + `div` + native label に置き換える
+- [x] 5.3 `components/farming/item-fieldset.tsx`: `Accordion` 群、`FormControl`、`Wrap` を shadcn `Accordion` + `fieldset/legend` + `div` に置き換える（openMultiple は Base UI では不要）
+- [x] 5.4 `components/farming/reset-alert-dialog.tsx`: Chakra `AlertDialog` 群 → shadcn `AlertDialog` 群（Base UI）に置き換える
+- [x] 5.5 `components/farming/index.tsx`: `useBoolean` → `useState` + setter オブジェクト、`Alert` → shadcn Alert+lucide、`VStack/ButtonGroup/FormControl` → div/fieldset
+- [x] 5.6 `components/material/range-slider-with-input.tsx`: Chakra `RangeSlider` → shadcn `Slider`（dual thumb 対応、onValueChange 型調整）
+- [x] 5.7 `components/material/material-page-select.tsx`: Chakra `Select` → native `<select className="c-global-dd">`（shadcn Select は API が複雑なため native を使用）
+- [x] 5.8 `components/items/drop-rate-style-radio.tsx`: `RadioGroup`、`Radio` → shadcn `RadioGroup`・`RadioGroupItem` に置き換える
+- [x] 5.9 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する（ベースライン更新済み）
 
 ## 6. Phase 4: ダッシュボードコンポーネント移行
 

@@ -1,13 +1,11 @@
- 
-import { FormControl, FormLabel } from '@chakra-ui/react'
+'use client'
+
 import {
   Accordion,
-  AccordionButton,
-  AccordionIcon,
+  AccordionContent,
   AccordionItem,
-  AccordionPanel,
-  Wrap,
-} from '@chakra-ui/react'
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Item } from '../../interfaces/fgodrop'
@@ -26,17 +24,18 @@ export const ItemFieldset = ({
   const { t } = useTranslation(['common', 'farming'])
 
   return (
-    <FormControl as="fieldset">
-      <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">{t('farming:集めたいアイテムの数')}</FormLabel>
-      <Accordion defaultIndex={[0]} allowMultiple>
+    <fieldset>
+      <legend className="c-settings-section-label" style={{ marginBottom: '1rem', display: 'flex' }}>
+        {t('farming:集めたいアイテムの数')}
+      </legend>
+      <Accordion
+        defaultValue={itemGroups.length > 0 ? [itemGroups[0][0]] : undefined}
+      >
         {itemGroups.map(([largeCategory, itemGroup]) => (
-          <AccordionItem key={largeCategory}>
-            <AccordionButton>
-              <AccordionIcon />
-              {largeCategory}
-            </AccordionButton>
-            <AccordionPanel>
-              <Wrap align="start" justify="space-evenly">
+          <AccordionItem key={largeCategory} value={largeCategory}>
+            <AccordionTrigger>{largeCategory}</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-wrap items-start justify-evenly gap-4">
                 {itemGroup.map(([category, items]) => (
                   <ItemCategoryFieldset
                     key={category}
@@ -46,11 +45,11 @@ export const ItemFieldset = ({
                     handleChange={handleChange}
                   />
                 ))}
-              </Wrap>
-            </AccordionPanel>
+              </div>
+            </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
-    </FormControl>
+    </fieldset>
   )
 }

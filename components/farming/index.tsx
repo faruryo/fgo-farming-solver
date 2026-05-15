@@ -1,18 +1,11 @@
 /* eslint-disable */
 'use client'
 
-import {
-  Alert,
-  AlertIcon,
-  Button,
-  ButtonGroup,
-  FormControl,
-  FormLabel,
-  useBoolean,
-  VStack,
-} from '@chakra-ui/react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { useChecked } from '../../hooks/use-checked-from-quest-state'
@@ -93,8 +86,12 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   const [checkedQuests, setCheckedQuests] = useLocalStorage('quests', questIds)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [isConfirming, setIsConfirming] = useBoolean()
-  const [isLoading, setIsLoading] = useBoolean(false)
+  const [isConfirming_, setIsConfirming_] = useState(false)
+  const setIsConfirming = { on: () => setIsConfirming_(true), off: () => setIsConfirming_(false) }
+  const isConfirming = isConfirming_
+  const [isLoading_, setIsLoading_] = useState(false)
+  const setIsLoading = { on: () => setIsLoading_(true), off: () => setIsLoading_(false) }
+  const isLoading = isLoading_
   const [selected, setSelected] = useChecked(
     questIds,
     checkedQuests,
@@ -187,22 +184,24 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <VStack alignItems="start" spacing={8}>
+          <div className="flex flex-col items-start gap-8">
             <ItemFieldset
               itemGroups={itemGroups}
               inputItems={itemCounts}
               handleChange={handleItemChange}
             />
             {Object.values(itemCounts).every((count) => count == '') && (
-              <Alert status="error">
-                <AlertIcon />
-                {t('集めたいアイテムの数を最低1つ入力してください。')}
+              <Alert variant="destructive">
+                <AlertCircle />
+                <AlertDescription>
+                  {t('集めたいアイテムの数を最低1つ入力してください。')}
+                </AlertDescription>
               </Alert>
             )}
-            <FormControl as="fieldset">
-              <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">
+            <fieldset style={{ width: '100%' }}>
+              <legend className="c-settings-section-label" style={{ marginBottom: '1rem', display: 'flex' }}>
                 {t('周回対象に含めるクエスト')}
-              </FormLabel>
+              </legend>
               <div className="c-card" style={{ width: '100%', padding: '20px' }}>
                 <CheckboxTree
                   tree={tree}
@@ -212,38 +211,39 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   onExpand={onExpand}
                 />
               </div>
-            </FormControl>
+            </fieldset>
             {checkedQuests.length == 0 && (
-              <Alert status="error">
-                <AlertIcon />
-                {t('周回対象に含めるクエストを最低1つ選択してください。')}
+              <Alert variant="destructive">
+                <AlertCircle />
+                <AlertDescription>
+                  {t('周回対象に含めるクエストを最低1つ選択してください。')}
+                </AlertDescription>
               </Alert>
             )}
 
             <div className="c-farming-footer">
-              <ButtonGroup spacing={4}>
+              <div className="flex gap-4">
                 <Button
                   type="submit"
                   disabled={
+                    isLoading ||
                     Object.values(itemCounts).every((count) => count == '') ||
                     checkedQuests.length == 0
                   }
                   className="c-farming-btn"
-                  isLoading={isLoading}
-                  p={8}
                 >
+                  {isLoading && <Loader2 className="animate-spin mr-2 h-4 w-4" />}
                   <span className="c-farming-btn-en">SOLVE FARMING</span>
                   <span className="c-farming-btn-jp">{t('周回数を求める')}</span>
                 </Button>
                 <Button
                   type="button"
                   onClick={setIsConfirming.on}
-                  p={8}
                   className="c-farming-btn-reset"
                 >
                   {t('リセット')}
                 </Button>
-              </ButtonGroup>
+              </div>
             </div>
 
             <ResetAlertDialog
@@ -251,7 +251,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
               onClose={setIsConfirming.off}
               onReset={onReset}
             />
-          </VStack>
+          </div>
         </form>
       </div>
     </div>

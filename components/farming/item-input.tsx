@@ -1,4 +1,4 @@
-import { FormControl, FormLabel, HStack, Input } from '@chakra-ui/react'
+import { Input } from '@/components/ui/input'
 import React from 'react'
 import Image from 'next/image'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
@@ -18,8 +18,8 @@ export const ItemInput = ({
 }) => {
   if (!(id in inputValues)) inputValues[id] = ''
   return (
-    <FormControl id={`item-${id}`}>
-      <HStack align="center" justify="end" spacing={3}>
+    <div id={`item-${id}`}>
+      <div className="flex items-center justify-end gap-3">
         {icon && (
           <Image
             src={getItemIconUrl(icon)}
@@ -29,10 +29,15 @@ export const ItemInput = ({
             style={{ objectFit: 'contain' }}
           />
         )}
-        <FormLabel textAlign="right" fontWeight="600" fontSize="13px" color="var(--text2)" m={0}>
+        <label
+          htmlFor={`item-input-${id}`}
+          className="text-right cursor-pointer"
+          style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text2)', margin: 0 }}
+        >
           {name}
-        </FormLabel>
+        </label>
         <Input
+          id={`item-input-${id}`}
           type="number"
           inputMode="numeric"
           name={id}
@@ -40,9 +45,9 @@ export const ItemInput = ({
           min={0}
           step={1}
           onChange={handleChange}
-          w="5em"
+          className="w-20"
         />
-      </HStack>
-    </FormControl>
+      </div>
+    </div>
   )
 }

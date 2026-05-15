@@ -1,12 +1,5 @@
- 
-import { Input } from '@chakra-ui/react'
-import { HStack } from '@chakra-ui/react'
-import {
-  RangeSlider,
-  RangeSliderFilledTrack,
-  RangeSliderThumb,
-  RangeSliderTrack,
-} from '@chakra-ui/react'
+import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
 import React from 'react'
 
 export const RangeSliderWithInput = ({
@@ -26,7 +19,7 @@ export const RangeSliderWithInput = ({
   value: number[]
   setValue: (value: number[]) => void
 }) => (
-  <HStack spacing={4}>
+  <div className="flex items-center gap-4">
     <Input
       type="number"
       min={min}
@@ -34,25 +27,18 @@ export const RangeSliderWithInput = ({
       step={step}
       name={name}
       value={value[0]}
-      onChange={(e) => {
-        setValue([e.currentTarget.valueAsNumber, value[1]])
-      }}
+      onChange={(e) => setValue([e.currentTarget.valueAsNumber, value[1]])}
       disabled={disabled}
-      w={100}
+      className="w-[100px]"
     />
-    <RangeSlider
+    <Slider
       min={min}
       max={max}
       value={value}
-      onChange={setValue}
-      isDisabled={disabled}
-    >
-      <RangeSliderTrack>
-        <RangeSliderFilledTrack />
-      </RangeSliderTrack>
-      <RangeSliderThumb index={0} borderWidth={1} borderColor="inherit" />
-      <RangeSliderThumb index={1} borderWidth={1} borderColor="inherit" />
-    </RangeSlider>
+      onValueChange={(v) => setValue(Array.isArray(v) ? [...v] : [v as number])}
+      disabled={disabled}
+      className="flex-1"
+    />
     <Input
       type="number"
       min={min}
@@ -61,10 +47,8 @@ export const RangeSliderWithInput = ({
       name={name}
       value={value[1]}
       disabled={disabled}
-      onChange={(e) => {
-        setValue([value[0], e.currentTarget.valueAsNumber])
-      }}
-      w={100}
+      onChange={(e) => setValue([value[0], e.currentTarget.valueAsNumber])}
+      className="w-[100px]"
     />
-  </HStack>
+  </div>
 )
