@@ -1,5 +1,6 @@
- 
-import { IconButton } from '@chakra-ui/react'
+'use client'
+
+import { Button } from '@/components/ui/button'
 import { MdTranslate } from 'react-icons/md'
 import { useToggleLocale } from '../../hooks/use-toggle-locale'
 
@@ -8,12 +9,8 @@ export const LangButton = () => {
   const label = locale == 'en' ? '言語を変更' : 'Change language'
 
   return (
-    <IconButton
-      onClick={toggleLocale}
-      aria-label={label}
-      icon={<MdTranslate />}
-      variant="ghost"
-      size="lg"
-    />
+    <Button onClick={toggleLocale} aria-label={label} size="icon" variant="ghost">
+      <MdTranslate size={20} />
+    </Button>
   )
 }

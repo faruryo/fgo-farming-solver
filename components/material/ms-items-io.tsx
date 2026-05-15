@@ -1,5 +1,5 @@
  
-import { Input } from '@chakra-ui/react'
+import { Input } from '@/components/ui/input'
 import { ChangeEventHandler, Dispatch, SetStateAction, useMemo } from 'react'
 import { useMsItemId } from '../../hooks/use-ms-item-id'
 import { useSelectOnFocus } from '../../hooks/use-select-on-focus'

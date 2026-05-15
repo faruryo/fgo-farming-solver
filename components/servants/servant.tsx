@@ -5,10 +5,10 @@ import Image from 'next/image'
 import {
   Breadcrumb,
   BreadcrumbItem,
-  SimpleGrid,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
 import { MaterialList } from './material-list'
 import { useTranslation } from 'react-i18next'
@@ -76,21 +76,24 @@ export const Page = ({
               />
             </div>
           )}
-          <VStack align="stretch" spacing={8} flex={1}>
+          <div className="flex flex-col gap-8 flex-1">
             <Breadcrumb>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/servants">
-                  {t('サーヴァント一覧')}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbItem isCurrentPage>
-                <Text color="var(--text3)">{title}</Text>
-              </BreadcrumbItem>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/servants">
+                    {t('サーヴァント一覧')}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage style={{ color: 'var(--text3)' }}>{title}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
             </Breadcrumb>
-          </VStack>
+          </div>
         </div>
 
-        <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {[
             { id: 'ascension',   label: t('common:ascension'),   key: 'ascensionMaterials' },
             { id: 'skill',       label: t('common:skill'),        key: 'skillMaterials' },
@@ -108,7 +111,7 @@ export const Page = ({
               </div>
             )
           })}
-        </SimpleGrid>
+        </div>
       </div>
     </div>
   )

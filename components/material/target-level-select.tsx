@@ -1,5 +1,5 @@
- 
-import { Checkbox, VStack } from '@chakra-ui/react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import React, { Dispatch, FormEventHandler, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ServantState, TargetState } from '../../hooks/create-chaldea-state'
@@ -32,14 +32,20 @@ const TargetLevelSelectComponent = ({
 }) => {
   const { t } = useTranslation('common')
   return (
-    <VStack align="stretch" key={`${id}-${target}`}>
-      <Checkbox
-        name={`${id}-${target}`}
-        isChecked={!disabled}
-        onChange={handleChangeDisabled}
-      >
-        {t(target)}
-      </Checkbox>
+    <div className="flex flex-col gap-2" key={`${id}-${target}`}>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`${id}-${target}`}
+          checked={!disabled}
+          onCheckedChange={(checked) => {
+            const syntheticEvent = {
+              currentTarget: { name: `${id}-${target}`, checked: checked === true },
+            } as unknown as React.FormEvent<HTMLInputElement>
+            handleChangeDisabled(syntheticEvent)
+          }}
+        />
+        <Label htmlFor={`${id}-${target}`}>{t(target)}</Label>
+      </div>
       {ranges.map(({ start, end }, index) => (
         <RangeSliderWithInput
           min={mins[target]}
@@ -56,12 +62,7 @@ const TargetLevelSelectComponent = ({
                 [target]: {
                   ...state.targets[target],
                   ranges: state.targets[target].ranges.map((range, i) =>
-                    i == index
-                      ? {
-                          start: value[0],
-                          end: value[1],
-                        }
-                      : range
+                    i == index ? { start: value[0], end: value[1] } : range
                   ),
                 },
               },
@@ -70,7 +71,7 @@ const TargetLevelSelectComponent = ({
           key={`${id}-${target}-${index}`}
         />
       ))}
-    </VStack>
+    </div>
   )
 }
 

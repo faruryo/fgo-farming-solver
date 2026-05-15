@@ -1,6 +1,4 @@
- 
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { Wrap, WrapItem } from '@chakra-ui/react'
+import { Label } from '@/components/ui/label'
 import React, { Dispatch, SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
@@ -25,23 +23,19 @@ export const MsIo = ({
 }) => {
   const { t } = useTranslation('material')
   return (
-    <Wrap>
-      <WrapItem>
-        <FormControl id="ms-servants">
-          <FormLabel>{t('サーヴァント')}</FormLabel>
-          <MsServantsIo servants={servants} state={state} setState={setState} />
-        </FormControl>
-      </WrapItem>
-      <WrapItem>
-        <FormControl id="ms-items">
-          <FormLabel>{t('アイテム')}</FormLabel>
-          <MsItemsIo
-            items={items}
-            posession={posession}
-            setPosession={setPosession}
-          />
-        </FormControl>
-      </WrapItem>
-    </Wrap>
+    <div className="flex flex-wrap gap-4">
+      <div>
+        <Label htmlFor="ms-servants">{t('サーヴァント')}</Label>
+        <MsServantsIo servants={servants} state={state} setState={setState} />
+      </div>
+      <div>
+        <Label htmlFor="ms-items">{t('アイテム')}</Label>
+        <MsItemsIo
+          items={items}
+          posession={posession}
+          setPosession={setPosession}
+        />
+      </div>
+    </div>
   )
 }

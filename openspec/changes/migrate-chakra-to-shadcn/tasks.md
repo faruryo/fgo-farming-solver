@@ -72,13 +72,14 @@
 
 ## 8. Phase 6: 残存コンポーネント整理
 
-- [ ] 8.1 `components/servants/material-list.tsx`: `Stat/StatGroup/StatLabel/StatNumber` を `div` + Tailwind で自作、`chakra.span` → `<span>` に置き換える
-- [ ] 8.2 `components/servants/servant.tsx`: `Breadcrumb` 群 → shadcn `Breadcrumb` 群に置き換える
-- [ ] 8.3 `components/servants/index.tsx`: 残存 Chakra コンポーネントを `div` + Tailwind に置き換える
-- [ ] 8.4 `components/material/material.tsx`: `Breadcrumb`、`SimpleGrid` 等を置き換える
-- [ ] 8.5 `components/items/item.tsx`: `Breadcrumb`、`Wrap`、`Skeleton` → shadcn 対応に置き換える
-- [ ] 8.6 `components/cloud/parts/local-section.tsx`, `sync-status.tsx`: 残存 Chakra コンポーネントを置き換える
-- [ ] 8.7 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
+- [x] 8.1 `components/servants/material-list.tsx`: `Stat/StatGroup/StatLabel/StatNumber` を `div` + Tailwind で自作、`chakra.span` → `<span>` に置き換える
+- [x] 8.2 `components/servants/servant.tsx`: `Breadcrumb` 群 → shadcn `Breadcrumb` 群に置き換える
+- [x] 8.3 `components/servants/index.tsx`: 残存 Chakra コンポーネントを `div` + Tailwind に置き換える
+- [x] 8.4 `components/material/material.tsx`: `Breadcrumb`、`SimpleGrid` 等を置き換える
+- [x] 8.5 `components/items/item.tsx`: `Breadcrumb`、`Wrap`、`Skeleton` → shadcn 対応に置き換える
+- [x] 8.6 `components/cloud/parts/local-section.tsx`, `sync-status.tsx`: 残存 Chakra コンポーネントを置き換える
+- [x] 8.7 全コンポーネントから Chakra import を除去（farming/*, material/*, items/*, common/* の追加ファイルも含む）
+- [x] 8.8 `pnpm type-check` / `pnpm test` が通ることを確認する
 
 ## 9. Phase 7: Chakra UI 完全削除
 

@@ -92,7 +92,7 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
                     .map(servant => (
                       <Tooltip key={servant.id}>
                         <TooltipTrigger render={<span />}>
-                          <Link href={`/material#svt-${servant.id}`} display="block">
+                          <Link href={`/material#svt-${servant.id}`} className="block">
                             <div className={`u-face-frame rarity-${servant.rarity}`}>
                               <img src={servant.face} alt={servant.name} />
                             </div>

@@ -1,8 +1,7 @@
- 
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { HStack, Radio, RadioGroup } from '@chakra-ui/react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 
 const values = [
   ['ap', '消費AP'],
@@ -19,19 +18,18 @@ export const ObjectiveFieldset = ({
   const { t } = useTranslation('farming')
 
   return (
-    <FormControl as="fieldset">
-      <FormLabel as="legend" className="c-settings-section-label" m={0} mb={4} display="flex">
-        {t('最小化')}
-      </FormLabel>
-      <RadioGroup name="objective" value={objective} onChange={setObjective}>
-        <HStack spacing={4}>
+    <fieldset>
+      <legend className="c-settings-section-label mb-4 flex">{t('最小化')}</legend>
+      <RadioGroup name="objective" value={objective} onValueChange={setObjective}>
+        <div className="flex items-center gap-4">
           {values.map(([value, description]) => (
-            <Radio key={value} value={value}>
-              {t(description)}
-            </Radio>
+            <div key={value} className="flex items-center gap-2">
+              <RadioGroupItem value={value} id={`objective-${value}`} />
+              <Label htmlFor={`objective-${value}`}>{t(description)}</Label>
+            </div>
           ))}
-        </HStack>
+        </div>
       </RadioGroup>
-    </FormControl>
+    </fieldset>
   )
 }

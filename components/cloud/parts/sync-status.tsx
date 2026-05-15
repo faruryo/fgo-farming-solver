@@ -1,4 +1,4 @@
-import { Button } from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
 import { Stats } from './stats-logic'
 
 interface SyncStatusProps {
@@ -11,8 +11,8 @@ interface SyncStatusProps {
 export const SyncStatus = ({ localStats, cloudStats, showComparison, onToggleComparison }: SyncStatusProps) => {
   if (!localStats || !cloudStats) return null
 
-  const isIdentical = 
-    localStats.ownedCount === cloudStats.ownedCount && 
+  const isIdentical =
+    localStats.ownedCount === cloudStats.ownedCount &&
     localStats.skillTotal === cloudStats.skillTotal &&
     localStats.appendTotal === cloudStats.appendTotal &&
     localStats.gold === cloudStats.gold &&
@@ -41,20 +41,14 @@ export const SyncStatus = ({ localStats, cloudStats, showComparison, onToggleCom
         )}
       </div>
 
-      <Button 
-        size="xs" 
-        variant="solid"
-        bg={showComparison ? 'rgba(154,114,36,0.2)' : 'rgba(154,114,36,0.1)'}
-        color="var(--gold)" 
-        fontSize="10px"
-        fontWeight="bold"
-        letterSpacing="0.05em"
-        height="24px"
-        px={3}
-        borderRadius="full"
+      <Button
+        className="text-[10px] font-bold tracking-wide h-6 px-3 rounded-full border"
+        style={{
+          background: showComparison ? 'rgba(154,114,36,0.2)' : 'rgba(154,114,36,0.1)',
+          color: 'var(--gold)',
+          borderColor: 'rgba(154,114,36,0.2)',
+        }}
         onClick={onToggleComparison}
-        _hover={{ bg: 'rgba(154,114,36,0.25)' }}
-        border="1px solid rgba(154,114,36,0.2)"
       >
         {showComparison ? 'HIDE DETAILS' : 'CHECK DETAILS'}
       </Button>

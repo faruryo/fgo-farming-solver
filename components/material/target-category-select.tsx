@@ -1,7 +1,5 @@
- 
-import { CheckboxGroup, Checkbox } from '@chakra-ui/react'
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { HStack } from '@chakra-ui/react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -14,23 +12,31 @@ export const TargetCategorySelect = ({
   targetCategories: string[]
   setTargetCategories: (targetCategories: string[]) => void
 }) => {
-  const onChange = (a: (string | number)[]) => {
-    setTargetCategories(a.map((v) => v.toString()))
-  }
   const { t } = useTranslation(['common', 'material'])
 
+  const handleChange = (category: string, checked: boolean) => {
+    if (checked) {
+      setTargetCategories([...targetCategories, category])
+    } else {
+      setTargetCategories(targetCategories.filter((c) => c !== category))
+    }
+  }
+
   return (
-    <FormControl as="fieldset">
-      <FormLabel as="legend">{t('material:周回数を求める対象')}</FormLabel>
-      <CheckboxGroup value={targetCategories} onChange={onChange}>
-        <HStack spacing={4}>
-          {categories.map((category) => (
-            <Checkbox key={category} value={category}>
-              {t(category)}
-            </Checkbox>
-          ))}
-        </HStack>
-      </CheckboxGroup>
-    </FormControl>
+    <fieldset>
+      <legend className="text-sm font-medium mb-2">{t('material:周回数を求める対象')}</legend>
+      <div className="flex items-center gap-4">
+        {categories.map((category) => (
+          <div key={category} className="flex items-center gap-2">
+            <Checkbox
+              id={`cat-${category}`}
+              checked={targetCategories.includes(category)}
+              onCheckedChange={(checked) => handleChange(category, checked === true)}
+            />
+            <Label htmlFor={`cat-${category}`}>{t(category)}</Label>
+          </div>
+        ))}
+      </div>
+    </fieldset>
   )
 }

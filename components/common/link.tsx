@@ -1,22 +1,21 @@
- 
-// <reference types="node"/>
 import NextLink from 'next/link'
-import {
-  ComponentWithAs,
-  Link as ChakraLink,
-  LinkProps,
-} from '@chakra-ui/react'
-import React from 'react'
+import React, { CSSProperties, ComponentPropsWithoutRef } from 'react'
 
-export const Link: ComponentWithAs<'a', LinkProps> = ({
-  children,
-  ...props
-}) => (
-  <ChakraLink {...props} as={NextLink}>
+type LinkExtraProps = {
+  color?: CSSProperties['color']
+  _hover?: Record<string, unknown>
+}
+
+type LinkProps = ComponentPropsWithoutRef<typeof NextLink> & LinkExtraProps
+
+export const Link = ({ children, color, _hover, style, ...props }: LinkProps) => (
+  <NextLink style={{ color, ...style }} {...props}>
     {children}
-  </ChakraLink>
+  </NextLink>
 )
 
-export const ExternalLink: ComponentWithAs<'a', LinkProps> = (props) => (
-  <ChakraLink isExternal {...props} />
+export const ExternalLink = ({ children, color, _hover, style, href, ...props }: Omit<LinkProps, 'href'> & { href: string }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer" style={{ color, ...style }} {...(props as React.HTMLAttributes<HTMLAnchorElement>)}>
+    {children}
+  </a>
 )

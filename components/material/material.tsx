@@ -1,16 +1,5 @@
- 
-/* eslint-disable */
 'use client'
 
-import {
-  Box,
-  Breadcrumb,
-  BreadcrumbItem,
-  Heading,
-  SimpleGrid,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
 import React, { useMemo } from 'react'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { getClassNode } from '../../hooks/use-servant-tree'
@@ -28,6 +17,13 @@ import { Pagination } from './material-pagination'
 import { ServantLevelSelect } from './servant-level-select'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 export type MaterialProps = {
   servants: NiceServant[]
@@ -70,20 +66,23 @@ export const Material = ({
   )
 
   return (
-    <VStack alignItems="stretch" spacing={8}>
+    <div className="flex flex-col gap-8">
       <Head title={`${localClassName} | 育成素材計算機`} />
       <Breadcrumb>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/material">
-            {t('育成素材計算機')}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem isCurrentPage>
-          <BreadcrumbLink href="#">{localClassName}</BreadcrumbLink>
-        </BreadcrumbItem>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/material">
+              {t('育成素材計算機')}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{localClassName}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
       </Breadcrumb>
-      <VStack align="stretch">
-        <Heading size="md">{t('サーヴァント選択')}</Heading>
+      <div className="flex flex-col gap-4">
+        <h2 className="text-base font-semibold mb-2">{t('サーヴァント選択')}</h2>
         <CheckboxTree
           tree={tree}
           checked={checked}
@@ -91,40 +90,38 @@ export const Material = ({
           expanded={expanded}
           onExpand={onExpand}
         />
-      </VStack>
-      <VStack align="stretch">
-        <Heading size="md">{t('個別設定')}</Heading>
-        <SimpleGrid minChildWidth="300px" spacing={10}>
+      </div>
+      <div className="flex flex-col gap-4">
+        <h2 className="text-base font-semibold mb-2">{t('個別設定')}</h2>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-10">
           {enabledServants.map(({ id, name }) => (
-            <VStack align="stretch" maxWidth="md" key={id}>
-              <Heading fontSize="xl">
+            <div className="flex flex-col gap-4 max-w-md" key={id}>
+              <h2 className="text-xl font-semibold">
                 <Link href={`/servants/${id}`}>{name}</Link>
-              </Heading>
+              </h2>
               <ServantLevelSelect
                 id={id.toString()}
                 servantState={chaldeaState[id.toString()]}
                 setState={setChaldeaState}
               />
-            </VStack>
+            </div>
           ))}
-        </SimpleGrid>
-      </VStack>
+        </div>
+      </div>
       {enabledServants.length == 0 && (
-        <Text>
+        <p>
           {locale == 'en'
             ? ''
             : `${localClassName}のサーヴァントは選択されていません。`}
-        </Text>
+        </p>
       )}
       <Pagination currentClassName={className} />
-      <Box alignSelf="center">
+      <div className="self-center">
         <CalcButton
           state={chaldeaState}
           materials={materials}
-          colorScheme="blue"
-          p={8}
         />
-      </Box>
-    </VStack>
+      </div>
+    </div>
   )
 }

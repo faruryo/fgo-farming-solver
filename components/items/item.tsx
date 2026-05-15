@@ -1,19 +1,6 @@
- 
-/* eslint-disable */
 'use client'
 
 import { useRouter } from 'next/navigation'
-import {
-  Box,
-  Breadcrumb,
-  BreadcrumbItem,
-  Center,
-  Skeleton,
-  Text,
-  VStack,
-  Wrap,
-  WrapItem,
-} from '@chakra-ui/react'
 import React from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item as FgoItem, Quest as FgoQuest, DropRate as DropRateRow } from '../../interfaces/fgodrop'
@@ -25,6 +12,13 @@ import { BreadcrumbLink } from '../common/breadcrumb-link'
 import { DropRateStyleRadio } from './drop-rate-style-radio'
 import { DropTable } from './drop-table'
 import { useTranslation } from 'react-i18next'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 export type DropRateStyle = 'ap' | 'rate'
 
@@ -80,26 +74,29 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
           </div>
         </div>
 
-        <VStack align="stretch" spacing={8}>
+        <div className="flex flex-col gap-8">
           <Breadcrumb>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/items">{t('アイテム一覧')}</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem isCurrentPage>
-              <Text color="var(--text3)">{title}</Text>
-            </BreadcrumbItem>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/items">{t('アイテム一覧')}</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  <span style={{ color: 'var(--text3)' }}>{title}</span>
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
           </Breadcrumb>
 
           <div className="c-card" style={{ padding: '24px' }}>
             <form>
-              <Wrap justify="center" spacing={8}>
-                <WrapItem>
-                  <DropRateStyleRadio
-                    dropRateStyle={dropRateStyle}
-                    setDropRateStyle={setDropRateStyle}
-                  />
-                </WrapItem>
-              </Wrap>
+              <div className="flex flex-wrap justify-center gap-8">
+                <DropRateStyleRadio
+                  dropRateStyle={dropRateStyle}
+                  setDropRateStyle={setDropRateStyle}
+                />
+              </div>
             </form>
           </div>
 
@@ -108,16 +105,16 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
               <div className="c-global-header-title">{t('DROP DATA')}</div>
               <div className="c-global-header-line"></div>
             </div>
-            <Box whiteSpace="nowrap" overflowX="auto">
+            <div className="whitespace-nowrap overflow-x-auto">
               <DropTable
                 itemIndexes={itemIndexes}
                 quests={selectedQuests}
                 dropGroups={dropGroups}
                 dropRateStyle={dropRateStyle}
               />
-            </Box>
+            </div>
           </div>
-        </VStack>
+        </div>
       </div>
     </div>
   )

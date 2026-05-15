@@ -1,13 +1,11 @@
- 
-import { ButtonProps, IconButton, IconButtonProps } from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
 import {
-  Menu,
-  MenuButton,
-  MenuButtonProps,
-  MenuItem,
-  MenuList,
-} from '@chakra-ui/react'
-import React from 'react'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { FaGithub } from 'react-icons/fa'
 
 const repos: { repo: string; label: { [locale: string]: string } }[] = [
   {
@@ -18,25 +16,29 @@ const repos: { repo: string; label: { [locale: string]: string } }[] = [
   { repo: 'fgodrop', label: { ja: 'スクレイピング', en: 'Scraping' } },
 ]
 
-export const GithubMenu = (
-  props: MenuButtonProps & ButtonProps & IconButtonProps
-) => {
+export const GithubMenu = ({ 'aria-label': ariaLabel = 'Github' }: { 'aria-label'?: string }) => {
   const locale = 'ja' as string
   return (
-    <Menu>
-      <MenuButton as={IconButton} {...props} />
-      <MenuList>
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label={ariaLabel} />}>
+        <FaGithub size={24} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
         {repos.map(({ repo, label }) => (
-          <a
-            href={`https://github.com/faruryo/${repo}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <DropdownMenuItem
             key={repo}
+            render={
+              <a
+                href={`https://github.com/faruryo/${repo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
           >
-            <MenuItem>{label[locale ?? 'ja']}</MenuItem>
-          </a>
+            {label[locale ?? 'ja']}
+          </DropdownMenuItem>
         ))}
-      </MenuList>
-    </Menu>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

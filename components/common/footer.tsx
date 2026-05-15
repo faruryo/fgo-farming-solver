@@ -1,17 +1,5 @@
- 
-import {
-  Flex,
-  Heading,
-  HStack,
-  Icon,
-  IconButton,
-  Stack,
-  StackDivider,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
 import React from 'react'
-import { FaGithub } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { GithubMenu } from './github-menu'
 import { Link, ExternalLink } from './link'
@@ -21,58 +9,46 @@ export const Footer = () => {
   const locale = 'ja' as string
   return (
     <footer>
-      <VStack align="center" justify="center">
-        <Flex wrap="wrap">
+      <div className="flex flex-col items-center justify-center gap-4">
+        <div className="flex flex-wrap">
           {menuGroups.map(({ title, items }) => (
-            <Stack
-              alignSelf="stretch"
-              direction={['column', null, 'row']}
-              align={['start', null, 'center']}
-              divider={<StackDivider />}
+            <div
               key={title}
-              minW={200}
-              mx={4}
-              my={[4, null, 2]}
+              className="flex flex-col md:flex-row md:items-center gap-2 min-w-[200px] mx-4 my-4 md:my-2"
             >
-              <Heading as="h6" size="xs">
-                {title}
-              </Heading>
+              <h6 className="text-xs font-semibold">{title}</h6>
               {items.map(({ href, label }) => (
                 <Link href={href} key={href}>
                   {label[(locale ?? 'ja') as 'ja' | 'en']}
                 </Link>
               ))}
-            </Stack>
+            </div>
           ))}
-        </Flex>
-        <HStack wrap="wrap" divider={<StackDivider />}>
-          <HStack>
-            <GithubMenu
-              aria-label="Github Repositories"
-              icon={<Icon as={FaGithub} boxSize={6} />}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <GithubMenu aria-label="Github Repositories" />
+            <Button
+              size="icon"
               variant="ghost"
-              size="sm"
-              isRound
-            />
-            <IconButton
-              as="a"
-              href="https://x.com/TechFaru"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="X (Twitter)"
-              icon={<Icon as={FaXTwitter} boxSize={6} />}
-              colorScheme="gray"
-              variant="ghost"
-              size="sm"
-              isRound
-            />
-          </HStack>
-          <Text>
+              render={
+                <a
+                  href="https://x.com/TechFaru"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="X (Twitter)"
+                />
+              }
+            >
+              <FaXTwitter size={24} />
+            </Button>
+          </div>
+          <p>
             <Link href="/LICENSE" color="inherit">
               © 2021 antenna-three
             </Link>
-          </Text>
-          <Text>
+          </p>
+          <p>
             Data from{' '}
             <ExternalLink href="https://atlasacademy.io" color="inherit">
               Atlas Academy
@@ -84,9 +60,9 @@ export const Footer = () => {
             >
               FGOアイテム効率劇場
             </ExternalLink>
-          </Text>
-        </HStack>
-      </VStack>
+          </p>
+        </div>
+      </div>
     </footer>
   )
 }

@@ -1,12 +1,10 @@
- 
+import React from 'react'
 import {
   Accordion,
+  AccordionContent,
   AccordionItem,
-  AccordionButton,
-  AccordionIcon,
-  AccordionPanel,
-} from '@chakra-ui/react'
-import React from 'react'
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { Item, Params } from '../../interfaces/api'
 import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
@@ -27,18 +25,13 @@ export const ResultAccordion = ({
   ])
 
   return (
-    <Accordion allowMultiple>
+    <Accordion>
       {itemGroups.map(([largeCategory, itemGroups]) => (
-        <AccordionItem className="item-details" key={largeCategory}>
-          <h3>
-            <AccordionButton>
-              <AccordionIcon />
-              {largeCategory}
-            </AccordionButton>
-          </h3>
-          <AccordionPanel>
+        <AccordionItem className="item-details" key={largeCategory} value={largeCategory}>
+          <AccordionTrigger>{largeCategory}</AccordionTrigger>
+          <AccordionContent>
             <ItemTable itemGroups={itemGroups} itemToQuery={params.items} />
-          </AccordionPanel>
+          </AccordionContent>
         </AccordionItem>
       ))}
     </Accordion>

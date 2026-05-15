@@ -1,11 +1,9 @@
-/* eslint-disable */
 'use client'
 
 import React, { useState } from 'react'
-import { Center, Text, Tooltip, VStack } from '@chakra-ui/react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslation } from 'react-i18next'
 import { useFarmingResult } from '../../hooks/use-farming-result'
-import { Title } from '../common/title'
 import { Link } from '../common/link'
 import { QuestTable } from './quest-table'
 import { TweetIntent } from './tweet-intent'
@@ -37,32 +35,35 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
   if (!result.quests || result.quests.length === 0) {
     return (
       <>
-        <Title>{t('結果が見つかりませんでした')}</Title>
-        <Text>{t('新しく追加された素材のためドロップ率のデータがない場合などがあります。')}</Text>
+        <h1 className="text-2xl font-semibold my-8">{t('結果が見つかりませんでした')}</h1>
+        <p>{t('新しく追加された素材のためドロップ率のデータがない場合などがあります。')}</p>
       </>
     )
   }
 
   return (
-    <VStack spacing={12} align="stretch">
+    <div className="flex flex-col gap-12">
       <div className="c-stats" style={{ justifyContent: 'flex-start', gap: 24, paddingBottom: 8 }}>
-        <Tooltip label={t('tooltip-total-lap')} placement="bottom">
-          <div className="c-stat" style={{ cursor: 'help' }}>
+        <Tooltip>
+          <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
             <div className="c-stat-num">{result.total_lap}</div>
             <div className="c-stat-label">周回数</div>
-          </div>
+          </TooltipTrigger>
+          <TooltipContent>{t('tooltip-total-lap')}</TooltipContent>
         </Tooltip>
-        <Tooltip label={t('tooltip-total-ap')} placement="bottom">
-          <div className="c-stat" style={{ cursor: 'help' }}>
+        <Tooltip>
+          <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
             <div className="c-stat-num">{result.total_ap}</div>
             <div className="c-stat-label">消費AP</div>
-          </div>
+          </TooltipTrigger>
+          <TooltipContent>{t('tooltip-total-ap')}</TooltipContent>
         </Tooltip>
-        <Tooltip label={t('tooltip-cost')} placement="bottom">
-          <div className="c-stat" style={{ cursor: 'help' }}>
+        <Tooltip>
+          <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
             <div className="c-stat-num">¥{yen.toLocaleString()}</div>
             <div className="c-stat-label">{t('費用')}</div>
-          </div>
+          </TooltipTrigger>
+          <TooltipContent>{t('tooltip-cost')}</TooltipContent>
         </Tooltip>
       </div>
 
@@ -70,12 +71,12 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
         <div className="c-settings-section-label" style={{ marginBottom: '16px', display: 'flex' }}>
           {t('クエスト周回数')}
         </div>
-        <Center>
+        <div className="flex items-center justify-center">
           <QuestTable items={result.items as any} quests={result.quests as any} dropRates={result.drop_rates as any} />
-        </Center>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div className="flex justify-center">
         <TweetIntent text={text} />
       </div>
 
@@ -85,7 +86,7 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
         </div>
         <ResultAccordion items={result.items as any} params={result.params as any} />
       </div>
-    </VStack>
+    </div>
   )
 }
 
@@ -93,7 +94,6 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
   const [activeTab, setActiveTab] = useState<'ap' | 'lap'>('ap')
 
-  // 後方互換: 旧形式の単一 Result
   if (legacyResult) {
     return (
       <div className="c-page">

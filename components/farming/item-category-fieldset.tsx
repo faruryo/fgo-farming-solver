@@ -1,7 +1,3 @@
- 
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { VStack } from '@chakra-ui/react'
-import { Box } from '@chakra-ui/react'
 import React from 'react'
 import { ItemInput } from './item-input'
 
@@ -17,24 +13,22 @@ export const ItemCategoryFieldset = ({
   handleChange: React.FormEventHandler
 }) => {
   return (
-    <Box>
-      <FormControl as="fieldset">
-        <VStack>
-          <FormLabel as="legend">{category}</FormLabel>
-          <VStack align="end">
-            {items.map(({ id, name, icon }) => (
-              <ItemInput
-                key={id}
-                id={id}
-                name={name}
-                icon={icon}
-                inputValues={inputValues}
-                handleChange={handleChange}
-              />
-            ))}
-          </VStack>
-        </VStack>
-      </FormControl>
-    </Box>
+    <fieldset>
+      <div className="flex flex-col gap-2">
+        <legend className="text-sm font-medium">{category}</legend>
+        <div className="flex flex-col items-end gap-2">
+          {items.map(({ id, name, icon }) => (
+            <ItemInput
+              key={id}
+              id={id}
+              name={name}
+              icon={icon}
+              inputValues={inputValues}
+              handleChange={handleChange}
+            />
+          ))}
+        </div>
+      </div>
+    </fieldset>
   )
 }

@@ -1,5 +1,4 @@
  
-import { VStack } from '@chakra-ui/react'
 import React, {
   Dispatch,
   FormEvent,
@@ -56,7 +55,7 @@ const ServantLevelSelectComponent = ({
   )
 
   return (
-    <VStack align="stretch" spacing={4}>
+    <div className="flex flex-col gap-4">
       {entries(servantState.targets).map(([target, state]) => (
         <TargetLevelSelect
           id={id}
@@ -67,7 +66,7 @@ const ServantLevelSelectComponent = ({
           key={`${id}-${target}`}
         />
       ))}
-    </VStack>
+    </div>
   )
 }
 

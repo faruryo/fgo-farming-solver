@@ -1,9 +1,7 @@
- 
 'use client'
 
 import { Link } from '../common/link'
-import { HStack, Stack, Box, Text } from '@chakra-ui/react'
-import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import React from 'react'
 import { PageSelect } from './material-page-select'
 import { classNames } from '../../lib/class-names'
@@ -22,32 +20,29 @@ export const Pagination = ({
   const prevClassName =
     currentIndex < 1 ? keys.slice(-1)[0] : keys[currentIndex - 1]
   const nextClassName = keys[currentIndex + 1] ?? keys[0]
-  
+
   return (
-    <Stack
-      as="nav"
+    <nav
       aria-label="pagination"
-      direction={['column', 'row']}
-      align="center"
-      justify="space-between"
+      className="flex flex-col sm:flex-row items-center justify-between gap-4"
     >
       <Link href={'/material/' + prevClassName}>
-        <HStack>
-          <ChevronLeftIcon />
-          <Text pr={5}>{localClassNames[prevClassName as keyof typeof localClassNames]}</Text>
-        </HStack>
+        <div className="flex items-center gap-1">
+          <ChevronLeft className="h-4 w-4" />
+          <span className="pr-5">{localClassNames[prevClassName as keyof typeof localClassNames]}</span>
+        </div>
       </Link>
 
-      <Box>
+      <div>
         <PageSelect currentClassName={currentClassName} />
-      </Box>
+      </div>
 
       <Link href={'/material/' + nextClassName}>
-        <HStack>
-          <Text pl={5}>{localClassNames[nextClassName as keyof typeof localClassNames]}</Text>
-          <ChevronRightIcon />
-        </HStack>
+        <div className="flex items-center gap-1">
+          <span className="pl-5">{localClassNames[nextClassName as keyof typeof localClassNames]}</span>
+          <ChevronRight className="h-4 w-4" />
+        </div>
       </Link>
-    </Stack>
+    </nav>
   )
 }

@@ -1,8 +1,7 @@
- 
- 
+
+
 'use client'
 
-import { HStack, List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import Image from 'next/image'
@@ -40,10 +39,10 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
           </div>
         </div>
 
-        <SimpleGrid minChildWidth="300px" spacingX={6} spacingY={10}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-x-6 gap-y-10">
           {servantGroups.map(([className, servantGroups]) => (
-            <VStack align="start" key={className} spacing={4}>
-              <VStack spacing={6} align="stretch" width="100%">
+            <div className="flex flex-col gap-4" key={className}>
+              <div className="flex flex-col gap-6 w-full">
                 {servantGroups.map(([rarity, servants]) => (
                   <div key={rarity} className="c-card" style={{ padding: '12px 16px' }}>
                     <div
@@ -73,12 +72,12 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
                         {'✦'.repeat(parseInt(rarity))}
                       </span>
                     </div>
-                    <List spacing={2}>
+                    <ul className="flex flex-col gap-2">
                       {servants.map((servant) => {
                         const faceUrl = `${staticOrigin}/${region}/Faces/f_${servant.id * 10}.png`
                         return (
-                          <ListItem key={servant.id}>
-                            <HStack spacing={2} display="inline-flex" align="center">
+                          <li key={servant.id}>
+                            <div className="flex items-center gap-2">
                               <Image
                                 src={faceUrl}
                                 alt={servant.name}
@@ -89,17 +88,17 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
                               <Link href={`/servants/${servant.id}`} color="var(--text)" _hover={{ color: 'var(--gold)', textDecoration: 'none' }}>
                                 {servant.name}
                               </Link>
-                            </HStack>
-                          </ListItem>
+                            </div>
+                          </li>
                         )
                       })}
-                    </List>
+                    </ul>
                   </div>
                 ))}
-              </VStack>
-            </VStack>
+              </div>
+            </div>
           ))}
-        </SimpleGrid>
+        </div>
       </div>
     </div>
   )

@@ -1,19 +1,5 @@
- 
 'use client'
 
-import {
-  Code,
-  Heading,
-  HeadingProps,
-  Link,
-  LinkProps,
-  ListItem,
-  ListProps,
-  OrderedList,
-  Text,
-  TextProps,
-  UnorderedList,
-} from '@chakra-ui/react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Head } from './head'
@@ -24,15 +10,16 @@ export type PageProps = {
 }
 
 const h = (n: 1 | 2 | 3 | 4 | 5) => {
-  const H = (props: HeadingProps) => (
-    <Heading
-      {...props}
-      as={`h${n}`}
-      size={n == 1 ? 'xl' : n == 2 ? 'lg' : 'md'}
-      mt={10 - n}
-      mb={5 - n}
-    />
-  )
+  const sizeClass =
+    n === 1
+      ? 'text-3xl font-bold mt-8 mb-4'
+      : n === 2
+      ? 'text-2xl font-bold mt-7 mb-3'
+      : 'text-xl font-semibold mt-6 mb-2'
+  const H = (props: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const Tag = `h${n}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5'
+    return <Tag className={sizeClass} {...props} />
+  }
   return H
 }
 
@@ -46,12 +33,22 @@ const components = {
   h2: h(2),
   h3: h(3),
   h4: h(4),
-  p: (props: TextProps) => <Text {...props} my={2} />,
-  a: ({ href, ...rest }: LinkProps) => <Link href={replace(href)} {...rest} />,
-  ul: (props: ListProps) => <UnorderedList {...props} spacing={2} my={4} />,
-  ol: (props: ListProps) => <OrderedList {...props} spacing={2} my={4} />,
-  li: ListItem,
-  code: Code,
+  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
+    <p className="my-2" {...props} />
+  ),
+  a: ({ href, ...rest }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a href={replace(href)} {...rest} />
+  ),
+  ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
+    <ul className="list-disc list-inside my-4 space-y-2" {...props} />
+  ),
+  ol: (props: React.HTMLAttributes<HTMLOListElement>) => (
+    <ol className="list-decimal list-inside my-4 space-y-2" {...props} />
+  ),
+  li: (props: React.HTMLAttributes<HTMLLIElement>) => <li {...props} />,
+  code: (props: React.HTMLAttributes<HTMLElement>) => (
+    <code className="bg-muted px-1 rounded text-sm" {...props} />
+  ),
 }
 
 const Page = ({ title, md }: PageProps) => (

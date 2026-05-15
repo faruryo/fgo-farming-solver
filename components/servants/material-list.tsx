@@ -1,12 +1,3 @@
-import {
-  chakra,
-  Heading,
-  Stat,
-  StatGroup,
-  StatLabel,
-  StatNumber,
-  VStack,
-} from '@chakra-ui/react'
 import Image from 'next/image'
 import React from 'react'
 import type { Item, Materials } from '../../interfaces/atlas-academy'
@@ -21,33 +12,33 @@ export const MaterialList = ({
   items: Item[]
 }) => {
   return (
-    <VStack align="stretch" spacing={8}>
-      {Object.entries(materials).map(([lv, materials]) => (
-        <VStack align="stretch" key={lv}>
-          <Heading size="md">
-            <chakra.span fontWeight="normal">Lv.</chakra.span> {lv}
-          </Heading>
-          <StatGroup borderWidth="thin" borderRadius="md" p={2}>
-            {materials.items.map(({ item, amount }) => (
-              <Stat key={item.id} mx={2}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div className="flex flex-col gap-8">
+      {Object.entries(materials).map(([lv, mats]) => (
+        <div className="flex flex-col gap-2" key={lv}>
+          <h3 className="text-base font-semibold">
+            <span className="font-normal">Lv.</span> {lv}
+          </h3>
+          <div className="flex flex-wrap gap-2 p-2 rounded-md border" style={{ borderColor: 'var(--border)' }}>
+            {mats.items.map(({ item, amount }) => (
+              <div key={item.id} className="mx-2">
+                <div className="flex items-center gap-2">
                   <Image src={item.icon} alt={item.name} width={32} height={32} />
-                  <StatLabel>
+                  <div className="text-xs" style={{ color: 'var(--text2)' }}>
                     <ItemLink id={toApiItemId(item, items)} name={item.name} />
-                  </StatLabel>
+                  </div>
                 </div>
-                <StatNumber>{amount}</StatNumber>
-              </Stat>
+                <div className="font-semibold">{amount}</div>
+              </div>
             ))}
-            {materials.qp > 0 && (
-              <Stat mx={2}>
-                <StatLabel>QP</StatLabel>
-                <StatNumber>{materials.qp.toLocaleString()}</StatNumber>
-              </Stat>
+            {mats.qp > 0 && (
+              <div className="mx-2">
+                <div className="text-xs" style={{ color: 'var(--text2)' }}>QP</div>
+                <div className="font-semibold">{mats.qp.toLocaleString()}</div>
+              </div>
             )}
-          </StatGroup>
-        </VStack>
+          </div>
+        </div>
       ))}
-    </VStack>
+    </div>
   )
 }

@@ -1,8 +1,5 @@
- 
-/* eslint-disable */
 'use client'
 
-import { List, ListItem, SimpleGrid, VStack } from '@chakra-ui/react'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Item } from '../../interfaces/fgodrop'
@@ -37,13 +34,13 @@ export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
           </div>
         </div>
 
-        <SimpleGrid minChildWidth="300px" spacingX={6} spacingY={10}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-x-6 gap-y-10">
           {itemGroup.map(([largeCategory, itemGroups]) => (
-            <VStack align="start" key={largeCategory} spacing={4}>
+            <div className="flex flex-col gap-4" key={largeCategory}>
               <div className="c-settings-section-label" style={{ width: '100%', display: 'flex' }}>
                 {largeCategory}
               </div>
-              <VStack spacing={6} align="stretch" width="100%">
+              <div className="flex flex-col gap-6 w-full">
                 {itemGroups.map(([category, items]) => (
                   <div key={category} className="c-card" style={{ padding: '16px' }}>
                     <div
@@ -59,19 +56,19 @@ export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
                     >
                       {category}
                     </div>
-                    <List spacing={2}>
+                    <ul className="flex flex-col gap-2">
                       {items.map((item) => (
-                        <ListItem key={item.id}>
+                        <li key={item.id}>
                           <ItemLink id={item.id} name={item.name} icon={item.icon} />
-                        </ListItem>
+                        </li>
                       ))}
-                    </List>
+                    </ul>
                   </div>
                 ))}
-              </VStack>
-            </VStack>
+              </div>
+            </div>
           ))}
-        </SimpleGrid>
+        </div>
       </div>
     </div>
   )

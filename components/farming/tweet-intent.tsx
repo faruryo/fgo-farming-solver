@@ -1,8 +1,7 @@
- 
 'use client'
 
 import React from 'react'
-import { Box, Button } from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
 import { FaXTwitter } from 'react-icons/fa6'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -17,28 +16,21 @@ export const TweetIntent = ({ text }: { text: string }) => {
 
   const params = new URLSearchParams()
   params.append('text', text)
-  if (url) {
-    params.append('url', url)
-  }
+  if (url) params.append('url', url)
   params.append('hashtags', hashtags)
 
   const intentUrl = `https://x.com/intent/tweet?${params.toString()}`
   const { t } = useTranslation('farming')
 
   return (
-    <Box my={4}>
+    <div className="my-4">
       <Button
-        as="a"
-        href={intentUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        leftIcon={<FaXTwitter />}
-        colorScheme="gray"
-        variant="solid"
-        p={2}
+        variant="secondary"
+        render={<a href={intentUrl} target="_blank" rel="noopener noreferrer" />}
       >
+        <FaXTwitter className="mr-2 h-4 w-4" />
         {t('結果をツイートする')}
       </Button>
-    </Box>
+    </div>
   )
 }
