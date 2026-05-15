@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* shadcn Switch - gold color when unchecked */
+.gold-switch[data-unchecked] {
+  background-color: rgba(154,114,36,0.2) !important;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {

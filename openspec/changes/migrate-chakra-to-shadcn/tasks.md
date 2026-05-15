@@ -61,14 +61,14 @@
 
 ## 7. Phase 5: 高複雑度コンポーネント移行
 
-- [ ] 7.1 `components/common/nav.tsx`: `Menu/MenuButton/MenuList/MenuItem/MenuGroup/MenuDivider` → shadcn `DropdownMenu` 群に置き換え、`Switch` → shadcn `Switch`（`gold-switch` クラス付与）、`sx` prop → `globals.css` セレクタに移動する
-- [ ] 7.2 `globals.css` に `[data-state="unchecked"].gold-switch { background-color: rgba(154,114,36,0.2); }` を追加する
-- [ ] 7.3 `components/common/cloud-indicator.tsx`: `Popover` 群 → shadcn `Popover`、`Switch` → shadcn `Switch`（`gold-switch` クラス付与）、`sx` prop を除去する
-- [ ] 7.4 `components/farming/FarmingHistoryChart.tsx`: `useBreakpointValue` を除去し、固定値または `useWindowSize` フックで代替する。`ButtonGroup isAttached` → `flex` div に置き換える
-- [ ] 7.5 `components/material/index.tsx`: `Accordion` 群、`VStack`、layout 系 Chakra コンポーネントを shadcn・Tailwind に置き換える
-- [ ] 7.6 `components/material/result-accordion.tsx`: `Accordion` 群 → shadcn `Accordion` 群に置き換える
-- [ ] 7.7 `components/cloud/index.tsx`: Chakra `Modal` 群 → shadcn `Dialog` 群、`useDisclosure` → `useState<boolean>` に置き換え、`Switch` → shadcn `Switch`（`gold-switch` クラス付与）、`sx` prop を除去する
-- [ ] 7.8 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
+- [x] 7.1 `components/common/nav.tsx`: `Menu/MenuButton/MenuList/MenuItem/MenuGroup/MenuDivider` → shadcn `DropdownMenu` 群に置き換え、`Switch` → shadcn `Switch`（`gold-switch` クラス付与）、`sx` prop → `globals.css` セレクタに移動する
+- [x] 7.2 `globals.css` に `[data-state="unchecked"].gold-switch { background-color: rgba(154,114,36,0.2); }` を追加する
+- [x] 7.3 `components/common/cloud-indicator.tsx`: `Popover` 群 → shadcn `Popover`、`Switch` → shadcn `Switch`（`gold-switch` クラス付与）、`sx` prop を除去する
+- [x] 7.4 `components/farming/FarmingHistoryChart.tsx`: `useBreakpointValue` を除去し、固定値または `useWindowSize` フックで代替する。`ButtonGroup isAttached` → `flex` div に置き換える
+- [x] 7.5 `components/material/index.tsx`: `Accordion` 群、`VStack`、layout 系 Chakra コンポーネントを shadcn・Tailwind に置き換える
+- [x] 7.6 `components/material/result-accordion.tsx`: `Accordion` 群 → shadcn `Accordion` 群に置き換える
+- [x] 7.7 `components/cloud/index.tsx`: Chakra `Modal` 群 → shadcn `Dialog` 群、`useDisclosure` → `useState<boolean>` に置き換え、`Switch` → shadcn `Switch`（`gold-switch` クラス付与）、`sx` prop を除去する
+- [x] 7.8 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
 
 ## 8. Phase 6: 残存コンポーネント整理
 

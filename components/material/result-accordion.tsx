@@ -1,12 +1,11 @@
- 
+'use client'
+
 import {
   Accordion,
-  AccordionButton,
-  AccordionIcon,
+  AccordionContent,
   AccordionItem,
-  AccordionPanel,
-  Text,
-} from '@chakra-ui/react'
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import React, { FormEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Item } from '../../interfaces/atlas-academy'
@@ -28,20 +27,14 @@ export const ResultAccordion = ({
   onFocus: FormEventHandler
 }) => {
   const { t } = useTranslation('common')
+  const defaultCategory = itemGroup.find(([category]) => category === '強化素材')?.[0]
+
   return (
-    <Accordion
-      defaultIndex={[
-        itemGroup.findIndex(([category]) => category == '強化素材'),
-      ]}
-      allowMultiple
-    >
+    <Accordion defaultValue={defaultCategory ? [defaultCategory] : undefined}>
       {itemGroup.map(([category, subItemGroup]) => (
-        <AccordionItem key={category}>
-          <AccordionButton>
-            <AccordionIcon />
-            <Text>{t(category)}</Text>
-          </AccordionButton>
-          <AccordionPanel px={0}>
+        <AccordionItem key={category} value={category}>
+          <AccordionTrigger>{t(category)}</AccordionTrigger>
+          <AccordionContent className="px-0">
             <ResultTable
               amounts={amounts}
               deficiencies={deficiencies}
@@ -50,7 +43,7 @@ export const ResultAccordion = ({
               onFocus={onFocus}
               possession={possession}
             />
-          </AccordionPanel>
+          </AccordionContent>
         </AccordionItem>
       ))}
     </Accordion>

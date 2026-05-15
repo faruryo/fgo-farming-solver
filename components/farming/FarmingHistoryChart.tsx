@@ -1,16 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react'
-import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Button,
-  useBreakpointValue,
-  ButtonGroup,
-  Tooltip,
-} from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   AreaChart,
   Area,
@@ -64,22 +56,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     });
 
     return (
-      <Box
-        bg="rgba(18, 28, 48, 0.95)"
-        border="1px solid var(--gold-dim)"
-        borderRadius="md"
-        p={3}
-        boxShadow="0 4px 12px rgba(0,0,0,0.4)"
-        backdropFilter="blur(4px)"
+      <div
+        className="rounded-md p-3 text-sm"
+        style={{ background: 'rgba(18,28,48,0.95)', border: '1px solid var(--gold-dim)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
       >
-        <Text color="var(--gold-dim)" fontSize="xs" mb={1}>{dateStr}</Text>
+        <p className="text-xs mb-1" style={{ color: 'var(--gold-dim)' }}>{dateStr}</p>
         {payload.map((entry: any) => (
-          <Text key={entry.name} color={entry.color} fontWeight="bold" fontSize="sm">
+          <p key={entry.name} className="font-bold text-sm" style={{ color: entry.color }}>
             {entry.name}: {entry.value.toLocaleString()}
             {entry.name.includes('予測') && ' (予想)'}
-          </Text>
+          </p>
         ))}
-      </Box>
+      </div>
     )
   }
   return null
@@ -115,7 +103,14 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
   const [chartTab, setChartTab] = useState<ChartTab>('ap')
   const [period, setPeriod] = useState<PeriodRange>('3m')
   const [isMounted, setIsMounted] = useState(false)
-  const responsiveHeight = useBreakpointValue({ base: 180, md: 220 })
+  const [responsiveHeight, setResponsiveHeight] = useState(180)
+
+  useEffect(() => {
+    const update = () => setResponsiveHeight(window.innerWidth >= 768 ? 220 : 180)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   useEffect(() => {
     setIsMounted(true)
@@ -194,75 +189,67 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
 
   if (!history.length || chartData.length < 2) {
     return (
-      <Box p={8} textAlign="center" color="var(--gold-dim)" bg="var(--panel2)" borderRadius="xl">
-        <Text fontSize="sm">{t('履歴が不足しているためグラフを表示できません')}</Text>
-      </Box>
+      <div className="p-8 text-center rounded-xl" style={{ color: 'var(--gold-dim)', background: 'var(--panel2)' }}>
+        <p className="text-sm">{t('履歴が不足しているためグラフを表示できません')}</p>
+      </div>
     )
   }
 
   return (
-    <VStack align="stretch" spacing={4}>
-      <HStack justify="space-between" flexWrap="wrap" spacing={4}>
-        <ButtonGroup isAttached size="xs" variant="outline" bg="var(--panel)" borderRadius="md">
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between flex-wrap gap-4">
+        <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
           {PERIOD_OPTIONS.map(opt => (
-            <Button
+            <button
               key={opt.value}
               onClick={() => setPeriod(opt.value)}
-              isActive={period === opt.value}
-              bg={period === opt.value ? 'var(--gold)' : 'transparent'}
-              color={period === opt.value ? 'white' : 'var(--text2)'}
-              borderColor="var(--border)"
-              _hover={{ 
-                bg: period === opt.value ? 'var(--gold)' : 'rgba(154,114,36,0.1)',
-                color: period === opt.value ? 'white' : 'var(--navy)'
+              className="text-[10px] px-3 py-1 border transition-colors"
+              style={{
+                background: period === opt.value ? 'var(--gold)' : 'transparent',
+                color: period === opt.value ? 'white' : 'var(--text2)',
+                borderColor: 'var(--border)',
+                fontWeight: period === opt.value ? 'bold' : 'normal',
               }}
-              _active={{
-                bg: 'var(--gold)',
-                color: 'white'
-              }}
-              fontSize="10px"
-              fontWeight={period === opt.value ? 'bold' : 'normal'}
-              px={3}
             >
               {opt.label}
-            </Button>
+            </button>
           ))}
-        </ButtonGroup>
+        </div>
 
-        <HStack spacing={1}>
+        <div className="flex gap-1">
           {(['ap', 'lap'] as ChartTab[]).map(tab => (
             <Button
               key={tab}
-              size="xs"
-              variant={chartTab === tab ? 'solid' : 'ghost'}
-              bg={chartTab === tab ? (tab === 'ap' ? 'var(--gold)' : 'var(--steel)') : 'transparent'}
-              color={chartTab === tab ? 'white' : 'var(--text2)'}
-              _hover={{
-                bg: chartTab === tab ? (tab === 'ap' ? 'var(--gold2)' : 'var(--steel2)') : 'rgba(0,0,0,0.05)'
-              }}
+              size="sm"
+              variant={chartTab === tab ? 'default' : 'ghost'}
               onClick={() => setChartTab(tab)}
-              fontSize="10px"
-              px={3}
-              borderRadius="md"
+              className="text-[10px] px-3 h-7 rounded-md"
+              style={{
+                background: chartTab === tab ? (tab === 'ap' ? 'var(--gold)' : 'var(--steel)') : 'transparent',
+                color: chartTab === tab ? 'white' : 'var(--text2)',
+              }}
             >
               {CHART_CONFIG[tab].label}
             </Button>
           ))}
-        </HStack>
-      </HStack>
+        </div>
+      </div>
 
-      <Box p={4} bg="var(--panel2)" borderRadius="xl" position="relative">
+      <div className="p-4 rounded-xl relative" style={{ background: 'var(--panel2)' }}>
         {predictionDate && (
-          <Box position="absolute" top={2} right={4} zIndex={1}>
-            <Tooltip label="現在のペースでの目標達成予想日">
-              <HStack spacing={1} color="var(--gold-dim)">
-                <Box as={FaCalendarAlt} size="10px" />
-                <Text fontSize="10px" fontWeight="bold">
-                  予想: {predictionDate.toLocaleDateString('ja-JP')}
-                </Text>
-              </HStack>
+          <div className="absolute top-2 right-4 z-10">
+            <Tooltip>
+              <TooltipTrigger render={<span />}>
+                <div className="flex items-center gap-1" style={{ color: 'var(--gold-dim)' }}>
+                  <FaCalendarAlt size={10} />
+                  <span className="text-[10px] font-bold">
+                    予想: {predictionDate.toLocaleDateString('ja-JP')}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>現在のペースでの目標達成予想日</TooltipContent>
             </Tooltip>
-          </Box>
+          </div>
         )}
 
         {isMounted && (
@@ -314,7 +301,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
             </AreaChart>
           </ResponsiveContainer>
         )}
-      </Box>
-    </VStack>
+      </div>
+    </div>
   )
 }

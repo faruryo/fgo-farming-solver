@@ -1,27 +1,11 @@
 'use client'
 
-import { 
-  Button, 
-  HStack, 
-  Text, 
-  VStack, 
-  Spinner,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Center,
-  Switch,
-  FormControl,
-  FormLabel,
-  Box,
-  Stack
-} from '@chakra-ui/react'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Loader2 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AuthButton } from '../common/auth-button'
 import { getStats } from './parts/stats-logic'
@@ -48,7 +32,9 @@ const Cloud = () => {
     items
   } = useCloudSync()
 
-  const { isOpen: isDiffOpen, onOpen: onDiffOpen, onClose: onDiffClose } = useDisclosure()
+  const [isDiffOpen, setIsDiffOpen] = useState(false)
+  const onDiffOpen = () => setIsDiffOpen(true)
+  const onDiffClose = () => setIsDiffOpen(false)
   const [modalMode, setModalMode] = useState<'load' | 'save'>('load')
   const [pendingCloudData, setPendingCloudData] = useState<CloudData | null>(null)
 
@@ -143,7 +129,7 @@ const Cloud = () => {
           </div>
         </div>
 
-        <VStack spacing={8} py={8}>
+        <div className="flex flex-col gap-8 py-8">
           {/* Cloud Sync Section */}
           <div className="c-card" style={{ 
             maxWidth: '600px', 
@@ -151,121 +137,103 @@ const Cloud = () => {
             padding: '32px',
             border: hasConflict ? '1px solid var(--red)' : '1px solid var(--border)' 
           }}>
-            <VStack spacing={6} align="stretch">
+            <div className="flex flex-col gap-6">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ padding: '8px', background: hasConflict ? 'rgba(255,0,0,0.1)' : 'rgba(154,114,36,0.1)', borderRadius: '8px' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={hasConflict ? 'var(--red)' : 'var(--gold)'} strokeWidth="2">
                     <path d="M17.5 19c.7 0 1.3-.2 1.8-.7.5-.5.7-1.1.7-1.8 0-.5-.1-.9-.4-1.3-.2-.4-.6-.7-1-.9 0-.1 0-.2.1-.3 0-1.4-.5-2.6-1.5-3.5-1-.9-2.1-1.4-3.5-1.4-.9 0-1.8.2-2.6.7-.8.5-1.4 1.1-1.8 1.9-.3-.1-.6-.2-.9-.2-1.1 0-2.1.4-2.8 1.2s-1.1 1.7-1.1 2.8c0 1.1.4 2.1 1.2 2.8.8.8 1.7 1.2 2.8 1.2h10z" />
                   </svg>
                 </div>
-                <Text fontWeight="bold" color={hasConflict ? 'var(--red)' : 'var(--gold)'}>
+                <p className="font-bold" style={{ color: hasConflict ? 'var(--red)' : 'var(--gold)' }}>
                   {hasConflict ? 'Sync Conflict Detected' : 'Cloud Sync'}
-                </Text>
+                </p>
               </div>
-              
+
               {hasConflict ? (
-                <VStack align="stretch" spacing={2} p={4} bg="rgba(255,0,0,0.05)" borderRadius="12px">
-                  <Text color="var(--red)" fontSize="sm" fontWeight="bold">Cloud contains newer data.</Text>
-                  <Text color="var(--text2)" fontSize="xs">
-                    Your local data is older than the data stored in the cloud (possibly from another device). 
-                    Auto-save is suspended to prevent overwriting newer progress. 
+                <div className="flex flex-col gap-2 p-4 rounded-xl" style={{ background: 'rgba(255,0,0,0.05)' }}>
+                  <p className="text-sm font-bold" style={{ color: 'var(--red)' }}>Cloud contains newer data.</p>
+                  <p className="text-xs" style={{ color: 'var(--text2)' }}>
+                    Your local data is older than the data stored in the cloud (possibly from another device).
+                    Auto-save is suspended to prevent overwriting newer progress.
                     Please &quot;Load&quot; from cloud to synchronize.
-                  </Text>
-                </VStack>
+                  </p>
+                </div>
               ) : (
-                <Text color="var(--text2)" fontSize="sm">{t('cloud-description')}</Text>
+                <p className="text-sm" style={{ color: 'var(--text2)' }}>{t('cloud-description')}</p>
               )}
 
               {(session != null || (process.env.NODE_ENV === 'development' && cloudData)) && (
-                <VStack spacing={4} align="stretch">
-                  <VStack spacing={2} align="stretch" px={4} py={3} background="rgba(154,114,36,0.04)" borderRadius="12px" border="1px solid rgba(154,114,36,0.1)">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(154,114,36,0.04)', border: '1px solid rgba(154,114,36,0.1)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#60c890' }}></div>
-                      <Text fontSize="xs" color="var(--text)" fontWeight="500">
+                      <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>
                         {session?.user?.name || 'Local Dev User'}
-                      </Text>
+                      </p>
                     </div>
-                  </VStack>
+                  </div>
 
-                  <FormControl display="flex" alignItems="center" px={1}>
-                    <FormLabel htmlFor="auto-sync" mb="0" fontSize="sm" color="var(--text2)" flex="1">
+                  <div className="flex items-center px-1">
+                    <label htmlFor="auto-sync" className="text-sm flex-1 cursor-pointer" style={{ color: 'var(--text2)' }}>
                       {t('auto-sync-label', 'クラウド同期を自動化する')}
-                    </FormLabel>
-                    <Switch 
-                      id="auto-sync" 
-                      isChecked={autoSyncEnabled} 
-                      isDisabled={hasConflict}
-                      onChange={toggleAutoSync} 
-                      colorScheme="gold" 
-                      size="sm" 
-                      sx={{
-                        'span.chakra-switch__track:not([data-checked])': {
-                          bg: 'rgba(154,114,36,0.2)',
-                        },
-                      }}
+                    </label>
+                    <Switch
+                      id="auto-sync"
+                      checked={autoSyncEnabled}
+                      disabled={hasConflict}
+                      onCheckedChange={() => toggleAutoSync()}
+                      size="sm"
+                      className="gold-switch"
                     />
-                  </FormControl>
-                </VStack>
+                  </div>
+                </div>
               )}
 
               {isInitializing || (session != null && !cloudData && !isLoading) || isLoading ? (
-                <Center py={4}>
-                  <VStack spacing={3}>
-                    <Spinner size="sm" color="var(--gold)" />
-                    <Text fontSize="xs" color="var(--text2)">
-                      {isLoading ? t('読み込み中...') : 'Checking sync status...'}
-                    </Text>
-                  </VStack>
-                </Center>
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <Loader2 className="animate-spin h-4 w-4" style={{ color: 'var(--gold)' }} />
+                  <p className="text-xs" style={{ color: 'var(--text2)' }}>
+                    {isLoading ? t('読み込み中...') : 'Checking sync status...'}
+                  </p>
+                </div>
               ) : session == null && process.env.NODE_ENV !== 'development' ? (
                 <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '16px' }}>
                   <AuthButton />
                 </div>
               ) : (
-                <VStack spacing={6} width="100%">
+                <div className="flex flex-col gap-6 w-full">
                   {hasConflict ? (
-                    <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} width="100%">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full">
                       <Button
-                        flex={1}
-                        height="44px"
+                        className="flex-1 h-11 text-sm"
                         variant="outline"
-                        borderColor="var(--gold-dim)"
-                        color="var(--gold)"
-                        fontSize="14px"
+                        style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold)' }}
                         onClick={handleLoad}
-                        isLoading={isLoading}
-                        isDisabled={!cloudData || Object.keys(cloudData.storage).length === 0}
-                        _hover={{ bg: 'rgba(154,114,36,0.05)' }}
+                        disabled={isLoading || !cloudData || Object.keys(cloudData.storage).length === 0}
                       >
+                        {isLoading && <Loader2 className="animate-spin h-3 w-3 mr-1" />}
                         {t('読み込み')}
                       </Button>
                       <Button
-                        flex={1}
-                        height="44px"
-                        colorScheme="red"
-                        variant="solid"
-                        borderColor="var(--red)"
-                        color="var(--bg)"
-                        fontSize="14px"
+                        className="flex-1 h-11 text-sm"
+                        variant="destructive"
                         onClick={handleManualSave}
-                        isLoading={isSaving}
-                        isDisabled={saveStatus === true}
+                        disabled={isSaving || saveStatus === true}
                       >
+                        {isSaving && <Loader2 className="animate-spin h-3 w-3 mr-1" />}
                         クラウドを強制上書き
                       </Button>
-                    </Stack>
+                    </div>
                   ) : (
-                    <Box w="100%" p={4} bg={autoSyncEnabled ? "rgba(154,114,36,0.05)" : "rgba(255,255,255,0.02)"} borderRadius="12px" border="1px dashed var(--gold-dim)">
-                      <HStack spacing={3}>
+                    <div className="w-full p-4 rounded-xl" style={{ background: autoSyncEnabled ? 'rgba(154,114,36,0.05)' : 'rgba(255,255,255,0.02)', border: '1px dashed var(--gold-dim)' }}>
+                      <div className="flex items-center gap-3">
                         {autoSyncEnabled ? (
                           <>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
                               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                               <polyline points="22 4 12 14.01 9 11.01" />
                             </svg>
-                            <Text fontSize="14px" color="var(--gold)" fontWeight="bold">
-                              クラウドとの同期は正常です
-                            </Text>
+                            <p className="font-bold" style={{ fontSize: '14px', color: 'var(--gold)' }}>クラウドとの同期は正常です</p>
                           </>
                         ) : (
                           <>
@@ -274,64 +242,63 @@ const Cloud = () => {
                               <line x1="12" y1="8" x2="12" y2="12" />
                               <line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
-                            <Text fontSize="14px" color="var(--text2)">
-                              自動同期が停止しています
-                            </Text>
+                            <p style={{ fontSize: '14px', color: 'var(--text2)' }}>自動同期が停止しています</p>
                           </>
                         )}
-                      </HStack>
-                    </Box>
+                      </div>
+                    </div>
                   )}
                   {session != null && (
                     <Button
                       variant="ghost"
-                      size="xs"
-                      color="rgba(180,210,240,0.5)"
+                      size="sm"
+                      style={{ color: 'rgba(180,210,240,0.5)' }}
                       onClick={() => signOut()}
-                      _hover={{ color: 'var(--red)', bg: 'rgba(176,48,48,0.05)' }}
                     >
                       {t('サインアウト')}
                     </Button>
                   )}
-                </VStack>
+                </div>
               )}
-            </VStack>
+            </div>
           </div>
 
           <LocalSection exportLocal={exportLocal} />
-        </VStack>
+        </div>
 
-        <Modal isOpen={isDiffOpen} onClose={onDiffClose} size="xl" scrollBehavior="inside">
-          <ModalOverlay backdropFilter="blur(4px)" />
-          <ModalContent background="var(--bg)" border="1px solid var(--border)" borderRadius="20px">
-            <ModalHeader color="var(--gold)">
-              {modalMode === 'load' ? t('data-comparison') : 'クラウド上書きの確認'}
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={6} align="stretch">
-                <Text fontSize="sm" color="var(--text2)">
-                  {modalMode === 'load' 
-                    ? t('cloud-load-confirm-message') 
-                    : 'クラウドにある新しいデータを、現在のローカルデータで強制的に上書きします。よろしいですか？'}
-                </Text>
-                <ComparisonView 
-                  localStats={localStats!} 
-                  cloudStats={comparisonStats!} 
-                  show={true}
-                />
-              </VStack>
-            </ModalBody>
-            <ModalFooter gap={3}>
+        <Dialog open={isDiffOpen} onOpenChange={(open) => !open && onDiffClose()}>
+          <DialogContent
+            className="max-w-xl overflow-y-auto max-h-[80vh] rounded-[20px]"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+          >
+            <DialogHeader>
+              <DialogTitle style={{ color: 'var(--gold)' }}>
+                {modalMode === 'load' ? t('data-comparison') : 'クラウド上書きの確認'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-6">
+              <p className="text-sm" style={{ color: 'var(--text2)' }}>
+                {modalMode === 'load'
+                  ? t('cloud-load-confirm-message')
+                  : 'クラウドにある新しいデータを、現在のローカルデータで強制的に上書きします。よろしいですか？'}
+              </p>
+              <ComparisonView
+                localStats={localStats!}
+                cloudStats={comparisonStats!}
+                show={true}
+              />
+            </div>
+            <DialogFooter className="gap-3">
               <Button variant="ghost" onClick={onDiffClose}>{t('キャンセル')}</Button>
-              <Button 
-                colorScheme={modalMode === 'load' ? 'gold' : 'red'} 
+              <Button
+                variant={modalMode === 'load' ? 'default' : 'destructive'}
                 onClick={confirmAction}
               >
                 {modalMode === 'load' ? t('データを適用する') : 'クラウドを上書きする'}
               </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
