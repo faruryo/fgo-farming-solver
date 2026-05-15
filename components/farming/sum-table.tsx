@@ -1,5 +1,9 @@
- 
-import { Table, Tbody, Tr, Td } from '@chakra-ui/react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from '@/components/ui/table'
 import React from 'react'
 
 export const SumTable = ({
@@ -8,14 +12,14 @@ export const SumTable = ({
   rows: { key: string; value: number | string; unit: string }[]
 }) => (
   <Table>
-    <Tbody>
+    <TableBody>
       {rows.map(({ key, value, unit }) => (
-        <Tr key={key}>
-          <Td>{key}</Td>
-          <Td isNumeric>{value}</Td>
-          <Td>{unit}</Td>
-        </Tr>
+        <TableRow key={key}>
+          <TableCell>{key}</TableCell>
+          <TableCell className="text-right">{value}</TableCell>
+          <TableCell>{unit}</TableCell>
+        </TableRow>
       ))}
-    </Tbody>
+    </TableBody>
   </Table>
 )

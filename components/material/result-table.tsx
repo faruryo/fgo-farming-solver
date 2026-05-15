@@ -1,5 +1,12 @@
- 
-import { Input, Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import React, { FormEventHandler, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Item } from '../../interfaces/atlas-academy'
@@ -8,7 +15,6 @@ import { ItemLink } from '../common/item-link'
 
 const showPositive = (value?: number) =>
   value == null || value < 0 ? '' : value
-const px = [2, 4, 6]
 
 export const ResultTable = ({
   itemGroup,
@@ -29,35 +35,31 @@ export const ResultTable = ({
 
   return (
     <Table>
-      <Thead>
-        <Tr>
-          <Th px={px}>{t('アイテム')}</Th>
-          <Th px={px} isNumeric>
-            {t('必要数')}
-          </Th>
-          <Th px={px}>{t('所持数')}</Th>
-          <Th px={px} isNumeric>
-            {t('不足数')}
-          </Th>
-        </Tr>
-      </Thead>
-      <Tbody>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="px-2 md:px-4">{t('アイテム')}</TableHead>
+          <TableHead className="px-2 md:px-4 text-right">{t('必要数')}</TableHead>
+          <TableHead className="px-2 md:px-4">{t('所持数')}</TableHead>
+          <TableHead className="px-2 md:px-4 text-right">{t('不足数')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {itemGroup.map(([category, items]) => (
           <Fragment key={category}>
-            <Tr>
-              <Th px={px} colSpan={4}>
+            <TableRow>
+              <TableHead className="px-2 md:px-4" colSpan={4}>
                 {t(category)}
-              </Th>
-            </Tr>
+              </TableHead>
+            </TableRow>
             {items.map((item) => (
-              <Tr key={item.id}>
-                <Td px={px} py={3}>
+              <TableRow key={item.id}>
+                <TableCell className="px-2 md:px-4 py-3">
                   <ItemLink name={item.name} id={toApiItemId(item, items)} />
-                </Td>
-                <Td px={px} py={3} isNumeric>
+                </TableCell>
+                <TableCell className="px-2 md:px-4 py-3 text-right">
                   {amounts[item.id.toString()]}
-                </Td>
-                <Td px={px} py={0}>
+                </TableCell>
+                <TableCell className="px-2 md:px-4 py-0">
                   <Input
                     type="number"
                     name={item.id.toString()}
@@ -65,17 +67,17 @@ export const ResultTable = ({
                     min={0}
                     onChange={onChange}
                     onFocus={onFocus}
-                    w={20}
+                    className="w-20"
                   />
-                </Td>
-                <Td px={px} py={3} isNumeric>
+                </TableCell>
+                <TableCell className="px-2 md:px-4 py-3 text-right">
                   {showPositive(deficiencies[item.id])}
-                </Td>
-              </Tr>
+                </TableCell>
+              </TableRow>
             ))}
           </Fragment>
         ))}
-      </Tbody>
+      </TableBody>
     </Table>
   )
 }

@@ -1,5 +1,11 @@
- 
-import { Table, TableProps, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DropRate, Item, Quest } from '../../interfaces/fgodrop'
@@ -14,13 +20,12 @@ export const DropTable = ({
   quests,
   dropGroups,
   dropRateStyle,
-  ...rest
 }: {
   itemIndexes: { [id: string]: Localized<Item> }
   quests: Quest[]
   dropGroups: { [key: string]: DropRate[] }
   dropRateStyle: DropRateStyle
-} & TableProps) => {
+}) => {
   const { t } = useTranslation('items')
   const colSpan =
     Object.values(dropGroups).reduce(
@@ -29,31 +34,31 @@ export const DropTable = ({
     ) * 3
 
   return (
-    <Table {...rest}>
-      <Thead>
-        <Tr>
-          <Th>{t('エリア')}</Th>
-          <Th>{t('クエスト')}</Th>
-          <Th isNumeric>{t('サンプル数')}</Th>
-          <Th colSpan={colSpan}>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('エリア')}</TableHead>
+          <TableHead>{t('クエスト')}</TableHead>
+          <TableHead className="text-right">{t('サンプル数')}</TableHead>
+          <TableHead colSpan={colSpan}>
             {t('ドロップ')} ({dropRateStyle == 'rate' ? '%' : 'AP/個'})
-          </Th>
-        </Tr>
-      </Thead>
-      <Tbody>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {quests.map((quest) => (
-          <Tr key={quest.id}>
-            <Td>{quest.area}</Td>
-            <Td>{quest.name}</Td>
-            <Td isNumeric>-</Td>
+          <TableRow key={quest.id}>
+            <TableCell>{quest.area}</TableCell>
+            <TableCell>{quest.name}</TableCell>
+            <TableCell className="text-right">-</TableCell>
             {dropGroups[quest.id].map((row) => (
               <Fragment key={row.item_id}>
-                <Td pr={0}>
+                <TableCell className="pr-0">
                   <ItemLink
                     id={row.item_id}
                     name={itemIndexes[row.item_id].name}
                   />
-                </Td>
+                </TableCell>
                 <DropTd
                   dropRate={row.drop_rate}
                   dropRateStyle={dropRateStyle}
@@ -62,9 +67,9 @@ export const DropTable = ({
                 />
               </Fragment>
             ))}
-          </Tr>
+          </TableRow>
         ))}
-      </Tbody>
+      </TableBody>
     </Table>
   )
 }

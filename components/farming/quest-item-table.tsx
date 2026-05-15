@@ -1,7 +1,13 @@
- 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Table, Thead, Tr, Th, Tbody, Td } from '@chakra-ui/react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { DropRate, Item } from '../../interfaces/api'
 import { ItemLink } from '../common/item-link'
 
@@ -17,32 +23,32 @@ export const QuestItemTable = ({
   const { t } = useTranslation('farming')
   return (
     <Table>
-      <Thead>
-        <Tr>
-          <Th>{t('アイテム')}</Th>
-          <Th isNumeric>{t('獲得数')}</Th>
-        </Tr>
-      </Thead>
-      <Tbody>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('アイテム')}</TableHead>
+          <TableHead className="text-right">{t('獲得数')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {dropRates.map(({ item_id, drop_rate }) => (
-          <Tr key={item_id}>
-            <Td>
+          <TableRow key={item_id}>
+            <TableCell>
               <ItemLink
                 id={item_id}
                 name={itemIndexes[item_id]?.name}
                 icon={itemIndexes[item_id]?.icon}
               />
-            </Td>
-            <Td isNumeric>
+            </TableCell>
+            <TableCell className="text-right">
               {Math.round(
                 (typeof drop_rate == 'string'
                   ? parseFloat(drop_rate)
                   : drop_rate) * lap
               )}
-            </Td>
-          </Tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </Tbody>
+      </TableBody>
     </Table>
   )
 }

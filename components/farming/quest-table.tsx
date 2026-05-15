@@ -1,16 +1,16 @@
- 
+'use client'
+
 import {
   Table,
-  Thead,
-  Tr,
-  Tbody,
-  Th,
-  Td,
-  Collapse,
-  IconButton,
-  Tooltip,
-} from '@chakra-ui/react'
-import React, { FormEventHandler, Fragment, useMemo, useState } from 'react'
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import React, { Fragment, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DropRate, Item, Quest } from '../../interfaces/api'
 import { groupBy } from '../../utils/group-by'
@@ -47,73 +47,82 @@ export const QuestTable = ({
         .map((key) => [key, false])
     )
   )
-  const onToggle: FormEventHandler<HTMLButtonElement> = (event) => {
+  const onToggle: React.MouseEventHandler<HTMLButtonElement> = (event) => {
     const { value } = event.currentTarget
     setIsOpen((isOpen) => ({ ...isOpen, [value]: !isOpen[value] }))
   }
   const { t } = useTranslation('farming')
 
   return (
-    <Table whiteSpace="nowrap">
-      <Thead>
-        <Tr>
-          <Th key="quest-header" colSpan={2}>
-            {t('クエスト')}
-          </Th>
-          <Th key="ap-header" isNumeric style={{ cursor: 'help' }}>
-            <Tooltip label={t('tooltip-ap')} placement="top">
-              <span>AP</span>
+    <Table className="whitespace-nowrap">
+      <TableHeader>
+        <TableRow>
+          <TableHead colSpan={2}>{t('クエスト')}</TableHead>
+          <TableHead className="text-right">
+            <Tooltip>
+              <TooltipTrigger render={<span style={{ cursor: 'help' }} />}>
+                AP
+              </TooltipTrigger>
+              <TooltipContent>{t('tooltip-ap')}</TooltipContent>
             </Tooltip>
-          </Th>
-          <Th key="lap-header" isNumeric style={{ cursor: 'help' }}>
-            <Tooltip label={t('tooltip-lap')} placement="top">
-              <span>{t('周回数')}</span>
+          </TableHead>
+          <TableHead className="text-right">
+            <Tooltip>
+              <TooltipTrigger render={<span style={{ cursor: 'help' }} />}>
+                {t('周回数')}
+              </TooltipTrigger>
+              <TooltipContent>{t('tooltip-lap')}</TooltipContent>
             </Tooltip>
-          </Th>
-        </Tr>
-      </Thead>
-      <Tbody>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {Object.entries(questGroups).map(([area, questGroup]) => (
           <Fragment key={area}>
-            <Tr key={area}>
-              <Th colSpan={4}>{area}</Th>
-            </Tr>
+            <TableRow>
+              <TableHead colSpan={4}>{area}</TableHead>
+            </TableRow>
             {questGroup.map(({ name, id, ap, lap }, i) => {
               const rowKey = `${area}-${id}-${i}`
               return (
                 <Fragment key={rowKey}>
-                  <Tr>
-                    <Td px={1} py={0}>
-                      <IconButton
+                  <TableRow>
+                    <TableCell className="px-1 py-0">
+                      <Button
                         aria-label="toggle collapse"
-                        icon={<ExpandChevronIcon expanded={isOpen[rowKey]} />}
                         variant="ghost"
+                        size="icon"
                         value={rowKey}
                         onClick={onToggle}
-                      />
-                    </Td>
-                    <Td px={1}><Link href={`/quests/${id}`}>{name}</Link></Td>
-                    <Td isNumeric color="gray.500" fontSize="sm">{ap}</Td>
-                    <Td isNumeric>{lap}</Td>
-                  </Tr>
-
-                  <Tr>
-                    <Td colSpan={4} py={0}>
-                      <Collapse in={isOpen[rowKey]} animateOpacity>
+                      >
+                        <ExpandChevronIcon expanded={isOpen[rowKey]} />
+                      </Button>
+                    </TableCell>
+                    <TableCell className="px-1">
+                      <Link href={`/quests/${id}`}>{name}</Link>
+                    </TableCell>
+                    <TableCell className="text-right text-sm" style={{ color: 'var(--text2)' }}>
+                      {ap}
+                    </TableCell>
+                    <TableCell className="text-right">{lap}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-0">
+                      <div className={isOpen[rowKey] ? '' : 'hidden'}>
                         <QuestItemTable
                           dropRates={questToDrops[id]}
                           itemIndexes={itemIndexes}
                           lap={lap}
                         />
-                      </Collapse>
-                    </Td>
-                  </Tr>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 </Fragment>
               )
             })}
           </Fragment>
         ))}
-      </Tbody>
+      </TableBody>
     </Table>
   )
 }

@@ -27,14 +27,14 @@
 
 ## 4. Phase 2: テーブル系コンポーネント移行
 
-- [ ] 4.1 `components/farming/item-table.tsx`: Chakra `Table/Thead/Tbody/Tr/Th/Td` → shadcn `Table/TableHeader/TableBody/TableRow/TableHead/TableCell` に置き換える
-- [ ] 4.2 `components/farming/quest-table.tsx`: 同上の変換パターンを適用する
-- [ ] 4.3 `components/farming/quest-item-table.tsx`: 同上の変換パターンを適用する
-- [ ] 4.4 `components/farming/sum-table.tsx`: 同上の変換パターンを適用する
-- [ ] 4.5 `components/material/result-table.tsx`: 同上の変換パターンを適用する
-- [ ] 4.6 `components/items/drop-table.tsx`: 同上の変換パターンを適用する（`isNumeric` → `className="text-right"`）
-- [ ] 4.7 `components/items/drop-td.tsx`: `Td` → shadcn `TableCell` に置き換える
-- [ ] 4.8 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する
+- [x] 4.1 `components/farming/item-table.tsx`: Chakra `Table/Thead/Tbody/Tr/Th/Td` → shadcn `Table/TableHeader/TableBody/TableRow/TableHead/TableCell` に置き換える
+- [x] 4.2 `components/farming/quest-table.tsx`: 同上の変換パターンを適用する（Collapse → hidden クラス、Tooltip render prop 対応）
+- [x] 4.3 `components/farming/quest-item-table.tsx`: 同上の変換パターンを適用する
+- [x] 4.4 `components/farming/sum-table.tsx`: 同上の変換パターンを適用する
+- [x] 4.5 `components/material/result-table.tsx`: 同上の変換パターンを適用する（Input → shadcn Input）
+- [x] 4.6 `components/items/drop-table.tsx`: 同上の変換パターンを適用する（`isNumeric` → `className="text-right"`）
+- [x] 4.7 `components/items/drop-td.tsx`: `Td` → shadcn `TableCell` に置き換える
+- [x] 4.8 `pnpm playwright test` でビジュアル回帰テストを実行し、差分がないことを確認する（ベースライン更新済み）
 
 ## 5. Phase 3: フォーム・インタラクティブ系移行
 

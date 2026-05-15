@@ -1,15 +1,11 @@
- 
 import {
   Table,
-  Thead,
-  Tr,
-  Th,
-  Tbody,
-  Td,
-  Heading,
-  Wrap,
-  VStack,
-} from '@chakra-ui/react'
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Item } from '../../interfaces/api'
@@ -25,40 +21,34 @@ export const ItemTable = ({
 }) => {
   const { t } = useTranslation('farming')
   return (
-    <Wrap align="start" justify="space-between">
+    <div className="flex flex-wrap items-start justify-between gap-4">
       {itemGroups.map(([category, items]) => (
-        <VStack align="start" key={category}>
-          <Heading size="md">{category}</Heading>
+        <div key={category} className="flex flex-col items-start gap-2">
+          <h2 className="text-base font-semibold">{category}</h2>
           <Table>
-            <Thead>
-              <Tr>
-                <Th px={4}>{t('アイテム')}</Th>
-                <Th px={2} isNumeric>
-                  {t('獲得数')}
-                </Th>
-                <Th px={4} isNumeric>
-                  {t('必要数')}
-                </Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">{t('アイテム')}</TableHead>
+                <TableHead className="px-2 text-right">{t('獲得数')}</TableHead>
+                <TableHead className="px-4 text-right">{t('必要数')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {items.map((item) => (
-                <Tr key={item.id}>
-                  <Td px={4}>
+                <TableRow key={item.id}>
+                  <TableCell className="px-4">
                     <ItemLink id={item.id} name={item.name} icon={item.icon} />
-                  </Td>
-                  <Td px={2} isNumeric>
-                    {item.count}
-                  </Td>
-                  <Td px={4} isNumeric>
+                  </TableCell>
+                  <TableCell className="px-2 text-right">{item.count}</TableCell>
+                  <TableCell className="px-4 text-right">
                     {itemToQuery[item.id] || '-'}
-                  </Td>
-                </Tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </Tbody>
+            </TableBody>
           </Table>
-        </VStack>
+        </div>
       ))}
-    </Wrap>
+    </div>
   )
 }
