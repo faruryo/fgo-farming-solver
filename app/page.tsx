@@ -1,11 +1,5 @@
 'use client'
 
-import {
-  Box,
-  SimpleGrid,
-  Skeleton,
-  VStack,
-} from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useDashboardMeta } from '../hooks/use-dashboard-meta'
@@ -18,16 +12,13 @@ import { FarmingWizard } from '../components/dashboard/FarmingWizard'
 import { HistoryGraph } from '../components/dashboard/HistoryGraph'
 import { NearGoalSection } from '../components/dashboard/NearGoalSection'
 import { Link } from '../components/common/link'
-
-const MotionBox = motion.create(Box)
+import { Skeleton } from '@/components/ui/skeleton'
 
 const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
+    transition: { staggerChildren: 0.1 }
   }
 }
 
@@ -43,20 +34,20 @@ export default function HomePage() {
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <VStack align="stretch" spacing={6}>
-          
+        <div className="flex flex-col gap-6">
+
           {/* Header */}
-          <MotionBox
+          <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="c-page-header"
           >
-            <VStack align="start" spacing={2}>
-              <VStack align="start" spacing={0}>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col">
                 <div className="c-page-en">MASTER TERMINAL</div>
                 <h1 className="c-page-title">{t('FGO周回ダッシュボード')}</h1>
-              </VStack>
-              <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+              </div>
+              <div className="flex gap-2 flex-wrap items-center">
                 <Link
                   href="/material"
                   style={{
@@ -91,88 +82,64 @@ export default function HomePage() {
                 >
                   周回ソルバー →
                 </Link>
-                <Box
-                  display="flex"
-                  gap={3}
-                  ml={1}
-                  pl={2}
-                  borderLeft="1px solid"
-                  borderLeftColor="var(--border)"
+                <div
+                  className="flex gap-3 ml-1 pl-2"
+                  style={{ borderLeft: '1px solid var(--border)' }}
                 >
-                  <Link
-                    href="/farming/history"
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--text3)',
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                    }}
-                  >
+                  <Link href="/farming/history" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
                     計算履歴
                   </Link>
-                  <Link
-                    href="/servants"
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--text3)',
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                    }}
-                  >
+                  <Link href="/servants" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
                     サーヴァント
                   </Link>
-                </Box>
-              </Box>
-            </VStack>
-          </MotionBox>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
           {isLoading ? (
-            <SimpleGrid columns={[1, 1, 2]} spacing={8}>
-              <Skeleton height="300px" borderRadius="lg" />
-              <Skeleton height="300px" borderRadius="lg" />
-            </SimpleGrid>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Skeleton className="h-[300px] rounded-lg" />
+              <Skeleton className="h-[300px] rounded-lg" />
+            </div>
           ) : (
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-            >
-              <VStack align="stretch" spacing={10}>
-                {/* Top Section: Event & Progress (balanced 2-col) */}
-                <MotionBox variants={item}>
-                  <SimpleGrid columns={[1, 1, 1, 2]} spacing={8} alignItems="start">
-                    <VStack align="stretch" spacing={8}>
+            <motion.div variants={container} initial="hidden" animate="show">
+              <div className="flex flex-col gap-10">
+                {/* Top Section: Event & Progress */}
+                <motion.div variants={item}>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+                    <div className="flex flex-col gap-8">
                       <FarmingWizard />
                       <EventSection events={dashboardMeta?.events || []} />
-                    </VStack>
+                    </div>
                     <ProgressSection />
-                  </SimpleGrid>
-                </MotionBox>
+                  </div>
+                </motion.div>
 
-                {/* Near Goal + Recommended Quest: PCでは横並び */}
-                <SimpleGrid columns={[1, 1, 2]} spacing={6} alignItems="start">
+                {/* Near Goal + Recommended Quest */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                   <NearGoalSection />
                   <RecommendedQuest />
-                </SimpleGrid>
+                </div>
 
-                {/* History Graph Section */}
-                <MotionBox variants={item}>
+                {/* History Graph */}
+                <motion.div variants={item}>
                   <HistoryGraph />
-                </MotionBox>
+                </motion.div>
 
-                {/* Recent Servants Section */}
-                <MotionBox variants={item}>
+                {/* Recent Servants */}
+                <motion.div variants={item}>
                   <RecentServantSection servants={dashboardMeta?.recentServants || []} />
-                </MotionBox>
+                </motion.div>
 
-                {/* Gacha Section */}
-                <MotionBox variants={item}>
+                {/* Gacha */}
+                <motion.div variants={item}>
                   <GachaSection gachas={dashboardMeta?.gachas || []} />
-                </MotionBox>
-              </VStack>
+                </motion.div>
+              </div>
             </motion.div>
           )}
-        </VStack>
+        </div>
       </div>
     </div>
   )

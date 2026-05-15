@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useToast } from '@chakra-ui/react'
 import { EnrichedItem, getItems } from '../lib/get-items'
 import { getStats } from '../components/cloud/parts/stats-logic'
 
@@ -45,9 +44,7 @@ export const useCloudSync = () => {
   const { data: session } = useSession()
   const { i18n, t } = useTranslation('common')
   const router = useRouter()
-  const toast = useToast()
-
-  const [isSaving, setIsSaving] = useState(false)
+const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [saveStatus, setSaveStatus] = useState<false | true | 'failed'>(false)
   const [cloudData, setCloudData] = useState<CloudData | null>(null)
@@ -118,16 +115,6 @@ export const useCloudSync = () => {
       }
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newLocalMeta))
 
-      if (!silent) {
-        toast({
-          title: t('読み込みました'),
-          status: 'success',
-          duration: 2000,
-          isClosable: true,
-          position: 'top'
-        })
-      }
-
       setHasConflict(false)
       window.dispatchEvent(new Event('localStorageUpdated'))
       window.dispatchEvent(new CustomEvent('ls-sync'))
@@ -135,7 +122,7 @@ export const useCloudSync = () => {
     } finally {
       isApplyingCloudDataRef.current = false
     }
-  }, [getLocalMetadata, router, toast, t])
+  }, [getLocalMetadata, router, t])
 
   const checkConflict = useCallback((cloud: CloudData) => {
     const local = getLocalMetadata()
@@ -161,18 +148,11 @@ export const useCloudSync = () => {
       if (autoSyncEnabled && isCloudNewer) {
         console.log('Safe Auto-Load (Sync) triggered')
         applyData(cloud.storage, cloud.metadata, true)
-        toast({
-          title: t('auto-load-success', '最新データを同期しました'),
-          status: 'info',
-          duration: 3000,
-          isClosable: true,
-          position: 'bottom-right'
-        })
       }
     }
 
     return { isCloudNewer, isConflict }
-  }, [autoSyncEnabled, applyData, getLocalMetadata, toast, t])
+  }, [autoSyncEnabled, applyData, getLocalMetadata, t])
 
   const fetchCloudData = useCallback(async () => {
     if (session == null) {

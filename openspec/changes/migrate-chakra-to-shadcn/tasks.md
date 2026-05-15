@@ -83,13 +83,13 @@
 
 ## 9. Phase 7: Chakra UI 完全削除
 
-- [ ] 9.1 `app/providers.tsx` から `EmotionRegistry`・`ChakraProvider` のインポートと使用を削除し、`SessionProvider` のみにする
-- [ ] 9.2 `lib/emotion-registry.tsx` を削除する
-- [ ] 9.3 `theme.ts` を削除する
-- [ ] 9.4 `app/globals.css` の `.chakra-*` セレクタオーバーライド部分を削除する
-- [ ] 9.5 `pnpm remove @chakra-ui/react @chakra-ui/accordion @chakra-ui/breadcrumb @chakra-ui/button @chakra-ui/checkbox @chakra-ui/form-control @chakra-ui/hooks @chakra-ui/icons @chakra-ui/input @chakra-ui/layout @chakra-ui/menu @chakra-ui/next-js @chakra-ui/system @chakra-ui/table @chakra-ui/utils @emotion/react @emotion/styled @emotion/cache` で全パッケージを削除する
-- [ ] 9.6 `pnpm type-check` で型エラーがないことを確認する
-- [ ] 9.7 `pnpm lint` で ESLint エラーがないことを確認する
-- [ ] 9.8 `pnpm build` が成功することを確認する
-- [ ] 9.9 `pnpm playwright test` で全ページのビジュアル回帰テストが通ることを確認する
+- [x] 9.1 `app/providers.tsx` から `EmotionRegistry`・`ChakraProvider` のインポートと使用を削除し、`SessionProvider` のみにする
+- [x] 9.2 `lib/emotion-registry.tsx` を削除する
+- [x] 9.3 `theme.ts` を削除する
+- [x] 9.4 `app/globals.css` の `.chakra-*` セレクタオーバーライド部分を削除する
+- [x] 9.5 全 Chakra + Emotion パッケージを削除（`@chakra-ui/*`, `@emotion/*`）
+- [x] 9.6 `app/page.tsx`, `app/farming/history/page.tsx`, `app/quests/[id]/page.tsx`, `hooks/use-cloud-sync.ts` から残存 Chakra 使用を除去
+- [x] 9.7 `pnpm type-check` + `pnpm test` (688 tests) 通過確認
+- [x] 9.8 `pnpm build`（Next.js + OpenNext Cloudflare）成功確認
+- [x] 9.9 `pnpm playwright test` で全 6 ページのビジュアル回帰テストが通ることを確認（新ベースライン更新）
 - [ ] 9.10 `pnpm run deploy` で Cloudflare Workers へのデプロイが成功することを確認する

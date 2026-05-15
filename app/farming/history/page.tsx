@@ -1,28 +1,16 @@
-"use client";
+'use client'
 
 import React, { useEffect, useState } from 'react'
-import {
-  Box,
-  Container,
-  Text,
-  VStack,
-  HStack,
-  Spinner,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  IconButton,
-  Tooltip,
-} from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '../../../components/common/link'
 import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 import { FaExternalLinkAlt, FaHistory } from 'react-icons/fa'
 import { FarmingHistoryChart, HistoryItem } from '../../../components/farming/FarmingHistoryChart'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 const OBJECTIVE_BADGE: Record<string, string> = {
   ap:   'AP MIN',
@@ -45,103 +33,101 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <Container maxW="container.lg" py={20}>
-        <VStack spacing={8}>
-          <Spinner size="xl" color="var(--gold)" />
-          <Text color="var(--gold-dim)">Loading history...</Text>
-        </VStack>
-      </Container>
+      <div className="c-page">
+        <div className="c-page-inner flex flex-col items-center justify-center gap-4 py-20">
+          <Loader2 className="h-10 w-10 animate-spin" style={{ color: 'var(--gold)' }} />
+          <p style={{ color: 'var(--gold-dim)' }}>Loading history...</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Box className="c-page">
-      <Container maxW="container.lg" className="c-page-inner">
-        <VStack align="stretch" spacing={8}>
-          <HStack justify="space-between">
-            <VStack align="start" spacing={0}>
-              <Text className="c-page-en" letterSpacing="0.2em">FARMING HISTORY</Text>
-              <Text as="h1" className="c-page-title" display="flex" alignItems="center">
-                <Box as={FaHistory} mr={3} color="var(--gold)" />
+    <div className="c-page">
+      <div className="c-page-inner">
+        <div className="flex flex-col gap-8">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col">
+              <div className="c-page-en" style={{ letterSpacing: '0.2em' }}>FARMING HISTORY</div>
+              <h1 className="c-page-title flex items-center gap-3">
+                <FaHistory style={{ color: 'var(--gold)' }} />
                 {t('common:計算履歴')}
-              </Text>
-            </VStack>
-          </HStack>
+              </h1>
+            </div>
+          </div>
 
           {history.length > 1 && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-              <Box className="c-card" p={6}>
+              <div className="c-card p-6">
                 <FarmingHistoryChart history={history} />
-              </Box>
+              </div>
             </motion.div>
           )}
 
-          <Box className="c-card" overflowX="auto">
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th color="var(--gold-dim)">{t('日時')}</Th>
-                  <Th color="var(--gold-dim)">{t('目的')}</Th>
-                  <Th color="var(--gold)" isNumeric>合計消費AP</Th>
-                  <Th color="var(--gold)" isNumeric>合計周回数</Th>
-                  <Th />
-                </Tr>
-              </Thead>
-              <Tbody>
+          <div className="c-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead style={{ color: 'var(--gold-dim)' }}>{t('日時')}</TableHead>
+                  <TableHead style={{ color: 'var(--gold-dim)' }}>{t('目的')}</TableHead>
+                  <TableHead className="text-right" style={{ color: 'var(--gold)' }}>合計消費AP</TableHead>
+                  <TableHead className="text-right" style={{ color: 'var(--gold)' }}>合計周回数</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {history.map(item => (
-                  <Tr key={item.id} _hover={{ bg: 'rgba(154,114,36,0.05)' }}>
-                    <Td fontSize="sm" color="var(--text)">
+                  <TableRow key={item.id}>
+                    <TableCell className="text-sm" style={{ color: 'var(--text)' }}>
                       {new Date(item.created_at).toLocaleString()}
-                    </Td>
-                    <Td>
-                      <Badge
-                        colorScheme={item.objective === 'ap' ? 'orange' : item.objective === 'lap' ? 'blue' : 'purple'}
-                        variant="outline"
-                        fontSize="10px"
-                      >
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px]">
                         {OBJECTIVE_BADGE[item.objective] ?? item.objective}
                       </Badge>
-                    </Td>
-                    <Td isNumeric color="var(--text2)">
+                    </TableCell>
+                    <TableCell className="text-right" style={{ color: 'var(--text2)' }}>
                       {Math.round(item.total_ap).toLocaleString()}
-                    </Td>
-                    <Td isNumeric color="var(--text2)">
+                    </TableCell>
+                    <TableCell className="text-right" style={{ color: 'var(--text2)' }}>
                       {Math.round(item.total_lap).toLocaleString()}
-                    </Td>
-                    <Td>
-                      <Tooltip label={t('結果を見る')}>
-                        <IconButton
-                          as={Link}
-                          href={`/farming/results/${item.id}`}
-                          aria-label="View result"
-                          icon={<FaExternalLinkAlt />}
-                          size="sm"
-                          variant="ghost"
-                          color="var(--gold-dim)"
-                          _hover={{ color: 'var(--gold)', bg: 'transparent' }}
-                        />
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger render={<span />}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            style={{ color: 'var(--gold-dim)' }}
+                            render={<Link href={`/farming/results/${item.id}`} />}
+                          >
+                            <FaExternalLinkAlt />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('結果を見る')}</TooltipContent>
                       </Tooltip>
-                    </Td>
-                  </Tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {history.length === 0 && (
-                  <Tr>
-                    <Td colSpan={5} textAlign="center" py={10} color="var(--gold-dim)">
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10" style={{ color: 'var(--gold-dim)' }}>
                       {t('履歴がありません')}
-                    </Td>
-                  </Tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </Tbody>
+              </TableBody>
             </Table>
-          </Box>
+          </div>
 
-          <Box textAlign="center">
+          <div className="text-center">
             <Link href="/farming" className="c-back-btn">
               {t('計算機に戻る')}
             </Link>
-          </Box>
-        </VStack>
-      </Container>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

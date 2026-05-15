@@ -1,15 +1,16 @@
-/* eslint-disable */
 'use client'
 
 import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Box, Container, IconButton, Heading, Text, VStack, HStack, SimpleGrid, Badge, Image, Divider, Card, CardBody, Spinner, Flex, Link } from '@chakra-ui/react'
-import { FaChevronLeft, FaInfoCircle, FaMapMarkerAlt, FaBolt, FaLayerGroup } from 'react-icons/fa'
+import { FaChevronLeft, FaMapMarkerAlt, FaBolt, FaLayerGroup } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
+import { Loader2 } from 'lucide-react'
 import { useDrops } from '../../../hooks/use-drops'
 import { useQuestWave } from '../../../hooks/use-quest-wave'
 import { Quest } from '../../../interfaces/api'
 import { getItemIconUrl } from '../../../lib/get-item-icon-url'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 export default function QuestDetailPage() {
   const { id } = useParams()
@@ -22,173 +23,147 @@ export default function QuestDetailPage() {
 
   if (isLoading) {
     return (
-      <Flex minH="100vh" align="center" justify="center">
-        <Spinner size="xl" color="var(--gold)" thickness="4px" />
-      </Flex>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin" style={{ color: 'var(--gold)' }} />
+      </div>
     )
   }
 
   if (!quest) {
     return (
-      <Container maxW="container.lg" py={20}>
-        <VStack spacing={6}>
-          <Heading color="var(--navy)">Quest Not Found</Heading>
-          <Text color="var(--text2)">The quest you are looking for does not exist or has been removed.</Text>
-          <IconButton 
-            aria-label="Go back" 
-            icon={<FaChevronLeft />} 
-            onClick={() => router.back()}
-            variant="ghost"
-          >
-            Back to Dashboard
-          </IconButton>
-        </VStack>
-      </Container>
+      <div className="c-page">
+        <div className="c-page-inner flex flex-col items-center gap-6 py-20">
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--navy)' }}>Quest Not Found</h2>
+          <p style={{ color: 'var(--text2)' }}>The quest you are looking for does not exist or has been removed.</p>
+          <Button variant="ghost" onClick={() => router.back()}>
+            <FaChevronLeft className="mr-2" /> Back
+          </Button>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Box minH="100vh" bg="var(--bg)" pt="56px" pb={10}>
+    <div className="min-h-screen pb-10 pt-14" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <Box 
-        bg="var(--panel)" 
-        backdropFilter="blur(10px)" 
-        borderBottom="1px solid var(--border)"
-        position="sticky"
-        top={0}
-        zIndex={10}
-        py={4}
+      <div
+        className="sticky top-0 z-10 py-4 border-b backdrop-blur-[10px]"
+        style={{ background: 'var(--panel)', borderColor: 'var(--border)' }}
       >
-        <Container maxW="container.lg">
-          <HStack spacing={4}>
-            <IconButton
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex items-center gap-4">
+            <Button
               aria-label="Back"
-              icon={<FaChevronLeft />}
               variant="ghost"
-              color="var(--text)"
+              size="icon"
+              style={{ color: 'var(--text)' }}
               onClick={() => router.back()}
-              _hover={{ bg: 'rgba(255,255,255,0.1)' }}
-            />
-            <VStack align="start" spacing={0}>
-              <Text fontSize="xs" color="var(--gold)" fontWeight="bold" letterSpacing="wider">
+            >
+              <FaChevronLeft />
+            </Button>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold tracking-wider" style={{ color: 'var(--gold)' }}>
                 {quest.section === 'Daily' ? 'DAILY QUEST' : 'FREE QUEST'}
-              </Text>
-              <Heading size="md" color="var(--navy)">{quest.name}</Heading>
-            </VStack>
-            <Flex flex={1} justify="end">
-               <Badge colorScheme="purple" variant="solid" px={3} py={1} borderRadius="full">
-                 {quest.ap} AP
-               </Badge>
-            </Flex>
-          </HStack>
-        </Container>
-      </Box>
+              </span>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--navy)' }}>{quest.name}</h2>
+            </div>
+            <div className="flex-1 flex justify-end">
+              <Badge className="px-3 py-1 rounded-full">{quest.ap} AP</Badge>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Container maxW="container.lg" pt={6}>
-        <SimpleGrid columns={[1, 1, 3]} spacing={6}>
+      <div className="max-w-5xl mx-auto px-4 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main Info Column */}
-          <VStack align="stretch" spacing={6} gridColumn={['span 1', 'span 1', 'span 2']}>
-            <Card variant="outline" bg="var(--panel2)" border="none" className="u-fgo-card">
-              <CardBody>
-                <VStack align="stretch" spacing={6}>
-                  <HStack spacing={3} color="var(--text2)">
-                    <FaMapMarkerAlt />
-                    <Text fontWeight="medium">{quest.area}</Text>
-                  </HStack>
-                  
-                  <Divider borderColor="var(--border)" opacity={0.3} />
+          <div className="md:col-span-2 flex flex-col gap-6">
+            <div className="c-card p-6">
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-3" style={{ color: 'var(--text2)' }}>
+                  <FaMapMarkerAlt />
+                  <span className="font-medium">{quest.area}</span>
+                </div>
 
-                  <Box>
-                    <HStack spacing={2} mb={4}>
-                      <FaLayerGroup color="var(--gold)" />
-                      <Heading size="sm" color="var(--navy)">Wave Details</Heading>
-                    </HStack>
+                <hr style={{ borderColor: 'var(--border)', opacity: 0.3 }} />
 
-                    {isWaveLoading ? (
-                      <Flex justify="center" py={8}>
-                        <Spinner size="md" color="var(--gold)" />
-                      </Flex>
-                    ) : waves && waves.length > 0 ? (
-                      <VStack align="stretch" spacing={6}>
-                        {waves.map((wave, wIdx) => (
-                          <Box key={wIdx} p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl" borderLeft="4px solid var(--gold)">
-                            <HStack justify="space-between" mb={3}>
-                              <Badge variant="outline" colorScheme="yellow">WAVE {wIdx + 1}</Badge>
-                              <Text fontSize="xs" color="var(--text3)">{wave.enemies.length} ENEMIES</Text>
-                            </HStack>
-                            <SimpleGrid columns={[1, 2, 3]} spacing={3}>
-                              {wave.enemies.map((enemy: any, eIdx: number) => (
-                                <Box 
-                                  key={eIdx} 
-                                  p={3} 
-                                  bg="var(--panel3)" 
-                                  borderRadius="lg" 
-                                  border="1px solid var(--border)"
-                                  position="relative"
-                                  overflow="hidden"
-                                >
-                                  <VStack align="start" spacing={1}>
-                                    <HStack spacing={2} width="100%" justify="space-between">
-                                      <Badge size="xs" colorScheme={enemy.className === 'archer' ? 'green' : enemy.className === 'saber' ? 'red' : 'blue'}>
-                                        {enemy.className.toUpperCase()}
-                                      </Badge>
-                                      <Badge variant="ghost" colorScheme="orange" fontSize="10px">
-                                        {enemy.attribute}
-                                      </Badge>
-                                    </HStack>
-                                    <Text fontSize="sm" fontWeight="bold" noOfLines={1}>{enemy.name}</Text>
-                                    <HStack spacing={1} color="var(--text2)">
-                                      <Text fontSize="xs">HP:</Text>
-                                      <Text fontSize="xs" fontWeight="bold">{enemy.hp.toLocaleString()}</Text>
-                                    </HStack>
-                                  </VStack>
-                                </Box>
-                              ))}
-                            </SimpleGrid>
-                          </Box>
-                        ))}
-                      </VStack>
-                    ) : (
-                      <Box p={8} textAlign="center" border="2px dashed var(--border)" borderRadius="xl">
-                        <Text color="var(--text3)" mb={3}>Enemy data not available for this quest.</Text>
-                        <Link
-                          href={`https://www.google.com/search?q=${encodeURIComponent(`FGO ${quest.area} ${quest.name} 周回`)}`}
-                          isExternal
-                          color="var(--gold)"
-                          fontSize="sm"
-                          _hover={{ textDecoration: 'underline' }}
-                        >
-                          「{quest.area} {quest.name}」をGoogleで検索 →
-                        </Link>
-                      </Box>
-                    )}
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          </VStack>
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <FaLayerGroup style={{ color: 'var(--gold)' }} />
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>Wave Details</h3>
+                  </div>
+
+                  {isWaveLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--gold)' }} />
+                    </div>
+                  ) : waves && waves.length > 0 ? (
+                    <div className="flex flex-col gap-6">
+                      {waves.map((wave, wIdx) => (
+                        <div key={wIdx} className="p-4 rounded-xl border-l-4" style={{ background: 'rgba(0,0,0,0.2)', borderLeftColor: 'var(--gold)' }}>
+                          <div className="flex justify-between items-center mb-3">
+                            <Badge variant="outline">WAVE {wIdx + 1}</Badge>
+                            <span className="text-xs" style={{ color: 'var(--text3)' }}>{wave.enemies.length} ENEMIES</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            {wave.enemies.map((enemy: any, eIdx: number) => (
+                              <div
+                                key={eIdx}
+                                className="p-3 rounded-lg border relative overflow-hidden"
+                                style={{ background: 'var(--panel3)', borderColor: 'var(--border)' }}
+                              >
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex justify-between items-center w-full">
+                                    <Badge className="text-[10px]">{enemy.className.toUpperCase()}</Badge>
+                                    <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{enemy.attribute}</span>
+                                  </div>
+                                  <p className="text-sm font-bold truncate">{enemy.name}</p>
+                                  <div className="flex items-center gap-1" style={{ color: 'var(--text2)' }}>
+                                    <span className="text-xs">HP:</span>
+                                    <span className="text-xs font-bold">{enemy.hp.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center rounded-xl border-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
+                      <p className="mb-3" style={{ color: 'var(--text3)' }}>Enemy data not available for this quest.</p>
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(`FGO ${quest.area} ${quest.name} 周回`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm hover:underline"
+                        style={{ color: 'var(--gold)' }}
+                      >
+                        「{quest.area} {quest.name}」をGoogleで検索 →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Sidebar / Drop Info */}
-          <VStack align="stretch" spacing={6}>
-            <Card variant="outline" bg="var(--panel2)" border="none" className="u-fgo-card">
-              <CardBody>
-                <VStack align="stretch" spacing={4}>
-                  <HStack spacing={2}>
-                    <FaBolt color="var(--gold)" />
-                    <Heading size="sm" color="var(--navy)">Drop Information</Heading>
-                  </HStack>
-                  <Text fontSize="xs" color="var(--text3)">Material drop rates based on community data.</Text>
-                  
-                  {/* We would need drop rates for this quest here. 
-                      Since we have useDrops, we can filter them. */}
-                  <QuestDropInfo questId={quest.id} />
-                </VStack>
-              </CardBody>
-            </Card>
-          </VStack>
-        </SimpleGrid>
-      </Container>
-    </Box>
+          <div className="flex flex-col gap-6">
+            <div className="c-card p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <FaBolt style={{ color: 'var(--gold)' }} />
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>Drop Information</h3>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text3)' }}>Material drop rates based on community data.</p>
+                <QuestDropInfo questId={quest.id} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -196,25 +171,27 @@ const QuestDropInfo: React.FC<{ questId: string }> = ({ questId }) => {
   const { items, drop_rates } = useDrops()
   const relevantRates = drop_rates?.filter(dr => dr.quest_id === questId).sort((a, b) => b.drop_rate - a.drop_rate)
 
-  if (!relevantRates || relevantRates.length === 0) return <Text fontSize="sm" color="var(--text3)">No drop data available.</Text>
+  if (!relevantRates || relevantRates.length === 0) {
+    return <p className="text-sm" style={{ color: 'var(--text3)' }}>No drop data available.</p>
+  }
 
   return (
-    <VStack align="stretch" spacing={3} mt={2}>
+    <div className="flex flex-col gap-3 mt-2">
       {relevantRates.map(dr => {
         const item = items?.find(i => i.id === dr.item_id)
         if (!item) return null
         return (
-          <HStack key={dr.item_id} spacing={3} p={2} bg="rgba(255,255,255,0.05)" borderRadius="md">
-            <Box width="32px" height="32px">
-              <Image src={getItemIconUrl(item.icon) || `https://via.placeholder.com/32`} alt={item.name} />
-            </Box>
-            <VStack align="start" spacing={0} flex={1}>
-              <Text fontSize="xs" fontWeight="bold" noOfLines={1}>{item.name}</Text>
-              <Text fontSize="10px" color="var(--text3)">{Math.round(dr.drop_rate * 100)}% Drop</Text>
-            </VStack>
-          </HStack>
+          <div key={dr.item_id} className="flex items-center gap-3 p-2 rounded-md" style={{ background: 'rgba(255,255,255,0.05)' }}>
+            <div className="w-8 h-8 flex-shrink-0">
+              <img src={getItemIconUrl(item.icon)} alt={item.name} width={32} height={32} />
+            </div>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-xs font-bold truncate">{item.name}</span>
+              <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{Math.round(dr.drop_rate * 100)}% Drop</span>
+            </div>
+          </div>
         )
       })}
-    </VStack>
+    </div>
   )
 }
