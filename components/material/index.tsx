@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { NiceServant, Item } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
@@ -40,6 +40,7 @@ export const Index = ({
   useEffect(() => setMounted(true), [])
 
   const [currentHash, setCurrentHash] = useState('')
+  const processedHash = useRef('')
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
     window.addEventListener('hashchange', handleHashChange)
@@ -136,8 +137,18 @@ export const Index = ({
 
   // Handle automatic scroll and filter reset based on URL hash
   useEffect(() => {
-    if (!mounted || !currentHash.startsWith('#svt-')) return
+    if (!mounted) return
     
+    // Reset processed hash if the hash cleared or changed to non-servant hash
+    if (!currentHash.startsWith('#svt-')) {
+      processedHash.current = ''
+      return
+    }
+
+    // Skip if we already highlighted this specific hash to avoid redundant triggers
+    // during servant state updates (which change 'sorted' array)
+    if (currentHash === processedHash.current) return
+
     const svtId = parseInt(currentHash.replace('#svt-', ''))
     if (isNaN(svtId)) return
 
@@ -161,6 +172,7 @@ export const Index = ({
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         el.classList.add('u-highlight')
+        processedHash.current = currentHash // Mark as processed
         setTimeout(() => el.classList.remove('u-highlight'), 5000)
       }
     }, 400)
