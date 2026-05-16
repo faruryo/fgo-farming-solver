@@ -35,7 +35,7 @@ export const ItemFieldset = ({
           <AccordionItem key={largeCategory} value={largeCategory}>
             <AccordionTrigger>{largeCategory}</AccordionTrigger>
             <AccordionContent>
-              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 {itemGroup.map(([category, items]) => (
                   <ItemCategoryFieldset
                     key={category}
