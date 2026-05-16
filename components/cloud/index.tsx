@@ -129,7 +129,7 @@ const Cloud = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-8 py-8">
+        <div className="flex flex-col items-center gap-8 py-8">
           {/* Cloud Sync Section */}
           <div className="c-card max-w-[600px] w-full p-8" style={{ border: hasConflict ? '1px solid var(--red)' : '1px solid var(--border)' }}>
             <div className="flex flex-col gap-6">

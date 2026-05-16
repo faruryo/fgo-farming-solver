@@ -2,6 +2,18 @@ import { TableCell } from '@/components/ui/table'
 import React from 'react'
 import { DropRateStyle } from './item'
 
+const getValueColor = (value: number, style: DropRateStyle): string => {
+  if (style === 'rate') {
+    if (value >= 30) return 'var(--green)'
+    if (value >= 10) return 'inherit'
+    return 'var(--text3)'
+  }
+  // AP mode: lower is better
+  if (value <= 20) return 'var(--green)'
+  if (value <= 60) return 'inherit'
+  return 'var(--text3)'
+}
+
 export const DropTd = ({
   dropRate,
   dropRateStyle,
@@ -14,12 +26,7 @@ export const DropTd = ({
   samples?: number
 }) => {
   if (dropRate == null) {
-    return (
-      <>
-        <TableCell className="pr-0 text-right">-</TableCell>
-        <TableCell></TableCell>
-      </>
-    )
+    return <TableCell className="text-right text-muted-foreground">—</TableCell>
   }
   const value = dropRateStyle == 'rate' ? dropRate * 100 : ap / dropRate
   const diffStr =
@@ -34,11 +41,15 @@ export const DropTd = ({
         })()
       : null
   return (
-    <>
-      <TableCell className="pr-0 text-right">{value.toFixed(1)}</TableCell>
-      <TableCell className="pl-0 text-right text-xs" style={{ color: 'var(--text3)' }}>
-        {diffStr}
-      </TableCell>
-    </>
+    <TableCell className="text-right whitespace-nowrap">
+      <span className="font-medium tabular-nums" style={{ color: getValueColor(value, dropRateStyle) }}>
+        {value.toFixed(1)}
+      </span>
+      {diffStr && (
+        <span className="text-xs ml-1" style={{ color: 'var(--text3)' }}>
+          {diffStr}
+        </span>
+      )}
+    </TableCell>
   )
 }

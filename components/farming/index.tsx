@@ -184,7 +184,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="flex flex-col items-start gap-8">
+          <div className="flex flex-col gap-8">
             <ItemFieldset
               itemGroups={itemGroups}
               inputItems={itemCounts}

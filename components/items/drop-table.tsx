@@ -27,19 +27,19 @@ export const DropTable = ({
   dropRateStyle: DropRateStyle
 }) => {
   const { t } = useTranslation('items')
-  const colSpan =
-    Object.values(dropGroups).reduce(
-      (acc, cur) => (cur.length > acc ? cur.length : acc),
-      0
-    ) * 3
+  const maxDropCount = Object.values(dropGroups).reduce(
+    (acc, cur) => (cur.length > acc ? cur.length : acc),
+    0
+  )
+  const colSpan = maxDropCount * 2
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>{t('エリア')}</TableHead>
-          <TableHead>{t('クエスト')}</TableHead>
-          <TableHead className="text-right">{t('サンプル数')}</TableHead>
+          <TableHead className="w-28 whitespace-nowrap">{t('エリア')}</TableHead>
+          <TableHead className="min-w-[8rem]">{t('クエスト')}</TableHead>
+          <TableHead className="w-20 text-right">{t('サンプル数')}</TableHead>
           <TableHead colSpan={colSpan}>
             {t('ドロップ')} ({dropRateStyle == 'rate' ? '%' : 'AP/個'})
           </TableHead>
@@ -48,12 +48,12 @@ export const DropTable = ({
       <TableBody>
         {quests.map((quest) => (
           <TableRow key={quest.id}>
-            <TableCell>{quest.area}</TableCell>
+            <TableCell className="whitespace-nowrap">{quest.area}</TableCell>
             <TableCell>{quest.name}</TableCell>
-            <TableCell className="text-right">-</TableCell>
+            <TableCell className="text-right text-muted-foreground">-</TableCell>
             {dropGroups[quest.id].map((row) => (
               <Fragment key={row.item_id}>
-                <TableCell className="pr-0">
+                <TableCell className="pl-3 pr-1">
                   <ItemLink
                     id={row.item_id}
                     name={itemIndexes[row.item_id].name}

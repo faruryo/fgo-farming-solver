@@ -158,8 +158,8 @@
 
 ## 12. Phase 12: UI 修正（目視確認で発見した不具合）
 
-- [ ] 12.1 `/servants/[id]` ページのサーヴァント画像が左寄りなので中央配置にする（`components/servants/servant.tsx` 等を調査して修正）
-- [ ] 12.2 `/items/[id]` の "Drop Data" テーブルをリデザインする（ドロップ率スタイル・列幅・色付けを見直し、`components/items/drop-table.tsx` / `drop-td.tsx` を修正）
-- [ ] 12.3 `/cloud` ページのメインコンテンツが左寄りなので中央に寄せる（`components/cloud/index.tsx` を修正）
-- [ ] 12.4 `/farming` ページのメインコンテンツが左寄りなので中央に寄せる（`components/farming/index.tsx` 等を修正）
-- [ ] 12.5 `pnpm type-check && pnpm playwright test --update-snapshots` でリグレッションがないことを確認してコミット
+- [x] 12.1 `/servants/[id]` ページのサーヴァント画像が左寄りなので中央配置にする（`components/servants/servant.tsx` 等を調査して修正）
+- [x] 12.2 `/items/[id]` の "Drop Data" テーブルをリデザインする（ドロップ率スタイル・列幅・色付けを見直し、`components/items/drop-table.tsx` / `drop-td.tsx` を修正）
+- [x] 12.3 `/cloud` ページのメインコンテンツが左寄りなので中央に寄せる（`components/cloud/index.tsx` を修正）
+- [x] 12.4 `/farming` ページのメインコンテンツが左寄りなので中央に寄せる（`components/farming/index.tsx` 等を修正）
+- [x] 12.5 `pnpm type-check && pnpm playwright test --update-snapshots` でリグレッションがないことを確認してコミット

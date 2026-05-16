@@ -66,7 +66,7 @@ export const Page = ({
 
         <div className="c-servant-detail-top">
           {portrait && (
-            <div className="c-servant-detail-portrait">
+            <div className="c-servant-detail-portrait mx-auto md:mx-0">
               <Image
                 src={portrait}
                 alt={servant.name}
