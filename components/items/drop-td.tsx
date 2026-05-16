@@ -1,4 +1,3 @@
-import { TableCell } from '@/components/ui/table'
 import React from 'react'
 import { DropRateStyle } from './item'
 
@@ -14,7 +13,7 @@ const getValueColor = (value: number, style: DropRateStyle): string => {
   return 'var(--text3)'
 }
 
-export const DropTd = ({
+export const DropTdContent = ({
   dropRate,
   dropRateStyle,
   ap,
@@ -26,9 +25,10 @@ export const DropTd = ({
   samples?: number
 }) => {
   if (dropRate == null) {
-    return <TableCell className="text-right text-muted-foreground">—</TableCell>
+    return <span className="text-muted-foreground">—</span>
   }
   const value = dropRateStyle == 'rate' ? dropRate * 100 : ap / dropRate
+  const suffix = dropRateStyle === 'rate' ? '%' : ''
   const diffStr =
     samples != null
       ? (() => {
@@ -41,15 +41,15 @@ export const DropTd = ({
         })()
       : null
   return (
-    <TableCell className="text-right whitespace-nowrap">
+    <span className="whitespace-nowrap">
       <span className="font-medium tabular-nums" style={{ color: getValueColor(value, dropRateStyle) }}>
-        {value.toFixed(1)}
+        {value.toFixed(1)}{suffix}
       </span>
       {diffStr && (
-        <span className="text-xs ml-1" style={{ color: 'var(--text3)' }}>
+        <span className="text-xs ml-0.5" style={{ color: 'var(--text3)' }}>
           {diffStr}
         </span>
       )}
-    </TableCell>
+    </span>
   )
 }

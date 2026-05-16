@@ -8,14 +8,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import React, { Fragment } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { DropRate, Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { QuestIdentity } from '../common/QuestIdentity'
 import { ItemIdentity } from '../common/ItemIdentity'
-import { DropTd } from './drop-td'
+import { DropTdContent } from './drop-td'
 
 type DropRateStyle = 'ap' | 'rate'
 
@@ -36,14 +36,13 @@ export const DropTable = ({
     (acc, cur) => (cur.length > acc ? cur.length : acc),
     0
   )
-  const colSpan = maxDropCount * 2
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="min-w-[200px]">{t('クエスト')}</TableHead>
-          <TableHead colSpan={colSpan}>
+          <TableHead colSpan={maxDropCount}>
             {t('ドロップ')} ({dropRateStyle == 'rate' ? '%' : 'AP/個'})
           </TableHead>
         </TableRow>
@@ -59,23 +58,26 @@ export const DropTable = ({
                 spotIcon={spotIcons[quest.id]}
               />
             </TableCell>
-            {dropGroups[quest.id].map((row) => (
-              <Fragment key={row.item_id}>
-                <TableCell className="px-2 py-2">
-                  <ItemIdentity
-                    icon={itemIndexes[row.item_id]?.icon}
-                    name={itemIndexes[row.item_id]?.name ?? row.item_id}
-                    size={28}
-                  />
+            {dropGroups[quest.id].map((row) => {
+              const item = itemIndexes[row.item_id]
+              return (
+                <TableCell key={row.item_id} className="px-3 py-2 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
+                    <ItemIdentity
+                      icon={item?.icon}
+                      name={item?.name ?? row.item_id}
+                      size={24}
+                    />
+                    <DropTdContent
+                      dropRate={row.drop_rate}
+                      dropRateStyle={dropRateStyle}
+                      ap={quest.ap}
+                      samples={undefined}
+                    />
+                  </div>
                 </TableCell>
-                <DropTd
-                  dropRate={row.drop_rate}
-                  dropRateStyle={dropRateStyle}
-                  ap={quest.ap}
-                  samples={undefined}
-                />
-              </Fragment>
-            ))}
+              )
+            })}
           </TableRow>
         ))}
       </TableBody>
