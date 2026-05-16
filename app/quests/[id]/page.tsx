@@ -8,14 +8,14 @@ import { Loader2 } from 'lucide-react'
 import { useDrops } from '../../../hooks/use-drops'
 import { useQuestWave } from '../../../hooks/use-quest-wave'
 import { Quest } from '../../../interfaces/api'
-import { getItemIconUrl } from '../../../lib/get-item-icon-url'
 import { Badge } from '@/components/ui/badge'
+import { ItemIdentity } from '../../../components/common/ItemIdentity'
 import { Button } from '@/components/ui/button'
 
 export default function QuestDetailPage() {
   const { id } = useParams()
   const router = useRouter()
-  const { t } = useTranslation(['dashboard'])
+  useTranslation(['dashboard'])
   const { quests, isLoading } = useDrops()
 
   const quest = quests?.find(q => q.id === id) as Quest | undefined
@@ -182,9 +182,7 @@ const QuestDropInfo: React.FC<{ questId: string }> = ({ questId }) => {
         if (!item) return null
         return (
           <div key={dr.item_id} className="flex items-center gap-3 p-2 rounded-md" style={{ background: 'rgba(255,255,255,0.05)' }}>
-            <div className="w-8 h-8 flex-shrink-0">
-              <img src={getItemIconUrl(item.icon)} alt={item.name} width={32} height={32} />
-            </div>
+            <ItemIdentity icon={item.icon} name={item.name} size={32} />
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-xs font-bold truncate">{item.name}</span>
               <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{Math.round(dr.drop_rate * 100)}% Drop</span>

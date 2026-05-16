@@ -1,13 +1,11 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import React from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item as FgoItem, Quest as FgoQuest, DropRate as DropRateRow } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
-import { Title } from '../common/title'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
 import { DropRateStyleRadio } from './drop-rate-style-radio'
 import { DropTable } from './drop-table'

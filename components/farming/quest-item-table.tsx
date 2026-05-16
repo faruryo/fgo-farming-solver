@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DropRate, Item } from '../../interfaces/api'
-import { ItemLink } from '../common/item-link'
+import { ItemIdentity } from '../common/ItemIdentity'
 
 export const QuestItemTable = ({
   dropRates,
@@ -33,11 +33,14 @@ export const QuestItemTable = ({
         {dropRates.map(({ item_id, drop_rate }) => (
           <TableRow key={item_id}>
             <TableCell>
-              <ItemLink
-                id={item_id}
-                name={itemIndexes[item_id]?.name}
-                icon={itemIndexes[item_id]?.icon}
-              />
+              <div className="flex items-center gap-2">
+                <ItemIdentity
+                  icon={itemIndexes[item_id]?.icon}
+                  name={itemIndexes[item_id]?.name ?? item_id}
+                  size={20}
+                />
+                <span className="text-sm">{itemIndexes[item_id]?.name ?? item_id}</span>
+              </div>
             </TableCell>
             <TableCell className="text-right">
               {Math.round(

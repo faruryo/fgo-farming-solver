@@ -1,4 +1,5 @@
 import React from 'react'
+import Image from 'next/image'
 import { Swords } from 'lucide-react'
 
 type Props = {
@@ -13,7 +14,7 @@ export const QuestIdentity: React.FC<Props> = ({ area, name, ap, spotIcon, class
   <div className={`flex items-center gap-2 min-w-0 ${className ?? ''}`}>
     <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded overflow-hidden">
       {spotIcon ? (
-        <img src={spotIcon} alt={area} className="w-full h-full object-contain" />
+        <Image src={spotIcon} alt={area} width={32} height={32} className="w-full h-full object-contain" />
       ) : (
         <Swords size={15} style={{ color: 'var(--gold)' }} />
       )}

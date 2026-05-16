@@ -85,7 +85,7 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
                                 height={24}
                                 style={{ objectFit: 'contain', borderRadius: '2px' }}
                               />
-                              <Link href={`/servants/${servant.id}`} color="var(--text)" _hover={{ color: 'var(--gold)', textDecoration: 'none' }}>
+                              <Link href={`/servants/${servant.id}`} color="var(--text)">
                                 {servant.name}
                               </Link>
                             </div>

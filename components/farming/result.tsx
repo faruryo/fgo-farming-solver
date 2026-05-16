@@ -8,7 +8,7 @@ import { Link } from '../common/link'
 import { QuestTable } from './quest-table'
 import { TweetIntent } from './tweet-intent'
 import { ResultAccordion } from './result-accordion'
-import { Item, Quest, DropRate } from '../../interfaces/fgodrop'
+import { Item, Quest } from '../../interfaces/fgodrop'
 import { Result } from '../../interfaces/api'
 
 type LocalResult = Omit<Result, 'items' | 'quests'> & {

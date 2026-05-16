@@ -15,7 +15,6 @@ import { CheckboxTree } from '../common/checkbox-tree'
 import { CalcButton } from './material-calc-button'
 import { Pagination } from './material-pagination'
 import { ServantLevelSelect } from './servant-level-select'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import {
   Breadcrumb,

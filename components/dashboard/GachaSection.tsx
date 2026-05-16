@@ -47,6 +47,7 @@ const GachaBanner: React.FC<{ image: DashboardGacha }> = ({ image }) => {
   }
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={sources[srcIndex]}
       alt={image.name}
@@ -94,6 +95,7 @@ export const GachaSection: React.FC<GachaSectionProps> = ({ gachas }) => {
                         <TooltipTrigger render={<span />}>
                           <Link href={`/material#svt-${servant.id}`} className="block">
                             <div className={`u-face-frame rarity-${servant.rarity}`}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={servant.face} alt={servant.name} />
                             </div>
                           </Link>

@@ -12,7 +12,7 @@ export type ItemIndexProps = {
   locale?: string
 }
 
-export const Index = ({ items, locale = 'ja' }: ItemIndexProps) => {
+export const Index = ({ items }: ItemIndexProps) => {
   const { t } = useTranslation('items')
   const itemGroup = useMemo(
     () =>

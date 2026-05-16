@@ -33,6 +33,7 @@ export const RecentServantSection: React.FC<RecentServantSectionProps> = ({ serv
             >
               <div className="flex flex-col items-center gap-2">
                 <div className="u-face-frame w-[60px] h-[60px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={servant.face} alt={servant.name} />
                 </div>
                 <div className="flex flex-col items-center">

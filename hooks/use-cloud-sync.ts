@@ -42,7 +42,7 @@ export type LocalMetadata = {
 
 export const useCloudSync = () => {
   const { data: session } = useSession()
-  const { i18n, t } = useTranslation('common')
+  const { i18n } = useTranslation('common')
   const router = useRouter()
 const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -96,7 +96,7 @@ const [isSaving, setIsSaving] = useState(false)
     window.dispatchEvent(new Event('fgo-auto-sync-update'))
   }
 
-  const applyData = useCallback((data: Record<string, string>, metadata: CloudData['metadata'], silent = false) => {
+  const applyData = useCallback((data: Record<string, string>, metadata: CloudData['metadata']) => {
     isApplyingCloudDataRef.current = true
     try {
       KEYS.forEach((key) => {
@@ -122,7 +122,7 @@ const [isSaving, setIsSaving] = useState(false)
     } finally {
       isApplyingCloudDataRef.current = false
     }
-  }, [getLocalMetadata, router, t])
+  }, [getLocalMetadata, router])
 
   const checkConflict = useCallback((cloud: CloudData) => {
     const local = getLocalMetadata()
@@ -147,12 +147,12 @@ const [isSaving, setIsSaving] = useState(false)
       // Auto-load if enabled and safe
       if (autoSyncEnabled && isCloudNewer) {
         console.log('Safe Auto-Load (Sync) triggered')
-        applyData(cloud.storage, cloud.metadata, true)
+        applyData(cloud.storage, cloud.metadata)
       }
     }
 
     return { isCloudNewer, isConflict }
-  }, [autoSyncEnabled, applyData, getLocalMetadata, t])
+  }, [autoSyncEnabled, applyData, getLocalMetadata])
 
   const fetchCloudData = useCallback(async () => {
     if (session == null) {

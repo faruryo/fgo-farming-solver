@@ -15,7 +15,8 @@ import { useTranslation } from 'react-i18next'
 import { DropRate, Item, Quest } from '../../interfaces/api'
 import { groupBy } from '../../utils/group-by'
 import { ExpandChevronIcon } from '../common/expand-chevron'
-import { Link } from '../common/link'
+import { QuestIdentity } from '../common/QuestIdentity'
+import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { QuestItemTable } from './quest-item-table'
 
 export const QuestTable = ({
@@ -39,6 +40,7 @@ export const QuestTable = ({
     () => groupBy(dropRates, ({ quest_id }) => quest_id),
     [dropRates]
   )
+  const spotIcons = useSpotIcons(quests)
 
   const [isOpen, setIsOpen] = useState(
     Object.fromEntries(
@@ -61,14 +63,6 @@ export const QuestTable = ({
           <TableHead className="text-right">
             <Tooltip>
               <TooltipTrigger render={<span style={{ cursor: 'help' }} />}>
-                AP
-              </TooltipTrigger>
-              <TooltipContent>{t('tooltip-ap')}</TooltipContent>
-            </Tooltip>
-          </TableHead>
-          <TableHead className="text-right">
-            <Tooltip>
-              <TooltipTrigger render={<span style={{ cursor: 'help' }} />}>
                 {t('周回数')}
               </TooltipTrigger>
               <TooltipContent>{t('tooltip-lap')}</TooltipContent>
@@ -80,7 +74,7 @@ export const QuestTable = ({
         {Object.entries(questGroups).map(([area, questGroup]) => (
           <Fragment key={area}>
             <TableRow>
-              <TableHead colSpan={4}>{area}</TableHead>
+              <TableHead colSpan={3}>{area}</TableHead>
             </TableRow>
             {questGroup.map(({ name, id, ap, lap }, i) => {
               const rowKey = `${area}-${id}-${i}`
@@ -99,15 +93,17 @@ export const QuestTable = ({
                       </Button>
                     </TableCell>
                     <TableCell className="px-3 py-2">
-                      <Link href={`/quests/${id}`}>{name}</Link>
-                    </TableCell>
-                    <TableCell className="text-right text-sm px-3 py-2" style={{ color: 'var(--text2)' }}>
-                      {ap}
+                      <QuestIdentity
+                        area={area}
+                        name={name}
+                        ap={ap}
+                        spotIcon={spotIcons[id]}
+                      />
                     </TableCell>
                     <TableCell className="text-right px-3 py-2">{lap}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell colSpan={4} className="py-0 px-0">
+                    <TableCell colSpan={3} className="py-0 px-0">
                       <div className={isOpen[rowKey] ? '' : 'hidden'}>
                         <QuestItemTable
                           dropRates={questToDrops[id]}

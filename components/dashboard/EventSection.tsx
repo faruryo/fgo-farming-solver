@@ -30,6 +30,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
           style={{ background: 'var(--panel2)' }}
         >
           <div className="relative h-[110px]" style={{ background: 'var(--panel)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={event.banner}
               alt={event.name}
@@ -62,6 +63,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
                     <Tooltip key={drop.id}>
                       <TooltipTrigger render={<span />}>
                         <div className="w-[22px] h-[22px] rounded overflow-hidden flex-shrink-0" style={{ background: 'var(--bg2)' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={drop.icon} alt={drop.name} className="w-full h-full" />
                         </div>
                       </TooltipTrigger>
