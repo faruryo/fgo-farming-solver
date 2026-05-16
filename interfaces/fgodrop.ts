@@ -14,6 +14,7 @@ export type Quest = {
   area: string
   name: string
   ap: number
+  aaQuestId?: number
   waves?: Wave[]
 }
 export type DropRate = {

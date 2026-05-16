@@ -1,15 +1,17 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Info } from 'lucide-react'
 import NextLink from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { QuestIdentity } from '../common/QuestIdentity'
+import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
-import { getItemIconUrl } from '../../lib/get-item-icon-url'
 import { useRecentResult } from '../../hooks/use-recent-result'
+import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { isBothResult, Quest } from '../../interfaces/api'
 
 export const RecommendedQuest: React.FC = () => {
@@ -41,11 +43,15 @@ export const RecommendedQuest: React.FC = () => {
           .slice(0, 4)
           .map((q: Quest) => {
             const relatedRates = targetDropRates.filter(dr => dr.quest_id === q.id)
-            const bestRate = relatedRates
+            const topRates = relatedRates
               .filter(dr => targetItems.some(ti => ti.id === dr.item_id))
-              .sort((a, b) => b.drop_rate - a.drop_rate)[0] || relatedRates[0]
-            const item = items.find(i => i.id === bestRate?.item_id)
-            return { id: q.id, item, quest: q, rate: bestRate?.drop_rate, lap: q.lap, isRecent: true }
+              .sort((a, b) => b.drop_rate - a.drop_rate)
+              .slice(0, 3)
+            const topItems = topRates
+              .map(dr => items.find(i => i.id === dr.item_id))
+              .filter((x): x is NonNullable<typeof x> => Boolean(x))
+            const bestRate = topRates[0] || relatedRates[0]
+            return { id: q.id, topItems, quest: q, rate: bestRate?.drop_rate, lap: q.lap, isRecent: true }
           })
       }
     }
@@ -56,15 +62,32 @@ export const RecommendedQuest: React.FC = () => {
     return items.slice(0, 3).map(item => {
       const bestRate = drop_rates.filter(dr => dr.item_id === item.id).sort((a, b) => b.drop_rate - a.drop_rate)[0]
       const quest = bestRate ? quests.find(q => q.id === bestRate.quest_id) : null
-      return { id: quest?.id || item.id, item, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false }
+      const questDrops = quest
+        ? drop_rates
+            .filter(dr => dr.quest_id === quest.id)
+            .sort((a, b) => b.drop_rate - a.drop_rate)
+            .slice(0, 3)
+            .map(dr => items.find(i => i.id === dr.item_id))
+            .filter((x): x is NonNullable<typeof x> => Boolean(x))
+        : [item]
+      return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false }
     }).filter(r => r.quest)
   }, [items, quests, drop_rates, chaldea, dropsLoading, recentResult])
+
+  // aaQuestId comes from drops quests (result quests may not carry it)
+  const spotIcons = useSpotIcons(
+    recommendations.map(r => {
+      if (!r.quest) return null
+      const aaQuestId = r.quest.aaQuestId ?? quests?.find(q => q.id === r.quest!.id)?.aaQuestId
+      return { id: r.quest.id, aaQuestId }
+    })
+  )
 
   if (dropsLoading || resultLoading) {
     return (
       <div className="flex flex-col gap-6">
         <div className="u-section-header">
-          <h2 className="u-section-header-title">{t('推奨周回クエスト')}</h2>
+          <h2 className="u-section-header-title">{t('周回予定クエスト')}</h2>
           <div className="u-section-header-line" />
         </div>
         <div className="p-4 text-center">
@@ -80,42 +103,57 @@ export const RecommendedQuest: React.FC = () => {
     <div className="flex flex-col gap-3">
       <div className="u-section-header">
         <h2 className="u-section-header-title">
-          {recentResult ? t('直近の周回予定') : t('推奨周回クエスト')}
+          {recentResult ? t('周回予定クエスト') : t('推奨周回クエスト')}
         </h2>
+        <Tooltip>
+          <TooltipTrigger className="flex-shrink-0 -ml-2 cursor-default" style={{ color: 'var(--text3)' }}>
+            <Info size={13} />
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[220px] text-left leading-relaxed">
+            {recentResult
+              ? '直近の計算結果のクエスト Top 4。優先順：冠位研鑽戦 → オーディール・コール → その他。同優先度内は予定周回数が多い順。'
+              : '不足素材ごとに最もドロップ率の高いクエスト Top 4。'}
+          </TooltipContent>
+        </Tooltip>
         <div className="u-section-header-line" />
       </div>
 
       <div className="flex flex-col gap-3">
-        {recommendations.map(({ id, item, quest, rate, lap, isRecent }) => (
+        {recommendations.map(({ id, topItems, quest, rate, lap }, index) => (
           <NextLink
             key={id}
             href={`/quests/${quest?.id}`}
-            className="u-fgo-card flex items-start gap-3 py-2 px-3 rounded-md transition-all duration-200 cursor-pointer no-underline hover:no-underline hover:-translate-y-0.5"
-            style={{ background: 'var(--panel2)' }}
+            className="u-fgo-card flex items-center gap-2 py-3 px-4 rounded-md transition-all duration-200 cursor-pointer no-underline hover:no-underline hover:-translate-y-0.5"
+            style={{ borderLeft: '3px solid var(--gold)' }}
           >
-            <div className="w-9 h-9 flex-shrink-0 mt-0.5">
-              {item && (
-                <img src={getItemIconUrl(item.icon)} alt={item.name} className="w-full h-full object-contain"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            <span className="w-3 text-[11px] font-bold tabular-nums select-none text-right flex-shrink-0" style={{ color: 'var(--text3)' }}>
+              {index + 1}
+            </span>
+
+            <QuestIdentity
+              area={quest?.area ?? ''}
+              name={quest?.name ?? ''}
+              ap={quest?.ap ?? 0}
+              spotIcon={quest?.id ? spotIcons[quest.id] : undefined}
+              className="flex-1"
+            />
+
+            {/* ドロップアイコン: スマホ1個、PC3個 */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {topItems[0] && (
+                <ItemIdentity icon={topItems[0].icon} name={topItems[0].name} size={26} />
               )}
+              {topItems.slice(1, 3).map((item) => (
+                <ItemIdentity key={item.id} icon={item.icon} name={item.name} size={26} className="hidden sm:flex" />
+              ))}
             </div>
-            <div className="flex-1 min-w-0">
-              {item && (
-                <p className="text-[10px] truncate" style={{ color: 'var(--text3)' }}>
-                  {isRecent ? t('主なドロップ') : t('不足素材')}: {item.name}
-                </p>
-              )}
-              <p className="text-sm font-bold truncate" style={{ color: 'var(--navy)' }}>{quest?.name}</p>
-              <div className="flex flex-wrap gap-2 mt-0.5">
-                <span className="text-[10px]" style={{ color: 'var(--text2)' }}>{quest?.area}</span>
-                <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{quest?.ap} AP</span>
-                {lap ? (
-                  <Badge className="text-[10px] bg-blue-500 text-white">{lap} {t('周')}</Badge>
-                ) : (
-                  <Badge className="text-[10px] bg-green-600 text-white">{Math.round((rate || 0) * 100)}%</Badge>
-                )}
-              </div>
-            </div>
+
+            {/* 区切り線 */}
+            <div className="self-stretch w-px flex-shrink-0 mx-1" style={{ background: 'rgba(154,114,36,0.15)' }} />
+
+            <p className="text-[10px] font-semibold flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--gold)' }}>
+              {lap ? `あと${lap}周で達成！` : `ドロップ率 ${Math.round((rate || 0) * 100)}%`}
+            </p>
           </NextLink>
         ))}
       </div>

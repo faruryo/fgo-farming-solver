@@ -133,5 +133,33 @@
 
 - [x] 10.17 `components/farming/FarmingHistoryChart.tsx`: 期間フィルターボタンの二重ボーダーを `border-y border-r first:border-l` で解消済み（確認済み）
 - [x] 10.18 コード全体のインラインスタイル（`style={{ padding: '24px' }}` 等）を Tailwind クラスに統一（HistoryGraph, item.tsx, item-fieldset.tsx, farming/index.tsx, cloud/index.tsx, local-section.tsx, doc.tsx）
-- [ ] 10.19 各ページで `pnpm dev` を起動し目視確認。問題があれば追加修正する
-- [ ] 10.20 `pnpm type-check && pnpm test --run && pnpm playwright test --update-snapshots` でリグレッションがないことを確認し、コミットする
+- [x] 10.19 各ページで `pnpm dev` を起動し目視確認。問題があれば追加修正する
+- [x] 10.20 `pnpm type-check && pnpm test --run && pnpm playwright test --update-snapshots` でリグレッションがないことを確認し、コミットする
+
+## 11. Phase 11: ダッシュボードカードコンポーネント設計
+
+### 共通カードコンポーネント
+
+- [x] 11.1 `components/common/QuestIdentity.tsx` を新規作成（スポットアイコン・エリア・クエスト名・AP を表示する識別コンポーネント）
+- [x] 11.2 `components/common/ItemIdentity.tsx` を新規作成（アイテムアイコンのみ表示、名前は Tooltip）
+- [x] 11.3 `hooks/use-spot-icons.ts` を新規作成（`useSpotIcons` hook を共有化）
+- [x] 11.4 `app/api/spot-icon/route.ts` を新規作成（Atlas Academy API 経由でスポット画像 URL を解決、warId・questId 単位でメモリキャッシュ）
+
+### ダッシュボードカードリデザイン
+
+- [x] 11.5 `NearGoalSection` を ItemIdentity + QuestIdentity を使う横1行レイアウトに再設計（縦サイズ統一・AP 位置修正）
+- [x] 11.6 `RecommendedQuest` を QuestIdentity + ItemIdentity（主ドロップ）を使うレイアウトに再設計
+- [x] 11.7 `lapText`（あとN周で達成！）を QuestIdentity の外に出し、カード側のコンテキスト情報として管理
+- [x] 11.8 セクションタイトルを「達成間近の素材」「周回予定クエスト」に変更
+- [x] 11.9 両セクションに Info アイコン + Tooltip でランキング方針を説明
+- [x] 11.10 カードに 1–4 のランク番号をレイアウトに組み込み表示
+- [x] 11.11 「あとN周で達成！」を両セクションで右端に統一配置し、認知負荷を低減
+- [x] 11.12 ドロップアイコンをスマホ 1 個・PC 3 個（`sm:` ブレークポイント）でレスポンシブ表示
+
+## 12. Phase 12: UI 修正（目視確認で発見した不具合）
+
+- [ ] 12.1 `/servants/[id]` ページのサーヴァント画像が左寄りなので中央配置にする（`components/servants/servant.tsx` 等を調査して修正）
+- [ ] 12.2 `/items/[id]` の "Drop Data" テーブルをリデザインする（ドロップ率スタイル・列幅・色付けを見直し、`components/items/drop-table.tsx` / `drop-td.tsx` を修正）
+- [ ] 12.3 `/cloud` ページのメインコンテンツが左寄りなので中央に寄せる（`components/cloud/index.tsx` を修正）
+- [ ] 12.4 `/farming` ページのメインコンテンツが左寄りなので中央に寄せる（`components/farming/index.tsx` 等を修正）
+- [ ] 12.5 `pnpm type-check && pnpm playwright test --update-snapshots` でリグレッションがないことを確認してコミット
