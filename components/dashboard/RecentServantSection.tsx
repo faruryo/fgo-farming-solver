@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { RecentServant } from '../../lib/master-data/types'
 import { motion } from 'framer-motion'
 import { Link } from '../common/link'
+import { ServantStars } from '../common/ServantStars'
 
 interface RecentServantSectionProps {
   servants: RecentServant[]
@@ -40,11 +41,7 @@ export const RecentServantSection: React.FC<RecentServantSectionProps> = ({ serv
                   <p className="text-xs font-bold text-center truncate w-full" style={{ color: 'var(--text)' }}>
                     {servant.name}
                   </p>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: servant.rarity }).map((_, i) => (
-                      <span key={i} style={{ color: 'var(--gold)', fontSize: '10px' }}>★</span>
-                    ))}
-                  </div>
+                  <ServantStars rarity={servant.rarity} style={{ color: 'var(--gold)', fontSize: '10px' }} />
                 </div>
                 <Badge variant="secondary" className="text-[9px] rounded-full px-2">
                   {new Date(servant.releasedAt * 1000).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}

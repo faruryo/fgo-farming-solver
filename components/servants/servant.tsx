@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { NiceServant, Item, Materials } from '../../interfaces/atlas-academy'
 import { getClassName } from '../../lib/class-names'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
+import { ServantStars } from '../common/ServantStars'
 
 export type ServantProps = {
   servant: NiceServant
@@ -42,7 +43,7 @@ export const Page = ({
           </div>
           <div className="c-stats">
             <div className="c-stat">
-              <div className="c-stat-num">{servant.rarity}</div>
+              <div className="c-stat-num"><ServantStars rarity={servant.rarity} /></div>
               <div className="c-stat-label">STARS</div>
             </div>
             <div className="c-stat">

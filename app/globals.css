@@ -137,9 +137,9 @@ body {
 .c-page-en { font-family: var(--serif); font-size: 10px; letter-spacing: 0.2em; color: var(--steel); margin-bottom: 4px; }
 .c-page-title { font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: 0.04em; }
 
-.c-stats { display: flex; gap: 20px; align-items: center; }
+.c-stats { display: flex; gap: 20px; align-items: flex-end; }
 .c-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.c-stat-num { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--gold); line-height: 1; }
+.c-stat-num { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--gold); line-height: 1; min-height: 1em; }
 .c-stat-num.green { color: var(--green); }
 .c-stat-label { font-size: 9px; color: var(--text2); letter-spacing: 0.08em; }
 
@@ -348,7 +348,7 @@ body {
 }
 .c-portrait-stars {
   position: absolute; bottom: 4px; right: 7px;
-  font-size: 9px; color: var(--gold); letter-spacing: -1px;
+  font-size: 9px; color: var(--gold);
 }
 .c-portrait-hex {
   width: 42px; height: 42px; border-radius: 50%; border: 1px solid currentColor; opacity: 0.18; position: absolute;

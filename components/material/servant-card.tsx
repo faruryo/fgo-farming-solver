@@ -7,6 +7,7 @@ import { NiceServant } from '../../interfaces/atlas-academy'
 import { ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'
 import { getClassInfo } from '../../constants/classes'
+import { ServantStars } from '../common/ServantStars'
 
 type Props = {
   servant: NiceServant
@@ -118,7 +119,7 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
         <div className="c-portrait-class" style={{ color: cc }}>
           {cls.abbr}
         </div>
-        <div className="c-portrait-stars">{'★'.repeat(servant.rarity)}</div>
+        <div className="c-portrait-stars"><ServantStars rarity={servant.rarity} /></div>
       </NextLink>
 
       <div className="c-servant-body">

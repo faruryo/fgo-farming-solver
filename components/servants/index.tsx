@@ -12,6 +12,7 @@ import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
 import { Link } from '../common/link'
+import { ServantStars } from '../common/ServantStars'
 
 const BEAST_CLASSES = new Set<ClassName>(['beast', 'beastEresh', 'unBeastOlgaMarie'])
 const normalizeBeastClass = (className: ClassName): ClassName =>
@@ -65,12 +66,11 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
                         {getClassName(className as ClassName, locale)}
                       </span>
                       <span style={{ fontSize: '10px', color: 'var(--steel)', margin: '0 2px' }}>|</span>
-                      <span
-                        style={{ fontSize: '11px', color: 'var(--gold)', fontFamily: 'var(--serif)', letterSpacing: '2px' }}
+                      <ServantStars
+                        rarity={parseInt(rarity)}
+                        style={{ fontSize: '11px', color: 'var(--gold)', fontFamily: 'var(--serif)' }}
                         aria-label={`Rarity ${rarity}`}
-                      >
-                        {'✦'.repeat(parseInt(rarity))}
-                      </span>
+                      />
                     </div>
                     <ul className="flex flex-col gap-3">
                       {servants.map((servant) => {
