@@ -18,6 +18,7 @@ const compat = new FlatCompat({
 
 export default defineConfig([globalIgnores([
     "next.config.js",
+    "postcss.config.mjs",
     "sentry.client.config.js",
     "sentry.server.config.js",
     "pages/_error.js",
