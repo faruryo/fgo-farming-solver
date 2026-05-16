@@ -92,7 +92,7 @@
 - [x] 9.7 `pnpm type-check` + `pnpm test` (688 tests) 通過確認
 - [x] 9.8 `pnpm build`（Next.js + OpenNext Cloudflare）成功確認
 - [x] 9.9 `pnpm playwright test` で全 6 ページのビジュアル回帰テストが通ることを確認（新ベースライン更新）
-- [ ] 9.10 `pnpm run deploy` で Cloudflare Workers へのデプロイが成功することを確認する
+- [x] 9.10 `pnpm run deploy` で Cloudflare Workers へのデプロイが成功することを確認する
 
 ## 10. Phase 8: ビジュアルポリッシュ
 
