@@ -1,18 +1,6 @@
 import React from 'react'
 import { DropRateStyle } from './item'
 
-const getValueColor = (value: number, style: DropRateStyle): string => {
-  if (style === 'rate') {
-    if (value >= 30) return 'var(--green)'
-    if (value >= 10) return 'inherit'
-    return 'var(--text3)'
-  }
-  // AP mode: lower is better
-  if (value <= 20) return 'var(--green)'
-  if (value <= 60) return 'inherit'
-  return 'var(--text3)'
-}
-
 export const DropTdContent = ({
   dropRate,
   dropRateStyle,
@@ -43,7 +31,7 @@ export const DropTdContent = ({
         })()
       : null
 
-  const color = isTarget ? getValueColor(value, dropRateStyle) : 'var(--text3)'
+  const color = isTarget ? 'var(--navy)' : 'var(--text3)'
   const fontSize = isTarget ? '15px' : '13px'
 
   return (
