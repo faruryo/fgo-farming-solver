@@ -32,7 +32,7 @@ export const HistoryGraph: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
-        <div className="u-section-header" style={{ marginBottom: 0, flex: 1 }}>
+        <div className="u-section-header mb-0 flex-1">
           <h2 className="u-section-header-title">
             <FaChartLine className="inline-block mr-2 mb-1" />
             {t('計算履歴の推移')}

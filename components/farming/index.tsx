@@ -199,10 +199,10 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
               </Alert>
             )}
             <fieldset style={{ width: '100%' }}>
-              <legend className="c-settings-section-label" style={{ marginBottom: '1rem', display: 'flex' }}>
+              <legend className="c-settings-section-label mb-4 flex">
                 {t('周回対象に含めるクエスト')}
               </legend>
-              <div className="c-card" style={{ width: '100%', padding: '20px' }}>
+              <div className="c-card w-full p-5">
                 <CheckboxTree
                   tree={tree}
                   checked={checked}

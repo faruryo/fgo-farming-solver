@@ -25,7 +25,7 @@ export const ItemFieldset = ({
 
   return (
     <fieldset>
-      <legend className="c-settings-section-label" style={{ marginBottom: '1rem', display: 'flex' }}>
+      <legend className="c-settings-section-label mb-4 flex">
         {t('farming:集めたいアイテムの数')}
       </legend>
       <Accordion

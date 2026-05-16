@@ -52,10 +52,10 @@ export const LocalSection = ({ exportLocal }: LocalSectionProps) => {
   }
 
   return (
-    <div className="c-card" style={{ maxWidth: '600px', width: '100%', padding: '32px' }}>
+    <div className="c-card max-w-[600px] w-full p-8">
       <div className="flex flex-col gap-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ padding: '8px', background: 'rgba(74,104,136,0.1)', borderRadius: '8px' }}>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg" style={{ background: 'rgba(74,104,136,0.1)' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--steel)" strokeWidth="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />

@@ -131,15 +131,10 @@ const Cloud = () => {
 
         <div className="flex flex-col gap-8 py-8">
           {/* Cloud Sync Section */}
-          <div className="c-card" style={{ 
-            maxWidth: '600px', 
-            width: '100%', 
-            padding: '32px',
-            border: hasConflict ? '1px solid var(--red)' : '1px solid var(--border)' 
-          }}>
+          <div className="c-card max-w-[600px] w-full p-8" style={{ border: hasConflict ? '1px solid var(--red)' : '1px solid var(--border)' }}>
             <div className="flex flex-col gap-6">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ padding: '8px', background: hasConflict ? 'rgba(255,0,0,0.1)' : 'rgba(154,114,36,0.1)', borderRadius: '8px' }}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: hasConflict ? 'rgba(255,0,0,0.1)' : 'rgba(154,114,36,0.1)' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={hasConflict ? 'var(--red)' : 'var(--gold)'} strokeWidth="2">
                     <path d="M17.5 19c.7 0 1.3-.2 1.8-.7.5-.5.7-1.1.7-1.8 0-.5-.1-.9-.4-1.3-.2-.4-.6-.7-1-.9 0-.1 0-.2.1-.3 0-1.4-.5-2.6-1.5-3.5-1-.9-2.1-1.4-3.5-1.4-.9 0-1.8.2-2.6.7-.8.5-1.4 1.1-1.8 1.9-.3-.1-.6-.2-.9-.2-1.1 0-2.1.4-2.8 1.2s-1.1 1.7-1.1 2.8c0 1.1.4 2.1 1.2 2.8.8.8 1.7 1.2 2.8 1.2h10z" />
                   </svg>
@@ -165,8 +160,8 @@ const Cloud = () => {
               {(session != null || (process.env.NODE_ENV === 'development' && cloudData)) && (
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(154,114,36,0.04)', border: '1px solid rgba(154,114,36,0.1)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#60c890' }}></div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full" style={{ background: '#60c890' }}></div>
                       <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>
                         {session?.user?.name || 'Local Dev User'}
                       </p>
@@ -197,7 +192,7 @@ const Cloud = () => {
                   </p>
                 </div>
               ) : session == null && process.env.NODE_ENV !== 'development' ? (
-                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '16px' }}>
+                <div className="flex justify-center pt-4">
                   <AuthButton />
                 </div>
               ) : (

@@ -60,7 +60,7 @@ const Page = ({ title, md }: PageProps) => (
           <h1 className="c-page-title">{title}</h1>
         </div>
       </div>
-      <div className="c-card" style={{ padding: '40px', background: 'var(--panel2)' }}>
+      <div className="c-card p-10" style={{ background: 'var(--panel2)' }}>
         <Head title={title} />
         <div className="markdown-body">
           <ReactMarkdown components={components}>{md}</ReactMarkdown>

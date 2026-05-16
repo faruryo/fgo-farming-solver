@@ -89,7 +89,7 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <div className="c-card" style={{ padding: '24px' }}>
+          <div className="c-card p-6">
             <form>
               <div className="flex flex-wrap justify-center gap-8">
                 <DropRateStyleRadio
@@ -100,7 +100,7 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
             </form>
           </div>
 
-          <div className="c-card" style={{ padding: '0', overflow: 'hidden' }}>
+          <div className="c-card p-0 overflow-hidden">
             <div className="c-global-header" style={{ cursor: 'default', background: 'var(--panel)' }}>
               <div className="c-global-header-title">{t('DROP DATA')}</div>
               <div className="c-global-header-line"></div>

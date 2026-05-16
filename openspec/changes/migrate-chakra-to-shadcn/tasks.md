@@ -108,7 +108,7 @@
 ### 周回ソルバー
 
 - [x] 10.5 `components/farming/quest-table.tsx`: 展開ボタン列 `py-0` → `py-1`、データ列 `px-3 py-2` に統一
-- [ ] 10.6 `components/farming/item-fieldset.tsx`: AccordionContent の `justify-evenly` → `justify-start gap-6` に変更する
+- [x] 10.6 `components/farming/item-fieldset.tsx`: AccordionContent の `justify-evenly` → `justify-start gap-6` に変更する
 - [x] 10.7 `components/farming/result.tsx`: stat コンテナ `paddingBottom: 8` → 16px、カード `padding: '24px'` → `className="p-6"` Tailwind 化
 - [x] 10.8 `app/farming/history/page.tsx`: セル padding `px-4 py-3` に統一済み（Phase 8 前に対応）
 
@@ -122,7 +122,7 @@
 - [x] 10.11 `components/servants/material-list.tsx`: stat グループ `p-2 gap-2` → `p-4 gap-3` に拡大
 - [x] 10.12 `components/servants/index.tsx`: カード `padding: '12px 16px'` → `p-4`、リスト `gap-2` → `gap-3`
 - [x] 10.13 `components/items/index.tsx`: カード `padding: '16px'` → `p-4`、inline margin/padding を整理
-- [ ] 10.14 `components/items/item.tsx`: drop table カードは edge-to-edge が意図的デザイン → スキップ
+- [x] 10.14 `components/items/item.tsx`: `padding: '24px'` → `p-6`、edge-to-edge カードは `p-0 overflow-hidden` に変換
 
 ### shadcn テーマを FGO パレットに合わせる
 
@@ -131,7 +131,7 @@
 
 ### 共通・仕上げ
 
-- [ ] 10.17 `components/farming/FarmingHistoryChart.tsx`: 期間フィルターボタンの二重ボーダーを `border-y border-r first:border-l` で解消する（部分的に修正済み、動作確認）
-- [ ] 10.18 コード全体のインラインスタイル（`style={{ padding: '24px' }}` 等）を Tailwind クラスに統一する（特に `padding`, `margin`, `gap` の数値指定）
+- [x] 10.17 `components/farming/FarmingHistoryChart.tsx`: 期間フィルターボタンの二重ボーダーを `border-y border-r first:border-l` で解消済み（確認済み）
+- [x] 10.18 コード全体のインラインスタイル（`style={{ padding: '24px' }}` 等）を Tailwind クラスに統一（HistoryGraph, item.tsx, item-fieldset.tsx, farming/index.tsx, cloud/index.tsx, local-section.tsx, doc.tsx）
 - [ ] 10.19 各ページで `pnpm dev` を起動し目視確認。問題があれば追加修正する
 - [ ] 10.20 `pnpm type-check && pnpm test --run && pnpm playwright test --update-snapshots` でリグレッションがないことを確認し、コミットする
