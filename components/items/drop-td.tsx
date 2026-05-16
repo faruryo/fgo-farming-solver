@@ -18,11 +18,13 @@ export const DropTdContent = ({
   dropRateStyle,
   ap,
   samples,
+  isTarget = false,
 }: {
   dropRate?: number
   dropRateStyle: DropRateStyle
   ap: number
   samples?: number
+  isTarget?: boolean
 }) => {
   if (dropRate == null) {
     return <span className="text-muted-foreground">—</span>
@@ -40,9 +42,16 @@ export const DropTdContent = ({
           return `±${diff.toFixed(1)}`
         })()
       : null
+
+  const color = isTarget ? getValueColor(value, dropRateStyle) : 'var(--text3)'
+  const fontSize = isTarget ? '15px' : '13px'
+
   return (
     <span className="whitespace-nowrap">
-      <span className="font-medium tabular-nums" style={{ color: getValueColor(value, dropRateStyle) }}>
+      <span
+        className="font-medium tabular-nums"
+        style={{ color, fontSize, fontWeight: isTarget ? 700 : 500 }}
+      >
         {value.toFixed(1)}{suffix}
       </span>
       {diffStr && (

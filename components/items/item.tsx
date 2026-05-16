@@ -109,6 +109,7 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
                 quests={selectedQuests}
                 dropGroups={dropGroups}
                 dropRateStyle={dropRateStyle}
+                targetItemId={id}
               />
             </div>
           </div>

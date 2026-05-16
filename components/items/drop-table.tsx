@@ -31,11 +31,13 @@ export const DropTable = ({
   quests,
   dropGroups,
   dropRateStyle,
+  targetItemId,
 }: {
   itemIndexes: { [id: string]: Localized<Item> }
   quests: Quest[]
   dropGroups: { [key: string]: DropRate[] }
   dropRateStyle: DropRateStyle
+  targetItemId?: string
 }) => {
   const { t } = useTranslation('items')
   const spotIcons = useSpotIcons(quests)
@@ -76,19 +78,21 @@ export const DropTable = ({
               </TableCell>
               {dropGroups[quest.id].map((row) => {
                 const item = itemIndexes[row.item_id]
+                const isTarget = row.item_id === targetItemId
                 return (
                   <TableCell key={row.item_id} className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <ItemIdentity
                         icon={item?.icon}
                         name={item?.name ?? row.item_id}
-                        size={24}
+                        size={isTarget ? 28 : 24}
                       />
                       <DropTdContent
                         dropRate={row.drop_rate}
                         dropRateStyle={dropRateStyle}
                         ap={quest.ap}
                         samples={undefined}
+                        isTarget={isTarget}
                       />
                     </div>
                   </TableCell>
