@@ -14,8 +14,13 @@ export const ItemCategoryFieldset = ({
 }) => {
   return (
     <fieldset>
-      <div className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{category}</legend>
+      <div className="flex flex-col gap-3">
+        <legend
+          className="w-full text-xs font-semibold tracking-widest pb-2 border-b"
+          style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}
+        >
+          {category}
+        </legend>
         <div className="flex flex-col items-end gap-2">
           {items.map(({ id, name, icon }) => (
             <ItemInput
