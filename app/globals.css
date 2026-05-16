@@ -311,6 +311,7 @@ body {
 }
 @media (max-width: 768px) {
   .c-servant-detail-top { flex-direction: column; }
+  .c-servant-detail-portrait { align-self: center; }
 }
 .c-servant-detail-portrait {
   width: 240px; flex-shrink: 0;

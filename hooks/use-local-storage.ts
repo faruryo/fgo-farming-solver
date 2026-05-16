@@ -9,53 +9,56 @@ export const useLocalStorage = <T>(
     useInitial?: boolean
   }
 ): [T, Dispatch<SetStateAction<T>>] => {
-  const [state, setState] = useState<T>(() => {
-    if (typeof window === 'undefined' || options?.useInitial) return initialState
-    try {
-      const json = localStorage.getItem(key)
-      if (json) {
-        let obj = JSON.parse(json) as T
-        if (options?.onGet) obj = options.onGet(obj)
-        return obj
-      }
-    } catch (e) {
-      console.error(e)
-    }
-    return initialState
-  })
+  // Always initialize with initialState to avoid SSR/hydration mismatch.
+  // Reading localStorage in the useState initializer causes the server to render
+  // with initialState while the client renders with the stored value, which React
+  // treats as a hydration error.
+  const [state, setState] = useState<T>(initialState)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Use a ref to store the current state for reference in effects without triggering them
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // Update localStorage when state changes
+  // Sync from localStorage after mount (client-only, runs after hydration)
   useEffect(() => {
-    if (options?.useInitial) return
+    if (!options?.useInitial) {
+      try {
+        const json = localStorage.getItem(key)
+        if (json) {
+          let obj = JSON.parse(json) as T
+          if (options?.onGet) obj = options.onGet(obj)
+          setState(obj)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    setIsInitialized(true)
+  }, [key])
+
+  // Persist state changes to localStorage (only after initialization to avoid
+  // overwriting stored values with initialState on first render)
+  useEffect(() => {
+    if (!isInitialized || options?.useInitial) return
     const json = JSON.stringify(state)
     const oldJson = localStorage.getItem(key)
-    
-    // Only update and notify if the value actually changed
     if (json !== oldJson) {
       localStorage.setItem(key, json)
       window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key } }))
     }
-  }, [key, state, options?.useInitial])
+  }, [key, state, isInitialized, options?.useInitial])
 
-  // Listen for updates from other components
+  // Listen for updates from other components/tabs
   useEffect(() => {
     if (options?.useInitial) return
     const handleUpdate = (e: Event) => {
-      // If it's our own custom sync event, verify it's for this key
       if (e instanceof CustomEvent && e.type === 'ls-sync') {
         if ((e.detail as { key?: string })?.key !== key) return
       }
-
       const json = localStorage.getItem(key)
       if (json) {
         let obj = JSON.parse(json) as T
         if (options?.onGet) obj = options.onGet(obj)
-        
-        // CRITICAL: Avoid infinite loop by checking if state actually needs updating
         if (JSON.stringify(obj) !== JSON.stringify(stateRef.current)) {
           setState(obj)
         }

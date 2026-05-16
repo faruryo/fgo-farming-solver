@@ -24,7 +24,7 @@ export const ItemFieldset = ({
   const { t } = useTranslation(['common', 'farming'])
 
   return (
-    <fieldset>
+    <fieldset className="w-full">
       <legend className="c-settings-section-label mb-4 flex">
         {t('farming:集めたいアイテムの数')}
       </legend>
@@ -35,7 +35,7 @@ export const ItemFieldset = ({
           <AccordionItem key={largeCategory} value={largeCategory}>
             <AccordionTrigger>{largeCategory}</AccordionTrigger>
             <AccordionContent>
-              <div className="flex flex-wrap items-start justify-start gap-6">
+              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
                 {itemGroup.map(([category, items]) => (
                   <ItemCategoryFieldset
                     key={category}
