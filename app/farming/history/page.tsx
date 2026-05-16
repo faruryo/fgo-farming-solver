@@ -101,6 +101,7 @@ export default function HistoryPage() {
                             className="h-8 w-8"
                             style={{ color: 'var(--gold-dim)' }}
                             render={<Link href={`/farming/results/${item.id}`} />}
+                            nativeButton={false}
                           >
                             <FaExternalLinkAlt />
                           </Button>

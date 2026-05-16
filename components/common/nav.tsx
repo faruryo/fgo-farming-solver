@@ -53,25 +53,23 @@ export const menuGroups = [
 const AuthStatus = () => {
   const { session } = useCloudSync()
   return (
-    <div className="px-3 py-2">
-      <div className="flex items-center gap-2">
-        <div
-          className="w-[7px] h-[7px] rounded-full flex-shrink-0"
-          style={{ background: session?.user ? 'var(--ok)' : 'var(--text3)' }}
-        />
-        {session?.user ? (
-          <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text2)' }}>
-            {session.user.name}
-          </span>
-        ) : (
-          <>
-            <span className="text-[11px]" style={{ color: 'var(--text3)' }}>未ログイン</span>
-            <NextLink href="/cloud">
-              <span className="text-[10px] underline" style={{ color: 'var(--steel)' }}>ログイン</span>
-            </NextLink>
-          </>
-        )}
-      </div>
+    <div className="px-3 py-2 flex items-center gap-2">
+      <div
+        className="w-[7px] h-[7px] rounded-full flex-shrink-0"
+        style={{ background: session?.user ? 'var(--ok)' : 'var(--text3)' }}
+      />
+      {session?.user ? (
+        <span className="text-[11px] truncate flex-1" style={{ color: 'var(--text2)' }}>
+          {session.user.name}
+        </span>
+      ) : (
+        <>
+          <span className="text-[11px]" style={{ color: 'var(--text3)' }}>未ログイン</span>
+          <NextLink href="/cloud">
+            <span className="text-[10px] underline" style={{ color: 'var(--steel)' }}>ログイン</span>
+          </NextLink>
+        </>
+      )}
     </div>
   )
 }
@@ -145,7 +143,7 @@ export const Nav = () => {
           <AlignJustify size={20} />
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-[220px] py-2"
+          className="w-[240px] py-1"
           style={{ background: 'var(--panel)', borderColor: 'var(--gold-dim)', backdropFilter: 'blur(20px)' }}
         >
           <AuthStatus />
@@ -155,15 +153,18 @@ export const Nav = () => {
 
           {menuGroups.map(({ title, items }) => (
             <DropdownMenuGroup key={title}>
-              <DropdownMenuLabel className="text-[10px] tracking-widest" style={{ color: 'var(--gold)' }}>
+              <DropdownMenuLabel
+                className="px-3 py-1 text-[10px] tracking-widest font-semibold"
+                style={{ color: 'var(--gold)' }}
+              >
                 {title}
               </DropdownMenuLabel>
               {items.map(({ href, label }) => (
                 <DropdownMenuItem
                   key={href}
                   render={<NextLink href={href} />}
-                  className="text-[13px] py-2"
-                  style={{ color: 'var(--text)' }}
+                  className="px-3 py-2 rounded-none"
+                  style={{ color: 'var(--text)', fontSize: '13px', lineHeight: '1.4' }}
                 >
                   {label[(locale ?? 'ja') as 'en' | 'ja']}
                 </DropdownMenuItem>
