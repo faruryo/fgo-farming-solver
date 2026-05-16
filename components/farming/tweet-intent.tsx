@@ -27,6 +27,7 @@ export const TweetIntent = ({ text }: { text: string }) => {
       <Button
         variant="secondary"
         render={<a href={intentUrl} target="_blank" rel="noopener noreferrer" />}
+        nativeButton={false}
       >
         <FaXTwitter className="mr-2 h-4 w-4" />
         {t('結果をツイートする')}
