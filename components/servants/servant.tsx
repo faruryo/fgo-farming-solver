@@ -64,9 +64,22 @@ export const Page = ({
           </div>
         </div>
 
-        <div className="c-servant-detail-top">
+        <div className="flex flex-col items-center gap-6 mb-8">
+          <Breadcrumb className="self-start">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/servants">
+                  {t('サーヴァント一覧')}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage style={{ color: 'var(--text3)' }}>{title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           {portrait && (
-            <div className="c-servant-detail-portrait self-center md:self-auto">
+            <div className="c-servant-detail-portrait">
               <Image
                 src={portrait}
                 alt={servant.name}
@@ -76,21 +89,6 @@ export const Page = ({
               />
             </div>
           )}
-          <div className="flex flex-col gap-8 flex-1">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/servants">
-                    {t('サーヴァント一覧')}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage style={{ color: 'var(--text3)' }}>{title}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
