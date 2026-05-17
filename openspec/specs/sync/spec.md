@@ -33,7 +33,32 @@
 - **WHEN** データを保存または取得するとき
 - **THEN** ログイン中のユーザーの識別子（メールアドレス等）をキーとして Cloudflare KV にアクセスする。
 
+### Requirement: 状態スナップショットの保存
+システムは、ユーザーの保存操作およびソルバー実行時にユーザーの localStorage 全体を D1 の `state_snapshots` テーブルへ保存しなければならない (SHALL)。
+
+#### Scenario: クラウド同期時のスナップショット保存
+- **WHEN** `/api/cloud` への POST が成功したとき
+- **THEN** 保存対象の `KEYS` の全データが `state_snapshots` テーブルに JSON として記録される。
+- **THEN** 同一 `user_id` の当日の既存レコードがあれば `UPDATE`、なければ `INSERT` する（同日上書き戦略）。
+
+#### Scenario: ソルバー実行時のスナップショット保存
+- **WHEN** `/api/solve` が成功したとき
+- **THEN** 呼び出し元から渡された現在の localStorage スナップショットが `state_snapshots` に記録される。
+- **THEN** 同一 `user_id` の当日の既存レコードがあれば `UPDATE`、なければ `INSERT` する（同日上書き戦略）。
+
+### Requirement: 進捗比較のための履歴データ提供
+システムは、現在のデータと比較するための過去のスナップショットデータを取得する手段を提供しなければならない (SHALL)。
+
+#### Scenario: 過去スナップショットの取得
+- **WHEN** 進捗比較のために過去のデータが必要なとき
+- **THEN** `state_snapshots` から「前回」「指定日数前に最も近い」レコードを取得して返す。
+
+#### Scenario: スナップショットが存在しない場合のフォールバック
+- **WHEN** 「1週間前」または「1ヶ月前」のレコードが存在しないとき
+- **THEN** `null` を返し、呼び出し元で「お疲れ様」モードのフォールバック表示を行う。
+
 ## Constraints
 - **同期対象**: `posession`, `input`, `objective`, `farming/results` 等、主要な設定および履歴データ。
 - **メタデータ**: 各データセットは `updatedAt`, `lastSyncedAt`, `deviceId` を保持すること。
 - **履歴の永続化**: 計算結果の履歴は D1 データベース (`farming_results` テーブル) に保存すること。
+- **スナップショット**: `state_snapshots` テーブル（`id` / `user_id` / `data` / `created_at`）に localStorage 全体を保存する。同日上書き戦略を採用。
