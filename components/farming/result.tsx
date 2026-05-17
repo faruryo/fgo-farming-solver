@@ -1,13 +1,14 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslation } from 'react-i18next'
 import { useFarmingResult } from '../../hooks/use-farming-result'
+import { useProgressReport } from '../../hooks/use-progress-report'
 import { Link } from '../common/link'
 import { QuestTable } from './quest-table'
 import { TweetIntent } from './tweet-intent'
 import { ResultAccordion } from './result-accordion'
+import { ProgressReportPanel, type ResultStats } from './ProgressReportPanel'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Result } from '../../interfaces/api'
 
@@ -20,7 +21,13 @@ export type PageProps =
   | { apResult: LocalResult; lapResult: LocalResult; legacyResult?: undefined }
   | { legacyResult: LocalResult; apResult?: undefined; lapResult?: undefined }
 
-const ResultPanel = ({ result }: { result: LocalResult }) => {
+const ResultPanel = ({
+  result,
+  progressPanel,
+}: {
+  result: LocalResult
+  progressPanel?: React.ReactNode
+}) => {
   const { t } = useTranslation(['farming', 'common'])
   const yen = Math.round(result.total_ap / 144 / 168 * 10000)
   const text = useFarmingResult(
@@ -43,29 +50,7 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
 
   return (
     <div className="flex flex-col gap-12">
-      <div className="c-stats" style={{ justifyContent: 'flex-start', gap: 24, paddingBottom: 16 }}>
-        <Tooltip>
-          <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
-            <div className="c-stat-num">{result.total_lap}</div>
-            <div className="c-stat-label">周回数</div>
-          </TooltipTrigger>
-          <TooltipContent>{t('tooltip-total-lap')}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
-            <div className="c-stat-num">{result.total_ap}</div>
-            <div className="c-stat-label">消費AP</div>
-          </TooltipTrigger>
-          <TooltipContent>{t('tooltip-total-ap')}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger render={<div className="c-stat" style={{ cursor: 'help' }} />}>
-            <div className="c-stat-num">¥{yen.toLocaleString()}</div>
-            <div className="c-stat-label">{t('費用')}</div>
-          </TooltipTrigger>
-          <TooltipContent>{t('tooltip-cost')}</TooltipContent>
-        </Tooltip>
-      </div>
+      {progressPanel}
 
       <div className="c-card p-6 overflow-x-auto">
         <div className="c-settings-section-label mb-4 flex">
@@ -93,6 +78,10 @@ const ResultPanel = ({ result }: { result: LocalResult }) => {
 export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
   const [activeTab, setActiveTab] = useState<'ap' | 'lap'>('ap')
+  const totalApForProgress = legacyResult
+    ? legacyResult.total_ap
+    : (apResult?.total_ap ?? null)
+  const progress = useProgressReport(totalApForProgress)
 
   if (legacyResult) {
     return (
@@ -107,7 +96,21 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
               <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
             </div>
           </div>
-          <ResultPanel result={legacyResult} />
+          <ResultPanel
+            result={legacyResult}
+            progressPanel={
+              <ProgressReportPanel
+                data={progress.data}
+                loading={progress.loading}
+                stats={{
+                  totalLap: legacyResult.total_lap,
+                  totalAp: legacyResult.total_ap,
+                  yen: Math.round(legacyResult.total_ap / 144 / 168 * 10000),
+                }}
+                tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+              />
+            }
+          />
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>
           </div>
@@ -117,6 +120,12 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
   }
 
   const current = activeTab === 'ap' ? apResult! : lapResult!
+  const currentYen = Math.round(current.total_ap / 144 / 168 * 10000)
+  const currentStats: ResultStats = {
+    totalLap: current.total_lap,
+    totalAp: current.total_ap,
+    yen: currentYen,
+  }
 
   return (
     <div className="c-page">
@@ -126,27 +135,34 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
             <div className="c-page-en">RESULT</div>
             <h1 className="c-page-title">{t('計算結果')}</h1>
           </div>
-          <div className="c-result-actions">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              className={`c-filter-toggle${activeTab === 'ap' ? ' active' : ''}`}
+              onClick={() => setActiveTab('ap')}
+            >
+              消費AP 最小
+            </button>
+            <button
+              className={`c-filter-toggle${activeTab === 'lap' ? ' active' : ''}`}
+              onClick={() => setActiveTab('lap')}
+            >
+              周回数 最小
+            </button>
             <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-          <button
-            className={`c-filter-toggle${activeTab === 'ap' ? ' active' : ''}`}
-            onClick={() => setActiveTab('ap')}
-          >
-            消費AP 最小
-          </button>
-          <button
-            className={`c-filter-toggle${activeTab === 'lap' ? ' active' : ''}`}
-            onClick={() => setActiveTab('lap')}
-          >
-            周回数 最小
-          </button>
-        </div>
-
-        <ResultPanel result={current} />
+        <ResultPanel
+          result={current}
+          progressPanel={
+            <ProgressReportPanel
+              data={progress.data}
+              loading={progress.loading}
+              stats={currentStats}
+              tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+            />
+          }
+        />
 
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>
