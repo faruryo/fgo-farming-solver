@@ -3,6 +3,7 @@ import { getDrops } from '../../../lib/get-drops'
 import { solveBoth } from '../../../lib/solver'
 import { Params } from '../../../interfaces/api'
 import { auth } from '../../../lib/auth'
+import { saveSnapshot } from '../../../lib/progress/snapshot'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import type { CloudflareEnv } from '../../../types/cloudflare-env'
 
@@ -23,11 +24,11 @@ export async function GET(req: NextRequest) {
 
   const allowedQuests = questsRaw.split(',').filter(Boolean)
 
-  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-    env: CloudflareEnv
-  }
-
-  const drops = await getDrops()
+  const [{ env }, drops, session] = await Promise.all([
+    getCloudflareContext({ async: true }) as unknown as Promise<{ env: CloudflareEnv }>,
+    getDrops(),
+    auth(),
+  ])
 
   // Apply AP coefficients (e.g., 0:0.5 for half AP on training grounds)
   if (apCoefficients) {
@@ -55,8 +56,6 @@ export async function GET(req: NextRequest) {
   const result = solveBoth(drops, params)
   const id = crypto.randomUUID()
 
-  // Save to D1 if available
-  const session = await auth()
   if (env.DB) {
     try {
       await env.DB.prepare(
@@ -74,6 +73,17 @@ export async function GET(req: NextRequest) {
         .run()
     } catch (e) {
       console.error('Failed to save to D1:', e)
+    }
+
+    if (session?.user?.id) {
+      try {
+        await saveSnapshot(env.DB, session.user.id, {
+          items: itemsRaw,
+          quests: questsRaw,
+        })
+      } catch (e) {
+        console.error('[api/solve] snapshot save failed:', e)
+      }
     }
   }
 
