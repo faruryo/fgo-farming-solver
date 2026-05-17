@@ -1,0 +1,196 @@
+[
+  {
+    "_scenario": "初回ユーザー（スナップショットなし）",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": { "totalAp": 35000 },
+    "periods": {
+      "previous": {
+        "period": "previous", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 0, "fallback": "first_time"
+      },
+      "week": {
+        "period": "week", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 0, "fallback": "first_time"
+      },
+      "month": {
+        "period": "month", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 0, "fallback": "first_time"
+      }
+    }
+  },
+  {
+    "_scenario": "進捗ゼロ（全期間・変化なし）",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": { "totalAp": 35000 },
+    "periods": {
+      "previous": {
+        "period": "previous", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 1440, "fallback": "zero_progress"
+      },
+      "week": {
+        "period": "week", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 10080, "fallback": "zero_progress"
+      },
+      "month": {
+        "period": "month", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 43200, "fallback": "zero_progress"
+      }
+    }
+  },
+  {
+    "_scenario": "小〜中進捗（全期間）+ 目標増加",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": { "totalAp": 34200 },
+    "periods": {
+      "previous": {
+        "period": "previous", "tier": "small",
+        "deltaApRaw": 800, "deltaApAdjusted": 800,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 1200,
+        "elapsedMinutes": 2880, "fallback": null
+      },
+      "week": {
+        "period": "week", "tier": "medium",
+        "deltaApRaw": 2500, "deltaApAdjusted": 2500,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 3 }
+        ],
+        "targetApIncrease": 1200,
+        "elapsedMinutes": 10080, "fallback": null
+      },
+      "month": {
+        "period": "month", "tier": "small",
+        "deltaApRaw": 900, "deltaApAdjusted": 900,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 2400,
+        "elapsedMinutes": 43200, "fallback": null
+      }
+    }
+  },
+  {
+    "_scenario": "中進捗（全期間）+ サーヴァント成長",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": { "totalAp": 32800 },
+    "periods": {
+      "previous": {
+        "period": "previous", "tier": "medium",
+        "deltaApRaw": 2200, "deltaApAdjusted": 2200,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 9 },
+          { "servantId": "200200", "servantName": "エミヤ", "delta": 3 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 2880, "fallback": null
+      },
+      "week": {
+        "period": "week", "tier": "large",
+        "deltaApRaw": 5800, "deltaApAdjusted": 5800,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 18 },
+          { "servantId": "200200", "servantName": "エミヤ", "delta": 9 },
+          { "servantId": "300300", "servantName": "キャスター・ニコラ", "delta": 6 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 10080, "fallback": null
+      },
+      "month": {
+        "period": "month", "tier": "medium",
+        "deltaApRaw": 3100, "deltaApAdjusted": 3100,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 9 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 43200, "fallback": null
+      }
+    }
+  },
+  {
+    "_scenario": "大進捗（全期間）+ 新規サーヴァント入手",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": { "totalAp": 28000 },
+    "periods": {
+      "previous": {
+        "period": "previous", "tier": "large",
+        "deltaApRaw": 4500, "deltaApAdjusted": 9500,
+        "newServantCount": 1, "newServantOffsetAp": 5000,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 9 },
+          { "servantId": "200200", "servantName": "エミヤ", "delta": 6 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 2880, "fallback": null
+      },
+      "week": {
+        "period": "week", "tier": "large",
+        "deltaApRaw": 7200, "deltaApAdjusted": 12200,
+        "newServantCount": 1, "newServantOffsetAp": 5000,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 15 },
+          { "servantId": "200200", "servantName": "エミヤ", "delta": 9 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 10080, "fallback": null
+      },
+      "month": {
+        "period": "month", "tier": "medium",
+        "deltaApRaw": 3500, "deltaApAdjusted": 3500,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 6 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 43200, "fallback": null
+      }
+    }
+  },
+  {
+    "_scenario": "比較対象なし（1週間前・1ヶ月前のスナップショットなし）",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": { "totalAp": 31000 },
+    "periods": {
+      "previous": {
+        "period": "previous", "tier": "small",
+        "deltaApRaw": 600, "deltaApAdjusted": 600,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 1440, "fallback": null
+      },
+      "week": {
+        "period": "week", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 0, "fallback": "no_snapshot_for_period"
+      },
+      "month": {
+        "period": "month", "tier": "none",
+        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "newServantCount": 0, "newServantOffsetAp": 0,
+        "servantGrowth": [], "targetApIncrease": 0,
+        "elapsedMinutes": 0, "fallback": "no_snapshot_for_period"
+      }
+    }
+  }
+]
