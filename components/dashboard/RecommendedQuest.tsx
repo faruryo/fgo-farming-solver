@@ -46,7 +46,7 @@ export const RecommendedQuest: React.FC = () => {
             const topRates = relatedRates
               .filter(dr => targetItems.some(ti => ti.id === dr.item_id))
               .sort((a, b) => b.drop_rate - a.drop_rate)
-              .slice(0, 3)
+              .slice(0, 5)
             const topItems = topRates
               .map(dr => items.find(i => i.id === dr.item_id))
               .filter((x): x is NonNullable<typeof x> => Boolean(x))
@@ -66,7 +66,7 @@ export const RecommendedQuest: React.FC = () => {
         ? drop_rates
             .filter(dr => dr.quest_id === quest.id)
             .sort((a, b) => b.drop_rate - a.drop_rate)
-            .slice(0, 3)
+            .slice(0, 5)
             .map(dr => items.find(i => i.id === dr.item_id))
             .filter((x): x is NonNullable<typeof x> => Boolean(x))
         : [item]
@@ -138,13 +138,13 @@ export const RecommendedQuest: React.FC = () => {
               className="flex-1"
             />
 
-            {/* ドロップアイコン: スマホ1個、PC3個 */}
+            {/* ドロップアイコン: スマホ1個、PC最大5個 */}
             <div className="flex items-center gap-1 flex-shrink-0">
               {topItems[0] && (
-                <ItemIdentity icon={topItems[0].icon} name={topItems[0].name} size={26} />
+                <ItemIdentity icon={topItems[0].icon} name={topItems[0].name} size={22} />
               )}
-              {topItems.slice(1, 3).map((item) => (
-                <ItemIdentity key={item.id} icon={item.icon} name={item.name} size={26} className="hidden sm:flex" />
+              {topItems.slice(1, 5).map((item) => (
+                <ItemIdentity key={item.id} icon={item.icon} name={item.name} size={22} className="hidden sm:flex" />
               ))}
             </div>
 

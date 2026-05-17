@@ -289,6 +289,14 @@
     ],
     "quests": [
       {
+        "id": "1n13",
+        "section": "Free",
+        "area": "冠位研鑽戦",
+        "name": "〔エクストラⅡ〕風 Ⅴ",
+        "ap": 40,
+        "lap": 320
+      },
+      {
         "id": "130",
         "section": "第2部",
         "area": "アヴァロン",
@@ -311,17 +319,44 @@
         "name": "神の空岩跡",
         "ap": 21,
         "lap": 158
-      },
-      {
-        "id": "1d6",
-        "section": "第1.5部",
-        "area": "セイレム",
-        "name": "ガローの丘",
-        "ap": 21,
-        "lap": 34
       }
     ],
     "drop_rates": [
+      {
+        "quest_id": "1n13",
+        "quest_name": "〔エクストラⅡ〕風 Ⅴ",
+        "item_id": "07",
+        "item_name": "鉄杭",
+        "drop_rate": 0.328
+      },
+      {
+        "quest_id": "1n13",
+        "quest_name": "〔エクストラⅡ〕風 Ⅴ",
+        "item_id": "09",
+        "item_name": "小鐘",
+        "drop_rate": 0.312
+      },
+      {
+        "quest_id": "1n13",
+        "quest_name": "〔エクストラⅡ〕風 Ⅴ",
+        "item_id": "00",
+        "item_name": "証",
+        "drop_rate": 0.273
+      },
+      {
+        "quest_id": "1n13",
+        "quest_name": "〔エクストラⅡ〕風 Ⅴ",
+        "item_id": "01",
+        "item_name": "骨",
+        "drop_rate": 0.295
+      },
+      {
+        "quest_id": "1n13",
+        "quest_name": "〔エクストラⅡ〕風 Ⅴ",
+        "item_id": "1k",
+        "item_name": "鱗粉",
+        "drop_rate": 0.248
+      },
       {
         "quest_id": "130",
         "quest_name": "霧の海岸",
@@ -349,13 +384,6 @@
         "item_id": "1g",
         "item_name": "矢尻",
         "drop_rate": 0.462
-      },
-      {
-        "quest_id": "1d6",
-        "quest_name": "ガローの丘",
-        "item_id": "07",
-        "item_name": "鉄杭",
-        "drop_rate": 0.769
       },
       {
         "quest_id": "13e",
