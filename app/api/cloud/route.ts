@@ -1,4 +1,5 @@
 import { auth } from '../../../lib/auth'
+import { saveSnapshot } from '../../../lib/progress/snapshot'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { NextRequest } from 'next/server'
 import type { CloudflareEnv } from '../../../types/cloudflare-env'
@@ -43,7 +44,15 @@ export async function POST(req: NextRequest) {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {
     env: CloudflareEnv
   }
-  await env.CLOUD_SAVE.put(key, body)
+  await Promise.all([
+    env.CLOUD_SAVE.put(key, body),
+    env.DB
+      ? saveSnapshot(env.DB, session.user.id, body).catch((e) =>
+          console.error('[api/cloud POST] snapshot save failed:', e)
+        )
+      : Promise.resolve(),
+  ])
   console.log('[api/cloud POST] put complete')
+
   return new Response(null, { status: 204 })
 }
