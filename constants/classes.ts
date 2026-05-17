@@ -1,5 +1,5 @@
 export const MAIN_CLASSES = ['saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker'] as const
-export const EXTRA_CLASSES = ['ruler', 'avenger', 'alterEgo', 'moonCancer', 'foreigner', 'pretender', 'beast'] as const
+export const EXTRA_CLASSES = ['shielder', 'ruler', 'avenger', 'alterEgo', 'moonCancer', 'foreigner', 'pretender', 'beast'] as const
 
 export const CLASS_LIST = [
   { id: 'all',        label: '全て',         abbr: 'ALL', color: '#9a7224' },
@@ -10,6 +10,7 @@ export const CLASS_LIST = [
   { id: 'caster',     label: 'キャスター',   abbr: 'CAS', color: '#207868' },
   { id: 'assassin',   label: 'アサシン',     abbr: 'ASN', color: '#483478' },
   { id: 'berserker',  label: 'バーサーカー', abbr: 'BER', color: '#982020' },
+  { id: 'shielder',   label: 'シールダー',   abbr: 'SHI', color: '#606878' },
   { id: 'ruler',      label: 'ルーラー',     abbr: 'RUL', color: '#886020' },
   { id: 'avenger',    label: 'アヴェンジャー', abbr: 'AVG', color: '#403468' },
   { id: 'alterEgo',   label: 'アルターエゴ', abbr: 'ALT', color: '#904070' },
