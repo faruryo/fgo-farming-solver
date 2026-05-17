@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFarmingResult } from '../../hooks/use-farming-result'
 import { useProgressReport } from '../../hooks/use-progress-report'
@@ -8,7 +8,8 @@ import { Link } from '../common/link'
 import { QuestTable } from './quest-table'
 import { TweetIntent } from './tweet-intent'
 import { ResultAccordion } from './result-accordion'
-import { ProgressReportPanel, type ResultStats } from './ProgressReportPanel'
+import { ProgressReportPanel } from './ProgressReportPanel'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Result } from '../../interfaces/api'
 
@@ -77,7 +78,6 @@ const ResultPanel = ({
 
 export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
-  const [activeTab, setActiveTab] = useState<'ap' | 'lap'>('ap')
   const totalApForProgress = legacyResult
     ? legacyResult.total_ap
     : (apResult?.total_ap ?? null)
@@ -119,13 +119,8 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
     )
   }
 
-  const current = activeTab === 'ap' ? apResult! : lapResult!
-  const currentYen = Math.round(current.total_ap / 144 / 168 * 10000)
-  const currentStats: ResultStats = {
-    totalLap: current.total_lap,
-    totalAp: current.total_ap,
-    yen: currentYen,
-  }
+  const apYen = Math.round(apResult!.total_ap / 144 / 168 * 10000)
+  const lapYen = Math.round(lapResult!.total_ap / 144 / 168 * 10000)
 
   return (
     <div className="c-page">
@@ -135,34 +130,41 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
             <div className="c-page-en">RESULT</div>
             <h1 className="c-page-title">{t('計算結果')}</h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              className={`c-filter-toggle${activeTab === 'ap' ? ' active' : ''}`}
-              onClick={() => setActiveTab('ap')}
-            >
-              消費AP 最小
-            </button>
-            <button
-              className={`c-filter-toggle${activeTab === 'lap' ? ' active' : ''}`}
-              onClick={() => setActiveTab('lap')}
-            >
-              周回数 最小
-            </button>
-            <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
-          </div>
+          <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
         </div>
 
-        <ResultPanel
-          result={current}
-          progressPanel={
-            <ProgressReportPanel
-              data={progress.data}
-              loading={progress.loading}
-              stats={currentStats}
-              tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+        <Tabs defaultValue="ap">
+          <TabsList className="mb-6">
+            <TabsTrigger value="ap">消費AP 最小</TabsTrigger>
+            <TabsTrigger value="lap">周回数 最小</TabsTrigger>
+          </TabsList>
+          <TabsContent value="ap">
+            <ResultPanel
+              result={apResult!}
+              progressPanel={
+                <ProgressReportPanel
+                  data={progress.data}
+                  loading={progress.loading}
+                  stats={{ totalLap: apResult!.total_lap, totalAp: apResult!.total_ap, yen: apYen }}
+                  tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+                />
+              }
             />
-          }
-        />
+          </TabsContent>
+          <TabsContent value="lap">
+            <ResultPanel
+              result={lapResult!}
+              progressPanel={
+                <ProgressReportPanel
+                  data={progress.data}
+                  loading={progress.loading}
+                  stats={{ totalLap: lapResult!.total_lap, totalAp: lapResult!.total_ap, yen: lapYen }}
+                  tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+                />
+              }
+            />
+          </TabsContent>
+        </Tabs>
 
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>

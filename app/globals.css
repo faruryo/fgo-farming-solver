@@ -504,12 +504,6 @@ body {
 
 /* ===== RESULT ACTIONS ===== */
 .c-result-actions { display: flex; gap: 8px; align-items: center; }
-.c-filter-toggle {
-  background: var(--panel); border: 1px solid var(--border); color: var(--text2);
-  cursor: pointer; font-family: var(--sans); font-size: 12px; padding: 8px 16px; transition: all 0.15s;
-}
-.c-filter-toggle:hover { border-color: var(--steel); color: var(--text); }
-.c-filter-toggle.active { border-color: var(--gold-dim); color: var(--gold); background: rgba(154,114,36,0.06); }
 .c-back-btn {
   background: none; border: 1px solid var(--border); color: var(--text2);
   cursor: pointer; font-family: var(--sans); font-size: 12px; padding: 8px 16px; transition: all 0.15s;
