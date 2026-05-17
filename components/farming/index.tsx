@@ -174,6 +174,12 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   ])
 
   return (
+    <>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      )}
     <div className="c-page">
       <div className="c-page-inner">
         <div className="c-page-header">
@@ -232,7 +238,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   }
                   className="c-farming-btn"
                 >
-                  {isLoading && <Loader2 className="animate-spin mr-2 h-4 w-4" />}
                   <span className="c-farming-btn-en">SOLVE FARMING</span>
                   <span className="c-farming-btn-jp">{t('周回数を求める')}</span>
                 </Button>
@@ -255,5 +260,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         </form>
       </div>
     </div>
+    </>
   )
 }
