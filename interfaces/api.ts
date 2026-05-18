@@ -3,6 +3,12 @@ export type Params = {
   items: { [key: string]: number }
   quests: string[]
 }
+
+export type SolveOptions = {
+  applyCampaigns?: boolean
+  /** Reference time (Unix seconds) for campaign validity filtering. Defaults to current time. */
+  nowSec?: number
+}
 export type Quest = {
   id: string
   section: string

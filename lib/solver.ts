@@ -1,12 +1,63 @@
 import solver from 'javascript-lp-solver'
 import { Drops } from './get-drops'
-import { Result, BothResult, Params } from '../interfaces/api'
+import { Result, BothResult, Params, SolveOptions } from '../interfaces/api'
+import { Campaign } from '../interfaces/fgodrop'
+
+/**
+ * Compute the campaign-adjusted AP for a quest, given the set of campaigns
+ * currently considered active. Returns the original AP if no campaign applies.
+ *
+ * Value scale (confirmed via Atlas Academy historical data):
+ *   - multiplication: effective = original × value / 1000
+ *     (50%DOWN→value=500, 75%DOWN→value=250, 66%DOWN→value=334)
+ *   - fixedValue: effective = value (e.g. value=0 for "AP 0" events)
+ *   - addition / none / unknown: ignored (use original AP)
+ *
+ * When multiple campaigns target the same quest, the smallest resulting
+ * AP wins (most player-favorable). This matches user expectations when
+ * overlapping events are running.
+ */
+export const computeEffectiveAp = (
+  originalAp: number,
+  questId: string,
+  activeCampaigns: Campaign[]
+): number => {
+  let effective = originalAp
+  for (const c of activeCampaigns) {
+    if (!c.questIds.includes(questId)) continue
+    let candidate: number | null = null
+    if (c.calcType === 'multiplication') {
+      candidate = Math.max(0, Math.round(originalAp * c.value / 1000))
+    } else if (c.calcType === 'fixedValue') {
+      candidate = Math.max(0, c.value)
+    }
+    if (candidate != null && candidate < effective) {
+      effective = candidate
+    }
+  }
+  return effective
+}
+
+/** Filter campaigns to those active at the given Unix-second timestamp. */
+export const filterActiveCampaigns = (
+  campaigns: Campaign[],
+  nowSec: number
+): Campaign[] =>
+  campaigns.filter(c => c.validFrom <= nowSec && nowSec <= c.validTo)
 
 export const solve = (
   drops: Drops,
   params: Params,
+  options: SolveOptions = {}
 ): Result => {
   const { objective, items: targetItems, quests: allowedQuestIds } = params
+  const { applyCampaigns = false, nowSec = Math.floor(Date.now() / 1000) } = options
+
+  // Determine which campaigns apply right now. Empty when applyCampaigns=false,
+  // so all downstream paths fall back to original AP.
+  const activeCampaigns = applyCampaigns
+    ? filterActiveCampaigns(drops.campaigns ?? [], nowSec)
+    : []
 
   const model: solver.Model = {
     optimize: objective === 'lap' ? 'totalRuns' : 'totalAp',
@@ -36,11 +87,23 @@ export const solve = (
     allowedQuestIds.includes(q.id)
   )
 
+  // Pre-compute effective AP per quest so we don't traverse activeCampaigns
+  // on every solver-model edge and result-aggregation step.
+  const apFor = (questId: string, originalAp: number) =>
+    activeCampaigns.length > 0
+      ? computeEffectiveAp(originalAp, questId, activeCampaigns)
+      : originalAp
+  const effectiveApByQuest = new Map<string, number>()
+  for (const q of availableQuests) {
+    effectiveApByQuest.set(q.id, apFor(q.id, q.ap))
+  }
+
   // Add variables for each quest
   availableQuests.forEach((quest) => {
+    const effAp = effectiveApByQuest.get(quest.id) ?? quest.ap
     const variable: Record<string, number> = {
       totalRuns: 1,
-      totalAp: quest.ap,
+      totalAp: effAp,
     }
 
     drops.drop_rates
@@ -76,7 +139,7 @@ export const solve = (
       section: q.section,
       area: q.area,
       name: q.name,
-      ap: q.ap,
+      ap: effectiveApByQuest.get(q.id) ?? q.ap,
       lap: Math.ceil(Number(solveResult[q.id] || 0)),
     }))
 
@@ -115,7 +178,10 @@ export const solve = (
     }))
 
   const total_lap = resultQuests.reduce((acc, q) => acc + q.lap, 0)
-  const total_ap = resultQuests.reduce((acc, q) => acc + q.lap * (availableQuests.find(aq => aq.id === q.id)?.ap || 0), 0)
+  const total_ap = resultQuests.reduce(
+    (acc, q) => acc + q.lap * (effectiveApByQuest.get(q.id) ?? 0),
+    0,
+  )
 
   return {
     params,
@@ -128,7 +194,11 @@ export const solve = (
   }
 }
 
-export const solveBoth = (drops: Drops, params: Params): BothResult => ({
-  ap:  solve(drops, { ...params, objective: 'ap' }),
-  lap: solve(drops, { ...params, objective: 'lap' }),
+export const solveBoth = (
+  drops: Drops,
+  params: Params,
+  options: SolveOptions = {}
+): BothResult => ({
+  ap: solve(drops, { ...params, objective: 'ap' }, options),
+  lap: solve(drops, { ...params, objective: 'lap' }, options),
 })

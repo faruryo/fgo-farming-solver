@@ -9,6 +9,8 @@ export type {
   Wave,
   Quest,
   DropRate,
+  Campaign,
+  CampaignCalcType,
   MasterData,
   DashboardEvent,
   DashboardGacha,
@@ -22,6 +24,8 @@ import type {
   Wave,
   Quest,
   DropRate,
+  Campaign,
+  CampaignCalcType,
   MasterData,
   DashboardEvent,
   DashboardGacha,
@@ -381,11 +385,49 @@ export async function fetchAndTransformData(): Promise<MasterData> {
 
   console.log(`Filtering complete: ${finalQuests.length} quests and ${filtered_drop_rates.length} drop rate records selected.`)
 
+  // 7. Extract AP campaigns from nice_event.json and project to short quest IDs.
+  // Build the aaQuestId → short quest ID map from the final (filtered) quest set
+  // so we only carry campaign data relevant to quests the solver can see.
+  const aaQuestIdToShortId = new Map<number, string>()
+  for (const q of finalQuests) {
+    if (typeof q.aaQuestId === 'number') {
+      aaQuestIdToShortId.set(q.aaQuestId, q.id)
+    }
+  }
+
+  let campaigns: Campaign[] = []
+  try {
+    console.log('Fetching event data for AP campaigns from Atlas Academy...')
+    const eventsRes = await fetch(`${origin}/export/${region}/nice_event.json`)
+    const allEvents: AtlasEvent[] = await eventsRes.json()
+    campaigns = extractApCampaigns(allEvents, aaQuestIdToShortId)
+    console.log(`Extracted ${campaigns.length} questAp campaigns covering ${aaQuestIdToShortId.size} mappable quests.`)
+  } catch (e) {
+    console.warn('Failed to fetch/parse nice_event.json for campaigns:', e)
+  }
+
   return {
     items: items,
     quests: finalQuests,
-    drop_rates: filtered_drop_rates
+    drop_rates: filtered_drop_rates,
+    campaigns,
   }
+}
+
+interface AtlasEventCampaign {
+  target: string
+  calcType: string
+  value: number
+  idx?: number
+  targetIds?: number[]
+  warIds?: number[]
+  warGroupIds?: number[]
+}
+
+interface AtlasEventCampaignQuest {
+  questId: number
+  phase?: number
+  isExcepted?: boolean
 }
 
 interface AtlasEvent {
@@ -404,6 +446,68 @@ interface AtlasEvent {
     }[]
   }[]
   svts?: { svtId: number }[]
+  campaigns?: AtlasEventCampaign[]
+  campaignQuests?: AtlasEventCampaignQuest[]
+}
+
+const KNOWN_CAMPAIGN_CALC_TYPES = new Set<CampaignCalcType>([
+  'multiplication',
+  'fixedValue',
+  'addition',
+  'none',
+])
+
+/**
+ * Extract `target=questAp` campaigns from Atlas `nice_event.json` and
+ * project their target quest list into the app's short quest ID space.
+ *
+ * - Skips `campaignQuests[].isExcepted === true`
+ * - Skips quests with no aaQuestId mapping (e.g., main story quests
+ *   not present in our drops data)
+ * - Drops campaigns whose `calcType` is not one of the known values
+ *   (logged for visibility); unmapped calcType is intentionally not
+ *   surfaced as an error to avoid breaking master-data updates when
+ *   Atlas introduces new values.
+ */
+export function extractApCampaigns(
+  events: AtlasEvent[],
+  aaQuestIdToShortId: Map<number, string>
+): Campaign[] {
+  const out: Campaign[] = []
+  for (const ev of events) {
+    const apCampaigns = (ev.campaigns ?? []).filter(c => c.target === 'questAp')
+    if (apCampaigns.length === 0) continue
+
+    const questIds: string[] = []
+    const seen = new Set<string>()
+    for (const cq of ev.campaignQuests ?? []) {
+      if (cq.isExcepted) continue
+      const shortId = aaQuestIdToShortId.get(cq.questId)
+      if (!shortId || seen.has(shortId)) continue
+      seen.add(shortId)
+      questIds.push(shortId)
+    }
+
+    if (questIds.length === 0) continue
+
+    for (const c of apCampaigns) {
+      if (!KNOWN_CAMPAIGN_CALC_TYPES.has(c.calcType as CampaignCalcType)) {
+        console.warn(
+          `extractApCampaigns: unknown calcType=${c.calcType} on event ${ev.id} (${ev.name}); skipping`
+        )
+        continue
+      }
+      out.push({
+        id: ev.id,
+        calcType: c.calcType as CampaignCalcType,
+        value: c.value,
+        validFrom: ev.startedAt,
+        validTo: ev.finishedAt,
+        questIds,
+      })
+    }
+  }
+  return out
 }
 
 interface AtlasGacha {

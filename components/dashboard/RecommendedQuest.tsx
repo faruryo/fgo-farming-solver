@@ -12,21 +12,25 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
+import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { isBothResult, Quest } from '../../interfaces/api'
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
   const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
-  const { items, quests, drop_rates, isLoading: dropsLoading } = useDrops()
+  const drops = useDrops()
+  const { items, quests, drop_rates, isLoading: dropsLoading } = drops
   const { result: recentResult, loading: resultLoading } = useRecentResult()
+  const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
+  const displayResult = campaignAdjustedResult ?? recentResult
 
   const recommendations = useMemo(() => {
     if (dropsLoading || !items || !items.length || !quests || !drop_rates) return []
 
-    if (recentResult) {
-      const targetQuests = isBothResult(recentResult) ? recentResult.lap.quests : recentResult.quests
-      const targetItems = isBothResult(recentResult) ? recentResult.lap.items : recentResult.items
-      const targetDropRates = isBothResult(recentResult) ? recentResult.lap.drop_rates : recentResult.drop_rates
+    if (displayResult) {
+      const targetQuests = isBothResult(displayResult) ? displayResult.lap.quests : displayResult.quests
+      const targetItems = isBothResult(displayResult) ? displayResult.lap.items : displayResult.items
+      const targetDropRates = isBothResult(displayResult) ? displayResult.lap.drop_rates : displayResult.drop_rates
 
       if (targetQuests && targetQuests.length > 0) {
         return targetQuests
@@ -72,7 +76,7 @@ export const RecommendedQuest: React.FC = () => {
         : [item]
       return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false }
     }).filter(r => r.quest)
-  }, [items, quests, drop_rates, chaldea, dropsLoading, recentResult])
+  }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult])
 
   // aaQuestId comes from drops quests (result quests may not carry it)
   const spotIcons = useSpotIcons(
@@ -113,13 +117,16 @@ export const RecommendedQuest: React.FC = () => {
             {recentResult
               ? '直近の計算結果のクエスト Top 4。優先順：冠位研鑽戦 → オーディール・コール → その他。同優先度内は予定周回数が多い順。'
               : '不足素材ごとに最もドロップ率の高いクエスト Top 4。'}
+            <span className="block mt-1 opacity-75">AP半減などのキャンペーン情報は最大30分程度の遅れで反映されます。</span>
           </TooltipContent>
         </Tooltip>
         <div className="u-section-header-line" />
       </div>
 
       <div className="flex flex-col gap-3">
-        {recommendations.map(({ id, topItems, quest, rate, lap }, index) => (
+        {recommendations.map(({ id, topItems, quest, rate, lap }, index) => {
+          const originalAp = quest?.id ? quests?.find(q => q.id === quest.id)?.ap : undefined
+          return (
           <NextLink
             key={id}
             href={`/quests/${quest?.id}`}
@@ -134,6 +141,7 @@ export const RecommendedQuest: React.FC = () => {
               area={quest?.area ?? ''}
               name={quest?.name ?? ''}
               ap={quest?.ap ?? 0}
+              originalAp={originalAp}
               spotIcon={quest?.id ? spotIcons[quest.id] : undefined}
               className="flex-1"
             />
@@ -155,7 +163,8 @@ export const RecommendedQuest: React.FC = () => {
               {lap ? `あと${lap}周で達成！` : `ドロップ率 ${Math.round((rate || 0) * 100)}%`}
             </p>
           </NextLink>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

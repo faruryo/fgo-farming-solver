@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta } from './update'
+import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
@@ -154,6 +154,7 @@ describe('fetchAndTransformData', () => {
       .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response)
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
       .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
 
     const data = await fetchAndTransformData()
 
@@ -177,5 +178,145 @@ describe('fetchAndTransformData', () => {
     const sorted = [...proofRates].sort((a, b) => b.drop_rate - a.drop_rate)
     expect(sorted[0].drop_rate).toBe(0.9)
     expect(sorted[5].drop_rate).toBe(0.4)
+
+    // campaigns field present (empty in this fixture since nice_event returned [])
+    expect(data.campaigns).toEqual([])
+  })
+})
+
+describe('extractApCampaigns', () => {
+  const idMap = new Map<number, string>([
+    [94145400, '20'],
+    [94145410, '21'],
+    [94146500, '22'],
+    [4000701, '30'],
+  ])
+
+  it('extracts questAp campaigns and maps Atlas quest IDs to short IDs', () => {
+    const events: any[] = [
+      {
+        id: 71683,
+        name: '消費AP 50%DOWN',
+        startedAt: 1000,
+        endedAt: 2000,
+        finishedAt: 2000,
+        type: 'questCampaign',
+        campaigns: [
+          { target: 'questAp', calcType: 'multiplication', value: 500, idx: 1 },
+        ],
+        campaignQuests: [
+          { questId: 94145400, phase: 0, isExcepted: false },
+          { questId: 94145410, phase: 0, isExcepted: false },
+          { questId: 94146500, phase: 0, isExcepted: false },
+        ],
+      },
+    ]
+    const result = extractApCampaigns(events, idMap)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      id: 71683,
+      calcType: 'multiplication',
+      value: 500,
+      validFrom: 1000,
+      validTo: 2000,
+    })
+    expect(result[0].questIds.sort()).toEqual(['20', '21', '22'])
+  })
+
+  it('skips campaigns whose target is not questAp', () => {
+    const events: any[] = [
+      {
+        id: 1,
+        name: 'Drop UP',
+        startedAt: 0,
+        endedAt: 1,
+        finishedAt: 1,
+        type: 'questCampaign',
+        campaigns: [{ target: 'questDrop', calcType: 'multiplication', value: 200 }],
+        campaignQuests: [{ questId: 94145400, phase: 0, isExcepted: false }],
+      },
+    ]
+    expect(extractApCampaigns(events, idMap)).toEqual([])
+  })
+
+  it('omits campaignQuests with isExcepted=true and unmappable Atlas IDs', () => {
+    const events: any[] = [
+      {
+        id: 9,
+        name: 'AP DOWN',
+        startedAt: 100,
+        endedAt: 200,
+        finishedAt: 200,
+        type: 'questCampaign',
+        campaigns: [{ target: 'questAp', calcType: 'multiplication', value: 500 }],
+        campaignQuests: [
+          { questId: 94145400, phase: 0, isExcepted: false },     // mapped → '20'
+          { questId: 94145410, phase: 0, isExcepted: true },      // excepted → drop
+          { questId: 99999999, phase: 0, isExcepted: false },     // unmapped → drop
+        ],
+      },
+    ]
+    const result = extractApCampaigns(events, idMap)
+    expect(result).toHaveLength(1)
+    expect(result[0].questIds).toEqual(['20'])
+  })
+
+  it('returns no campaign when no mappable quests remain', () => {
+    const events: any[] = [
+      {
+        id: 9,
+        name: 'AP DOWN',
+        startedAt: 0,
+        endedAt: 1,
+        finishedAt: 1,
+        type: 'questCampaign',
+        campaigns: [{ target: 'questAp', calcType: 'multiplication', value: 500 }],
+        campaignQuests: [{ questId: 99999999, phase: 0, isExcepted: false }],
+      },
+    ]
+    expect(extractApCampaigns(events, idMap)).toEqual([])
+  })
+
+  it('emits one Campaign entry per questAp campaign within the same event', () => {
+    const events: any[] = [
+      {
+        id: 50,
+        name: 'multi-campaign',
+        startedAt: 0,
+        endedAt: 10,
+        finishedAt: 10,
+        type: 'questCampaign',
+        campaigns: [
+          { target: 'questAp', calcType: 'multiplication', value: 500, idx: 1 },
+          { target: 'questAp', calcType: 'fixedValue', value: 0, idx: 2 },
+        ],
+        campaignQuests: [{ questId: 4000701, phase: 0, isExcepted: false }],
+      },
+    ]
+    const result = extractApCampaigns(events, idMap)
+    expect(result).toHaveLength(2)
+    expect(result.map(r => r.calcType).sort()).toEqual(['fixedValue', 'multiplication'])
+    expect(result.every(r => r.questIds.length === 1 && r.questIds[0] === '30')).toBe(true)
+  })
+
+  it('skips campaigns with unknown calcType but keeps known ones', () => {
+    const events: any[] = [
+      {
+        id: 1,
+        name: 'mixed',
+        startedAt: 0,
+        endedAt: 1,
+        finishedAt: 1,
+        type: 'questCampaign',
+        campaigns: [
+          { target: 'questAp', calcType: 'multiplication', value: 500 },
+          { target: 'questAp', calcType: 'futureType', value: 100 },
+        ],
+        campaignQuests: [{ questId: 94145400, phase: 0, isExcepted: false }],
+      },
+    ]
+    const result = extractApCampaigns(events, idMap)
+    expect(result).toHaveLength(1)
+    expect(result[0].calcType).toBe('multiplication')
   })
 })

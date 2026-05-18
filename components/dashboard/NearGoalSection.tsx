@@ -9,22 +9,26 @@ import { QuestIdentity } from '../common/QuestIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
+import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { isBothResult } from '../../interfaces/api'
 
 export const NearGoalSection: React.FC = () => {
-  const { items: dropItems, quests: dropQuests, isLoading: dropsLoading } = useDrops()
+  const drops = useDrops()
+  const { items: dropItems, quests: dropQuests, isLoading: dropsLoading } = drops
   const { result: recentResult, loading: resultLoading } = useRecentResult()
+  const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
+  const displayResult = campaignAdjustedResult ?? recentResult
 
   const nearGoalEntries = useMemo(() => {
-    if (!recentResult || !dropItems?.length) return []
+    if (!displayResult || !dropItems?.length) return []
 
-    const result = isBothResult(recentResult) ? recentResult.lap : recentResult
+    const result = isBothResult(displayResult) ? displayResult.lap : displayResult
     const { quests: targetQuests, drop_rates: targetDropRates, items: targetItems, params } = result
 
     if (!targetQuests?.length || !targetItems?.length) return []
 
-    const maxLap = Math.max(...targetQuests.map(q => q.lap))
-    const threshold = Math.max(50, maxLap * 0.3)
+    // Build a map of original AP (before campaign) from the drops data for badge display
+    const originalApById = new Map(dropQuests?.map(q => [q.id, q.ap]) ?? [])
 
     return targetItems
       .flatMap(ti => {
@@ -41,7 +45,7 @@ export const NearGoalSection: React.FC = () => {
           .filter((x): x is NonNullable<typeof x> => x !== null)
           .sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
 
-        if (!best || best.lapsNeeded > threshold) return []
+        if (!best) return []
 
         const displayItem = dropItems.find(i => i.id === ti.id)
         if (!displayItem) return []
@@ -50,7 +54,11 @@ export const NearGoalSection: React.FC = () => {
       })
       .sort((a, b) => a.lapsNeeded - b.lapsNeeded)
       .slice(0, 4)
-  }, [dropItems, recentResult])
+      .map(entry => ({
+        ...entry,
+        originalAp: originalApById.get(entry.quest.id),
+      }))
+  }, [dropItems, dropQuests, displayResult])
 
   // drops側のquestからaaQuestIdを補完してspot画像を取得
   const spotIcons = useSpotIcons(
@@ -72,12 +80,13 @@ export const NearGoalSection: React.FC = () => {
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[220px] text-left leading-relaxed">
             直近の計算結果から、残り周回数が最も少ない素材の Top 4。残り周回数が少ない順（達成が近い順）でランキング。
+            <span className="block mt-1 opacity-75">AP半減などのキャンペーン情報は最大30分程度の遅れで反映されます。</span>
           </TooltipContent>
         </Tooltip>
         <div className="u-section-header-line" />
       </div>
       <div className="flex flex-col gap-3">
-        {nearGoalEntries.map(({ item, quest, needed, lapsNeeded }, index) => {
+        {nearGoalEntries.map(({ item, quest, needed, lapsNeeded, originalAp }, index) => {
           const isVeryClose = lapsNeeded <= 10
           const accentColor = isVeryClose ? '#60c890' : 'var(--gold)'
           return (
@@ -96,11 +105,11 @@ export const NearGoalSection: React.FC = () => {
               {/* 区切り線 */}
               <div className="self-stretch w-px flex-shrink-0 mx-1" style={{ background: 'rgba(154,114,36,0.15)' }} />
 
-              {/* QuestIdentity を横1行で配置（②AP位置修正・①高さ統一） */}
               <QuestIdentity
                 area={quest.area}
                 name={quest.name}
                 ap={quest.ap}
+                originalAp={originalAp}
                 spotIcon={spotIcons[quest.id]}
                 className="flex-1 min-w-0"
               />

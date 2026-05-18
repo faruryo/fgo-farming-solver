@@ -53,7 +53,11 @@ export async function GET(req: NextRequest) {
     quests: allowedQuests,
   }
 
-  const result = solveBoth(drops, params)
+  // Saved farming results and snapshots must use nominal (campaign-free) AP so
+  // that downstream KPIs (calculation history, progress comparisons) stay
+  // stable across campaign periods. Dashboard views re-solve client-side with
+  // applyCampaigns=true when needed.
+  const result = solveBoth(drops, params, { applyCampaigns: false })
   const id = crypto.randomUUID()
 
   if (env.DB) {

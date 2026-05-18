@@ -22,3 +22,14 @@ export type DropRate = {
   quest_id: string
   drop_rate: number
 }
+
+export type CampaignCalcType = 'multiplication' | 'fixedValue' | 'addition' | 'none'
+
+export type Campaign = {
+  id: number
+  calcType: CampaignCalcType
+  value: number
+  validFrom: number
+  validTo: number
+  questIds: string[]
+}

@@ -154,6 +154,8 @@
         "今の素材状況で最適な周回場所を探したい": "Find optimal farming locations",
         "wizard-q2-title": "Material Calculation",
         "どのサーヴァントを育てたいですか？": "Which servant do you want to train?",
-        "サーヴァント一覧から選択する": "Select from servant list"
+        "サーヴァント一覧から選択する": "Select from servant list",
+        "ap-campaign-delay-note": "Campaign info (e.g., AP halve) may take up to ~30 minutes to appear here.",
+        "ap-campaign-active-badge": "AP campaign applied"
     }
 }

@@ -30,10 +30,22 @@ export interface DropRate {
   drop_rate: number
 }
 
+export type CampaignCalcType = 'multiplication' | 'fixedValue' | 'addition' | 'none'
+
+export interface Campaign {
+  id: number
+  calcType: CampaignCalcType
+  value: number
+  validFrom: number
+  validTo: number
+  questIds: string[]
+}
+
 export interface MasterData {
   items: Item[]
   quests: Quest[]
   drop_rates: DropRate[]
+  campaigns: Campaign[]
 }
 
 export interface DashboardEvent {
