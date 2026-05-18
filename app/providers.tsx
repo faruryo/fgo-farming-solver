@@ -2,6 +2,7 @@
 
 import { SessionProvider } from 'next-auth/react'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from '@/components/ui/sonner'
 import '../lib/i18n'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -9,6 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <TooltipProvider>
         {children}
+        <Toaster />
       </TooltipProvider>
     </SessionProvider>
   )

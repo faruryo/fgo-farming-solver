@@ -2,16 +2,21 @@
 
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { NiceServant, Item } from '../../interfaces/atlas-academy'
+import { NiceServant, Item, TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
+import { useLocalStorage } from '../../hooks/use-local-storage'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { sumMaterials } from '../../lib/sum-materials'
+import { diffMaterialsForStartChange } from '../../lib/diff-materials'
+import { showTrackingToast, showBlockedToast } from '../../lib/tracking-toast'
 import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { ClassName } from '../../interfaces/atlas-academy'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { ServantCard } from './servant-card'
+import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export type MaterialIndexProps = {
   servants: NiceServant[]
@@ -22,9 +27,13 @@ export type MaterialIndexProps = {
 
 const DEFAULT_SERVANT_STATE = createServantState()
 
+const hasNonZeroPossession = (p: Record<string, number | undefined>): boolean =>
+  Object.values(p).some(v => typeof v === 'number' && v > 0)
+
 export const Index = ({
   servants = [],
   materials = {},
+  items = [],
 }: MaterialIndexProps) => {
   const router = useRouter()
   const ids = useMemo(() => servants.map(s => s.id.toString()), [servants])
@@ -38,6 +47,46 @@ export const Index = ({
   const [showGlobal, setShowGlobal] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
+
+  // Tracking mode + possession sharing
+  const [trackingMode, setTrackingMode] = useLocalStorage<boolean>(
+    'material/tracking-mode',
+    false
+  )
+  const [trackingDismissed, setTrackingDismissed] = useLocalStorage<boolean>(
+    'material/tracking-suggest-dismissed',
+    false
+  )
+  const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
+    'posession',
+    {}
+  )
+
+  // Keep a ref so applyStartChange always sees the latest possession synchronously
+  const possessionRef = useRef(possession)
+  useEffect(() => {
+    possessionRef.current = possession
+  }, [possession])
+
+  // Detect whether possession has ever been non-zero (drives suggestion banner)
+  const [hasPossessionInput, setHasPossessionInput] = useState(false)
+  useEffect(() => {
+    if (!hasPossessionInput && hasNonZeroPossession(possession)) {
+      setHasPossessionInput(true)
+    }
+  }, [possession, hasPossessionInput])
+
+  const itemsById = useMemo(() => {
+    const map: Record<string, Item> = {}
+    items.forEach(it => { map[it.id.toString()] = it })
+    return map
+  }, [items])
+
+  const servantsById = useMemo(() => {
+    const map: Record<string, NiceServant> = {}
+    servants.forEach(s => { map[s.id.toString()] = s })
+    return map
+  }, [servants])
 
   const [currentHash, setCurrentHash] = useState('')
   const processedHash = useRef('')
@@ -71,6 +120,99 @@ export const Index = ({
       )
     )
   }, [setChaldeaState])
+
+  // Pre-check: returns false and shows blocked toast when tracking mode ON and items insufficient.
+  const checkStartChange = useCallback(
+    (
+      servantId: string,
+      target: TargetKey,
+      idx: number,
+      prevStart: number,
+      newStart: number
+    ): boolean => {
+      if (!trackingMode) return true
+      if (servantId === 'all') return true
+      if (newStart <= prevStart) return true  // returns are always allowed
+
+      const servantMats = materials[servantId]
+      if (!servantMats) return true
+
+      const delta = diffMaterialsForStartChange(servantMats, target, prevStart, newStart)
+      if (!delta || delta.direction !== 'consume') return true
+
+      const poss = possessionRef.current
+      const shortageItems = delta.items
+        .filter(({ itemId, amount }) => (poss[itemId] ?? 0) < amount)
+        .map(({ itemId, amount }) => ({
+          itemId,
+          owned: poss[itemId] ?? 0,
+          required: amount,
+          name: itemsById[itemId]?.name ?? itemId,
+          icon: itemsById[itemId]?.icon,
+        }))
+
+      if (shortageItems.length === 0) return true
+
+      const servant = servantsById[servantId]
+      showBlockedToast({
+        servantName: servant?.name ?? servantId,
+        target,
+        idx,
+        prevStart,
+        newStart,
+        shortageItems,
+        onSetPossession: (newValues) =>
+          setPossession((prev) => ({ ...prev, ...newValues })),
+      })
+      return false
+    },
+    [trackingMode, materials, servantsById, itemsById, setPossession]
+  )
+
+  // Apply possession after a confirmed (unblocked) start change.
+  const applyStartChange = useCallback(
+    (
+      servantId: string,
+      target: TargetKey,
+      idx: number,
+      prevStart: number,
+      newStart: number
+    ) => {
+      if (!trackingMode) return
+      if (servantId === 'all') return
+      if (prevStart === newStart) return
+
+      const servantMats = materials[servantId]
+      if (!servantMats) return
+
+      const delta = diffMaterialsForStartChange(servantMats, target, prevStart, newStart)
+      if (!delta) return
+
+      setPossession(prev => {
+        const next: Record<string, number | undefined> = { ...prev }
+        delta.items.forEach(({ itemId, amount }) => {
+          const cur = next[itemId] ?? 0
+          next[itemId] = delta.direction === 'consume' ? cur - amount : cur + amount
+        })
+        return next
+      })
+
+      const servant = servantsById[servantId]
+      if (!servant) return
+
+      showTrackingToast({
+        servantId,
+        servantName: servant.name,
+        servantMaterials: servantMats,
+        target,
+        idx,
+        prevStart,
+        newStart,
+        itemsById,
+      })
+    },
+    [trackingMode, materials, setPossession, servantsById, itemsById]
+  )
 
   const { ownedCount, doneCount } = useMemo(() => {
     let owned = 0, done = 0
@@ -138,7 +280,7 @@ export const Index = ({
   // Handle automatic scroll and filter reset based on URL hash
   useEffect(() => {
     if (!mounted) return
-    
+
     // Reset processed hash if the hash cleared or changed to non-servant hash
     if (!currentHash.startsWith('#svt-')) {
       processedHash.current = ''
@@ -186,6 +328,20 @@ export const Index = ({
     [setChaldeaState]
   )
 
+  const handleWillStartChange = useCallback(
+    (id: string) =>
+      (target: TargetKey, idx: number, prev: number, next: number): boolean =>
+        checkStartChange(id, target, idx, prev, next),
+    [checkStartChange]
+  )
+
+  const handleOnStartChange = useCallback(
+    (id: string) =>
+      (target: TargetKey, idx: number, prev: number, next: number) =>
+        applyStartChange(id, target, idx, prev, next),
+    [applyStartChange]
+  )
+
   const handleCalc = () => {
     const result = sumMaterials(chaldeaState, materials)
     localStorage.setItem('material/result', JSON.stringify(result))
@@ -193,6 +349,12 @@ export const Index = ({
   }
 
   const globalState = chaldeaState.all ?? DEFAULT_SERVANT_STATE
+
+  const showSuggestionBanner =
+    mounted &&
+    !trackingMode &&
+    !trackingDismissed &&
+    hasPossessionInput
 
   if (!mounted) return <div className="c-page" />
 
@@ -225,6 +387,20 @@ export const Index = ({
           <div className="c-global-header" onClick={() => setShowGlobal(v => !v)}>
             <span className="c-global-header-title">COMMON TARGET — 共通目標設定</span>
             <div className="c-global-header-line" />
+            {trackingMode && (
+              <span
+                style={{
+                  color: 'var(--red)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  marginRight: 8,
+                }}
+                title="育成記録モード ON"
+              >
+                ● REC
+              </span>
+            )}
             <span className="c-global-note">再臨 {gtAsc} ／ スキル {gtSkill} ／ アペンド {gtAppend}</span>
             <span className={`c-global-chevron${showGlobal ? ' open' : ''}`}>▼</span>
           </div>
@@ -263,9 +439,102 @@ export const Index = ({
                 </select>
                 <span className="c-global-note">全アペンド共通</span>
               </div>
+              <span className="c-global-label">育成記録モード</span>
+              <div className="c-global-row" style={{ alignItems: 'center', gap: 10 }}>
+                <Switch
+                  checked={trackingMode}
+                  onCheckedChange={(v) => {
+                    setTrackingMode(v)
+                    if (v) setTrackingDismissed(true)
+                  }}
+                  aria-label="育成記録モード"
+                />
+                <span className="c-global-note">
+                  {trackingMode ? 'ON: 現在値変更で所持数を増減します' : 'OFF: 現在値変更は所持数に影響しません'}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<button type="button" aria-label="ヘルプ" />}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      border: '1px solid var(--border, #555)',
+                      background: 'transparent',
+                      color: 'inherit',
+                      cursor: 'help',
+                      fontSize: 11,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ?
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div style={{ maxWidth: 240, fontSize: 11, lineHeight: 1.5 }}>
+                      タップ:+1 ／ 長押し:-1<br />
+                      ON 時、現在値を変更すると所持数を自動で増減します。
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Tracking mode suggestion banner */}
+        {showSuggestionBanner && (
+          <div
+            style={{
+              border: '1px solid var(--border, #444)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              margin: '8px 0',
+              background: 'var(--card, #1a1a1a)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, fontSize: 13 }}>
+              セットアップが進んでいるようです。今後の現在値変更で所持数を自動で増減する「育成記録モード」をオンにしますか？
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setTrackingMode(true)
+                setTrackingDismissed(true)
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 6,
+                border: '1px solid var(--border, #555)',
+                background: 'var(--primary, #4a6fa5)',
+                color: 'var(--primary-foreground, #fff)',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              ON にする
+            </button>
+            <button
+              type="button"
+              onClick={() => setTrackingDismissed(true)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 6,
+                border: '1px solid var(--border, #555)',
+                background: 'transparent',
+                color: 'inherit',
+                cursor: 'pointer',
+                fontSize: 12,
+              }}
+            >
+              今はやめておく
+            </button>
+          </div>
+        )}
 
         {/* Filter bar */}
         <div className="c-filter-bar">
@@ -352,6 +621,8 @@ export const Index = ({
                 state={chaldeaState[s.id] ?? DEFAULT_SERVANT_STATE}
                 globalState={globalState}
                 setState={handleSetServantState(s.id.toString())}
+                onWillStartChange={handleWillStartChange(s.id.toString())}
+                onStartChange={handleOnStartChange(s.id.toString())}
               />
             ))}
           </div>

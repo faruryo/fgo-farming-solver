@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import NextLink from 'next/link'
 import { NiceServant } from '../../interfaces/atlas-academy'
@@ -14,6 +14,31 @@ type Props = {
   state: ServantState
   globalState: ServantState
   setState: (update: (prev: ServantState) => ServantState) => void
+  onWillStartChange?: (
+    target: TargetKey,
+    idx: number,
+    prevStart: number,
+    newStart: number
+  ) => boolean
+  onStartChange?: (
+    target: TargetKey,
+    idx: number,
+    prevStart: number,
+    newStart: number
+  ) => void
+}
+
+const LONG_PRESS_MS = 500
+
+const TARGET_MIN: Record<TargetKey, number> = {
+  ascension: 0,
+  skill: 1,
+  appendSkill: 0,
+}
+const TARGET_MAX: Record<TargetKey, number> = {
+  ascension: 4,
+  skill: 10,
+  appendSkill: 10,
 }
 
 const updateRangeStart = (
@@ -40,7 +65,14 @@ const updateRangeStart = (
   }
 }
 
-const ServantCardComponent = ({ servant, state, globalState, setState }: Props) => {
+const ServantCardComponent = ({
+  servant,
+  state,
+  globalState,
+  setState,
+  onWillStartChange,
+  onStartChange,
+}: Props) => {
   const cls = getClassInfo(servant.className)
   const cc = cls.color
 
@@ -70,24 +102,85 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
     [setState]
   )
 
-  const setAsc = (val: number) => setState(s => updateRangeStart(s, 'ascension', 0, val))
-  const setSkill = (idx: number, val: number) => setState(s => updateRangeStart(s, 'skill', idx, val))
-  const setAppend = (idx: number, val: number) => setState(s => updateRangeStart(s, 'appendSkill', idx, val))
+  const applyStart = useCallback(
+    (target: TargetKey, idx: number, prev: number, next: number) => {
+      const min = TARGET_MIN[target]
+      const max = TARGET_MAX[target]
+      const clamped = Math.max(min, Math.min(max, next))
+      if (clamped === prev) return
+      if (onWillStartChange && !onWillStartChange(target, idx, prev, clamped)) return
+      setState(s => updateRangeStart(s, target, idx, clamped))
+      onStartChange?.(target, idx, prev, clamped)
+    },
+    [setState, onWillStartChange, onStartChange]
+  )
 
-  const handlePipClick = (val: number) => {
-    // Cycle: 0 -> 1 -> 2 -> 3 -> 4 -> 0
-    if (ascCur === val) {
-      setAsc(val - 1)
-    } else {
-      setAsc(val)
+  // Long-press / contextmenu helpers
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressFired = useRef(false)
+
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
     }
   }
 
-  const handleChipClick = (key: 'skill' | 'appendSkill', idx: number, cur: number, max: number) => {
+  const handlePointerDown = (
+    target: TargetKey,
+    idx: number,
+    cur: number
+  ) => {
+    longPressFired.current = false
+    clearLongPress()
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true
+      applyStart(target, idx, cur, cur - 1)
+    }, LONG_PRESS_MS)
+  }
+
+  const handlePointerEndOrLeave = () => {
+    clearLongPress()
+  }
+
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    target: TargetKey,
+    idx: number,
+    cur: number
+  ) => {
+    e.preventDefault()
+    clearLongPress()
+    longPressFired.current = true
+    applyStart(target, idx, cur, cur - 1)
+  }
+
+  const handlePipClick = (val: number) => {
+    if (longPressFired.current) {
+      longPressFired.current = false
+      return
+    }
+    // Cycle: clicking same lit pip → -1, else → set to val
+    if (ascCur === val) {
+      applyStart('ascension', 0, ascCur, val - 1)
+    } else {
+      applyStart('ascension', 0, ascCur, val)
+    }
+  }
+
+  const handleChipClick = (
+    key: 'skill' | 'appendSkill',
+    idx: number,
+    cur: number,
+    max: number
+  ) => {
+    if (longPressFired.current) {
+      longPressFired.current = false
+      return
+    }
     const min = key === 'appendSkill' ? 0 : 1
     const next = cur >= max ? min : cur + 1
-    if (key === 'skill') setSkill(idx, next)
-    else setAppend(idx, next)
+    applyStart(key, idx, cur, next)
   }
 
   const face = servant.extraAssets.faces.ascension?.[1] || Object.values(servant.extraAssets.faces.ascension || {})[0]
@@ -134,6 +227,11 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
               <div
                 key={i}
                 className={`c-sum-pip${ascCur >= i ? ' lit' : ''}`}
+                onPointerDown={() => handlePointerDown('ascension', 0, ascCur)}
+                onPointerUp={handlePointerEndOrLeave}
+                onPointerLeave={handlePointerEndOrLeave}
+                onPointerCancel={handlePointerEndOrLeave}
+                onContextMenu={(e) => handleContextMenu(e, 'ascension', 0, ascCur)}
                 onClick={() => handlePipClick(i)}
               />
             ))}
@@ -144,6 +242,11 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
               <div
                 key={i}
                 className={`c-sum-card sk${v >= gtSkill ? ' done' : ''}`}
+                onPointerDown={() => handlePointerDown('skill', i, v)}
+                onPointerUp={handlePointerEndOrLeave}
+                onPointerLeave={handlePointerEndOrLeave}
+                onPointerCancel={handlePointerEndOrLeave}
+                onContextMenu={(e) => handleContextMenu(e, 'skill', i, v)}
                 onClick={() => handleChipClick('skill', i, v, 10)}
               >
                 {v}
@@ -156,6 +259,11 @@ const ServantCardComponent = ({ servant, state, globalState, setState }: Props) 
               <div
                 key={i}
                 className={`c-sum-card ap${v >= gtAppend ? ' done' : ''}`}
+                onPointerDown={() => handlePointerDown('appendSkill', i, v)}
+                onPointerUp={handlePointerEndOrLeave}
+                onPointerLeave={handlePointerEndOrLeave}
+                onPointerCancel={handlePointerEndOrLeave}
+                onContextMenu={(e) => handleContextMenu(e, 'appendSkill', i, v)}
                 onClick={() => handleChipClick('appendSkill', i, v, 10)}
               >
                 {v}
