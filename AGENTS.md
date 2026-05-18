@@ -15,7 +15,7 @@
 
 ## Deployment
 - **Auto-deploy**: push to `main` → Cloudflare Workers Builds が自動でビルド & デプロイ。手動デプロイ不要。
-- **Manual deploy**: `pnpm run deploy` — ローカルから直接 wrangler deploy する場合のみ。
+- **Manual deploy**: `pnpm run deploy` は原則禁止。ローカルビルドの差異が本番に混入するリスクがあるため、明示的な指示がない限り実行しないこと。
 
 ## Key Commands
 - `pnpm dev` — local dev server
