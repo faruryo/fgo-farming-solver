@@ -13,6 +13,10 @@
 - **UI**: shadcn/ui + Tailwind CSS
 - **Data**: lib/ & data/
 
+## Deployment
+- **Auto-deploy**: push to `main` → Cloudflare Workers Builds が自動でビルド & デプロイ。手動デプロイ不要。
+- **Manual deploy**: `pnpm run deploy` — ローカルから直接 wrangler deploy する場合のみ。
+
 ## Key Commands
 - `pnpm dev` — local dev server
 - `pnpm run build` — Next.js build + OpenNext Cloudflare build
