@@ -1,4 +1,5 @@
 import { fetchAndTransformData, fetchDashboardMeta } from '../lib/master-data/update'
+import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 
 export interface Env {
   MASTER_DATA: KVNamespace
@@ -8,38 +9,43 @@ const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
 
 const worker = {
-  // Cron Trigger から呼び出されるハンドラ
-  async scheduled(_: unknown, env: Env) {
+  async scheduled(_event: unknown, env: Env) {
     console.log('Running scheduled data update...')
-    await updateMasterData(env)
-  },
-
-  // 手動で HTTP リクエストを送っても更新できるようにしておく
-  async fetch(request: Request, env: Env) {
-    if (new URL(request.url).pathname === '/update') {
-      await updateMasterData(env)
-      return new Response('Updated successfully')
-    }
-    return new Response('Not Found', { status: 404 })
+    await updateDrops(env)
+    await updateDashboardMeta(env)
   }
 }
 
 export default worker
 
-async function updateMasterData(env: Env) {
+async function updateDrops(env: Env) {
   try {
     console.log('Fetching and transforming master data (drops)...')
     const dropsData = await fetchAndTransformData()
+    const v = validateMasterData(dropsData)
+    if (!v.ok) {
+      console.warn(`Refusing to overwrite MASTER_DATA KV with degraded payload: ${v.reason}`)
+      return
+    }
     await env.MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(dropsData))
     console.log('Successfully updated MASTER_DATA KV')
+  } catch (e) {
+    console.error('Failed to update drops KV data:', e)
+  }
+}
 
+async function updateDashboardMeta(env: Env) {
+  try {
     console.log('Fetching dashboard metadata...')
     const dashboardMeta = await fetchDashboardMeta()
+    const v = validateDashboardMeta(dashboardMeta)
+    if (!v.ok) {
+      console.warn(`Refusing to overwrite DASHBOARD_META KV with degraded payload: ${v.reason}`)
+      return
+    }
     await env.MASTER_DATA.put(DASHBOARD_META_KEY, JSON.stringify(dashboardMeta))
     console.log('Successfully updated DASHBOARD_META KV')
-    
-    console.log('All KV data updated successfully')
   } catch (e) {
-    console.error('Failed to update KV data:', e)
+    console.error('Failed to update dashboard meta KV data:', e)
   }
 }

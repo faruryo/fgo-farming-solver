@@ -76,7 +76,9 @@ cd updater-worker
 pnpm exec wrangler deploy
 ```
 
-これにより、毎日 0:00 (UTC) に最新のドロップ率データが `MASTER_DATA` KV へ自動的に保存されるようになります。
+これにより、毎時 0 分に `all_drops_json` と `dashboard_meta` が更新されます。Atlas が空応答を返したり fetch が落ちた場合は、KV 保護層が働いて既存の正常データを温存します。
+
+緊急で即時更新が必要なときは、Cloudflare ダッシュボードの Worker → Triggers → Cron Triggers から "Trigger" ボタンで cron を手動発火できます。
 
 #### 3. Cloudflare D1 (データベース) の作成
 
