@@ -191,7 +191,7 @@ const Cloud = () => {
                     {isLoading ? t('読み込み中...') : 'Checking sync status...'}
                   </p>
                 </div>
-              ) : session == null && process.env.NODE_ENV !== 'development' ? (
+              ) : session == null && !(process.env.NODE_ENV === 'development' && cloudData) ? (
                 <div className="flex justify-center pt-4">
                   <AuthButton />
                 </div>
