@@ -8,6 +8,7 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
+import { Toggle } from '@/components/ui/toggle'
 
 export type MaterialResultProps = {
   items: Item[]
@@ -184,12 +185,15 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                 充足 {totalMet}種
               </span>
             )}
-            <button
-              className={`c-filter-toggle${shortOnly ? ' active' : ''}`}
-              onClick={() => setShortOnly(v => !v)}
+            <Toggle
+              variant="outline"
+              size="sm"
+              pressed={shortOnly}
+              onPressedChange={setShortOnly}
+              aria-label="不足のみ表示"
             >
               {shortOnly ? '全て表示' : '不足のみ表示'}
-            </button>
+            </Toggle>
             <Link href="/material" className="c-back-btn">← 設定に戻る</Link>
           </div>
         </div>
