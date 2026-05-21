@@ -12,6 +12,8 @@ import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { useDashboardSortMode } from '../../hooks/use-dashboard-sort-mode'
+import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
+import { computeEffectiveAp } from '../../lib/solver'
 import { isBothResult } from '../../interfaces/api'
 
 const SORT_MODE_STORAGE_KEY = 'dashboard.nearGoal.sortMode'
@@ -23,30 +25,41 @@ export const NearGoalSection: React.FC = () => {
   const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
   const displayResult = campaignAdjustedResult ?? recentResult
   const [sortMode, setSortMode] = useDashboardSortMode(SORT_MODE_STORAGE_KEY, drops.campaigns)
+  const { activeCampaigns } = useActiveCampaigns(drops.campaigns)
 
   const nearGoalEntries = useMemo(() => {
     if (!displayResult || !dropItems?.length) return []
 
     const result = isBothResult(displayResult) ? displayResult.lap : displayResult
-    const { quests: targetQuests, drop_rates: targetDropRates, items: targetItems, params } = result
+    const { items: targetItems, params } = result
 
-    if (!targetQuests?.length || !targetItems?.length) return []
+    if (!targetItems?.length) return []
+
+    // The user's saved calculation pinned a set of allowed quests; respect it so
+    // candidate enumeration here does not surface quests the user excluded.
+    const allowedQuestIds = new Set<string>(params.quests ?? [])
 
     // Build a map of original AP (before campaign) from the drops data for badge display
     const originalApById = new Map(dropQuests?.map(q => [q.id, q.ap]) ?? [])
+    const dropQuestById = new Map(dropQuests?.map(q => [q.id, q]) ?? [])
 
     return targetItems
       .flatMap(ti => {
         const needed = params.items[ti.id] ?? 0
         if (needed <= 0) return []
 
-        const candidates = targetDropRates
-          .filter(dr => dr.item_id === ti.id && dr.drop_rate > 0)
+        const candidates = drops.drop_rates
+          .filter(dr => dr.item_id === ti.id && dr.drop_rate > 0 && allowedQuestIds.has(dr.quest_id))
           .map(dr => {
-            const quest = targetQuests.find(q => q.id === dr.quest_id)
-            if (!quest) return null
+            const baseQuest = dropQuestById.get(dr.quest_id)
+            if (!baseQuest) return null
+            const effectiveAp =
+              activeCampaigns.length > 0
+                ? computeEffectiveAp(baseQuest.ap, baseQuest.id, activeCampaigns)
+                : baseQuest.ap
+            const quest = { ...baseQuest, ap: effectiveAp }
             const lapsNeeded = Math.ceil(needed / dr.drop_rate)
-            const apPerDrop = quest.ap > 0 ? quest.ap / dr.drop_rate : Number.POSITIVE_INFINITY
+            const apPerDrop = effectiveAp > 0 ? effectiveAp / dr.drop_rate : Number.POSITIVE_INFINITY
             return { quest, lapsNeeded, apPerDrop }
           })
           .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -69,7 +82,7 @@ export const NearGoalSection: React.FC = () => {
         ...entry,
         originalAp: originalApById.get(entry.quest.id),
       }))
-  }, [dropItems, dropQuests, displayResult, sortMode])
+  }, [dropItems, dropQuests, drops.drop_rates, displayResult, sortMode, activeCampaigns])
 
   // drops側のquestからaaQuestIdを補完してspot画像を取得
   const spotIcons = useSpotIcons(
