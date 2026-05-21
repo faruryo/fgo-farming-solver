@@ -156,6 +156,11 @@
         "どのサーヴァントを育てたいですか？": "Which servant do you want to train?",
         "サーヴァント一覧から選択する": "Select from servant list",
         "ap-campaign-delay-note": "Campaign info (e.g., AP halve) may take up to ~30 minutes to appear here.",
-        "ap-campaign-active-badge": "AP campaign applied"
+        "ap-campaign-active-badge": "AP campaign applied",
+        "開催中のキャンペーン": "Active Campaigns",
+        "ファーミング直結": "Farming Boosters",
+        "強化・育成": "Enhance & Train",
+        "その他": "Other",
+        "ストーム・ポッド消費なし期間中": "Storm Pod Free Period"
     }
 }

@@ -9,6 +9,123 @@
       "shopFinishedAt": 1779508799,
       "type": "eventQuest",
       "drops": []
+    },
+    {
+      "id": 71676,
+      "name": "期間限定 ストーム・ポッド消費なし！",
+      "banner": null,
+      "startedAt": 1779120000,
+      "endedAt": 1779724800,
+      "shopFinishedAt": 1779724800,
+      "type": "questCampaign",
+      "drops": [],
+      "campaigns": [
+        {
+          "target": "questAp",
+          "calcType": "multiplication",
+          "value": 1000,
+          "targetIds": []
+        }
+      ],
+      "campaignQuestsCount": 5
+    },
+    {
+      "id": 71683,
+      "name": "消費AP 50%DOWN",
+      "banner": null,
+      "startedAt": 1778948400,
+      "endedAt": 1780243200,
+      "shopFinishedAt": 1780243200,
+      "type": "questCampaign",
+      "drops": [],
+      "campaigns": [
+        {
+          "target": "questAp",
+          "calcType": "multiplication",
+          "value": 500
+        }
+      ],
+      "campaignQuestsCount": 12
+    },
+    {
+      "id": 71557,
+      "name": "期間限定で「ストーム・ポッド」で獲得できる星光の砂を2倍に増量！",
+      "banner": null,
+      "startedAt": 1779120000,
+      "endedAt": 1780243200,
+      "shopFinishedAt": 1780243200,
+      "type": "questCampaign",
+      "drops": [],
+      "campaigns": [
+        {
+          "target": "questUseRewardAddItem",
+          "calcType": "multiplication",
+          "value": 700482,
+          "targetIds": [
+            49
+          ]
+        }
+      ],
+      "campaignQuestsCount": 8
+    },
+    {
+      "id": 71700,
+      "name": "スキル錬成 大成功率UP",
+      "banner": null,
+      "startedAt": 1779120000,
+      "endedAt": 1779984000,
+      "shopFinishedAt": 1779984000,
+      "type": "questCampaign",
+      "drops": [],
+      "campaigns": [
+        {
+          "target": "largeSuccess",
+          "calcType": "multiplication",
+          "value": 200
+        },
+        {
+          "target": "superSuccess",
+          "calcType": "multiplication",
+          "value": 200
+        }
+      ],
+      "campaignQuestsCount": 0
+    },
+    {
+      "id": 71701,
+      "name": "絆ポイント2倍キャンペーン",
+      "banner": null,
+      "startedAt": 1779292800,
+      "endedAt": 1779638400,
+      "shopFinishedAt": 1779638400,
+      "type": "questCampaign",
+      "drops": [],
+      "campaigns": [
+        {
+          "target": "questFriendship",
+          "calcType": "multiplication",
+          "value": 200
+        }
+      ],
+      "campaignQuestsCount": 50
+    },
+    {
+      "id": 71702,
+      "name": "フレポ獲得 2倍キャンペーン",
+      "banner": null,
+      "startedAt": 1779292800,
+      "endedAt": 1779638400,
+      "shopFinishedAt": 1779638400,
+      "type": "questCampaign",
+      "drops": [],
+      "campaigns": [
+        {
+          "target": "questFp",
+          "calcType": "multiplication",
+          "value": 200
+        }
+      ],
+      "campaignQuestsCount": 50
     }
   ],
   "gachas": [
@@ -629,5 +746,20 @@
       "releasedAt": 1773219600
     }
   ],
-  "updatedAt": 1778775277615
+  "updatedAt": 1778775277615,
+  "podFreePeriods": [
+    {
+      "id": 71676,
+      "name": "期間限定 ストーム・ポッド消費なし！",
+      "startedAt": 1779120000,
+      "endedAt": 1779724800,
+      "questIds": [
+        "1n20",
+        "1n21",
+        "1n22",
+        "1n23",
+        "1n24"
+      ]
+    }
+  ]
 }

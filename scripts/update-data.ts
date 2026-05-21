@@ -12,8 +12,8 @@ async function main() {
     await fs.writeFile(allPath, JSON.stringify(data, null, 2))
     console.log(`Successfully updated master data at ${allPath}`)
 
-    // Update dashboard meta
-    const dashboardData = await fetchDashboardMeta()
+    // Update dashboard meta (pass master quests so podFreePeriods can resolve aaQuestId → short ID)
+    const dashboardData = await fetchDashboardMeta(data.quests)
     const dashboardPath = path.resolve(process.cwd(), 'mocks', 'dashboard.json')
     await fs.writeFile(dashboardPath, JSON.stringify(dashboardData, null, 2))
     console.log(`Successfully updated dashboard metadata at ${dashboardPath}`)

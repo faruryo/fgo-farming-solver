@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useDashboardMeta } from '../hooks/use-dashboard-meta'
 import { EventSection } from '../components/dashboard/EventSection'
+import { CampaignSection } from '../components/dashboard/CampaignSection'
 import { GachaSection } from '../components/dashboard/GachaSection'
 import { RecentServantSection } from '../components/dashboard/RecentServantSection'
 import { ProgressSection } from '../components/dashboard/ProgressSection'
@@ -105,14 +106,12 @@ export default function HomePage() {
           ) : (
             <motion.div variants={container} initial="hidden" animate="show">
               <div className="flex flex-col gap-10">
-                {/* Top Section: Event & Progress */}
+                {/* Top Section: Event + Campaign (side-by-side on xl) */}
                 <motion.div variants={item}>
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
-                    <div className="flex flex-col gap-8">
-                      <FarmingWizard />
-                      <EventSection events={dashboardMeta?.events || []} />
-                    </div>
-                    <ProgressSection />
+                  <FarmingWizard />
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start mt-8">
+                    <EventSection events={dashboardMeta?.events || []} />
+                    <CampaignSection events={dashboardMeta?.events || []} />
                   </div>
                 </motion.div>
 
@@ -125,6 +124,11 @@ export default function HomePage() {
                 {/* History Graph */}
                 <motion.div variants={item}>
                   <HistoryGraph />
+                </motion.div>
+
+                {/* Progress (moved below history graph for better visual balance) */}
+                <motion.div variants={item}>
+                  <ProgressSection />
                 </motion.div>
 
                 {/* Recent Servants */}

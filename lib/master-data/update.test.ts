@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns } from './update'
+import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
@@ -368,5 +368,85 @@ describe('extractApCampaigns', () => {
     const result = extractApCampaigns(events, idMap)
     expect(result).toHaveLength(1)
     expect(result[0].calcType).toBe('multiplication')
+  })
+})
+
+describe('extractPodFreePeriods', () => {
+  const NOW = 1779000000 // arbitrary fixed timestamp
+  const idMap = new Map<number, string>([
+    [94150501, 'P0'],
+    [94150502, 'P1'],
+    [94150503, 'P2'],
+  ])
+
+  const baseEvent = {
+    id: 71676,
+    name: '期間限定 ストーム・ポッド消費なし！',
+    type: 'questCampaign',
+    startedAt: NOW - 86400,
+    endedAt: NOW + 86400,
+    finishedAt: NOW + 86400,
+    campaigns: [{ target: 'questAp', calcType: 'multiplication', value: 1000, idx: 1 }],
+    campaignQuests: [
+      { questId: 94150501, phase: 0, isExcepted: false },
+      { questId: 94150502, phase: 0, isExcepted: false },
+      { questId: 94150503, phase: 0, isExcepted: false },
+    ],
+  } as any
+
+  it('extracts pod-free periods by name (中黒あり)', () => {
+    const result = extractPodFreePeriods([baseEvent], idMap, NOW)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      id: 71676,
+      name: '期間限定 ストーム・ポッド消費なし！',
+      startedAt: NOW - 86400,
+      endedAt: NOW + 86400,
+    })
+    expect(result[0].questIds.sort()).toEqual(['P0', 'P1', 'P2'])
+  })
+
+  it('also matches the legacy spelling without 中黒', () => {
+    const ev = { ...baseEvent, name: 'ストームポッド消費なし' }
+    const result = extractPodFreePeriods([ev], idMap, NOW)
+    expect(result).toHaveLength(1)
+  })
+
+  it('ignores events whose name does not contain the marker', () => {
+    const ev = { ...baseEvent, name: '消費AP 50%DOWN' }
+    expect(extractPodFreePeriods([ev], idMap, NOW)).toEqual([])
+  })
+
+  it('ignores events whose type is not questCampaign', () => {
+    const ev = { ...baseEvent, type: 'eventQuest' }
+    expect(extractPodFreePeriods([ev], idMap, NOW)).toEqual([])
+  })
+
+  it('ignores events that are not currently active', () => {
+    const futureEv = { ...baseEvent, startedAt: NOW + 100, endedAt: NOW + 1000, finishedAt: NOW + 1000 }
+    const pastEv = { ...baseEvent, id: 71677, startedAt: NOW - 1000, endedAt: NOW - 100, finishedAt: NOW - 100 }
+    expect(extractPodFreePeriods([futureEv, pastEv], idMap, NOW)).toEqual([])
+  })
+
+  it('drops unmappable Atlas quest IDs and excepted entries', () => {
+    const ev = {
+      ...baseEvent,
+      campaignQuests: [
+        { questId: 94150501, phase: 0, isExcepted: false },   // mapped → P0
+        { questId: 94150502, phase: 0, isExcepted: true },    // excepted → drop
+        { questId: 99999999, phase: 0, isExcepted: false },   // unmapped → drop
+      ],
+    }
+    const result = extractPodFreePeriods([ev], idMap, NOW)
+    expect(result).toHaveLength(1)
+    expect(result[0].questIds).toEqual(['P0'])
+  })
+
+  it('returns empty when every quest is unmappable', () => {
+    const ev = {
+      ...baseEvent,
+      campaignQuests: [{ questId: 99999999, phase: 0, isExcepted: false }],
+    }
+    expect(extractPodFreePeriods([ev], idMap, NOW)).toEqual([])
   })
 })

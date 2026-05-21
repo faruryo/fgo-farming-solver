@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import { Swords } from 'lucide-react'
+import { Swords, Zap } from 'lucide-react'
 
 type Props = {
   area: string
@@ -10,9 +10,25 @@ type Props = {
   originalAp?: number
   spotIcon?: string
   className?: string
+  /** Quest が「ストーム・ポッド」を消費するか (冠位戴冠戦/研鑽戦・オーディール・コール)。 */
+  consumesPod?: boolean
+  /** ポッド消費なし期間中で、この quest がその期間の対象に含まれているか。 */
+  podFree?: boolean
 }
 
-export const QuestIdentity: React.FC<Props> = ({ area, name, ap, originalAp, spotIcon, className }) => {
+const PodIndicator: React.FC<{ podFree: boolean }> = ({ podFree }) => (
+  <span
+    className="inline-flex items-center gap-0.5 text-[9px] flex-shrink-0 font-bold tabular-nums"
+    aria-label={podFree ? 'ポッド消費なし' : 'ポッド消費'}
+    style={{ color: podFree ? '#60c890' : 'var(--text3)' }}
+    title={podFree ? 'ストーム・ポッド消費なし期間中' : 'ストーム・ポッド消費クエスト'}
+  >
+    <Zap size={10} strokeWidth={2.5} fill={podFree ? '#60c890' : 'none'} />
+    <span>{podFree ? '×0' : '×1'}</span>
+  </span>
+)
+
+export const QuestIdentity: React.FC<Props> = ({ area, name, ap, originalAp, spotIcon, className, consumesPod, podFree }) => {
   const isDiscounted = originalAp !== undefined && originalAp > ap
 
   return (
@@ -38,6 +54,7 @@ export const QuestIdentity: React.FC<Props> = ({ area, name, ap, originalAp, spo
           ) : (
             <span className="text-[9px] flex-shrink-0" style={{ color: 'var(--text3)' }}>{ap} AP</span>
           )}
+          {consumesPod && <PodIndicator podFree={Boolean(podFree)} />}
         </div>
       </div>
     </div>

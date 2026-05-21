@@ -48,15 +48,33 @@ export interface MasterData {
   campaigns: Campaign[]
 }
 
+export interface DashboardCampaignInfo {
+  target: string
+  calcType: string
+  value: number
+  targetIds?: number[]
+}
+
 export interface DashboardEvent {
   id: number
   name: string
-  banner: string
+  /**
+   * バナー画像 URL。`type=questCampaign` などのバナーレスイベントでは `null`。
+   * EventSection はバナーあり、CampaignSection はバナーレスをそれぞれフィルタする。
+   */
+  banner: string | null
   startedAt: number
   endedAt: number
   shopFinishedAt: number
   type: string
   drops: { id: number; name: string; icon: string }[]
+  /**
+   * Atlas Academy `event.campaigns` の主要フィールドのみを保持。
+   * バナーレスキャンペーンを CampaignSection で分類するために使う。
+   */
+  campaigns?: DashboardCampaignInfo[]
+  /** Atlas Academy `event.campaignQuests` の件数 (`isExcepted=true` を含む生件数)。 */
+  campaignQuestsCount?: number
 }
 
 export interface DashboardGacha {
@@ -77,9 +95,25 @@ export interface RecentServant {
   collectionNo: number
 }
 
+export interface PodFreePeriod {
+  /** Source event id (Atlas Academy event.id), useful for deduplication & debugging. */
+  id: number
+  name: string
+  startedAt: number
+  endedAt: number
+  /** Target quests projected into our app-internal short quest ID space. */
+  questIds: string[]
+}
+
 export interface DashboardMeta {
   events: DashboardEvent[]
   gachas: DashboardGacha[]
   recentServants: RecentServant[]
   updatedAt: number
+  /**
+   * "ストーム・ポッド消費なし" キャンペーン期間。Atlas Academy 上で event name に
+   * 「ストーム・ポッド消費なし」を含む `questCampaign` から抽出する。
+   * 旧データとの後方互換のためオプショナル。
+   */
+  podFreePeriods?: PodFreePeriod[]
 }

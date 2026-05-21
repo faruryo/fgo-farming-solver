@@ -13,8 +13,11 @@ import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
+import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
+import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { computeEffectiveAp } from '../../lib/solver'
 import { isBothResult } from '../../interfaces/api'
+import { questConsumesPod } from '../../lib/quest-consumes-pod'
 
 const SORT_MODE_STORAGE_KEY = 'dashboard.nearGoal.sortMode'
 
@@ -43,7 +46,9 @@ export const NearGoalSection: React.FC = () => {
     'efficiency',
     { onGet: (v) => (isNearGoalSortMode(v) ? v : 'efficiency') },
   )
-  const { activeCampaigns } = useActiveCampaigns(drops.campaigns)
+  const { activeCampaigns, nowSec } = useActiveCampaigns(drops.campaigns)
+  const { data: dashboardMeta } = useDashboardMeta()
+  const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
 
   const nearGoalEntries = useMemo(() => {
     if (!displayResult || !dropItems?.length) return []
@@ -98,23 +103,49 @@ export const NearGoalSection: React.FC = () => {
             .map(x => x.ti)
         : targetItems
 
+    const podFreeActive = sortMode === 'efficiency' && podFree.isActive
+    const podFreeQuestIds = podFree.questIds
+
     return itemsToEvaluate
       .flatMap(ti => {
         const needed = params.items[ti.id] ?? 0
         if (needed <= 0) return []
 
+        const buildCandidate = (dr: { quest_id: string; drop_rate: number }) => {
+          const baseQuest = dropQuestById.get(dr.quest_id)
+          if (!baseQuest) return null
+          const effectiveAp = effectiveApFor(baseQuest.id, baseQuest.ap)
+          const quest = { ...baseQuest, ap: effectiveAp }
+          const lapsNeeded = Math.ceil(needed / dr.drop_rate)
+          return { quest, lapsNeeded }
+        }
+
+        // 効率モード + ポッド消費なし期間中: 対象 questIds 内で当該 item を drop するクエストが
+        // あれば、そのクエストで集める想定の lap を最優先で採用する (effectiveAp は無視)。
+        if (podFreeActive) {
+          const podFreeCandidates = drops.drop_rates
+            .filter(dr =>
+              dr.item_id === ti.id &&
+              dr.drop_rate > 0 &&
+              allowedQuestIds.has(dr.quest_id) &&
+              podFreeQuestIds.has(dr.quest_id),
+            )
+            .map(buildCandidate)
+            .filter((x): x is NonNullable<ReturnType<typeof buildCandidate>> => x !== null)
+
+          const bestPodFree = podFreeCandidates.sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
+          if (bestPodFree) {
+            const displayItem = dropItems.find(i => i.id === ti.id)
+            if (!displayItem) return []
+            return [{ item: displayItem, quest: bestPodFree.quest, needed, lapsNeeded: bestPodFree.lapsNeeded }]
+          }
+        }
+
         const candidates = drops.drop_rates
           .filter(dr => dr.item_id === ti.id && dr.drop_rate > 0 && allowedQuestIds.has(dr.quest_id))
           .filter(dr => (efficiencyPool ? efficiencyPool.has(dr.quest_id) : true))
-          .map(dr => {
-            const baseQuest = dropQuestById.get(dr.quest_id)
-            if (!baseQuest) return null
-            const effectiveAp = effectiveApFor(baseQuest.id, baseQuest.ap)
-            const quest = { ...baseQuest, ap: effectiveAp }
-            const lapsNeeded = Math.ceil(needed / dr.drop_rate)
-            return { quest, lapsNeeded }
-          })
-          .filter((x): x is NonNullable<typeof x> => x !== null)
+          .map(buildCandidate)
+          .filter((x): x is NonNullable<ReturnType<typeof buildCandidate>> => x !== null)
 
         const best = candidates.sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
         if (!best) return []
@@ -130,7 +161,7 @@ export const NearGoalSection: React.FC = () => {
         ...entry,
         originalAp: originalApById.get(entry.quest.id),
       }))
-  }, [dropItems, dropQuests, drops.drop_rates, displayResult, sortMode, activeCampaigns])
+  }, [dropItems, dropQuests, drops.drop_rates, displayResult, sortMode, activeCampaigns, podFree.isActive, podFree.questIds])
 
   // drops側のquestからaaQuestIdを補完してspot画像を取得
   const spotIcons = useSpotIcons(
@@ -189,6 +220,8 @@ export const NearGoalSection: React.FC = () => {
         {nearGoalEntries.map(({ item, quest, needed, lapsNeeded, originalAp }, index) => {
           const isVeryClose = lapsNeeded <= 10
           const accentColor = isVeryClose ? '#60c890' : 'var(--gold)'
+          const consumesPod = questConsumesPod(quest.area)
+          const isPodFreeQuest = consumesPod && podFree.questIds.has(quest.id)
           return (
             <NextLink
               key={item.id}
@@ -212,6 +245,8 @@ export const NearGoalSection: React.FC = () => {
                 originalAp={originalAp}
                 spotIcon={spotIcons[quest.id]}
                 className="flex-1 min-w-0"
+                consumesPod={consumesPod}
+                podFree={isPodFreeQuest}
               />
 
               {/* 達成カウント（右端） */}

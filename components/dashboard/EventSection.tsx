@@ -14,7 +14,9 @@ interface EventSectionProps {
 export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
   const { t } = useTranslation(['dashboard'])
 
-  if (events.length === 0) return null
+  // バナーレスのキャンペーンは CampaignSection に流すため除外。
+  const bannerEvents = events.filter(e => Boolean(e.banner))
+  if (bannerEvents.length === 0) return null
 
   return (
     <div className="flex flex-col gap-3">
@@ -23,7 +25,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
         <div className="u-section-header-line" />
       </div>
 
-      {events.map(event => (
+      {bannerEvents.map((event) => event.banner && (
         <div
           key={event.id}
           className="u-fgo-card rounded-md overflow-hidden transition-transform duration-200 hover:-translate-y-0.5"

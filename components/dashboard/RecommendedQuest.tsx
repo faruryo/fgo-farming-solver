@@ -15,7 +15,12 @@ import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { useDashboardSortMode } from '../../hooks/use-dashboard-sort-mode'
+import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
+import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
+import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { isBothResult, Quest } from '../../interfaces/api'
+import { questConsumesPod } from '../../lib/quest-consumes-pod'
+import { getRecommendedQuestPriorityLaps } from '../../lib/recommended-quest-priority'
 
 const SORT_MODE_STORAGE_KEY = 'dashboard.recommendedQuest.sortMode'
 
@@ -28,6 +33,11 @@ export const RecommendedQuest: React.FC = () => {
   const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
   const displayResult = campaignAdjustedResult ?? recentResult
   const [sortMode, setSortMode] = useDashboardSortMode(SORT_MODE_STORAGE_KEY, drops.campaigns)
+  const { data: dashboardMeta } = useDashboardMeta()
+  // Reuse 30-min bucketed nowSec from useActiveCampaigns so pod-free state stays
+  // stable across renders (Date.now() in render is impure per react-hooks/purity).
+  const { nowSec } = useActiveCampaigns(drops.campaigns)
+  const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
 
   const recommendations = useMemo(() => {
     if (dropsLoading || !items || !items.length || !quests || !drop_rates) return []
@@ -42,11 +52,8 @@ export const RecommendedQuest: React.FC = () => {
           const original = quests?.find((qq) => qq.id === q.id)?.ap
           return original != null && q.ap < original
         }
-        const getPriorityLaps = (q: Quest) => {
-          if (q.area?.includes('冠位研鑽戦')) return 1
-          if (q.area?.includes('オーディール・コール')) return 2
-          return 3
-        }
+        const getPriorityLaps = (q: Quest) =>
+          getRecommendedQuestPriorityLaps(q, podFree.isActive ? podFree.questIds : new Set())
         const getPriorityAp = (q: Quest) => (isApDiscounted(q) ? 1 : 2)
         const getPriority = sortMode === 'ap' ? getPriorityAp : getPriorityLaps
         return targetQuests
@@ -95,7 +102,7 @@ export const RecommendedQuest: React.FC = () => {
         : [item]
       return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false, tier: undefined as number | undefined }
     }).filter(r => r.quest)
-  }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult, sortMode])
+  }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult, sortMode, podFree.isActive, podFree.questIds])
 
   // aaQuestId comes from drops quests (result quests may not carry it)
   const spotIcons = useSpotIcons(
@@ -181,7 +188,10 @@ export const RecommendedQuest: React.FC = () => {
           const dividerLabel =
             sortMode === 'ap'
               ? (tier === 2 ? 'その他' : null)
-              : (tier === 2 ? 'オーディール・コール' : tier === 3 ? 'その他' : null)
+              : (tier === 1 ? '冠位研鑽戦' : tier === 2 ? 'オーディール・コール' : tier === 3 ? 'その他' : null)
+          const questArea = quest?.area ?? ''
+          const consumesPod = questConsumesPod(questArea)
+          const isPodFreeQuest = consumesPod && quest?.id ? podFree.questIds.has(quest.id) : false
           return (
           <React.Fragment key={id}>
             {showDivider && dividerLabel && (
@@ -201,12 +211,14 @@ export const RecommendedQuest: React.FC = () => {
             </span>
 
             <QuestIdentity
-              area={quest?.area ?? ''}
+              area={questArea}
               name={quest?.name ?? ''}
               ap={quest?.ap ?? 0}
               originalAp={originalAp}
               spotIcon={quest?.id ? spotIcons[quest.id] : undefined}
               className="flex-1"
+              consumesPod={consumesPod}
+              podFree={isPodFreeQuest}
             />
 
             {/* ドロップアイコン: スマホ1個、PC最大5個 */}
