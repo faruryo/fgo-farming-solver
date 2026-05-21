@@ -143,7 +143,7 @@ export const RecommendedQuest: React.FC = () => {
             size="sm"
             spacing={0}
             aria-label="並び替え基準"
-            className="ml-2 rounded-lg p-0.5 border border-[color:var(--gold-dim)] bg-[color:var(--bg2)] shadow-[inset_0_1px_2px_rgba(42,58,92,0.08)]"
+            className="ml-2 rounded-[12px] p-0.5 border border-[color:var(--gold-dim)] bg-[color:var(--bg2)] shadow-[inset_0_1px_2px_rgba(42,58,92,0.08)]"
           >
             <ToggleGroupItem
               value="laps"
