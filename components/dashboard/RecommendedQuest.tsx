@@ -143,19 +143,19 @@ export const RecommendedQuest: React.FC = () => {
             size="sm"
             spacing={0}
             aria-label="並び替え基準"
-            className="ml-2 rounded-md border border-[color:var(--gold-dim)] bg-[color:var(--bg2)] overflow-hidden"
+            className="ml-2 rounded-md bg-[color:var(--bg2)] shadow-[inset_0_0_0_1px_var(--gold-dim)] overflow-hidden"
           >
             <ToggleGroupItem
               value="laps"
               aria-label="周回数優先"
-              className="h-7 px-3 rounded-none text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
+              className="h-7 px-3 rounded-none! text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
             >
               周回数
             </ToggleGroupItem>
             <ToggleGroupItem
               value="ap"
               aria-label="AP優先"
-              className="h-7 px-3 rounded-none text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
+              className="h-7 px-3 rounded-none! text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
             >
               AP
             </ToggleGroupItem>
