@@ -395,12 +395,23 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     }
   }
 
+  // afterClear === 'close' marks first-clear-only quests (main story, friendship,
+  // certain event one-shots). Their campaign AP discounts are first-clear bonuses
+  // that disappear after one run, so they have no farming value and must be
+  // excluded from the campaign quest set.
+  const aaQuestIdToAfterClear = new Map<number, string>()
+  for (const q of aaQuests) {
+    if (typeof q.id === 'number' && typeof q.afterClear === 'string') {
+      aaQuestIdToAfterClear.set(q.id, q.afterClear)
+    }
+  }
+
   let campaigns: Campaign[] = []
   try {
     console.log('Fetching event data for AP campaigns from Atlas Academy...')
     const eventsRes = await fetch(`${origin}/export/${region}/nice_event.json`)
     const allEvents: AtlasEvent[] = await eventsRes.json()
-    campaigns = extractApCampaigns(allEvents, aaQuestIdToShortId)
+    campaigns = extractApCampaigns(allEvents, aaQuestIdToShortId, aaQuestIdToAfterClear)
     console.log(`Extracted ${campaigns.length} questAp campaigns covering ${aaQuestIdToShortId.size} mappable quests.`)
   } catch (e) {
     console.warn('Failed to fetch/parse nice_event.json for campaigns:', e)
@@ -464,6 +475,12 @@ const KNOWN_CAMPAIGN_CALC_TYPES = new Set<CampaignCalcType>([
  * - Skips `campaignQuests[].isExcepted === true`
  * - Skips quests with no aaQuestId mapping (e.g., main story quests
  *   not present in our drops data)
+ * - Skips quests whose `afterClear === 'close'` (first-clear-only quests:
+ *   main story, friendship, certain event one-shots). Their AP discount
+ *   is a one-time bonus and has no farming value. Atlas's `nice_event.json`
+ *   often bundles main-story quests into AP campaigns alongside repeatable
+ *   ones; without this guard, our name-based aaQuestId matching can wrongly
+ *   inherit those discounts onto repeatable free quests with similar names.
  * - Drops campaigns whose `calcType` is not one of the known values
  *   (logged for visibility); unmapped calcType is intentionally not
  *   surfaced as an error to avoid breaking master-data updates when
@@ -471,7 +488,8 @@ const KNOWN_CAMPAIGN_CALC_TYPES = new Set<CampaignCalcType>([
  */
 export function extractApCampaigns(
   events: AtlasEvent[],
-  aaQuestIdToShortId: Map<number, string>
+  aaQuestIdToShortId: Map<number, string>,
+  aaQuestIdToAfterClear?: Map<number, string>
 ): Campaign[] {
   const out: Campaign[] = []
   for (const ev of events) {
@@ -482,6 +500,8 @@ export function extractApCampaigns(
     const seen = new Set<string>()
     for (const cq of ev.campaignQuests ?? []) {
       if (cq.isExcepted) continue
+      const afterClear = aaQuestIdToAfterClear?.get(cq.questId)
+      if (afterClear === 'close') continue
       const shortId = aaQuestIdToShortId.get(cq.questId)
       if (!shortId || seen.has(shortId)) continue
       seen.add(shortId)

@@ -299,6 +299,56 @@ describe('extractApCampaigns', () => {
     expect(result.every(r => r.questIds.length === 1 && r.questIds[0] === '30')).toBe(true)
   })
 
+  it("omits campaignQuests whose afterClear is 'close' (first-clear-only)", () => {
+    const events: any[] = [
+      {
+        id: 71679,
+        name: '消費AP0！',
+        startedAt: 0,
+        endedAt: 10,
+        finishedAt: 10,
+        type: 'questCampaign',
+        campaigns: [{ target: 'questAp', calcType: 'fixedValue', value: 0 }],
+        campaignQuests: [
+          { questId: 94145400, phase: 0, isExcepted: false }, // repeatLast → keep
+          { questId: 94145410, phase: 0, isExcepted: false }, // close → drop
+          { questId: 4000701, phase: 0, isExcepted: false }, // close → drop
+        ],
+      },
+    ]
+    const afterClearMap = new Map<number, string>([
+      [94145400, 'repeatLast'],
+      [94145410, 'close'],
+      [4000701, 'close'],
+    ])
+    const result = extractApCampaigns(events, idMap, afterClearMap)
+    expect(result).toHaveLength(1)
+    expect(result[0].questIds).toEqual(['20'])
+  })
+
+  it("drops the whole campaign when every quest has afterClear='close'", () => {
+    const events: any[] = [
+      {
+        id: 71679,
+        name: '消費AP0！',
+        startedAt: 0,
+        endedAt: 10,
+        finishedAt: 10,
+        type: 'questCampaign',
+        campaigns: [{ target: 'questAp', calcType: 'fixedValue', value: 0 }],
+        campaignQuests: [
+          { questId: 94145400, phase: 0, isExcepted: false },
+          { questId: 4000701, phase: 0, isExcepted: false },
+        ],
+      },
+    ]
+    const afterClearMap = new Map<number, string>([
+      [94145400, 'close'],
+      [4000701, 'close'],
+    ])
+    expect(extractApCampaigns(events, idMap, afterClearMap)).toEqual([])
+  })
+
   it('skips campaigns with unknown calcType but keeps known ones', () => {
     const events: any[] = [
       {
