@@ -4,13 +4,17 @@ import React, { useMemo } from 'react'
 import NextLink from 'next/link'
 import { Info } from 'lucide-react'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { QuestIdentity } from '../common/QuestIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
+import { useDashboardSortMode } from '../../hooks/use-dashboard-sort-mode'
 import { isBothResult } from '../../interfaces/api'
+
+const SORT_MODE_STORAGE_KEY = 'dashboard.nearGoal.sortMode'
 
 export const NearGoalSection: React.FC = () => {
   const drops = useDrops()
@@ -18,6 +22,7 @@ export const NearGoalSection: React.FC = () => {
   const { result: recentResult, loading: resultLoading } = useRecentResult()
   const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
   const displayResult = campaignAdjustedResult ?? recentResult
+  const [sortMode, setSortMode] = useDashboardSortMode(SORT_MODE_STORAGE_KEY, drops.campaigns)
 
   const nearGoalEntries = useMemo(() => {
     if (!displayResult || !dropItems?.length) return []
@@ -35,15 +40,21 @@ export const NearGoalSection: React.FC = () => {
         const needed = params.items[ti.id] ?? 0
         if (needed <= 0) return []
 
-        const best = targetDropRates
+        const candidates = targetDropRates
           .filter(dr => dr.item_id === ti.id && dr.drop_rate > 0)
           .map(dr => {
             const quest = targetQuests.find(q => q.id === dr.quest_id)
             if (!quest) return null
-            return { quest, lapsNeeded: Math.ceil(needed / dr.drop_rate) }
+            const lapsNeeded = Math.ceil(needed / dr.drop_rate)
+            const apPerDrop = quest.ap > 0 ? quest.ap / dr.drop_rate : Number.POSITIVE_INFINITY
+            return { quest, lapsNeeded, apPerDrop }
           })
           .filter((x): x is NonNullable<typeof x> => x !== null)
-          .sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
+
+        const best =
+          sortMode === 'ap'
+            ? candidates.sort((a, b) => a.apPerDrop - b.apPerDrop || a.lapsNeeded - b.lapsNeeded)[0]
+            : candidates.sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
 
         if (!best) return []
 
@@ -58,7 +69,7 @@ export const NearGoalSection: React.FC = () => {
         ...entry,
         originalAp: originalApById.get(entry.quest.id),
       }))
-  }, [dropItems, dropQuests, displayResult])
+  }, [dropItems, dropQuests, displayResult, sortMode])
 
   // drops側のquestからaaQuestIdを補完してspot画像を取得
   const spotIcons = useSpotIcons(
@@ -78,11 +89,27 @@ export const NearGoalSection: React.FC = () => {
           <TooltipTrigger className="flex-shrink-0 -ml-2 cursor-default" style={{ color: 'var(--text3)' }}>
             <Info size={13} />
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[220px] text-left leading-relaxed">
-            直近の計算結果から、残り周回数が最も少ない素材の Top 4。残り周回数が少ない順（達成が近い順）でランキング。
+          <TooltipContent side="bottom" className="max-w-[240px] text-left leading-relaxed">
+            {sortMode === 'ap'
+              ? '直近の計算結果から、各素材を最も少ない AP（1 個あたりの実効 AP が最小）で集められるクエストを選び、残り周回数が少ない順に Top 4 を表示。'
+              : '直近の計算結果から、各素材を最も少ない周回数で集められるクエストを選び、達成が近い順に Top 4 を表示。'}
             <span className="block mt-1 opacity-75">AP半減などのキャンペーン情報は最大30分程度の遅れで反映されます。</span>
           </TooltipContent>
         </Tooltip>
+        <ToggleGroup
+          value={[sortMode]}
+          onValueChange={(values: string[]) => {
+            const next = values[0]
+            if (next === 'laps' || next === 'ap') setSortMode(next)
+          }}
+          size="sm"
+          spacing={0}
+          aria-label="並び替え基準"
+          className="ml-2"
+        >
+          <ToggleGroupItem value="laps" aria-label="周回数優先">周回数</ToggleGroupItem>
+          <ToggleGroupItem value="ap" aria-label="AP優先">AP</ToggleGroupItem>
+        </ToggleGroup>
         <div className="u-section-header-line" />
       </div>
       <div className="flex flex-col gap-3">

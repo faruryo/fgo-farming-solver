@@ -5,6 +5,7 @@ import { Loader2, Info } from 'lucide-react'
 import NextLink from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { QuestIdentity } from '../common/QuestIdentity'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
@@ -13,7 +14,10 @@ import { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
+import { useDashboardSortMode } from '../../hooks/use-dashboard-sort-mode'
 import { isBothResult, Quest } from '../../interfaces/api'
+
+const SORT_MODE_STORAGE_KEY = 'dashboard.recommendedQuest.sortMode'
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
@@ -23,6 +27,7 @@ export const RecommendedQuest: React.FC = () => {
   const { result: recentResult, loading: resultLoading } = useRecentResult()
   const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
   const displayResult = campaignAdjustedResult ?? recentResult
+  const [sortMode, setSortMode] = useDashboardSortMode(SORT_MODE_STORAGE_KEY, drops.campaigns)
 
   const recommendations = useMemo(() => {
     if (dropsLoading || !items || !items.length || !quests || !drop_rates) return []
@@ -33,13 +38,19 @@ export const RecommendedQuest: React.FC = () => {
       const targetDropRates = isBothResult(displayResult) ? displayResult.lap.drop_rates : displayResult.drop_rates
 
       if (targetQuests && targetQuests.length > 0) {
+        const isApDiscounted = (q: Quest) => {
+          const original = quests?.find((qq) => qq.id === q.id)?.ap
+          return original != null && q.ap < original
+        }
+        const getPriorityLaps = (q: Quest) => {
+          if (q.area?.includes('冠位研鑽戦')) return 1
+          if (q.area?.includes('オーディール・コール')) return 2
+          return 3
+        }
+        const getPriorityAp = (q: Quest) => (isApDiscounted(q) ? 1 : 2)
+        const getPriority = sortMode === 'ap' ? getPriorityAp : getPriorityLaps
         return targetQuests
           .sort((a, b) => {
-            const getPriority = (q: Quest) => {
-              if (q.area?.includes('冠位研鑽戦')) return 1
-              if (q.area?.includes('オーディール・コール')) return 2
-              return 3
-            }
             const pa = getPriority(a), pb = getPriority(b)
             if (pa !== pb) return pa - pb
             return b.lap - a.lap
@@ -76,7 +87,7 @@ export const RecommendedQuest: React.FC = () => {
         : [item]
       return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false }
     }).filter(r => r.quest)
-  }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult])
+  }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult, sortMode])
 
   // aaQuestId comes from drops quests (result quests may not carry it)
   const spotIcons = useSpotIcons(
@@ -113,13 +124,31 @@ export const RecommendedQuest: React.FC = () => {
           <TooltipTrigger className="flex-shrink-0 -ml-2 cursor-default" style={{ color: 'var(--text3)' }}>
             <Info size={13} />
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[220px] text-left leading-relaxed">
+          <TooltipContent side="bottom" className="max-w-[240px] text-left leading-relaxed">
             {recentResult
-              ? '直近の計算結果のクエスト Top 4。優先順：冠位研鑽戦 → オーディール・コール → その他。同優先度内は予定周回数が多い順。'
+              ? sortMode === 'ap'
+                ? '直近の計算結果のクエスト Top 4。AP割引対象クエストを最上位、その他をその下に並べ、同優先度内は予定周回数が多い順。'
+                : '直近の計算結果のクエスト Top 4。優先順：冠位研鑽戦 → オーディール・コール → その他。ストームポッド消費を促す並びです。同優先度内は予定周回数が多い順。'
               : '不足素材ごとに最もドロップ率の高いクエスト Top 4。'}
             <span className="block mt-1 opacity-75">AP半減などのキャンペーン情報は最大30分程度の遅れで反映されます。</span>
           </TooltipContent>
         </Tooltip>
+        {recentResult && (
+          <ToggleGroup
+            value={[sortMode]}
+            onValueChange={(values: string[]) => {
+              const next = values[0]
+              if (next === 'laps' || next === 'ap') setSortMode(next)
+            }}
+            size="sm"
+            spacing={0}
+            aria-label="並び替え基準"
+            className="ml-2"
+          >
+            <ToggleGroupItem value="laps" aria-label="周回数優先">周回数</ToggleGroupItem>
+            <ToggleGroupItem value="ap" aria-label="AP優先">AP</ToggleGroupItem>
+          </ToggleGroup>
+        )}
         <div className="u-section-header-line" />
       </div>
 
