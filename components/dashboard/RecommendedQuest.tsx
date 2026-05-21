@@ -143,19 +143,19 @@ export const RecommendedQuest: React.FC = () => {
             size="sm"
             spacing={0}
             aria-label="並び替え基準"
-            className="ml-2 rounded-full p-0.5 border border-[color:var(--gold-dim)] bg-[color:var(--bg2)] shadow-[inset_0_1px_2px_rgba(42,58,92,0.08)]"
+            className="ml-2 rounded-lg p-0.5 border border-[color:var(--gold-dim)] bg-[color:var(--bg2)] shadow-[inset_0_1px_2px_rgba(42,58,92,0.08)]"
           >
             <ToggleGroupItem
               value="laps"
               aria-label="周回数優先"
-              className="h-6 px-2.5 rounded-full text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white data-[pressed]:shadow-[0_1px_2px_rgba(154,114,36,0.35)] aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
+              className="h-6 px-2.5 text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white data-[pressed]:shadow-[0_1px_2px_rgba(154,114,36,0.35)] aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
             >
               周回数
             </ToggleGroupItem>
             <ToggleGroupItem
               value="ap"
               aria-label="AP優先"
-              className="h-6 px-2.5 rounded-full text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white data-[pressed]:shadow-[0_1px_2px_rgba(154,114,36,0.35)] aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
+              className="h-6 px-2.5 text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white data-[pressed]:shadow-[0_1px_2px_rgba(154,114,36,0.35)] aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
             >
               AP
             </ToggleGroupItem>
