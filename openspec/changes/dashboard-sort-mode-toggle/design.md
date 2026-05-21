@@ -53,6 +53,11 @@
 - item 間の並びは従来どおり `lapsNeeded` 昇順 (達成が近い順) を維持する。
 - 代替案 (item 並びを「AP 合計が最小」順に変える): 「達成間近の素材」というセクション名称と一致しなくなるため不採用。あくまで「同じ item に対するクエスト選択を AP 効率寄りに切り替える」スコープ。
 
+**Decision: NearGoalSection の候補プールはソルバー結果ではなく drops 全体から取る**
+- 採用案: `drops.drop_rates` 全体を候補とし、`params.quests` で許可された quest_id に限定する。各 quest の AP は `computeEffectiveAp(quest.ap, quest.id, activeCampaigns)` で求める。
+- 代替案 (`displayResult.lap.drop_rates` を候補とする): ソルバーは各 item に対し採用クエストを 1 つに絞り込んでしまうため、候補数が 1 となり AP/周回数モード切替の結果が同一になる (= 切替が無意味)。
+- 影響: ソルバーが farming プランに含めなかったクエストも候補に上がるため、NearGoalSection が「ソルバー結果に直接対応するビュー」ではなくなる。これは AP モードのメリット (代替効率パスの提示) を成立させる代償として受け入れる。
+
 **Decision: 共有 hook `useDashboardSortMode` を切り出す**
 - LocalStorage 読み書き + 既定値計算 + アクティブキャンペーン購読をまとめた小さな hook を `hooks/use-dashboard-sort-mode.ts` に置く。
 - 2 セクションから呼べる形にし、引数で LS キーと `campaigns` を受ける。
