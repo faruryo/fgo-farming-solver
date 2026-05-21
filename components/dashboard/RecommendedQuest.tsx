@@ -66,7 +66,15 @@ export const RecommendedQuest: React.FC = () => {
               .map(dr => items.find(i => i.id === dr.item_id))
               .filter((x): x is NonNullable<typeof x> => Boolean(x))
             const bestRate = topRates[0] || relatedRates[0]
-            return { id: q.id, topItems, quest: q, rate: bestRate?.drop_rate, lap: q.lap, isRecent: true }
+            return {
+              id: q.id,
+              topItems,
+              quest: q,
+              rate: bestRate?.drop_rate,
+              lap: q.lap,
+              isRecent: true,
+              tier: getPriority(q),
+            }
           })
       }
     }
@@ -85,7 +93,7 @@ export const RecommendedQuest: React.FC = () => {
             .map(dr => items.find(i => i.id === dr.item_id))
             .filter((x): x is NonNullable<typeof x> => Boolean(x))
         : [item]
-      return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false }
+      return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false, tier: undefined as number | undefined }
     }).filter(r => r.quest)
   }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult, sortMode])
 
@@ -165,11 +173,25 @@ export const RecommendedQuest: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-3">
-        {recommendations.map(({ id, topItems, quest, rate, lap }, index) => {
+        {recommendations.map((r, index) => {
+          const { id, topItems, quest, rate, lap, tier } = r
           const originalAp = quest?.id ? quests?.find(q => q.id === quest.id)?.ap : undefined
+          const prevTier = index > 0 ? recommendations[index - 1].tier : undefined
+          const showDivider = tier !== undefined && prevTier !== undefined && tier !== prevTier
+          const dividerLabel =
+            sortMode === 'ap'
+              ? (tier === 2 ? 'その他' : null)
+              : (tier === 2 ? 'オーディール・コール' : tier === 3 ? 'その他' : null)
           return (
+          <React.Fragment key={id}>
+            {showDivider && dividerLabel && (
+              <div className="flex items-center gap-2 text-[9px] font-semibold tracking-wider uppercase" style={{ color: 'var(--text3)' }}>
+                <div className="flex-1 h-px" style={{ background: 'rgba(154,114,36,0.25)' }} />
+                <span>{dividerLabel}</span>
+                <div className="flex-1 h-px" style={{ background: 'rgba(154,114,36,0.25)' }} />
+              </div>
+            )}
           <NextLink
-            key={id}
             href={`/quests/${quest?.id}`}
             className="u-fgo-card flex items-center gap-2 py-3 px-4 rounded-md transition-all duration-200 cursor-pointer no-underline hover:no-underline hover:-translate-y-0.5"
             style={{ borderLeft: '3px solid var(--gold)' }}
@@ -204,6 +226,7 @@ export const RecommendedQuest: React.FC = () => {
               {lap ? `あと${lap}周で達成！` : `ドロップ率 ${Math.round((rate || 0) * 100)}%`}
             </p>
           </NextLink>
+          </React.Fragment>
           )
         })}
       </div>

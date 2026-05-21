@@ -11,12 +11,26 @@ import { useDrops } from '../../hooks/use-drops'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
-import { useDashboardSortMode } from '../../hooks/use-dashboard-sort-mode'
+import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { computeEffectiveAp } from '../../lib/solver'
 import { isBothResult } from '../../interfaces/api'
 
 const SORT_MODE_STORAGE_KEY = 'dashboard.nearGoal.sortMode'
+
+type NearGoalSortMode = 'efficiency' | 'laps'
+
+const isNearGoalSortMode = (v: unknown): v is NearGoalSortMode =>
+  v === 'efficiency' || v === 'laps'
+
+// Top-N for "総合効率" mode. N=20 surfaces multi-drop heavens (冠位研鑽戦,
+// AP-half 修練場, オーディール・コール) plus the occasional outlier free
+// quest, without diluting the pool to the point of including everything.
+const EFFICIENCY_POOL_SIZE = 20
+// Pool size of "items near completion" that are evaluated against the
+// efficiency pool. Sliced by smallest `needed` count so the section stays
+// focused on what the user is actually close to finishing.
+const NEEDED_ITEMS_WINDOW = 10
 
 export const NearGoalSection: React.FC = () => {
   const drops = useDrops()
@@ -24,7 +38,11 @@ export const NearGoalSection: React.FC = () => {
   const { result: recentResult, loading: resultLoading } = useRecentResult()
   const campaignAdjustedResult = useDashboardResult(recentResult, dropsLoading ? null : drops)
   const displayResult = campaignAdjustedResult ?? recentResult
-  const [sortMode, setSortMode] = useDashboardSortMode(SORT_MODE_STORAGE_KEY, drops.campaigns)
+  const [sortMode, setSortMode] = useLocalStorage<NearGoalSortMode>(
+    SORT_MODE_STORAGE_KEY,
+    'efficiency',
+    { onGet: (v) => (isNearGoalSortMode(v) ? v : 'efficiency') },
+  )
   const { activeCampaigns } = useActiveCampaigns(drops.campaigns)
 
   const nearGoalEntries = useMemo(() => {
@@ -32,43 +50,73 @@ export const NearGoalSection: React.FC = () => {
 
     const result = isBothResult(displayResult) ? displayResult.lap : displayResult
     const { items: targetItems, params } = result
-
     if (!targetItems?.length) return []
 
-    // The user's saved calculation pinned a set of allowed quests; respect it so
-    // candidate enumeration here does not surface quests the user excluded.
     const allowedQuestIds = new Set<string>(params.quests ?? [])
-
-    // Build a map of original AP (before campaign) from the drops data for badge display
     const originalApById = new Map(dropQuests?.map(q => [q.id, q.ap]) ?? [])
     const dropQuestById = new Map(dropQuests?.map(q => [q.id, q]) ?? [])
 
-    return targetItems
+    const effectiveApFor = (questId: string, originalAp: number): number =>
+      activeCampaigns.length > 0
+        ? computeEffectiveAp(originalAp, questId, activeCampaigns)
+        : originalAp
+
+    // 効率モード: ユーザーの残目標すべてに対し各クエストの効率スコア
+    //   score(q) = Σ drop_rate(q, i) / effectiveAp(q)   for i ∈ needed items
+    // を計算し、上位 EFFICIENCY_POOL_SIZE 件を「高効率プール」とする。
+    let efficiencyPool: Set<string> | null = null
+    if (sortMode === 'efficiency') {
+      const questScores = new Map<string, number>()
+      for (const dr of drops.drop_rates) {
+        if (dr.drop_rate <= 0) continue
+        if (!allowedQuestIds.has(dr.quest_id)) continue
+        const needed = params.items[dr.item_id] ?? 0
+        if (needed <= 0) continue
+        const quest = dropQuestById.get(dr.quest_id)
+        if (!quest) continue
+        const ap = effectiveApFor(quest.id, quest.ap)
+        if (ap <= 0) continue
+        questScores.set(dr.quest_id, (questScores.get(dr.quest_id) ?? 0) + dr.drop_rate / ap)
+      }
+      efficiencyPool = new Set(
+        [...questScores.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, EFFICIENCY_POOL_SIZE)
+          .map(([id]) => id),
+      )
+    }
+
+    // 効率モードでは「残量が少ない 10 個」のアイテムのみ評価する。
+    // 最短モードでは従来通り全 targetItems を評価する。
+    const itemsToEvaluate =
+      sortMode === 'efficiency'
+        ? [...targetItems]
+            .map(ti => ({ ti, needed: params.items[ti.id] ?? 0 }))
+            .filter(x => x.needed > 0)
+            .sort((a, b) => a.needed - b.needed)
+            .slice(0, NEEDED_ITEMS_WINDOW)
+            .map(x => x.ti)
+        : targetItems
+
+    return itemsToEvaluate
       .flatMap(ti => {
         const needed = params.items[ti.id] ?? 0
         if (needed <= 0) return []
 
         const candidates = drops.drop_rates
           .filter(dr => dr.item_id === ti.id && dr.drop_rate > 0 && allowedQuestIds.has(dr.quest_id))
+          .filter(dr => (efficiencyPool ? efficiencyPool.has(dr.quest_id) : true))
           .map(dr => {
             const baseQuest = dropQuestById.get(dr.quest_id)
             if (!baseQuest) return null
-            const effectiveAp =
-              activeCampaigns.length > 0
-                ? computeEffectiveAp(baseQuest.ap, baseQuest.id, activeCampaigns)
-                : baseQuest.ap
+            const effectiveAp = effectiveApFor(baseQuest.id, baseQuest.ap)
             const quest = { ...baseQuest, ap: effectiveAp }
             const lapsNeeded = Math.ceil(needed / dr.drop_rate)
-            const apPerDrop = effectiveAp > 0 ? effectiveAp / dr.drop_rate : Number.POSITIVE_INFINITY
-            return { quest, lapsNeeded, apPerDrop }
+            return { quest, lapsNeeded }
           })
           .filter((x): x is NonNullable<typeof x> => x !== null)
 
-        const best =
-          sortMode === 'ap'
-            ? candidates.sort((a, b) => a.apPerDrop - b.apPerDrop || a.lapsNeeded - b.lapsNeeded)[0]
-            : candidates.sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
-
+        const best = candidates.sort((a, b) => a.lapsNeeded - b.lapsNeeded)[0]
         if (!best) return []
 
         const displayItem = dropItems.find(i => i.id === ti.id)
@@ -102,9 +150,9 @@ export const NearGoalSection: React.FC = () => {
           <TooltipTrigger className="flex-shrink-0 -ml-2 cursor-default" style={{ color: 'var(--text3)' }}>
             <Info size={13} />
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[240px] text-left leading-relaxed">
-            {sortMode === 'ap'
-              ? '直近の計算結果から、各素材を最も少ない AP（1 個あたりの実効 AP が最小）で集められるクエストを選び、残り周回数が少ない順に Top 4 を表示。'
+          <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
+            {sortMode === 'efficiency'
+              ? `直近の計算結果から、ユーザー残目標へのスコア (drop/AP 合計) が高い上位 ${EFFICIENCY_POOL_SIZE} クエストを「高効率プール」とし、その中で達成が近い素材を Top 4 表示。冠位研鑽戦・AP半 修練場・オーディール・コールなどが自然に上位に来ます。`
               : '直近の計算結果から、各素材を最も少ない周回数で集められるクエストを選び、達成が近い順に Top 4 を表示。'}
             <span className="block mt-1 opacity-75">AP半減などのキャンペーン情報は最大30分程度の遅れで反映されます。</span>
           </TooltipContent>
@@ -113,7 +161,7 @@ export const NearGoalSection: React.FC = () => {
           value={[sortMode]}
           onValueChange={(values: string[]) => {
             const next = values[0]
-            if (next === 'laps' || next === 'ap') setSortMode(next)
+            if (isNearGoalSortMode(next)) setSortMode(next)
           }}
           size="sm"
           spacing={0}
@@ -121,18 +169,18 @@ export const NearGoalSection: React.FC = () => {
           className="ml-2 rounded-md bg-[color:var(--bg2)] shadow-[inset_0_0_0_1px_var(--gold-dim)] overflow-hidden"
         >
           <ToggleGroupItem
-            value="laps"
-            aria-label="周回数優先"
+            value="efficiency"
+            aria-label="総合効率優先"
             className="h-7 px-3 rounded-none! text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
           >
-            周回数
+            効率
           </ToggleGroupItem>
           <ToggleGroupItem
-            value="ap"
-            aria-label="AP優先"
+            value="laps"
+            aria-label="最短周回優先"
             className="h-7 px-3 rounded-none! text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white"
           >
-            AP
+            最短
           </ToggleGroupItem>
         </ToggleGroup>
         <div className="u-section-header-line" />
