@@ -1,4 +1,6 @@
-import React from 'react'
+'use client'
+
+import React, { useState } from 'react'
 import Image from 'next/image'
 import { Swords, Zap } from 'lucide-react'
 
@@ -14,6 +16,23 @@ type Props = {
   consumesPod?: boolean
   /** ポッド消費なし期間中で、この quest がその期間の対象に含まれているか。 */
   podFree?: boolean
+}
+
+const SpotIcon: React.FC<{ spotIcon?: string; alt: string }> = ({ spotIcon, alt }) => {
+  const [errored, setErrored] = useState(false)
+  if (!spotIcon || errored) {
+    return <Swords size={15} style={{ color: 'var(--gold)' }} />
+  }
+  return (
+    <Image
+      src={spotIcon}
+      alt={alt}
+      width={32}
+      height={32}
+      className="w-full h-full object-contain"
+      onError={() => setErrored(true)}
+    />
+  )
 }
 
 const PodIndicator: React.FC<{ podFree: boolean }> = ({ podFree }) => (
@@ -34,11 +53,7 @@ export const QuestIdentity: React.FC<Props> = ({ area, name, ap, originalAp, spo
   return (
     <div className={`flex items-center gap-2 min-w-0 ${className ?? ''}`}>
       <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded overflow-hidden">
-        {spotIcon ? (
-          <Image src={spotIcon} alt={area} width={32} height={32} className="w-full h-full object-contain" />
-        ) : (
-          <Swords size={15} style={{ color: 'var(--gold)' }} />
-        )}
+        <SpotIcon spotIcon={spotIcon} alt={area} />
       </div>
 
       <div className="flex flex-col gap-0.5 min-w-0">
