@@ -7,17 +7,14 @@ import { Badge } from '@/components/ui/badge'
 import type { DashboardEvent } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
 import { categorizeCampaignEvent, isPodFreeCampaignEvent, type CampaignCategory } from '../../lib/campaign-category'
+import { groupCampaignsByName, type CampaignGroup, type CategorizedEvent } from '../../lib/campaign-grouping'
 import { CampaignDetailDialog } from './CampaignDetailDialog'
 
 interface CampaignSectionProps {
   events: DashboardEvent[]
 }
 
-type CategorizedEvent = {
-  event: DashboardEvent
-  category: CampaignCategory
-  isPodFree: boolean
-}
+type CategorizedEventWithPodFree = CategorizedEvent & { isPodFree: boolean }
 
 const CATEGORY_LABEL: Record<CampaignCategory, string> = {
   farming: 'ファーミング直結',
@@ -33,12 +30,12 @@ const CategoryIcon: React.FC<{ category: CampaignCategory }> = ({ category }) =>
   return <Sparkles size={12} style={{ color: 'var(--text3)' }} />
 }
 
-type RowClickHandler = (event: DashboardEvent) => void
+type RowClickHandler = (events: DashboardEvent[]) => void
 
 const PodFreeHighlight: React.FC<{ event: DashboardEvent; onClick: RowClickHandler }> = ({ event, onClick }) => (
   <button
     type="button"
-    onClick={() => onClick(event)}
+    onClick={() => onClick([event])}
     className="u-fgo-card flex w-full items-center gap-3 rounded-md px-4 py-3 text-left transition-all hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2"
     style={{
       borderLeft: '3px solid #60c890',
@@ -67,33 +64,41 @@ const PodFreeHighlight: React.FC<{ event: DashboardEvent; onClick: RowClickHandl
   </button>
 )
 
-const CampaignRow: React.FC<{ event: DashboardEvent; category: CampaignCategory; onClick: RowClickHandler }> = ({
-  event,
-  category,
-  onClick,
-}) => (
-  <button
-    type="button"
-    onClick={() => onClick(event)}
-    className="u-fgo-card flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-all hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2"
-    style={{ background: 'var(--panel2)' }}
-    aria-label={`${event.name} の詳細を表示`}
-  >
-    <CategoryIcon category={category} />
-    <span className="text-[11px] font-semibold truncate flex-1 min-w-0" style={{ color: 'var(--navy)' }}>
-      {event.name}
-    </span>
-    {typeof event.campaignQuestsCount === 'number' && event.campaignQuestsCount > 0 && (
-      <span className="text-[9px] flex-shrink-0" style={{ color: 'var(--text3)' }}>
-        {event.campaignQuestsCount}件
+const GroupRow: React.FC<{ group: CampaignGroup; onClick: RowClickHandler }> = ({ group, onClick }) => {
+  const groupSize = group.events.length
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(group.events)}
+      className="u-fgo-card flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-all hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{ background: 'var(--panel2)' }}
+      aria-label={`${group.name} の詳細を表示`}
+    >
+      <CategoryIcon category={group.category} />
+      <span className="text-[11px] font-semibold truncate flex-1 min-w-0" style={{ color: 'var(--navy)' }}>
+        {group.name}
       </span>
-    )}
-    <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text3)' }}>
-      {formatDuration(event.endedAt)}
-    </span>
-    <ChevronRight size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
-  </button>
-)
+      {groupSize > 1 && (
+        <span
+          className="text-[9px] font-bold tabular-nums flex-shrink-0 px-1.5 py-0.5 rounded"
+          style={{ color: 'var(--gold)', background: 'rgba(154,114,36,0.12)' }}
+          aria-label={`${groupSize} 個のグループ`}
+        >
+          ×{groupSize}
+        </span>
+      )}
+      {group.totalQuests > 0 && (
+        <span className="text-[9px] tabular-nums flex-shrink-0" style={{ color: 'var(--text3)' }}>
+          {group.totalQuests}件
+        </span>
+      )}
+      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text3)' }}>
+        {formatDuration(group.earliestEndedAt)}
+      </span>
+      <ChevronRight size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
+    </button>
+  )
+}
 
 const CategoryHeader: React.FC<{ category: CampaignCategory }> = ({ category }) => (
   <div className="flex items-center gap-2 text-[9px] font-semibold tracking-wider uppercase" style={{ color: 'var(--text3)' }}>
@@ -105,11 +110,11 @@ const CategoryHeader: React.FC<{ category: CampaignCategory }> = ({ category }) 
 
 export const CampaignSection: React.FC<CampaignSectionProps> = ({ events }) => {
   const { t } = useTranslation(['dashboard'])
-  const [selected, setSelected] = useState<DashboardEvent | null>(null)
+  const [selected, setSelected] = useState<DashboardEvent[]>([])
   const [open, setOpen] = useState(false)
 
-  const handleOpen: RowClickHandler = (event) => {
-    setSelected(event)
+  const handleOpen: RowClickHandler = (eventList) => {
+    setSelected(eventList)
     setOpen(true)
   }
 
@@ -120,7 +125,7 @@ export const CampaignSection: React.FC<CampaignSectionProps> = ({ events }) => {
 
   if (bannerless.length === 0) return null
 
-  const categorized: CategorizedEvent[] = bannerless.map(event => ({
+  const categorized: CategorizedEventWithPodFree[] = bannerless.map(event => ({
     event,
     category: categorizeCampaignEvent(event),
     isPodFree: isPodFreeCampaignEvent(event),
@@ -129,15 +134,19 @@ export const CampaignSection: React.FC<CampaignSectionProps> = ({ events }) => {
   const podFreeEvents = categorized.filter(c => c.isPodFree)
   const otherEvents = categorized.filter(c => !c.isPodFree)
 
-  const byCategory: Record<CampaignCategory, CategorizedEvent[]> = {
+  // 同名キャンペーンをグループ化 (Atlas が対象 quest 群ごとに別 event を作るため)
+  const groupsByCategory: Record<CampaignCategory, CampaignGroup[]> = {
     farming: [],
     upgrade: [],
     other: [],
   }
-  for (const c of otherEvents) byCategory[c.category].push(c)
   for (const cat of CATEGORY_ORDER) {
-    byCategory[cat].sort((a, b) => a.event.endedAt - b.event.endedAt)
+    const inCat = otherEvents.filter(c => c.category === cat)
+    groupsByCategory[cat] = groupCampaignsByName(inCat).sort(
+      (a, b) => a.earliestEndedAt - b.earliestEndedAt,
+    )
   }
+
   podFreeEvents.sort((a, b) => a.event.endedAt - b.event.endedAt)
 
   return (
@@ -156,19 +165,19 @@ export const CampaignSection: React.FC<CampaignSectionProps> = ({ events }) => {
       )}
 
       {CATEGORY_ORDER.map(cat => {
-        const list = byCategory[cat]
-        if (list.length === 0) return null
+        const groups = groupsByCategory[cat]
+        if (groups.length === 0) return null
         return (
           <div key={cat} className="flex flex-col gap-2">
             <CategoryHeader category={cat} />
-            {list.map(c => (
-              <CampaignRow key={c.event.id} event={c.event} category={cat} onClick={handleOpen} />
+            {groups.map(g => (
+              <GroupRow key={g.name} group={g} onClick={handleOpen} />
             ))}
           </div>
         )
       })}
 
-      <CampaignDetailDialog event={selected} open={open} onOpenChange={setOpen} />
+      <CampaignDetailDialog events={selected} open={open} onOpenChange={setOpen} />
     </div>
   )
 }
