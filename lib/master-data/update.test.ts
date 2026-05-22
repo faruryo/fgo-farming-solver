@@ -182,6 +182,49 @@ describe('fetchAndTransformData', () => {
     // campaigns field present (empty in this fixture since nice_event returned [])
     expect(data.campaigns).toEqual([])
   })
+
+  it('resolves aaQuestId for 冠位研鑽戦 quests via 冠位戴冠戦 war alias', async () => {
+    const mockAAItems = [
+      { id: 6001, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 },
+    ]
+
+    // Atlas のクエスト名は spreadsheet クエスト名を内包し、warLongName は改行 + クラス名付き。
+    // この組み合わせを正しく aaQuestId にマッピングできることを確認する。
+    const mockWars = [
+      {
+        id: 8405,
+        longName: '冠位戴冠戦\nアサシン',
+        spots: [
+          {
+            quests: [
+              { id: 94150501, name: '冠位研鑽戦〔アサシン〕 Ⅰ', spotName: '' },
+              { id: 94150502, name: '冠位研鑽戦〔アサシン〕 Ⅱ', spotName: '' },
+            ],
+          },
+        ],
+      },
+    ]
+
+    const mockCSV = `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材
+,,AP,データ数,証
+冠位研鑽戦,〔アサシン〕 Ⅰ,40,100,50
+冠位研鑽戦,〔アサシン〕 Ⅱ,40,100,40
+`
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockWars) } as Response)
+      .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+
+    const data = await fetchAndTransformData()
+
+    const q1 = data.quests.find(q => q.name === '〔アサシン〕 Ⅰ')
+    const q2 = data.quests.find(q => q.name === '〔アサシン〕 Ⅱ')
+    expect(q1?.aaQuestId).toBe(94150501)
+    expect(q2?.aaQuestId).toBe(94150502)
+  })
 })
 
 describe('extractApCampaigns', () => {

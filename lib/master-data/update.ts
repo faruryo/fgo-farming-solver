@@ -273,9 +273,15 @@ export async function fetchAndTransformData(): Promise<MasterData> {
       }
 
       // Match with AA quest
-      const aaQuestInWar = aaQuests.find(q => 
-        (q.name === searchName || q.name.includes(searchName) || q.spotName === searchName) && 
-        (q.warLongName?.includes(area) || area.includes(q.warLongName) || (area.includes('修練場') && q.warLongName === '曜日クエスト'))
+      // Spreadsheet area と Atlas warLongName が表記揺れする場合のエイリアスマップ:
+      //   - 冠位研鑽戦 (spreadsheet) ↔ 冠位戴冠戦 (Atlas, 例: "冠位戴冠戦\nアサシン")
+      //   - 修練場 (spreadsheet) ↔ 曜日クエスト (Atlas)
+      const aaQuestInWar = aaQuests.find(q =>
+        (q.name === searchName || q.name.includes(searchName) || q.spotName === searchName) &&
+        (q.warLongName?.includes(area) ||
+          area.includes(q.warLongName) ||
+          (area.includes('修練場') && q.warLongName === '曜日クエスト') ||
+          (area === '冠位研鑽戦' && q.warLongName?.includes('冠位戴冠戦')))
       )
 
       quests.push({
