@@ -35,14 +35,26 @@ export async function POST(req: NextRequest) {
     }
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  const cfContextStart = performance.now()
-  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-    env: CloudflareEnv
+  let env: CloudflareEnv | undefined = undefined
+  let cfContextDur = 0
+  try {
+    const cfContextStart = performance.now()
+    const context = (await getCloudflareContext({ async: true })) as unknown as {
+      env: CloudflareEnv
+    }
+    env = context?.env || (context as any)
+    cfContextDur = performance.now() - cfContextStart
+  } catch (err) {
+    console.warn('[api/progress] Failed to get Cloudflare context locally:', err)
   }
+
   const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
-  const cfContextDur = performance.now() - cfContextStart
   if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      const { getDevMockResponse } = await import('./dev-mock')
+      const mock = await getDevMockResponse()
+      if (mock) return Response.json(mock)
+    }
     return Response.json({ error: 'D1 unavailable' }, { status: 503 })
   }
 
