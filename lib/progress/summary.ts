@@ -157,9 +157,23 @@ export const buildProgressResponse = async ({
   servants,
 }: BuildProgressResponseInput): Promise<ProgressResponse> => {
   const generatedAtIso = current.generatedAtIso ?? new Date().toISOString()
+  
+  let d1Dur = 0
+  let apDur = 0
+
   const [snapshots, apTables] = await Promise.all([
-    fetchAllSnapshotsByPeriod(db, userId),
-    getRarityApTables(),
+    (async () => {
+      const s = performance.now()
+      const res = await fetchAllSnapshotsByPeriod(db, userId)
+      d1Dur = performance.now() - s
+      return res
+    })(),
+    (async () => {
+      const s = performance.now()
+      const res = await getRarityApTables()
+      apDur = performance.now() - s
+      return res
+    })(),
   ])
 
   const rarityById = new Map<string, Rarity>()
@@ -207,6 +221,10 @@ export const buildProgressResponse = async ({
         ctx,
         hasAnyPastSnapshot
       ),
+    },
+    _timings: {
+      d1Query: `${d1Dur.toFixed(1)}ms`,
+      apTableLoad: `${apDur.toFixed(1)}ms`,
     },
   }
 }

@@ -19,7 +19,11 @@ type ProgressRequestBody = {
 }
 
 export async function POST(req: NextRequest) {
+  const start = performance.now()
+
+  const authStart = performance.now()
   const session = await auth()
+  const authDur = performance.now() - authStart
 
   if (!session?.user?.id) {
     // In development, serve rotating mock scenarios so the modal works without login.
@@ -32,10 +36,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const cfContextStart = performance.now()
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {
     env: CloudflareEnv
   }
   const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
+  const cfContextDur = performance.now() - cfContextStart
   if (!db) {
     return Response.json({ error: 'D1 unavailable' }, { status: 503 })
   }
@@ -47,11 +53,14 @@ export async function POST(req: NextRequest) {
     // empty body is fine
   }
 
+  const fetchStart = performance.now()
   const [drops, servants] = await Promise.all([
     getDrops(),
     getServantsList().catch(() => []),
   ])
+  const fetchDur = performance.now() - fetchStart
 
+  const buildStart = performance.now()
   const response = await buildProgressResponse({
     db,
     userId: session.user.id,
@@ -64,6 +73,25 @@ export async function POST(req: NextRequest) {
     quests: drops.quests,
     servants: servants.map((s) => ({ id: s.id, name: s.name, rarity: s.rarity })),
   })
+  const buildDur = performance.now() - buildStart
 
-  return Response.json(response)
+  const totalDur = performance.now() - start
+
+  // Construct standard Server-Timing header
+  const serverTiming = [
+    `auth;dur=${authDur.toFixed(1)};desc="NextAuth Session"`,
+    `cfContext;dur=${cfContextDur.toFixed(1)};desc="CF Context Bind"`,
+    `kvFetch;dur=${fetchDur.toFixed(1)};desc="KV Drops/Servants"`,
+    `d1Query;dur=${parseFloat(response._timings?.d1Query || '0').toFixed(1)};desc="D1 SQL Query"`,
+    `apLoad;dur=${parseFloat(response._timings?.apTableLoad || '0').toFixed(1)};desc="AP Table Load"`,
+    `build;dur=${buildDur.toFixed(1)};desc="Progress Build"`,
+    `total;dur=${totalDur.toFixed(1)};desc="API Total Execution"`
+  ].join(', ')
+
+  return new Response(JSON.stringify(response), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Server-Timing': serverTiming,
+    },
+  })
 }
