@@ -77,7 +77,7 @@ export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
             key={p}
             type="button"
             onClick={() => setPeriod(p)}
-            className={`c-filter-toggle${period === p ? ' active' : ''}`}
+            className={`c-hide-toggle${period === p ? ' active' : ''}`}
             style={{ fontSize: 11, padding: '2px 8px' }}
           >
             {PERIOD_LABELS[p]}

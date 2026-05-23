@@ -84,11 +84,12 @@ export const fetchSnapshotByPeriod = async (
 ): Promise<Snapshot | null> => {
   if (period === 'previous') {
     // Most recent snapshot strictly before today (excludes the current day's overwrite).
-    const todayIso = `${dateKey()}T00:00:00.000Z`
-    return fetchClosest(db, userId, todayIso)
+    const todayStart = `${dateKey()} 00:00:00`
+    return fetchClosest(db, userId, todayStart)
   }
   const ago = period === 'week' ? 7 : 30
-  return fetchClosest(db, userId, daysAgo(ago).toISOString())
+  const agoStr = daysAgo(ago).toISOString().replace('T', ' ').slice(0, 19)
+  return fetchClosest(db, userId, agoStr)
 }
 
 export const fetchAllSnapshotsByPeriod = async (
