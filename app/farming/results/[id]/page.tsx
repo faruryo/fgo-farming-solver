@@ -29,6 +29,7 @@ export default async function ResultPage({
         <Page
           apResult={{ ...raw.ap, items: apItems as any, quests: apQuests as any }}
           lapResult={{ ...raw.lap, items: lapItems as any, quests: lapQuests as any }}
+          createdAt={raw.createdAt}
         />
       )
     }
@@ -42,6 +43,7 @@ export default async function ResultPage({
     return (
       <Page
         legacyResult={{ ...result, items: localItems as any, quests: localQuests as any }}
+        createdAt={raw.createdAt}
       />
     )
   } catch (e) {

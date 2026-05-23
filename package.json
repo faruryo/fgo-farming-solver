@@ -16,6 +16,7 @@
     "test": "vitest",
     "update-data": "tsx scripts/update-data.ts",
     "update:mock:dashboard": "tsx scripts/update-mock-dashboard.ts",
+    "seed:progress": "tsx scripts/seed-d1-progress.ts",
     "prepare": "husky"
   },
   "dependencies": {

@@ -1,10 +1,15 @@
 import { Result, BothResult } from '../interfaces/api'
 import { readLocalJson } from './data-source'
 
-export const getResult = async (id: string): Promise<Result | BothResult> => {
+export const getResult = async (id: string): Promise<(Result | BothResult) & { createdAt?: string }> => {
   // 1. Try local mock (dev)
   const mock = await readLocalJson<Result | BothResult>('mocks/result.json')
-  if (mock) return mock
+  if (mock) {
+    return {
+      ...mock,
+      createdAt: new Date().toISOString(),
+    }
+  }
 
   // 2. Try Cloudflare D1 (production)
   try {
@@ -18,16 +23,20 @@ export const getResult = async (id: string): Promise<Result | BothResult> => {
     }
 
     const result = await ctx.env.DB.prepare(
-      'SELECT result_data FROM farming_results WHERE id = ?'
+      'SELECT result_data, created_at FROM farming_results WHERE id = ?'
     )
       .bind(id)
-      .first<{ result_data: string }>()
+      .first<{ result_data: string; created_at: string }>()
 
     if (!result) {
       throw new Error(`Result not found for id ${id}`)
     }
 
-    return JSON.parse(result.result_data) as Result | BothResult
+    const parsed = JSON.parse(result.result_data) as Result | BothResult
+    return {
+      ...parsed,
+      createdAt: result.created_at,
+    }
   } catch (e) {
     throw e instanceof Error ? e : new Error(String(e))
   }

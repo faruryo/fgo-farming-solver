@@ -16,14 +16,17 @@
         "deltaApRaw": 0, "deltaApAdjusted": 0,
         "newServantCount": 0, "newServantOffsetAp": 0,
         "servantGrowth": [], "targetApIncrease": 0,
-        "elapsedMinutes": 0, "fallback": "first_time"
+        "elapsedMinutes": 10080, "fallback": "zero_progress"
       },
       "month": {
-        "period": "month", "tier": "none",
-        "deltaApRaw": 0, "deltaApAdjusted": 0,
+        "period": "month", "tier": "medium",
+        "deltaApRaw": 3100, "deltaApAdjusted": 3100,
         "newServantCount": 0, "newServantOffsetAp": 0,
-        "servantGrowth": [], "targetApIncrease": 0,
-        "elapsedMinutes": 0, "fallback": "first_time"
+        "servantGrowth": [
+          { "servantId": "100100", "servantName": "アルトリア・ペンドラゴン", "delta": 9 }
+        ],
+        "targetApIncrease": 0,
+        "elapsedMinutes": 43200, "fallback": null
       }
     }
   },

@@ -19,8 +19,8 @@ type LocalResult = Omit<Result, 'items' | 'quests'> & {
 }
 
 export type PageProps =
-  | { apResult: LocalResult; lapResult: LocalResult; legacyResult?: undefined }
-  | { legacyResult: LocalResult; apResult?: undefined; lapResult?: undefined }
+  | { apResult: LocalResult; lapResult: LocalResult; legacyResult?: undefined; createdAt?: string }
+  | { legacyResult: LocalResult; apResult?: undefined; lapResult?: undefined; createdAt?: string }
 
 const ResultPanel = ({
   result,
@@ -76,12 +76,30 @@ const ResultPanel = ({
   )
 }
 
-export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
+const formatDate = (isoStr?: string) => {
+  if (!isoStr) return ''
+  try {
+    const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
+    const withZ = normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
+    const d = new Date(withZ)
+    if (isNaN(d.getTime())) return ''
+    const m = d.getMonth() + 1
+    const day = d.getDate()
+    const h = d.getHours().toString().padStart(2, '0')
+    const min = d.getMinutes().toString().padStart(2, '0')
+    return `${m}月${day}日 ${h}:${min}`
+  } catch {
+    return ''
+  }
+}
+
+export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
   const totalApForProgress = legacyResult
     ? legacyResult.total_ap
     : (apResult?.total_ap ?? null)
   const progress = useProgressReport(totalApForProgress)
+  const formattedDate = formatDate(createdAt)
 
   if (legacyResult) {
     return (
@@ -90,7 +108,14 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
           <div className="c-page-header">
             <div>
               <div className="c-page-en">RESULT</div>
-              <h1 className="c-page-title">{t('計算結果')}</h1>
+              <h1 className="c-page-title">
+                {t('計算結果')}
+                {formattedDate && (
+                  <span className="text-xs font-normal text-muted-foreground ml-3" style={{ opacity: 0.8 }}>
+                    (計算日時: {formattedDate})
+                  </span>
+                )}
+              </h1>
             </div>
             <div className="c-result-actions">
               <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
@@ -128,7 +153,14 @@ export const Page = ({ apResult, lapResult, legacyResult }: PageProps) => {
         <div className="c-page-header">
           <div>
             <div className="c-page-en">RESULT</div>
-            <h1 className="c-page-title">{t('計算結果')}</h1>
+            <h1 className="c-page-title">
+              {t('計算結果')}
+              {formattedDate && (
+                <span className="text-xs font-normal text-muted-foreground ml-3" style={{ opacity: 0.8 }}>
+                  (計算日時: {formattedDate})
+                </span>
+              )}
+            </h1>
           </div>
           <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
         </div>

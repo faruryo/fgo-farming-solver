@@ -24,10 +24,13 @@
 - `pnpm run lint` — ESLint
 - `pnpm run type-check` — tsc --noEmit
 - `pnpm run format` — Prettier
+- `pnpm run seed:progress` — ローカルD1 SQLiteへの過去進捗ダミースナップショット注入（昨日・1週間前・1ヶ月前）。ローカル画面でカチカチとタブを切り替えてマシュの様々なセリフパターン（進捗量・育成成長・新サーヴァント入手）を検証可能。
 
 ## Global Gotchas
 - Build is two-step: `next build && npx @opennextjs/cloudflare build --skipBuild`
 - `wrangler.toml` uses `nodejs_compat` and `global_fetch_strictly_public`.
+- **D1 Local Dev Fallback**: `/api/progress` API は、ローカル開発環境（`next dev`）でDB接続がない状態（ログイン後）で動作してもクラッシュせず、自動的に時間決定的なモック（`mocks/progress.json`）へフォールバックする例外保護が組み込まれています。
+- **Unified Cache**: 高速化のため、`lib/data-source.ts` において Cloudflare Context (`env.MASTER_DATA`) がグローバルモジュールレベルでキャッシュされています。
 - Refer to domain-specific rules for implementation details.
 
 ## OpenSpec Workflow
