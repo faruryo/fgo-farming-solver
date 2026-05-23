@@ -53,10 +53,23 @@ export async function POST(req: NextRequest) {
     // empty body is fine
   }
 
+  let dropsDur = 0
+  let servantsDur = 0
+
   const fetchStart = performance.now()
   const [drops, servants] = await Promise.all([
-    getDrops(),
-    getServantsList().catch(() => []),
+    (async () => {
+      const s = performance.now()
+      const res = await getDrops()
+      dropsDur = performance.now() - s
+      return res
+    })(),
+    (async () => {
+      const s = performance.now()
+      const res = await getServantsList().catch(() => [])
+      servantsDur = performance.now() - s
+      return res
+    })(),
   ])
   const fetchDur = performance.now() - fetchStart
 
@@ -82,6 +95,8 @@ export async function POST(req: NextRequest) {
     `auth;dur=${authDur.toFixed(1)};desc="NextAuth Session"`,
     `cfContext;dur=${cfContextDur.toFixed(1)};desc="CF Context Bind"`,
     `kvFetch;dur=${fetchDur.toFixed(1)};desc="KV Drops/Servants"`,
+    `getDrops;dur=${dropsDur.toFixed(1)};desc="getDrops Load"`,
+    `getServants;dur=${servantsDur.toFixed(1)};desc="getServants List"`,
     `d1Query;dur=${parseFloat(response._timings?.d1Query || '0').toFixed(1)};desc="D1 SQL Query"`,
     `apLoad;dur=${parseFloat(response._timings?.apTableLoad || '0').toFixed(1)};desc="AP Table Load"`,
     `build;dur=${buildDur.toFixed(1)};desc="Progress Build"`,
