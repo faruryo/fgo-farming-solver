@@ -49,6 +49,21 @@ export const extractItemCounts = (
   snapshot: unknown
 ): Record<string, string | number> | null => {
   const raw = pickStorageField(snapshot, 'items')
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+    if (trimmed && !trimmed.startsWith('{') && trimmed.includes(':')) {
+      const res: Record<string, number> = {}
+      for (const pair of trimmed.split(',')) {
+        if (!pair.includes(':')) continue
+        const [id, count] = pair.split(':')
+        const trimmedId = id.trim()
+        if (trimmedId) {
+          res[trimmedId] = parseInt(count, 10) || 0
+        }
+      }
+      return Object.keys(res).length > 0 ? res : null
+    }
+  }
   return parseJsonField<Record<string, string | number>>(raw)
 }
 
