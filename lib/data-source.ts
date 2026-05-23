@@ -13,6 +13,8 @@ import type { CloudflareEnv } from '../types/cloudflare-env.d'
 
 // ── KV ──────────────────────────────────────────────────────────────
 
+let cachedEnv: CloudflareEnv | null = null
+
 /**
  * Read a string value from Cloudflare KV.
  * Returns `null` when KV is unavailable (local dev) or the key is missing.
@@ -25,16 +27,21 @@ export async function kvGet(key: string): Promise<string | null> {
       return await processEnv.MASTER_DATA.get(key)
     }
 
-    // 2. Try to get context from @opennextjs/cloudflare
+    // 2. Try cached context first
+    if (cachedEnv && cachedEnv.MASTER_DATA) {
+      return await cachedEnv.MASTER_DATA.get(key)
+    }
+
+    // 3. Try to get context from @opennextjs/cloudflare
     // We use a dynamic import to avoid bundling issues in local development
     try {
       // Use dynamic import directly. Most modern bundlers handle this fine.
       const { getCloudflareContext } = await import("@opennextjs/cloudflare")
       const context = await getCloudflareContext()
-      const env = (context.env || context) as CloudflareEnv
+      cachedEnv = (context.env || context) as CloudflareEnv
       
-      if (env && env.MASTER_DATA) {
-        return await env.MASTER_DATA.get(key)
+      if (cachedEnv && cachedEnv.MASTER_DATA) {
+        return await cachedEnv.MASTER_DATA.get(key)
       }
     } catch {
       // Dynamic import or getCloudflareContext might fail in some environments (e.g. local dev)
@@ -59,6 +66,9 @@ export async function kvGetJson<T>(key: string): Promise<T | null> {
 
 // ── Local file ──────────────────────────────────────────────────────
 
+let cachedPath: any = null
+let cachedFs: any = null
+
 /**
  * Read a JSON file relative to project root.
  * Returns `null` when the file doesn't exist or fs APIs are unavailable
@@ -66,10 +76,15 @@ export async function kvGetJson<T>(key: string): Promise<T | null> {
  */
 export async function readLocalJson<T>(relativePath: string): Promise<T | null> {
   try {
-    const pathMod = await new Function('return import("path")')()
-    const fsMod  = await new Function('return import("fs/promises")')()
-    const fs   = fsMod.default || fsMod
-    const abs  = pathMod.default.resolve(process.cwd(), relativePath)
+    if (!cachedPath) {
+      cachedPath = await new Function('return import("path")')()
+    }
+    if (!cachedFs) {
+      cachedFs = await new Function('return import("fs/promises")')()
+    }
+    const path = cachedPath.default || cachedPath
+    const fs = cachedFs.default || cachedFs
+    const abs = path.resolve(process.cwd(), relativePath)
     const text = await fs.readFile(abs, 'utf-8')
     return JSON.parse(text) as T
   } catch {
