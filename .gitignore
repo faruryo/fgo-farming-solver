@@ -46,3 +46,9 @@ tsconfig.tsbuildinfo
 build.log
 .wrangler
 .open-next
+
+# AI Agent folders
+.claude/
+.codex/
+.agents/
+.agent/
