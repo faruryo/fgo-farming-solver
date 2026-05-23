@@ -24,6 +24,7 @@ export type PeriodSummary = {
   targetApIncrease: number
   elapsedMinutes: number
   fallback: FallbackReason | null
+  snapshotCreatedAt?: string | null
 }
 
 export type ProgressResponse = {

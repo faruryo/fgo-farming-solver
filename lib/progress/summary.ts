@@ -67,6 +67,7 @@ const buildPeriodSummary = (
       targetApIncrease: 0,
       elapsedMinutes: 0,
       fallback,
+      snapshotCreatedAt: null,
     }
   }
 
@@ -138,6 +139,7 @@ const buildPeriodSummary = (
     targetApIncrease,
     elapsedMinutes,
     fallback: zeroProgress ? 'zero_progress' : null,
+    snapshotCreatedAt: snapshot.createdAt,
   }
 }
 

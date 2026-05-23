@@ -30,6 +30,10 @@ export default defineConfig([globalIgnores([
     ".vercel/",
     ".next/",
     "public/",
+    ".claude/",
+    ".codex/",
+    ".agents/",
+    ".agent/",
 ]), {
     extends: [
         ...next,

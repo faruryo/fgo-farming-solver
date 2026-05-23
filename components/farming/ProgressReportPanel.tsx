@@ -16,6 +16,22 @@ const PERIOD_LABELS: Record<SnapshotPeriod, string> = {
 
 const PERIODS: SnapshotPeriod[] = ['previous', 'week', 'month']
 
+const formatDate = (isoStr: string) => {
+  try {
+    const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
+    const withZ = normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
+    const d = new Date(withZ)
+    if (isNaN(d.getTime())) return isoStr
+    const m = d.getMonth() + 1
+    const day = d.getDate()
+    const h = d.getHours().toString().padStart(2, '0')
+    const min = d.getMinutes().toString().padStart(2, '0')
+    return `${m}月${day}日 ${h}:${min}`
+  } catch {
+    return isoStr
+  }
+}
+
 export type ResultStats = {
   totalLap: number
   totalAp: number
@@ -71,18 +87,25 @@ export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
         </div>
       )}
 
-      <div className="flex gap-1.5">
-        {PERIODS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => setPeriod(p)}
-            className={`c-hide-toggle${period === p ? ' active' : ''}`}
-            style={{ fontSize: 11, padding: '2px 8px' }}
-          >
-            {PERIOD_LABELS[p]}
-          </button>
-        ))}
+      <div className="flex justify-between items-center gap-1.5 flex-wrap" style={{ minHeight: 24 }}>
+        <div className="flex gap-1.5">
+          {PERIODS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPeriod(p)}
+              className={`c-hide-toggle${period === p ? ' active' : ''}`}
+              style={{ fontSize: 11, padding: '2px 8px' }}
+            >
+              {PERIOD_LABELS[p]}
+            </button>
+          ))}
+        </div>
+        {!loading && current?.snapshotCreatedAt && (
+          <div className="text-[10px] text-muted-foreground" style={{ opacity: 0.8 }}>
+            比較データ: {formatDate(current.snapshotCreatedAt)}
+          </div>
+        )}
       </div>
 
       {loading ? (
