@@ -96,10 +96,33 @@ export const fetchAllSnapshotsByPeriod = async (
   db: D1Database,
   userId: string
 ): Promise<Record<SnapshotPeriod, Snapshot | null>> => {
-  const [previous, week, month] = await Promise.all([
-    fetchSnapshotByPeriod(db, userId, 'previous'),
-    fetchSnapshotByPeriod(db, userId, 'week'),
-    fetchSnapshotByPeriod(db, userId, 'month'),
-  ])
-  return { previous, week, month }
+  const { results } = await db
+    .prepare(
+      `SELECT id, user_id, data, created_at
+       FROM state_snapshots
+       WHERE user_id = ?
+       ORDER BY created_at DESC`
+    )
+    .bind(userId)
+    .all<{ id: string; user_id: string; data: string; created_at: string }>()
+
+  const list = results || []
+
+  // 1. Previous: Closest strictly before today
+  const todayStart = `${dateKey()} 00:00:00`
+  const prevRow = list.find((r) => r.created_at <= todayStart)
+
+  // 2. Week: Closest strictly before 7 days ago
+  const weekAgoIso = daysAgo(7).toISOString().replace('T', ' ').slice(0, 19)
+  const weekRow = list.find((r) => r.created_at <= weekAgoIso)
+
+  // 3. Month: Closest strictly before 30 days ago
+  const monthAgoIso = daysAgo(30).toISOString().replace('T', ' ').slice(0, 19)
+  const monthRow = list.find((r) => r.created_at <= monthAgoIso)
+
+  return {
+    previous: prevRow ? parseSnapshot(prevRow) : null,
+    week: weekRow ? parseSnapshot(weekRow) : null,
+    month: monthRow ? parseSnapshot(monthRow) : null,
+  }
 }
