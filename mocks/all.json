@@ -1,479 +1,764 @@
 {
   "items": [
     {
-      "category": "skillLvUp",
+      "id": "00",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "証",
       "name": "英雄の証",
-      "id": "00"
+      "icon": "https://static.atlasacademy.io/JP/Items/6503.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "01",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "骨",
       "name": "凶骨",
-      "id": "01"
+      "icon": "https://static.atlasacademy.io/JP/Items/6516.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "02",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "牙",
       "name": "竜の牙",
-      "id": "02"
+      "icon": "https://static.atlasacademy.io/JP/Items/6512.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "03",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "塵",
       "name": "虚影の塵",
-      "id": "03"
+      "icon": "https://static.atlasacademy.io/JP/Items/6505.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "04",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "鎖",
       "name": "愚者の鎖",
-      "id": "04"
+      "icon": "https://static.atlasacademy.io/JP/Items/6522.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "05",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "毒針",
       "name": "万死の毒針",
-      "id": "05"
+      "icon": "https://static.atlasacademy.io/JP/Items/6527.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "06",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "髄液",
       "name": "魔術髄液",
-      "id": "06"
+      "icon": "https://static.atlasacademy.io/JP/Items/6530.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "07",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "鉄杭",
       "name": "宵哭きの鉄杭",
-      "id": "07"
+      "icon": "https://static.atlasacademy.io/JP/Items/6533.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "08",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "火薬",
       "name": "励振火薬",
-      "id": "08"
+      "icon": "https://static.atlasacademy.io/JP/Items/6534.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "09",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "小鐘",
       "name": "赦免の小鐘",
-      "id": "09"
+      "icon": "https://static.atlasacademy.io/JP/Items/6549.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "0a",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "剣",
       "name": "黄昏の儀式剣",
-      "id": "0a"
+      "icon": "https://static.atlasacademy.io/JP/Items/6551.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "0b",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "灰",
       "name": "忘れじの灰",
-      "id": "0b"
+      "icon": "https://static.atlasacademy.io/JP/Items/6552.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "0c",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "刃",
       "name": "黒曜鋭刃",
-      "id": "0c"
+      "icon": "https://static.atlasacademy.io/JP/Items/6554.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "0d",
+      "category": "銅素材",
+      "largeCategory": "強化素材",
+      "shortName": "残滓",
       "name": "狂気の残滓",
-      "id": "0d"
+      "icon": "https://static.atlasacademy.io/JP/Items/6555.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "10",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "種",
       "name": "世界樹の種",
-      "id": "10"
+      "icon": "https://static.atlasacademy.io/JP/Items/6502.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "11",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "ﾗﾝﾀﾝ",
       "name": "ゴーストランタン",
-      "id": "11"
+      "icon": "https://static.atlasacademy.io/JP/Items/6508.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "12",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "八連",
       "name": "八連双晶",
-      "id": "12"
+      "icon": "https://static.atlasacademy.io/JP/Items/6515.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "13",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "蛇玉",
       "name": "蛇の宝玉",
-      "id": "13"
+      "icon": "https://static.atlasacademy.io/JP/Items/6509.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "14",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "羽根",
       "name": "鳳凰の羽根",
-      "id": "14"
+      "icon": "https://static.atlasacademy.io/JP/Items/6501.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "15",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "歯車",
       "name": "無間の歯車",
-      "id": "15"
+      "icon": "https://static.atlasacademy.io/JP/Items/6510.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "16",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "頁",
       "name": "禁断の頁",
-      "id": "16"
+      "icon": "https://static.atlasacademy.io/JP/Items/6511.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "17",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "ホム",
       "name": "ホムンクルスベビー",
-      "id": "17"
+      "icon": "https://static.atlasacademy.io/JP/Items/6514.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "18",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "蹄鉄",
       "name": "隕蹄鉄",
-      "id": "18"
+      "icon": "https://static.atlasacademy.io/JP/Items/6513.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "19",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "勲章",
       "name": "大騎士勲章",
-      "id": "19"
+      "icon": "https://static.atlasacademy.io/JP/Items/6524.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1a",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "貝殻",
       "name": "追憶の貝殻",
-      "id": "1a"
+      "icon": "https://static.atlasacademy.io/JP/Items/6526.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1b",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "勾玉",
       "name": "枯淡勾玉",
-      "id": "1b"
+      "icon": "https://static.atlasacademy.io/JP/Items/6532.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1c",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "結氷",
       "name": "永遠結氷",
-      "id": "1c"
+      "icon": "https://static.atlasacademy.io/JP/Items/6535.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1d",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "指輪",
       "name": "巨人の指輪",
-      "id": "1d"
+      "icon": "https://static.atlasacademy.io/JP/Items/6537.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1e",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "ｵｰﾛﾗ",
       "name": "オーロラ鋼",
-      "id": "1e"
+      "icon": "https://static.atlasacademy.io/JP/Items/6536.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1f",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "鈴",
       "name": "閑古鈴",
-      "id": "1f"
+      "icon": "https://static.atlasacademy.io/JP/Items/6538.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1g",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "矢尻",
       "name": "禍罪の矢尻",
-      "id": "1g"
+      "icon": "https://static.atlasacademy.io/JP/Items/6541.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1h",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "冠",
       "name": "光銀の冠",
-      "id": "1h"
+      "icon": "https://static.atlasacademy.io/JP/Items/6543.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1i",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "霊子",
       "name": "神脈霊子",
-      "id": "1i"
+      "icon": "https://static.atlasacademy.io/JP/Items/6545.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1j",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "糸玉",
       "name": "虹の糸玉",
-      "id": "1j"
+      "icon": "https://static.atlasacademy.io/JP/Items/6547.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1k",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "鱗粉",
       "name": "夢幻の鱗粉",
-      "id": "1k"
+      "icon": "https://static.atlasacademy.io/JP/Items/6550.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1l",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "皮",
       "name": "太陽皮",
-      "id": "1l"
+      "icon": "https://static.atlasacademy.io/JP/Items/6553.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1n",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "花",
       "name": "終の花",
-      "id": "1n"
+      "icon": "https://static.atlasacademy.io/JP/Items/6557.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1o",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "ｷｭｰﾌﾞ",
       "name": "ユニバーサルキューブ",
-      "id": "1o"
+      "icon": "https://static.atlasacademy.io/JP/Items/6559.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "1p",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "ﾚﾝｽﾞ",
       "name": "神彩のレンズ",
-      "id": "1p"
+      "icon": "https://static.atlasacademy.io/JP/Items/6561.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "20",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "爪",
       "name": "混沌の爪",
-      "id": "20"
+      "icon": "https://static.atlasacademy.io/JP/Items/6507.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "21",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "心臓",
       "name": "蛮神の心臓",
-      "id": "21"
+      "icon": "https://static.atlasacademy.io/JP/Items/6517.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "22",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "逆鱗",
       "name": "竜の逆鱗",
-      "id": "22"
+      "icon": "https://static.atlasacademy.io/JP/Items/6506.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "23",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "根",
       "name": "精霊根",
-      "id": "23"
+      "icon": "https://static.atlasacademy.io/JP/Items/6518.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "24",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "幼角",
       "name": "戦馬の幼角",
-      "id": "24"
+      "icon": "https://static.atlasacademy.io/JP/Items/6519.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "25",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "涙石",
       "name": "血の涙石",
-      "id": "25"
+      "icon": "https://static.atlasacademy.io/JP/Items/6520.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "26",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "脂",
       "name": "黒獣脂",
-      "id": "26"
+      "icon": "https://static.atlasacademy.io/JP/Items/6521.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "27",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "ﾗﾝﾌﾟ",
       "name": "封魔のランプ",
-      "id": "27"
+      "icon": "https://static.atlasacademy.io/JP/Items/6523.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "28",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "ｽｶﾗﾍﾞ",
       "name": "智慧のスカラベ",
-      "id": "28"
+      "icon": "https://static.atlasacademy.io/JP/Items/6525.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "29",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "産毛",
       "name": "原初の産毛",
-      "id": "29"
+      "icon": "https://static.atlasacademy.io/JP/Items/6528.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2a",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "胆石",
       "name": "呪獣胆石",
-      "id": "2a"
+      "icon": "https://static.atlasacademy.io/JP/Items/6529.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2b",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "神酒",
       "name": "奇奇神酒",
-      "id": "2b"
+      "icon": "https://static.atlasacademy.io/JP/Items/6531.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2c",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "炉心",
       "name": "暁光炉心",
-      "id": "2c"
+      "icon": "https://static.atlasacademy.io/JP/Items/6539.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2d",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "鏡",
       "name": "九十九鏡",
-      "id": "2d"
+      "icon": "https://static.atlasacademy.io/JP/Items/6540.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2e",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "卵",
       "name": "真理の卵",
-      "id": "2e"
+      "icon": "https://static.atlasacademy.io/JP/Items/6542.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2g",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "実",
       "name": "悠久の実",
-      "id": "2g"
+      "icon": "https://static.atlasacademy.io/JP/Items/6546.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2h",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "鬼灯",
       "name": "鬼炎鬼灯",
-      "id": "2h"
+      "icon": "https://static.atlasacademy.io/JP/Items/6548.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2i",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "釜",
       "name": "黄金釜",
-      "id": "2i"
+      "icon": "https://static.atlasacademy.io/JP/Items/6558.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2j",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "月光",
       "name": "月光核",
-      "id": "2j"
+      "icon": "https://static.atlasacademy.io/JP/Items/6560.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2k",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "聖水",
       "name": "天命の聖水",
-      "id": "2k"
+      "icon": "https://static.atlasacademy.io/JP/Items/6562.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "2l",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "箱",
       "name": "遺霊箱",
-      "id": "2l"
+      "icon": "https://static.atlasacademy.io/JP/Items/6563.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "30",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "剣輝",
       "name": "剣の輝石",
-      "id": "30"
+      "icon": "https://static.atlasacademy.io/JP/Items/6001.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "31",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "弓輝",
       "name": "弓の輝石",
-      "id": "31"
+      "icon": "https://static.atlasacademy.io/JP/Items/6002.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "32",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "槍輝",
       "name": "槍の輝石",
-      "id": "32"
+      "icon": "https://static.atlasacademy.io/JP/Items/6003.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "33",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "騎輝",
       "name": "騎の輝石",
-      "id": "33"
+      "icon": "https://static.atlasacademy.io/JP/Items/6004.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "34",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "術輝",
       "name": "術の輝石",
-      "id": "34"
+      "icon": "https://static.atlasacademy.io/JP/Items/6005.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "35",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "殺輝",
       "name": "殺の輝石",
-      "id": "35"
+      "icon": "https://static.atlasacademy.io/JP/Items/6006.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "36",
+      "category": "輝石",
+      "largeCategory": "スキル石",
+      "shortName": "狂輝",
       "name": "狂の輝石",
-      "id": "36"
+      "icon": "https://static.atlasacademy.io/JP/Items/6007.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "40",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "剣魔",
       "name": "剣の魔石",
-      "id": "40"
+      "icon": "https://static.atlasacademy.io/JP/Items/6101.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "41",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "弓魔",
       "name": "弓の魔石",
-      "id": "41"
+      "icon": "https://static.atlasacademy.io/JP/Items/6102.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "42",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "槍魔",
       "name": "槍の魔石",
-      "id": "42"
+      "icon": "https://static.atlasacademy.io/JP/Items/6103.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "43",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "騎魔",
       "name": "騎の魔石",
-      "id": "43"
+      "icon": "https://static.atlasacademy.io/JP/Items/6104.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "44",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "術魔",
       "name": "術の魔石",
-      "id": "44"
+      "icon": "https://static.atlasacademy.io/JP/Items/6105.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "45",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "殺魔",
       "name": "殺の魔石",
-      "id": "45"
+      "icon": "https://static.atlasacademy.io/JP/Items/6106.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "46",
+      "category": "魔石",
+      "largeCategory": "スキル石",
+      "shortName": "狂魔",
       "name": "狂の魔石",
-      "id": "46"
+      "icon": "https://static.atlasacademy.io/JP/Items/6107.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "50",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "剣秘",
       "name": "剣の秘石",
-      "id": "50"
+      "icon": "https://static.atlasacademy.io/JP/Items/6201.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "51",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "弓秘",
       "name": "弓の秘石",
-      "id": "51"
+      "icon": "https://static.atlasacademy.io/JP/Items/6202.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "52",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "槍秘",
       "name": "槍の秘石",
-      "id": "52"
+      "icon": "https://static.atlasacademy.io/JP/Items/6203.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "53",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "騎秘",
       "name": "騎の秘石",
-      "id": "53"
+      "icon": "https://static.atlasacademy.io/JP/Items/6204.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "54",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "術秘",
       "name": "術の秘石",
-      "id": "54"
+      "icon": "https://static.atlasacademy.io/JP/Items/6205.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "55",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "殺秘",
       "name": "殺の秘石",
-      "id": "55"
+      "icon": "https://static.atlasacademy.io/JP/Items/6206.png"
     },
     {
-      "category": "skillLvUp",
+      "id": "56",
+      "category": "秘石",
+      "largeCategory": "スキル石",
+      "shortName": "狂秘",
       "name": "狂の秘石",
-      "id": "56"
+      "icon": "https://static.atlasacademy.io/JP/Items/6207.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "60",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "剣ピ",
       "name": "セイバーピース",
-      "id": "60"
+      "icon": "https://static.atlasacademy.io/JP/Items/7001.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "61",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "弓ピ",
       "name": "アーチャーピース",
-      "id": "61"
+      "icon": "https://static.atlasacademy.io/JP/Items/7002.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "62",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "槍ピ",
       "name": "ランサーピース",
-      "id": "62"
+      "icon": "https://static.atlasacademy.io/JP/Items/7003.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "63",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "騎ピ",
       "name": "ライダーピース",
-      "id": "63"
+      "icon": "https://static.atlasacademy.io/JP/Items/7004.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "64",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "術ピ",
       "name": "キャスターピース",
-      "id": "64"
+      "icon": "https://static.atlasacademy.io/JP/Items/7005.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "65",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "殺ピ",
       "name": "アサシンピース",
-      "id": "65"
+      "icon": "https://static.atlasacademy.io/JP/Items/7006.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "66",
+      "category": "ピース",
+      "largeCategory": "モニュピ",
+      "shortName": "狂ピ",
       "name": "バーサーカーピース",
-      "id": "66"
+      "icon": "https://static.atlasacademy.io/JP/Items/7007.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "70",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "剣モ",
       "name": "セイバーモニュメント",
-      "id": "70"
+      "icon": "https://static.atlasacademy.io/JP/Items/7101.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "71",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "弓モ",
       "name": "アーチャーモニュメント",
-      "id": "71"
+      "icon": "https://static.atlasacademy.io/JP/Items/7102.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "72",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "槍モ",
       "name": "ランサーモニュメント",
-      "id": "72"
+      "icon": "https://static.atlasacademy.io/JP/Items/7103.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "73",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "騎モ",
       "name": "ライダーモニュメント",
-      "id": "73"
+      "icon": "https://static.atlasacademy.io/JP/Items/7104.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "74",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "術モ",
       "name": "キャスターモニュメント",
-      "id": "74"
+      "icon": "https://static.atlasacademy.io/JP/Items/7105.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "75",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "殺モ",
       "name": "アサシンモニュメント",
-      "id": "75"
+      "icon": "https://static.atlasacademy.io/JP/Items/7106.png"
     },
     {
-      "category": "tdLvUp",
+      "id": "76",
+      "category": "モニュメント",
+      "largeCategory": "モニュピ",
+      "shortName": "狂モ",
       "name": "バーサーカーモニュメント",
-      "id": "76"
+      "icon": "https://static.atlasacademy.io/JP/Items/7107.png"
     }
   ],
   "quests": [

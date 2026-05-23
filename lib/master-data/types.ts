@@ -2,6 +2,9 @@ export interface Item {
   category: string
   name: string
   id: string
+  largeCategory?: string
+  shortName?: string
+  icon?: string
 }
 
 export interface Enemy {

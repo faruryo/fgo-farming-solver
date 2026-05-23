@@ -150,8 +150,26 @@ export function normalizeItemName(shortName: string): string {
   return shortName
 }
 
-// Subset of AtlasItem fields returned by nice_item.json that we need
-type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority'> & { type: string }
+const largeCategories: Record<string, string[]> = {
+  ja: ['QP', 'スキル石', '強化素材', 'モニュピ'],
+}
+const categories: Record<string, Record<string, string>[]> = {
+  ja: [
+    { zero: 'QP' },
+    { bronze: '輝石', silver: '魔石', gold: '秘石' },
+    { bronze: '銅素材', silver: '銀素材', gold: '金素材' },
+    { silver: 'ピース', gold: 'モニュメント' },
+  ],
+}
+
+function getCategory(priority: number, background: string): { largeCategory: string; category: string } {
+  const index = Math.floor(priority / 100)
+  const largeCategory = largeCategories.ja[index] ?? 'イベントアイテム'
+  const category = categories.ja[index]?.[background] ?? '特殊霊基再臨素材'
+  return { largeCategory, category }
+}
+
+type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority' | 'icon'> & { type: string }
 
 export async function fetchAndTransformData(): Promise<MasterData> {
   let fs: any
@@ -246,7 +264,15 @@ export async function fetchAndTransformData(): Promise<MasterData> {
       const id = toApiItemId(aaItem as AtlasItem, aaItemsForId as AtlasItem[])
       if (!id) continue
       if (!items.find(i => i.id === id)) {
-        items.push({ category: aaItem.type, name: aaItem.name, id })
+        const cat = getCategory(aaItem.priority, aaItem.background)
+        items.push({
+          id,
+          category: cat.category,
+          largeCategory: cat.largeCategory,
+          shortName: shortName,
+          name: aaItem.name,
+          icon: aaItem.icon,
+        })
       }
       itemMap.set(shortName, id)
     }

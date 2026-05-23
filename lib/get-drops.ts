@@ -1,6 +1,6 @@
 import { Campaign, DropRate, Item, Quest } from '../interfaces/fgodrop'
 import { fetchData } from './data-source'
-import { getLocalItems, Localized } from './get-local-items'
+import { Localized } from './get-local-items'
 
 export type Drops = {
   items: Localized<Item>[]
@@ -16,7 +16,7 @@ const EMPTY: Drops = { items: [], quests: [], drop_rates: [], campaigns: [] }
 
 export const getDrops = async (): Promise<Drops> => {
   type RawDrops = {
-    items: Item[]
+    items: Localized<Item>[]
     quests: Quest[]
     drop_rates: DropRate[]
     campaigns?: Campaign[]
@@ -25,7 +25,7 @@ export const getDrops = async (): Promise<Drops> => {
   if (!data) return EMPTY
 
   return {
-    items: data.items ? await getLocalItems(data.items) : [],
+    items: data.items || [],
     quests: data.quests || [],
     drop_rates: data.drop_rates || [],
     campaigns: data.campaigns || [],
