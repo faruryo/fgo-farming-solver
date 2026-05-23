@@ -17,6 +17,14 @@ async function main() {
     const dashboardPath = path.resolve(process.cwd(), 'mocks', 'dashboard.json')
     await fs.writeFile(dashboardPath, JSON.stringify(dashboardData, null, 2))
     console.log(`Successfully updated dashboard metadata at ${dashboardPath}`)
+
+    // Precompute rarity AP tables
+    console.log('Precomputing rarity AP tables...')
+    const { buildRarityApTables } = await import('../lib/progress/rarity-ap-table')
+    const rarityApTables = await buildRarityApTables()
+    const rarityApPath = path.resolve(process.cwd(), 'mocks', 'rarity-ap-tables.json')
+    await fs.writeFile(rarityApPath, JSON.stringify(rarityApTables, null, 2))
+    console.log(`Successfully precomputed and saved rarity AP tables at ${rarityApPath}`)
     
   } catch (e) {
     console.error('Failed to update master data:', e)

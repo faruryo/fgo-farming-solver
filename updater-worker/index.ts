@@ -8,12 +8,16 @@ export interface Env {
 
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
+const RARITY_AP_TABLES_KEY = 'rarity_ap_tables'
 
 const worker = {
   async scheduled(_event: unknown, env: Env) {
     console.log('Running scheduled data update...')
     const dropsData = await updateDrops(env)
-    await updateDashboardMeta(env, dropsData)
+    await Promise.all([
+      updateDashboardMeta(env, dropsData),
+      updateRarityApTables(env, dropsData),
+    ])
   }
 }
 
@@ -50,5 +54,17 @@ async function updateDashboardMeta(env: Env, dropsData: MasterData | null) {
     console.log('Successfully updated DASHBOARD_META KV')
   } catch (e) {
     console.error('Failed to update dashboard meta KV data:', e)
+  }
+}
+
+async function updateRarityApTables(env: Env, dropsData: MasterData | null) {
+  try {
+    console.log('Precomputing and updating rarity AP tables KV data...')
+    const { buildRarityApTables } = await import('../lib/progress/rarity-ap-table')
+    const rarityApTables = await buildRarityApTables(dropsData || undefined)
+    await env.MASTER_DATA.put(RARITY_AP_TABLES_KEY, JSON.stringify(rarityApTables))
+    console.log('Successfully updated RARITY_AP_TABLES KV')
+  } catch (e) {
+    console.error('Failed to update rarity AP tables KV data:', e)
   }
 }

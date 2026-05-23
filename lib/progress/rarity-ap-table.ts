@@ -1,8 +1,9 @@
-import { getDrops } from '../get-drops'
+import { getDrops, Drops } from '../get-drops'
 import { getItems } from '../get-items'
 import { getMaterialsForServants } from '../get-materials'
 import { getNiceServants } from '../get-nice-servants'
 import { collectHighDifficultyQuestIds } from './quest-access'
+import { fetchData } from '../data-source'
 import {
   aggregateApSamples,
   buildAtlasIdToFgodropId,
@@ -22,13 +23,14 @@ export type RarityApTables = {
 
 const emptyTable = (): RarityApTable => ({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 })
 
-export const buildRarityApTables = async (): Promise<RarityApTables> => {
-  const [servants, materials, drops, atlasItems] = await Promise.all([
+export const buildRarityApTables = async (existingDrops?: any): Promise<RarityApTables> => {
+  const [servants, materials, atlasItems] = await Promise.all([
     getNiceServants(),
     getMaterialsForServants(),
-    getDrops(),
     getItems(),
   ])
+
+  const drops = (existingDrops || (await getDrops())) as Drops
 
   const atlasIdToFgodropId = buildAtlasIdToFgodropId(atlasItems)
   const samplesByRarity = sampleServantsByRarity(servants)
@@ -62,19 +64,15 @@ export const buildRarityApTables = async (): Promise<RarityApTables> => {
   }
 }
 
-let cached: Promise<RarityApTables> | null = null
-
-// Lazy, in-memory cache. Re-computed when the Worker instance cold-starts.
-// Master-data updates trigger a re-compute on the next cold start; for now an
-// in-memory reset is acceptable per design notes.
-export const getRarityApTables = (): Promise<RarityApTables> => {
-  if (cached == null) {
-    cached = buildRarityApTables().catch((e) => {
-      cached = null
-      throw e
-    })
+// Read precomputed rarity AP tables from KV (production) or local mock file (dev).
+// If both fail, fall back to the statically bundled JSON as an ultimate safeguard.
+export const getRarityApTables = async (): Promise<RarityApTables> => {
+  const tables = await fetchData<RarityApTables>('rarity_ap_tables', 'mocks/rarity-ap-tables.json')
+  if (!tables) {
+    const fallback = await import('../../mocks/rarity-ap-tables.json')
+    return fallback.default as RarityApTables
   }
-  return cached
+  return tables
 }
 
 export const pickRarityApTable = (
