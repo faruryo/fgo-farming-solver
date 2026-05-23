@@ -25,6 +25,15 @@ async function main() {
     const rarityApPath = path.resolve(process.cwd(), 'mocks', 'rarity-ap-tables.json')
     await fs.writeFile(rarityApPath, JSON.stringify(rarityApTables, null, 2))
     console.log(`Successfully precomputed and saved rarity AP tables at ${rarityApPath}`)
+
+    // Save lightweight servant list
+    console.log('Generating lightweight servant list...')
+    const { getNiceServants } = await import('../lib/get-nice-servants')
+    const servants = await getNiceServants()
+    const servantList = servants.map((s) => ({ id: s.id, name: s.name, rarity: s.rarity }))
+    const servantsPath = path.resolve(process.cwd(), 'mocks', 'servants.json')
+    await fs.writeFile(servantsPath, JSON.stringify(servantList, null, 2))
+    console.log(`Successfully saved lightweight servant list at ${servantsPath}`)
     
   } catch (e) {
     console.error('Failed to update master data:', e)

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { auth } from '../../../lib/auth'
 import { getDrops } from '../../../lib/get-drops'
-import { getNiceServants } from '../../../lib/get-nice-servants'
+import { getServantsList } from '../../../lib/get-nice-servants'
 import { buildProgressResponse } from '../../../lib/progress/summary'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import type { CloudflareEnv } from '../../../types/cloudflare-env'
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   const [drops, servants] = await Promise.all([
     getDrops(),
-    getNiceServants().catch(() => []),
+    getServantsList().catch(() => []),
   ])
 
   const response = await buildProgressResponse({

@@ -9,6 +9,7 @@ export interface Env {
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
 const RARITY_AP_TABLES_KEY = 'rarity_ap_tables'
+const SERVANTS_LIST_KEY = 'servants_list'
 
 const worker = {
   async scheduled(_event: unknown, env: Env) {
@@ -17,6 +18,7 @@ const worker = {
     await Promise.all([
       updateDashboardMeta(env, dropsData),
       updateRarityApTables(env, dropsData),
+      updateServantsList(env),
     ])
   }
 }
@@ -66,5 +68,27 @@ async function updateRarityApTables(env: Env, dropsData: MasterData | null) {
     console.log('Successfully updated RARITY_AP_TABLES KV')
   } catch (e) {
     console.error('Failed to update rarity AP tables KV data:', e)
+  }
+}
+
+async function updateServantsList(env: Env) {
+  try {
+    console.log('Fetching basic servant list from Atlas Academy...')
+    const { origin, region } = await import('../constants/atlasacademy')
+    const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
+    const allServants = (await res.json()) as Array<{
+      id: number
+      name: string
+      rarity: number
+      type: string
+      collectionNo: number
+    }>
+    const filtered = allServants
+      .filter((s) => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0)
+      .map((s) => ({ id: s.id, name: s.name, rarity: s.rarity }))
+    await env.MASTER_DATA.put(SERVANTS_LIST_KEY, JSON.stringify(filtered))
+    console.log('Successfully updated SERVANTS_LIST KV')
+  } catch (e) {
+    console.error('Failed to update servants list KV data:', e)
   }
 }

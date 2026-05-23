@@ -1,6 +1,13 @@
 import { NiceServant } from '../interfaces/atlas-academy'
 import { fetchJsonWithCache } from './cache'
 import { getUrl } from './get-url'
+import { fetchData } from './data-source'
+
+export type SimpleServant = {
+  id: number
+  name: string
+  rarity: number
+}
 
 export const getNiceServants = async (locale?: string, original = false) => {
   const url = getUrl('nice_servant', locale)
@@ -19,4 +26,13 @@ export const getNiceServants = async (locale?: string, original = false) => {
     rarity,
     extraAssets,
   })) as NiceServant[]
+}
+
+export const getServantsList = async (): Promise<SimpleServant[]> => {
+  const data = await fetchData<SimpleServant[]>('servants_list', 'mocks/servants.json')
+  if (!data) {
+    const fallback = await import('../mocks/servants.json')
+    return fallback.default as SimpleServant[]
+  }
+  return data
 }
