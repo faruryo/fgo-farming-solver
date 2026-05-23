@@ -20,13 +20,14 @@ export async function GET() {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {
     env: CloudflareEnv
   }
+  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
 
-  if (!env.DB) {
+  if (!db) {
     return Response.json({ error: 'Database not available' }, { status: 500 })
   }
 
   try {
-    const results = await env.DB.prepare(
+    const results = await db.prepare(
       'SELECT id, objective, target_items, total_ap, total_lap, created_at FROM farming_results WHERE user_id = ? ORDER BY created_at DESC LIMIT 50'
     )
       .bind(session.user.id)

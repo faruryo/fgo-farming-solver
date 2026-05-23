@@ -19,7 +19,8 @@ export async function GET() {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {
     env: CloudflareEnv
   }
-  const data = await env.CLOUD_SAVE.get(key)
+  const cloudSave = env?.CLOUD_SAVE || (process.env as unknown as CloudflareEnv).CLOUD_SAVE
+  const data = await cloudSave.get(key)
   console.log('[api/cloud GET] data from KV:', data == null ? 'null' : `${data.length} chars`)
 
   if (data == null) {
@@ -44,10 +45,13 @@ export async function POST(req: NextRequest) {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {
     env: CloudflareEnv
   }
+  const cloudSave = env?.CLOUD_SAVE || (process.env as unknown as CloudflareEnv).CLOUD_SAVE
+  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
+
   await Promise.all([
-    env.CLOUD_SAVE.put(key, body),
-    env.DB
-      ? saveSnapshot(env.DB, session.user.id, body).catch((e) =>
+    cloudSave.put(key, body),
+    db
+      ? saveSnapshot(db, session.user.id, body).catch((e) =>
           console.error('[api/cloud POST] snapshot save failed:', e)
         )
       : Promise.resolve(),

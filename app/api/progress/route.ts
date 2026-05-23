@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as {
     env: CloudflareEnv
   }
-  if (!env.DB) {
+  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
+  if (!db) {
     return Response.json({ error: 'D1 unavailable' }, { status: 503 })
   }
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   ])
 
   const response = await buildProgressResponse({
-    db: env.DB,
+    db,
     userId: session.user.id,
     current: {
       chaldea: body.current?.chaldea ?? null,

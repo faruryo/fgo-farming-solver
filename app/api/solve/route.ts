@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     getDrops(),
     auth(),
   ])
+  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
 
   // Apply AP coefficients (e.g., 0:0.5 for half AP on training grounds)
   if (apCoefficients) {
@@ -60,9 +61,9 @@ export async function GET(req: NextRequest) {
   const result = solveBoth(drops, params, { applyCampaigns: false })
   const id = crypto.randomUUID()
 
-  if (env.DB) {
+  if (db) {
     try {
-      await env.DB.prepare(
+      await db.prepare(
         'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data) VALUES (?, ?, ?, ?, ?, ?, ?)'
       )
         .bind(
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
 
     if (session?.user?.id) {
       try {
-        await saveSnapshot(env.DB, session.user.id, {
+        await saveSnapshot(db, session.user.id, {
           items: itemsRaw,
           quests: questsRaw,
         })
