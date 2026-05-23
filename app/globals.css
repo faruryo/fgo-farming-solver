@@ -505,11 +505,11 @@ body {
 /* ===== RESULT ACTIONS ===== */
 .c-result-actions { display: flex; gap: 8px; align-items: center; }
 .c-back-btn {
-  background: none; border: 1px solid var(--border); color: var(--text2);
+  background: var(--panel2); border: 1px solid var(--border2); color: var(--steel);
   cursor: pointer; font-family: var(--sans); font-size: 12px; padding: 8px 16px; transition: all 0.15s;
   text-decoration: none; display: inline-flex; align-items: center;
 }
-.c-back-btn:hover { border-color: var(--steel); color: var(--text); }
+.c-back-btn:hover { background: var(--panel); border-color: var(--steel); color: var(--text); }
 
 /* ===== MATERIAL CARDS ===== */
 .c-mat-section { margin-bottom: 28px; }
