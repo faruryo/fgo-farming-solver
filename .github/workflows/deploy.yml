@@ -126,9 +126,17 @@ jobs:
         with:
           name: open-next-build
           path: .open-next/
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Run D1 Database Migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply fgo-farming-solver-db --remote
+          wranglerVersion: "4.87.0"
+          packageManager: pnpm
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
