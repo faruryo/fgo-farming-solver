@@ -19,11 +19,7 @@ type ProgressRequestBody = {
 }
 
 export async function POST(req: NextRequest) {
-  const start = performance.now()
-
-  const authStart = performance.now()
   const session = await auth()
-  const authDur = performance.now() - authStart
 
   if (!session?.user?.id) {
     // In development, serve rotating mock scenarios so the modal works without login.
@@ -36,14 +32,11 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   let env: CloudflareEnv | undefined = undefined
-  let cfContextDur = 0
   try {
-    const cfContextStart = performance.now()
     const context = (await getCloudflareContext({ async: true })) as unknown as {
       env: CloudflareEnv
     }
     env = context?.env || (context as any)
-    cfContextDur = performance.now() - cfContextStart
   } catch (err) {
     console.warn('[api/progress] Failed to get Cloudflare context locally:', err)
   }
@@ -65,27 +58,11 @@ export async function POST(req: NextRequest) {
     // empty body is fine
   }
 
-  let dropsDur = 0
-  let servantsDur = 0
-
-  const fetchStart = performance.now()
   const [drops, servants] = await Promise.all([
-    (async () => {
-      const s = performance.now()
-      const res = await getDrops()
-      dropsDur = performance.now() - s
-      return res
-    })(),
-    (async () => {
-      const s = performance.now()
-      const res = await getServantsList().catch(() => [])
-      servantsDur = performance.now() - s
-      return res
-    })(),
+    getDrops(),
+    getServantsList().catch(() => []),
   ])
-  const fetchDur = performance.now() - fetchStart
 
-  const buildStart = performance.now()
   const response = await buildProgressResponse({
     db,
     userId: session.user.id,
@@ -98,27 +75,6 @@ export async function POST(req: NextRequest) {
     quests: drops.quests,
     servants: servants.map((s) => ({ id: s.id, name: s.name, rarity: s.rarity })),
   })
-  const buildDur = performance.now() - buildStart
 
-  const totalDur = performance.now() - start
-
-  // Construct standard Server-Timing header
-  const serverTiming = [
-    `auth;dur=${authDur.toFixed(1)};desc="NextAuth Session"`,
-    `cfContext;dur=${cfContextDur.toFixed(1)};desc="CF Context Bind"`,
-    `kvFetch;dur=${fetchDur.toFixed(1)};desc="KV Drops/Servants"`,
-    `getDrops;dur=${dropsDur.toFixed(1)};desc="getDrops Load"`,
-    `getServants;dur=${servantsDur.toFixed(1)};desc="getServants List"`,
-    `d1Query;dur=${parseFloat(response._timings?.d1Query || '0').toFixed(1)};desc="D1 SQL Query"`,
-    `apLoad;dur=${parseFloat(response._timings?.apTableLoad || '0').toFixed(1)};desc="AP Table Load"`,
-    `build;dur=${buildDur.toFixed(1)};desc="Progress Build"`,
-    `total;dur=${totalDur.toFixed(1)};desc="API Total Execution"`
-  ].join(', ')
-
-  return new Response(JSON.stringify(response), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Server-Timing': serverTiming,
-    },
-  })
+  return Response.json(response)
 }

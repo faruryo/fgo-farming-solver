@@ -37,5 +37,4 @@ export type ProgressResponse = {
     week: PeriodSummary | null
     month: PeriodSummary | null
   }
-  _timings?: Record<string, string>
 }
