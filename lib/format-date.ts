@@ -1,15 +1,24 @@
+const JST_FORMATTER = new Intl.DateTimeFormat('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  month: 'numeric',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
 export const formatDate = (isoStr?: string): string => {
   if (!isoStr) return ''
   try {
     const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
-    const withZ = normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
+    const withZ =
+      normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
     const d = new Date(withZ)
     if (isNaN(d.getTime())) return ''
-    const m = d.getMonth() + 1
-    const day = d.getDate()
-    const h = d.getHours().toString().padStart(2, '0')
-    const min = d.getMinutes().toString().padStart(2, '0')
-    return `${m}月${day}日 ${h}:${min}`
+    // formatToParts で月・日・時・分を個別に取得して整形
+    const parts = JST_FORMATTER.formatToParts(d)
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
+    return `${get('month')}月${get('day')}日 ${get('hour')}:${get('minute')}`
   } catch {
     return ''
   }
