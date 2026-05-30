@@ -16,6 +16,8 @@ export type Quest = {
   ap: number
   aaQuestId?: number
   waves?: Wave[]
+  /** クリアに要する wave 数(=ターン数)。周回効率(ターン割り)の分母に使う。 */
+  waveCount?: number
 }
 export type DropRate = {
   item_id: string

@@ -166,14 +166,12 @@
   "quests": {
     "クエスト効率": "Quest Efficiency",
     "効率ポイント": "Efficiency Pt",
-    "効率ポイントとは": "Each material is normalized (0-1) against the quest that farms it most efficiently, then weighted by your stock and goals and summed. Computed within the community drop-data range. QP and bond are not in the drop data, so they are excluded.",
+    "効率ポイントとは": "Each material normalized to the best quest (0-1), weighted by your stock & goals, then summed. Toggles: gems on/off, denominator (AP/turn), scope (needed/all). QP & bond excluded.",
     "クエストを検索": "Search by quest or area",
     "石含む": "Incl. gems",
     "石除く": "Excl. gems",
-    "石トグル説明": "Whether skill gems (Shining/Magic/Secret) count toward efficiency.",
     "不足のみ": "Needed only",
     "全部": "All",
-    "不足トグル説明": "\"Needed only\" evaluates materials you lack (and low-surplus ones) based on stock and goals. \"All\" weights every material equally.",
     "所持数を入力": "Edit stock",
     "所持数・しきい値設定": "Stock & surplus thresholds",
     "余剰しきい値": "Surplus threshold (kept as secondary if at or below)",
@@ -184,6 +182,9 @@
     "ポッド無料中": "Pod-free now",
     "該当するクエストがありません": "No matching quests",
     "効率内訳": "Efficiency breakdown",
-    "ダッシュボードへ戻る": "Back to dashboard"
+    "ダッシュボードへ戻る": "Back to dashboard",
+    "AP効率": "Per AP",
+    "周回効率": "Per turn",
+    "効率の分母": "Efficiency denominator"
   }
 }

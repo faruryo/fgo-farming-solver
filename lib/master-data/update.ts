@@ -2,6 +2,7 @@
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../to-api-item-id'
+import { populateWaveCounts } from './wave-count'
 
 export type {
   Item,
@@ -449,6 +450,14 @@ export async function fetchAndTransformData(): Promise<MasterData> {
     console.log(`Extracted ${campaigns.length} questAp campaigns covering ${aaQuestIdToShortId.size} mappable quests.`)
   } catch (e) {
     console.warn('Failed to fetch/parse nice_event.json for campaigns:', e)
+  }
+
+  // クエストごとの waveCount(=ターン数)を付与(周回効率の分母に使う)。
+  try {
+    const { pod, fetched } = await populateWaveCounts(finalQuests)
+    console.log(`Wave counts: ${pod} pod quests (1 turn), ${fetched} fetched from Atlas.`)
+  } catch (e) {
+    console.warn('Failed to populate wave counts:', e)
   }
 
   return {

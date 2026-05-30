@@ -9,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { QuestIdentity } from '../common/QuestIdentity'
+import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
@@ -18,6 +19,7 @@ import { computeEffectiveAp } from '../../lib/solver'
 import {
   computeQuestEfficiency,
   DEFAULT_SURPLUS_THRESHOLD,
+  EfficiencyDenominator,
   SurplusThreshold,
 } from '../../lib/quest-efficiency'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
@@ -59,6 +61,10 @@ export const QuestEfficiencyList: React.FC = () => {
     'quests/efficiency/includeSkillStones',
     true,
   )
+  const [denominator, setDenominator] = useLocalStorage<EfficiencyDenominator>(
+    'quests/efficiency/denominator',
+    'ap',
+  )
 
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -74,6 +80,7 @@ export const QuestEfficiencyList: React.FC = () => {
       shortageOnly,
       includeSkillStones,
       surplusThreshold: threshold,
+      denominator,
     })
     const questById = new Map(dropQuests.map(q => [q.id, q]))
     return effList
@@ -88,7 +95,7 @@ export const QuestEfficiencyList: React.FC = () => {
       })
       .filter(r => r.quest)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, threshold])
+  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -105,6 +112,23 @@ export const QuestEfficiencyList: React.FC = () => {
     const dropItemIds = new Set(drops.drop_rates.map(dr => dr.item_id))
     return dropItems.filter(i => dropItemIds.has(i.id) && possession[i.id] == null).length
   }, [dropItems, drops.drop_rates, possession])
+
+  // クエストごとの入手アイテム(ドロップ率降順)。行のアイコン表示に使う。
+  const dropItemsByQuest = useMemo(() => {
+    type Entry = { id: string; name: string; icon?: string; dropRate: number }
+    const itemById = new Map((dropItems ?? []).map(i => [i.id, i]))
+    const m = new Map<string, Entry[]>()
+    for (const dr of drops.drop_rates) {
+      if (dr.drop_rate <= 0) continue
+      const it = itemById.get(dr.item_id)
+      if (!it) continue
+      const arr = m.get(dr.quest_id) ?? []
+      arr.push({ id: it.id, name: it.name, icon: it.icon, dropRate: dr.drop_rate })
+      m.set(dr.quest_id, arr)
+    }
+    for (const arr of m.values()) arr.sort((a, b) => b.dropRate - a.dropRate)
+    return m
+  }, [dropItems, drops.drop_rates])
 
   if (isLoading) return null
 
@@ -146,6 +170,25 @@ export const QuestEfficiencyList: React.FC = () => {
         </ToggleGroup>
 
         <ToggleGroup
+          value={[denominator]}
+          onValueChange={(values: string[]) => {
+            const v = values[0]
+            if (v === 'ap' || v === 'turn') setDenominator(v)
+          }}
+          size="sm"
+          spacing={0}
+          aria-label={t('効率の分母')}
+          className={toggleGroupClass}
+        >
+          <ToggleGroupItem value="ap" className={toggleItemClass}>
+            {t('AP効率')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="turn" className={toggleItemClass}>
+            {t('周回効率')}
+          </ToggleGroupItem>
+        </ToggleGroup>
+
+        <ToggleGroup
           value={[shortageOnly ? 'shortage' : 'all']}
           onValueChange={(values: string[]) => {
             if (values[0]) setShortageOnly(values[0] === 'shortage')
@@ -167,10 +210,8 @@ export const QuestEfficiencyList: React.FC = () => {
           <TooltipTrigger className="flex-shrink-0 cursor-default" style={{ color: 'var(--text3)' }}>
             <Info size={14} />
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[280px] text-left leading-relaxed">
+          <TooltipContent side="bottom" className="max-w-[240px] text-left leading-relaxed">
             {t('効率ポイントとは')}
-            <span className="block mt-1 opacity-80">{t('不足トグル説明')}</span>
-            <span className="block mt-1 opacity-80">{t('石トグル説明')}</span>
           </TooltipContent>
         </Tooltip>
 
@@ -219,10 +260,18 @@ export const QuestEfficiencyList: React.FC = () => {
                   name={r.quest.name}
                   ap={r.effAp}
                   originalAp={r.quest.ap}
-                  className="flex-1 min-w-0"
+                  className="min-w-0 max-w-[44%]"
                   consumesPod={consumesPod}
                   podFree={isPodFreeQuest}
                 />
+
+                {/* 入手アイテムのアイコン(ドロップ率上位) */}
+                <div className="hidden sm:flex flex-1 items-center gap-1 min-w-0 overflow-hidden">
+                  {(dropItemsByQuest.get(r.quest.id) ?? []).slice(0, 8).map(it => (
+                    <ItemIdentity key={it.id} icon={it.icon} name={it.name} size={22} />
+                  ))}
+                </div>
+
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {isPodFreeQuest && (
                     <span

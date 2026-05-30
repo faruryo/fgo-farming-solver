@@ -10,6 +10,7 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import {
   computeSingleQuestEfficiency,
   DEFAULT_SURPLUS_THRESHOLD,
+  EfficiencyDenominator,
   SurplusThreshold,
 } from '../../lib/quest-efficiency'
 
@@ -43,6 +44,10 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
     'quests/efficiency/includeSkillStones',
     true,
   )
+  const [denominator] = useLocalStorage<EfficiencyDenominator>(
+    'quests/efficiency/denominator',
+    'ap',
+  )
 
   const eff = useMemo(() => {
     if (isLoading || !drops.quests?.length) return null
@@ -53,8 +58,9 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
       shortageOnly,
       includeSkillStones,
       surplusThreshold: threshold,
+      denominator,
     })
-  }, [drops, isLoading, questId, possession, goalsRaw, activeCampaigns, shortageOnly, includeSkillStones, threshold])
+  }, [drops, isLoading, questId, possession, goalsRaw, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator])
 
   if (isLoading || !eff || eff.score <= 0) return null
   const itemById = new Map((dropItems ?? []).map(i => [i.id, i]))

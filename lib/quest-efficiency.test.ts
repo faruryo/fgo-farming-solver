@@ -15,8 +15,8 @@ const makeDrops = (campaigns: Campaign[] = []): Drops =>
       { id: 'gem', category: '秘石', largeCategory: 'スキル石', name: 'gem', shortName: 'gem' },
     ],
     quests: [
-      { id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20 },
-      { id: 'qB', area: 'B', name: 'qB', section: 'Free', ap: 40 },
+      { id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20, waveCount: 1 },
+      { id: 'qB', area: 'B', name: 'qB', section: 'Free', ap: 40, waveCount: 3 },
     ],
     drop_rates: [
       { quest_id: 'qA', item_id: 'g', drop_rate: 1.0 },
@@ -85,6 +85,33 @@ describe('computeQuestEfficiency', () => {
     const res = byId(computeQuestEfficiency(makeDrops(), { shortageOnly: false, includeSkillStones: false }))
     expect(contrib(res.qA, 'gem')).toBeUndefined()
     expect(res.qA.score).toBeCloseTo(1) // g のみ
+  })
+
+  it("denominator='turn'(周回効率)はターン数で割り、1ターンクエストを高評価する", () => {
+    // qA=1ターン, qB=3ターン。共に g を 1.0 drop。
+    // eff(g,qA)=1/1=1, eff(g,qB)=1/3 → bestEff=1 → relativeEff(qA)=1, relativeEff(qB)=1/3。
+    const res = byId(computeQuestEfficiency(makeDrops(), { shortageOnly: false, denominator: 'turn' }))
+    expect(contrib(res.qA, 'g')!.relativeEff).toBeCloseTo(1)
+    expect(contrib(res.qB, 'g')!.relativeEff).toBeCloseTo(1 / 3)
+  })
+
+  it("denominator='turn' で waveCount 未設定なら 1 ターン扱い", () => {
+    const drops = {
+      items: [{ id: 'g', category: '金素材', largeCategory: '強化素材', name: 'gold', shortName: 'g' }],
+      quests: [
+        { id: 'q1', area: 'X', name: 'one', section: 'Free', ap: 40, waveCount: 1 },
+        { id: 'q2', area: 'Y', name: 'unknown', section: 'Free', ap: 40 }, // waveCount 無し
+      ],
+      drop_rates: [
+        { quest_id: 'q1', item_id: 'g', drop_rate: 1.0 },
+        { quest_id: 'q2', item_id: 'g', drop_rate: 1.0 },
+      ],
+      campaigns: [],
+    } as unknown as Drops
+    const res = byId(computeQuestEfficiency(drops, { shortageOnly: false, denominator: 'turn' }))
+    // 両方とも 1 ターン扱い → 同点
+    expect(contrib(res.q2, 'g')!.relativeEff).toBeCloseTo(1)
+    expect(res.q1.score).toBeCloseTo(res.q2.score)
   })
 
   it('キャンペーン AP を反映する(qB の AP 半減で g の効率が上がる)', () => {

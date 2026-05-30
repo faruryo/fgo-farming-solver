@@ -768,7 +768,8 @@
       "name": "弓極級",
       "id": "020",
       "section": "Daily",
-      "aaQuestId": 94066101
+      "aaQuestId": 94066101,
+      "waveCount": 3
     },
     {
       "area": "修練場（月）",
@@ -776,7 +777,8 @@
       "name": "弓超級",
       "id": "021",
       "section": "Daily",
-      "aaQuestId": 94006808
+      "aaQuestId": 94006808,
+      "waveCount": 3
     },
     {
       "area": "修練場（月）",
@@ -784,7 +786,8 @@
       "name": "弓上級",
       "id": "022",
       "section": "Daily",
-      "aaQuestId": 94006807
+      "aaQuestId": 94006807,
+      "waveCount": 3
     },
     {
       "area": "修練場（月）",
@@ -806,7 +809,8 @@
       "name": "槍極級",
       "id": "050",
       "section": "Daily",
-      "aaQuestId": 94066102
+      "aaQuestId": 94066102,
+      "waveCount": 3
     },
     {
       "area": "修練場（火）",
@@ -814,7 +818,8 @@
       "name": "槍超級",
       "id": "051",
       "section": "Daily",
-      "aaQuestId": 94006812
+      "aaQuestId": 94006812,
+      "waveCount": 3
     },
     {
       "area": "修練場（火）",
@@ -822,7 +827,8 @@
       "name": "槍上級",
       "id": "052",
       "section": "Daily",
-      "aaQuestId": 94006811
+      "aaQuestId": 94006811,
+      "waveCount": 3
     },
     {
       "area": "修練場（火）",
@@ -844,7 +850,8 @@
       "name": "狂極級",
       "id": "040",
       "section": "Daily",
-      "aaQuestId": 94066103
+      "aaQuestId": 94066103,
+      "waveCount": 3
     },
     {
       "area": "修練場（水）",
@@ -852,7 +859,8 @@
       "name": "狂超級",
       "id": "041",
       "section": "Daily",
-      "aaQuestId": 94004316
+      "aaQuestId": 94004316,
+      "waveCount": 3
     },
     {
       "area": "修練場（水）",
@@ -860,7 +868,8 @@
       "name": "狂上級",
       "id": "042",
       "section": "Daily",
-      "aaQuestId": 94004315
+      "aaQuestId": 94004315,
+      "waveCount": 3
     },
     {
       "area": "修練場（水）",
@@ -882,7 +891,8 @@
       "name": "騎極級",
       "id": "030",
       "section": "Daily",
-      "aaQuestId": 94066104
+      "aaQuestId": 94066104,
+      "waveCount": 3
     },
     {
       "area": "修練場（木）",
@@ -890,7 +900,8 @@
       "name": "騎超級",
       "id": "031",
       "section": "Daily",
-      "aaQuestId": 94006820
+      "aaQuestId": 94006820,
+      "waveCount": 3
     },
     {
       "area": "修練場（木）",
@@ -898,7 +909,8 @@
       "name": "騎上級",
       "id": "032",
       "section": "Daily",
-      "aaQuestId": 94006819
+      "aaQuestId": 94006819,
+      "waveCount": 3
     },
     {
       "area": "修練場（木）",
@@ -920,7 +932,8 @@
       "name": "術極級",
       "id": "060",
       "section": "Daily",
-      "aaQuestId": 94066105
+      "aaQuestId": 94066105,
+      "waveCount": 3
     },
     {
       "area": "修練場（金）",
@@ -928,7 +941,8 @@
       "name": "術超級",
       "id": "061",
       "section": "Daily",
-      "aaQuestId": 94006824
+      "aaQuestId": 94006824,
+      "waveCount": 3
     },
     {
       "area": "修練場（金）",
@@ -936,7 +950,8 @@
       "name": "術上級",
       "id": "062",
       "section": "Daily",
-      "aaQuestId": 94006823
+      "aaQuestId": 94006823,
+      "waveCount": 3
     },
     {
       "area": "修練場（金）",
@@ -958,7 +973,8 @@
       "name": "殺極級",
       "id": "000",
       "section": "Daily",
-      "aaQuestId": 94066106
+      "aaQuestId": 94066106,
+      "waveCount": 3
     },
     {
       "area": "修練場（土）",
@@ -966,7 +982,8 @@
       "name": "殺超級",
       "id": "001",
       "section": "Daily",
-      "aaQuestId": 94006828
+      "aaQuestId": 94006828,
+      "waveCount": 3
     },
     {
       "area": "修練場（土）",
@@ -974,7 +991,8 @@
       "name": "殺上級",
       "id": "002",
       "section": "Daily",
-      "aaQuestId": 94006827
+      "aaQuestId": 94006827,
+      "waveCount": 3
     },
     {
       "area": "修練場（土）",
@@ -996,7 +1014,8 @@
       "name": "剣極級",
       "id": "010",
       "section": "Daily",
-      "aaQuestId": 94066107
+      "aaQuestId": 94066107,
+      "waveCount": 3
     },
     {
       "area": "修練場（日）",
@@ -1004,7 +1023,8 @@
       "name": "剣超級",
       "id": "011",
       "section": "Daily",
-      "aaQuestId": 94006804
+      "aaQuestId": 94006804,
+      "waveCount": 3
     },
     {
       "area": "修練場（日）",
@@ -1012,7 +1032,8 @@
       "name": "剣上級",
       "id": "012",
       "section": "Daily",
-      "aaQuestId": 94006803
+      "aaQuestId": 94006803,
+      "waveCount": 3
     },
     {
       "area": "修練場（日）",
@@ -1041,7 +1062,8 @@
       "name": "ゲルマニア",
       "id": "1e5",
       "section": "Free",
-      "aaQuestId": 91201501
+      "aaQuestId": 91201501,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1049,7 +1071,8 @@
       "name": "海賊船",
       "id": "160",
       "section": "Free",
-      "aaQuestId": 1000301
+      "aaQuestId": 1000301,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1057,7 +1080,8 @@
       "name": "翼竜の島",
       "id": "166",
       "section": "Free",
-      "aaQuestId": 1000306
+      "aaQuestId": 1000306,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1065,7 +1089,8 @@
       "name": "嵐の海域",
       "id": "168",
       "section": "Free",
-      "aaQuestId": 1000309
+      "aaQuestId": 1000309,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1080,7 +1105,8 @@
       "name": "オールドストリート",
       "id": "1l0",
       "section": "Free",
-      "aaQuestId": 1000401
+      "aaQuestId": 1000401,
+      "waveCount": 1
     },
     {
       "area": "ロンドン",
@@ -1088,7 +1114,8 @@
       "name": "シティ・オブ・ロンドン",
       "id": "1l2",
       "section": "Free",
-      "aaQuestId": 1000403
+      "aaQuestId": 1000403,
+      "waveCount": 3
     },
     {
       "area": "ロンドン",
@@ -1096,7 +1123,8 @@
       "name": "サザーク",
       "id": "1l7",
       "section": "Free",
-      "aaQuestId": 91601803
+      "aaQuestId": 91601803,
+      "waveCount": 1
     },
     {
       "area": "ロンドン",
@@ -1104,7 +1132,8 @@
       "name": "ハイドパーク",
       "id": "1l8",
       "section": "Free",
-      "aaQuestId": 91100901
+      "aaQuestId": 91100901,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1112,7 +1141,8 @@
       "name": "デミング",
       "id": "1p3",
       "section": "Free",
-      "aaQuestId": 1000506
+      "aaQuestId": 1000506,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1120,7 +1150,8 @@
       "name": "ダラス",
       "id": "1p4",
       "section": "Free",
-      "aaQuestId": 1000508
+      "aaQuestId": 1000508,
+      "waveCount": 2
     },
     {
       "area": "北米",
@@ -1128,7 +1159,8 @@
       "name": "モントゴメリー",
       "id": "1p7",
       "section": "Free",
-      "aaQuestId": 1000517
+      "aaQuestId": 1000517,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1136,7 +1168,8 @@
       "name": "ラボック",
       "id": "1p8",
       "section": "Free",
-      "aaQuestId": 1000507
+      "aaQuestId": 1000507,
+      "waveCount": 2
     },
     {
       "area": "北米",
@@ -1144,7 +1177,8 @@
       "name": "アレクサンドリア",
       "id": "1p9",
       "section": "Free",
-      "aaQuestId": 1000509
+      "aaQuestId": 1000509,
+      "waveCount": 2
     },
     {
       "area": "北米",
@@ -1152,7 +1186,8 @@
       "name": "カーニー",
       "id": "1pa",
       "section": "Free",
-      "aaQuestId": 1000514
+      "aaQuestId": 1000514,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1160,7 +1195,8 @@
       "name": "シャーロット",
       "id": "1pb",
       "section": "Free",
-      "aaQuestId": 1000520
+      "aaQuestId": 1000520,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1168,7 +1204,8 @@
       "name": "シカゴ",
       "id": "1pd",
       "section": "Free",
-      "aaQuestId": 93000504
+      "aaQuestId": 93000504,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1176,7 +1213,8 @@
       "name": "砂嵐の砂漠",
       "id": "1a0",
       "section": "Free",
-      "aaQuestId": 1000601
+      "aaQuestId": 1000601,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1184,7 +1222,8 @@
       "name": "死の荒野",
       "id": "1a2",
       "section": "Free",
-      "aaQuestId": 1000606
+      "aaQuestId": 1000606,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1192,7 +1231,8 @@
       "name": "晩鐘廟",
       "id": "1a5",
       "section": "Free",
-      "aaQuestId": 1000618
+      "aaQuestId": 1000618,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1200,7 +1240,8 @@
       "name": "西の村跡",
       "id": "1a6",
       "section": "Free",
-      "aaQuestId": 93000607
+      "aaQuestId": 93000607,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1208,7 +1249,8 @@
       "name": "聖都正門",
       "id": "1a8",
       "section": "Free",
-      "aaQuestId": 1000607
+      "aaQuestId": 1000607,
+      "waveCount": 2
     },
     {
       "area": "キャメロット",
@@ -1216,7 +1258,8 @@
       "name": "聖都市街",
       "id": "1a9",
       "section": "Free",
-      "aaQuestId": 1000629
+      "aaQuestId": 1000629,
+      "waveCount": 2
     },
     {
       "area": "キャメロット",
@@ -1224,7 +1267,8 @@
       "name": "隠れ村",
       "id": "1aa",
       "section": "Free",
-      "aaQuestId": 1000625
+      "aaQuestId": 1000625,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1232,7 +1276,8 @@
       "name": "王城",
       "id": "1ab",
       "section": "Free",
-      "aaQuestId": 1000631
+      "aaQuestId": 1000631,
+      "waveCount": 1
     },
     {
       "area": "キャメロット",
@@ -1240,7 +1285,8 @@
       "name": "無の大地",
       "id": "1ac",
       "section": "Free",
-      "aaQuestId": 93000614
+      "aaQuestId": 93000614,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1248,7 +1294,8 @@
       "name": "大神殿",
       "id": "1ad",
       "section": "Free",
-      "aaQuestId": 1000604
+      "aaQuestId": 1000604,
+      "waveCount": 2
     },
     {
       "area": "バビロニア",
@@ -1256,7 +1303,8 @@
       "name": "廃都バビロン",
       "id": "1h0",
       "section": "Free",
-      "aaQuestId": 1000701
+      "aaQuestId": 1000701,
+      "waveCount": 2
     },
     {
       "area": "バビロニア",
@@ -1264,7 +1312,8 @@
       "name": "北の高台",
       "id": "1h1",
       "section": "Free",
-      "aaQuestId": 1000702
+      "aaQuestId": 1000702,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1272,7 +1321,8 @@
       "name": "高原",
       "id": "1h3",
       "section": "Free",
-      "aaQuestId": 93000704
+      "aaQuestId": 93000704,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1288,7 +1338,8 @@
       "name": "エリドゥ",
       "id": "1h6",
       "section": "Free",
-      "aaQuestId": 1000713
+      "aaQuestId": 1000713,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1296,7 +1347,8 @@
       "name": "観測所",
       "id": "1h7",
       "section": "Free",
-      "aaQuestId": 1000718
+      "aaQuestId": 1000718,
+      "waveCount": 1
     },
     {
       "area": "バビロニア",
@@ -1304,7 +1356,8 @@
       "name": "葦の原",
       "id": "1h8",
       "section": "Free",
-      "aaQuestId": 93000709
+      "aaQuestId": 93000709,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1312,7 +1365,8 @@
       "name": "クタ",
       "id": "1h9",
       "section": "Free",
-      "aaQuestId": 1000714
+      "aaQuestId": 1000714,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1328,7 +1382,8 @@
       "name": "ニップル",
       "id": "1hb",
       "section": "Free",
-      "aaQuestId": 93000712
+      "aaQuestId": 93000712,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1336,7 +1391,8 @@
       "name": "エビフ山",
       "id": "1hc",
       "section": "Free",
-      "aaQuestId": 91700602
+      "aaQuestId": 91700602,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1344,7 +1400,8 @@
       "name": "鮮血神殿",
       "id": "1hd",
       "section": "Free",
-      "aaQuestId": 1000716
+      "aaQuestId": 1000716,
+      "waveCount": 1
     },
     {
       "area": "新宿",
@@ -1359,7 +1416,8 @@
       "name": "国道20号",
       "id": "1r1",
       "section": "Free",
-      "aaQuestId": 2000103
+      "aaQuestId": 2000103,
+      "waveCount": 1
     },
     {
       "area": "新宿",
@@ -1367,7 +1425,8 @@
       "name": "新宿駅",
       "id": "1r2",
       "section": "Free",
-      "aaQuestId": 93020103
+      "aaQuestId": 93020103,
+      "waveCount": 3
     },
     {
       "area": "新宿",
@@ -1375,7 +1434,8 @@
       "name": "新宿四丁目",
       "id": "1r3",
       "section": "Free",
-      "aaQuestId": 2000105
+      "aaQuestId": 2000105,
+      "waveCount": 3
     },
     {
       "area": "新宿",
@@ -1383,7 +1443,8 @@
       "name": "バレルタワー",
       "id": "1r5",
       "section": "Free",
-      "aaQuestId": 2000110
+      "aaQuestId": 2000110,
+      "waveCount": 2
     },
     {
       "area": "新宿",
@@ -1391,7 +1452,8 @@
       "name": "タワー最上階",
       "id": "1r7",
       "section": "Free",
-      "aaQuestId": 2000117
+      "aaQuestId": 2000117,
+      "waveCount": 1
     },
     {
       "area": "新宿",
@@ -1399,7 +1461,8 @@
       "name": "新宿御苑",
       "id": "1r8",
       "section": "Free",
-      "aaQuestId": 93020109
+      "aaQuestId": 93020109,
+      "waveCount": 3
     },
     {
       "area": "新宿",
@@ -1407,7 +1470,8 @@
       "name": "新宿二丁目",
       "id": "1r9",
       "section": "Free",
-      "aaQuestId": 93020110
+      "aaQuestId": 93020110,
+      "waveCount": 3
     },
     {
       "area": "アガルタ",
@@ -1415,7 +1479,8 @@
       "name": "野営地",
       "id": "101",
       "section": "Free",
-      "aaQuestId": 2000202
+      "aaQuestId": 2000202,
+      "waveCount": 2
     },
     {
       "area": "アガルタ",
@@ -1423,7 +1488,8 @@
       "name": "桃源郷",
       "id": "103",
       "section": "Free",
-      "aaQuestId": 2000204
+      "aaQuestId": 2000204,
+      "waveCount": 3
     },
     {
       "area": "アガルタ",
@@ -1447,7 +1513,8 @@
       "name": "山裾の密林",
       "id": "107",
       "section": "Free",
-      "aaQuestId": 2000210
+      "aaQuestId": 2000210,
+      "waveCount": 1
     },
     {
       "area": "アガルタ",
@@ -1463,7 +1530,8 @@
       "name": "地底大河",
       "id": "109",
       "section": "Free",
-      "aaQuestId": 93020209
+      "aaQuestId": 93020209,
+      "waveCount": 3
     },
     {
       "area": "アガルタ",
@@ -1479,7 +1547,8 @@
       "name": "大地の裂け目",
       "id": "10b",
       "section": "Free",
-      "aaQuestId": 93020212
+      "aaQuestId": 93020212,
+      "waveCount": 3
     },
     {
       "area": "下総国",
@@ -1503,7 +1572,8 @@
       "name": "城下町",
       "id": "1m3",
       "section": "Free",
-      "aaQuestId": 2000305
+      "aaQuestId": 2000305,
+      "waveCount": 1
     },
     {
       "area": "下総国",
@@ -1511,7 +1581,8 @@
       "name": "土気城",
       "id": "1m5",
       "section": "Free",
-      "aaQuestId": 2000308
+      "aaQuestId": 2000308,
+      "waveCount": 1
     },
     {
       "area": "下総国",
@@ -1526,7 +1597,8 @@
       "name": "荒川の原",
       "id": "1m7",
       "section": "Free",
-      "aaQuestId": 93020308
+      "aaQuestId": 93020308,
+      "waveCount": 3
     },
     {
       "area": "下総国",
@@ -1541,7 +1613,8 @@
       "name": "静寂な森",
       "id": "1d0",
       "section": "Free",
-      "aaQuestId": 2000401
+      "aaQuestId": 2000401,
+      "waveCount": 2
     },
     {
       "area": "セイレム",
@@ -1565,7 +1638,8 @@
       "name": "波止場",
       "id": "1d3",
       "section": "Free",
-      "aaQuestId": 93020404
+      "aaQuestId": 93020404,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -1573,7 +1647,8 @@
       "name": "ウェイトリー家",
       "id": "1d4",
       "section": "Free",
-      "aaQuestId": 93020406
+      "aaQuestId": 93020406,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -1581,7 +1656,8 @@
       "name": "郊外の屋敷",
       "id": "1d5",
       "section": "Free",
-      "aaQuestId": 93020405
+      "aaQuestId": 93020405,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -1589,7 +1665,8 @@
       "name": "ガローの丘",
       "id": "1d6",
       "section": "Free",
-      "aaQuestId": 93020408
+      "aaQuestId": 93020408,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -1621,7 +1698,8 @@
       "name": "留置所",
       "id": "1da",
       "section": "Free",
-      "aaQuestId": 93020411
+      "aaQuestId": 93020411,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -1653,7 +1731,8 @@
       "name": "ヤガ・スィチョーフカ",
       "id": "124",
       "section": "Free",
-      "aaQuestId": 93030205
+      "aaQuestId": 93030205,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -1661,7 +1740,8 @@
       "name": "焼き払われた村",
       "id": "125",
       "section": "Free",
-      "aaQuestId": 93030206
+      "aaQuestId": 93030206,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -1669,7 +1749,8 @@
       "name": "ヤガ・ヴャジマ",
       "id": "126",
       "section": "Free",
-      "aaQuestId": 93030207
+      "aaQuestId": 93030207,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -1685,7 +1766,8 @@
       "name": "潰れた村",
       "id": "129",
       "section": "Free",
-      "aaQuestId": 93030210
+      "aaQuestId": 93030210,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -1693,7 +1775,8 @@
       "name": "ヤガ・モスクワ",
       "id": "12a",
       "section": "Free",
-      "aaQuestId": 3000124
+      "aaQuestId": 3000124,
+      "waveCount": 1
     },
     {
       "area": "アナスタシア",
@@ -1701,7 +1784,8 @@
       "name": "ヤガ・リャザン",
       "id": "12d",
       "section": "Free",
-      "aaQuestId": 93030214
+      "aaQuestId": 93030214,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -1709,7 +1793,8 @@
       "name": "巨人の花園",
       "id": "1b2",
       "section": "Free",
-      "aaQuestId": 93030303
+      "aaQuestId": 93030303,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -1725,7 +1810,8 @@
       "name": "雪と氷の城",
       "id": "1b5",
       "section": "Free",
-      "aaQuestId": 3000206
+      "aaQuestId": 3000206,
+      "waveCount": 2
     },
     {
       "area": "ゲッテルデメルング",
@@ -1733,7 +1819,8 @@
       "name": "果てへと至る道",
       "id": "1b6",
       "section": "Free",
-      "aaQuestId": 93030307
+      "aaQuestId": 93030307,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -1741,7 +1828,8 @@
       "name": "炎の館",
       "id": "1b7",
       "section": "Free",
-      "aaQuestId": 93030308
+      "aaQuestId": 93030308,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -1749,7 +1837,8 @@
       "name": "第67集落",
       "id": "1b8",
       "section": "Free",
-      "aaQuestId": 93030309
+      "aaQuestId": 93030309,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -1757,7 +1846,8 @@
       "name": "北の境界",
       "id": "1b9",
       "section": "Free",
-      "aaQuestId": 93030310
+      "aaQuestId": 93030310,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -1765,7 +1855,8 @@
       "name": "忘れられた神殿",
       "id": "1ba",
       "section": "Free",
-      "aaQuestId": 93030311
+      "aaQuestId": 93030311,
+      "waveCount": 3
     },
     {
       "area": "シン",
@@ -1773,7 +1864,8 @@
       "name": "シーディングポイント",
       "id": "1c0",
       "section": "Free",
-      "aaQuestId": 3000305
+      "aaQuestId": 3000305,
+      "waveCount": 1
     },
     {
       "area": "シン",
@@ -1781,7 +1873,8 @@
       "name": "氷冷窟",
       "id": "1c2",
       "section": "Free",
-      "aaQuestId": 93030403
+      "aaQuestId": 93030403,
+      "waveCount": 3
     },
     {
       "area": "シン",
@@ -1789,7 +1882,8 @@
       "name": "景陽原",
       "id": "1c4",
       "section": "Free",
-      "aaQuestId": 3000314
+      "aaQuestId": 3000314,
+      "waveCount": 2
     },
     {
       "area": "シン",
@@ -1797,7 +1891,8 @@
       "name": "収容所",
       "id": "1c6",
       "section": "Free",
-      "aaQuestId": 3000315
+      "aaQuestId": 3000315,
+      "waveCount": 2
     },
     {
       "area": "シン",
@@ -1805,7 +1900,8 @@
       "name": "石泉峡",
       "id": "1c7",
       "section": "Free",
-      "aaQuestId": 3000317
+      "aaQuestId": 3000317,
+      "waveCount": 1
     },
     {
       "area": "シン",
@@ -1813,7 +1909,8 @@
       "name": "大坪峪",
       "id": "1c8",
       "section": "Free",
-      "aaQuestId": 93030409
+      "aaQuestId": 93030409,
+      "waveCount": 3
     },
     {
       "area": "シン",
@@ -1821,7 +1918,8 @@
       "name": "八門洞",
       "id": "1ca",
       "section": "Free",
-      "aaQuestId": 93030411
+      "aaQuestId": 93030411,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1829,7 +1927,8 @@
       "name": "イニシエートポイント",
       "id": "1k0",
       "section": "Free",
-      "aaQuestId": 3000403
+      "aaQuestId": 3000403,
+      "waveCount": 1
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1837,7 +1936,8 @@
       "name": "隠遁窟",
       "id": "1k2",
       "section": "Free",
-      "aaQuestId": 93030503
+      "aaQuestId": 93030503,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1853,7 +1953,8 @@
       "name": "ディーヴァール",
       "id": "1k5",
       "section": "Free",
-      "aaQuestId": 93030506
+      "aaQuestId": 93030506,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1861,7 +1962,8 @@
       "name": "神の空岩跡",
       "id": "1k6",
       "section": "Free",
-      "aaQuestId": 3000419
+      "aaQuestId": 3000419,
+      "waveCount": 1
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1869,7 +1971,8 @@
       "name": "無窮の地",
       "id": "1k8",
       "section": "Free",
-      "aaQuestId": 93030509
+      "aaQuestId": 93030509,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1877,7 +1980,8 @@
       "name": "東の花園",
       "id": "1k9",
       "section": "Free",
-      "aaQuestId": 93030510
+      "aaQuestId": 93030510,
+      "waveCount": 3
     },
     {
       "area": "アトランティス",
@@ -1885,7 +1989,8 @@
       "name": "セーリングポイント",
       "id": "110",
       "section": "Free",
-      "aaQuestId": 3000505
+      "aaQuestId": 3000505,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -1893,7 +1998,8 @@
       "name": "ヘスティア島",
       "id": "111",
       "section": "Free",
-      "aaQuestId": 3000506
+      "aaQuestId": 3000506,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -1909,7 +2015,8 @@
       "name": "デイモス島",
       "id": "113",
       "section": "Free",
-      "aaQuestId": 3000515
+      "aaQuestId": 3000515,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -1917,7 +2024,8 @@
       "name": "アストライア島",
       "id": "114",
       "section": "Free",
-      "aaQuestId": 3000516
+      "aaQuestId": 3000516,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -1925,7 +2033,8 @@
       "name": "テティス島",
       "id": "115",
       "section": "Free",
-      "aaQuestId": 93030606
+      "aaQuestId": 93030606,
+      "waveCount": 3
     },
     {
       "area": "アトランティス",
@@ -1933,7 +2042,8 @@
       "name": "タナトス島",
       "id": "118",
       "section": "Free",
-      "aaQuestId": 93030609
+      "aaQuestId": 93030609,
+      "waveCount": 3
     },
     {
       "area": "オリュンポス",
@@ -1949,7 +2059,8 @@
       "name": "星間都市西部",
       "id": "171",
       "section": "Free",
-      "aaQuestId": 3000603
+      "aaQuestId": 3000603,
+      "waveCount": 1
     },
     {
       "area": "オリュンポス",
@@ -1957,7 +2068,8 @@
       "name": "星間都市南部",
       "id": "172",
       "section": "Free",
-      "aaQuestId": 3000607
+      "aaQuestId": 3000607,
+      "waveCount": 1
     },
     {
       "area": "オリュンポス",
@@ -1965,7 +2077,8 @@
       "name": "星間都市東部",
       "id": "173",
       "section": "Free",
-      "aaQuestId": 3000612
+      "aaQuestId": 3000612,
+      "waveCount": 2
     },
     {
       "area": "オリュンポス",
@@ -1997,7 +2110,8 @@
       "name": "地下機構帯・外周部",
       "id": "17a",
       "section": "Free",
-      "aaQuestId": 93030711
+      "aaQuestId": 93030711,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2005,7 +2119,8 @@
       "name": "七条四坊",
       "id": "1q0",
       "section": "Free",
-      "aaQuestId": 93030801
+      "aaQuestId": 93030801,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2013,7 +2128,8 @@
       "name": "七条二坊",
       "id": "1q1",
       "section": "Free",
-      "aaQuestId": 3000702
+      "aaQuestId": 3000702,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2029,7 +2145,8 @@
       "name": "貴族邸",
       "id": "1q3",
       "section": "Free",
-      "aaQuestId": 3000704
+      "aaQuestId": 3000704,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2037,7 +2154,8 @@
       "name": "朱雀門",
       "id": "1q4",
       "section": "Free",
-      "aaQuestId": 3000715
+      "aaQuestId": 3000715,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2045,7 +2163,8 @@
       "name": "平安宮",
       "id": "1q5",
       "section": "Free",
-      "aaQuestId": 93030806
+      "aaQuestId": 93030806,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2053,7 +2172,8 @@
       "name": "稲荷神社",
       "id": "1q7",
       "section": "Free",
-      "aaQuestId": 93030808
+      "aaQuestId": 93030808,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2069,7 +2189,8 @@
       "name": "五条の橋",
       "id": "1qa",
       "section": "Free",
-      "aaQuestId": 3000712
+      "aaQuestId": 3000712,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2085,7 +2206,8 @@
       "name": "三条三坊",
       "id": "1qc",
       "section": "Free",
-      "aaQuestId": 93030813
+      "aaQuestId": 93030813,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2093,7 +2215,8 @@
       "name": "霧の海岸",
       "id": "130",
       "section": "Free",
-      "aaQuestId": 93031000
+      "aaQuestId": 93031000,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2109,7 +2232,8 @@
       "name": "グロスター",
       "id": "133",
       "section": "Free",
-      "aaQuestId": 3000806
+      "aaQuestId": 3000806,
+      "waveCount": 1
     },
     {
       "area": "アヴァロン",
@@ -2117,7 +2241,8 @@
       "name": "涙の河",
       "id": "134",
       "section": "Free",
-      "aaQuestId": 93031004
+      "aaQuestId": 93031004,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2133,7 +2258,8 @@
       "name": "ロンディニウム",
       "id": "137",
       "section": "Free",
-      "aaQuestId": 3000902
+      "aaQuestId": 3000902,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2141,7 +2267,8 @@
       "name": "マンチェスター",
       "id": "138",
       "section": "Free",
-      "aaQuestId": 3000911
+      "aaQuestId": 3000911,
+      "waveCount": 2
     },
     {
       "area": "アヴァロン",
@@ -2157,7 +2284,8 @@
       "name": "湖水地方",
       "id": "13b",
       "section": "Free",
-      "aaQuestId": 3000913
+      "aaQuestId": 3000913,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2181,7 +2309,8 @@
       "name": "ドーバーハウス",
       "id": "13f",
       "section": "Free",
-      "aaQuestId": 93031015
+      "aaQuestId": 93031015,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2189,7 +2318,8 @@
       "name": "狭間の街",
       "id": "1f0",
       "section": "Free",
-      "aaQuestId": 3001202
+      "aaQuestId": 3001202,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -2197,7 +2327,8 @@
       "name": "中つ森",
       "id": "1f2",
       "section": "Free",
-      "aaQuestId": 93031203
+      "aaQuestId": 93031203,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2205,7 +2336,8 @@
       "name": "薄暮れの森",
       "id": "1f3",
       "section": "Free",
-      "aaQuestId": 93031204
+      "aaQuestId": 93031204,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2213,7 +2345,8 @@
       "name": "天嶮山脈",
       "id": "1f4",
       "section": "Free",
-      "aaQuestId": 93031205
+      "aaQuestId": 93031205,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2221,7 +2354,8 @@
       "name": "クサンテンの塔",
       "id": "1f6",
       "section": "Free",
-      "aaQuestId": 93031207
+      "aaQuestId": 93031207,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2229,7 +2363,8 @@
       "name": "アツァガウク砦",
       "id": "1f7",
       "section": "Free",
-      "aaQuestId": 3001213
+      "aaQuestId": 3001213,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -2237,7 +2372,8 @@
       "name": "シルミウム",
       "id": "1f9",
       "section": "Free",
-      "aaQuestId": 3001215
+      "aaQuestId": 3001215,
+      "waveCount": 2
     },
     {
       "area": "トラオム",
@@ -2245,7 +2381,8 @@
       "name": "復権界域拠点",
       "id": "1fa",
       "section": "Free",
-      "aaQuestId": 3001205
+      "aaQuestId": 3001205,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -2253,7 +2390,8 @@
       "name": "門前の平原",
       "id": "1fb",
       "section": "Free",
-      "aaQuestId": 93031212
+      "aaQuestId": 93031212,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2269,7 +2407,8 @@
       "name": "ライヘンバッハ",
       "id": "1fd",
       "section": "Free",
-      "aaQuestId": 3001221
+      "aaQuestId": 3001221,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -2277,7 +2416,8 @@
       "name": "果ての荒野",
       "id": "1fe",
       "section": "Free",
-      "aaQuestId": 93031215
+      "aaQuestId": 93031215,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2285,7 +2425,8 @@
       "name": "ヨウィヌス砦",
       "id": "1ff",
       "section": "Free",
-      "aaQuestId": 93031216
+      "aaQuestId": 93031216,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -2293,7 +2434,8 @@
       "name": "チコモストク",
       "id": "1j0",
       "section": "Free",
-      "aaQuestId": 93031301
+      "aaQuestId": 93031301,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -2308,7 +2450,8 @@
       "name": "トウモロコシ畑",
       "id": "1j2",
       "section": "Free",
-      "aaQuestId": 3001306
+      "aaQuestId": 3001306,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -2316,7 +2459,8 @@
       "name": "トラトラウキ",
       "id": "1j3",
       "section": "Free",
-      "aaQuestId": 3001303
+      "aaQuestId": 3001303,
+      "waveCount": 2
     },
     {
       "area": "ミクトラン",
@@ -2324,7 +2468,8 @@
       "name": "大平原",
       "id": "1j4",
       "section": "Free",
-      "aaQuestId": 3001308
+      "aaQuestId": 3001308,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -2340,7 +2485,8 @@
       "name": "クラッシュポイント",
       "id": "1j6",
       "section": "Free",
-      "aaQuestId": 3001307
+      "aaQuestId": 3001307,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -2356,7 +2502,8 @@
       "name": "カラクムル",
       "id": "1ja",
       "section": "Free",
-      "aaQuestId": 3001321
+      "aaQuestId": 3001321,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -2364,7 +2511,8 @@
       "name": "カーンの廃墟",
       "id": "1jb",
       "section": "Free",
-      "aaQuestId": 93031310
+      "aaQuestId": 93031310,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -2372,7 +2520,8 @@
       "name": "ソソアウワキ",
       "id": "1jc",
       "section": "Free",
-      "aaQuestId": 3001315
+      "aaQuestId": 3001315,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -2380,7 +2529,8 @@
       "name": "メツィティトラン",
       "id": "1jd",
       "section": "Free",
-      "aaQuestId": 3001316
+      "aaQuestId": 3001316,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -2396,7 +2546,8 @@
       "name": "ティカル遺跡",
       "id": "1jf",
       "section": "Free",
-      "aaQuestId": 93031315
+      "aaQuestId": 93031315,
+      "waveCount": 3
     },
     {
       "area": "オーディール・コール",
@@ -2404,7 +2555,8 @@
       "name": "ロシアエリア",
       "id": "190",
       "section": "Free",
-      "aaQuestId": 93040101
+      "aaQuestId": 93040101,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2412,7 +2564,8 @@
       "name": "東欧エリア",
       "id": "191",
       "section": "Free",
-      "aaQuestId": 93040102
+      "aaQuestId": 93040102,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2420,7 +2573,8 @@
       "name": "ハワイエリア",
       "id": "192",
       "section": "Free",
-      "aaQuestId": 93040103
+      "aaQuestId": 93040103,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2428,7 +2582,8 @@
       "name": "常夏即売会場",
       "id": "193",
       "section": "Free",
-      "aaQuestId": 94095301
+      "aaQuestId": 94095301,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2436,7 +2591,8 @@
       "name": "オセアニア北部エリア",
       "id": "195",
       "section": "Free",
-      "aaQuestId": 93040105
+      "aaQuestId": 93040105,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2444,7 +2600,8 @@
       "name": "北欧エリア",
       "id": "196",
       "section": "Free",
-      "aaQuestId": 94086601
+      "aaQuestId": 94086601,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2452,7 +2609,8 @@
       "name": "カリブ海エリア",
       "id": "197",
       "section": "Free",
-      "aaQuestId": 94086602
+      "aaQuestId": 94086602,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2460,7 +2618,8 @@
       "name": "東アジアエリア",
       "id": "198",
       "section": "Free",
-      "aaQuestId": 94089601
+      "aaQuestId": 94089601,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2468,7 +2627,8 @@
       "name": "アメリカ南部エリア",
       "id": "199",
       "section": "Free",
-      "aaQuestId": 94089602
+      "aaQuestId": 94089602,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2476,7 +2636,8 @@
       "name": "南アジアエリア",
       "id": "19a",
       "section": "Free",
-      "aaQuestId": 94090701
+      "aaQuestId": 94090701,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2484,7 +2645,8 @@
       "name": "アフリカ南部エリア",
       "id": "19b",
       "section": "Free",
-      "aaQuestId": 94090702
+      "aaQuestId": 94090702,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2492,7 +2654,8 @@
       "name": "光糸導く迷宮",
       "id": "19c",
       "section": "Free",
-      "aaQuestId": 94093201
+      "aaQuestId": 94093201,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2500,7 +2663,8 @@
       "name": "久遠の微笑",
       "id": "19d",
       "section": "Free",
-      "aaQuestId": 94093202
+      "aaQuestId": 94093202,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2508,7 +2672,8 @@
       "name": "女神像を求めて",
       "id": "19e",
       "section": "Free",
-      "aaQuestId": 94095302
+      "aaQuestId": 94095302,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2516,7 +2681,8 @@
       "name": "蛇竜のいたずら",
       "id": "19f",
       "section": "Free",
-      "aaQuestId": 94100501
+      "aaQuestId": 94100501,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2524,7 +2690,8 @@
       "name": "復活の黄金都市",
       "id": "19g",
       "section": "Free",
-      "aaQuestId": 94100502
+      "aaQuestId": 94100502,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2532,7 +2699,8 @@
       "name": "賞金稼ぎに幾光年",
       "id": "19h",
       "section": "Free",
-      "aaQuestId": 94137201
+      "aaQuestId": 94137201,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -2540,7 +2708,8 @@
       "name": "月光採掘場",
       "id": "19i",
       "section": "Free",
-      "aaQuestId": 94137202
+      "aaQuestId": 94137202,
+      "waveCount": 1
     },
     {
       "area": "ペーパームーン",
@@ -2548,7 +2717,8 @@
       "name": "修理部郊外",
       "id": "1i0",
       "section": "Free",
-      "aaQuestId": 93040201
+      "aaQuestId": 93040201,
+      "waveCount": 3
     },
     {
       "area": "ペーパームーン",
@@ -2564,7 +2734,8 @@
       "name": "警防部広場",
       "id": "1i4",
       "section": "Free",
-      "aaQuestId": 93040205
+      "aaQuestId": 93040205,
+      "waveCount": 3
     },
     {
       "area": "ペーパームーン",
@@ -2572,7 +2743,8 @@
       "name": "維持部モール",
       "id": "1i6",
       "section": "Free",
-      "aaQuestId": 4000210
+      "aaQuestId": 4000210,
+      "waveCount": 1
     },
     {
       "area": "ペーパームーン",
@@ -2580,7 +2752,8 @@
       "name": "構築部本部",
       "id": "1i7",
       "section": "Free",
-      "aaQuestId": 93040210
+      "aaQuestId": 93040210,
+      "waveCount": 3
     },
     {
       "area": "ペーパームーン",
@@ -2596,7 +2769,8 @@
       "name": "かいもの帰り",
       "id": "150",
       "section": "Free",
-      "aaQuestId": 93040301
+      "aaQuestId": 93040301,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2604,7 +2778,8 @@
       "name": "いつもの通い道",
       "id": "151",
       "section": "Free",
-      "aaQuestId": 93040307
+      "aaQuestId": 93040307,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2612,7 +2787,8 @@
       "name": "であいの交差点",
       "id": "152",
       "section": "Free",
-      "aaQuestId": 93040309
+      "aaQuestId": 93040309,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2620,7 +2796,8 @@
       "name": "たたずむ摩天楼",
       "id": "153",
       "section": "Free",
-      "aaQuestId": 93040310
+      "aaQuestId": 93040310,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2628,7 +2805,8 @@
       "name": "ないしょの待ち合わせ",
       "id": "154",
       "section": "Free",
-      "aaQuestId": 93040302
+      "aaQuestId": 93040302,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2636,7 +2814,8 @@
       "name": "しずかな放課後",
       "id": "155",
       "section": "Free",
-      "aaQuestId": 93040303
+      "aaQuestId": 93040303,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2644,7 +2823,8 @@
       "name": "ななふしぎ調査",
       "id": "156",
       "section": "Free",
-      "aaQuestId": 93040304
+      "aaQuestId": 93040304,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2652,7 +2832,8 @@
       "name": "いのこり特訓",
       "id": "157",
       "section": "Free",
-      "aaQuestId": 93040306
+      "aaQuestId": 93040306,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2660,7 +2841,8 @@
       "name": "とつぜんの呼び出し",
       "id": "158",
       "section": "Free",
-      "aaQuestId": 93040305
+      "aaQuestId": 93040305,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2668,7 +2850,8 @@
       "name": "バードウォッチング",
       "id": "159",
       "section": "Free",
-      "aaQuestId": 93040312
+      "aaQuestId": 93040312,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2676,7 +2859,8 @@
       "name": "たびだちの駅",
       "id": "15a",
       "section": "Free",
-      "aaQuestId": 93040308
+      "aaQuestId": 93040308,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -2684,7 +2868,8 @@
       "name": "あいにくの空模様",
       "id": "15b",
       "section": "Free",
-      "aaQuestId": 93040311
+      "aaQuestId": 93040311,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2692,7 +2877,8 @@
       "name": "トップ・オブ・ザ・ムーン",
       "id": "140",
       "section": "Free",
-      "aaQuestId": 93040401
+      "aaQuestId": 93040401,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2700,7 +2886,8 @@
       "name": "ラグジュアリー・ビュッフェ",
       "id": "143",
       "section": "Free",
-      "aaQuestId": 93040404
+      "aaQuestId": 93040404,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2708,7 +2895,8 @@
       "name": "ワームズ・サンドボックス",
       "id": "144",
       "section": "Free",
-      "aaQuestId": 93040405
+      "aaQuestId": 93040405,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2716,7 +2904,8 @@
       "name": "ムーン・ウォーキング",
       "id": "145",
       "section": "Free",
-      "aaQuestId": 93040406
+      "aaQuestId": 93040406,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2724,7 +2913,8 @@
       "name": "マシーナリー・タウン",
       "id": "146",
       "section": "Free",
-      "aaQuestId": 93040407
+      "aaQuestId": 93040407,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2732,7 +2922,8 @@
       "name": "ムーン・クルージング",
       "id": "148",
       "section": "Free",
-      "aaQuestId": 93040409
+      "aaQuestId": 93040409,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2740,7 +2931,8 @@
       "name": "スター・ピッキング",
       "id": "149",
       "section": "Free",
-      "aaQuestId": 93040410
+      "aaQuestId": 93040410,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2748,7 +2940,8 @@
       "name": "ファンタズム・パレード",
       "id": "14b",
       "section": "Free",
-      "aaQuestId": 93040412
+      "aaQuestId": 93040412,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2756,7 +2949,8 @@
       "name": "ムーン・ドバイ・ファウンテン",
       "id": "14d",
       "section": "Free",
-      "aaQuestId": 93040414
+      "aaQuestId": 93040414,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -2764,7 +2958,8 @@
       "name": "セレブリティ・ボート",
       "id": "14e",
       "section": "Free",
-      "aaQuestId": 93040415
+      "aaQuestId": 93040415,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2772,7 +2967,8 @@
       "name": "悪しきは罰せよ",
       "id": "1g0",
       "section": "Free",
-      "aaQuestId": 93040501
+      "aaQuestId": 93040501,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2780,7 +2976,8 @@
       "name": "色情に染まる街",
       "id": "1g1",
       "section": "Free",
-      "aaQuestId": 93040502
+      "aaQuestId": 93040502,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2788,7 +2985,8 @@
       "name": "禁じられた果実の園",
       "id": "1g3",
       "section": "Free",
-      "aaQuestId": 93040504
+      "aaQuestId": 93040504,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2796,7 +2994,8 @@
       "name": "愛に溺れた罪人たち",
       "id": "1g5",
       "section": "Free",
-      "aaQuestId": 93040506
+      "aaQuestId": 93040506,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2804,7 +3003,8 @@
       "name": "獄犬の縄張り",
       "id": "1g6",
       "section": "Free",
-      "aaQuestId": 93040507
+      "aaQuestId": 93040507,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2812,7 +3012,8 @@
       "name": "憤怒の集う死沼",
       "id": "1g8",
       "section": "Free",
-      "aaQuestId": 93040509
+      "aaQuestId": 93040509,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2820,7 +3021,8 @@
       "name": "魅惑の絶対支配",
       "id": "1g9",
       "section": "Free",
-      "aaQuestId": 93040510
+      "aaQuestId": 93040510,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2828,7 +3030,8 @@
       "name": "渦巻く悪意の応酬",
       "id": "1ga",
       "section": "Free",
-      "aaQuestId": 93040511
+      "aaQuestId": 93040511,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2836,7 +3039,8 @@
       "name": "氷原に轟く嘆き",
       "id": "1gb",
       "section": "Free",
-      "aaQuestId": 93040512
+      "aaQuestId": 93040512,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -2844,7 +3048,8 @@
       "name": "悔悟の祈り",
       "id": "1gc",
       "section": "Free",
-      "aaQuestId": 93040514
+      "aaQuestId": 93040514,
+      "waveCount": 3
     },
     {
       "area": "冠位研鑽戦",
@@ -2852,7 +3057,8 @@
       "name": "〔セイバー〕 Ⅱ",
       "id": "1n1",
       "section": "Free",
-      "aaQuestId": 94145402
+      "aaQuestId": 94145402,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2860,7 +3066,8 @@
       "name": "〔セイバー〕 Ⅲ",
       "id": "1n2",
       "section": "Free",
-      "aaQuestId": 94145403
+      "aaQuestId": 94145403,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2868,7 +3075,8 @@
       "name": "〔セイバー〕 Ⅳ",
       "id": "1n3",
       "section": "Free",
-      "aaQuestId": 94145404
+      "aaQuestId": 94145404,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2876,7 +3084,8 @@
       "name": "〔セイバー〕 Ⅴ",
       "id": "1n4",
       "section": "Free",
-      "aaQuestId": 94145405
+      "aaQuestId": 94145405,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2884,7 +3093,8 @@
       "name": "〔セイバー〕 Ⅵ",
       "id": "1n5",
       "section": "Free",
-      "aaQuestId": 94145406
+      "aaQuestId": 94145406,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2892,7 +3102,8 @@
       "name": "〔セイバー〕 Ⅶ",
       "id": "1n6",
       "section": "Free",
-      "aaQuestId": 94145407
+      "aaQuestId": 94145407,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2900,7 +3111,8 @@
       "name": "〔バーサーカー〕 Ⅵ",
       "id": "1nc",
       "section": "Free",
-      "aaQuestId": 94146506
+      "aaQuestId": 94146506,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2908,7 +3120,8 @@
       "name": "〔バーサーカー〕 Ⅶ",
       "id": "1nd",
       "section": "Free",
-      "aaQuestId": 94146507
+      "aaQuestId": 94146507,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2916,7 +3129,8 @@
       "name": "〔ランサー〕 Ⅴ",
       "id": "1ni",
       "section": "Free",
-      "aaQuestId": 94146805
+      "aaQuestId": 94146805,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2924,7 +3138,8 @@
       "name": "〔ランサー〕 Ⅵ",
       "id": "1nj",
       "section": "Free",
-      "aaQuestId": 94146806
+      "aaQuestId": 94146806,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -2932,70 +3147,80 @@
       "name": "〔ランサー〕 Ⅶ",
       "id": "1nk",
       "section": "Free",
-      "aaQuestId": 94146807
+      "aaQuestId": 94146807,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅠ〕火 Ⅵ",
       "id": "1nq",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅠ〕火 Ⅶ",
       "id": "1nr",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅠ〕地 Ⅶ",
       "id": "1ny",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅡ〕風 Ⅴ",
       "id": "1n13",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅡ〕風 Ⅵ",
       "id": "1n14",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅡ〕風 Ⅶ",
       "id": "1n15",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅡ〕水 Ⅴ",
       "id": "1n1a",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅡ〕水 Ⅵ",
       "id": "1n1b",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
       "ap": 40,
       "name": "〔エクストラⅡ〕水 Ⅶ",
       "id": "1n1c",
-      "section": "Free"
+      "section": "Free",
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3003,7 +3228,8 @@
       "name": "〔ライダー〕 Ⅴ",
       "id": "1n1h",
       "section": "Free",
-      "aaQuestId": 94149805
+      "aaQuestId": 94149805,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3011,7 +3237,8 @@
       "name": "〔ライダー〕 Ⅵ",
       "id": "1n1i",
       "section": "Free",
-      "aaQuestId": 94149806
+      "aaQuestId": 94149806,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3019,7 +3246,8 @@
       "name": "〔ライダー〕 Ⅶ",
       "id": "1n1j",
       "section": "Free",
-      "aaQuestId": 94149807
+      "aaQuestId": 94149807,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3027,7 +3255,8 @@
       "name": "〔アサシン〕 Ⅴ",
       "id": "1n1o",
       "section": "Free",
-      "aaQuestId": 94150505
+      "aaQuestId": 94150505,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3035,7 +3264,8 @@
       "name": "〔アサシン〕 Ⅵ",
       "id": "1n1p",
       "section": "Free",
-      "aaQuestId": 94150506
+      "aaQuestId": 94150506,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3043,7 +3273,8 @@
       "name": "〔アサシン〕 Ⅶ",
       "id": "1n1q",
       "section": "Free",
-      "aaQuestId": 94150507
+      "aaQuestId": 94150507,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3051,7 +3282,8 @@
       "name": "〔アーチャー〕 Ⅴ",
       "id": "1n1v",
       "section": "Free",
-      "aaQuestId": 94150805
+      "aaQuestId": 94150805,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3059,7 +3291,8 @@
       "name": "〔アーチャー〕 Ⅵ",
       "id": "1n1w",
       "section": "Free",
-      "aaQuestId": 94150806
+      "aaQuestId": 94150806,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3067,7 +3300,8 @@
       "name": "〔アーチャー〕 Ⅶ",
       "id": "1n1x",
       "section": "Free",
-      "aaQuestId": 94150807
+      "aaQuestId": 94150807,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3075,7 +3309,8 @@
       "name": "〔キャスター〕 Ⅲ",
       "id": "1n20",
       "section": "Free",
-      "aaQuestId": 94151203
+      "aaQuestId": 94151203,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3083,7 +3318,8 @@
       "name": "〔キャスター〕 Ⅳ",
       "id": "1n21",
       "section": "Free",
-      "aaQuestId": 94151204
+      "aaQuestId": 94151204,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3091,7 +3327,8 @@
       "name": "〔キャスター〕 Ⅴ",
       "id": "1n22",
       "section": "Free",
-      "aaQuestId": 94151205
+      "aaQuestId": 94151205,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3099,7 +3336,8 @@
       "name": "〔キャスター〕 Ⅵ",
       "id": "1n23",
       "section": "Free",
-      "aaQuestId": 94151206
+      "aaQuestId": 94151206,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3107,7 +3345,8 @@
       "name": "〔キャスター〕 Ⅶ",
       "id": "1n24",
       "section": "Free",
-      "aaQuestId": 94151207
+      "aaQuestId": 94151207,
+      "waveCount": 1
     }
   ],
   "drop_rates": [

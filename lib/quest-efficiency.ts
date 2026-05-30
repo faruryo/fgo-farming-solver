@@ -6,12 +6,14 @@ import { getRarityByCategory, isSkillStone, Rarity } from './item-rarity'
 // クエストの「効率ポイント」を算出する純粋関数群。
 //
 // score(q) = Σ_i  relativeEff(i,q) × weight[i]
-//   relativeEff(i,q) = (drop_rate(q,i) / effAp(q)) / bestEff(i)   ∈ [0,1]
-//   bestEff(i)       = max over q of  drop_rate(q,i) / effAp(q)
+//   relativeEff(i,q) = eff(i,q) / bestEff(i)   ∈ [0,1]
+//   bestEff(i)       = max over q of  eff(i,q)
+//   eff(i,q)         = drop_rate(q,i) / denom(q)
+//   denom(q)         = 'ap' なら effAp(q) / 'turn' なら waveCount(q)(=ターン数)
 //   effAp(q)         = computeEffectiveAp(q.ap, q.id, activeCampaigns)
 //
 // スプレッドシートの「相対効率の合計」を踏襲し、所持数・目標・レア別余剰しきい値で
-// 個人最適化する(2段階重み)。
+// 個人最適化する(2段階重み)。denominator で AP効率/周回効率(ターン数で割る)を切り替える。
 
 export type SurplusThreshold = Record<Rarity, number>
 
@@ -24,6 +26,18 @@ export const DEFAULT_SURPLUS_THRESHOLD: SurplusThreshold = {
 
 /** 次点(充足済みだが余剰が少ない素材)の重み。 */
 export const SECONDARY_WEIGHT = 0.3
+
+/**
+ * 効率の分母。
+ * - 'ap'   : 実効AP(AP効率 = AP1あたりのドロップ)
+ * - 'turn' : ターン数=wave数(周回効率 = 1ターンあたりのドロップ)。
+ *            3ターンクエストより1ターンクエストを高評価する(速い周回ほど有利)。
+ *            wave 数データが無いクエストは 1 ターン扱いにフォールバック。
+ */
+export type EfficiencyDenominator = 'ap' | 'turn'
+
+/** wave 数が不明なクエストのフォールバックターン数。 */
+export const DEFAULT_TURNS = 1
 
 export type QuestEfficiencyOptions = {
   /** 所持数 itemId -> owned count */
@@ -38,6 +52,8 @@ export type QuestEfficiencyOptions = {
   includeSkillStones?: boolean
   /** レア別余剰しきい値(部分指定可、デフォルトとマージ)。 */
   surplusThreshold?: Partial<SurplusThreshold>
+  /** 効率の分母。'ap'(default=AP効率) か 'turn'(周回効率=ターン数で割る)。 */
+  denominator?: EfficiencyDenominator
 }
 
 export type ItemContribution = {
@@ -98,25 +114,38 @@ export const computeQuestEfficiency = (
     activeCampaigns = [],
     shortageOnly = true,
     includeSkillStones = true,
+    denominator = 'ap',
   } = options
   const threshold: SurplusThreshold = { ...DEFAULT_SURPLUS_THRESHOLD, ...(options.surplusThreshold ?? {}) }
 
   const itemById = new Map(drops.items.map(i => [i.id, i]))
 
-  // effective AP per quest
-  const effApByQuest = new Map<string, number>()
+  // クエストごとの「分母」。'ap'=実効AP / 'turn'=ターン数(wave数)。0以下は無効。
+  const denomByQuest = new Map<string, number>()
   for (const q of drops.quests) {
-    const eff = activeCampaigns.length > 0 ? computeEffectiveAp(q.ap, q.id, activeCampaigns) : q.ap
-    effApByQuest.set(q.id, eff)
+    let denom: number
+    if (denominator === 'turn') {
+      const turns = (q as { waveCount?: number }).waveCount
+      denom = turns != null && turns > 0 ? turns : DEFAULT_TURNS
+    } else {
+      denom = activeCampaigns.length > 0 ? computeEffectiveAp(q.ap, q.id, activeCampaigns) : q.ap
+    }
+    denomByQuest.set(q.id, denom)
   }
 
-  // bestEff per item = max(drop_rate / effAp) across quests
+  // eff(i,q) = drop_rate / denom(q)。分母が0以下なら無効。
+  const effOf = (dr: { quest_id: string; drop_rate: number }): number | null => {
+    const denom = denomByQuest.get(dr.quest_id)
+    if (denom == null || denom <= 0) return null
+    return dr.drop_rate / denom
+  }
+
+  // bestEff per item = max(eff) across quests
   const bestEffByItem = new Map<string, number>()
   for (const dr of drops.drop_rates) {
     if (dr.drop_rate <= 0) continue
-    const effAp = effApByQuest.get(dr.quest_id)
-    if (effAp == null || effAp <= 0) continue
-    const eff = dr.drop_rate / effAp
+    const eff = effOf(dr)
+    if (eff == null) continue
     if (eff > (bestEffByItem.get(dr.item_id) ?? 0)) bestEffByItem.set(dr.item_id, eff)
   }
 
@@ -141,13 +170,13 @@ export const computeQuestEfficiency = (
   const acc = new Map<string, ItemContribution[]>()
   for (const dr of drops.drop_rates) {
     if (dr.drop_rate <= 0) continue
-    const effAp = effApByQuest.get(dr.quest_id)
-    if (effAp == null || effAp <= 0) continue
+    const eff = effOf(dr)
+    if (eff == null) continue
     const bestEff = bestEffByItem.get(dr.item_id)
     if (bestEff == null || bestEff <= 0) continue
     const weight = weightFor(dr.item_id)
     if (weight <= 0) continue
-    const relativeEff = dr.drop_rate / effAp / bestEff
+    const relativeEff = eff / bestEff
     const list = acc.get(dr.quest_id) ?? []
     list.push({
       itemId: dr.item_id,
