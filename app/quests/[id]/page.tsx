@@ -10,6 +10,7 @@ import { useQuestWave } from '../../../hooks/use-quest-wave'
 import { Quest } from '../../../interfaces/api'
 import { Badge } from '@/components/ui/badge'
 import { ItemIdentity } from '../../../components/common/ItemIdentity'
+import { QuestEfficiencyCard } from '../../../components/quests/QuestEfficiencyCard'
 import { Button } from '@/components/ui/button'
 
 export default function QuestDetailPage() {
@@ -150,6 +151,7 @@ export default function QuestDetailPage() {
 
           {/* Sidebar / Drop Info */}
           <div className="flex flex-col gap-6">
+            <QuestEfficiencyCard questId={quest.id} />
             <div className="c-card p-6">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">

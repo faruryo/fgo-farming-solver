@@ -20,6 +20,7 @@ export const KEYS = [
   'farming/results',
   'dropRateKey',
   'dropRateStyle',
+  'efficiency/surplusThreshold',
 ]
 
 export const MOCK_CLOUD_KEY = 'fgo_mock_cloud_data'

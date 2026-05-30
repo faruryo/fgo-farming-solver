@@ -87,6 +87,9 @@ export default function HomePage() {
                   className="flex gap-3 ml-1 pl-2"
                   style={{ borderLeft: '1px solid var(--border)' }}
                 >
+                  <Link href="/quests" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
+                    クエスト効率
+                  </Link>
                   <Link href="/farming/history" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
                     計算履歴
                   </Link>

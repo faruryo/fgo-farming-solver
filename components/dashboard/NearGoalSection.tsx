@@ -49,6 +49,7 @@ export const NearGoalSection: React.FC = () => {
   const { activeCampaigns, nowSec } = useActiveCampaigns(drops.campaigns)
   const { data: dashboardMeta } = useDashboardMeta()
   const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
+  const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
 
   const nearGoalEntries = useMemo(() => {
     if (!displayResult || !dropItems?.length) return []
@@ -56,6 +57,10 @@ export const NearGoalSection: React.FC = () => {
     const result = isBothResult(displayResult) ? displayResult.lap : displayResult
     const { items: targetItems, params } = result
     if (!targetItems?.length) return []
+
+    // 目標から所持数を引いた不足度。「不足してない素材」は達成間近から外れる。
+    const neededOf = (itemId: string): number =>
+      Math.max(0, (params.items[itemId] ?? 0) - (possession[itemId] ?? 0))
 
     const allowedQuestIds = new Set<string>(params.quests ?? [])
     const originalApById = new Map(dropQuests?.map(q => [q.id, q.ap]) ?? [])
@@ -75,7 +80,7 @@ export const NearGoalSection: React.FC = () => {
       for (const dr of drops.drop_rates) {
         if (dr.drop_rate <= 0) continue
         if (!allowedQuestIds.has(dr.quest_id)) continue
-        const needed = params.items[dr.item_id] ?? 0
+        const needed = neededOf(dr.item_id)
         if (needed <= 0) continue
         const quest = dropQuestById.get(dr.quest_id)
         if (!quest) continue
@@ -96,7 +101,7 @@ export const NearGoalSection: React.FC = () => {
     const itemsToEvaluate =
       sortMode === 'efficiency'
         ? [...targetItems]
-            .map(ti => ({ ti, needed: params.items[ti.id] ?? 0 }))
+            .map(ti => ({ ti, needed: neededOf(ti.id) }))
             .filter(x => x.needed > 0)
             .sort((a, b) => a.needed - b.needed)
             .slice(0, NEEDED_ITEMS_WINDOW)
@@ -108,7 +113,7 @@ export const NearGoalSection: React.FC = () => {
 
     return itemsToEvaluate
       .flatMap(ti => {
-        const needed = params.items[ti.id] ?? 0
+        const needed = neededOf(ti.id)
         if (needed <= 0) return []
 
         const buildCandidate = (dr: { quest_id: string; drop_rate: number }) => {
@@ -161,7 +166,7 @@ export const NearGoalSection: React.FC = () => {
         ...entry,
         originalAp: originalApById.get(entry.quest.id),
       }))
-  }, [dropItems, dropQuests, drops.drop_rates, displayResult, sortMode, activeCampaigns, podFree.isActive, podFree.questIds])
+  }, [dropItems, dropQuests, drops.drop_rates, displayResult, sortMode, activeCampaigns, podFree.isActive, podFree.questIds, possession])
 
   // drops側のquestからaaQuestIdを補完してspot画像を取得
   const spotIcons = useSpotIcons(

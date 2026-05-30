@@ -14,6 +14,7 @@ import {
   Loader2,
   FlaskConical,
   Route,
+  Gauge,
   History,
   Users,
   Package,
@@ -50,6 +51,7 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { href: '/material',        icon: FlaskConical, label: { ja: '育成素材計算機', en: 'Material Calculator' } },
       { href: '/farming',         icon: Route,        label: { ja: '周回ソルバー',   en: 'Farming Solver' } },
+      { href: '/quests',          icon: Gauge,        label: { ja: 'クエスト効率',   en: 'Quest Efficiency' } },
       { href: '/farming/history', icon: History,      label: { ja: '計算履歴',       en: 'History' } },
     ],
   },
