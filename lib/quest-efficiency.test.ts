@@ -15,8 +15,8 @@ const makeDrops = (campaigns: Campaign[] = []): Drops =>
       { id: 'gem', category: '秘石', largeCategory: 'スキル石', name: 'gem', shortName: 'gem' },
     ],
     quests: [
-      { id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20, waveCount: 1 },
-      { id: 'qB', area: 'B', name: 'qB', section: 'Free', ap: 40, waveCount: 3 },
+      { id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20, waveCount: 1, qp: 100 },
+      { id: 'qB', area: 'B', name: 'qB', section: 'Free', ap: 40, waveCount: 3, qp: 100 },
     ],
     drop_rates: [
       { quest_id: 'qA', item_id: 'g', drop_rate: 1.0 },
@@ -112,6 +112,20 @@ describe('computeQuestEfficiency', () => {
     // 両方とも 1 ターン扱い → 同点
     expect(contrib(res.q2, 'g')!.relativeEff).toBeCloseTo(1)
     expect(res.q1.score).toBeCloseTo(res.q2.score)
+  })
+
+  it('includeQp で QP を擬似アイテムとして加算する(default は加算しない)', () => {
+    const off = byId(computeQuestEfficiency(makeDrops(), { shortageOnly: false }))
+    expect(off.qA.contributions.some(c => c.itemId === 'reward:qp')).toBe(false)
+
+    const on = byId(computeQuestEfficiency(makeDrops(), { shortageOnly: false, includeQp: true }))
+    // qp: qA=100/ap20=5, qB=100/ap40=2.5 → bestEff=5 → relativeEff(qA)=1, (qB)=0.5
+    const qpA = on.qA.contributions.find(c => c.itemId === 'reward:qp')
+    expect(qpA?.relativeEff).toBeCloseTo(1)
+    expect(qpA?.weight).toBe(1)
+    expect(on.qB.contributions.find(c => c.itemId === 'reward:qp')?.relativeEff).toBeCloseTo(0.5)
+    // 加算により score が上がる
+    expect(on.qA.score).toBeCloseTo(off.qA.score + 1)
   })
 
   it('キャンペーン AP を反映する(qB の AP 半減で g の効率が上がる)', () => {

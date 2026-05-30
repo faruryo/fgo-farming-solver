@@ -166,7 +166,7 @@
   "quests": {
     "クエスト効率": "Quest Efficiency",
     "効率ポイント": "Efficiency Pt",
-    "効率ポイントとは": "Each material normalized to the best quest (0-1), weighted by your stock & goals, then summed. Toggles: gems on/off, denominator (AP/turn), scope (needed/all). QP & bond excluded.",
+    "効率ポイントとは": "Each material normalized to the best quest (0-1), weighted by your stock & goals, then summed. Filters: gems, denominator (AP/turn), scope (needed/all), reward add-ons (QP/Bond/EXP).",
     "クエストを検索": "Search by quest or area",
     "石含む": "Incl. gems",
     "石除く": "Excl. gems",
@@ -185,6 +185,16 @@
     "ダッシュボードへ戻る": "Back to dashboard",
     "AP効率": "Per AP",
     "周回効率": "Per turn",
-    "効率の分母": "Efficiency denominator"
+    "効率の分母": "Efficiency denominator",
+    "フィルター": "Filters",
+    "素材対象": "Materials",
+    "スキル石": "Gems",
+    "含む": "Incl.",
+    "除く": "Excl.",
+    "報酬加算": "Rewards",
+    "絆": "Bond",
+    "表示": "Display",
+    "冠位研鑽戦VI以下を表示": "Show Ordeal Call ≤VI",
+    "報酬を効率ポイントに加算": "Add rewards to efficiency"
   }
 }

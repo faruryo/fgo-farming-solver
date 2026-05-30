@@ -2,10 +2,12 @@
 
 import React, { useMemo, useState } from 'react'
 import NextLink from 'next/link'
-import { Info, Search } from 'lucide-react'
+import { Info, Search, SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { QuestIdentity } from '../common/QuestIdentity'
@@ -39,6 +41,34 @@ const parseGoals = (raw: Record<string, string | number | undefined>): Record<st
   return out
 }
 
+// クエスト名から段位(ローマ数字 I〜VIII。ASCII / 全角の両対応)を抽出。冠位研鑽戦の VI以下 判定に使う。
+const TIER_TOKENS: [string, number][] = [
+  ['Ⅷ', 8], ['VIII', 8], ['Ⅶ', 7], ['VII', 7], ['Ⅵ', 6], ['VI', 6],
+  ['Ⅴ', 5], ['V', 5], ['Ⅳ', 4], ['IV', 4], ['Ⅲ', 3], ['III', 3], ['Ⅱ', 2], ['II', 2], ['Ⅰ', 1], ['I', 1],
+]
+const kanniTier = (name: string): number | null => {
+  for (const [token, n] of TIER_TOKENS) if (name.includes(token)) return n
+  return null
+}
+const isLowKanni = (area: string, name: string): boolean =>
+  area.includes('冠位研鑽戦') && (kanniTier(name) ?? 99) <= 6
+
+const CheckLabel: React.FC<{
+  checked: boolean
+  onChange: (b: boolean) => void
+  children: React.ReactNode
+}> = ({ checked, onChange, children }) => (
+  <label
+    className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+    style={{ color: 'var(--text2)' }}
+  >
+    <Checkbox checked={checked} onCheckedChange={(c: boolean) => onChange(Boolean(c))} />
+    {children}
+  </label>
+)
+
+const filterRowLabelClass = 'text-[10px] font-semibold tracking-wide w-16 flex-shrink-0'
+
 export const QuestEfficiencyList: React.FC = () => {
   const { t } = useTranslation('quests')
   const drops = useDrops()
@@ -65,6 +95,10 @@ export const QuestEfficiencyList: React.FC = () => {
     'quests/efficiency/denominator',
     'ap',
   )
+  const [includeQp, setIncludeQp] = useLocalStorage<boolean>('quests/efficiency/includeQp', false)
+  const [includeBond, setIncludeBond] = useLocalStorage<boolean>('quests/efficiency/includeBond', false)
+  const [includeExp, setIncludeExp] = useLocalStorage<boolean>('quests/efficiency/includeExp', false)
+  const [showLowKanni, setShowLowKanni] = useLocalStorage<boolean>('quests/efficiency/showLowKanni', false)
 
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -81,6 +115,9 @@ export const QuestEfficiencyList: React.FC = () => {
       includeSkillStones,
       surplusThreshold: threshold,
       denominator,
+      includeQp,
+      includeBond,
+      includeExp,
     })
     const questById = new Map(dropQuests.map(q => [q.id, q]))
     return effList
@@ -94,8 +131,10 @@ export const QuestEfficiencyList: React.FC = () => {
         return { ...e, quest, effAp }
       })
       .filter(r => r.quest)
+      // 冠位研鑽戦の VI以下 は既定で隠す(showLowKanni で表示)。
+      .filter(r => showLowKanni || !isLowKanni(r.quest.area, r.quest.name))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator])
+  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator, includeQp, includeBond, includeExp, showLowKanni])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -132,6 +171,14 @@ export const QuestEfficiencyList: React.FC = () => {
 
   if (isLoading) return null
 
+  const activeFilterCount =
+    (shortageOnly ? 0 : 1) +
+    (includeSkillStones ? 0 : 1) +
+    (includeQp ? 1 : 0) +
+    (includeBond ? 1 : 0) +
+    (includeExp ? 1 : 0) +
+    (showLowKanni ? 1 : 0)
+
   return (
     <div className="flex flex-col gap-4">
       {/* コントロール行 */}
@@ -151,24 +198,7 @@ export const QuestEfficiencyList: React.FC = () => {
           />
         </div>
 
-        <ToggleGroup
-          value={[includeSkillStones ? 'incl' : 'excl']}
-          onValueChange={(values: string[]) => {
-            if (values[0]) setIncludeSkillStones(values[0] === 'incl')
-          }}
-          size="sm"
-          spacing={0}
-          aria-label={t('石含む')}
-          className={toggleGroupClass}
-        >
-          <ToggleGroupItem value="incl" className={toggleItemClass}>
-            {t('石含む')}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="excl" className={toggleItemClass}>
-            {t('石除く')}
-          </ToggleGroupItem>
-        </ToggleGroup>
-
+        {/* 分母(AP効率/周回効率)はメイン行に常設 */}
         <ToggleGroup
           value={[denominator]}
           onValueChange={(values: string[]) => {
@@ -188,23 +218,94 @@ export const QuestEfficiencyList: React.FC = () => {
           </ToggleGroupItem>
         </ToggleGroup>
 
-        <ToggleGroup
-          value={[shortageOnly ? 'shortage' : 'all']}
-          onValueChange={(values: string[]) => {
-            if (values[0]) setShortageOnly(values[0] === 'shortage')
-          }}
-          size="sm"
-          spacing={0}
-          aria-label={t('不足のみ')}
-          className={toggleGroupClass}
-        >
-          <ToggleGroupItem value="shortage" className={toggleItemClass}>
-            {t('不足のみ')}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="all" className={toggleItemClass}>
-            {t('全部')}
-          </ToggleGroupItem>
-        </ToggleGroup>
+        {/* フィルター(ポップオーバー) */}
+        <Popover>
+          <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+            <SlidersHorizontal size={14} className="mr-1.5" />
+            {t('フィルター')}
+            {activeFilterCount > 0 && (
+              <span
+                className="ml-1.5 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full text-[10px] font-bold text-white"
+                style={{ background: 'var(--gold)' }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72 gap-3">
+            <div className="flex items-center gap-2">
+              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
+                {t('素材対象')}
+              </span>
+              <ToggleGroup
+                value={[shortageOnly ? 'shortage' : 'all']}
+                onValueChange={(values: string[]) => {
+                  if (values[0]) setShortageOnly(values[0] === 'shortage')
+                }}
+                size="sm"
+                spacing={0}
+                className={toggleGroupClass}
+              >
+                <ToggleGroupItem value="shortage" className={toggleItemClass}>
+                  {t('不足のみ')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="all" className={toggleItemClass}>
+                  {t('全部')}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
+                {t('スキル石')}
+              </span>
+              <ToggleGroup
+                value={[includeSkillStones ? 'incl' : 'excl']}
+                onValueChange={(values: string[]) => {
+                  if (values[0]) setIncludeSkillStones(values[0] === 'incl')
+                }}
+                size="sm"
+                spacing={0}
+                className={toggleGroupClass}
+              >
+                <ToggleGroupItem value="incl" className={toggleItemClass}>
+                  {t('含む')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="excl" className={toggleItemClass}>
+                  {t('除く')}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
+                {t('報酬加算')}
+              </span>
+              <CheckLabel checked={includeQp} onChange={setIncludeQp}>
+                QP
+              </CheckLabel>
+              <CheckLabel checked={includeBond} onChange={setIncludeBond}>
+                {t('絆')}
+              </CheckLabel>
+              <CheckLabel checked={includeExp} onChange={setIncludeExp}>
+                EXP
+              </CheckLabel>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
+                {t('表示')}
+              </span>
+              <CheckLabel checked={showLowKanni} onChange={setShowLowKanni}>
+                {t('冠位研鑽戦VI以下を表示')}
+              </CheckLabel>
+            </div>
+
+            <p className="text-[10px] leading-relaxed pt-1" style={{ color: 'var(--text3)' }}>
+              {t('効率ポイントとは')}
+            </p>
+          </PopoverContent>
+        </Popover>
 
         <Tooltip>
           <TooltipTrigger className="flex-shrink-0 cursor-default" style={{ color: 'var(--text3)' }}>

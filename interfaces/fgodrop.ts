@@ -18,6 +18,12 @@ export type Quest = {
   waves?: Wave[]
   /** クリアに要する wave 数(=ターン数)。周回効率(ターン割り)の分母に使う。 */
   waveCount?: number
+  /** クエスト報酬。効率ポイントへの任意加算(トグルON時)に使う。元 CSV の列から抽出。 */
+  qp?: number
+  /** 基本絆ポイント。 */
+  bondPoints?: number
+  /** マスターEXP。 */
+  exp?: number
 }
 export type DropRate = {
   item_id: string

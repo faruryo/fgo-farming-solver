@@ -769,7 +769,10 @@
       "id": "020",
       "section": "Daily",
       "aaQuestId": 94066101,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（月）",
@@ -778,7 +781,10 @@
       "id": "021",
       "section": "Daily",
       "aaQuestId": 94006808,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（月）",
@@ -787,21 +793,30 @@
       "id": "022",
       "section": "Daily",
       "aaQuestId": 94006807,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（月）",
       "ap": 20,
       "name": "弓中級",
       "id": "023",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（月）",
       "ap": 10,
       "name": "弓初級",
       "id": "024",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "修練場（火）",
@@ -810,7 +825,10 @@
       "id": "050",
       "section": "Daily",
       "aaQuestId": 94066102,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（火）",
@@ -819,7 +837,10 @@
       "id": "051",
       "section": "Daily",
       "aaQuestId": 94006812,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（火）",
@@ -828,21 +849,30 @@
       "id": "052",
       "section": "Daily",
       "aaQuestId": 94006811,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（火）",
       "ap": 20,
       "name": "槍中級",
       "id": "053",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（火）",
       "ap": 10,
       "name": "槍初級",
       "id": "054",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "修練場（水）",
@@ -851,7 +881,10 @@
       "id": "040",
       "section": "Daily",
       "aaQuestId": 94066103,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（水）",
@@ -860,7 +893,10 @@
       "id": "041",
       "section": "Daily",
       "aaQuestId": 94004316,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（水）",
@@ -869,21 +905,30 @@
       "id": "042",
       "section": "Daily",
       "aaQuestId": 94004315,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（水）",
       "ap": 20,
       "name": "狂中級",
       "id": "043",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（水）",
       "ap": 10,
       "name": "狂初級",
       "id": "044",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "修練場（木）",
@@ -892,7 +937,10 @@
       "id": "030",
       "section": "Daily",
       "aaQuestId": 94066104,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（木）",
@@ -901,7 +949,10 @@
       "id": "031",
       "section": "Daily",
       "aaQuestId": 94006820,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（木）",
@@ -910,21 +961,30 @@
       "id": "032",
       "section": "Daily",
       "aaQuestId": 94006819,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（木）",
       "ap": 20,
       "name": "騎中級",
       "id": "033",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（木）",
       "ap": 10,
       "name": "騎初級",
       "id": "034",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "修練場（金）",
@@ -933,7 +993,10 @@
       "id": "060",
       "section": "Daily",
       "aaQuestId": 94066105,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（金）",
@@ -942,7 +1005,10 @@
       "id": "061",
       "section": "Daily",
       "aaQuestId": 94006824,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（金）",
@@ -951,21 +1017,30 @@
       "id": "062",
       "section": "Daily",
       "aaQuestId": 94006823,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（金）",
       "ap": 20,
       "name": "術中級",
       "id": "063",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（金）",
       "ap": 10,
       "name": "術初級",
       "id": "064",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "修練場（土）",
@@ -974,7 +1049,10 @@
       "id": "000",
       "section": "Daily",
       "aaQuestId": 94066106,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（土）",
@@ -983,7 +1061,10 @@
       "id": "001",
       "section": "Daily",
       "aaQuestId": 94006828,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（土）",
@@ -992,21 +1073,30 @@
       "id": "002",
       "section": "Daily",
       "aaQuestId": 94006827,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（土）",
       "ap": 20,
       "name": "殺中級",
       "id": "003",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（土）",
       "ap": 10,
       "name": "殺初級",
       "id": "004",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "修練場（日）",
@@ -1015,7 +1105,10 @@
       "id": "010",
       "section": "Daily",
       "aaQuestId": 94066107,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8400,
+      "bondPoints": 815,
+      "exp": 29690
     },
     {
       "area": "修練場（日）",
@@ -1024,7 +1117,10 @@
       "id": "011",
       "section": "Daily",
       "aaQuestId": 94006804,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 6400,
+      "bondPoints": 615,
+      "exp": 15690
     },
     {
       "area": "修練場（日）",
@@ -1033,28 +1129,40 @@
       "id": "012",
       "section": "Daily",
       "aaQuestId": 94006803,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4400,
+      "bondPoints": 415,
+      "exp": 5690
     },
     {
       "area": "修練場（日）",
       "ap": 20,
       "name": "剣中級",
       "id": "013",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 2900,
+      "bondPoints": 265,
+      "exp": 1385
     },
     {
       "area": "修練場（日）",
       "ap": 10,
       "name": "剣初級",
       "id": "014",
-      "section": "Daily"
+      "section": "Daily",
+      "qp": 1400,
+      "bondPoints": 115,
+      "exp": 275
     },
     {
       "area": "冬木",
       "ap": 15,
       "name": "X-G（燃え盛る森）",
       "id": "1o3",
-      "section": "Free"
+      "section": "Free",
+      "qp": 5720,
+      "bondPoints": 415,
+      "exp": 4552
     },
     {
       "area": "セプテム",
@@ -1063,7 +1171,10 @@
       "id": "1e5",
       "section": "Free",
       "aaQuestId": 91201501,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 5720,
+      "bondPoints": 415,
+      "exp": 4552
     },
     {
       "area": "オケアノス",
@@ -1072,7 +1183,10 @@
       "id": "160",
       "section": "Free",
       "aaQuestId": 1000301,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 4160,
+      "bondPoints": 295,
+      "exp": 1288
     },
     {
       "area": "オケアノス",
@@ -1081,7 +1195,10 @@
       "id": "166",
       "section": "Free",
       "aaQuestId": 1000306,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 5460,
+      "bondPoints": 395,
+      "exp": 3928
     },
     {
       "area": "オケアノス",
@@ -1090,14 +1207,20 @@
       "id": "168",
       "section": "Free",
       "aaQuestId": 1000309,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 5720,
+      "bondPoints": 415,
+      "exp": 4552
     },
     {
       "area": "オケアノス",
       "ap": 16,
       "name": "群島（隠された島）",
       "id": "16a",
-      "section": "Free"
+      "section": "Free",
+      "qp": 6500,
+      "bondPoints": 475,
+      "exp": 6616
     },
     {
       "area": "ロンドン",
@@ -1106,7 +1229,10 @@
       "id": "1l0",
       "section": "Free",
       "aaQuestId": 1000401,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 5980,
+      "bondPoints": 435,
+      "exp": 5208
     },
     {
       "area": "ロンドン",
@@ -1115,7 +1241,10 @@
       "id": "1l2",
       "section": "Free",
       "aaQuestId": 1000403,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 5980,
+      "bondPoints": 435,
+      "exp": 5208
     },
     {
       "area": "ロンドン",
@@ -1124,7 +1253,10 @@
       "id": "1l7",
       "section": "Free",
       "aaQuestId": 91601803,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 8840,
+      "bondPoints": 655,
+      "exp": 14536
     },
     {
       "area": "ロンドン",
@@ -1133,7 +1265,10 @@
       "id": "1l8",
       "section": "Free",
       "aaQuestId": 91100901,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9360,
+      "bondPoints": 695,
+      "exp": 16648
     },
     {
       "area": "北米",
@@ -1142,7 +1277,10 @@
       "id": "1p3",
       "section": "Free",
       "aaQuestId": 1000506,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 7540,
+      "bondPoints": 555,
+      "exp": 9816
     },
     {
       "area": "北米",
@@ -1151,7 +1289,10 @@
       "id": "1p4",
       "section": "Free",
       "aaQuestId": 1000508,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 7540,
+      "bondPoints": 555,
+      "exp": 9816
     },
     {
       "area": "北米",
@@ -1160,7 +1301,10 @@
       "id": "1p7",
       "section": "Free",
       "aaQuestId": 1000517,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8060,
+      "bondPoints": 595,
+      "exp": 11608
     },
     {
       "area": "北米",
@@ -1169,7 +1313,10 @@
       "id": "1p8",
       "section": "Free",
       "aaQuestId": 1000507,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 8320,
+      "bondPoints": 615,
+      "exp": 12552
     },
     {
       "area": "北米",
@@ -1178,7 +1325,10 @@
       "id": "1p9",
       "section": "Free",
       "aaQuestId": 1000509,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 8320,
+      "bondPoints": 615,
+      "exp": 12552
     },
     {
       "area": "北米",
@@ -1187,7 +1337,10 @@
       "id": "1pa",
       "section": "Free",
       "aaQuestId": 1000514,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8320,
+      "bondPoints": 615,
+      "exp": 12552
     },
     {
       "area": "北米",
@@ -1196,7 +1349,10 @@
       "id": "1pb",
       "section": "Free",
       "aaQuestId": 1000520,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9620,
+      "bondPoints": 715,
+      "exp": 17752
     },
     {
       "area": "北米",
@@ -1205,7 +1361,10 @@
       "id": "1pd",
       "section": "Free",
       "aaQuestId": 93000504,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "キャメロット",
@@ -1214,7 +1373,10 @@
       "id": "1a0",
       "section": "Free",
       "aaQuestId": 1000601,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8580,
+      "bondPoints": 635,
+      "exp": 13528
     },
     {
       "area": "キャメロット",
@@ -1223,7 +1385,10 @@
       "id": "1a2",
       "section": "Free",
       "aaQuestId": 1000606,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 8840,
+      "bondPoints": 655,
+      "exp": 14536
     },
     {
       "area": "キャメロット",
@@ -1232,7 +1397,10 @@
       "id": "1a5",
       "section": "Free",
       "aaQuestId": 1000618,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9100,
+      "bondPoints": 675,
+      "exp": 15576
     },
     {
       "area": "キャメロット",
@@ -1241,7 +1409,10 @@
       "id": "1a6",
       "section": "Free",
       "aaQuestId": 93000607,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9100,
+      "bondPoints": 675,
+      "exp": 15576
     },
     {
       "area": "キャメロット",
@@ -1250,7 +1421,10 @@
       "id": "1a8",
       "section": "Free",
       "aaQuestId": 1000607,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 9620,
+      "bondPoints": 715,
+      "exp": 17752
     },
     {
       "area": "キャメロット",
@@ -1259,7 +1433,10 @@
       "id": "1a9",
       "section": "Free",
       "aaQuestId": 1000629,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 9620,
+      "bondPoints": 715,
+      "exp": 17752
     },
     {
       "area": "キャメロット",
@@ -1268,7 +1445,10 @@
       "id": "1aa",
       "section": "Free",
       "aaQuestId": 1000625,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "キャメロット",
@@ -1277,7 +1457,10 @@
       "id": "1ab",
       "section": "Free",
       "aaQuestId": 1000631,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "キャメロット",
@@ -1286,7 +1469,10 @@
       "id": "1ac",
       "section": "Free",
       "aaQuestId": 93000614,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "キャメロット",
@@ -1295,7 +1481,10 @@
       "id": "1ad",
       "section": "Free",
       "aaQuestId": 1000604,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "バビロニア",
@@ -1304,7 +1493,10 @@
       "id": "1h0",
       "section": "Free",
       "aaQuestId": 1000701,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "バビロニア",
@@ -1313,7 +1505,10 @@
       "id": "1h1",
       "section": "Free",
       "aaQuestId": 1000702,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "バビロニア",
@@ -1322,7 +1517,10 @@
       "id": "1h3",
       "section": "Free",
       "aaQuestId": 93000704,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "バビロニア",
@@ -1330,7 +1528,10 @@
       "name": "ウル",
       "id": "1h5",
       "section": "Free",
-      "aaQuestId": 1000708
+      "aaQuestId": 1000708,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "バビロニア",
@@ -1339,7 +1540,10 @@
       "id": "1h6",
       "section": "Free",
       "aaQuestId": 1000713,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "バビロニア",
@@ -1348,7 +1552,10 @@
       "id": "1h7",
       "section": "Free",
       "aaQuestId": 1000718,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "バビロニア",
@@ -1357,7 +1564,10 @@
       "id": "1h8",
       "section": "Free",
       "aaQuestId": 93000709,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "バビロニア",
@@ -1366,7 +1576,10 @@
       "id": "1h9",
       "section": "Free",
       "aaQuestId": 1000714,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "バビロニア",
@@ -1374,7 +1587,10 @@
       "name": "北壁",
       "id": "1ha",
       "section": "Free",
-      "aaQuestId": 1000708
+      "aaQuestId": 1000708,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "バビロニア",
@@ -1383,7 +1599,10 @@
       "id": "1hb",
       "section": "Free",
       "aaQuestId": 93000712,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "バビロニア",
@@ -1392,7 +1611,10 @@
       "id": "1hc",
       "section": "Free",
       "aaQuestId": 91700602,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "バビロニア",
@@ -1401,14 +1623,20 @@
       "id": "1hd",
       "section": "Free",
       "aaQuestId": 1000716,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "新宿",
       "ap": 20,
       "name": "代々木二丁目",
       "id": "1r0",
-      "section": "Free"
+      "section": "Free",
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "新宿",
@@ -1417,7 +1645,10 @@
       "id": "1r1",
       "section": "Free",
       "aaQuestId": 2000103,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "新宿",
@@ -1426,7 +1657,10 @@
       "id": "1r2",
       "section": "Free",
       "aaQuestId": 93020103,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "新宿",
@@ -1435,7 +1669,10 @@
       "id": "1r3",
       "section": "Free",
       "aaQuestId": 2000105,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "新宿",
@@ -1444,7 +1681,10 @@
       "id": "1r5",
       "section": "Free",
       "aaQuestId": 2000110,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "新宿",
@@ -1453,7 +1693,10 @@
       "id": "1r7",
       "section": "Free",
       "aaQuestId": 2000117,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "新宿",
@@ -1462,7 +1705,10 @@
       "id": "1r8",
       "section": "Free",
       "aaQuestId": 93020109,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "新宿",
@@ -1471,7 +1717,10 @@
       "id": "1r9",
       "section": "Free",
       "aaQuestId": 93020110,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アガルタ",
@@ -1480,7 +1729,10 @@
       "id": "101",
       "section": "Free",
       "aaQuestId": 2000202,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "アガルタ",
@@ -1489,7 +1741,10 @@
       "id": "103",
       "section": "Free",
       "aaQuestId": 2000204,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アガルタ",
@@ -1497,7 +1752,10 @@
       "name": "北の断崖",
       "id": "105",
       "section": "Free",
-      "aaQuestId": 2000207
+      "aaQuestId": 2000207,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アガルタ",
@@ -1505,7 +1763,10 @@
       "name": "不夜城",
       "id": "106",
       "section": "Free",
-      "aaQuestId": 2000207
+      "aaQuestId": 2000207,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アガルタ",
@@ -1514,7 +1775,10 @@
       "id": "107",
       "section": "Free",
       "aaQuestId": 2000210,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アガルタ",
@@ -1522,7 +1786,10 @@
       "name": "竜宮城",
       "id": "108",
       "section": "Free",
-      "aaQuestId": 2000212
+      "aaQuestId": 2000212,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アガルタ",
@@ -1531,7 +1798,10 @@
       "id": "109",
       "section": "Free",
       "aaQuestId": 93020209,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アガルタ",
@@ -1539,7 +1809,10 @@
       "name": "エルドラド",
       "id": "10a",
       "section": "Free",
-      "aaQuestId": 2000213
+      "aaQuestId": 2000213,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アガルタ",
@@ -1548,7 +1821,10 @@
       "id": "10b",
       "section": "Free",
       "aaQuestId": 93020212,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "下総国",
@@ -1556,7 +1832,10 @@
       "name": "田んぼ",
       "id": "1m0",
       "section": "Free",
-      "aaQuestId": 2000300
+      "aaQuestId": 2000300,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "下総国",
@@ -1564,7 +1843,10 @@
       "name": "庵",
       "id": "1m2",
       "section": "Free",
-      "aaQuestId": 2000304
+      "aaQuestId": 2000304,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "下総国",
@@ -1573,7 +1855,10 @@
       "id": "1m3",
       "section": "Free",
       "aaQuestId": 2000305,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "下総国",
@@ -1582,14 +1867,20 @@
       "id": "1m5",
       "section": "Free",
       "aaQuestId": 2000308,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "下総国",
       "ap": 21,
       "name": "裏山（名もなき霊峰）",
       "id": "1m6",
-      "section": "Free"
+      "section": "Free",
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "下総国",
@@ -1598,14 +1889,20 @@
       "id": "1m7",
       "section": "Free",
       "aaQuestId": 93020308,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "下総国",
       "ap": 21,
       "name": "裏山（戦戦恐恐）",
       "id": "1m8",
-      "section": "Free"
+      "section": "Free",
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "セイレム",
@@ -1614,7 +1911,10 @@
       "id": "1d0",
       "section": "Free",
       "aaQuestId": 2000401,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "セイレム",
@@ -1622,7 +1922,10 @@
       "name": "カーター家",
       "id": "1d1",
       "section": "Free",
-      "aaQuestId": 2000402
+      "aaQuestId": 2000402,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "セイレム",
@@ -1630,7 +1933,10 @@
       "name": "公会堂",
       "id": "1d2",
       "section": "Free",
-      "aaQuestId": 2000403
+      "aaQuestId": 2000403,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "セイレム",
@@ -1639,7 +1945,10 @@
       "id": "1d3",
       "section": "Free",
       "aaQuestId": 93020404,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "セイレム",
@@ -1648,7 +1957,10 @@
       "id": "1d4",
       "section": "Free",
       "aaQuestId": 93020406,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "セイレム",
@@ -1657,7 +1969,10 @@
       "id": "1d5",
       "section": "Free",
       "aaQuestId": 93020405,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "セイレム",
@@ -1666,7 +1981,10 @@
       "id": "1d6",
       "section": "Free",
       "aaQuestId": 93020408,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "セイレム",
@@ -1674,7 +1992,10 @@
       "name": "牧草地",
       "id": "1d7",
       "section": "Free",
-      "aaQuestId": 2000409
+      "aaQuestId": 2000409,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "セイレム",
@@ -1682,7 +2003,10 @@
       "name": "空き家",
       "id": "1d8",
       "section": "Free",
-      "aaQuestId": 2000406
+      "aaQuestId": 2000406,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "セイレム",
@@ -1690,7 +2014,10 @@
       "name": "隠れ家",
       "id": "1d9",
       "section": "Free",
-      "aaQuestId": 2000405
+      "aaQuestId": 2000405,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "セイレム",
@@ -1699,7 +2026,10 @@
       "id": "1da",
       "section": "Free",
       "aaQuestId": 93020411,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アナスタシア",
@@ -1707,7 +2037,10 @@
       "name": "アンカーポイント",
       "id": "120",
       "section": "Free",
-      "aaQuestId": 3000102
+      "aaQuestId": 3000102,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "アナスタシア",
@@ -1715,7 +2048,10 @@
       "name": "ヤガ・スモレンスク",
       "id": "121",
       "section": "Free",
-      "aaQuestId": 3000103
+      "aaQuestId": 3000103,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "アナスタシア",
@@ -1723,7 +2059,10 @@
       "name": "叛逆軍の砦",
       "id": "123",
       "section": "Free",
-      "aaQuestId": 3000106
+      "aaQuestId": 3000106,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アナスタシア",
@@ -1732,7 +2071,10 @@
       "id": "124",
       "section": "Free",
       "aaQuestId": 93030205,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アナスタシア",
@@ -1741,7 +2083,10 @@
       "id": "125",
       "section": "Free",
       "aaQuestId": 93030206,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アナスタシア",
@@ -1750,7 +2095,10 @@
       "id": "126",
       "section": "Free",
       "aaQuestId": 93030207,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アナスタシア",
@@ -1758,7 +2106,10 @@
       "name": "ヤガ・ジェメンスク",
       "id": "127",
       "section": "Free",
-      "aaQuestId": 3000112
+      "aaQuestId": 3000112,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アナスタシア",
@@ -1767,7 +2118,10 @@
       "id": "129",
       "section": "Free",
       "aaQuestId": 93030210,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アナスタシア",
@@ -1776,7 +2130,10 @@
       "id": "12a",
       "section": "Free",
       "aaQuestId": 3000124,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アナスタシア",
@@ -1785,7 +2142,10 @@
       "id": "12d",
       "section": "Free",
       "aaQuestId": 93030214,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ゲッテルデメルング",
@@ -1794,7 +2154,10 @@
       "id": "1b2",
       "section": "Free",
       "aaQuestId": 93030303,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "ゲッテルデメルング",
@@ -1802,7 +2165,10 @@
       "name": "英雄の穴倉",
       "id": "1b4",
       "section": "Free",
-      "aaQuestId": 3000213
+      "aaQuestId": 3000213,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "ゲッテルデメルング",
@@ -1811,7 +2177,10 @@
       "id": "1b5",
       "section": "Free",
       "aaQuestId": 3000206,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "ゲッテルデメルング",
@@ -1820,7 +2189,10 @@
       "id": "1b6",
       "section": "Free",
       "aaQuestId": 93030307,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "ゲッテルデメルング",
@@ -1829,7 +2201,10 @@
       "id": "1b7",
       "section": "Free",
       "aaQuestId": 93030308,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "ゲッテルデメルング",
@@ -1838,7 +2213,10 @@
       "id": "1b8",
       "section": "Free",
       "aaQuestId": 93030309,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "ゲッテルデメルング",
@@ -1847,7 +2225,10 @@
       "id": "1b9",
       "section": "Free",
       "aaQuestId": 93030310,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ゲッテルデメルング",
@@ -1856,7 +2237,10 @@
       "id": "1ba",
       "section": "Free",
       "aaQuestId": 93030311,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "シン",
@@ -1865,7 +2249,10 @@
       "id": "1c0",
       "section": "Free",
       "aaQuestId": 3000305,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "シン",
@@ -1874,7 +2261,10 @@
       "id": "1c2",
       "section": "Free",
       "aaQuestId": 93030403,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "シン",
@@ -1883,7 +2273,10 @@
       "id": "1c4",
       "section": "Free",
       "aaQuestId": 3000314,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "シン",
@@ -1892,7 +2285,10 @@
       "id": "1c6",
       "section": "Free",
       "aaQuestId": 3000315,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "シン",
@@ -1901,7 +2297,10 @@
       "id": "1c7",
       "section": "Free",
       "aaQuestId": 3000317,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "シン",
@@ -1910,7 +2309,10 @@
       "id": "1c8",
       "section": "Free",
       "aaQuestId": 93030409,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "シン",
@@ -1919,7 +2321,10 @@
       "id": "1ca",
       "section": "Free",
       "aaQuestId": 93030411,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1928,7 +2333,10 @@
       "id": "1k0",
       "section": "Free",
       "aaQuestId": 3000403,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 9880,
+      "bondPoints": 735,
+      "exp": 18888
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1937,7 +2345,10 @@
       "id": "1k2",
       "section": "Free",
       "aaQuestId": 93030503,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1945,7 +2356,10 @@
       "name": "西の断層",
       "id": "1k4",
       "section": "Free",
-      "aaQuestId": 3000408
+      "aaQuestId": 3000408,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1954,7 +2368,10 @@
       "id": "1k5",
       "section": "Free",
       "aaQuestId": 93030506,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1963,7 +2380,10 @@
       "id": "1k6",
       "section": "Free",
       "aaQuestId": 3000419,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 795,
+      "exp": 21256
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1972,7 +2392,10 @@
       "id": "1k8",
       "section": "Free",
       "aaQuestId": 93030509,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ユガ・クシェートラ",
@@ -1981,7 +2404,10 @@
       "id": "1k9",
       "section": "Free",
       "aaQuestId": 93030510,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アトランティス",
@@ -1990,7 +2416,10 @@
       "id": "110",
       "section": "Free",
       "aaQuestId": 3000505,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アトランティス",
@@ -1999,7 +2428,10 @@
       "id": "111",
       "section": "Free",
       "aaQuestId": 3000506,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アトランティス",
@@ -2007,7 +2439,10 @@
       "name": "ヘカテ島",
       "id": "112",
       "section": "Free",
-      "aaQuestId": 3000513
+      "aaQuestId": 3000513,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アトランティス",
@@ -2016,7 +2451,10 @@
       "id": "113",
       "section": "Free",
       "aaQuestId": 3000515,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アトランティス",
@@ -2025,7 +2463,10 @@
       "id": "114",
       "section": "Free",
       "aaQuestId": 3000516,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アトランティス",
@@ -2034,7 +2475,10 @@
       "id": "115",
       "section": "Free",
       "aaQuestId": 93030606,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アトランティス",
@@ -2043,7 +2487,10 @@
       "id": "118",
       "section": "Free",
       "aaQuestId": 93030609,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "オリュンポス",
@@ -2051,7 +2498,10 @@
       "name": "グライディングポイント",
       "id": "170",
       "section": "Free",
-      "aaQuestId": 3000601
+      "aaQuestId": 3000601,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "オリュンポス",
@@ -2060,7 +2510,10 @@
       "id": "171",
       "section": "Free",
       "aaQuestId": 3000603,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "オリュンポス",
@@ -2069,7 +2522,10 @@
       "id": "172",
       "section": "Free",
       "aaQuestId": 3000607,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "オリュンポス",
@@ -2078,7 +2534,10 @@
       "id": "173",
       "section": "Free",
       "aaQuestId": 3000612,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "オリュンポス",
@@ -2086,7 +2545,10 @@
       "name": "大工房",
       "id": "174",
       "section": "Free",
-      "aaQuestId": 3000617
+      "aaQuestId": 3000617,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "オリュンポス",
@@ -2094,7 +2556,10 @@
       "name": "破神同盟基地",
       "id": "175",
       "section": "Free",
-      "aaQuestId": 3000604
+      "aaQuestId": 3000604,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "オリュンポス",
@@ -2102,7 +2567,10 @@
       "name": "祭壇街",
       "id": "176",
       "section": "Free",
-      "aaQuestId": 3000620
+      "aaQuestId": 3000620,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "オリュンポス",
@@ -2111,7 +2579,10 @@
       "id": "17a",
       "section": "Free",
       "aaQuestId": 93030711,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "平安京",
@@ -2120,7 +2591,10 @@
       "id": "1q0",
       "section": "Free",
       "aaQuestId": 93030801,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "平安京",
@@ -2129,7 +2603,10 @@
       "id": "1q1",
       "section": "Free",
       "aaQuestId": 3000702,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652
     },
     {
       "area": "平安京",
@@ -2137,7 +2614,10 @@
       "name": "六条大路",
       "id": "1q2",
       "section": "Free",
-      "aaQuestId": 3000703
+      "aaQuestId": 3000703,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652
     },
     {
       "area": "平安京",
@@ -2146,7 +2626,10 @@
       "id": "1q3",
       "section": "Free",
       "aaQuestId": 3000704,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "平安京",
@@ -2155,7 +2638,10 @@
       "id": "1q4",
       "section": "Free",
       "aaQuestId": 3000715,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "平安京",
@@ -2164,7 +2650,10 @@
       "id": "1q5",
       "section": "Free",
       "aaQuestId": 93030806,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868
     },
     {
       "area": "平安京",
@@ -2173,7 +2662,10 @@
       "id": "1q7",
       "section": "Free",
       "aaQuestId": 93030808,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "平安京",
@@ -2181,7 +2673,10 @@
       "name": "頼光の屋敷",
       "id": "1q9",
       "section": "Free",
-      "aaQuestId": 3000707
+      "aaQuestId": 3000707,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116
     },
     {
       "area": "平安京",
@@ -2190,7 +2685,10 @@
       "id": "1qa",
       "section": "Free",
       "aaQuestId": 3000712,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116
     },
     {
       "area": "平安京",
@@ -2198,7 +2696,10 @@
       "name": "大江山",
       "id": "1qb",
       "section": "Free",
-      "aaQuestId": 3000713
+      "aaQuestId": 3000713,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "平安京",
@@ -2207,7 +2708,10 @@
       "id": "1qc",
       "section": "Free",
       "aaQuestId": 93030813,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アヴァロン",
@@ -2216,7 +2720,10 @@
       "id": "130",
       "section": "Free",
       "aaQuestId": 93031000,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アヴァロン",
@@ -2224,7 +2731,10 @@
       "name": "ソールズベリー",
       "id": "132",
       "section": "Free",
-      "aaQuestId": 3000803
+      "aaQuestId": 3000803,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "アヴァロン",
@@ -2233,7 +2743,10 @@
       "id": "133",
       "section": "Free",
       "aaQuestId": 3000806,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アヴァロン",
@@ -2242,7 +2755,10 @@
       "id": "134",
       "section": "Free",
       "aaQuestId": 93031004,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アヴァロン",
@@ -2250,7 +2766,10 @@
       "name": "ノリッジ",
       "id": "135",
       "section": "Free",
-      "aaQuestId": 3000901
+      "aaQuestId": 3000901,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アヴァロン",
@@ -2259,7 +2778,10 @@
       "id": "137",
       "section": "Free",
       "aaQuestId": 3000902,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アヴァロン",
@@ -2268,7 +2790,10 @@
       "id": "138",
       "section": "Free",
       "aaQuestId": 3000911,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アヴァロン",
@@ -2276,7 +2801,10 @@
       "name": "ニュー・ダーリントン",
       "id": "13a",
       "section": "Free",
-      "aaQuestId": 3000917
+      "aaQuestId": 3000917,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "アヴァロン",
@@ -2285,7 +2813,10 @@
       "id": "13b",
       "section": "Free",
       "aaQuestId": 3000913,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アヴァロン",
@@ -2293,7 +2824,10 @@
       "name": "オークニー",
       "id": "13d",
       "section": "Free",
-      "aaQuestId": 3000915
+      "aaQuestId": 3000915,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アヴァロン",
@@ -2301,7 +2835,10 @@
       "name": "オックスフォード",
       "id": "13e",
       "section": "Free",
-      "aaQuestId": 3000918
+      "aaQuestId": 3000918,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "アヴァロン",
@@ -2310,7 +2847,10 @@
       "id": "13f",
       "section": "Free",
       "aaQuestId": 93031015,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "トラオム",
@@ -2319,7 +2859,10 @@
       "id": "1f0",
       "section": "Free",
       "aaQuestId": 3001202,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "トラオム",
@@ -2328,7 +2871,10 @@
       "id": "1f2",
       "section": "Free",
       "aaQuestId": 93031203,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "トラオム",
@@ -2337,7 +2883,10 @@
       "id": "1f3",
       "section": "Free",
       "aaQuestId": 93031204,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "トラオム",
@@ -2346,7 +2895,10 @@
       "id": "1f4",
       "section": "Free",
       "aaQuestId": 93031205,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "トラオム",
@@ -2355,7 +2907,10 @@
       "id": "1f6",
       "section": "Free",
       "aaQuestId": 93031207,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "トラオム",
@@ -2364,7 +2919,10 @@
       "id": "1f7",
       "section": "Free",
       "aaQuestId": 3001213,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "トラオム",
@@ -2373,7 +2931,10 @@
       "id": "1f9",
       "section": "Free",
       "aaQuestId": 3001215,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "トラオム",
@@ -2382,7 +2943,10 @@
       "id": "1fa",
       "section": "Free",
       "aaQuestId": 3001205,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "トラオム",
@@ -2391,7 +2955,10 @@
       "id": "1fb",
       "section": "Free",
       "aaQuestId": 93031212,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "トラオム",
@@ -2399,7 +2966,10 @@
       "name": "復讐界域拠点",
       "id": "1fc",
       "section": "Free",
-      "aaQuestId": 3001206
+      "aaQuestId": 3001206,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "トラオム",
@@ -2408,7 +2978,10 @@
       "id": "1fd",
       "section": "Free",
       "aaQuestId": 3001221,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "トラオム",
@@ -2417,7 +2990,10 @@
       "id": "1fe",
       "section": "Free",
       "aaQuestId": 93031215,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "トラオム",
@@ -2426,7 +3002,10 @@
       "id": "1ff",
       "section": "Free",
       "aaQuestId": 93031216,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "ミクトラン",
@@ -2435,14 +3014,20 @@
       "id": "1j0",
       "section": "Free",
       "aaQuestId": 93031301,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "ミクトラン",
       "ap": 21,
       "name": "賢者の隠れ家",
       "id": "1j1",
-      "section": "Free"
+      "section": "Free",
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "ミクトラン",
@@ -2451,7 +3036,10 @@
       "id": "1j2",
       "section": "Free",
       "aaQuestId": 3001306,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10140,
+      "bondPoints": 755,
+      "exp": 20056
     },
     {
       "area": "ミクトラン",
@@ -2460,7 +3048,10 @@
       "id": "1j3",
       "section": "Free",
       "aaQuestId": 3001303,
-      "waveCount": 2
+      "waveCount": 2,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "ミクトラン",
@@ -2469,7 +3060,10 @@
       "id": "1j4",
       "section": "Free",
       "aaQuestId": 3001308,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "ミクトラン",
@@ -2477,7 +3071,10 @@
       "name": "チチェン・イツァー",
       "id": "1j5",
       "section": "Free",
-      "aaQuestId": 3001305
+      "aaQuestId": 3001305,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "ミクトラン",
@@ -2486,7 +3083,10 @@
       "id": "1j6",
       "section": "Free",
       "aaQuestId": 3001307,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "ミクトラン",
@@ -2494,7 +3094,10 @@
       "name": "ヤヤウキ",
       "id": "1j9",
       "section": "Free",
-      "aaQuestId": 3001320
+      "aaQuestId": 3001320,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "ミクトラン",
@@ -2503,7 +3106,10 @@
       "id": "1ja",
       "section": "Free",
       "aaQuestId": 3001321,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "ミクトラン",
@@ -2512,7 +3118,10 @@
       "id": "1jb",
       "section": "Free",
       "aaQuestId": 93031310,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ミクトラン",
@@ -2521,7 +3130,10 @@
       "id": "1jc",
       "section": "Free",
       "aaQuestId": 3001315,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ミクトラン",
@@ -2530,7 +3142,10 @@
       "id": "1jd",
       "section": "Free",
       "aaQuestId": 3001316,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ミクトラン",
@@ -2538,7 +3153,10 @@
       "name": "焼きモロコシ畑",
       "id": "1je",
       "section": "Free",
-      "aaQuestId": 3001318
+      "aaQuestId": 3001318,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "ミクトラン",
@@ -2547,7 +3165,10 @@
       "id": "1jf",
       "section": "Free",
       "aaQuestId": 93031315,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11440,
+      "bondPoints": 855,
+      "exp": 26376
     },
     {
       "area": "オーディール・コール",
@@ -2556,7 +3177,10 @@
       "id": "190",
       "section": "Free",
       "aaQuestId": 93040101,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2565,7 +3189,10 @@
       "id": "191",
       "section": "Free",
       "aaQuestId": 93040102,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2574,7 +3201,10 @@
       "id": "192",
       "section": "Free",
       "aaQuestId": 93040103,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2583,7 +3213,10 @@
       "id": "193",
       "section": "Free",
       "aaQuestId": 94095301,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2592,7 +3225,10 @@
       "id": "195",
       "section": "Free",
       "aaQuestId": 93040105,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2601,7 +3237,10 @@
       "id": "196",
       "section": "Free",
       "aaQuestId": 94086601,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2610,7 +3249,10 @@
       "id": "197",
       "section": "Free",
       "aaQuestId": 94086602,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2619,7 +3261,10 @@
       "id": "198",
       "section": "Free",
       "aaQuestId": 94089601,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2628,7 +3273,10 @@
       "id": "199",
       "section": "Free",
       "aaQuestId": 94089602,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2637,7 +3285,10 @@
       "id": "19a",
       "section": "Free",
       "aaQuestId": 94090701,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 324870,
+      "bondPoints": 3164,
+      "exp": 131986
     },
     {
       "area": "オーディール・コール",
@@ -2646,7 +3297,10 @@
       "id": "19b",
       "section": "Free",
       "aaQuestId": 94090702,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2655,7 +3309,10 @@
       "id": "19c",
       "section": "Free",
       "aaQuestId": 94093201,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2664,7 +3321,10 @@
       "id": "19d",
       "section": "Free",
       "aaQuestId": 94093202,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 324870,
+      "bondPoints": 3164,
+      "exp": 131986
     },
     {
       "area": "オーディール・コール",
@@ -2673,7 +3333,10 @@
       "id": "19e",
       "section": "Free",
       "aaQuestId": 94095302,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2682,7 +3345,10 @@
       "id": "19f",
       "section": "Free",
       "aaQuestId": 94100501,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 389850,
+      "bondPoints": 3797,
+      "exp": 158384
     },
     {
       "area": "オーディール・コール",
@@ -2691,7 +3357,10 @@
       "id": "19g",
       "section": "Free",
       "aaQuestId": 94100502,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2700,7 +3369,10 @@
       "id": "19h",
       "section": "Free",
       "aaQuestId": 94137201,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 270720,
+      "bondPoints": 2636,
+      "exp": 109988
     },
     {
       "area": "オーディール・コール",
@@ -2709,7 +3381,10 @@
       "id": "19i",
       "section": "Free",
       "aaQuestId": 94137202,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 389850,
+      "bondPoints": 3797,
+      "exp": 158384
     },
     {
       "area": "ペーパームーン",
@@ -2718,7 +3393,10 @@
       "id": "1i0",
       "section": "Free",
       "aaQuestId": 93040201,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652
     },
     {
       "area": "ペーパームーン",
@@ -2726,7 +3404,10 @@
       "name": "生産部農地",
       "id": "1i3",
       "section": "Free",
-      "aaQuestId": 4000205
+      "aaQuestId": 4000205,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868
     },
     {
       "area": "ペーパームーン",
@@ -2735,7 +3416,10 @@
       "id": "1i4",
       "section": "Free",
       "aaQuestId": 93040205,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868
     },
     {
       "area": "ペーパームーン",
@@ -2744,7 +3428,10 @@
       "id": "1i6",
       "section": "Free",
       "aaQuestId": 4000210,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 11050,
+      "bondPoints": 825,
+      "exp": 24396
     },
     {
       "area": "ペーパームーン",
@@ -2753,7 +3440,10 @@
       "id": "1i7",
       "section": "Free",
       "aaQuestId": 93040210,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11050,
+      "bondPoints": 825,
+      "exp": 24396
     },
     {
       "area": "ペーパームーン",
@@ -2761,7 +3451,10 @@
       "name": "外周部",
       "id": "1i8",
       "section": "Free",
-      "aaQuestId": 4000209
+      "aaQuestId": 4000209,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116
     },
     {
       "area": "イド",
@@ -2770,7 +3463,10 @@
       "id": "150",
       "section": "Free",
       "aaQuestId": 93040301,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652
     },
     {
       "area": "イド",
@@ -2779,7 +3475,10 @@
       "id": "151",
       "section": "Free",
       "aaQuestId": 93040307,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "イド",
@@ -2788,7 +3487,10 @@
       "id": "152",
       "section": "Free",
       "aaQuestId": 93040309,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868
     },
     {
       "area": "イド",
@@ -2797,7 +3499,10 @@
       "id": "153",
       "section": "Free",
       "aaQuestId": 93040310,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11050,
+      "bondPoints": 825,
+      "exp": 24396
     },
     {
       "area": "イド",
@@ -2806,7 +3511,10 @@
       "id": "154",
       "section": "Free",
       "aaQuestId": 93040302,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "イド",
@@ -2815,7 +3523,10 @@
       "id": "155",
       "section": "Free",
       "aaQuestId": 93040303,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "イド",
@@ -2824,7 +3535,10 @@
       "id": "156",
       "section": "Free",
       "aaQuestId": 93040304,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "イド",
@@ -2833,7 +3547,10 @@
       "id": "157",
       "section": "Free",
       "aaQuestId": 93040306,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "イド",
@@ -2842,7 +3559,10 @@
       "id": "158",
       "section": "Free",
       "aaQuestId": 93040305,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116
     },
     {
       "area": "イド",
@@ -2851,7 +3571,10 @@
       "id": "159",
       "section": "Free",
       "aaQuestId": 93040312,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708
     },
     {
       "area": "イド",
@@ -2860,7 +3583,10 @@
       "id": "15a",
       "section": "Free",
       "aaQuestId": 93040308,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "イド",
@@ -2869,7 +3595,10 @@
       "id": "15b",
       "section": "Free",
       "aaQuestId": 93040311,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アーキタイプ",
@@ -2878,7 +3607,10 @@
       "id": "140",
       "section": "Free",
       "aaQuestId": 93040401,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "アーキタイプ",
@@ -2887,7 +3619,10 @@
       "id": "143",
       "section": "Free",
       "aaQuestId": 93040404,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652
     },
     {
       "area": "アーキタイプ",
@@ -2896,7 +3631,10 @@
       "id": "144",
       "section": "Free",
       "aaQuestId": 93040405,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868
     },
     {
       "area": "アーキタイプ",
@@ -2905,7 +3643,10 @@
       "id": "145",
       "section": "Free",
       "aaQuestId": 93040406,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "アーキタイプ",
@@ -2914,7 +3655,10 @@
       "id": "146",
       "section": "Free",
       "aaQuestId": 93040407,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116
     },
     {
       "area": "アーキタイプ",
@@ -2923,7 +3667,10 @@
       "id": "148",
       "section": "Free",
       "aaQuestId": 93040409,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "アーキタイプ",
@@ -2932,7 +3679,10 @@
       "id": "149",
       "section": "Free",
       "aaQuestId": 93040410,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "アーキタイプ",
@@ -2941,7 +3691,10 @@
       "id": "14b",
       "section": "Free",
       "aaQuestId": 93040412,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048
     },
     {
       "area": "アーキタイプ",
@@ -2950,7 +3703,10 @@
       "id": "14d",
       "section": "Free",
       "aaQuestId": 93040414,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708
     },
     {
       "area": "アーキタイプ",
@@ -2959,7 +3715,10 @@
       "id": "14e",
       "section": "Free",
       "aaQuestId": 93040415,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708
     },
     {
       "area": "トリニティ",
@@ -2968,7 +3727,10 @@
       "id": "1g0",
       "section": "Free",
       "aaQuestId": 93040501,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708
     },
     {
       "area": "トリニティ",
@@ -2977,7 +3739,10 @@
       "id": "1g1",
       "section": "Free",
       "aaQuestId": 93040502,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868
     },
     {
       "area": "トリニティ",
@@ -2986,7 +3751,10 @@
       "id": "1g3",
       "section": "Free",
       "aaQuestId": 93040504,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652
     },
     {
       "area": "トリニティ",
@@ -2995,7 +3763,10 @@
       "id": "1g5",
       "section": "Free",
       "aaQuestId": 93040506,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10400,
+      "bondPoints": 775,
+      "exp": 21256
     },
     {
       "area": "トリニティ",
@@ -3004,7 +3775,10 @@
       "id": "1g6",
       "section": "Free",
       "aaQuestId": 93040507,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "トリニティ",
@@ -3013,7 +3787,10 @@
       "id": "1g8",
       "section": "Free",
       "aaQuestId": 93040509,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116
     },
     {
       "area": "トリニティ",
@@ -3022,7 +3799,10 @@
       "id": "1g9",
       "section": "Free",
       "aaQuestId": 93040510,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11050,
+      "bondPoints": 825,
+      "exp": 24396
     },
     {
       "area": "トリニティ",
@@ -3031,7 +3811,10 @@
       "id": "1ga",
       "section": "Free",
       "aaQuestId": 93040511,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488
     },
     {
       "area": "トリニティ",
@@ -3040,7 +3823,10 @@
       "id": "1gb",
       "section": "Free",
       "aaQuestId": 93040512,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708
     },
     {
       "area": "トリニティ",
@@ -3049,7 +3835,10 @@
       "id": "1gc",
       "section": "Free",
       "aaQuestId": 93040514,
-      "waveCount": 3
+      "waveCount": 3,
+      "qp": 10920,
+      "bondPoints": 815,
+      "exp": 23752
     },
     {
       "area": "冠位研鑽戦",
@@ -3058,7 +3847,10 @@
       "id": "1n1",
       "section": "Free",
       "aaQuestId": 94145402,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 34761,
+      "bondPoints": 3385,
+      "exp": 141225
     },
     {
       "area": "冠位研鑽戦",
@@ -3067,7 +3859,10 @@
       "id": "1n2",
       "section": "Free",
       "aaQuestId": 94145403,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 37194,
+      "bondPoints": 3622,
+      "exp": 151111
     },
     {
       "area": "冠位研鑽戦",
@@ -3076,7 +3871,10 @@
       "id": "1n3",
       "section": "Free",
       "aaQuestId": 94145404,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 39798,
+      "bondPoints": 3876,
+      "exp": 161689
     },
     {
       "area": "冠位研鑽戦",
@@ -3085,7 +3883,10 @@
       "id": "1n4",
       "section": "Free",
       "aaQuestId": 94145405,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3094,7 +3895,10 @@
       "id": "1n5",
       "section": "Free",
       "aaQuestId": 94145406,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3103,7 +3907,10 @@
       "id": "1n6",
       "section": "Free",
       "aaQuestId": 94145407,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3112,7 +3919,10 @@
       "id": "1nc",
       "section": "Free",
       "aaQuestId": 94146506,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3121,7 +3931,10 @@
       "id": "1nd",
       "section": "Free",
       "aaQuestId": 94146507,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3130,7 +3943,10 @@
       "id": "1ni",
       "section": "Free",
       "aaQuestId": 94146805,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3139,7 +3955,10 @@
       "id": "1nj",
       "section": "Free",
       "aaQuestId": 94146806,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3148,7 +3967,10 @@
       "id": "1nk",
       "section": "Free",
       "aaQuestId": 94146807,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3156,7 +3978,10 @@
       "name": "〔エクストラⅠ〕火 Ⅵ",
       "id": "1nq",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3164,7 +3989,10 @@
       "name": "〔エクストラⅠ〕火 Ⅶ",
       "id": "1nr",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3172,7 +4000,10 @@
       "name": "〔エクストラⅠ〕地 Ⅶ",
       "id": "1ny",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3180,7 +4011,10 @@
       "name": "〔エクストラⅡ〕風 Ⅴ",
       "id": "1n13",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3188,7 +4022,10 @@
       "name": "〔エクストラⅡ〕風 Ⅵ",
       "id": "1n14",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3196,7 +4033,10 @@
       "name": "〔エクストラⅡ〕風 Ⅶ",
       "id": "1n15",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3204,7 +4044,10 @@
       "name": "〔エクストラⅡ〕水 Ⅴ",
       "id": "1n1a",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3212,7 +4055,10 @@
       "name": "〔エクストラⅡ〕水 Ⅵ",
       "id": "1n1b",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3220,7 +4066,10 @@
       "name": "〔エクストラⅡ〕水 Ⅶ",
       "id": "1n1c",
       "section": "Free",
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3229,7 +4078,10 @@
       "id": "1n1h",
       "section": "Free",
       "aaQuestId": 94149805,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3238,7 +4090,10 @@
       "id": "1n1i",
       "section": "Free",
       "aaQuestId": 94149806,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3247,7 +4102,10 @@
       "id": "1n1j",
       "section": "Free",
       "aaQuestId": 94149807,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3256,7 +4114,10 @@
       "id": "1n1o",
       "section": "Free",
       "aaQuestId": 94150505,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3265,7 +4126,10 @@
       "id": "1n1p",
       "section": "Free",
       "aaQuestId": 94150506,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3274,7 +4138,10 @@
       "id": "1n1q",
       "section": "Free",
       "aaQuestId": 94150507,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3283,7 +4150,10 @@
       "id": "1n1v",
       "section": "Free",
       "aaQuestId": 94150805,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3292,7 +4162,10 @@
       "id": "1n1w",
       "section": "Free",
       "aaQuestId": 94150806,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3301,7 +4174,10 @@
       "id": "1n1x",
       "section": "Free",
       "aaQuestId": 94150807,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     },
     {
       "area": "冠位研鑽戦",
@@ -3310,7 +4186,10 @@
       "id": "1n20",
       "section": "Free",
       "aaQuestId": 94151203,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 37194,
+      "bondPoints": 3622,
+      "exp": 151111
     },
     {
       "area": "冠位研鑽戦",
@@ -3319,7 +4198,10 @@
       "id": "1n21",
       "section": "Free",
       "aaQuestId": 94151204,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 39798,
+      "bondPoints": 3876,
+      "exp": 161689
     },
     {
       "area": "冠位研鑽戦",
@@ -3328,7 +4210,10 @@
       "id": "1n22",
       "section": "Free",
       "aaQuestId": 94151205,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 42584,
+      "bondPoints": 4147,
+      "exp": 173007
     },
     {
       "area": "冠位研鑽戦",
@@ -3337,7 +4222,10 @@
       "id": "1n23",
       "section": "Free",
       "aaQuestId": 94151206,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 45565,
+      "bondPoints": 4438,
+      "exp": 185117
     },
     {
       "area": "冠位研鑽戦",
@@ -3346,7 +4234,10 @@
       "id": "1n24",
       "section": "Free",
       "aaQuestId": 94151207,
-      "waveCount": 1
+      "waveCount": 1,
+      "qp": 48754,
+      "bondPoints": 4748,
+      "exp": 198075
     }
   ],
   "drop_rates": [

@@ -239,7 +239,18 @@ export async function fetchAndTransformData(): Promise<MasterData> {
 
   // Item names are in row index 2, starting from column index 4
   const itemNamesInHeader = rows[2].slice(4)
-  
+
+  // 報酬列(基本絆P / EXP / QP)は row index 1 のラベルで位置特定する。
+  const rewardHeader = rows[1] ?? []
+  const rewardCol = (label: string) => rewardHeader.findIndex(c => (c ?? '').trim() === label)
+  const bondCol = rewardCol('基本絆P')
+  const expCol = rewardCol('EXP')
+  const qpCol = rewardCol('QP')
+  const parseReward = (s: string | undefined): number | undefined => {
+    const n = parseInt((s ?? '').replace(/,/g, ''), 10)
+    return Number.isFinite(n) && n > 0 ? n : undefined
+  }
+
   // Create item mapping
   const itemMap = new Map<string, string>()
   for (const shortName of itemNamesInHeader) {
@@ -317,7 +328,10 @@ export async function fetchAndTransformData(): Promise<MasterData> {
         name: questName,
         id: questId,
         section: area.includes('修練場') ? 'Daily' : 'Free',
-        aaQuestId: aaQuestInWar?.id
+        aaQuestId: aaQuestInWar?.id,
+        qp: qpCol >= 0 ? parseReward(row[qpCol]) : undefined,
+        bondPoints: bondCol >= 0 ? parseReward(row[bondCol]) : undefined,
+        exp: expCol >= 0 ? parseReward(row[expCol]) : undefined,
       } as any)
     }
 

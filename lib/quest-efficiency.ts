@@ -54,7 +54,22 @@ export type QuestEfficiencyOptions = {
   surplusThreshold?: Partial<SurplusThreshold>
   /** 効率の分母。'ap'(default=AP効率) か 'turn'(周回効率=ターン数で割る)。 */
   denominator?: EfficiencyDenominator
+  /** QP 報酬を効率ポイントに加算する(default false)。 */
+  includeQp?: boolean
+  /** 基本絆P を効率ポイントに加算する(default false)。 */
+  includeBond?: boolean
+  /** マスターEXP を効率ポイントに加算する(default false)。 */
+  includeExp?: boolean
 }
+
+/** 報酬(擬似アイテム)の contribution itemId プレフィックス。 */
+export const REWARD_ITEM_PREFIX = 'reward:'
+type RewardDef = { key: 'qp' | 'bond' | 'exp'; field: 'qp' | 'bondPoints' | 'exp' }
+const REWARD_DEFS: RewardDef[] = [
+  { key: 'qp', field: 'qp' },
+  { key: 'bond', field: 'bondPoints' },
+  { key: 'exp', field: 'exp' },
+]
 
 export type ItemContribution = {
   itemId: string
@@ -115,8 +130,14 @@ export const computeQuestEfficiency = (
     shortageOnly = true,
     includeSkillStones = true,
     denominator = 'ap',
+    includeQp = false,
+    includeBond = false,
+    includeExp = false,
   } = options
   const threshold: SurplusThreshold = { ...DEFAULT_SURPLUS_THRESHOLD, ...(options.surplusThreshold ?? {}) }
+  const enabledRewards = REWARD_DEFS.filter(
+    r => (r.key === 'qp' && includeQp) || (r.key === 'bond' && includeBond) || (r.key === 'exp' && includeExp),
+  )
 
   const itemById = new Map(drops.items.map(i => [i.id, i]))
 
@@ -188,8 +209,43 @@ export const computeQuestEfficiency = (
     acc.set(dr.quest_id, list)
   }
 
+  // 報酬(QP/絆/EXP)の bestEff。各報酬を「最良クエストの 報酬/分母」で正規化する。
+  const amountOf = (q: { [k: string]: unknown }, field: string): number => {
+    const v = q[field]
+    return typeof v === 'number' && v > 0 ? v : 0
+  }
+  const bestEffReward = new Map<string, number>()
+  for (const rw of enabledRewards) {
+    let best = 0
+    for (const q of drops.quests) {
+      const denom = denomByQuest.get(q.id)
+      const amount = amountOf(q as unknown as Record<string, unknown>, rw.field)
+      if (amount > 0 && denom != null && denom > 0) best = Math.max(best, amount / denom)
+    }
+    if (best > 0) bestEffReward.set(rw.key, best)
+  }
+
   const result: QuestEfficiency[] = drops.quests.map(q => {
-    const contributions = (acc.get(q.id) ?? []).sort((a, b) => b.weighted - a.weighted)
+    const contributions = [...(acc.get(q.id) ?? [])]
+    // 報酬を擬似アイテムとして加算(トグルON時、weight=1)。
+    const denom = denomByQuest.get(q.id)
+    if (denom != null && denom > 0) {
+      for (const rw of enabledRewards) {
+        const best = bestEffReward.get(rw.key)
+        const amount = amountOf(q as unknown as Record<string, unknown>, rw.field)
+        if (best != null && best > 0 && amount > 0) {
+          const relativeEff = amount / denom / best
+          contributions.push({
+            itemId: `${REWARD_ITEM_PREFIX}${rw.key}`,
+            dropRate: amount,
+            relativeEff,
+            weight: 1,
+            weighted: relativeEff,
+          })
+        }
+      }
+    }
+    contributions.sort((a, b) => b.weighted - a.weighted)
     const score = contributions.reduce((s, c) => s + c.weighted, 0)
     return { questId: q.id, score, contributions }
   })

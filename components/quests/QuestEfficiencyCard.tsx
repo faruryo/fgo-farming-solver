@@ -11,8 +11,11 @@ import {
   computeSingleQuestEfficiency,
   DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
+  REWARD_ITEM_PREFIX,
   SurplusThreshold,
 } from '../../lib/quest-efficiency'
+
+const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
 
 const parseGoals = (raw: Record<string, string | number | undefined>): Record<string, number> => {
   const out: Record<string, number> = {}
@@ -48,6 +51,9 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
     'quests/efficiency/denominator',
     'ap',
   )
+  const [includeQp] = useLocalStorage<boolean>('quests/efficiency/includeQp', false)
+  const [includeBond] = useLocalStorage<boolean>('quests/efficiency/includeBond', false)
+  const [includeExp] = useLocalStorage<boolean>('quests/efficiency/includeExp', false)
 
   const eff = useMemo(() => {
     if (isLoading || !drops.quests?.length) return null
@@ -59,8 +65,11 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
       includeSkillStones,
       surplusThreshold: threshold,
       denominator,
+      includeQp,
+      includeBond,
+      includeExp,
     })
-  }, [drops, isLoading, questId, possession, goalsRaw, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator])
+  }, [drops, isLoading, questId, possession, goalsRaw, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator, includeQp, includeBond, includeExp])
 
   if (isLoading || !eff || eff.score <= 0) return null
   const itemById = new Map((dropItems ?? []).map(i => [i.id, i]))
@@ -86,17 +95,28 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
           </p>
           <div className="flex flex-col gap-2">
             {eff.contributions.map(c => {
-              const item = itemById.get(c.itemId)
+              const reward = c.itemId.startsWith(REWARD_ITEM_PREFIX)
+                ? REWARD_NAMES[c.itemId.slice(REWARD_ITEM_PREFIX.length)]
+                : undefined
+              const item = reward ? undefined : itemById.get(c.itemId)
+              const label = reward ?? item?.name ?? c.itemId
               return (
                 <div
                   key={c.itemId}
                   className="flex items-center gap-3 p-2 rounded-md"
                   style={{ background: 'rgba(255,255,255,0.05)' }}
                 >
-                  <ItemIdentity icon={item?.icon} name={item?.name ?? c.itemId} size={28} />
-                  <span className="text-xs font-bold truncate flex-1 min-w-0">
-                    {item?.name ?? c.itemId}
-                  </span>
+                  {reward ? (
+                    <span
+                      className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded text-[9px] font-bold"
+                      style={{ background: 'rgba(154,114,36,0.15)', color: 'var(--gold)' }}
+                    >
+                      {reward}
+                    </span>
+                  ) : (
+                    <ItemIdentity icon={item?.icon} name={label} size={28} />
+                  )}
+                  <span className="text-xs font-bold truncate flex-1 min-w-0">{label}</span>
                   <span className="text-[10px] tabular-nums" style={{ color: 'var(--text3)' }}>
                     ×{c.weight}
                   </span>
