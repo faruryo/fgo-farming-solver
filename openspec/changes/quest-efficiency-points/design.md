@@ -39,6 +39,13 @@ score(q)         = Σ_i  relativeEff(i,q) × weight[i]
 - **余剰しきい値の保持**: レア別デフォルト(例 `gold:50 / silver:100 / bronze:200`)を持ち、ユーザーが localStorage で数値上書き可。`hooks/use-cloud-sync.ts` の `KEYS` に追加してクラウド同期。
 - 代替案: カテゴリ別重みパネル / 連続減衰。却下 — ユーザーは所持数登録 + レア別余剰しきい値(2段階)を希望。
 
+### D2.5 効率の分母を AP / ターン数 で切替
+- `denominator: 'ap' | 'turn'`。`eff(i,q) = drop_rate / denom(q)`、`denom = 'ap' ? effAp : waveCount(q)`。
+- 「周回効率」(turn)はターン数で割るため、1ターンで終わるクエスト(冠位研鑽戦)が3ターン(修練場)より高評価。AP当たり/手間(ターン)当たりの2観点を提供。
+- wave数は新規 `Quest.waveCount`。`lib/master-data/wave-count.ts` の `populateWaveCounts` で付与し、パイプライン(`update.ts`)とローカル mock 生成(`scripts/populate-wave-count.ts`)で共有。
+- **aaQuestId 衝突対策**: 冠位研鑽戦等は aaQuestId が修練場と衝突し Atlas 取得が不正確。ポッドクエストは単一 wave 確定なので1固定、それ以外は一意 aaQuestId のみ取得。残りは未設定(=1ターン扱い)。
+- 消費数(AP or ポッド数)案はユーザー判断で却下(分かりにくい)。
+
 ### D3. エンジンは純粋関数 `lib/quest-efficiency.ts`
 - `computeQuestEfficiency(drops, { possession, goals, activeCampaigns, nowSec, shortageOnly, includeSkillStones, surplusThreshold })`(`surplusThreshold`: `{ gold, silver, bronze }`、レア別デフォルトをマージ)。
 - 返り値: `{ questId, score, contributions: { itemId, drop_rate, relativeEff, weighted }[] }[]`(score 降順)。

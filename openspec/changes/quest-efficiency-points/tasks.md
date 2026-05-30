@@ -33,6 +33,16 @@
 - [x] 5.1 `components/dashboard/NearGoalSection.tsx` の `needed` を所持数加味の不足度 `max(0, goal - owned)` に変更
 - [x] 5.2 目標未設定の低所持素材の発見はクエスト一覧(不足のみモード)に委ねる方針に決定。NearGoalSection は目標素材のみのまま据え置き(ユーザー決定)
 
+## 7. 効率の分母切替・入手アイテム表示・UI 調整
+
+- [x] 7.1 エンジンに `denominator: 'ap' | 'turn'` を追加(turn は `waveCount` で割る、未設定は1ターン扱い)
+- [x] 7.2 `Quest.waveCount` を追加し `lib/master-data/wave-count.ts` の `populateWaveCounts`(ポッド=1固定、一意 aaQuestId は Atlas 取得)を実装
+- [x] 7.3 `scripts/populate-wave-count.ts` でローカル mock に付与、`update.ts` パイプラインに組込み
+- [x] 7.4 一覧/詳細に「AP効率 / 周回効率」トグルを追加(再計算)、i18n 追加。consume 案は不採用
+- [x] 7.5 クエスト一覧の各行に入手アイテムのアイコン(ドロップ率上位)を表示
+- [x] 7.6 インフォメーションのツールチップを簡潔化(長文4段組 → 1行要約)
+- [x] 7.7 ブラウザ確認: 周回効率で冠位研鑽戦が最上位・修練場が下降、アイコン・ツールチップ反映
+
 ## 6. 検証
 
 - [x] 6.1 `pnpm run type-check` / `pnpm run lint` / `pnpm test`(新テスト含む)が通る
