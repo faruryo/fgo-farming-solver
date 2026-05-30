@@ -53,6 +53,15 @@
 - [x] 8.6 報酬加算テスト(includeQp で擬似アイテム加算・既定は非加算)
 - [x] 8.7 ブラウザ確認: 報酬トグル・冠位VI以下表示・ポップオーバー・詳細の報酬行
 
+## 9. モーダル刷新・ピース除く・ID統一(育成計算機連動)
+
+- [x] 9.1 所持数モーダルを刷新(各素材アイコン表示、2カラム、余剰しきい値の平易な説明)
+- [x] 9.2 「ピース除く」フィルタを追加(`isPiece`、エンジン `includePieces`、ポップオーバーにトグル)
+- [x] 9.3 drops アイテムに `atlasId` を付与(`get-local-items` + `scripts/populate-atlas-id.ts` で mock)
+- [x] 9.4 所持数(`posession`)を Atlas ID 空間に統一し育成計算機と共有。エンジンは `atlasId` で所持数・必要数を参照
+- [x] 9.5 必要数(目標)の主ソースを `material/result`(Atlas ID)に変更、`items`(短縮ID)は `atlasId` 変換で補完(`mergeGoals`)
+- [x] 9.6 atlasId 参照テスト追加。ブラウザで所持数が Atlas ID キー("6503")で書かれることを確認
+
 ## 6. 検証
 
 - [x] 6.1 `pnpm run type-check` / `pnpm run lint` / `pnpm test`(新テスト含む)が通る

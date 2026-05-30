@@ -32,6 +32,34 @@
 - **WHEN** 「周回効率」で wave数が不明なクエストがある
 - **THEN** そのクエストは1ターン扱いで評価される
 
+### Requirement: ピース除くフィルタ
+
+システムは「ピース除く」ビューにおいて、ピース(category が ピース/Piece)の重みを0とする SHALL(スキル石の「石除く」と同様)。
+
+#### Scenario: ピース除く
+- **WHEN** 「ピース除く」が選択されている
+- **THEN** ピースは効率ポイントに寄与しない
+
+### Requirement: 所持数・必要数を育成計算機と連動(Atlas ID 統一)
+
+システムは所持数(`posession`)と必要数を、育成計算機と同じ **Atlas ID** 空間で扱う SHALL。所持数は育成計算機の所持数と同一の `posession`(Atlas ID キー)を共有し、必要数は育成計算機の `material/result`(Atlas ID)を主ソース、周回ソルバー目標 `items`(短縮ID)を `atlasId` に変換して補完する。drops のアイテムは `atlasId` を保持する SHALL。
+
+#### Scenario: 所持数の共有
+- **WHEN** クエスト効率の所持数モーダルで素材の所持数を入力する
+- **THEN** 育成計算機(material/result)と同じ Atlas ID キーで保存され、双方に反映される
+
+#### Scenario: 必要数は material/result が主
+- **WHEN** 育成計算機で必要数(material/result)が計算されている
+- **THEN** クエスト効率の不足判定は material/result の必要数 − 所持数 で行われる
+
+### Requirement: 所持数モーダルの体裁
+
+システムは所持数モーダルに各素材のアイコンを表示し、余剰しきい値の意味を平易に説明する SHALL。
+
+#### Scenario: アイコンと説明
+- **WHEN** 所持数モーダルを開く
+- **THEN** 各素材にアイコンが表示され、余剰しきい値の説明文が表示される
+
 ### Requirement: 報酬(QP/絆/EXP)の効率ポイント加算
 
 システムは QP・基本絆P・マスターEXP を効率ポイントに任意で加算できる SHALL(各々トグル、既定OFF)。トグルON時、その報酬を擬似アイテムとして「報酬量/分母」を最良クエストで正規化し weight=1 で加算する。これらの報酬値は元CSVの列(基本絆P/EXP/QP)から `Quest.qp` / `bondPoints` / `exp` として抽出する SHALL。QP・絆が不要なユーザーはOFFのまま、欲しいユーザーだけONにする。

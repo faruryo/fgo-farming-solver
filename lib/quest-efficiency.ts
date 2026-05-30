@@ -1,7 +1,7 @@
 import { Drops } from './get-drops'
 import { Campaign } from '../interfaces/fgodrop'
 import { computeEffectiveAp } from './solver'
-import { getRarityByCategory, isSkillStone, Rarity } from './item-rarity'
+import { getRarityByCategory, isPiece, isSkillStone, Rarity } from './item-rarity'
 
 // クエストの「効率ポイント」を算出する純粋関数群。
 //
@@ -40,9 +40,9 @@ export type EfficiencyDenominator = 'ap' | 'turn'
 export const DEFAULT_TURNS = 1
 
 export type QuestEfficiencyOptions = {
-  /** 所持数 itemId -> owned count */
+  /** 所持数 atlasId -> owned count(育成計算機の posession と同じ Atlas ID 空間)。 */
   possession?: Record<string, number | undefined>
-  /** 目標 itemId -> required count */
+  /** 必要数 atlasId -> required count(育成計算機の material/result と同じ Atlas ID 空間)。 */
   goals?: Record<string, number | undefined>
   /** effective-AP 補正用のアクティブキャンペーン。空なら元 AP。 */
   activeCampaigns?: Campaign[]
@@ -50,6 +50,8 @@ export type QuestEfficiencyOptions = {
   shortageOnly?: boolean
   /** スキル石を含めるか(default true)。false で「石除く」。 */
   includeSkillStones?: boolean
+  /** ピース(銀の霊基再臨素材)を含めるか(default true)。false で「ピース除く」。 */
+  includePieces?: boolean
   /** レア別余剰しきい値(部分指定可、デフォルトとマージ)。 */
   surplusThreshold?: Partial<SurplusThreshold>
   /** 効率の分母。'ap'(default=AP効率) か 'turn'(周回効率=ターン数で割る)。 */
@@ -89,7 +91,10 @@ export type QuestEfficiency = {
   contributions: ItemContribution[]
 }
 
-type ItemLike = { id: string; category: string; largeCategory?: string }
+type ItemLike = { id: string; category: string; largeCategory?: string; atlasId?: number }
+
+/** 所持数・必要数(material/result)は Atlas ID 空間で持つため、アイテムの参照キーは atlasId を優先。 */
+const possessionKey = (item: ItemLike): string => (item.atlasId != null ? String(item.atlasId) : item.id)
 
 /**
  * 単一素材の重みを決定する(2段階)。
@@ -104,9 +109,10 @@ export const computeItemWeight = (
   item: ItemLike,
   owned: number,
   goal: number,
-  opts: { shortageOnly: boolean; includeSkillStones: boolean; threshold: SurplusThreshold },
+  opts: { shortageOnly: boolean; includeSkillStones: boolean; includePieces: boolean; threshold: SurplusThreshold },
 ): number => {
   if (!opts.includeSkillStones && isSkillStone(item.largeCategory)) return 0
+  if (!opts.includePieces && isPiece(item.category)) return 0
   if (!opts.shortageOnly) return 1
   if (owned < goal) return 1
   const rarity = getRarityByCategory(item.category)
@@ -129,6 +135,7 @@ export const computeQuestEfficiency = (
     activeCampaigns = [],
     shortageOnly = true,
     includeSkillStones = true,
+    includePieces = true,
     denominator = 'ap',
     includeQp = false,
     includeBond = false,
@@ -176,10 +183,12 @@ export const computeQuestEfficiency = (
     const cached = weightByItem.get(itemId)
     if (cached != null) return cached
     const item = itemById.get(itemId)
+    const key = item ? possessionKey(item) : itemId
     const w = item
-      ? computeItemWeight(item, possession[itemId] ?? 0, goals[itemId] ?? 0, {
+      ? computeItemWeight(item, possession[key] ?? 0, goals[key] ?? 0, {
           shortageOnly,
           includeSkillStones,
+          includePieces,
           threshold,
         })
       : 0
@@ -251,6 +260,31 @@ export const computeQuestEfficiency = (
   })
   result.sort((a, b) => b.score - a.score)
   return result
+}
+
+/**
+ * 必要数(目標)を Atlas ID 空間に統合する。
+ * - materialResult: 育成計算機の必要数(Atlas ID キー)= 主ソース。
+ * - itemsRaw: 周回ソルバー目標(短縮ID キー、文字列可)→ atlasId に変換して補完。
+ */
+export const mergeGoals = (
+  materialResult: Record<string, number>,
+  itemsRaw: Record<string, string | number | undefined>,
+  dropItems: { id: string; atlasId?: number }[],
+): Record<string, number> => {
+  const shortToAtlas = new Map<string, number>()
+  for (const i of dropItems) if (i.atlasId != null) shortToAtlas.set(i.id, i.atlasId)
+
+  const out: Record<string, number> = {}
+  for (const [shortId, v] of Object.entries(itemsRaw)) {
+    const atlas = shortToAtlas.get(shortId)
+    const n = typeof v === 'number' ? v : parseInt(String(v ?? ''), 10)
+    if (atlas != null && Number.isFinite(n) && n > 0) out[String(atlas)] = n
+  }
+  for (const [atlasId, n] of Object.entries(materialResult)) {
+    if (Number.isFinite(n) && n > 0) out[atlasId] = n // material/result が優先
+  }
+  return out
 }
 
 /** 単一クエストの効率ポイント(詳細ページ用)。該当が無ければ null。 */

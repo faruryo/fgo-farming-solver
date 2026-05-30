@@ -22,6 +22,7 @@ import {
   computeQuestEfficiency,
   DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
+  mergeGoals,
   SurplusThreshold,
 } from '../../lib/quest-efficiency'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
@@ -31,15 +32,6 @@ const toggleItemClass =
   'h-7 px-3 rounded-none! text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white'
 const toggleGroupClass =
   'rounded-md bg-[color:var(--bg2)] shadow-[inset_0_0_0_1px_var(--gold-dim)] overflow-hidden'
-
-const parseGoals = (raw: Record<string, string | number | undefined>): Record<string, number> => {
-  const out: Record<string, number> = {}
-  for (const [id, v] of Object.entries(raw)) {
-    const n = typeof v === 'number' ? v : parseInt(String(v ?? ''), 10)
-    if (Number.isFinite(n) && n > 0) out[id] = n
-  }
-  return out
-}
 
 // クエスト名から段位(ローマ数字 I〜VIII。ASCII / 全角の両対応)を抽出。冠位研鑽戦の VI以下 判定に使う。
 const TIER_TOKENS: [string, number][] = [
@@ -77,8 +69,10 @@ export const QuestEfficiencyList: React.FC = () => {
   const { data: dashboardMeta } = useDashboardMeta()
   const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
 
+  // 所持数・必要数は育成計算機と同じ Atlas ID 空間で持つ。
   const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
-  const [goalsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
+  const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
+  const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
   const [threshold] = useLocalStorage<SurplusThreshold>(
     'efficiency/surplusThreshold',
     DEFAULT_SURPLUS_THRESHOLD,
@@ -89,6 +83,10 @@ export const QuestEfficiencyList: React.FC = () => {
   )
   const [includeSkillStones, setIncludeSkillStones] = useLocalStorage<boolean>(
     'quests/efficiency/includeSkillStones',
+    true,
+  )
+  const [includePieces, setIncludePieces] = useLocalStorage<boolean>(
+    'quests/efficiency/includePieces',
     true,
   )
   const [denominator, setDenominator] = useLocalStorage<EfficiencyDenominator>(
@@ -103,7 +101,11 @@ export const QuestEfficiencyList: React.FC = () => {
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
 
-  const goals = useMemo(() => parseGoals(goalsRaw), [goalsRaw])
+  // 必要数(目標)は material/result(Atlas ID)を主に、無ければ items(短縮ID→atlasId 変換)で補完。
+  const goals = useMemo(
+    () => mergeGoals(materialResult, itemsRaw, dropItems ?? []),
+    [materialResult, itemsRaw, dropItems],
+  )
 
   const ranked = useMemo(() => {
     if (isLoading || !dropQuests?.length) return []
@@ -113,6 +115,7 @@ export const QuestEfficiencyList: React.FC = () => {
       activeCampaigns,
       shortageOnly,
       includeSkillStones,
+      includePieces,
       surplusThreshold: threshold,
       denominator,
       includeQp,
@@ -134,7 +137,7 @@ export const QuestEfficiencyList: React.FC = () => {
       // 冠位研鑽戦の VI以下 は既定で隠す(showLowKanni で表示)。
       .filter(r => showLowKanni || !isLowKanni(r.quest.area, r.quest.name))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator, includeQp, includeBond, includeExp, showLowKanni])
+  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, includePieces, threshold, denominator, includeQp, includeBond, includeExp, showLowKanni])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -149,7 +152,9 @@ export const QuestEfficiencyList: React.FC = () => {
   const unenteredCount = useMemo(() => {
     if (!dropItems?.length) return 0
     const dropItemIds = new Set(drops.drop_rates.map(dr => dr.item_id))
-    return dropItems.filter(i => dropItemIds.has(i.id) && possession[i.id] == null).length
+    return dropItems.filter(
+      i => dropItemIds.has(i.id) && i.atlasId != null && possession[String(i.atlasId)] == null,
+    ).length
   }, [dropItems, drops.drop_rates, possession])
 
   // クエストごとの入手アイテム(ドロップ率降順)。行のアイコン表示に使う。
@@ -174,6 +179,7 @@ export const QuestEfficiencyList: React.FC = () => {
   const activeFilterCount =
     (shortageOnly ? 0 : 1) +
     (includeSkillStones ? 0 : 1) +
+    (includePieces ? 0 : 1) +
     (includeQp ? 1 : 0) +
     (includeBond ? 1 : 0) +
     (includeExp ? 1 : 0) +
@@ -263,6 +269,28 @@ export const QuestEfficiencyList: React.FC = () => {
                 value={[includeSkillStones ? 'incl' : 'excl']}
                 onValueChange={(values: string[]) => {
                   if (values[0]) setIncludeSkillStones(values[0] === 'incl')
+                }}
+                size="sm"
+                spacing={0}
+                className={toggleGroupClass}
+              >
+                <ToggleGroupItem value="incl" className={toggleItemClass}>
+                  {t('含む')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="excl" className={toggleItemClass}>
+                  {t('除く')}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
+                {t('ピース')}
+              </span>
+              <ToggleGroup
+                value={[includePieces ? 'incl' : 'excl']}
+                onValueChange={(values: string[]) => {
+                  if (values[0]) setIncludePieces(values[0] === 'incl')
                 }}
                 size="sm"
                 spacing={0}

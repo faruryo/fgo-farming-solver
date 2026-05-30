@@ -11,20 +11,12 @@ import {
   computeSingleQuestEfficiency,
   DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
+  mergeGoals,
   REWARD_ITEM_PREFIX,
   SurplusThreshold,
 } from '../../lib/quest-efficiency'
 
 const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
-
-const parseGoals = (raw: Record<string, string | number | undefined>): Record<string, number> => {
-  const out: Record<string, number> = {}
-  for (const [id, v] of Object.entries(raw)) {
-    const n = typeof v === 'number' ? v : parseInt(String(v ?? ''), 10)
-    if (Number.isFinite(n) && n > 0) out[id] = n
-  }
-  return out
-}
 
 /**
  * クエスト詳細用: そのクエストの効率ポイント合計と素材別 contribution 内訳を表示。
@@ -37,7 +29,8 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
   const { activeCampaigns } = useActiveCampaigns(drops.campaigns)
 
   const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
-  const [goalsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
+  const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
+  const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
   const [threshold] = useLocalStorage<SurplusThreshold>(
     'efficiency/surplusThreshold',
     DEFAULT_SURPLUS_THRESHOLD,
@@ -47,6 +40,7 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
     'quests/efficiency/includeSkillStones',
     true,
   )
+  const [includePieces] = useLocalStorage<boolean>('quests/efficiency/includePieces', true)
   const [denominator] = useLocalStorage<EfficiencyDenominator>(
     'quests/efficiency/denominator',
     'ap',
@@ -59,17 +53,18 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
     if (isLoading || !drops.quests?.length) return null
     return computeSingleQuestEfficiency(drops, questId, {
       possession,
-      goals: parseGoals(goalsRaw),
+      goals: mergeGoals(materialResult, itemsRaw, dropItems ?? []),
       activeCampaigns,
       shortageOnly,
       includeSkillStones,
+      includePieces,
       surplusThreshold: threshold,
       denominator,
       includeQp,
       includeBond,
       includeExp,
     })
-  }, [drops, isLoading, questId, possession, goalsRaw, activeCampaigns, shortageOnly, includeSkillStones, threshold, denominator, includeQp, includeBond, includeExp])
+  }, [drops, isLoading, questId, possession, materialResult, itemsRaw, dropItems, activeCampaigns, shortageOnly, includeSkillStones, includePieces, threshold, denominator, includeQp, includeBond, includeExp])
 
   if (isLoading || !eff || eff.score <= 0) return null
   const itemById = new Map((dropItems ?? []).map(i => [i.id, i]))

@@ -173,8 +173,7 @@
     "不足のみ": "Needed only",
     "全部": "All",
     "所持数を入力": "Edit stock",
-    "所持数・しきい値設定": "Stock & surplus thresholds",
-    "余剰しきい値": "Surplus threshold (kept as secondary if at or below)",
+    "余剰しきい値": "Surplus threshold",
     "金": "Gold",
     "銀": "Silver",
     "銅": "Bronze",
@@ -195,6 +194,10 @@
     "絆": "Bond",
     "表示": "Display",
     "冠位研鑽戦VI以下を表示": "Show Ordeal Call ≤VI",
-    "報酬を効率ポイントに加算": "Add rewards to efficiency"
+    "報酬を効率ポイントに加算": "Add rewards to efficiency",
+    "ピース": "Pieces",
+    "所持数を登録": "Edit your stock",
+    "所持数モーダル説明": "Enter how many of each material you own. The efficiency favors materials you still need. Blank counts as 0 owned.",
+    "余剰しきい値の説明": "Even after a goal is met, a material is kept as a secondary candidate while its surplus (owned − goal) is within this amount; larger surpluses are excluded. Set per rarity (gold/silver/bronze)."
   }
 }

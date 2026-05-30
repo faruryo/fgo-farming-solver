@@ -6,6 +6,8 @@ export type Localized<I extends Item> = I & {
   largeCategory: string
   shortName: string
   icon?: string
+  /** Atlas Academy のアイテムID。育成計算機(material/result・所持数)と同じID空間で連動するために保持。 */
+  atlasId?: number
 }
 
 export const getLocalItems = async <I extends Item>(
@@ -34,6 +36,7 @@ export const getLocalItems = async <I extends Item>(
       shortName: name,
       name: atlasItem?.name ?? name,
       icon: atlasItem?.icon,
+      atlasId: atlasItem?.id,
       ...rest,
     } as Localized<I>
   })

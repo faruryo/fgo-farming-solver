@@ -114,6 +114,26 @@ describe('computeQuestEfficiency', () => {
     expect(res.q1.score).toBeCloseTo(res.q2.score)
   })
 
+  it('所持数・必要数は atlasId で参照する(育成計算機と同じID空間)', () => {
+    const drops = {
+      items: [{ id: 'g', atlasId: 6503, category: '金素材', largeCategory: '強化素材', name: 'gold', shortName: 'g' }],
+      quests: [{ id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20 }],
+      drop_rates: [{ quest_id: 'qA', item_id: 'g', drop_rate: 1.0 }],
+      campaigns: [],
+    } as unknown as Drops
+    // goal/owned は atlasId('6503') キーで渡す。短縮ID('g')では参照されない。
+    const res = byId(
+      computeQuestEfficiency(drops, { goals: { '6503': 10 }, possession: { '6503': 3 } }),
+    )
+    expect(contrib(res.qA, 'g')!.weight).toBe(1) // owned 3 < goal 10 → 不足
+    // 短縮IDで渡しても効かない(atlasId 空間で見るため)
+    const res2 = byId(
+      computeQuestEfficiency(drops, { goals: { g: 10 }, possession: { g: 100 } }),
+    )
+    // goal/owned が atlasId 側に無い → goal=0,owned=0 → 余剰0 ≤ gold既定50 → 次点(0.3)
+    expect(contrib(res2.qA, 'g')!.weight).toBeCloseTo(SECONDARY_WEIGHT)
+  })
+
   it('includeQp で QP を擬似アイテムとして加算する(default は加算しない)', () => {
     const off = byId(computeQuestEfficiency(makeDrops(), { shortageOnly: false }))
     expect(off.qA.contributions.some(c => c.itemId === 'reward:qp')).toBe(false)

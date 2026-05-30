@@ -6,7 +6,8 @@
       "largeCategory": "強化素材",
       "shortName": "証",
       "name": "英雄の証",
-      "icon": "https://static.atlasacademy.io/JP/Items/6503.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6503.png",
+      "atlasId": 6503
     },
     {
       "id": "01",
@@ -14,7 +15,8 @@
       "largeCategory": "強化素材",
       "shortName": "骨",
       "name": "凶骨",
-      "icon": "https://static.atlasacademy.io/JP/Items/6516.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6516.png",
+      "atlasId": 6516
     },
     {
       "id": "02",
@@ -22,7 +24,8 @@
       "largeCategory": "強化素材",
       "shortName": "牙",
       "name": "竜の牙",
-      "icon": "https://static.atlasacademy.io/JP/Items/6512.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6512.png",
+      "atlasId": 6512
     },
     {
       "id": "03",
@@ -30,7 +33,8 @@
       "largeCategory": "強化素材",
       "shortName": "塵",
       "name": "虚影の塵",
-      "icon": "https://static.atlasacademy.io/JP/Items/6505.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6505.png",
+      "atlasId": 6505
     },
     {
       "id": "04",
@@ -38,7 +42,8 @@
       "largeCategory": "強化素材",
       "shortName": "鎖",
       "name": "愚者の鎖",
-      "icon": "https://static.atlasacademy.io/JP/Items/6522.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6522.png",
+      "atlasId": 6522
     },
     {
       "id": "05",
@@ -46,7 +51,8 @@
       "largeCategory": "強化素材",
       "shortName": "毒針",
       "name": "万死の毒針",
-      "icon": "https://static.atlasacademy.io/JP/Items/6527.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6527.png",
+      "atlasId": 6527
     },
     {
       "id": "06",
@@ -54,7 +60,8 @@
       "largeCategory": "強化素材",
       "shortName": "髄液",
       "name": "魔術髄液",
-      "icon": "https://static.atlasacademy.io/JP/Items/6530.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6530.png",
+      "atlasId": 6530
     },
     {
       "id": "07",
@@ -62,7 +69,8 @@
       "largeCategory": "強化素材",
       "shortName": "鉄杭",
       "name": "宵哭きの鉄杭",
-      "icon": "https://static.atlasacademy.io/JP/Items/6533.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6533.png",
+      "atlasId": 6533
     },
     {
       "id": "08",
@@ -70,7 +78,8 @@
       "largeCategory": "強化素材",
       "shortName": "火薬",
       "name": "励振火薬",
-      "icon": "https://static.atlasacademy.io/JP/Items/6534.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6534.png",
+      "atlasId": 6534
     },
     {
       "id": "09",
@@ -78,7 +87,8 @@
       "largeCategory": "強化素材",
       "shortName": "小鐘",
       "name": "赦免の小鐘",
-      "icon": "https://static.atlasacademy.io/JP/Items/6549.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6549.png",
+      "atlasId": 6549
     },
     {
       "id": "0a",
@@ -86,7 +96,8 @@
       "largeCategory": "強化素材",
       "shortName": "剣",
       "name": "黄昏の儀式剣",
-      "icon": "https://static.atlasacademy.io/JP/Items/6551.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6551.png",
+      "atlasId": 6551
     },
     {
       "id": "0b",
@@ -94,7 +105,8 @@
       "largeCategory": "強化素材",
       "shortName": "灰",
       "name": "忘れじの灰",
-      "icon": "https://static.atlasacademy.io/JP/Items/6552.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6552.png",
+      "atlasId": 6552
     },
     {
       "id": "0c",
@@ -102,7 +114,8 @@
       "largeCategory": "強化素材",
       "shortName": "刃",
       "name": "黒曜鋭刃",
-      "icon": "https://static.atlasacademy.io/JP/Items/6554.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6554.png",
+      "atlasId": 6554
     },
     {
       "id": "0d",
@@ -110,7 +123,8 @@
       "largeCategory": "強化素材",
       "shortName": "残滓",
       "name": "狂気の残滓",
-      "icon": "https://static.atlasacademy.io/JP/Items/6555.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6555.png",
+      "atlasId": 6555
     },
     {
       "id": "10",
@@ -118,7 +132,8 @@
       "largeCategory": "強化素材",
       "shortName": "種",
       "name": "世界樹の種",
-      "icon": "https://static.atlasacademy.io/JP/Items/6502.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6502.png",
+      "atlasId": 6502
     },
     {
       "id": "11",
@@ -126,7 +141,8 @@
       "largeCategory": "強化素材",
       "shortName": "ﾗﾝﾀﾝ",
       "name": "ゴーストランタン",
-      "icon": "https://static.atlasacademy.io/JP/Items/6508.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6508.png",
+      "atlasId": 6508
     },
     {
       "id": "12",
@@ -134,7 +150,8 @@
       "largeCategory": "強化素材",
       "shortName": "八連",
       "name": "八連双晶",
-      "icon": "https://static.atlasacademy.io/JP/Items/6515.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6515.png",
+      "atlasId": 6515
     },
     {
       "id": "13",
@@ -142,7 +159,8 @@
       "largeCategory": "強化素材",
       "shortName": "蛇玉",
       "name": "蛇の宝玉",
-      "icon": "https://static.atlasacademy.io/JP/Items/6509.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6509.png",
+      "atlasId": 6509
     },
     {
       "id": "14",
@@ -150,7 +168,8 @@
       "largeCategory": "強化素材",
       "shortName": "羽根",
       "name": "鳳凰の羽根",
-      "icon": "https://static.atlasacademy.io/JP/Items/6501.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6501.png",
+      "atlasId": 6501
     },
     {
       "id": "15",
@@ -158,7 +177,8 @@
       "largeCategory": "強化素材",
       "shortName": "歯車",
       "name": "無間の歯車",
-      "icon": "https://static.atlasacademy.io/JP/Items/6510.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6510.png",
+      "atlasId": 6510
     },
     {
       "id": "16",
@@ -166,7 +186,8 @@
       "largeCategory": "強化素材",
       "shortName": "頁",
       "name": "禁断の頁",
-      "icon": "https://static.atlasacademy.io/JP/Items/6511.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6511.png",
+      "atlasId": 6511
     },
     {
       "id": "17",
@@ -174,7 +195,8 @@
       "largeCategory": "強化素材",
       "shortName": "ホム",
       "name": "ホムンクルスベビー",
-      "icon": "https://static.atlasacademy.io/JP/Items/6514.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6514.png",
+      "atlasId": 6514
     },
     {
       "id": "18",
@@ -182,7 +204,8 @@
       "largeCategory": "強化素材",
       "shortName": "蹄鉄",
       "name": "隕蹄鉄",
-      "icon": "https://static.atlasacademy.io/JP/Items/6513.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6513.png",
+      "atlasId": 6513
     },
     {
       "id": "19",
@@ -190,7 +213,8 @@
       "largeCategory": "強化素材",
       "shortName": "勲章",
       "name": "大騎士勲章",
-      "icon": "https://static.atlasacademy.io/JP/Items/6524.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6524.png",
+      "atlasId": 6524
     },
     {
       "id": "1a",
@@ -198,7 +222,8 @@
       "largeCategory": "強化素材",
       "shortName": "貝殻",
       "name": "追憶の貝殻",
-      "icon": "https://static.atlasacademy.io/JP/Items/6526.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6526.png",
+      "atlasId": 6526
     },
     {
       "id": "1b",
@@ -206,7 +231,8 @@
       "largeCategory": "強化素材",
       "shortName": "勾玉",
       "name": "枯淡勾玉",
-      "icon": "https://static.atlasacademy.io/JP/Items/6532.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6532.png",
+      "atlasId": 6532
     },
     {
       "id": "1c",
@@ -214,7 +240,8 @@
       "largeCategory": "強化素材",
       "shortName": "結氷",
       "name": "永遠結氷",
-      "icon": "https://static.atlasacademy.io/JP/Items/6535.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6535.png",
+      "atlasId": 6535
     },
     {
       "id": "1d",
@@ -222,7 +249,8 @@
       "largeCategory": "強化素材",
       "shortName": "指輪",
       "name": "巨人の指輪",
-      "icon": "https://static.atlasacademy.io/JP/Items/6537.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6537.png",
+      "atlasId": 6537
     },
     {
       "id": "1e",
@@ -230,7 +258,8 @@
       "largeCategory": "強化素材",
       "shortName": "ｵｰﾛﾗ",
       "name": "オーロラ鋼",
-      "icon": "https://static.atlasacademy.io/JP/Items/6536.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6536.png",
+      "atlasId": 6536
     },
     {
       "id": "1f",
@@ -238,7 +267,8 @@
       "largeCategory": "強化素材",
       "shortName": "鈴",
       "name": "閑古鈴",
-      "icon": "https://static.atlasacademy.io/JP/Items/6538.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6538.png",
+      "atlasId": 6538
     },
     {
       "id": "1g",
@@ -246,7 +276,8 @@
       "largeCategory": "強化素材",
       "shortName": "矢尻",
       "name": "禍罪の矢尻",
-      "icon": "https://static.atlasacademy.io/JP/Items/6541.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6541.png",
+      "atlasId": 6541
     },
     {
       "id": "1h",
@@ -254,7 +285,8 @@
       "largeCategory": "強化素材",
       "shortName": "冠",
       "name": "光銀の冠",
-      "icon": "https://static.atlasacademy.io/JP/Items/6543.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6543.png",
+      "atlasId": 6543
     },
     {
       "id": "1i",
@@ -262,7 +294,8 @@
       "largeCategory": "強化素材",
       "shortName": "霊子",
       "name": "神脈霊子",
-      "icon": "https://static.atlasacademy.io/JP/Items/6545.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6545.png",
+      "atlasId": 6545
     },
     {
       "id": "1j",
@@ -270,7 +303,8 @@
       "largeCategory": "強化素材",
       "shortName": "糸玉",
       "name": "虹の糸玉",
-      "icon": "https://static.atlasacademy.io/JP/Items/6547.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6547.png",
+      "atlasId": 6547
     },
     {
       "id": "1k",
@@ -278,7 +312,8 @@
       "largeCategory": "強化素材",
       "shortName": "鱗粉",
       "name": "夢幻の鱗粉",
-      "icon": "https://static.atlasacademy.io/JP/Items/6550.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6550.png",
+      "atlasId": 6550
     },
     {
       "id": "1l",
@@ -286,7 +321,8 @@
       "largeCategory": "強化素材",
       "shortName": "皮",
       "name": "太陽皮",
-      "icon": "https://static.atlasacademy.io/JP/Items/6553.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6553.png",
+      "atlasId": 6553
     },
     {
       "id": "1n",
@@ -294,7 +330,8 @@
       "largeCategory": "強化素材",
       "shortName": "花",
       "name": "終の花",
-      "icon": "https://static.atlasacademy.io/JP/Items/6557.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6557.png",
+      "atlasId": 6557
     },
     {
       "id": "1o",
@@ -302,7 +339,8 @@
       "largeCategory": "強化素材",
       "shortName": "ｷｭｰﾌﾞ",
       "name": "ユニバーサルキューブ",
-      "icon": "https://static.atlasacademy.io/JP/Items/6559.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6559.png",
+      "atlasId": 6559
     },
     {
       "id": "1p",
@@ -310,7 +348,8 @@
       "largeCategory": "強化素材",
       "shortName": "ﾚﾝｽﾞ",
       "name": "神彩のレンズ",
-      "icon": "https://static.atlasacademy.io/JP/Items/6561.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6561.png",
+      "atlasId": 6561
     },
     {
       "id": "20",
@@ -318,7 +357,8 @@
       "largeCategory": "強化素材",
       "shortName": "爪",
       "name": "混沌の爪",
-      "icon": "https://static.atlasacademy.io/JP/Items/6507.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6507.png",
+      "atlasId": 6507
     },
     {
       "id": "21",
@@ -326,7 +366,8 @@
       "largeCategory": "強化素材",
       "shortName": "心臓",
       "name": "蛮神の心臓",
-      "icon": "https://static.atlasacademy.io/JP/Items/6517.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6517.png",
+      "atlasId": 6517
     },
     {
       "id": "22",
@@ -334,7 +375,8 @@
       "largeCategory": "強化素材",
       "shortName": "逆鱗",
       "name": "竜の逆鱗",
-      "icon": "https://static.atlasacademy.io/JP/Items/6506.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6506.png",
+      "atlasId": 6506
     },
     {
       "id": "23",
@@ -342,7 +384,8 @@
       "largeCategory": "強化素材",
       "shortName": "根",
       "name": "精霊根",
-      "icon": "https://static.atlasacademy.io/JP/Items/6518.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6518.png",
+      "atlasId": 6518
     },
     {
       "id": "24",
@@ -350,7 +393,8 @@
       "largeCategory": "強化素材",
       "shortName": "幼角",
       "name": "戦馬の幼角",
-      "icon": "https://static.atlasacademy.io/JP/Items/6519.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6519.png",
+      "atlasId": 6519
     },
     {
       "id": "25",
@@ -358,7 +402,8 @@
       "largeCategory": "強化素材",
       "shortName": "涙石",
       "name": "血の涙石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6520.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6520.png",
+      "atlasId": 6520
     },
     {
       "id": "26",
@@ -366,7 +411,8 @@
       "largeCategory": "強化素材",
       "shortName": "脂",
       "name": "黒獣脂",
-      "icon": "https://static.atlasacademy.io/JP/Items/6521.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6521.png",
+      "atlasId": 6521
     },
     {
       "id": "27",
@@ -374,7 +420,8 @@
       "largeCategory": "強化素材",
       "shortName": "ﾗﾝﾌﾟ",
       "name": "封魔のランプ",
-      "icon": "https://static.atlasacademy.io/JP/Items/6523.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6523.png",
+      "atlasId": 6523
     },
     {
       "id": "28",
@@ -382,7 +429,8 @@
       "largeCategory": "強化素材",
       "shortName": "ｽｶﾗﾍﾞ",
       "name": "智慧のスカラベ",
-      "icon": "https://static.atlasacademy.io/JP/Items/6525.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6525.png",
+      "atlasId": 6525
     },
     {
       "id": "29",
@@ -390,7 +438,8 @@
       "largeCategory": "強化素材",
       "shortName": "産毛",
       "name": "原初の産毛",
-      "icon": "https://static.atlasacademy.io/JP/Items/6528.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6528.png",
+      "atlasId": 6528
     },
     {
       "id": "2a",
@@ -398,7 +447,8 @@
       "largeCategory": "強化素材",
       "shortName": "胆石",
       "name": "呪獣胆石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6529.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6529.png",
+      "atlasId": 6529
     },
     {
       "id": "2b",
@@ -406,7 +456,8 @@
       "largeCategory": "強化素材",
       "shortName": "神酒",
       "name": "奇奇神酒",
-      "icon": "https://static.atlasacademy.io/JP/Items/6531.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6531.png",
+      "atlasId": 6531
     },
     {
       "id": "2c",
@@ -414,7 +465,8 @@
       "largeCategory": "強化素材",
       "shortName": "炉心",
       "name": "暁光炉心",
-      "icon": "https://static.atlasacademy.io/JP/Items/6539.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6539.png",
+      "atlasId": 6539
     },
     {
       "id": "2d",
@@ -422,7 +474,8 @@
       "largeCategory": "強化素材",
       "shortName": "鏡",
       "name": "九十九鏡",
-      "icon": "https://static.atlasacademy.io/JP/Items/6540.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6540.png",
+      "atlasId": 6540
     },
     {
       "id": "2e",
@@ -430,7 +483,8 @@
       "largeCategory": "強化素材",
       "shortName": "卵",
       "name": "真理の卵",
-      "icon": "https://static.atlasacademy.io/JP/Items/6542.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6542.png",
+      "atlasId": 6542
     },
     {
       "id": "2g",
@@ -438,7 +492,8 @@
       "largeCategory": "強化素材",
       "shortName": "実",
       "name": "悠久の実",
-      "icon": "https://static.atlasacademy.io/JP/Items/6546.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6546.png",
+      "atlasId": 6546
     },
     {
       "id": "2h",
@@ -446,7 +501,8 @@
       "largeCategory": "強化素材",
       "shortName": "鬼灯",
       "name": "鬼炎鬼灯",
-      "icon": "https://static.atlasacademy.io/JP/Items/6548.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6548.png",
+      "atlasId": 6548
     },
     {
       "id": "2i",
@@ -454,7 +510,8 @@
       "largeCategory": "強化素材",
       "shortName": "釜",
       "name": "黄金釜",
-      "icon": "https://static.atlasacademy.io/JP/Items/6558.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6558.png",
+      "atlasId": 6558
     },
     {
       "id": "2j",
@@ -462,7 +519,8 @@
       "largeCategory": "強化素材",
       "shortName": "月光",
       "name": "月光核",
-      "icon": "https://static.atlasacademy.io/JP/Items/6560.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6560.png",
+      "atlasId": 6560
     },
     {
       "id": "2k",
@@ -470,7 +528,8 @@
       "largeCategory": "強化素材",
       "shortName": "聖水",
       "name": "天命の聖水",
-      "icon": "https://static.atlasacademy.io/JP/Items/6562.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6562.png",
+      "atlasId": 6562
     },
     {
       "id": "2l",
@@ -478,7 +537,8 @@
       "largeCategory": "強化素材",
       "shortName": "箱",
       "name": "遺霊箱",
-      "icon": "https://static.atlasacademy.io/JP/Items/6563.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6563.png",
+      "atlasId": 6563
     },
     {
       "id": "30",
@@ -486,7 +546,8 @@
       "largeCategory": "スキル石",
       "shortName": "剣輝",
       "name": "剣の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6001.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6001.png",
+      "atlasId": 6001
     },
     {
       "id": "31",
@@ -494,7 +555,8 @@
       "largeCategory": "スキル石",
       "shortName": "弓輝",
       "name": "弓の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6002.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6002.png",
+      "atlasId": 6002
     },
     {
       "id": "32",
@@ -502,7 +564,8 @@
       "largeCategory": "スキル石",
       "shortName": "槍輝",
       "name": "槍の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6003.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6003.png",
+      "atlasId": 6003
     },
     {
       "id": "33",
@@ -510,7 +573,8 @@
       "largeCategory": "スキル石",
       "shortName": "騎輝",
       "name": "騎の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6004.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6004.png",
+      "atlasId": 6004
     },
     {
       "id": "34",
@@ -518,7 +582,8 @@
       "largeCategory": "スキル石",
       "shortName": "術輝",
       "name": "術の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6005.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6005.png",
+      "atlasId": 6005
     },
     {
       "id": "35",
@@ -526,7 +591,8 @@
       "largeCategory": "スキル石",
       "shortName": "殺輝",
       "name": "殺の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6006.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6006.png",
+      "atlasId": 6006
     },
     {
       "id": "36",
@@ -534,7 +600,8 @@
       "largeCategory": "スキル石",
       "shortName": "狂輝",
       "name": "狂の輝石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6007.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6007.png",
+      "atlasId": 6007
     },
     {
       "id": "40",
@@ -542,7 +609,8 @@
       "largeCategory": "スキル石",
       "shortName": "剣魔",
       "name": "剣の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6101.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6101.png",
+      "atlasId": 6101
     },
     {
       "id": "41",
@@ -550,7 +618,8 @@
       "largeCategory": "スキル石",
       "shortName": "弓魔",
       "name": "弓の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6102.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6102.png",
+      "atlasId": 6102
     },
     {
       "id": "42",
@@ -558,7 +627,8 @@
       "largeCategory": "スキル石",
       "shortName": "槍魔",
       "name": "槍の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6103.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6103.png",
+      "atlasId": 6103
     },
     {
       "id": "43",
@@ -566,7 +636,8 @@
       "largeCategory": "スキル石",
       "shortName": "騎魔",
       "name": "騎の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6104.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6104.png",
+      "atlasId": 6104
     },
     {
       "id": "44",
@@ -574,7 +645,8 @@
       "largeCategory": "スキル石",
       "shortName": "術魔",
       "name": "術の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6105.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6105.png",
+      "atlasId": 6105
     },
     {
       "id": "45",
@@ -582,7 +654,8 @@
       "largeCategory": "スキル石",
       "shortName": "殺魔",
       "name": "殺の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6106.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6106.png",
+      "atlasId": 6106
     },
     {
       "id": "46",
@@ -590,7 +663,8 @@
       "largeCategory": "スキル石",
       "shortName": "狂魔",
       "name": "狂の魔石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6107.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6107.png",
+      "atlasId": 6107
     },
     {
       "id": "50",
@@ -598,7 +672,8 @@
       "largeCategory": "スキル石",
       "shortName": "剣秘",
       "name": "剣の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6201.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6201.png",
+      "atlasId": 6201
     },
     {
       "id": "51",
@@ -606,7 +681,8 @@
       "largeCategory": "スキル石",
       "shortName": "弓秘",
       "name": "弓の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6202.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6202.png",
+      "atlasId": 6202
     },
     {
       "id": "52",
@@ -614,7 +690,8 @@
       "largeCategory": "スキル石",
       "shortName": "槍秘",
       "name": "槍の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6203.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6203.png",
+      "atlasId": 6203
     },
     {
       "id": "53",
@@ -622,7 +699,8 @@
       "largeCategory": "スキル石",
       "shortName": "騎秘",
       "name": "騎の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6204.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6204.png",
+      "atlasId": 6204
     },
     {
       "id": "54",
@@ -630,7 +708,8 @@
       "largeCategory": "スキル石",
       "shortName": "術秘",
       "name": "術の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6205.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6205.png",
+      "atlasId": 6205
     },
     {
       "id": "55",
@@ -638,7 +717,8 @@
       "largeCategory": "スキル石",
       "shortName": "殺秘",
       "name": "殺の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6206.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6206.png",
+      "atlasId": 6206
     },
     {
       "id": "56",
@@ -646,7 +726,8 @@
       "largeCategory": "スキル石",
       "shortName": "狂秘",
       "name": "狂の秘石",
-      "icon": "https://static.atlasacademy.io/JP/Items/6207.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/6207.png",
+      "atlasId": 6207
     },
     {
       "id": "60",
@@ -654,7 +735,8 @@
       "largeCategory": "モニュピ",
       "shortName": "剣ピ",
       "name": "セイバーピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7001.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7001.png",
+      "atlasId": 7001
     },
     {
       "id": "61",
@@ -662,7 +744,8 @@
       "largeCategory": "モニュピ",
       "shortName": "弓ピ",
       "name": "アーチャーピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7002.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7002.png",
+      "atlasId": 7002
     },
     {
       "id": "62",
@@ -670,7 +753,8 @@
       "largeCategory": "モニュピ",
       "shortName": "槍ピ",
       "name": "ランサーピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7003.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7003.png",
+      "atlasId": 7003
     },
     {
       "id": "63",
@@ -678,7 +762,8 @@
       "largeCategory": "モニュピ",
       "shortName": "騎ピ",
       "name": "ライダーピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7004.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7004.png",
+      "atlasId": 7004
     },
     {
       "id": "64",
@@ -686,7 +771,8 @@
       "largeCategory": "モニュピ",
       "shortName": "術ピ",
       "name": "キャスターピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7005.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7005.png",
+      "atlasId": 7005
     },
     {
       "id": "65",
@@ -694,7 +780,8 @@
       "largeCategory": "モニュピ",
       "shortName": "殺ピ",
       "name": "アサシンピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7006.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7006.png",
+      "atlasId": 7006
     },
     {
       "id": "66",
@@ -702,7 +789,8 @@
       "largeCategory": "モニュピ",
       "shortName": "狂ピ",
       "name": "バーサーカーピース",
-      "icon": "https://static.atlasacademy.io/JP/Items/7007.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7007.png",
+      "atlasId": 7007
     },
     {
       "id": "70",
@@ -710,7 +798,8 @@
       "largeCategory": "モニュピ",
       "shortName": "剣モ",
       "name": "セイバーモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7101.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7101.png",
+      "atlasId": 7101
     },
     {
       "id": "71",
@@ -718,7 +807,8 @@
       "largeCategory": "モニュピ",
       "shortName": "弓モ",
       "name": "アーチャーモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7102.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7102.png",
+      "atlasId": 7102
     },
     {
       "id": "72",
@@ -726,7 +816,8 @@
       "largeCategory": "モニュピ",
       "shortName": "槍モ",
       "name": "ランサーモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7103.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7103.png",
+      "atlasId": 7103
     },
     {
       "id": "73",
@@ -734,7 +825,8 @@
       "largeCategory": "モニュピ",
       "shortName": "騎モ",
       "name": "ライダーモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7104.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7104.png",
+      "atlasId": 7104
     },
     {
       "id": "74",
@@ -742,7 +834,8 @@
       "largeCategory": "モニュピ",
       "shortName": "術モ",
       "name": "キャスターモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7105.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7105.png",
+      "atlasId": 7105
     },
     {
       "id": "75",
@@ -750,7 +843,8 @@
       "largeCategory": "モニュピ",
       "shortName": "殺モ",
       "name": "アサシンモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7106.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7106.png",
+      "atlasId": 7106
     },
     {
       "id": "76",
@@ -758,7 +852,8 @@
       "largeCategory": "モニュピ",
       "shortName": "狂モ",
       "name": "バーサーカーモニュメント",
-      "icon": "https://static.atlasacademy.io/JP/Items/7107.png"
+      "icon": "https://static.atlasacademy.io/JP/Items/7107.png",
+      "atlasId": 7107
     }
   ],
   "quests": [

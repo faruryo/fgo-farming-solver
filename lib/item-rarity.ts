@@ -35,3 +35,9 @@ const SKILL_STONE_LARGE_CATEGORIES = new Set(['スキル石', 'Gems'])
 
 export const isSkillStone = (largeCategory: string | undefined): boolean =>
   largeCategory != null && SKILL_STONE_LARGE_CATEGORIES.has(largeCategory)
+
+// ピース(銀の霊基再臨素材)。「ピース除く」トグルで使用。
+const PIECE_CATEGORIES = new Set(['ピース', 'Piece'])
+
+export const isPiece = (category: string | undefined): boolean =>
+  category != null && PIECE_CATEGORIES.has(category)
