@@ -1,5 +1,8 @@
-## ADDED Requirements
+# quest-efficiency Specification
 
+## Purpose
+TBD - created by archiving change quest-efficiency-points. Update Purpose after archive.
+## Requirements
 ### Requirement: 効率ポイントの算出
 
 システムは各クエストの効率ポイントを「相対効率の合計」として算出 SHALL。各素材について `relativeEff(i,q) = (drop_rate(q,i) / effectiveAP(q)) / (その素材の全クエスト中の最大 drop_rate/effectiveAP)` を求め、対象素材に重みを掛けて合計する。effectiveAP はアクティブなキャンペーン(`computeEffectiveAp`)を反映 SHALL。
@@ -186,6 +189,11 @@
 - **WHEN** ユーザーが一覧の行を選択する
 - **THEN** そのクエストの `/quests/[id]` 詳細へ遷移する
 
+#### Scenario: 効率ポイントの右寄せと狭幅でのクエスト名確保
+- **WHEN** 入手アイテムアイコン列が非表示になる狭い画面幅(SP)で一覧を表示する
+- **THEN** クエスト名が余白を吸収して幅を確保し、効率ポイントは行の右端に右寄せされる
+- **THEN** 広い画面幅(sm 以上)では「名前 | 入手アイテムアイコン | 効率ポイント」のレイアウトを維持する
+
 ### Requirement: 所持数入力導線
 
 システムは一覧ページの表示近くに所持数入力モーダルへの導線を提供 SHALL。モーダルは既存 `posession`(localStorage)を読み書きし、クラウド同期される。効率計算に効く素材で所持数が未入力のものがある場合、入力を促すナッジを表示 SHALL。
@@ -206,6 +214,18 @@
 - **WHEN** ユーザーがクエスト詳細を開く
 - **THEN** 効率ポイントの合計と、寄与した素材ごとの内訳が表示される
 
+### Requirement: クエスト詳細のクエスト報酬表示
+
+システムは `/quests/[id]` 詳細に、当該クエストのクエスト報酬(QP / 基本絆P / EXP)を、効率ポイント加算トグルの ON/OFF に関わらず常に表示 SHALL。値は元 CSV 由来の `Quest.qp` / `Quest.bondPoints` / `Quest.exp` を用いる。
+
+#### Scenario: 報酬の表示
+- **WHEN** ユーザーがクエスト詳細を開き、当該クエストに報酬値(QP/基本絆P/EXP)が存在する
+- **THEN** 存在する報酬項目のみがクエスト報酬として表示される
+
+#### Scenario: 報酬データが無い場合
+- **WHEN** 当該クエストに報酬値が一つも無い
+- **THEN** 「報酬データがありません」と表示される
+
 ### Requirement: 達成間近の素材の所持数加味
 
 システムはダッシュボードの「達成間近の素材」を、所持数を加味した不足度 `max(0, goal - owned)` で評価 SHALL。本セクションは目標達成(「あと◯個で達成」)に焦点を当てるため目標素材のみを対象とし、目標未設定の低所持素材の発見はクエスト一覧(不足のみモード)に委ねる。
@@ -217,3 +237,4 @@
 #### Scenario: 所持十分なら達成間近から外れる
 - **WHEN** ある目標素材の所持数が目標以上になった
 - **THEN** その素材は達成間近の候補から外れる
+
