@@ -5,6 +5,8 @@ export interface Item {
   largeCategory?: string
   shortName?: string
   icon?: string
+  /** Atlas Academy のアイテムID。育成計算機(material/result・所持数)と同じID空間で連動するために保持。 */
+  atlasId?: number
 }
 
 export interface Enemy {

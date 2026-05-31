@@ -284,6 +284,8 @@ export async function fetchAndTransformData(): Promise<MasterData> {
           shortName: shortName,
           name: aaItem.name,
           icon: aaItem.icon,
+          // 育成計算機(material/result・所持数)と同じ Atlas ID 空間で連動させる。
+          atlasId: aaItem.id,
         })
       }
       itemMap.set(shortName, id)

@@ -52,6 +52,15 @@
 - **WHEN** 育成計算機で必要数(material/result)が計算されている
 - **THEN** クエスト効率の不足判定は material/result の必要数 − 所持数 で行われる
 
+#### Scenario: 本番マスターデータにも atlasId を保持
+- **WHEN** マスターデータ更新パイプライン(`lib/master-data/update.ts`)が drops の `items` を構築する
+- **THEN** 各アイテムに対応する Atlas ID(`atlasId`)を付与する(モックだけでなく本番データでも保持)
+
+#### Scenario: 旧データの atlasId 実行時補完
+- **WHEN** `getDrops` が取得した `items` に `atlasId` が欠けている(再生成前の旧マスターデータ)
+- **THEN** 短縮ID → Atlas ID の対応(`toApiItemId`)で欠損分のみ補完し、既存フィールドや所持数キーは変更しない
+- **THEN** Atlas Academy が利用不可なら items は素のまま返し、リクエスト全体は失敗させない
+
 ### Requirement: 所持数モーダルの体裁
 
 システムは所持数モーダルに各素材のアイコンを表示し、余剰しきい値の意味を平易に説明する SHALL。
