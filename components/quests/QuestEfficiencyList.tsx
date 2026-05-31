@@ -389,7 +389,7 @@ export const QuestEfficiencyList: React.FC = () => {
                   name={r.quest.name}
                   ap={r.effAp}
                   originalAp={r.quest.ap}
-                  className="min-w-0 max-w-[44%]"
+                  className="flex-1 min-w-0 sm:flex-none sm:max-w-[44%]"
                   consumesPod={consumesPod}
                   podFree={isPodFreeQuest}
                 />
