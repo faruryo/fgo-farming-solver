@@ -285,7 +285,7 @@ export const QuestEfficiencyList: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
-                {t('ピース')}
+                {t('モニュピ')}
               </span>
               <ToggleGroup
                 value={[includePieces ? 'incl' : 'excl']}

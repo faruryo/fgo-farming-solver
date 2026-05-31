@@ -87,6 +87,28 @@ describe('computeQuestEfficiency', () => {
     expect(res.qA.score).toBeCloseTo(1) // g のみ
   })
 
+  it('モニュピ除くでピースとモニュメントがまとめて寄与しない', () => {
+    // largeCategory='モニュピ' のピース(銀)・モニュメント(金)はどちらも除外される。
+    const drops = {
+      items: [
+        { id: 'g', category: '金素材', largeCategory: '強化素材', name: 'gold', shortName: 'g' },
+        { id: 'piece', category: 'ピース', largeCategory: 'モニュピ', name: 'piece', shortName: 'p' },
+        { id: 'mon', category: 'モニュメント', largeCategory: 'モニュピ', name: 'monument', shortName: 'm' },
+      ],
+      quests: [{ id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20 }],
+      drop_rates: [
+        { quest_id: 'qA', item_id: 'g', drop_rate: 1.0 },
+        { quest_id: 'qA', item_id: 'piece', drop_rate: 1.0 },
+        { quest_id: 'qA', item_id: 'mon', drop_rate: 1.0 },
+      ],
+      campaigns: [],
+    } as unknown as Drops
+    const res = byId(computeQuestEfficiency(drops, { shortageOnly: false, includePieces: false }))
+    expect(contrib(res.qA, 'piece')).toBeUndefined()
+    expect(contrib(res.qA, 'mon')).toBeUndefined()
+    expect(res.qA.score).toBeCloseTo(1) // g のみ
+  })
+
   it("denominator='turn'(周回効率)はターン数で割り、1ターンクエストを高評価する", () => {
     // qA=1ターン, qB=3ターン。共に g を 1.0 drop。
     // eff(g,qA)=1/1=1, eff(g,qB)=1/3 → bestEff=1 → relativeEff(qA)=1, relativeEff(qB)=1/3。

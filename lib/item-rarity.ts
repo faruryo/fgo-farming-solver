@@ -36,8 +36,9 @@ const SKILL_STONE_LARGE_CATEGORIES = new Set(['スキル石', 'Gems'])
 export const isSkillStone = (largeCategory: string | undefined): boolean =>
   largeCategory != null && SKILL_STONE_LARGE_CATEGORIES.has(largeCategory)
 
-// ピース(銀の霊基再臨素材)。「ピース除く」トグルで使用。
-const PIECE_CATEGORIES = new Set(['ピース', 'Piece'])
+// モニュピ(霊基再臨素材 = ピース + モニュメント)の largeCategory。
+// 「モニュピ除く」トグルで、ピースとモニュメントをまとめて除外する。
+const MONUMENT_PIECE_LARGE_CATEGORIES = new Set(['モニュピ', 'Monuments and Pieces'])
 
-export const isPiece = (category: string | undefined): boolean =>
-  category != null && PIECE_CATEGORIES.has(category)
+export const isMonumentOrPiece = (largeCategory: string | undefined): boolean =>
+  largeCategory != null && MONUMENT_PIECE_LARGE_CATEGORIES.has(largeCategory)

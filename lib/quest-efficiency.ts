@@ -1,7 +1,7 @@
 import { Drops } from './get-drops'
 import { Campaign } from '../interfaces/fgodrop'
 import { computeEffectiveAp } from './solver'
-import { getRarityByCategory, isPiece, isSkillStone, Rarity } from './item-rarity'
+import { getRarityByCategory, isMonumentOrPiece, isSkillStone, Rarity } from './item-rarity'
 
 // クエストの「効率ポイント」を算出する純粋関数群。
 //
@@ -112,7 +112,7 @@ export const computeItemWeight = (
   opts: { shortageOnly: boolean; includeSkillStones: boolean; includePieces: boolean; threshold: SurplusThreshold },
 ): number => {
   if (!opts.includeSkillStones && isSkillStone(item.largeCategory)) return 0
-  if (!opts.includePieces && isPiece(item.category)) return 0
+  if (!opts.includePieces && isMonumentOrPiece(item.largeCategory)) return 0
   if (!opts.shortageOnly) return 1
   if (owned < goal) return 1
   const rarity = getRarityByCategory(item.category)

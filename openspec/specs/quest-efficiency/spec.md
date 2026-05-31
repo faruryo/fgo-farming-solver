@@ -35,13 +35,13 @@ TBD - created by archiving change quest-efficiency-points. Update Purpose after 
 - **WHEN** 「周回効率」で wave数が不明なクエストがある
 - **THEN** そのクエストは1ターン扱いで評価される
 
-### Requirement: ピース除くフィルタ
+### Requirement: モニュピ除くフィルタ
 
-システムは「ピース除く」ビューにおいて、ピース(category が ピース/Piece)の重みを0とする SHALL(スキル石の「石除く」と同様)。
+システムは「モニュピ除く」ビューにおいて、霊基再臨素材(largeCategory が モニュピ/Monuments and Pieces = ピースとモニュメント)の重みを0とする SHALL(スキル石の「石除く」と同様)。ピースとモニュメントは1つのトグルでまとめて除外される。
 
-#### Scenario: ピース除く
-- **WHEN** 「ピース除く」が選択されている
-- **THEN** ピースは効率ポイントに寄与しない
+#### Scenario: モニュピ除く
+- **WHEN** 「モニュピ除く」が選択されている
+- **THEN** ピース(銀)とモニュメント(金)はどちらも効率ポイントに寄与しない
 
 ### Requirement: 所持数・必要数を育成計算機と連動(Atlas ID 統一)
 
