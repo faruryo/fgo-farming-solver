@@ -197,6 +197,11 @@
     "報酬を効率ポイントに加算": "Add rewards to efficiency",
     "ピース": "Pieces",
     "所持数を登録": "Edit your stock",
+    "クエスト報酬": "Quest Rewards",
+    "基本絆P": "Base Bond",
+    "EXP": "EXP",
+    "QP": "QP",
+    "報酬データなし": "No reward data",
     "所持数モーダル説明": "Enter how many of each material you own. The efficiency favors materials you still need. Blank counts as 0 owned.",
     "余剰しきい値の説明": "Even after a goal is met, a material is kept as a secondary candidate while its surplus (owned − goal) is within this amount; larger surpluses are excluded. Set per rarity (gold/silver/bronze)."
   }

@@ -2,12 +2,12 @@
 
 import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { FaChevronLeft, FaMapMarkerAlt, FaBolt, FaLayerGroup } from 'react-icons/fa'
+import { FaChevronLeft, FaMapMarkerAlt, FaBolt, FaLayerGroup, FaGift } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { useDrops } from '../../../hooks/use-drops'
 import { useQuestWave } from '../../../hooks/use-quest-wave'
-import { Quest } from '../../../interfaces/api'
+import { Quest } from '../../../interfaces/fgodrop'
 import { Badge } from '@/components/ui/badge'
 import { ItemIdentity } from '../../../components/common/ItemIdentity'
 import { QuestEfficiencyCard } from '../../../components/quests/QuestEfficiencyCard'
@@ -152,6 +152,7 @@ export default function QuestDetailPage() {
           {/* Sidebar / Drop Info */}
           <div className="flex flex-col gap-6">
             <QuestEfficiencyCard questId={quest.id} />
+            <QuestRewards quest={quest} />
             <div className="c-card p-6">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
@@ -164,6 +165,50 @@ export default function QuestDetailPage() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+const QuestRewards: React.FC<{ quest: Quest }> = ({ quest }) => {
+  const { t } = useTranslation('quests')
+  const rows = [
+    { key: 'qp', label: t('QP'), value: quest.qp },
+    { key: 'bond', label: t('基本絆P'), value: quest.bondPoints },
+    { key: 'exp', label: t('EXP'), value: quest.exp },
+  ].filter(r => typeof r.value === 'number' && r.value > 0)
+
+  return (
+    <div className="c-card p-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <FaGift style={{ color: 'var(--gold)' }} />
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>
+            {t('クエスト報酬')}
+          </h3>
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--text3)' }}>
+            {t('報酬データなし')}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {rows.map(r => (
+              <div
+                key={r.key}
+                className="flex items-center justify-between gap-3 p-2 rounded-md"
+                style={{ background: 'rgba(255,255,255,0.05)' }}
+              >
+                <span className="text-xs font-bold" style={{ color: 'var(--text2)' }}>
+                  {r.label}
+                </span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
+                  {r.value!.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
