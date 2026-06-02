@@ -36,7 +36,7 @@ export type CurrentStateInput = {
   generatedAtIso?: string
 }
 
-type BuildContext = {
+export type BuildContext = {
   current: CurrentStateInput
   highDifficultyQuestIds: string[]
   rarityById: Map<string, Rarity>
@@ -46,7 +46,7 @@ type BuildContext = {
   generatedAtIso: string
 }
 
-const buildPeriodSummary = (
+export const buildPeriodSummary = (
   period: SnapshotPeriod,
   snapshot: Snapshot | null,
   ctx: BuildContext,
@@ -105,8 +105,11 @@ const buildPeriodSummary = (
   const deltaApRaw = pastTargetSum - currentTargetSum
   const deltaApAdjusted = deltaApRaw + newServantOffsetAp
 
+  // 目標増加は deltaApRaw と同じ「目標アイテム個数合計」プロキシで比較する。
+  // ここで current.totalAp(ソルバーの実AP総量)を使うと、過去の個数合計
+  // (pastTargetSum)と単位が食い違い、目標未変更でも巨大な増加が出てしまう。
   const targetApIncrease = computeTargetApIncrease(
-    ctx.current.totalAp ?? currentTargetSum,
+    currentTargetSum,
     pastTargetSum
   )
 
