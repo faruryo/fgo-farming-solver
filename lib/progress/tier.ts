@@ -11,19 +11,23 @@ export type NewServantEntry = {
   rarity: Rarity | null
 }
 
-// New servants are those that flipped from disabled=true (or missing) in the
-// past snapshot to disabled=false in the current state.
+// New servants are those that flipped from disabled=true to disabled=false
+// between the past snapshot and the current state. When the past snapshot has
+// no chaldea state recorded (material absent → past=null), the true→false
+// transition is unobservable, so we report zero new servants rather than
+// counting the entire roster as "new" (which would inflate deltaAp with a
+// phantom offset). See progress-visualizer spec: 新規サーヴァント検出.
 export const detectNewServants = (
   current: ChaldeaState | null,
   past: ChaldeaState | null,
   rarityById: Map<string, Rarity>
 ): NewServantEntry[] => {
-  if (!current) return []
+  if (!current || !past) return []
   const entries: NewServantEntry[] = []
   for (const [id, entry] of Object.entries(current)) {
     if (id === 'all') continue
     if (!isOwned(entry)) continue
-    if (past && isOwned(past[id])) continue
+    if (isOwned(past[id])) continue
     entries.push({ servantId: id, rarity: rarityById.get(id) ?? null })
   }
   return entries

@@ -13,6 +13,7 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useQuestTree } from '../../hooks/use-quest-tree'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
+import { saveProgressSnapshot } from '../../lib/progress/snapshot-client'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { ItemFieldset } from './item-fieldset'
@@ -144,6 +145,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       if (hasId(result) && typeof result.id == 'string') {
         const url = `/farming/results/${result.id}`
         localStorage.setItem('farming/results', url)
+        // Persist a full-state progress snapshot (incl. material) for this run.
+        // Fire-and-forget so it never blocks navigation to the result page.
+        void saveProgressSnapshot()
         await router.push(url)
       } else {
         await router.push('/500')

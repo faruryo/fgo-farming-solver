@@ -3,7 +3,6 @@ import { getDrops } from '../../../lib/get-drops'
 import { solveBoth } from '../../../lib/solver'
 import { Params } from '../../../interfaces/api'
 import { auth } from '../../../lib/auth'
-import { saveSnapshot } from '../../../lib/progress/snapshot'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import type { CloudflareEnv } from '../../../types/cloudflare-env'
 
@@ -80,16 +79,10 @@ export async function GET(req: NextRequest) {
       console.error('Failed to save to D1:', e)
     }
 
-    if (session?.user?.id) {
-      try {
-        await saveSnapshot(db, session.user.id, {
-          items: itemsRaw,
-          quests: questsRaw,
-        })
-      } catch (e) {
-        console.error('[api/solve] snapshot save failed:', e)
-      }
-    }
+    // Progress snapshots are persisted client-side via /api/progress/snapshot
+    // after a successful run, so the snapshot includes `material` (needed for
+    // new-servant detection). The server no longer writes a material-less
+    // snapshot here, which previously clobbered material-containing snapshots.
   }
 
   return Response.json({ ...result, id })
