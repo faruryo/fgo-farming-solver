@@ -17,4 +17,4 @@
 
 ## 4. 仕様反映
 
-- [ ] 4.1 実装完了後、`openspec archive progress-snapshot-include-material` で `openspec/specs/sync` と `openspec/specs/progress-visualizer` に変更を反映する。
+- [x] 4.1 実装完了後、`openspec archive progress-snapshot-include-material` で `openspec/specs/sync` と `openspec/specs/progress-visualizer` に変更を反映する。
