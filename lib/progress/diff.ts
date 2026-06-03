@@ -97,6 +97,23 @@ export const sumTargetItemCounts = (
   return sum
 }
 
+// Snapshot includes the user's owned-material counts in `posession` (atlasId
+// keyed). Used to re-solve "remaining" with past possessions (方式1).
+export const extractPosession = (
+  snapshot: unknown
+): Record<string, number> | null => {
+  const parsed = parseJsonField<Record<string, string | number | undefined>>(
+    pickStorageField(snapshot, 'posession')
+  )
+  if (!parsed) return null
+  const res: Record<string, number> = {}
+  for (const [id, v] of Object.entries(parsed)) {
+    const n = typeof v === 'string' ? Number(v) : v
+    if (Number.isFinite(n)) res[id] = n as number
+  }
+  return Object.keys(res).length > 0 ? res : null
+}
+
 export const servantGrowthSum = (state: ServantState | undefined): number => {
   if (!state || state.disabled) return 0
   let total = 0

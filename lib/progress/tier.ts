@@ -45,13 +45,14 @@ export const sumNewServantOffsetAp = (
   return total
 }
 
-// 4-tier classification per design.md Decision #3.
-// deltaAp: AP saved between snapshots (positive when target ap decreased),
-// already adjusted for new-servant offsets by the caller.
+// 4-tier classification.
+// reducedAp: アイテム入手により「残りに必要なAP」が減った量(正で進捗)。
+// 目標を現在で固定した再ソルブで算出され、目標増加の影響は含まない。
 export const classifyTier = (
-  deltaAp: number,
+  reducedAp: number,
   elapsedMinutes: number
 ): ProgressTier => {
+  const deltaAp = reducedAp
   if (deltaAp <= 0) return 'none'
   const naturalRecoveryAp = elapsedMinutes / 5
   if (naturalRecoveryAp <= 0) {

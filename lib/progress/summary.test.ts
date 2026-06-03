@@ -1,67 +1,75 @@
 import { describe, it, expect } from 'vitest'
 import { buildPeriodSummary, type BuildContext } from './summary'
 import type { Snapshot } from './snapshot'
-import type { Rarity } from './rarity-ap-sample'
+import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 
-const apTable: Record<Rarity, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-
-const makeCtx = (
-  itemCounts: Record<string, number> | null,
-  totalAp: number | null
-): BuildContext => ({
+const makeCtx = (chaldea: ChaldeaState | null = null): BuildContext => ({
   current: {
-    chaldea: null,
-    itemCounts,
+    chaldea,
+    itemCounts: null,
     checkedQuests: [],
-    totalAp,
+    totalAp: null,
     generatedAtIso: '2026-06-03T00:00:00.000Z',
   },
-  highDifficultyQuestIds: [],
   rarityById: new Map(),
   nameById: new Map(),
-  apTableBasic: apTable,
-  apTableHighDifficulty: apTable,
   generatedAtIso: '2026-06-03T00:00:00.000Z',
 })
 
-const makeSnapshot = (items: Record<string, number>): Snapshot => ({
+const makeSnapshot = (data: unknown): Snapshot => ({
   id: 's1',
   userId: 'u1',
-  data: { items },
+  data,
   createdAt: '2026-06-02T00:00:00.000Z',
 })
 
-describe('buildPeriodSummary targetApIncrease', () => {
-  it('目標(アイテム個数)が変わっていなければ、ソルバーの実AP総量に関係なく増加は0', () => {
-    // 過去・現在ともに目標個数 100。current.totalAp は大きな実AP総量(回帰: 単位取り違えで誤って巨大化していた)
+// 単一サーヴァントの再臨レンジだけを持つ最小 ChaldeaState。
+const chaldeaWithAscension = (start: number, end: number): ChaldeaState =>
+  ({
+    '100100': {
+      disabled: false,
+      targets: { ascension: { disabled: false, ranges: [{ start, end }] } },
+    },
+  }) as unknown as ChaldeaState
+
+describe('buildPeriodSummary (実プレイ基準の指標)', () => {
+  it('過去所持(posession)を pastPosession として返す', () => {
     const summary = buildPeriodSummary(
       'previous',
-      makeSnapshot({ '6503': 100 }),
-      makeCtx({ '6503': 100 }, 414211),
+      makeSnapshot({ posession: { '6503': 3, '6512': 10 } }),
+      makeCtx(),
       true
     )
-    expect(summary?.deltaApRaw).toBe(0)
-    expect(summary?.targetApIncrease).toBe(0)
+    expect(summary?.pastPosession).toEqual({ '6503': 3, '6512': 10 })
+    // サーバ側 tier は暫定 none(クライアントが reducedAp 確定後に上書き)
+    expect(summary?.tier).toBe('none')
+    // reduced* はサーバでは未確定
+    expect(summary?.reducedAp).toBeUndefined()
   })
 
-  it('目標(アイテム個数)を増やした分だけ targetApIncrease が増える', () => {
+  it('育成で目標レンジが縮んだ分を growthTotal に集計する', () => {
+    // 過去: 再臨 0→4(残り4)、現在: 2→4(残り2) → 2 育成した
     const summary = buildPeriodSummary(
       'previous',
-      makeSnapshot({ '6503': 100 }),
-      makeCtx({ '6503': 300 }, 414211),
+      makeSnapshot({ material: chaldeaWithAscension(0, 4) }),
+      makeCtx(chaldeaWithAscension(2, 4)),
       true
     )
-    // current 300 - past 100 = 200 増加
-    expect(summary?.targetApIncrease).toBe(200)
+    expect(summary?.growthTotal).toBe(2)
+    expect(summary?.servantGrowth.length).toBe(1)
   })
 
-  it('目標を減らした(周回で消費)場合は増加0', () => {
-    const summary = buildPeriodSummary(
-      'previous',
-      makeSnapshot({ '6503': 300 }),
-      makeCtx({ '6503': 100 }, 414211),
-      true
-    )
-    expect(summary?.targetApIncrease).toBe(0)
+  it('スナップショットが無ければ first_time/no_snapshot フォールバック', () => {
+    const first = buildPeriodSummary('previous', null, makeCtx(), false)
+    expect(first?.fallback).toBe('first_time')
+    expect(first?.growthTotal).toBe(0)
+
+    const none = buildPeriodSummary('week', null, makeCtx(), true)
+    expect(none?.fallback).toBe('no_snapshot_for_period')
+  })
+
+  it('posession が無いスナップショットでは pastPosession は undefined', () => {
+    const summary = buildPeriodSummary('previous', makeSnapshot({ items: {} }), makeCtx(), true)
+    expect(summary?.pastPosession).toBeUndefined()
   })
 })

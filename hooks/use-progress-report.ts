@@ -1,9 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import type { ProgressResponse } from '../lib/progress/types'
+import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
+import type { Drops } from '../lib/get-drops'
+import { buildNeedByApiItemId, solveTotals } from '../lib/progress/compute-reduction'
+import { classifyTier } from '../lib/progress/tier'
 
 const readJson = <T,>(key: string): T | null => {
   if (typeof window === 'undefined') return null
@@ -29,7 +32,12 @@ export type UseProgressReport = {
   error: string | null
 }
 
-export const useProgressReport = (totalAp: number | null): UseProgressReport => {
+const yenFromAp = (ap: number): number => Math.round((ap / 144 / 168) * 10000)
+
+export const useProgressReport = (
+  totalAp: number | null,
+  drops?: Drops | null
+): UseProgressReport => {
   const { data: session } = useSession()
   const userId = session?.user?.id ?? null
   const [data, setData] = useState<ProgressResponse | null>(null)
@@ -67,5 +75,49 @@ export const useProgressReport = (totalAp: number | null): UseProgressReport => 
     return () => controller.abort()
   }, [load])
 
-  return { data, loading, error }
+  // 「アイテム入手による残りの減少」を方式1(目標を現在で固定して再ソルブ)で
+  // クライアント算出し、reducedAp 確定後に tier / zero_progress を再判定する。
+  // pastPosession が無い期間(初期データや dev モック)はサーバ/モックの値を保持。
+  const enriched = useMemo<ProgressResponse | null>(() => {
+    if (!data) return null
+    if (!drops || drops.items.length === 0) return data
+
+    const targets = readJson<Record<string, number>>('material/result') ?? {}
+    const posession = readJson<Record<string, number>>('posession') ?? {}
+    const quests = readJson<string[]>('quests') ?? []
+    const now = solveTotals(
+      drops,
+      buildNeedByApiItemId(targets, posession, drops),
+      quests
+    )
+
+    const finalize = (p: PeriodSummary | null): PeriodSummary | null => {
+      if (!p || !p.pastPosession) return p
+      const past = solveTotals(
+        drops,
+        buildNeedByApiItemId(targets, p.pastPosession, drops),
+        quests
+      )
+      const reducedAp = past.totalAp - now.totalAp
+      const reducedLap = past.totalLap - now.totalLap
+      const tier = p.fallback ? p.tier : classifyTier(reducedAp, p.elapsedMinutes)
+      const fallback =
+        p.fallback ??
+        (reducedAp <= 0 && p.growthTotal <= 0 && p.newServantCount === 0
+          ? 'zero_progress'
+          : null)
+      return { ...p, reducedAp, reducedLap, reducedYen: yenFromAp(reducedAp), tier, fallback }
+    }
+
+    return {
+      ...data,
+      periods: {
+        previous: finalize(data.periods.previous),
+        week: finalize(data.periods.week),
+        month: finalize(data.periods.month),
+      },
+    }
+  }, [data, drops])
+
+  return { data: enriched, loading, error }
 }

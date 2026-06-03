@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { auth } from '../../../lib/auth'
-import { getDrops } from '../../../lib/get-drops'
 import { getServantsList } from '../../../lib/get-nice-servants'
 import { buildProgressResponse } from '../../../lib/progress/summary'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
@@ -58,10 +57,7 @@ export async function POST(req: NextRequest) {
     // empty body is fine
   }
 
-  const [drops, servants] = await Promise.all([
-    getDrops(),
-    getServantsList().catch(() => []),
-  ])
+  const servants = await getServantsList().catch(() => [])
 
   const response = await buildProgressResponse({
     db,
@@ -72,7 +68,6 @@ export async function POST(req: NextRequest) {
       checkedQuests: body.current?.checkedQuests ?? null,
       totalAp: body.current?.totalAp ?? null,
     },
-    quests: drops.quests,
     servants: servants.map((s) => ({ id: s.id, name: s.name, rarity: s.rarity })),
   })
 

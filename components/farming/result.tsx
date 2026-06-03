@@ -3,12 +3,12 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFarmingResult } from '../../hooks/use-farming-result'
-import { useProgressReport } from '../../hooks/use-progress-report'
 import { Link } from '../common/link'
 import { QuestTable } from './quest-table'
 import { TweetIntent } from './tweet-intent'
 import { ResultAccordion } from './result-accordion'
-import { ProgressReportPanel } from './ProgressReportPanel'
+import { HistoryGraph } from '../dashboard/HistoryGraph'
+import { ResultStatsBar } from './ResultStatsBar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Result } from '../../interfaces/api'
@@ -79,10 +79,6 @@ const ResultPanel = ({
 
 export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
-  const totalApForProgress = legacyResult
-    ? legacyResult.total_ap
-    : (apResult?.total_ap ?? null)
-  const progress = useProgressReport(totalApForProgress)
   const formattedDate = formatDate(createdAt)
 
   if (legacyResult) {
@@ -108,18 +104,17 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps
           <ResultPanel
             result={legacyResult}
             progressPanel={
-              <ProgressReportPanel
-                data={progress.data}
-                loading={progress.loading}
-                stats={{
-                  totalLap: legacyResult.total_lap,
-                  totalAp: legacyResult.total_ap,
-                  yen: Math.round(legacyResult.total_ap / 144 / 168 * 10000),
-                }}
+              <ResultStatsBar
+                totalLap={legacyResult.total_lap}
+                totalAp={legacyResult.total_ap}
+                yen={Math.round(legacyResult.total_ap / 144 / 168 * 10000)}
                 tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
               />
             }
           />
+          <div className="mt-12">
+            <HistoryGraph />
+          </div>
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>
           </div>
@@ -158,10 +153,10 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps
             <ResultPanel
               result={apResult!}
               progressPanel={
-                <ProgressReportPanel
-                  data={progress.data}
-                  loading={progress.loading}
-                  stats={{ totalLap: apResult!.total_lap, totalAp: apResult!.total_ap, yen: apYen }}
+                <ResultStatsBar
+                  totalLap={apResult!.total_lap}
+                  totalAp={apResult!.total_ap}
+                  yen={apYen}
                   tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
                 />
               }
@@ -171,16 +166,20 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps
             <ResultPanel
               result={lapResult!}
               progressPanel={
-                <ProgressReportPanel
-                  data={progress.data}
-                  loading={progress.loading}
-                  stats={{ totalLap: lapResult!.total_lap, totalAp: lapResult!.total_ap, yen: lapYen }}
+                <ResultStatsBar
+                  totalLap={lapResult!.total_lap}
+                  totalAp={lapResult!.total_ap}
+                  yen={lapYen}
                   tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
                 />
               }
             />
           </TabsContent>
         </Tabs>
+
+        <div className="mt-12">
+          <HistoryGraph />
+        </div>
 
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>

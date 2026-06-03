@@ -2,31 +2,19 @@ import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import {
   elapsedMinutesBetween,
   extractChaldeaState,
-  extractCheckedQuests,
-  extractItemCounts,
-  sumTargetItemCounts,
+  extractPosession,
 } from './diff'
-import { computeServantGrowthDeltas, computeTargetApIncrease } from './growth'
-import {
-  hasHighDifficultyAccess as detectHighDifficultyAccess,
-  collectHighDifficultyQuestIds,
-} from './quest-access'
-import { getRarityApTables, pickRarityApTable } from './rarity-ap-table'
+import { computeServantGrowthDeltas } from './growth'
 import type { Rarity } from './rarity-ap-sample'
 import type { Snapshot, SnapshotPeriod } from './snapshot'
 import { fetchAllSnapshotsByPeriod } from './snapshot'
-import {
-  classifyTier,
-  detectNewServants,
-  sumNewServantOffsetAp,
-} from './tier'
+import { detectNewServants } from './tier'
 import type {
   FallbackReason,
   PeriodSummary,
   ProgressResponse,
 } from './types'
 import type { D1Database } from '@cloudflare/workers-types'
-import type { Quest } from '../../interfaces/fgodrop'
 
 export type CurrentStateInput = {
   chaldea: ChaldeaState | null
@@ -38,11 +26,8 @@ export type CurrentStateInput = {
 
 export type BuildContext = {
   current: CurrentStateInput
-  highDifficultyQuestIds: string[]
   rarityById: Map<string, Rarity>
   nameById: Map<string, string>
-  apTableBasic: Record<Rarity, number>
-  apTableHighDifficulty: Record<Rarity, number>
   generatedAtIso: string
 }
 
@@ -59,12 +44,9 @@ export const buildPeriodSummary = (
     return {
       period,
       tier: 'none',
-      deltaApRaw: 0,
-      deltaApAdjusted: 0,
+      growthTotal: 0,
       newServantCount: 0,
-      newServantOffsetAp: 0,
       servantGrowth: [],
-      targetApIncrease: 0,
       elapsedMinutes: 0,
       fallback,
       snapshotCreatedAt: null,
@@ -72,45 +54,11 @@ export const buildPeriodSummary = (
   }
 
   const pastChaldea = extractChaldeaState(snapshot.data)
-  const pastCheckedQuests = extractCheckedQuests(snapshot.data)
-  const pastItemCounts = extractItemCounts(snapshot.data)
-  const pastTargetSum = sumTargetItemCounts(pastItemCounts)
-  const currentTargetSum = sumTargetItemCounts(ctx.current.itemCounts)
-
-  // Determine which AP table to use based on the PAST checkedQuests (because
-  // the past snapshot is what's being compared) — fall back to current if past
-  // didn't record quests.
-  const checkedForAccess = pastCheckedQuests ?? ctx.current.checkedQuests ?? []
-  const hadHighDifficultyAccess = detectHighDifficultyAccess(
-    checkedForAccess,
-    ctx.highDifficultyQuestIds
-  )
-  const apTable = hadHighDifficultyAccess
-    ? ctx.apTableHighDifficulty
-    : ctx.apTableBasic
 
   const newServants = detectNewServants(
     ctx.current.chaldea,
     pastChaldea,
     ctx.rarityById
-  )
-  const newServantOffsetAp = sumNewServantOffsetAp(newServants, apTable)
-
-  // Raw delta on the *target* AP scale isn't directly available in snapshots;
-  // we approximate AP delta from total target item-count change weighted later
-  // by the actual solver run. As a proxy here, we use:
-  //   deltaAp = pastTargetSum - currentTargetSum
-  // Negative deltas indicate "more items needed now" (e.g. after new servant
-  // unlocks), which gets offset by newServantOffsetAp.
-  const deltaApRaw = pastTargetSum - currentTargetSum
-  const deltaApAdjusted = deltaApRaw + newServantOffsetAp
-
-  // 目標増加は deltaApRaw と同じ「目標アイテム個数合計」プロキシで比較する。
-  // ここで current.totalAp(ソルバーの実AP総量)を使うと、過去の個数合計
-  // (pastTargetSum)と単位が食い違い、目標未変更でも巨大な増加が出てしまう。
-  const targetApIncrease = computeTargetApIncrease(
-    currentTargetSum,
-    pastTargetSum
   )
 
   const elapsedMinutes = elapsedMinutesBetween(
@@ -123,25 +71,25 @@ export const buildPeriodSummary = (
     pastChaldea,
     ctx.nameById
   )
+  // 育成総量: 育成で縮んだ目標レンジ(再臨/スキル/アペンド)の合計。
+  const growthTotal = servantGrowth.reduce((sum, g) => sum + g.delta, 0)
 
-  const tier = classifyTier(deltaApAdjusted, elapsedMinutes)
-
-  const zeroProgress =
-    deltaApAdjusted <= 0 &&
-    servantGrowth.length === 0 &&
-    targetApIncrease === 0
+  // 「アイテム入手による残りの減少(reducedAp/Lap/Yen)」は目標を現在で固定した
+  // 再ソルブが必要で、現在の目標(material/result)と所持(posession)を持つ
+  // クライアント側で算出する(方式1)。そのためサーバは過去所持(pastPosession)を
+  // 返すだけにし、tier はクライアントが reducedAp 確定後に再判定する。
+  // ここでの tier は暫定の 'none'(ダッシュボードが上書きする)。
+  const pastPosession = extractPosession(snapshot.data) ?? undefined
 
   return {
     period,
-    tier,
-    deltaApRaw,
-    deltaApAdjusted,
+    tier: 'none',
+    growthTotal,
     newServantCount: newServants.length,
-    newServantOffsetAp,
     servantGrowth,
-    targetApIncrease,
+    pastPosession,
     elapsedMinutes,
-    fallback: zeroProgress ? 'zero_progress' : null,
+    fallback: null,
     snapshotCreatedAt: snapshot.createdAt,
   }
 }
@@ -150,7 +98,6 @@ export type BuildProgressResponseInput = {
   db: D1Database
   userId: string
   current: CurrentStateInput
-  quests: Quest[]
   servants: Array<{ id: number | string; name?: string; rarity: number }>
 }
 
@@ -158,15 +105,11 @@ export const buildProgressResponse = async ({
   db,
   userId,
   current,
-  quests,
   servants,
 }: BuildProgressResponseInput): Promise<ProgressResponse> => {
   const generatedAtIso = current.generatedAtIso ?? new Date().toISOString()
-  
-  const [snapshots, apTables] = await Promise.all([
-    fetchAllSnapshotsByPeriod(db, userId),
-    getRarityApTables(),
-  ])
+
+  const snapshots = await fetchAllSnapshotsByPeriod(db, userId)
 
   const rarityById = new Map<string, Rarity>()
   const nameById = new Map<string, string>()
@@ -177,15 +120,10 @@ export const buildProgressResponse = async ({
     if (s.name) nameById.set(s.id.toString(), s.name)
   }
 
-  const highDifficultyQuestIds = collectHighDifficultyQuestIds(quests)
-
   const ctx: BuildContext = {
     current,
-    highDifficultyQuestIds,
     rarityById,
     nameById,
-    apTableBasic: apTables.basic,
-    apTableHighDifficulty: apTables.withHighDifficulty,
     generatedAtIso,
   }
 
@@ -216,6 +154,3 @@ export const buildProgressResponse = async ({
     },
   }
 }
-
-// re-export for use in /api/progress
-export { pickRarityApTable }

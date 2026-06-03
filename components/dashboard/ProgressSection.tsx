@@ -8,11 +8,17 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
 import NextLink from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useDrops } from '../../hooks/use-drops'
+import { useProgressReport } from '../../hooks/use-progress-report'
+import { ProgressReportPanel } from '../farming/ProgressReportPanel'
 
 export const ProgressSection: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common'])
   const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
   const [isMounted, setIsMounted] = React.useState(false)
+  const drops = useDrops()
+  // 現在 total_ap はパネル表示に必須ではない(減少はクライアント再ソルブで算出)ため null。
+  const progress = useProgressReport(null, drops)
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0)
@@ -51,13 +57,20 @@ export const ProgressSection: React.FC = () => {
     ].filter(d => d.total > 0)
   }, [chaldea, t])
 
-  if (!stats || stats.length === 0) {
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="u-section-header">
-          <h2 className="u-section-header-title">{t('あなたの育成進捗')}</h2>
-          <div className="u-section-header-line" />
-        </div>
+  const showProgressPanel = progress.loading || progress.data != null
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="u-section-header">
+        <h2 className="u-section-header-title">{t('あなたの育成進捗')}</h2>
+        <div className="u-section-header-line" />
+      </div>
+
+      {showProgressPanel && (
+        <ProgressReportPanel data={progress.data} loading={progress.loading} />
+      )}
+
+      {!stats || stats.length === 0 ? (
         <div className="u-fgo-card p-8 text-center rounded-xl" style={{ background: 'var(--panel2)' }}>
           <div className="flex flex-col items-center gap-4">
             <p style={{ color: 'var(--text2)', fontWeight: 'bold' }}>{t('目標が設定されていません')}</p>
@@ -71,17 +84,7 @@ export const ProgressSection: React.FC = () => {
             </NextLink>
           </div>
         </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="u-section-header">
-        <h2 className="u-section-header-title">{t('あなたの育成進捗')}</h2>
-        <div className="u-section-header-line" />
-      </div>
-
+      ) : (
       <div className="grid grid-cols-3 gap-4">
         {stats.map(stat => {
           const percent = stat.total > 0 ? Math.round((stat.value / stat.total) * 100) : 0
@@ -116,6 +119,7 @@ export const ProgressSection: React.FC = () => {
           )
         })}
       </div>
+      )}
     </div>
   )
 }

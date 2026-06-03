@@ -40,12 +40,6 @@ const newServantWelcome: string[] = [
   '新しい絆ですね、先輩。一緒に育てていきましょう。',
 ]
 
-const targetIncrease: string[] = [
-  '次の目標、しっかり見据えていますね、先輩。素敵です。',
-  '挑む山を高くするのは勇気がいります、先輩、応援しています。',
-  '前向きな目標設定です、先輩。一緒にがんばりましょう。',
-]
-
 const growth: string[] = [
   'スキル強化、しっかり進めましたね、先輩。',
   'サーヴァントの成長、確かに見届けました、先輩。',
@@ -89,10 +83,8 @@ export const selectMashuMessage = (summary: PeriodSummary | null): string => {
   if (summary.newServantCount > 0 && summary.tier !== 'none') {
     return pickRandom(newServantWelcome)
   }
-  if (summary.targetApIncrease > 0 && summary.tier === 'none') {
-    return pickRandom(targetIncrease)
-  }
-  if (summary.servantGrowth.length > 0 && summary.tier === 'none') {
+  // 育成総量があるのに「アイテム入手による減少」が小さい(tier=none)ときは育成を労う。
+  if (summary.growthTotal > 0 && summary.tier === 'none') {
     return pickRandom(growth)
   }
   return pickRandom(apProgress[summary.tier as ProgressTier])

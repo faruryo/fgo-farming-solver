@@ -95,29 +95,57 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
 
       {!summary.fallback && (
         <>
-          <div
-            className={`${style.numSize} font-bold tabular-nums`}
-            style={{ color: style.border }}
-          >
-            AP −{Math.max(0, summary.deltaApAdjusted).toLocaleString()}
-          </div>
+          {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 ? (
+            <div
+              className={`${style.numSize} font-bold tabular-nums`}
+              style={{ color: style.border }}
+            >
+              残りAP −{Math.round(summary.reducedAp).toLocaleString()}
+            </div>
+          ) : (
+            summary.growthTotal > 0 && (
+              <div
+                className={`${style.numSize} font-bold tabular-nums`}
+                style={{ color: style.border }}
+              >
+                育成 +{summary.growthTotal.toLocaleString()}
+              </div>
+            )
+          )}
 
           <div className="flex flex-col">
-            <Row
-              label="周回による減少"
-              value={summary.deltaApRaw.toLocaleString()}
-            />
-            {summary.newServantCount > 0 && (
+            {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 && (
+              <>
+                <Row
+                  label="アイテム入手による残りAPの減少"
+                  value={`−${Math.round(summary.reducedAp).toLocaleString()}`}
+                  highlight
+                />
+                {typeof summary.reducedLap === 'number' && (
+                  <Row
+                    label="残り周回数の減少"
+                    value={`−${Math.round(summary.reducedLap).toLocaleString()}`}
+                  />
+                )}
+                {typeof summary.reducedYen === 'number' && (
+                  <Row
+                    label="残り費用の減少"
+                    value={`−¥${Math.round(summary.reducedYen).toLocaleString()}`}
+                  />
+                )}
+              </>
+            )}
+            {summary.growthTotal > 0 && (
               <Row
-                label={`新しい仲間 ${summary.newServantCount}体ぶん`}
-                value={`+${summary.newServantOffsetAp.toLocaleString()}`}
+                label="育成総量"
+                value={`+${summary.growthTotal.toLocaleString()}`}
                 highlight
               />
             )}
-            {summary.targetApIncrease > 0 && (
+            {summary.newServantCount > 0 && (
               <Row
-                label="目標 AP 増加"
-                value={`+${summary.targetApIncrease.toLocaleString()}`}
+                label="新しい仲間"
+                value={`${summary.newServantCount}体`}
                 highlight
               />
             )}
@@ -138,7 +166,7 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                       {g.servantName ?? `#${g.servantId}`}
                     </span>
                     <span className="tabular-nums text-muted-foreground">
-                      −{g.delta} レベル
+                      +{g.delta} 育成
                     </span>
                   </li>
                 ))}
