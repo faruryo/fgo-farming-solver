@@ -9,6 +9,13 @@ import { Item } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 import { Toggle } from '@/components/ui/toggle'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { MaterialSelectionAdvisor } from './material-selection-advisor'
 
 export type MaterialResultProps = {
   items: Item[]
@@ -235,6 +242,23 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           })}
           </>
         )}
+
+        <div className="c-mat-section">
+          <Accordion multiple={false} defaultValue={['advisor']}>
+            <AccordionItem value="advisor" style={{ border: 'none' }}>
+              <AccordionTrigger className="c-mat-section-title" style={{ color: 'var(--gold)' }}>
+                配布・交換券アドバイザー
+              </AccordionTrigger>
+              <AccordionContent>
+                <MaterialSelectionAdvisor
+                  items={items}
+                  amounts={amounts}
+                  possession={possession}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
       </div>
 
       <div className="c-farming-footer">
