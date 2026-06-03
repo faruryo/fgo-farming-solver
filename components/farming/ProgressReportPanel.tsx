@@ -3,33 +3,10 @@
 import React, { useEffect, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { ProgressResponse } from '../../lib/progress/types'
-import type { SnapshotPeriod } from '../../lib/progress/snapshot'
 import { ProgressReportContent } from './progress-report-content'
 import { ServantPraise } from './ServantPraise'
 import { selectMashuMessage } from '../../lib/progress/mashu-messages'
 import { selectBaseline } from '../../lib/progress/select-baseline'
-
-const PERIOD_LABELS: Record<SnapshotPeriod, string> = {
-  previous: '前回',
-  week: '1週間前',
-  month: '1ヶ月前',
-}
-
-const formatDate = (isoStr: string) => {
-  try {
-    const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
-    const withZ = normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
-    const d = new Date(withZ)
-    if (isNaN(d.getTime())) return isoStr
-    const m = d.getMonth() + 1
-    const day = d.getDate()
-    const h = d.getHours().toString().padStart(2, '0')
-    const min = d.getMinutes().toString().padStart(2, '0')
-    return `${m}月${day}日 ${h}:${min}`
-  } catch {
-    return isoStr
-  }
-}
 
 export type ResultStats = {
   totalLap: number
@@ -83,19 +60,6 @@ export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
             </TooltipTrigger>
             {tooltips && <TooltipContent>{tooltips.cost}</TooltipContent>}
           </Tooltip>
-        </div>
-      )}
-
-      {!loading && current && (
-        <div className="flex justify-between items-center gap-1.5 flex-wrap" style={{ minHeight: 24 }}>
-          <div className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>
-            {PERIOD_LABELS[current.period]}と比較
-          </div>
-          {current.snapshotCreatedAt && (
-            <div className="text-[10px] text-muted-foreground" style={{ opacity: 0.8 }}>
-              比較データ: {formatDate(current.snapshotCreatedAt)}
-            </div>
-          )}
         </div>
       )}
 

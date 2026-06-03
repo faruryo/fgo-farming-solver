@@ -2,6 +2,40 @@
 
 import React from 'react'
 import type { PeriodSummary, ProgressTier } from '../../lib/progress/types'
+import type { SnapshotPeriod } from '../../lib/progress/snapshot'
+
+const PERIOD_LABELS: Record<SnapshotPeriod, string> = {
+  previous: '前回',
+  week: '1週間前',
+  month: '1ヶ月前',
+}
+
+const formatCompareDate = (isoStr: string): string => {
+  try {
+    const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
+    const withZ =
+      normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
+    const d = new Date(withZ)
+    if (isNaN(d.getTime())) return isoStr
+    return `${d.getMonth() + 1}月${d.getDate()}日`
+  } catch {
+    return isoStr
+  }
+}
+
+// 「いつと比べて」を見出し直下に出すキャプション。例: 「1ヶ月前(5月3日)と比べて」
+const CompareCaption: React.FC<{ summary: PeriodSummary }> = ({ summary }) => {
+  const label = PERIOD_LABELS[summary.period]
+  const date = summary.snapshotCreatedAt
+    ? `(${formatCompareDate(summary.snapshotCreatedAt)})`
+    : ''
+  return (
+    <div className="text-xs text-muted-foreground -mt-1">
+      {label}
+      {date}と比べて
+    </div>
+  )
+}
 
 const TIER_STYLES: Record<
   ProgressTier,
@@ -96,19 +130,25 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
       {!summary.fallback && (
         <>
           {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 ? (
-            <div
-              className={`${style.numSize} font-bold tabular-nums`}
-              style={{ color: style.border }}
-            >
-              残りAP −{Math.round(summary.reducedAp).toLocaleString()}
-            </div>
-          ) : (
-            summary.growthTotal > 0 && (
+            <div>
               <div
                 className={`${style.numSize} font-bold tabular-nums`}
                 style={{ color: style.border }}
               >
-                育成 +{summary.growthTotal.toLocaleString()}
+                残りAP −{Math.round(summary.reducedAp).toLocaleString()}
+              </div>
+              <CompareCaption summary={summary} />
+            </div>
+          ) : (
+            summary.growthTotal > 0 && (
+              <div>
+                <div
+                  className={`${style.numSize} font-bold tabular-nums`}
+                  style={{ color: style.border }}
+                >
+                  育成 +{summary.growthTotal.toLocaleString()}
+                </div>
+                <CompareCaption summary={summary} />
               </div>
             )
           )}
