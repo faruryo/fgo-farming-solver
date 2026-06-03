@@ -17,7 +17,8 @@
 - [x] 3.1 マシュ進捗パネル本体（`components/farming/ProgressReportPanel` + `progress-report-content`）を、stats（周回数/消費AP/費用 絶対値）非依存で「育成総量」「減少AP/周回/費用」「マシュのセリフ」を出す表示へ更新。汎用化 or `components/dashboard/` へ移動。
 - [x] 3.2 `components/dashboard/ProgressSection.tsx`: 上部にマシュ進捗パネル（前回/1週間前/1ヶ月前タブ）、下部に既存達成率円グラフ、の2段構成へ。現在 `total_ap`/再ソルブ入力は `useDashboardResult` から供給。
 - [x] 3.3 `app/page.tsx`: `ProgressSection` の配置を確認（達成率の上にマシュ進捗が来る形）。必要に応じてセクション順を調整。
-- [x] 3.4 `locales/ja.json`・`locales/en.json`: 「育成総量」「アイテム入手による減少」「減少AP/周回/費用」等の文言キーを追加。
+- [x] 3.4 `locales/ja.json`・`locales/en.json`: 「育成総量」「アイテム入手による減少」「減少AP/周回/費用」等の文言キーを追加。（既存マシュ表示が日本語直書きのため新規キーは追加せず踏襲）
+- [x] 3.5 期間タブを廃止し、最古の存在スナップショット(1ヶ月前→1週間前→前回)を1つだけ基準にする単一比較へ変更。`lib/progress/select-baseline.ts`(+テスト)を追加し、`use-progress-report.ts` は基準1件のみ再ソルブ、`ProgressReportPanel` はタブを撤去して「○○と比較」を表示。
 
 ## 4. 結果ページの差し替え
 

@@ -7,6 +7,7 @@ import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
 import { buildNeedByApiItemId, solveTotals } from '../lib/progress/compute-reduction'
 import { classifyTier } from '../lib/progress/tier'
+import { selectBaseline } from '../lib/progress/select-baseline'
 
 const readJson = <T,>(key: string): T | null => {
   if (typeof window === 'undefined') return null
@@ -76,46 +77,43 @@ export const useProgressReport = (
   }, [load])
 
   // 「アイテム入手による残りの減少」を方式1(目標を現在で固定して再ソルブ)で
-  // クライアント算出し、reducedAp 確定後に tier / zero_progress を再判定する。
-  // pastPosession が無い期間(初期データや dev モック)はサーバ/モックの値を保持。
+  // クライアント算出する。比較基準は最古の存在スナップショット1つ(selectBaseline)
+  // のみ — それ以外の期間は再ソルブしない。reducedAp 確定後に tier/zero_progress を
+  // 再判定。pastPosession が無い場合(初期データや dev モック)は元の値を保持。
   const enriched = useMemo<ProgressResponse | null>(() => {
     if (!data) return null
     if (!drops || drops.items.length === 0) return data
 
+    const baseline = selectBaseline(data.periods)
+    if (!baseline || !baseline.pastPosession) return data
+
     const targets = readJson<Record<string, number>>('material/result') ?? {}
     const posession = readJson<Record<string, number>>('posession') ?? {}
     const quests = readJson<string[]>('quests') ?? []
-    const now = solveTotals(
+    const now = solveTotals(drops, buildNeedByApiItemId(targets, posession, drops), quests)
+    const past = solveTotals(
       drops,
-      buildNeedByApiItemId(targets, posession, drops),
+      buildNeedByApiItemId(targets, baseline.pastPosession, drops),
       quests
     )
-
-    const finalize = (p: PeriodSummary | null): PeriodSummary | null => {
-      if (!p || !p.pastPosession) return p
-      const past = solveTotals(
-        drops,
-        buildNeedByApiItemId(targets, p.pastPosession, drops),
-        quests
-      )
-      const reducedAp = past.totalAp - now.totalAp
-      const reducedLap = past.totalLap - now.totalLap
-      const tier = p.fallback ? p.tier : classifyTier(reducedAp, p.elapsedMinutes)
-      const fallback =
-        p.fallback ??
-        (reducedAp <= 0 && p.growthTotal <= 0 && p.newServantCount === 0
-          ? 'zero_progress'
-          : null)
-      return { ...p, reducedAp, reducedLap, reducedYen: yenFromAp(reducedAp), tier, fallback }
+    const reducedAp = past.totalAp - now.totalAp
+    const reducedLap = past.totalLap - now.totalLap
+    const fallback: PeriodSummary['fallback'] =
+      reducedAp <= 0 && baseline.growthTotal <= 0 && baseline.newServantCount === 0
+        ? 'zero_progress'
+        : null
+    const finalized: PeriodSummary = {
+      ...baseline,
+      reducedAp,
+      reducedLap,
+      reducedYen: yenFromAp(reducedAp),
+      tier: classifyTier(reducedAp, baseline.elapsedMinutes),
+      fallback,
     }
 
     return {
       ...data,
-      periods: {
-        previous: finalize(data.periods.previous),
-        week: finalize(data.periods.week),
-        month: finalize(data.periods.month),
-      },
+      periods: { ...data.periods, [baseline.period]: finalized },
     }
   }, [data, drops])
 

@@ -7,14 +7,13 @@ import type { SnapshotPeriod } from '../../lib/progress/snapshot'
 import { ProgressReportContent } from './progress-report-content'
 import { ServantPraise } from './ServantPraise'
 import { selectMashuMessage } from '../../lib/progress/mashu-messages'
+import { selectBaseline } from '../../lib/progress/select-baseline'
 
 const PERIOD_LABELS: Record<SnapshotPeriod, string> = {
   previous: '前回',
   week: '1週間前',
   month: '1ヶ月前',
 }
-
-const PERIODS: SnapshotPeriod[] = ['previous', 'week', 'month']
 
 const formatDate = (isoStr: string) => {
   try {
@@ -51,8 +50,8 @@ export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
   stats,
   tooltips,
 }) => {
-  const [period, setPeriod] = useState<SnapshotPeriod>('previous')
-  const current = data?.periods[period] ?? null
+  // 比較基準は最古の存在スナップショット1つだけ(タブ廃止)。
+  const current = selectBaseline(data?.periods)
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -87,26 +86,18 @@ export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
         </div>
       )}
 
-      <div className="flex justify-between items-center gap-1.5 flex-wrap" style={{ minHeight: 24 }}>
-        <div className="flex gap-1.5">
-          {PERIODS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPeriod(p)}
-              className={`c-hide-toggle${period === p ? ' active' : ''}`}
-              style={{ fontSize: 11, padding: '2px 8px' }}
-            >
-              {PERIOD_LABELS[p]}
-            </button>
-          ))}
-        </div>
-        {!loading && current?.snapshotCreatedAt && (
-          <div className="text-[10px] text-muted-foreground" style={{ opacity: 0.8 }}>
-            比較データ: {formatDate(current.snapshotCreatedAt)}
+      {!loading && current && (
+        <div className="flex justify-between items-center gap-1.5 flex-wrap" style={{ minHeight: 24 }}>
+          <div className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>
+            {PERIOD_LABELS[current.period]}と比較
           </div>
-        )}
-      </div>
+          {current.snapshotCreatedAt && (
+            <div className="text-[10px] text-muted-foreground" style={{ opacity: 0.8 }}>
+              比較データ: {formatDate(current.snapshotCreatedAt)}
+            </div>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-muted-foreground py-2 text-center text-xs">読み込み中...</div>
