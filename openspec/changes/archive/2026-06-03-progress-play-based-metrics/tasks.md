@@ -41,4 +41,4 @@
 ## 7. OpenSpec 反映
 
 - [x] 7.1 全タスク完了後 `openspec validate progress-play-based-metrics --strict` をパス。
-- [ ] 7.2 実装・検証完了後に `/opsx:archive` で `progress-visualizer` の canonical spec へ反映。
+- [x] 7.2 実装・検証完了後に `/opsx:archive` で `progress-visualizer` の canonical spec へ反映。
