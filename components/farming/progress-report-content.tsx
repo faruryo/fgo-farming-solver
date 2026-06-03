@@ -2,40 +2,24 @@
 
 import React from 'react'
 import type { PeriodSummary, ProgressTier } from '../../lib/progress/types'
-import type { SnapshotPeriod } from '../../lib/progress/snapshot'
 
-const PERIOD_LABELS: Record<SnapshotPeriod, string> = {
-  previous: '前回',
-  week: '1週間前',
-  month: '1ヶ月前',
-}
-
-const formatCompareDate = (isoStr: string): string => {
-  try {
-    const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
-    const withZ =
-      normalized.endsWith('Z') || normalized.includes('+') ? normalized : `${normalized}Z`
-    const d = new Date(withZ)
-    if (isNaN(d.getTime())) return isoStr
-    return `${d.getMonth() + 1}月${d.getDate()}日`
-  } catch {
-    return isoStr
+// 「いつと比べて」のラベル。
+// previous は「前回」だと時点が曖昧なので経過日数(昨日 / N日前)で表す。
+// week / month はバケット名そのまま。
+const compareLabel = (summary: PeriodSummary): string => {
+  if (summary.period === 'previous') {
+    const days = Math.round(summary.elapsedMinutes / 1440)
+    if (days <= 0) return '今日'
+    if (days === 1) return '昨日'
+    return `${days}日前`
   }
+  return summary.period === 'week' ? '1週間前' : '1ヶ月前'
 }
 
-// 「いつと比べて」を見出し直下に出すキャプション。例: 「1ヶ月前(5月3日)と比べて」
-const CompareCaption: React.FC<{ summary: PeriodSummary }> = ({ summary }) => {
-  const label = PERIOD_LABELS[summary.period]
-  const date = summary.snapshotCreatedAt
-    ? `(${formatCompareDate(summary.snapshotCreatedAt)})`
-    : ''
-  return (
-    <div className="text-xs text-muted-foreground -mt-1">
-      {label}
-      {date}と比べて
-    </div>
-  )
-}
+// 見出しの上に出す比較基準キャプション。例:「1週間前と比べて」「2日前と比べて」
+const CompareCaption: React.FC<{ summary: PeriodSummary }> = ({ summary }) => (
+  <div className="text-xs text-muted-foreground">{compareLabel(summary)}と比べて</div>
+)
 
 const TIER_STYLES: Record<
   ProgressTier,
@@ -131,24 +115,24 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
         <>
           {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 ? (
             <div>
+              <CompareCaption summary={summary} />
               <div
                 className={`${style.numSize} font-bold tabular-nums`}
                 style={{ color: style.border }}
               >
                 残りAP −{Math.round(summary.reducedAp).toLocaleString()}
               </div>
-              <CompareCaption summary={summary} />
             </div>
           ) : (
             summary.growthTotal > 0 && (
               <div>
+                <CompareCaption summary={summary} />
                 <div
                   className={`${style.numSize} font-bold tabular-nums`}
                   style={{ color: style.border }}
                 >
                   育成 +{summary.growthTotal.toLocaleString()}
                 </div>
-                <CompareCaption summary={summary} />
               </div>
             )
           )}
