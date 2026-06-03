@@ -132,7 +132,15 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
 
   const [shortOnly, setShortOnly] = useState(false)
   const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+    if (window.location.hash === '#advisor') {
+      // hash 付きで直接遷移した場合、mount 後にアドバイザーセクションへスクロール。
+      requestAnimationFrame(() => {
+        document.getElementById('advisor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  }, [])
 
   const deficiencies = useMemo(
     () => Object.fromEntries(
@@ -243,7 +251,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           </>
         )}
 
-        <div className="c-mat-section">
+        <div id="advisor" className="c-mat-section">
           <Accordion multiple={false} defaultValue={['advisor']}>
             <AccordionItem value="advisor" style={{ border: 'none' }}>
               <AccordionTrigger className="c-mat-section-title" style={{ color: 'var(--gold)' }}>

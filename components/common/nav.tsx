@@ -46,12 +46,29 @@ type MenuGroup = {
   items: MenuItem[]
 }
 
+/**
+ * あるメニュー項目が現在のパスに対してアクティブかどうかを判定する。
+ * prefix 一致だけだと /material/result 訪問時に /material も active になるため、
+ * より長い（より具体的な）sibling が同じパスを prefix で一致させている場合は false を返す。
+ */
+const isActiveHref = (href: string, pathname: string, allItems: MenuItem[]): boolean => {
+  // hash を除いたパス部分で比較する。
+  const hrefPath = href.split('#')[0]
+  if (pathname === hrefPath) return true
+  if (hrefPath === '/') return false
+  if (!pathname.startsWith(hrefPath)) return false
+  return !allItems.some(item => {
+    const p = item.href.split('#')[0]
+    return p !== hrefPath && p.length > hrefPath.length && pathname.startsWith(p)
+  })
+}
+
 export const menuGroups: MenuGroup[] = [
   {
     title: 'Tools',
     items: [
       { href: '/material',         icon: FlaskConical, label: { ja: '育成素材計算機',   en: 'Material Calculator' } },
-      { href: '/material/result', icon: Sparkles,     label: { ja: '配布アドバイザー', en: 'Advisor' } },
+      { href: '/material/result#advisor', icon: Sparkles, label: { ja: '配布アドバイザー', en: 'Advisor' } },
       { href: '/farming',         icon: Route,        label: { ja: '周回ソルバー',     en: 'Farming Solver' } },
       { href: '/quests',          icon: Gauge,        label: { ja: 'クエスト効率',   en: 'Quest Efficiency' } },
       { href: '/farming/history', icon: History,      label: { ja: '計算履歴',       en: 'History' } },
@@ -277,6 +294,7 @@ export const Nav = () => {
   const { i18n } = useTranslation()
   const locale   = i18n.language as 'en' | 'ja'
   const pathname = usePathname()
+  const allItems = menuGroups.flatMap(g => g.items)
 
   return (
     <nav>
@@ -328,7 +346,7 @@ export const Nav = () => {
                       href={href}
                       icon={icon}
                       label={label[locale ?? 'ja']}
-                      isActive={pathname === href || (href !== '/' && pathname.startsWith(href))}
+                      isActive={isActiveHref(href, pathname, allItems)}
                     />
                   ))}
                 </div>

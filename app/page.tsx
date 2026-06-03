@@ -87,7 +87,7 @@ export default function HomePage() {
                   className="flex gap-3 ml-1 pl-2"
                   style={{ borderLeft: '1px solid var(--border)' }}
                 >
-                  <Link href="/material/result" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
+                  <Link href="/material/result#advisor" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
                     配布アドバイザー
                   </Link>
                   <Link href="/quests" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
