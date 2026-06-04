@@ -4,12 +4,13 @@ import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
-import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { Item } from '../../interfaces/atlas-academy'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
+import { buildNeedByApiItemId } from '../../lib/progress/compute-reduction'
 import {
-  computeItemEfficiencies,
-  computeAllocation,
+  priceCandidates,
+  allocateAndMeasure,
+  CandidateRef,
   DenominatorMode,
 } from '../../lib/material-selection-advisor'
 import { ServantPraise } from '../farming/ServantPraise'
@@ -52,9 +53,13 @@ type Row = {
   deficiency: number
   allocated: number
   stillShort: number
-  cost: number | null
+  /** 1個あたり限界削減量(周回 or AP)。 */
+  valuePerCopy: number
   saved: number
-  excluded: boolean
+  /** ドロップ有・限界価値≈0(他素材集めのついでに揃う)。 */
+  byproduct: boolean
+  /** フリクエ恒常ドロップ無し。 */
+  noDropData: boolean
 }
 
 const ProgressBar = ({ row }: { row: Row }) => {
@@ -104,7 +109,6 @@ export const MaterialSelectionAdvisor = ({
   }, [pickerOpen])
 
   const drops = useDrops()
-  const { activeCampaigns, digest } = useActiveCampaigns(drops.campaigns)
 
   // atlasId 文字列 -> Item の索引。
   const itemsById = useMemo(() => {
@@ -113,12 +117,41 @@ export const MaterialSelectionAdvisor = ({
     return m
   }, [items])
 
-  // Drops から各アイテムの最良コスト(AP/個・周回/個)を逆算(キャンペーン込み)。
-  const efficiencies = useMemo(
-    () => computeItemEfficiencies(drops, activeCampaigns),
-    // digest はアクティブキャンペーン集合の安定ダイジェスト(useActiveCampaigns 由来)。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [drops.items, drops.quests, drops.drop_rates, digest],
+  // atlasId 文字列 -> 短縮 apiItemId(drops の item_id)。
+  const atlasToShort = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const it of drops.items) if (it.atlasId != null) m.set(String(it.atlasId), it.id)
+    return m
+  }, [drops.items])
+
+  // 全クエストID(LP の許可クエスト)。最適周回プランの基準にユーザーの全不足を回す。
+  const questIds = useMemo(() => drops.quests.map(q => q.id), [drops.quests])
+
+  // ユーザーの全不足(短縮IDキー)。byproduct 判定には候補だけでなく全不足が必要。
+  const fullNeed = useMemo(
+    () => buildNeedByApiItemId(amounts, possession, drops),
+    [amounts, possession, drops],
+  )
+
+  // 候補(atlasId・短縮ID・不足数)。
+  const candidateRefs = useMemo<CandidateRef[]>(
+    () =>
+      config.candidateIds
+        .map(id => {
+          const shortId = atlasToShort.get(id)
+          if (shortId == null) return null
+          const required = amounts[id] ?? 0
+          const owned = possession[id] ?? 0
+          return { id, shortId, deficiency: Math.max(0, required - owned) }
+        })
+        .filter((c): c is CandidateRef => c != null),
+    [config.candidateIds, atlasToShort, amounts, possession],
+  )
+
+  // 各候補の「1個あたり限界削減量」(シャドウプライス)。total に依存しないのでキャッシュ可。
+  const pricing = useMemo(
+    () => priceCandidates(drops, fullNeed, candidateRefs, config.mode, questIds),
+    [drops, fullNeed, candidateRefs, config.mode, questIds],
   )
 
   const setMode = useCallback(
@@ -152,42 +185,40 @@ export const MaterialSelectionAdvisor = ({
   )
   const reset = useCallback(() => setConfig(DEFAULT_CONFIG), [setConfig])
 
-  // 候補 -> 不足数・コストを束ね、貪欲法で最適配分を計算する。
+  // 限界価値で貪欲配分し、残余 need を再ソルブして厳密な合算削減量を測る。
   const { rows, totalSaved, totalAllocated, top } = useMemo(() => {
-    const candidates = config.candidateIds.map(id => {
-      const required = amounts[id] ?? 0
-      const owned = possession[id] ?? 0
-      const eff = efficiencies.get(id)
-      return {
-        id,
-        deficiency: Math.max(0, required - owned),
-        apCost: eff?.apCost ?? null,
-        turnCost: eff?.turnCost ?? null,
-        required,
-        owned,
-      }
-    })
-    const result = computeAllocation(candidates, config.total, config.mode)
-    const rows: Row[] = candidates.map((c, i) => {
+    const result = allocateAndMeasure(
+      drops,
+      fullNeed,
+      candidateRefs,
+      pricing,
+      config.total,
+      config.mode,
+      questIds,
+    )
+    const rows: Row[] = candidateRefs.map((c, i) => {
       const alloc = result.allocations[i]
+      const required = amounts[c.id] ?? 0
+      const owned = possession[c.id] ?? 0
       return {
         item: itemsById.get(c.id) ?? ({ id: Number(c.id), name: c.id } as Item),
         id: c.id,
-        required: c.required,
-        owned: c.owned,
+        required,
+        owned,
         deficiency: c.deficiency,
         allocated: alloc.allocated,
         stillShort: Math.max(0, c.deficiency - alloc.allocated),
-        cost: alloc.cost,
+        valuePerCopy: alloc.valuePerCopy,
         saved: alloc.saved,
-        excluded: alloc.excluded,
+        byproduct: alloc.byproduct,
+        noDropData: alloc.noDropData,
       }
     })
     const top = rows
       .filter(r => r.allocated > 0)
       .reduce<Row | null>((best, r) => (best == null || r.saved > best.saved ? r : best), null)
     return { rows, totalSaved: result.totalSaved, totalAllocated: result.totalAllocated, top }
-  }, [config.candidateIds, config.total, config.mode, amounts, possession, efficiencies, itemsById])
+  }, [drops, fullNeed, candidateRefs, pricing, config.total, config.mode, questIds, amounts, possession, itemsById])
 
   // 追加ドロップダウン候補: 未追加のアイテム。不足あり→必要あり→その他 の順に並べる。
   const addableItems = useMemo(() => {
@@ -219,15 +250,18 @@ export const MaterialSelectionAdvisor = ({
   // マシュからの動的アドバイス。
   const advice = useMemo(() => {
     if (config.candidateIds.length === 0) {
-      return '指令を確認します、先輩。もらえる候補の素材を追加してください。不足状況とフリクエ効率から、最もお得な交換配分を割り出します。'
+      return '指令を確認します、先輩。もらえる候補の素材を追加してください。あなたの全不足を周回ソルバーで最適化し、交換でどれを選べば実際に周回数が減るかを割り出します。'
     }
     if (config.total <= 0) {
       return 'まず「獲得可能総数」を入力してください、先輩。配布枚数や交換券の数を教えていただければ、即座に最適配分を計算します。'
     }
+    const byproducts = rows.filter(r => r.byproduct && r.deficiency > 0)
     if (totalAllocated === 0) {
-      const allExcluded = rows.length > 0 && rows.every(r => r.excluded)
-      if (allExcluded) {
-        return '選択された素材はいずれもフリクエで恒常ドロップしないため、節約効果を計算できません、先輩。ドロップ対象の素材を追加してみてください。'
+      if (rows.length > 0 && rows.every(r => r.noDropData)) {
+        return '選択された素材はいずれもフリクエで恒常ドロップしないため、周回数の評価ができません、先輩。ドロップ対象の素材を追加してみてください。'
+      }
+      if (byproducts.length > 0) {
+        return `${byproducts.map(r => `「${r.item.name}」`).join('・')}は、他の不足素材を集める周回のついでに揃ってしまうため、交換でもらっても周回数は減りません、先輩。交換枠は他の素材に回すのがおすすめです。`
       }
       return '現在、不足している候補がありません、先輩。充足済みのようです。素晴らしい進捗です！'
     }
@@ -235,9 +269,13 @@ export const MaterialSelectionAdvisor = ({
     const head = top
       ? `最優先は「${top.item.name}」です、先輩。これを ${top.allocated} 個もらうのが最も効率的です。`
       : ''
-    return `${head} この配分なら合計で約 ${fmt(totalSaved)} ${u} の周回を節約できます。${
+    const tail =
       config.mode === 'ap' ? 'りんごや石の温存に最適な配分です。' : 'リアルの周回時間を最小化する配分です。'
-    }`
+    const note =
+      byproducts.length > 0
+        ? `なお${byproducts.map(r => `「${r.item.name}」`).join('・')}は他の素材集めのついでに揃うため、交換対象から外しました。`
+        : ''
+    return `${head} この配分なら、あなたの最適周回プランから合計 約 ${fmt(totalSaved)} ${u} を削減できます。${tail}${note}`
   }, [config.candidateIds.length, config.total, config.mode, totalAllocated, totalSaved, top, rows])
 
   if (!mounted) return null
@@ -308,9 +346,13 @@ export const MaterialSelectionAdvisor = ({
                     >
                       推奨 +{row.allocated}
                     </span>
-                  ) : row.excluded ? (
+                  ) : row.noDropData ? (
                     <span className="flex-shrink-0 text-xs" style={{ color: 'var(--text3)' }}>
                       対象外
+                    </span>
+                  ) : row.byproduct ? (
+                    <span className="flex-shrink-0 text-xs" style={{ color: 'var(--steel)' }}>
+                      ついで充足
                     </span>
                   ) : (
                     <span className="flex-shrink-0 text-xs" style={{ color: 'var(--text3)' }}>
@@ -327,11 +369,13 @@ export const MaterialSelectionAdvisor = ({
                   {row.stillShort > 0 && (
                     <span style={{ color: 'var(--red)' }}>不足 {row.stillShort}</span>
                   )}
-                  {row.excluded ? (
+                  {row.noDropData ? (
                     <span style={{ color: 'var(--text3)' }}>フリクエ恒常ドロップ無し</span>
-                  ) : row.cost != null ? (
+                  ) : row.byproduct ? (
+                    <span style={{ color: 'var(--steel)' }}>他素材集めのついでに揃う(削減 0)</span>
+                  ) : row.deficiency > 0 ? (
                     <span>
-                      {fmt(row.cost)} {unit(config.mode)}/個
+                      約 {fmt(row.valuePerCopy)} {unit(config.mode)}/個 削減
                     </span>
                   ) : null}
                   {row.saved > 0 && (
