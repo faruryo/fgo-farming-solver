@@ -172,7 +172,19 @@ function getCategory(priority: number, background: string): { largeCategory: str
 
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority' | 'icon'> & { type: string }
 
-export async function fetchAndTransformData(): Promise<MasterData> {
+/**
+ * nice_event.json (約33MB) を取得・parse する。
+ * fetchAndTransformData と fetchDashboardMeta が同一 cron invocation で
+ * 二重に取得・parse していたため、共有できるよう切り出した。
+ */
+export async function fetchNiceEvents(): Promise<AtlasEvent[]> {
+  const res = await fetch(`${origin}/export/${region}/nice_event.json`)
+  return (await res.json()) as AtlasEvent[]
+}
+
+export async function fetchAndTransformData(
+  opts: { events?: AtlasEvent[] } = {}
+): Promise<MasterData> {
   let fs: any
   try {
     fs = await import('node:fs/promises')
@@ -460,8 +472,7 @@ export async function fetchAndTransformData(): Promise<MasterData> {
   let campaigns: Campaign[] = []
   try {
     console.log('Fetching event data for AP campaigns from Atlas Academy...')
-    const eventsRes = await fetch(`${origin}/export/${region}/nice_event.json`)
-    const allEvents: AtlasEvent[] = await eventsRes.json()
+    const allEvents = opts.events ?? (await fetchNiceEvents())
     campaigns = extractApCampaigns(allEvents, aaQuestIdToShortId, aaQuestIdToAfterClear)
     console.log(`Extracted ${campaigns.length} questAp campaigns covering ${aaQuestIdToShortId.size} mappable quests.`)
   } catch (e) {
@@ -644,17 +655,19 @@ interface AtlasGacha {
   featuredSvtIds?: number[]
 }
 
-export async function fetchDashboardMeta(masterQuests?: Quest[]): Promise<DashboardMeta> {
+export async function fetchDashboardMeta(
+  masterQuests?: Quest[],
+  opts: { events?: AtlasEvent[] } = {}
+): Promise<DashboardMeta> {
   const now = Math.floor(Date.now() / 1000)
-  
+
   console.log('Fetching event, gacha and servant data from Atlas Academy...')
-  const [niceEventsRes, gachaRes, servantRes] = await Promise.all([
-    fetch(`${origin}/export/${region}/nice_event.json`),
+  const [allEvents, gachaRes, servantRes] = await Promise.all([
+    opts.events ? Promise.resolve(opts.events) : fetchNiceEvents(),
     fetch(`${origin}/export/${region}/nice_gacha.json`),
     fetch(`${origin}/export/${region}/basic_servant.json`)
   ])
 
-  const allEvents: AtlasEvent[] = await niceEventsRes.json()
   const allGachas: AtlasGacha[] = await gachaRes.json()
   const allServants: { id: number; name: string; rarity: number; collectionNo: number; type: string }[] = await servantRes.json()
 

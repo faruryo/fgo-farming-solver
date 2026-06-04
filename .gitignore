@@ -42,6 +42,9 @@ yarn-error.log*
 /cache/
 tsconfig.tsbuildinfo
 
+# updater bench fetch cache (scripts/bench-updater.ts)
+/scripts/.cache-bench/
+
 # Cloudflare / Build
 build.log
 .wrangler

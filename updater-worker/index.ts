@@ -1,6 +1,9 @@
-import { fetchAndTransformData, fetchDashboardMeta } from '../lib/master-data/update'
+import { fetchAndTransformData, fetchDashboardMeta, fetchNiceEvents } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
+
+// nice_event.json は cron 1回で複数フェーズが必要とするため、先頭で1回だけ取得して共有する。
+type NiceEvents = Awaited<ReturnType<typeof fetchNiceEvents>>
 
 export interface Env {
   MASTER_DATA: KVNamespace
@@ -14,9 +17,17 @@ const SERVANTS_LIST_KEY = 'servants_list'
 const worker = {
   async scheduled(_event: unknown, env: Env) {
     console.log('Running scheduled data update...')
-    const dropsData = await updateDrops(env)
+    // nice_event.json (約33MB) は drops 変換とダッシュボードの両方で必要。
+    // cron 1回で二重に取得・parse しないよう、ここで1回だけ取得して共有する。
+    let events: NiceEvents | undefined
+    try {
+      events = await fetchNiceEvents()
+    } catch (e) {
+      console.warn('Failed to prefetch nice_event.json; phases will fetch individually:', e)
+    }
+    const dropsData = await updateDrops(env, events)
     await Promise.all([
-      updateDashboardMeta(env, dropsData),
+      updateDashboardMeta(env, dropsData, events),
       updateRarityApTables(env, dropsData),
       updateServantsList(env),
     ])
@@ -25,10 +36,10 @@ const worker = {
 
 export default worker
 
-async function updateDrops(env: Env): Promise<MasterData | null> {
+async function updateDrops(env: Env, events?: NiceEvents): Promise<MasterData | null> {
   try {
     console.log('Fetching and transforming master data (drops)...')
-    const dropsData = await fetchAndTransformData()
+    const dropsData = await fetchAndTransformData({ events })
     const v = validateMasterData(dropsData)
     if (!v.ok) {
       console.warn(`Refusing to overwrite MASTER_DATA KV with degraded payload: ${v.reason}`)
@@ -43,10 +54,10 @@ async function updateDrops(env: Env): Promise<MasterData | null> {
   }
 }
 
-async function updateDashboardMeta(env: Env, dropsData: MasterData | null) {
+async function updateDashboardMeta(env: Env, dropsData: MasterData | null, events?: NiceEvents) {
   try {
     console.log('Fetching dashboard metadata...')
-    const dashboardMeta = await fetchDashboardMeta(dropsData?.quests)
+    const dashboardMeta = await fetchDashboardMeta(dropsData?.quests, { events })
     const v = validateDashboardMeta(dashboardMeta)
     if (!v.ok) {
       console.warn(`Refusing to overwrite DASHBOARD_META KV with degraded payload: ${v.reason}`)

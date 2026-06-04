@@ -1,6 +1,6 @@
 import type { Drops } from '../get-drops'
 import type { MaterialsForServants } from '../get-materials'
-import type { Item as AtlasItem, NiceServant } from '../../interfaces/atlas-academy'
+import type { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { createServantState } from '../../hooks/create-chaldea-state'
 import { sumMaterials } from '../sum-materials'
 import { solve } from '../solver'
@@ -18,13 +18,17 @@ export type SampleResult = {
 
 export const SAMPLES_PER_RARITY = 5
 
+// サンプリングに必要な最小フィールドだけを要求する(軽量 servants_list でも
+// フル NiceServant でも受けられるようにする)。
+export type SampleableServant = { id: number; rarity: number }
+
 // Deterministic sampling: pick the first N servants per rarity by ID order.
 // Caller can shuffle in advance for variety.
-export const sampleServantsByRarity = (
-  servants: NiceServant[],
+export const sampleServantsByRarity = <T extends SampleableServant>(
+  servants: T[],
   perRarity: number = SAMPLES_PER_RARITY
-): Record<Rarity, NiceServant[]> => {
-  const result = { 1: [], 2: [], 3: [], 4: [], 5: [] } as Record<Rarity, NiceServant[]>
+): Record<Rarity, T[]> => {
+  const result = { 1: [], 2: [], 3: [], 4: [], 5: [] } as Record<Rarity, T[]>
   for (const s of servants) {
     const r = s.rarity as Rarity
     if (!RARITIES.includes(r)) continue
