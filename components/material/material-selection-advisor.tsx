@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
@@ -93,6 +93,15 @@ export const MaterialSelectionAdvisor = ({
   // 候補素材を追加するピッカー(検索可能)の開閉と検索クエリ。
   const [pickerOpen, setPickerOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // autoFocus だと Portal が body 先頭にレンダリングされる都合でページ最上部へスクロールしてしまうため、
+  // Popover が開いた後にプログラムでフォーカスする。
+  useEffect(() => {
+    if (!pickerOpen) return
+    const id = setTimeout(() => searchInputRef.current?.focus(), 30)
+    return () => clearTimeout(id)
+  }, [pickerOpen])
 
   const drops = useDrops()
   const { activeCampaigns, digest } = useActiveCampaigns(drops.campaigns)
@@ -370,8 +379,8 @@ export const MaterialSelectionAdvisor = ({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-64 gap-2 p-2">
             <Input
+              ref={searchInputRef}
               type="search"
-              autoFocus
               value={query}
               placeholder="素材名で検索…"
               onChange={e => setQuery(e.target.value)}
