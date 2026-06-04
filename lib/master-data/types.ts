@@ -27,6 +27,7 @@ export interface Quest {
   id: string
   section: string
   aaQuestId?: number
+  waveCount?: number
 }
 
 export interface DropRate {

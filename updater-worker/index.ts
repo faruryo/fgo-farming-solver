@@ -25,7 +25,11 @@ const worker = {
     } catch (e) {
       console.warn('Failed to prefetch nice_event.json; phases will fetch individually:', e)
     }
-    const dropsData = await updateDrops(env, events)
+    // 前回 KV の all_drops_json から waveCount(aaQuestId→ターン数)を seed として読む。
+    // これで populateWaveCounts の per-quest fetch(180件超 = subrequest 上限超過の
+    // 主因)を新規クエスト分だけに削減する。
+    const waveCountSeed = await readWaveCountSeed(env)
+    const dropsData = await updateDrops(env, events, waveCountSeed)
     await Promise.all([
       updateDashboardMeta(env, dropsData, events),
       updateRarityApTables(env, dropsData),
@@ -36,10 +40,32 @@ const worker = {
 
 export default worker
 
-async function updateDrops(env: Env, events?: NiceEvents): Promise<MasterData | null> {
+async function readWaveCountSeed(env: Env): Promise<Map<number, number> | undefined> {
+  try {
+    const prior = await env.MASTER_DATA.get(MASTER_DATA_KEY)
+    if (!prior) return undefined
+    const parsed = JSON.parse(prior) as MasterData
+    const seed = new Map<number, number>()
+    for (const q of parsed.quests ?? []) {
+      if (typeof q.aaQuestId === 'number' && typeof q.waveCount === 'number') {
+        seed.set(q.aaQuestId, q.waveCount)
+      }
+    }
+    return seed.size > 0 ? seed : undefined
+  } catch (e) {
+    console.warn('Failed to read waveCount seed from prior KV:', e)
+    return undefined
+  }
+}
+
+async function updateDrops(
+  env: Env,
+  events?: NiceEvents,
+  waveCountSeed?: Map<number, number>
+): Promise<MasterData | null> {
   try {
     console.log('Fetching and transforming master data (drops)...')
-    const dropsData = await fetchAndTransformData({ events })
+    const dropsData = await fetchAndTransformData({ events, waveCountSeed })
     const v = validateMasterData(dropsData)
     if (!v.ok) {
       console.warn(`Refusing to overwrite MASTER_DATA KV with degraded payload: ${v.reason}`)

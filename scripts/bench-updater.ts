@@ -28,7 +28,7 @@
  * 実行: pnpm bench:updater  [--refresh]
  */
 import { createHash } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
@@ -107,6 +107,25 @@ async function measure<T>(name: string, fn: () => Promise<T>): Promise<T> {
   return out
 }
 
+// mocks/all.json から aaQuestId→waveCount の seed を作る(worker の KV seed 相当)
+function readWaveCountSeedFromMock(): Map<number, number> | undefined {
+  try {
+    const p = path.resolve(process.cwd(), 'mocks', 'all.json')
+    const raw = JSON.parse(readFileSync(p, 'utf8')) as {
+      quests?: Array<{ aaQuestId?: number; waveCount?: number }>
+    }
+    const seed = new Map<number, number>()
+    for (const q of raw.quests ?? []) {
+      if (typeof q.aaQuestId === 'number' && typeof q.waveCount === 'number') {
+        seed.set(q.aaQuestId, q.waveCount)
+      }
+    }
+    return seed.size > 0 ? seed : undefined
+  } catch {
+    return undefined
+  }
+}
+
 // updater-worker/index.ts の各フェーズと同じ処理を再現
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
@@ -121,9 +140,13 @@ async function main() {
     return await fetchNiceEvents()
   })
 
+  // 既存 mocks/all.json の waveCount を seed にして、本番 KV キャッシュ時の
+  // 定常 subrequest 数を再現する(初回 cold 時は --refresh で seed 無効化はしない)。
+  const waveCountSeed = readWaveCountSeedFromMock()
+
   // A. updateDrops
   const drops = await measure('A. updateDrops (fetchAndTransformData)', async () => {
-    const d = await fetchAndTransformData({ events })
+    const d = await fetchAndTransformData({ events, waveCountSeed })
     const v = validateMasterData(d)
     if (v.ok) await MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(d))
     else console.warn(`  (degraded payload: ${v.reason})`)

@@ -22,14 +22,26 @@ const fetchWaveCount = async (aaQuestId: number): Promise<number | null> => {
   }
 }
 
+export type PopulateWaveCountsOptions = {
+  concurrency?: number
+  /**
+   * aaQuestId → waveCount のキャッシュ(前回 all_drops_json 由来)。
+   * ここに載っている aaQuestId は Atlas を再取得せずキャッシュ値を使う。
+   * stage 数はほぼ不変なので、これで毎回の per-quest fetch(180+件 = subrequest
+   * 上限超過の主因)を新規クエスト分だけに削減できる。
+   */
+  seed?: Map<number, number>
+}
+
 /**
  * `quests` を in-place で更新し、各クエストに waveCount を付与する。
  * @returns 付与の内訳(ログ用)。
  */
 export const populateWaveCounts = async (
   quests: WaveQuest[],
-  concurrency = 8,
-): Promise<{ pod: number; fetched: number }> => {
+  options: PopulateWaveCountsOptions = {},
+): Promise<{ pod: number; fetched: number; cached: number }> => {
+  const { concurrency = 8, seed } = options
   const freq = new Map<number, number>()
   for (const q of quests) {
     if (q.aaQuestId != null) freq.set(q.aaQuestId, (freq.get(q.aaQuestId) ?? 0) + 1)
@@ -43,9 +55,22 @@ export const populateWaveCounts = async (
     }
   }
 
-  const toFetch = quests.filter(
+  const candidates = quests.filter(
     q => !questConsumesPod(q.area) && q.aaQuestId != null && freq.get(q.aaQuestId) === 1,
   )
+
+  // seed にある aaQuestId はキャッシュ値を流用し、fetch 対象から外す。
+  let cached = 0
+  const toFetch: WaveQuest[] = []
+  for (const q of candidates) {
+    const c = seed?.get(q.aaQuestId as number)
+    if (c != null) {
+      q.waveCount = c
+      cached++
+    } else {
+      toFetch.push(q)
+    }
+  }
 
   let fetched = 0
   for (let i = 0; i < toFetch.length; i += concurrency) {
@@ -60,5 +85,5 @@ export const populateWaveCounts = async (
     })
   }
 
-  return { pod, fetched }
+  return { pod, fetched, cached }
 }
