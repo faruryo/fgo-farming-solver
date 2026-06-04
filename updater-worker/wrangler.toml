@@ -6,6 +6,14 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 [triggers]
 crons = ["*/30 * * * *"] # 30 分ごとに実行 (失敗時の MTTR 短縮)
 
+# subrequest 上限の引き上げ (有料 Standard プランで設定可・課金対象外)。
+# 1 invocation で waveCount の per-quest fetch(cold start で ~240 件)+ rarity 用
+# per-servant fetch(~25 件)が必要。既定上限では途中で "Too many subrequests" に
+# なり waveCount cache がブートストラップできず rarity 更新も失敗していた。
+# 一度フル取得できれば KV seed で定常時は数十件に収まる(safety margin として 1000)。
+[limits]
+subrequests = 1000
+
 [[kv_namespaces]]
 binding = "MASTER_DATA"
 id = "306bbe537e9d4907809f82468df500e4"
