@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
 
 export type MaterialSelectionAdvisorProps = {
   /** 全選択可能アイテム(Atlas Academy)。 */
@@ -281,6 +283,7 @@ export const MaterialSelectionAdvisor = ({
   if (!mounted) return null
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col gap-4">
       {/* モード切替・総数入力 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -351,8 +354,28 @@ export const MaterialSelectionAdvisor = ({
                       対象外
                     </span>
                   ) : row.byproduct ? (
-                    <span className="flex-shrink-0 text-xs" style={{ color: 'var(--steel)' }}>
-                      ついで充足
+                    <span
+                      className="flex flex-shrink-0 items-center gap-1 text-xs"
+                      style={{ color: 'var(--steel)' }}
+                    >
+                      交換の効果なし
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              aria-label="詳しい説明"
+                              className="inline-flex items-center justify-center rounded-full outline-none"
+                              style={{ color: 'var(--steel)' }}
+                            />
+                          }
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[15rem] text-left">
+                          他の不足素材を集める周回で自然にドロップするため、交換でもらっても総周回数は変わりません。交換枠は他の素材に回すのがおすすめです。
+                        </TooltipContent>
+                      </Tooltip>
                     </span>
                   ) : (
                     <span className="flex-shrink-0 text-xs" style={{ color: 'var(--text3)' }}>
@@ -372,7 +395,7 @@ export const MaterialSelectionAdvisor = ({
                   {row.noDropData ? (
                     <span style={{ color: 'var(--text3)' }}>フリクエ恒常ドロップ無し</span>
                   ) : row.byproduct ? (
-                    <span style={{ color: 'var(--steel)' }}>他素材集めのついでに揃う(削減 0)</span>
+                    <span style={{ color: 'var(--steel)' }}>他素材の周回で自然に揃う(削減 0)</span>
                   ) : row.deficiency > 0 ? (
                     <span>
                       約 {fmt(row.valuePerCopy)} {unit(config.mode)}/個 削減
@@ -487,5 +510,6 @@ export const MaterialSelectionAdvisor = ({
         )}
       </div>
     </div>
+    </TooltipProvider>
   )
 }
