@@ -223,11 +223,22 @@ export async function fetchAndTransformData(
     }
 
     if (aaWars) {
+      // ⚠️ メモリ対策: `{...q}` で全フィールド(~30項目)を 15,000+ 件コピーすると
+      // nice_war(20MB)の object graph が二重化し、128MB の Worker で GC が暴走して
+      // exceededCpu を招く。後段で実際に使う 5 項目だけの compact オブジェクトにする。
       aaQuests = aaWars.flatMap(war =>
         (war.spots || []).flatMap((spot: any) =>
-          (spot.quests || []).map((q: any) => ({ ...q, warLongName: war.longName }))
+          (spot.quests || []).map((q: any) => ({
+            id: q.id,
+            name: q.name,
+            spotName: q.spotName,
+            afterClear: q.afterClear,
+            warLongName: war.longName,
+          }))
         )
       )
+      // 元の巨大配列を早期に解放可能にする(以降 aaWars は参照しない)。
+      aaWars = null
       console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
     }
   } catch (e) {
