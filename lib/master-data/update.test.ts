@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods } from './update'
+import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods, fetchActiveEvents, eventDropItems } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
@@ -78,11 +78,13 @@ describe('fetchDashboardMeta', () => {
       makeGacha(5, 'stone', PERMANENT_CLOSE), // excluded (permanent)
     ]
     vi.mocked(fetch)
-      .mockResolvedValueOnce({ json: () => Promise.resolve([makeEvent(1, 'https://example.com/banner.png')]) } as Response)
       .mockResolvedValueOnce({ json: () => Promise.resolve(gachas) } as Response)
       .mockResolvedValueOnce({ json: () => Promise.resolve([makeServant(100100)]) } as Response)
 
-    const result = await fetchDashboardMeta()
+    // events は本番同様 opts 経由で渡す(prefetch されたアクティブイベント)。
+    const result = await fetchDashboardMeta(undefined, {
+      events: [makeEvent(1, 'https://example.com/banner.png')] as any,
+    })
 
     expect(result.gachas).toHaveLength(2)
     expect(result.gachas.map(g => g.id)).toEqual([1, 2])
@@ -91,11 +93,10 @@ describe('fetchDashboardMeta', () => {
   it('generates correct SummonBanners URL for every gacha', async () => {
     const gachas = [makeGacha(10, 'stone'), makeGacha(20, 'chargeStone')]
     vi.mocked(fetch)
-      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response)
       .mockResolvedValueOnce({ json: () => Promise.resolve(gachas) } as Response)
       .mockResolvedValueOnce({ json: () => Promise.resolve([makeServant(100100)]) } as Response)
 
-    const result = await fetchDashboardMeta()
+    const result = await fetchDashboardMeta(undefined, { events: [] })
 
     for (const g of result.gachas) {
       expect(g.banner).toMatch(/\/JP\/SummonBanners\/img_summon_\d+\.png$/)
@@ -104,11 +105,10 @@ describe('fetchDashboardMeta', () => {
 
   it('output is valid JSON with required DashboardMeta fields', async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response)
       .mockResolvedValueOnce({ json: () => Promise.resolve([makeGacha(1, 'stone')]) } as Response)
       .mockResolvedValueOnce({ json: () => Promise.resolve([makeServant(100100)]) } as Response)
 
-    const result = await fetchDashboardMeta()
+    const result = await fetchDashboardMeta(undefined, { events: [] })
     const serialized = JSON.stringify(result)
 
     expect(() => JSON.parse(serialized)).not.toThrow()
@@ -491,5 +491,76 @@ describe('extractPodFreePeriods', () => {
       campaignQuests: [{ questId: 99999999, phase: 0, isExcepted: false }],
     }
     expect(extractPodFreePeriods([ev], idMap, NOW)).toEqual([])
+  })
+})
+
+describe('fetchActiveEvents', () => {
+  const NOW = 1778773507 // 2026-05-15
+  const PERMANENT = 1893423600
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  // Regression: the worker repeatedly hit exceededCpu because it parsed the full
+  // ~40MB nice_event.json every run. This must NEVER be reintroduced — only the
+  // lightweight basic_event.json + per-event detail endpoints may be fetched.
+  it('fetches basic_event + per-event detail, never nice_event.json', async () => {
+    const basic = [
+      { id: 100, startedAt: NOW - 3600, finishedAt: NOW + 3600 }, // active
+      { id: 200, startedAt: NOW - 7200, finishedAt: NOW - 3600 }, // expired
+      { id: 300, startedAt: NOW + 3600, finishedAt: NOW + 7200 }, // not started
+      { id: 400, startedAt: NOW - 3600, finishedAt: PERMANENT + 1 }, // permanent sentinel
+    ]
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(basic) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ id: 100, name: 'E100' }) } as Response)
+
+    const events = await fetchActiveEvents(NOW)
+
+    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    expect(urls.some(u => u.includes('nice_event.json'))).toBe(false)
+    expect(urls[0]).toContain('basic_event.json')
+    // Only the single active, non-permanent, already-started event is detailed.
+    expect(urls.filter(u => /\/event\/\d+$/.test(u))).toEqual([
+      expect.stringContaining('/event/100'),
+    ])
+    expect(events).toEqual([{ id: 100, name: 'E100' }])
+  })
+
+  it('drops per-event fetches that fail without aborting the rest', async () => {
+    const basic = [
+      { id: 100, startedAt: NOW - 1, finishedAt: NOW + 1 },
+      { id: 101, startedAt: NOW - 1, finishedAt: NOW + 1 },
+    ]
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(basic) } as Response)
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ id: 101, name: 'E101' }) } as Response)
+
+    const events = await fetchActiveEvents(NOW)
+    expect(events).toEqual([{ id: 101, name: 'E101' }])
+  })
+})
+
+describe('eventDropItems', () => {
+  it('derives distinct eventItem drops from shop cost items', () => {
+    const ev: any = {
+      shop: [
+        { cost: { item: { id: 94155601, name: '褪せたマント', icon: 'a.png', type: 'eventItem' } } },
+        { cost: { item: { id: 94155601, name: '褪せたマント', icon: 'a.png', type: 'eventItem' } } }, // dup
+        { cost: { item: { id: 94155602, name: '古びた鉄兜', icon: 'b.png', type: 'eventItem' } } },
+        { cost: { item: { id: 1, name: 'QP', icon: 'qp.png', type: 'qp' } } }, // non-eventItem, excluded
+        { cost: undefined }, // no cost
+      ],
+    }
+    expect(eventDropItems(ev)).toEqual([
+      { id: 94155601, name: '褪せたマント', icon: 'a.png' },
+      { id: 94155602, name: '古びた鉄兜', icon: 'b.png' },
+    ])
+  })
+
+  it('returns empty array when the event has no shop', () => {
+    expect(eventDropItems({ id: 1 } as any)).toEqual([])
   })
 })

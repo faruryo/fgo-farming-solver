@@ -35,7 +35,7 @@ import { performance } from 'node:perf_hooks'
 
 import { origin, region } from '../constants/atlasacademy'
 import { buildRarityApTables } from '../lib/progress/rarity-ap-table'
-import { fetchAndTransformData, fetchDashboardMeta, fetchNiceEvents } from '../lib/master-data/update'
+import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 
@@ -140,9 +140,9 @@ async function main() {
   console.log(`\n=== fgo-data-updater CPU bench (${REFRESH ? 'network refresh' : 'cached'}) ===\n`)
 
   // ── updater worker (fgo-data-updater): A/B/D ──
-  // 0. nice_event.json を1回だけ取得 (worker scheduled() と同じく共有)
-  const events = await measure('0. prefetch nice_event.json (shared)', 'updater', async () => {
-    return await fetchNiceEvents()
+  // 0. アクティブイベントを1回だけ取得 (worker scheduled() と同じく共有)
+  const events = await measure('0. prefetch active events (shared)', 'updater', async () => {
+    return await fetchActiveEvents()
   })
 
   // 既存 mocks/all.json の waveCount を seed にして、本番 KV キャッシュ時の

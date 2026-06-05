@@ -172,14 +172,70 @@ function getCategory(priority: number, background: string): { largeCategory: str
 
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority' | 'icon'> & { type: string }
 
+// Atlas は恒常コンテンツの終了時刻にこの番兵値を使う。
+const EVENT_PERMANENT_SENTINEL = 1893423600
+// 異常系で active が極端に多い場合でも free プランの subrequest 上限を守るための上限。
+// 通常の同時開催イベントは 1〜15 件程度。
+const MAX_ACTIVE_EVENTS = 40
+
+interface BasicEvent {
+  id: number
+  startedAt: number
+  finishedAt: number
+}
+
 /**
- * nice_event.json (約33MB) を取得・parse する。
- * fetchAndTransformData と fetchDashboardMeta が同一 cron invocation で
- * 二重に取得・parse していたため、共有できるよう切り出した。
+ * 開催中(アクティブ)のイベントのみを取得する。
+ *
+ * 以前は nice_event.json(約40MB / 1430件)を丸ごと取得・parse していたが、
+ * 消費側(AP キャンペーン抽出・ダッシュボード・pod-free 期間)はいずれも
+ * 「現在開催中の数件」しか使わず、過去イベントは parse 直後に捨てていた。
+ * この 40MB parse が cron の exceededCpu(CPU 上限超過)の主因だったため、
+ * 以下の2段に置き換える:
+ *   1. basic_event.json(約316KB)で全イベントの日付だけ取得しアクティブを絞る
+ *   2. アクティブな数件だけ per-event API(/nice/{region}/event/{id})で詳細取得
+ * これで parse 量が ~40MB → 1MB 未満に下がる。
+ *
+ * 注: per-event API は bulk nice_event の `quests[].drops` を含まないため、
+ * ダッシュボードの drop アイコンは `shop[].cost.item`(イベント素材)から導出する
+ * (eventDropItems 参照)。
  */
-export async function fetchNiceEvents(): Promise<AtlasEvent[]> {
-  const res = await fetch(`${origin}/export/${region}/nice_event.json`)
-  return (await res.json()) as AtlasEvent[]
+export async function fetchActiveEvents(nowSec?: number): Promise<AtlasEvent[]> {
+  const now = nowSec ?? Math.floor(Date.now() / 1000)
+  const res = await fetch(`${origin}/export/${region}/basic_event.json`)
+  const basic = (await res.json()) as BasicEvent[]
+  const activeIds = basic
+    .filter(
+      e =>
+        e.startedAt <= now &&
+        e.finishedAt > now &&
+        e.finishedAt < EVENT_PERMANENT_SENTINEL
+    )
+    .map(e => e.id)
+
+  if (activeIds.length > MAX_ACTIVE_EVENTS) {
+    console.warn(
+      `fetchActiveEvents: ${activeIds.length} active events exceeds cap ${MAX_ACTIVE_EVENTS}; truncating.`
+    )
+    activeIds.length = MAX_ACTIVE_EVENTS
+  }
+
+  const details = await Promise.all(
+    activeIds.map(async id => {
+      try {
+        const r = await fetch(`${origin}/nice/${region}/event/${id}`)
+        if (!r.ok) {
+          console.warn(`fetchActiveEvents: per-event fetch failed for ${id} (status ${r.status})`)
+          return null
+        }
+        return (await r.json()) as AtlasEvent
+      } catch (e) {
+        console.warn(`fetchActiveEvents: per-event fetch error for ${id}:`, e)
+        return null
+      }
+    })
+  )
+  return details.filter((e): e is AtlasEvent => e !== null)
 }
 
 export async function fetchAndTransformData(
@@ -463,7 +519,7 @@ export async function fetchAndTransformData(
 
   console.log(`Filtering complete: ${finalQuests.length} quests and ${filtered_drop_rates.length} drop rate records selected.`)
 
-  // 7. Extract AP campaigns from nice_event.json and project to short quest IDs.
+  // 7. Extract AP campaigns from active events and project to short quest IDs.
   // Build the aaQuestId → short quest ID map from the final (filtered) quest set
   // so we only carry campaign data relevant to quests the solver can see.
   const aaQuestIdToShortId = new Map<number, string>()
@@ -487,11 +543,11 @@ export async function fetchAndTransformData(
   let campaigns: Campaign[] = []
   try {
     console.log('Fetching event data for AP campaigns from Atlas Academy...')
-    const allEvents = opts.events ?? (await fetchNiceEvents())
+    const allEvents = opts.events ?? (await fetchActiveEvents())
     campaigns = extractApCampaigns(allEvents, aaQuestIdToShortId, aaQuestIdToAfterClear)
     console.log(`Extracted ${campaigns.length} questAp campaigns covering ${aaQuestIdToShortId.size} mappable quests.`)
   } catch (e) {
-    console.warn('Failed to fetch/parse nice_event.json for campaigns:', e)
+    console.warn('Failed to fetch/parse active events for campaigns:', e)
   }
 
   // クエストごとの waveCount(=ターン数)を付与(周回効率の分母に使う)。
@@ -531,6 +587,10 @@ interface AtlasEventCampaignQuest {
   isExcepted?: boolean
 }
 
+interface AtlasEventShopItem {
+  cost?: { item?: { id: number; name: string; icon: string; type: string } }
+}
+
 interface AtlasEvent {
   id: number
   name: string
@@ -539,16 +599,27 @@ interface AtlasEvent {
   endedAt: number
   finishedAt: number
   type: string
-  quests?: {
-    drops?: {
-      objectId: number
-      name: string
-      icon: string
-    }[]
-  }[]
+  // per-event API では shop[].cost.item がイベント素材(name/icon 内蔵)。
+  // ダッシュボードの drop アイコン導出に使う(eventDropItems)。
+  shop?: AtlasEventShopItem[]
   svts?: { svtId: number }[]
   campaigns?: AtlasEventCampaign[]
   campaignQuests?: AtlasEventCampaignQuest[]
+}
+
+/**
+ * per-event API には bulk nice_event の `quests[].drops` が無いため、イベントの
+ * shop コストアイテム(= 周回で集めるイベント素材, name/icon を内包)から
+ * ダッシュボード表示用の drop アイテム集合を導出する。
+ */
+export function eventDropItems(e: AtlasEvent): { id: number; name: string; icon: string }[] {
+  const map = new Map<number, { id: number; name: string; icon: string }>()
+  for (const s of e.shop ?? []) {
+    const it = s.cost?.item
+    if (!it || it.type !== 'eventItem') continue
+    if (!map.has(it.id)) map.set(it.id, { id: it.id, name: it.name, icon: it.icon })
+  }
+  return Array.from(map.values())
 }
 
 const KNOWN_CAMPAIGN_CALC_TYPES = new Set<CampaignCalcType>([
@@ -683,7 +754,7 @@ export async function fetchDashboardMeta(
 
   console.log('Fetching event, gacha and servant data from Atlas Academy...')
   const [allEvents, gachaRes, servantRes] = await Promise.all([
-    opts.events ? Promise.resolve(opts.events) : fetchNiceEvents(),
+    opts.events ? Promise.resolve(opts.events) : fetchActiveEvents(),
     fetch(`${origin}/export/${region}/nice_gacha.json`),
     fetch(`${origin}/export/${region}/basic_servant.json`)
   ])
@@ -761,10 +832,7 @@ export async function fetchDashboardMeta(
     endedAt: e.endedAt,
     shopFinishedAt: e.finishedAt,
     type: e.type,
-    drops: Array.from(new Map(
-      (e.quests || []).flatMap(q => q.drops || [])
-        .map(d => [d.objectId, { id: d.objectId, name: d.name, icon: d.icon }])
-    ).values())
+    drops: eventDropItems(e)
   }))
 
   // 6b. Map banner-less questCampaign events for CampaignSection.

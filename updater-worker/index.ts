@@ -1,9 +1,9 @@
-import { fetchAndTransformData, fetchDashboardMeta, fetchNiceEvents } from '../lib/master-data/update'
+import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 
-// nice_event.json は cron 1回で複数フェーズが必要とするため、先頭で1回だけ取得して共有する。
-type NiceEvents = Awaited<ReturnType<typeof fetchNiceEvents>>
+// アクティブイベントは cron 1回で複数フェーズが必要とするため、先頭で1回だけ取得して共有する。
+type NiceEvents = Awaited<ReturnType<typeof fetchActiveEvents>>
 
 export interface Env {
   MASTER_DATA: KVNamespace
@@ -19,13 +19,15 @@ const SERVANTS_LIST_KEY = 'servants_list'
 const worker = {
   async scheduled(_event: unknown, env: Env) {
     console.log('Running scheduled data update...')
-    // nice_event.json (約33MB) は drops 変換とダッシュボードの両方で必要。
-    // cron 1回で二重に取得・parse しないよう、ここで1回だけ取得して共有する。
+    // アクティブイベントは drops 変換(AP キャンペーン)とダッシュボードの両方で必要。
+    // cron 1回で二重取得しないよう、ここで1回だけ取得して共有する。
+    // 旧実装は nice_event.json(約40MB)を毎回 parse して exceededCpu の主因だった。
+    // 現在は basic_event(約316KB)+ アクティブ数件の per-event 取得に置き換え済み。
     let events: NiceEvents | undefined
     try {
-      events = await fetchNiceEvents()
+      events = await fetchActiveEvents()
     } catch (e) {
-      console.warn('Failed to prefetch nice_event.json; phases will fetch individually:', e)
+      console.warn('Failed to prefetch active events; phases will fetch individually:', e)
     }
     // 前回 KV の all_drops_json から waveCount(aaQuestId→ターン数)を seed として読む。
     // これで populateWaveCounts の per-quest fetch(180件超 = subrequest 上限超過の
