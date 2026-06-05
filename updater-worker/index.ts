@@ -11,8 +11,10 @@ export interface Env {
 
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
-const RARITY_AP_TABLES_KEY = 'rarity_ap_tables'
 const SERVANTS_LIST_KEY = 'servants_list'
+// 注: rarity_ap_tables の更新は別 worker (rarity-worker/) に分離した。
+// 無料プランの subrequest 上限内に収めるため、per-servant 取得を含む重い rarity 計算は
+// 独立した cron worker(独自 subrequest 予算)で実行する。
 
 const worker = {
   async scheduled(_event: unknown, env: Env) {
@@ -32,7 +34,6 @@ const worker = {
     const dropsData = await updateDrops(env, events, waveCountSeed)
     await Promise.all([
       updateDashboardMeta(env, dropsData, events),
-      updateRarityApTables(env, dropsData),
       updateServantsList(env),
     ])
   }
@@ -93,18 +94,6 @@ async function updateDashboardMeta(env: Env, dropsData: MasterData | null, event
     console.log('Successfully updated DASHBOARD_META KV')
   } catch (e) {
     console.error('Failed to update dashboard meta KV data:', e)
-  }
-}
-
-async function updateRarityApTables(env: Env, dropsData: MasterData | null) {
-  try {
-    console.log('Precomputing and updating rarity AP tables KV data...')
-    const { buildRarityApTables } = await import('../lib/progress/rarity-ap-table')
-    const rarityApTables = await buildRarityApTables(dropsData || undefined)
-    await env.MASTER_DATA.put(RARITY_AP_TABLES_KEY, JSON.stringify(rarityApTables))
-    console.log('Successfully updated RARITY_AP_TABLES KV')
-  } catch (e) {
-    console.error('Failed to update rarity AP tables KV data:', e)
   }
 }
 

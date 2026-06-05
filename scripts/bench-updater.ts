@@ -87,15 +87,19 @@ const sampler = setInterval(() => {
 }, 25)
 
 // ── フェーズ計測 ───────────────────────────────────────────────────
+// rarity 計算は別 worker (rarity-worker) に分離済み。subrequest は worker ごとに
+// 別予算なので、どの worker に属すフェーズかを記録して per-worker で集計する。
+type WorkerName = 'updater' | 'rarity'
 type PhaseResult = {
   name: string
+  worker: WorkerName
   cpuMs: number
   wallMs: number
   subrequests: number
 }
 const results: PhaseResult[] = []
 
-async function measure<T>(name: string, fn: () => Promise<T>): Promise<T> {
+async function measure<T>(name: string, worker: WorkerName, fn: () => Promise<T>): Promise<T> {
   const fc0 = fetchCount
   const cpu0 = process.cpuUsage()
   const w0 = performance.now()
@@ -103,7 +107,7 @@ async function measure<T>(name: string, fn: () => Promise<T>): Promise<T> {
   const wallMs = performance.now() - w0
   const cpu = process.cpuUsage(cpu0)
   const cpuMs = (cpu.user + cpu.system) / 1000
-  results.push({ name, cpuMs, wallMs, subrequests: fetchCount - fc0 })
+  results.push({ name, worker, cpuMs, wallMs, subrequests: fetchCount - fc0 })
   return out
 }
 
@@ -135,8 +139,9 @@ const SERVANTS_LIST_KEY = 'servants_list'
 async function main() {
   console.log(`\n=== fgo-data-updater CPU bench (${REFRESH ? 'network refresh' : 'cached'}) ===\n`)
 
+  // ── updater worker (fgo-data-updater): A/B/D ──
   // 0. nice_event.json を1回だけ取得 (worker scheduled() と同じく共有)
-  const events = await measure('0. prefetch nice_event.json (shared)', async () => {
+  const events = await measure('0. prefetch nice_event.json (shared)', 'updater', async () => {
     return await fetchNiceEvents()
   })
 
@@ -145,7 +150,7 @@ async function main() {
   const waveCountSeed = readWaveCountSeedFromMock()
 
   // A. updateDrops
-  const drops = await measure('A. updateDrops (fetchAndTransformData)', async () => {
+  const drops = await measure('A. updateDrops (fetchAndTransformData)', 'updater', async () => {
     const d = await fetchAndTransformData({ events, waveCountSeed })
     const v = validateMasterData(d)
     if (v.ok) await MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(d))
@@ -154,20 +159,23 @@ async function main() {
   })
 
   // B. updateDashboardMeta
-  await measure('B. updateDashboardMeta (fetchDashboardMeta)', async () => {
+  await measure('B. updateDashboardMeta (fetchDashboardMeta)', 'updater', async () => {
     const meta = await fetchDashboardMeta(drops?.quests, { events })
     const v = validateDashboardMeta(meta)
     if (v.ok) await MASTER_DATA.put(DASHBOARD_META_KEY, JSON.stringify(meta))
   })
 
-  // C. updateRarityApTables
-  await measure('C. updateRarityApTables (buildRarityApTables / LP solver)', async () => {
-    const tables = await buildRarityApTables(drops || undefined)
+  // ── rarity worker (fgo-rarity-updater): C のみ・独立 invocation ──
+  // 本番では all_drops_json を KV から読んで buildRarityApTables(drops) を呼ぶ。
+  await measure('C. rarity worker (buildRarityApTables / LP solver)', 'rarity', async () => {
+    const raw = await MASTER_DATA.get(MASTER_DATA_KEY)
+    const d = raw ? (JSON.parse(raw) as MasterData) : drops
+    const tables = await buildRarityApTables(d || undefined)
     await MASTER_DATA.put(RARITY_AP_TABLES_KEY, JSON.stringify(tables))
   })
 
   // D. updateServantsList
-  await measure('D. updateServantsList (basic_servant fetch)', async () => {
+  await measure('D. updateServantsList (basic_servant fetch)', 'updater', async () => {
     const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
     const all = (await res.json()) as Array<{
       id: number
@@ -210,16 +218,23 @@ function report() {
   console.log('\n--- Peak memory (プロセス全体・参考値) ---')
   console.log(`  peak RSS: ${(peakRss / 1024 / 1024).toFixed(1)} MB`)
 
-  // 実態(observability で確認): アカウントは Workers 有料 Standard プラン。
-  //   - cron の CPU 上限 = 30,000ms (既定, <1h 間隔)
-  //   - メモリ上限 = 128MB / invocation  ← 巨大 JSON の parse でここを突くと
-  //     GC 暴走で CPU が膨張し exceededCpu になる(真の制約はメモリ側)。
-  console.log('\n--- Workers 有料 Standard の上限との比較 (cron 1回あたり) ---')
-  const cpuVerdict = totalCpu <= 30000 ? `OK (余裕 ${(30000 - totalCpu).toFixed(0)}ms)` : `OVER`
-  console.log(`  CPU 30,000ms : ${num(totalCpu).trim()} ms  -> ${cpuVerdict}`)
+  // 実態(observability + CI ログで確認): アカウントは Workers 無料プラン。
+  //   - [limits](cpu_ms / subrequests)は設定不可(無料プランでは deploy が拒否)。
+  //   - subrequest は 1 invocation あたりの上限が厳しい ← これが律速。
+  //   - rarity 計算 (C) は per-servant 取得を含むため別 worker に分離し、独立した
+  //     subrequest 予算を確保している。
+  const subBy = (w: WorkerName) =>
+    results.filter((r) => r.worker === w).reduce((a, r) => a + r.subrequests, 0)
+  const cpuBy = (w: WorkerName) =>
+    results.filter((r) => r.worker === w).reduce((a, r) => a + r.cpuMs, 0)
+
+  console.log('\n--- worker 別 subrequest / CPU (各 worker は独立 invocation = 独立予算) ---')
+  console.log(`  updater (fgo-data-updater)  : subreq ${subBy('updater')},  CPU ${cpuBy('updater').toFixed(0)}ms`)
+  console.log(`  rarity  (fgo-rarity-updater): subreq ${subBy('rarity')},  CPU ${cpuBy('rarity').toFixed(0)}ms`)
+  console.log(`  (参考) 合算: subreq ${totalSub}, CPU ${totalCpu.toFixed(0)}ms`)
   console.log(
-    '\n  注: ローカル(M1等)はメモリ潤沢のため GC 暴走を再現しない。\n' +
-    '      本番の真の制約は 128MB メモリ + その GC コスト。peak RSS の傾向で代替評価する。\n'
+    '\n  注: 無料プランは subrequest が律速。worker ごとに上限内へ収めること。\n' +
+    '      ローカルはメモリ潤沢で GC 暴走を再現しないため、CPU は参考値。\n'
   )
 }
 
