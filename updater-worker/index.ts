@@ -66,7 +66,14 @@ async function updateDrops(
 ): Promise<MasterData | null> {
   try {
     console.log('Fetching and transforming master data (drops)...')
-    const dropsData = await fetchAndTransformData({ events, waveCountSeed })
+    // 無料プランの subrequest 上限(1 invocation ~50)内に収めるため、waveCount の
+    // 新規 fetch は 1 回あたり 20 件までに制限。seed と併用で数回の cron で全件埋まり、
+    // 以後は 0 件になる。これで dashboard/servants 更新が starve しない。
+    const dropsData = await fetchAndTransformData({
+      events,
+      waveCountSeed,
+      waveCountMaxFetch: 20,
+    })
     const v = validateMasterData(dropsData)
     if (!v.ok) {
       console.warn(`Refusing to overwrite MASTER_DATA KV with degraded payload: ${v.reason}`)

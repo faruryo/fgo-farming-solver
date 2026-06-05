@@ -183,7 +183,11 @@ export async function fetchNiceEvents(): Promise<AtlasEvent[]> {
 }
 
 export async function fetchAndTransformData(
-  opts: { events?: AtlasEvent[]; waveCountSeed?: Map<number, number> } = {}
+  opts: {
+    events?: AtlasEvent[]
+    waveCountSeed?: Map<number, number>
+    waveCountMaxFetch?: number
+  } = {}
 ): Promise<MasterData> {
   let fs: any
   try {
@@ -481,11 +485,12 @@ export async function fetchAndTransformData(
 
   // クエストごとの waveCount(=ターン数)を付与(周回効率の分母に使う)。
   try {
-    const { pod, fetched, cached } = await populateWaveCounts(finalQuests, {
+    const { pod, fetched, cached, deferred } = await populateWaveCounts(finalQuests, {
       seed: opts.waveCountSeed,
+      maxFetch: opts.waveCountMaxFetch,
     })
     console.log(
-      `Wave counts: ${pod} pod quests (1 turn), ${cached} from cache, ${fetched} fetched from Atlas.`
+      `Wave counts: ${pod} pod quests (1 turn), ${cached} from cache, ${fetched} fetched from Atlas, ${deferred} deferred to next run.`
     )
   } catch (e) {
     console.warn('Failed to populate wave counts:', e)

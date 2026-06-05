@@ -31,6 +31,13 @@ export type PopulateWaveCountsOptions = {
    * 上限超過の主因)を新規クエスト分だけに削減できる。
    */
   seed?: Map<number, number>
+  /**
+   * 1 回の呼び出しで新規 fetch するクエスト数の上限。無料プランの subrequest 上限
+   * (1 invocation あたり ~50)内に収めるため、cold start でも 1 回で全件取得せず
+   * 数回に分けて埋める。未指定なら無制限(ローカルの mock 再生成用)。
+   * seed と併用すれば数回の cron で全件キャッシュされ、以後の fetch は 0 になる。
+   */
+  maxFetch?: number
 }
 
 /**
@@ -40,8 +47,8 @@ export type PopulateWaveCountsOptions = {
 export const populateWaveCounts = async (
   quests: WaveQuest[],
   options: PopulateWaveCountsOptions = {},
-): Promise<{ pod: number; fetched: number; cached: number }> => {
-  const { concurrency = 8, seed } = options
+): Promise<{ pod: number; fetched: number; cached: number; deferred: number }> => {
+  const { concurrency = 8, seed, maxFetch } = options
   const freq = new Map<number, number>()
   for (const q of quests) {
     if (q.aaQuestId != null) freq.set(q.aaQuestId, (freq.get(q.aaQuestId) ?? 0) + 1)
@@ -61,16 +68,20 @@ export const populateWaveCounts = async (
 
   // seed にある aaQuestId はキャッシュ値を流用し、fetch 対象から外す。
   let cached = 0
-  const toFetch: WaveQuest[] = []
+  const uncached: WaveQuest[] = []
   for (const q of candidates) {
     const c = seed?.get(q.aaQuestId as number)
     if (c != null) {
       q.waveCount = c
       cached++
     } else {
-      toFetch.push(q)
+      uncached.push(q)
     }
   }
+
+  // 1 回の fetch 件数を maxFetch で制限(subrequest 上限対策)。残りは次回以降に回す。
+  const toFetch = maxFetch != null ? uncached.slice(0, maxFetch) : uncached
+  const deferred = uncached.length - toFetch.length
 
   let fetched = 0
   for (let i = 0; i < toFetch.length; i += concurrency) {
@@ -85,5 +96,5 @@ export const populateWaveCounts = async (
     })
   }
 
-  return { pod, fetched, cached }
+  return { pod, fetched, cached, deferred }
 }
