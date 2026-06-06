@@ -89,6 +89,30 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
     expect(summary?.snapshotCreatedAt).toBeNull()
   })
 
+  it('新規入手サーヴァントを名前付き(newServants)で返す', () => {
+    // 過去: 100100 が未所持(disabled:true)、現在: 所持(disabled:false) → 新規 1 騎。
+    const pastMaterial = {
+      '100100': { disabled: true, targets: {} },
+    } as unknown as ChaldeaState
+    const currentMaterial = {
+      '100100': { disabled: false, targets: {} },
+    } as unknown as ChaldeaState
+    const ctx: BuildContext = {
+      ...makeCtx(currentMaterial),
+      nameById: new Map([['100100', 'アルトリア・ペンドラゴン']]),
+    }
+    const summary = buildPeriodSummary(
+      'previous',
+      makeSnapshot({ material: pastMaterial }),
+      ctx,
+      true
+    )
+    expect(summary?.newServantCount).toBe(1)
+    expect(summary?.newServants).toEqual([
+      { servantId: '100100', servantName: 'アルトリア・ペンドラゴン' },
+    ])
+  })
+
   it('material だけ持つ(posession 欠落)スナップショットは degenerate にしない', () => {
     const summary = buildPeriodSummary(
       'previous',

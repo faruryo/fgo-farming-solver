@@ -46,6 +46,7 @@ export const buildPeriodSummary = (
       tier: 'none',
       growthTotal: 0,
       newServantCount: 0,
+      newServants: [],
       servantGrowth: [],
       elapsedMinutes: 0,
       fallback,
@@ -66,6 +67,7 @@ export const buildPeriodSummary = (
       tier: 'none',
       growthTotal: 0,
       newServantCount: 0,
+      newServants: [],
       servantGrowth: [],
       elapsedMinutes: 0,
       fallback: 'no_snapshot_for_period',
@@ -78,6 +80,11 @@ export const buildPeriodSummary = (
     pastChaldea,
     ctx.rarityById
   )
+  // 表示用に名前を付与(育成成長と同様 nameById から解決)。
+  const newServantEntries = newServants.map((s) => ({
+    servantId: s.servantId,
+    servantName: ctx.nameById.get(s.servantId),
+  }))
 
   const elapsedMinutes = elapsedMinutesBetween(
     snapshot.createdAt,
@@ -103,6 +110,7 @@ export const buildPeriodSummary = (
     tier: 'none',
     growthTotal,
     newServantCount: newServants.length,
+    newServants: newServantEntries,
     servantGrowth,
     pastPosession,
     elapsedMinutes,

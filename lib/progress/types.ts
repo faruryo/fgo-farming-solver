@@ -13,12 +13,19 @@ export type ServantGrowthEntry = {
   delta: number
 }
 
+export type NewServantSummaryEntry = {
+  servantId: string
+  servantName?: string
+}
+
 export type PeriodSummary = {
   period: SnapshotPeriod
   tier: ProgressTier
   /** 育成総量: 比較スナップショットから縮んだ育成目標レンジ(再臨/スキル/アペンド)の合計。 */
   growthTotal: number
   newServantCount: number
+  /** 新規入手サーヴァント(名前付き)。比較スナップショットに material が無い場合は空。 */
+  newServants: NewServantSummaryEntry[]
   servantGrowth: ServantGrowthEntry[]
   /**
    * アイテム入手による「残りに必要なAP/周回数/費用」の減少量。

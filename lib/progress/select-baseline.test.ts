@@ -10,6 +10,7 @@ const mk = (
   tier: 'none',
   growthTotal: 0,
   newServantCount: 0,
+  newServants: [],
   servantGrowth: [],
   elapsedMinutes: 0,
   fallback,

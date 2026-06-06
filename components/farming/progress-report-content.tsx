@@ -169,16 +169,47 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
             {summary.newServantCount > 0 && (
               <Row
                 label="新しい仲間"
-                value={`${summary.newServantCount}体`}
+                value={`${summary.newServantCount}騎`}
                 highlight
               />
             )}
           </div>
 
+          {(summary.newServants?.length ?? 0) > 0 && (
+            <div className="mt-2">
+              <div className="text-xs text-muted-foreground mb-1">
+                新しい仲間 ({summary.newServants.length} 騎)
+              </div>
+              <ul className="text-sm flex flex-col gap-0.5">
+                {summary.newServants.slice(0, 5).map((s) => (
+                  <li
+                    key={s.servantId}
+                    className="flex justify-between gap-3"
+                  >
+                    <span className="truncate">
+                      {s.servantName ?? `#${s.servantId}`}
+                    </span>
+                    <span
+                      className="tabular-nums text-[11px] font-semibold"
+                      style={{ color: 'var(--gold)' }}
+                    >
+                      NEW
+                    </span>
+                  </li>
+                ))}
+                {summary.newServants.length > 5 && (
+                  <li className="text-[11px] text-muted-foreground">
+                    ほか {summary.newServants.length - 5} 騎
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
           {summary.servantGrowth.length > 0 && (
             <div className="mt-2">
               <div className="text-xs text-muted-foreground mb-1">
-                サーヴァント成長 ({summary.servantGrowth.length} 体)
+                サーヴァント成長 ({summary.servantGrowth.length} 騎)
               </div>
               <ul className="text-sm flex flex-col gap-0.5">
                 {summary.servantGrowth.slice(0, 5).map((g) => (
