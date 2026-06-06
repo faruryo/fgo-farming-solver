@@ -23,6 +23,40 @@ export type RarityApTables = {
 
 const emptyTable = (): RarityApTable => ({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 })
 
+// rarity AP テーブルの再計算要否を判定するための、入力データの指紋。
+// 計算ロジックを変えたら強制再計算したいので VERSION を前置する。
+const FINGERPRINT_VERSION = 'v1'
+
+// ソルバが rarity AP に使う入力は quests(id/ap)と drop_rates(quest_id/item_id/
+// drop_rate)だけ。waveCount のインクリメンタル埋めや waves/qp 等は AP に影響しない
+// ため除外する。これにより all_drops_json が毎時書き換わっても内容が実質不変なら
+// 同じ指紋になり、rarity worker は重い 50 回ソルブをスキップできる。
+// 配列順の揺れで false な再計算が走らないよう、両者を sort して順序非依存にする。
+export const computeRaritySourceFingerprint = (drops: {
+  quests: { id: string; ap: number }[]
+  drop_rates: { quest_id: string; item_id: string; drop_rate: number }[]
+}): string => {
+  const quests = drops.quests.map((q) => `${q.id}:${q.ap}`).sort()
+  const rates = drops.drop_rates
+    .map((d) => `${d.quest_id}|${d.item_id}|${d.drop_rate}`)
+    .sort()
+
+  // FNV-1a 32bit。衝突確率は無視できる範囲で KV 値を短く保てる。
+  let h = 0x811c9dc5
+  const fold = (s: string) => {
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i)
+      h = Math.imul(h, 0x01000193)
+    }
+    h ^= 0x0a // 区切り(連結による衝突を避ける)
+    h = Math.imul(h, 0x01000193)
+  }
+  for (const q of quests) fold(q)
+  for (const r of rates) fold(r)
+
+  return `${FINGERPRINT_VERSION}:${(h >>> 0).toString(16)}:${quests.length}x${rates.length}`
+}
+
 // existingDrops は MasterData / Drops どちらも受ける(両者は items の型だけ
 // 異なるが、ソルバが参照する quests / drop_rates は共通)。
 export const buildRarityApTables = async (existingDrops?: any): Promise<RarityApTables> => {
