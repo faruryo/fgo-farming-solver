@@ -52,4 +52,39 @@ describe('selectBaseline (最古の存在スナップショット優先)', () =>
     expect(selectBaseline(null)).toBeNull()
     expect(selectBaseline(undefined)).toBeNull()
   })
+
+  it('中身の無い(degenerate)最古期間より、比較に使える新しい期間を優先する', () => {
+    // 本番再現: week が material/posession を持たない残骸(fallback 無し・中身ゼロ)、
+    // previous が pastPosession を持つフルデータ。previous を採用すべき。
+    const degenerateWeek = mk('week') // growthTotal 0 / pastPosession なし
+    const richPrevious: PeriodSummary = {
+      ...mk('previous'),
+      pastPosession: { '6512': 10 },
+    }
+    const b = selectBaseline({
+      previous: richPrevious,
+      week: degenerateWeek,
+      month: mk('month', 'no_snapshot_for_period'),
+    })
+    expect(b?.period).toBe('previous')
+  })
+
+  it('material 由来の進捗(育成総量)を持つ期間も比較対象として採用する', () => {
+    const growthOnlyWeek: PeriodSummary = { ...mk('week'), growthTotal: 3 }
+    const b = selectBaseline({
+      previous: mk('previous'),
+      week: growthOnlyWeek,
+      month: mk('month', 'no_snapshot_for_period'),
+    })
+    expect(b?.period).toBe('week')
+  })
+
+  it('使える中身が無く全て fallback 無しなら、従来どおり最古を返す(後方互換)', () => {
+    const b = selectBaseline({
+      previous: mk('previous'),
+      week: mk('week'),
+      month: mk('month'),
+    })
+    expect(b?.period).toBe('month')
+  })
 })

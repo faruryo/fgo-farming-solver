@@ -54,6 +54,24 @@ export const buildPeriodSummary = (
   }
 
   const pastChaldea = extractChaldeaState(snapshot.data)
+  // 「アイテム入手による残りの減少」を再ソルブするための過去所持。
+  const pastPosession = extractPosession(snapshot.data) ?? undefined
+
+  // degenerate スナップショット: material も posession も持たないレコード(旧 /api/solve が
+  // 書いた `{items,quests}` のみの残骸など)は、育成総量も reducedAp も算出できず比較に
+  // 使えない。non-null でも「スナップショット無し」と同様に扱い、比較基準に選ばせない。
+  if (pastChaldea == null && pastPosession == null) {
+    return {
+      period,
+      tier: 'none',
+      growthTotal: 0,
+      newServantCount: 0,
+      servantGrowth: [],
+      elapsedMinutes: 0,
+      fallback: 'no_snapshot_for_period',
+      snapshotCreatedAt: null,
+    }
+  }
 
   const newServants = detectNewServants(
     ctx.current.chaldea,
@@ -79,7 +97,6 @@ export const buildPeriodSummary = (
   // クライアント側で算出する(方式1)。そのためサーバは過去所持(pastPosession)を
   // 返すだけにし、tier はクライアントが reducedAp 確定後に再判定する。
   // ここでの tier は暫定の 'none'(ダッシュボードが上書きする)。
-  const pastPosession = extractPosession(snapshot.data) ?? undefined
 
   return {
     period,

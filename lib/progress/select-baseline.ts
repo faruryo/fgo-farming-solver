@@ -10,6 +10,16 @@ const OLDEST_FIRST: Array<keyof ProgressResponse['periods']> = [
   'previous',
 ]
 
+// 比較に使える中身があるか。reducedAp 用の過去所持(pastPosession)か、material 由来の
+// 進捗(育成総量・新規/成長サーヴァント)のいずれかを持てば「実比較できる」。
+// material も posession も無い degenerate スナップショット(サーバが fallback 化し損ねた
+// 場合の保険)はここで弾く。
+const hasComparableContent = (p: PeriodSummary): boolean =>
+  p.pastPosession != null ||
+  p.growthTotal > 0 ||
+  p.newServantCount > 0 ||
+  p.servantGrowth.length > 0
+
 export const selectBaseline = (
   periods: ProgressResponse['periods'] | undefined | null
 ): PeriodSummary | null => {
@@ -17,5 +27,10 @@ export const selectBaseline = (
   const ordered = OLDEST_FIRST.map((k) => periods[k]).filter(
     (p): p is PeriodSummary => p != null
   )
-  return ordered.find((p) => !p.fallback) ?? ordered[0] ?? null
+  return (
+    ordered.find((p) => !p.fallback && hasComparableContent(p)) ??
+    ordered.find((p) => !p.fallback) ??
+    ordered[0] ??
+    null
+  )
 }

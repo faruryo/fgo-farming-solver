@@ -72,4 +72,31 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
     const summary = buildPeriodSummary('previous', makeSnapshot({ items: {} }), makeCtx(), true)
     expect(summary?.pastPosession).toBeUndefined()
   })
+
+  it('material も posession も無い degenerate スナップショットは比較不能(fallback)扱い', () => {
+    // 旧 /api/solve が書いた `{items,quests}` のみの残骸を模した snapshot。
+    const summary = buildPeriodSummary(
+      'week',
+      makeSnapshot({ items: '10:617,11:5', quests: '101,103' }),
+      makeCtx(),
+      true
+    )
+    expect(summary?.fallback).toBe('no_snapshot_for_period')
+    expect(summary?.growthTotal).toBe(0)
+    expect(summary?.servantGrowth).toEqual([])
+    expect(summary?.pastPosession).toBeUndefined()
+    // 経過時間や snapshotCreatedAt を持たせず、有効な比較基準として振る舞わせない。
+    expect(summary?.snapshotCreatedAt).toBeNull()
+  })
+
+  it('material だけ持つ(posession 欠落)スナップショットは degenerate にしない', () => {
+    const summary = buildPeriodSummary(
+      'previous',
+      makeSnapshot({ material: chaldeaWithAscension(0, 4) }),
+      makeCtx(chaldeaWithAscension(2, 4)),
+      true
+    )
+    expect(summary?.fallback).toBeNull()
+    expect(summary?.growthTotal).toBe(2)
+  })
 })
