@@ -9,12 +9,11 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 #   引き上げられない。rarity 計算は per-servant 取得 (~25 件) を含むため、本体と
 #   同居すると上限を超える。独立 worker なら独自の subrequest 予算で収まる。
 # rarity テーブルは drop_rate / サーヴァント素材の変化(週〜隔週)に依存するため
-# 高頻度更新は不要。本来は 1 時間ごと(検証・鮮度のバランス)。
-# 指紋ゲート(rarity_ap_tables_fp)導入で大半の実行は cheap no-op になるため、
-# ⚠️ 一時的に 5 分間隔へ短縮中(動作確認・再試行の高速化目的)。
-#    確認が済んだら crons = ["0 * * * *"] に戻すこと。
+# 高頻度更新は不要。1 時間ごと(検証・鮮度のバランス)。
+# 指紋ゲート(rarity_ap_tables_fp)導入で大半の実行は cheap no-op になり、
+# 重い再計算は drops が実変化した時(イベント/AP キャンペーン更新)だけ走る。
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["0 * * * *"]
 
 [[kv_namespaces]]
 binding = "MASTER_DATA"
