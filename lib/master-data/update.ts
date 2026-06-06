@@ -238,11 +238,28 @@ export async function fetchActiveEvents(nowSec?: number): Promise<AtlasEvent[]> 
   return details.filter((e): e is AtlasEvent => e !== null)
 }
 
+// nice_war(約23MB)の parse 済み compact マッピングを KV にキャッシュするための
+// アクセサ。worker が env.MASTER_DATA を裏に差し込む。bench/test では未指定で
+// 従来どおり毎回 fetch する。
+export interface NiceWarCache {
+  get(): Promise<{ etag: string; aaQuests: NiceWarQuest[] } | null>
+  put(value: { etag: string; aaQuests: NiceWarQuest[] }): Promise<void>
+}
+
+export interface NiceWarQuest {
+  id: number
+  name: string
+  spotName: string
+  afterClear?: string
+  warLongName?: string
+}
+
 export async function fetchAndTransformData(
   opts: {
     events?: AtlasEvent[]
     waveCountSeed?: Map<number, number>
     waveCountMaxFetch?: number
+    niceWarCache?: NiceWarCache
   } = {}
 ): Promise<MasterData> {
   let fs: any
@@ -257,9 +274,10 @@ export async function fetchAndTransformData(
   const aaItems: AAItem[] = await itemsResponse.json()
   console.log(`Fetched ${aaItems.length} items from Atlas Academy.`)
 
-  let aaQuests: any[] = []
+  let aaQuests: NiceWarQuest[] = []
   try {
     let aaWars: any[] | null = null
+    let warEtag = ''
     if (fs && fs.readFile) {
       try {
         aaWars = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
@@ -268,9 +286,28 @@ export async function fetchAndTransformData(
       }
     }
 
-    if (!aaWars) {
+    // KV キャッシュ経路(worker): nice_war は 23MB あり、その fetch+parse が
+    // phase A の exceededCpu の主因。ETag を使った条件付き GET で、データ未変更時は
+    // 304(本体0バイト)を受けて parse 済み compact マッピングを KV から再利用し、
+    // 23MB の download+parse+変換を丸ごとスキップする。Atlas は週数回しか war を
+    // 更新しないため、大半の cron run がこの 304 経路に乗る。
+    if (!aaWars && opts.niceWarCache) {
+      const cached = await opts.niceWarCache.get()
+      const warRes = await fetch(`${origin}/export/${region}/nice_war.json`,
+        cached?.etag ? { headers: { 'If-None-Match': cached.etag } } : {})
+      if (warRes.status === 304 && cached?.aaQuests) {
+        aaQuests = cached.aaQuests
+        console.log(`nice_war unchanged (etag ${cached.etag}); reused ${aaQuests.length} cached quests (skipped 23MB parse).`)
+      } else if (warRes.ok) {
+        console.log('nice_war changed or uncached; fetching full metadata (~23MB)...')
+        aaWars = await warRes.json()
+        warEtag = warRes.headers.get('etag') ?? ''
+      }
+    }
+
+    // フォールバック経路(bench/test など niceWarCache 未指定): 従来どおり毎回取得。
+    if (!aaWars && aaQuests.length === 0 && !opts.niceWarCache) {
       console.log('Fetching war metadata from Atlas Academy (this might be slow)...')
-      // Try to fetch nice_war.json if local file is missing. 
       // Note: This is 23MB, might hit memory limits in Workers.
       const warRes = await fetch(`${origin}/export/${region}/nice_war.json`)
       if (warRes.ok) {
@@ -280,7 +317,7 @@ export async function fetchAndTransformData(
 
     if (aaWars) {
       // ⚠️ メモリ対策: `{...q}` で全フィールド(~30項目)を 15,000+ 件コピーすると
-      // nice_war(20MB)の object graph が二重化し、128MB の Worker で GC が暴走して
+      // nice_war(23MB)の object graph が二重化し、128MB の Worker で GC が暴走して
       // exceededCpu を招く。後段で実際に使う 5 項目だけの compact オブジェクトにする。
       aaQuests = aaWars.flatMap(war =>
         (war.spots || []).flatMap((spot: any) =>
@@ -296,6 +333,15 @@ export async function fetchAndTransformData(
       // 元の巨大配列を早期に解放可能にする(以降 aaWars は参照しない)。
       aaWars = null
       console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
+      // compact マッピングを KV にキャッシュ(次回以降の 304 経路で再利用)。
+      if (opts.niceWarCache && warEtag) {
+        try {
+          await opts.niceWarCache.put({ etag: warEtag, aaQuests })
+          console.log(`Cached nice_war mapping (etag ${warEtag}, ${aaQuests.length} quests).`)
+        } catch (e) {
+          console.warn('Failed to cache nice_war mapping:', e)
+        }
+      }
     }
   } catch (e) {
     console.log('Failed to load war quest metadata:', e)
@@ -402,7 +448,7 @@ export async function fetchAndTransformData(
       const aaQuestInWar = aaQuests.find(q =>
         (q.name === searchName || q.name.includes(searchName) || q.spotName === searchName) &&
         (q.warLongName?.includes(area) ||
-          area.includes(q.warLongName) ||
+          (q.warLongName !== undefined && area.includes(q.warLongName)) ||
           (area.includes('修練場') && q.warLongName === '曜日クエスト') ||
           (area === '冠位研鑽戦' && q.warLongName?.includes('冠位戴冠戦')))
       )

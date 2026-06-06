@@ -564,3 +564,75 @@ describe('eventDropItems', () => {
     expect(eventDropItems({ id: 1 } as any)).toEqual([])
   })
 })
+
+describe('fetchAndTransformData niceWarCache', () => {
+  // Minimal 3-row CSV (header rows only, no quest data) to drive the transform
+  // without exercising quest mapping — these tests focus on cache behavior.
+  const mockCSV = `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材
+,,AP,データ数,証
+`
+  const mockItem = [{ id: 6001, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 }]
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  // Regression: nice_war (~23MB) parse is the phase-A exceededCpu hot spot. When the
+  // ETag is unchanged, the conditional GET must return 304 and we reuse the cached
+  // compact mapping WITHOUT re-parsing 23MB.
+  it('reuses cached aaQuests on 304 and never re-parses or re-caches', async () => {
+    const cached = {
+      etag: 'abc',
+      aaQuests: [{ id: 94150501, name: 'Q1', spotName: '', afterClear: 'open', warLongName: 'W' }],
+    }
+    const cache = {
+      get: vi.fn().mockResolvedValue(cached),
+      put: vi.fn().mockResolvedValue(undefined),
+    }
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(mockItem) } as Response) // nice_item
+      .mockResolvedValueOnce({ status: 304, ok: false, json: () => Promise.resolve(null) } as Response) // nice_war 304
+      .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response) // CSV
+      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response) // basic_event (events)
+
+    await fetchAndTransformData({ niceWarCache: cache })
+
+    expect(cache.get).toHaveBeenCalledOnce()
+    expect(cache.put).not.toHaveBeenCalled() // unchanged → no re-cache
+    const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
+    expect((warCall?.[1] as RequestInit | undefined)?.headers).toMatchObject({ 'If-None-Match': 'abc' })
+  })
+
+  // Regression: on a cache miss / changed data (200), parse once and persist the
+  // compact mapping (id/name/spotName/afterClear/warLongName) keyed by the new ETag.
+  it('parses and caches the compact mapping on 200', async () => {
+    const cache = {
+      get: vi.fn().mockResolvedValue(null),
+      put: vi.fn().mockResolvedValue(undefined),
+    }
+    const mockWars = [
+      { id: 8405, longName: 'War', spots: [{ quests: [{ id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open' }] }] },
+    ]
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(mockItem) } as Response) // nice_item
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(mockWars),
+        headers: { get: (k: string) => (k.toLowerCase() === 'etag' ? 'newetag' : null) },
+      } as unknown as Response) // nice_war 200
+      .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response) // CSV
+      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response) // basic_event
+
+    await fetchAndTransformData({ niceWarCache: cache })
+
+    expect(cache.put).toHaveBeenCalledWith({
+      etag: 'newetag',
+      aaQuests: [{ id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open', warLongName: 'War' }],
+    })
+    // Conditional header omitted on a cold cache (no prior etag).
+    const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
+    expect((warCall?.[1] as RequestInit | undefined)?.headers).toBeUndefined()
+  })
+})

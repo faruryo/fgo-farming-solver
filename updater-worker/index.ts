@@ -1,4 +1,5 @@
 import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
+import type { NiceWarCache, NiceWarQuest } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 
@@ -12,6 +13,27 @@ export interface Env {
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
 const SERVANTS_LIST_KEY = 'servants_list'
+// nice_war(約23MB)の parse 済み compact マッピングのキャッシュ。ETag 条件付き
+// GET の 304 時に再利用し、phase A の exceededCpu を回避する。
+const NICE_WAR_CACHE_KEY = 'nice_war_aaquests'
+
+function makeNiceWarCache(env: Env): NiceWarCache {
+  return {
+    async get() {
+      const raw = await env.MASTER_DATA.get(NICE_WAR_CACHE_KEY)
+      if (!raw) return null
+      try {
+        return JSON.parse(raw) as { etag: string; aaQuests: NiceWarQuest[] }
+      } catch (e) {
+        console.warn('Failed to parse nice_war cache; ignoring:', e)
+        return null
+      }
+    },
+    async put(value) {
+      await env.MASTER_DATA.put(NICE_WAR_CACHE_KEY, JSON.stringify(value))
+    },
+  }
+}
 // 注: rarity_ap_tables の更新は別 worker (rarity-worker/) に分離した。
 // 無料プランの subrequest 上限内に収めるため、per-servant 取得を含む重い rarity 計算は
 // 独立した cron worker(独自 subrequest 予算)で実行する。
@@ -75,6 +97,7 @@ async function updateDrops(
       events,
       waveCountSeed,
       waveCountMaxFetch: 20,
+      niceWarCache: makeNiceWarCache(env),
     })
     const v = validateMasterData(dropsData)
     if (!v.ok) {
