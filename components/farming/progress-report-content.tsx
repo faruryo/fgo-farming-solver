@@ -132,8 +132,9 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
               return (
                 <div>
                   <CompareCaption summary={summary} />
+                  {/* 複合文字列で長いため、tier 連動の numSize ではなく控えめ固定。 */}
                   <div
-                    className={`${style.numSize} font-bold tabular-nums`}
+                    className="text-base font-bold tabular-nums"
                     style={{ color: style.border }}
                   >
                     素材 {parts.join(' / ')}
