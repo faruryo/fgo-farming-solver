@@ -4,9 +4,7 @@ compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 [triggers]
-# ⚠️ 一時的に 5 分ごと。nice_war 条件付き GET(304)修正の効果を素早く検証するため。
-# 検証後は "*/30 * * * *" へ戻すこと。
-crons = ["*/5 * * * *"]
+crons = ["*/30 * * * *"] # 30 分ごとに実行 (失敗時の MTTR 短縮)
 
 # 注: このアカウントは Workers 無料プランのため [limits](cpu_ms / subrequests)は
 # 設定不可(設定すると wrangler deploy が code:100328 で失敗する)。subrequest 上限
