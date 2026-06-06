@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods, fetchActiveEvents, eventDropItems } from './update'
+import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods, fetchActiveEvents, eventDropItems, normalizeEtag } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
@@ -614,25 +614,74 @@ describe('fetchAndTransformData niceWarCache', () => {
     const mockWars = [
       { id: 8405, longName: 'War', spots: [{ quests: [{ id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open' }] }] },
     ]
+    const warHeaders: Record<string, string> = {
+      etag: 'W/"newetag-gzip"',
+      'last-modified': 'Fri, 05 Jun 2026 09:05:36 GMT',
+    }
     vi.mocked(fetch)
       .mockResolvedValueOnce({ json: () => Promise.resolve(mockItem) } as Response) // nice_item
       .mockResolvedValueOnce({
         status: 200,
         ok: true,
         json: () => Promise.resolve(mockWars),
-        headers: { get: (k: string) => (k.toLowerCase() === 'etag' ? 'newetag' : null) },
+        headers: { get: (k: string) => warHeaders[k.toLowerCase()] ?? null },
       } as unknown as Response) // nice_war 200
       .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response) // CSV
       .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response) // basic_event
 
     await fetchAndTransformData({ niceWarCache: cache })
 
+    // ETag は normalizeEtag で strong 化して保存(次回 304 を成立させるため)。
+    // Last-Modified も保険の検証子として保存する。
     expect(cache.put).toHaveBeenCalledWith({
-      etag: 'newetag',
+      etag: '"newetag-gzip"',
+      lastModified: 'Fri, 05 Jun 2026 09:05:36 GMT',
       aaQuests: [{ id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open', warLongName: 'War' }],
     })
     // Conditional header omitted on a cold cache (no prior etag).
     const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
     expect((warCall?.[1] as RequestInit | undefined)?.headers).toBeUndefined()
+  })
+
+  // Regression (root cause of recurring exceededCpu): global_fetch_strictly_public は
+  // Atlas の strong ETag を weak (W/"...") 化して返す。その weak etag を If-None-Match に
+  // そのまま渡すと Atlas は 304 を返さず毎回 23MB を再 parse する。送信時に W/ を剥がして
+  // strong に戻し、保険として保存済み Last-Modified を If-Modified-Since に載せること。
+  it('strips the weak W/ prefix and sends If-Modified-Since for the conditional GET', async () => {
+    const cached = {
+      etag: 'W/"dj0zv3q9vm7ydtwcm-gzip"',
+      lastModified: 'Fri, 05 Jun 2026 09:05:36 GMT',
+      aaQuests: [{ id: 94150501, name: 'Q1', spotName: '', afterClear: 'open', warLongName: 'W' }],
+    }
+    const cache = {
+      get: vi.fn().mockResolvedValue(cached),
+      put: vi.fn().mockResolvedValue(undefined),
+    }
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(mockItem) } as Response) // nice_item
+      .mockResolvedValueOnce({ status: 304, ok: false, json: () => Promise.resolve(null) } as Response) // nice_war 304
+      .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response) // CSV
+      .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response) // basic_event
+
+    await fetchAndTransformData({ niceWarCache: cache })
+
+    expect(cache.put).not.toHaveBeenCalled()
+    const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
+    expect((warCall?.[1] as RequestInit | undefined)?.headers).toMatchObject({
+      'If-None-Match': '"dj0zv3q9vm7ydtwcm-gzip"', // W/ stripped → strong
+      'If-Modified-Since': 'Fri, 05 Jun 2026 09:05:36 GMT',
+    })
+  })
+})
+
+describe('normalizeEtag', () => {
+  it('strips a leading weak W/ prefix', () => {
+    expect(normalizeEtag('W/"abc-gzip"')).toBe('"abc-gzip"')
+  })
+  it('leaves a strong etag untouched', () => {
+    expect(normalizeEtag('"abc-gzip"')).toBe('"abc-gzip"')
+  })
+  it('handles an empty string', () => {
+    expect(normalizeEtag('')).toBe('')
   })
 })

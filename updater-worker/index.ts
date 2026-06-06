@@ -23,7 +23,7 @@ function makeNiceWarCache(env: Env): NiceWarCache {
       const raw = await env.MASTER_DATA.get(NICE_WAR_CACHE_KEY)
       if (!raw) return null
       try {
-        return JSON.parse(raw) as { etag: string; aaQuests: NiceWarQuest[] }
+        return JSON.parse(raw) as { etag: string; lastModified?: string; aaQuests: NiceWarQuest[] }
       } catch (e) {
         console.warn('Failed to parse nice_war cache; ignoring:', e)
         return null

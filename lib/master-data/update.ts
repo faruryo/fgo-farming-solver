@@ -242,9 +242,15 @@ export async function fetchActiveEvents(nowSec?: number): Promise<AtlasEvent[]> 
 // アクセサ。worker が env.MASTER_DATA を裏に差し込む。bench/test では未指定で
 // 従来どおり毎回 fetch する。
 export interface NiceWarCache {
-  get(): Promise<{ etag: string; aaQuests: NiceWarQuest[] } | null>
-  put(value: { etag: string; aaQuests: NiceWarQuest[] }): Promise<void>
+  get(): Promise<{ etag: string; lastModified?: string; aaQuests: NiceWarQuest[] } | null>
+  put(value: { etag: string; lastModified?: string; aaQuests: NiceWarQuest[] }): Promise<void>
 }
+
+// Cloudflare の global_fetch_strictly_public は upstream の strong ETag を weak 化
+// (先頭に W/ を付与)して返すことがある。Atlas は If-None-Match に weak etag を渡されると
+// 304 を返さず(strong 比較のみ対応)毎回 23MB を再送する。これが phase A の
+// exceededCpu の主因だった。比較を成立させるため W/ プレフィックスを剥がして strong に戻す。
+export const normalizeEtag = (etag: string): string => etag.replace(/^W\//, '')
 
 export interface NiceWarQuest {
   id: number
@@ -278,6 +284,7 @@ export async function fetchAndTransformData(
   try {
     let aaWars: any[] | null = null
     let warEtag = ''
+    let warLastModified = ''
     if (fs && fs.readFile) {
       try {
         aaWars = JSON.parse(await fs.readFile('/tmp/nice_war.json', 'utf-8'))
@@ -293,15 +300,21 @@ export async function fetchAndTransformData(
     // 更新しないため、大半の cron run がこの 304 経路に乗る。
     if (!aaWars && opts.niceWarCache) {
       const cached = await opts.niceWarCache.get()
+      // 条件付き GET。etag は normalizeEtag で strong に戻す(weak だと Atlas が 304 を
+      // 返さない)。保険として Last-Modified ベースの If-Modified-Since も併送する。
+      const condHeaders: Record<string, string> = {}
+      if (cached?.etag) condHeaders['If-None-Match'] = normalizeEtag(cached.etag)
+      if (cached?.lastModified) condHeaders['If-Modified-Since'] = cached.lastModified
       const warRes = await fetch(`${origin}/export/${region}/nice_war.json`,
-        cached?.etag ? { headers: { 'If-None-Match': cached.etag } } : {})
+        Object.keys(condHeaders).length ? { headers: condHeaders } : {})
       if (warRes.status === 304 && cached?.aaQuests) {
         aaQuests = cached.aaQuests
-        console.log(`nice_war unchanged (etag ${cached.etag}); reused ${aaQuests.length} cached quests (skipped 23MB parse).`)
+        console.log(`nice_war unchanged (304); reused ${aaQuests.length} cached quests (skipped 23MB parse).`)
       } else if (warRes.ok) {
         console.log('nice_war changed or uncached; fetching full metadata (~23MB)...')
         aaWars = await warRes.json()
-        warEtag = warRes.headers.get('etag') ?? ''
+        warEtag = normalizeEtag(warRes.headers.get('etag') ?? '')
+        warLastModified = warRes.headers.get('last-modified') ?? ''
       }
     }
 
@@ -334,9 +347,9 @@ export async function fetchAndTransformData(
       aaWars = null
       console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)
       // compact マッピングを KV にキャッシュ(次回以降の 304 経路で再利用)。
-      if (opts.niceWarCache && warEtag) {
+      if (opts.niceWarCache && (warEtag || warLastModified)) {
         try {
-          await opts.niceWarCache.put({ etag: warEtag, aaQuests })
+          await opts.niceWarCache.put({ etag: warEtag, lastModified: warLastModified, aaQuests })
           console.log(`Cached nice_war mapping (etag ${warEtag}, ${aaQuests.length} quests).`)
         } catch (e) {
           console.warn('Failed to cache nice_war mapping:', e)
