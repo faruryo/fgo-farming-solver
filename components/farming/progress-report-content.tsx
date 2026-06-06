@@ -2,6 +2,11 @@
 
 import React from 'react'
 import type { PeriodSummary, ProgressTier } from '../../lib/progress/types'
+import { staticOrigin, region } from '../../constants/atlasacademy'
+
+// サーヴァントの顔アイコンURL。Atlas の Faces 命名規則は f_<servantId * 10>.png。
+const servantFaceUrl = (servantId: string): string =>
+  `${staticOrigin}/${region}/Faces/f_${Number(servantId) * 10}.png`
 
 // 「いつと比べて」のラベル。
 // previous は「前回」だと時点が曖昧なので経過日数(昨日 / N日前)で表す。
@@ -207,13 +212,6 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                 highlight
               />
             )}
-            {summary.newServantCount > 0 && (
-              <Row
-                label="新しい仲間"
-                value={`${summary.newServantCount}騎`}
-                highlight
-              />
-            )}
           </div>
 
           {(summary.newServants?.length ?? 0) > 0 && (
@@ -221,17 +219,30 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
               <div className="text-xs text-muted-foreground mb-1">
                 新しい仲間 ({summary.newServants.length} 騎)
               </div>
-              <ul className="text-sm flex flex-col gap-0.5">
+              <ul className="text-sm flex flex-col gap-1">
                 {summary.newServants.slice(0, 5).map((s) => (
                   <li
                     key={s.servantId}
-                    className="flex justify-between gap-3"
+                    className="flex items-center justify-between gap-2"
                   >
-                    <span className="truncate">
-                      {s.servantName ?? `#${s.servantId}`}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="u-face-frame shrink-0"
+                        style={{ width: 28, height: 28 }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={servantFaceUrl(s.servantId)}
+                          alt={s.servantName ?? s.servantId}
+                          loading="lazy"
+                        />
+                      </span>
+                      <span className="truncate">
+                        {s.servantName ?? `#${s.servantId}`}
+                      </span>
                     </span>
                     <span
-                      className="tabular-nums text-[11px] font-semibold"
+                      className="tabular-nums text-[11px] font-semibold shrink-0"
                       style={{ color: 'var(--gold)' }}
                     >
                       NEW
