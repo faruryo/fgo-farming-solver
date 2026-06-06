@@ -35,6 +35,10 @@ export type PeriodSummary = {
   reducedAp?: number
   reducedLap?: number
   reducedYen?: number
+  /** 素材スループット: 比較スナップショット以降に獲得した素材の合計個数(QP除外)。 */
+  itemsFarmed?: number
+  /** 素材スループット: 比較スナップショット以降に育成等で消費した素材の合計個数(QP除外)。 */
+  itemsConsumed?: number
   /** 比較スナップショット時点の所持数(atlasId キー)。クライアントの再ソルブに使う。 */
   pastPosession?: Record<string, number>
   elapsedMinutes: number

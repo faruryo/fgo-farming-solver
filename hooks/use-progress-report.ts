@@ -6,7 +6,10 @@ import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
 import { buildNeedByApiItemId, solveTotals } from '../lib/progress/compute-reduction'
-import { classifyTier } from '../lib/progress/tier'
+import {
+  classifyTierByThroughput,
+  computeItemThroughput,
+} from '../lib/progress/throughput'
 import { selectBaseline } from '../lib/progress/select-baseline'
 
 const readJson = <T,>(key: string): T | null => {
@@ -76,38 +79,59 @@ export const useProgressReport = (
     return () => controller.abort()
   }, [load])
 
-  // 「アイテム入手による残りの減少」を方式1(目標を現在で固定して再ソルブ)で
-  // クライアント算出する。比較基準は最古の存在スナップショット1つ(selectBaseline)
-  // のみ — それ以外の期間は再ソルブしない。reducedAp 確定後に tier/zero_progress を
-  // 再判定。pastPosession が無い場合(初期データや dev モック)は元の値を保持。
+  // 進捗指標をクライアント算出する。比較基準は最古の存在スナップショット1つ
+  // (selectBaseline)のみ。
+  //   - tier の主指標: 素材スループット(獲得+育成投入の個数, QP除外)。ソルバー不要で
+  //     pastPosession と現在 posession から算出。育成に素材を使った日も none にしない。
+  //   - 副指標: reducedAp(目標固定の残りAP減少)。drops があれば再ソルブで算出し、>0 の
+  //     日のみ表示する参考値(tier は駆動しない)。
+  // pastPosession が無い場合(初期データや dev モック)は元の値を保持。
   const enriched = useMemo<ProgressResponse | null>(() => {
     if (!data) return null
-    if (!drops || drops.items.length === 0) return data
 
     const baseline = selectBaseline(data.periods)
     if (!baseline || !baseline.pastPosession) return data
 
-    const targets = readJson<Record<string, number>>('material/result') ?? {}
     const posession = readJson<Record<string, number>>('posession') ?? {}
-    const quests = readJson<string[]>('quests') ?? []
-    const now = solveTotals(drops, buildNeedByApiItemId(targets, posession, drops), quests)
-    const past = solveTotals(
-      drops,
-      buildNeedByApiItemId(targets, baseline.pastPosession, drops),
-      quests
+    const { itemsFarmed, itemsConsumed } = computeItemThroughput(
+      baseline.pastPosession,
+      posession
     )
-    const reducedAp = past.totalAp - now.totalAp
-    const reducedLap = past.totalLap - now.totalLap
+    const throughput = itemsFarmed + itemsConsumed
+    const tier = classifyTierByThroughput(throughput, baseline.elapsedMinutes)
+
+    // 副指標 reducedAp は drops(ソルバー)が必要。無ければ未算出のまま。
+    let reducedAp: number | undefined
+    let reducedLap: number | undefined
+    if (drops && drops.items.length > 0) {
+      const targets = readJson<Record<string, number>>('material/result') ?? {}
+      const quests = readJson<string[]>('quests') ?? []
+      const now = solveTotals(drops, buildNeedByApiItemId(targets, posession, drops), quests)
+      const past = solveTotals(
+        drops,
+        buildNeedByApiItemId(targets, baseline.pastPosession, drops),
+        quests
+      )
+      reducedAp = past.totalAp - now.totalAp
+      reducedLap = past.totalLap - now.totalLap
+    }
+
+    const noReduced = reducedAp == null || reducedAp <= 0
     const fallback: PeriodSummary['fallback'] =
-      reducedAp <= 0 && baseline.growthTotal <= 0 && baseline.newServantCount === 0
+      throughput <= 0 &&
+      baseline.growthTotal <= 0 &&
+      baseline.newServantCount === 0 &&
+      noReduced
         ? 'zero_progress'
         : null
     const finalized: PeriodSummary = {
       ...baseline,
+      itemsFarmed,
+      itemsConsumed,
       reducedAp,
       reducedLap,
-      reducedYen: yenFromAp(reducedAp),
-      tier: classifyTier(reducedAp, baseline.elapsedMinutes),
+      reducedYen: reducedAp != null ? yenFromAp(reducedAp) : undefined,
+      tier,
       fallback,
     }
 

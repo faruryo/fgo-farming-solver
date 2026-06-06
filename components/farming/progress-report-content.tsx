@@ -113,37 +113,78 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
 
       {!summary.fallback && (
         <>
-          {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 ? (
-            <div>
-              <CompareCaption summary={summary} />
-              <div
-                className={`${style.numSize} font-bold tabular-nums`}
-                style={{ color: style.border }}
-              >
-                残りAP −{Math.round(summary.reducedAp).toLocaleString()}
-              </div>
-            </div>
-          ) : (
-            summary.growthTotal > 0 && (
-              <div>
-                <CompareCaption summary={summary} />
-                <div
-                  className={`${style.numSize} font-bold tabular-nums`}
-                  style={{ color: style.border }}
-                >
-                  育成 +{summary.growthTotal.toLocaleString()}
+          {(() => {
+            const farmed = summary.itemsFarmed ?? 0
+            const consumed = summary.itemsConsumed ?? 0
+            const hasThroughput = farmed > 0 || consumed > 0
+            // 見出し(ヒーロー)は活動量(素材スループット)を主役にする。
+            // 活動が無ければ reducedAp(参考)→育成総量の順でフォールバック。
+            if (hasThroughput) {
+              const parts = [
+                farmed > 0 ? `獲得 +${farmed.toLocaleString()}` : null,
+                consumed > 0 ? `育成投入 ${consumed.toLocaleString()}` : null,
+              ].filter(Boolean)
+              return (
+                <div>
+                  <CompareCaption summary={summary} />
+                  <div
+                    className={`${style.numSize} font-bold tabular-nums`}
+                    style={{ color: style.border }}
+                  >
+                    素材 {parts.join(' / ')}
+                  </div>
                 </div>
-              </div>
-            )
-          )}
+              )
+            }
+            if (typeof summary.reducedAp === 'number' && summary.reducedAp > 0) {
+              return (
+                <div>
+                  <CompareCaption summary={summary} />
+                  <div
+                    className={`${style.numSize} font-bold tabular-nums`}
+                    style={{ color: style.border }}
+                  >
+                    残りAP −{Math.round(summary.reducedAp).toLocaleString()}
+                  </div>
+                </div>
+              )
+            }
+            if (summary.growthTotal > 0) {
+              return (
+                <div>
+                  <CompareCaption summary={summary} />
+                  <div
+                    className={`${style.numSize} font-bold tabular-nums`}
+                    style={{ color: style.border }}
+                  >
+                    育成 +{summary.growthTotal.toLocaleString()}
+                  </div>
+                </div>
+              )
+            }
+            return null
+          })()}
 
           <div className="flex flex-col">
+            {(summary.itemsFarmed ?? 0) > 0 && (
+              <Row
+                label="獲得素材"
+                value={`+${(summary.itemsFarmed ?? 0).toLocaleString()}`}
+                highlight
+              />
+            )}
+            {(summary.itemsConsumed ?? 0) > 0 && (
+              <Row
+                label="育成投入(消費素材)"
+                value={`${(summary.itemsConsumed ?? 0).toLocaleString()}`}
+                highlight
+              />
+            )}
             {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 && (
               <>
                 <Row
-                  label="アイテム入手による残りAPの減少"
+                  label="アイテム入手による残りAPの減少(参考)"
                   value={`−${Math.round(summary.reducedAp).toLocaleString()}`}
-                  highlight
                 />
                 {typeof summary.reducedLap === 'number' && (
                   <Row

@@ -80,11 +80,13 @@ export const selectMashuMessage = (summary: PeriodSummary | null): string => {
   }
 
   // Layered selection: prefer the most "notable" event of the period.
-  if (summary.newServantCount > 0 && summary.tier !== 'none') {
+  // 新規入手・育成は tier(=アイテム周回による残りAP減少)とは独立した「達成」なので、
+  // tier が none(周回の純増がゼロ/マイナス)でも必ず労う。素材を育成に使った日に
+  // 「お疲れさま(休んで)」が出る不整合を避ける。
+  if (summary.newServantCount > 0) {
     return pickRandom(newServantWelcome)
   }
-  // 育成総量があるのに「アイテム入手による減少」が小さい(tier=none)ときは育成を労う。
-  if (summary.growthTotal > 0 && summary.tier === 'none') {
+  if (summary.growthTotal > 0) {
     return pickRandom(growth)
   }
   return pickRandom(apProgress[summary.tier as ProgressTier])
