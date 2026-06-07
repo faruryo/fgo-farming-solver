@@ -14,12 +14,6 @@ const dateKey = (date: Date = new Date()) => date.toISOString().slice(0, 10)
 const snapshotId = (userId: string, date: Date = new Date()) =>
   `${userId}:${dateKey(date)}`
 
-const daysAgo = (n: number): Date => {
-  const d = new Date()
-  d.setUTCDate(d.getUTCDate() - n)
-  return d
-}
-
 const parseSnapshot = (row: {
   id: string
   user_id: string
@@ -59,37 +53,30 @@ export const saveSnapshot = async (
     .run()
 }
 
-const fetchClosest = async (
-  db: D1Database,
-  userId: string,
-  beforeIso: string
-): Promise<Snapshot | null> => {
-  const row = await db
-    .prepare(
-      `SELECT id, user_id, data, created_at
-       FROM state_snapshots
-       WHERE user_id = ? AND created_at <= ?
-       ORDER BY created_at DESC
-       LIMIT 1`
-    )
-    .bind(userId, beforeIso)
-    .first<{ id: string; user_id: string; data: string; created_at: string }>()
-  return row ? parseSnapshot(row) : null
-}
+// 比較の相手(baseline)に選ぶ「約1ヶ月前に最も近い」スナップショットを返す。
+// ちょうど30日前のデータは通常存在しないため、30日前との時刻差が最小のものを採る。
+//   - 手持ちが全て直近(<1ヶ月)なら、自然と最も古いものが選ばれる(最長比較)。
+//   - データが貯まれば約1ヶ月前のものへ寄る。
+// 「今(ライブ状態)」が比較の起点なので、baseline は常に過去側の1点のみ。
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
 
-export const fetchSnapshotByPeriod = async (
-  db: D1Database,
-  userId: string,
-  period: SnapshotPeriod
-): Promise<Snapshot | null> => {
-  if (period === 'previous') {
-    // Most recent snapshot strictly before today (excludes the current day's overwrite).
-    const todayStart = `${dateKey()} 00:00:00`
-    return fetchClosest(db, userId, todayStart)
+export const selectBaselineRow = <T extends { created_at: string }>(
+  rows: T[],
+  nowMs: number
+): T | null => {
+  const targetMs = nowMs - ONE_MONTH_MS
+  let best: T | null = null
+  let bestDiff = Infinity
+  for (const r of rows) {
+    const t = new Date(r.created_at).getTime()
+    if (!Number.isFinite(t)) continue
+    const diff = Math.abs(t - targetMs)
+    if (diff < bestDiff) {
+      bestDiff = diff
+      best = r
+    }
   }
-  const ago = period === 'week' ? 7 : 30
-  const agoStr = daysAgo(ago).toISOString().replace('T', ' ').slice(0, 19)
-  return fetchClosest(db, userId, agoStr)
+  return best
 }
 
 export const fetchAllSnapshotsByPeriod = async (
@@ -108,21 +95,13 @@ export const fetchAllSnapshotsByPeriod = async (
 
   const list = results || []
 
-  // 1. Previous: Closest strictly before today
-  const todayStart = `${dateKey()} 00:00:00`
-  const prevRow = list.find((r) => r.created_at <= todayStart)
-
-  // 2. Week: Closest strictly before 7 days ago
-  const weekAgoIso = daysAgo(7).toISOString().replace('T', ' ').slice(0, 19)
-  const weekRow = list.find((r) => r.created_at <= weekAgoIso)
-
-  // 3. Month: Closest strictly before 30 days ago
-  const monthAgoIso = daysAgo(30).toISOString().replace('T', ' ').slice(0, 19)
-  const monthRow = list.find((r) => r.created_at <= monthAgoIso)
+  // 単一比較: 約1ヶ月前に最も近いスナップショット1つを baseline(previous スロット)に
+  // 載せる。週/月スロットは廃し、比較相手はこの1点に集約する。
+  const baselineRow = selectBaselineRow(list, Date.now())
 
   return {
-    previous: prevRow ? parseSnapshot(prevRow) : null,
-    week: weekRow ? parseSnapshot(weekRow) : null,
-    month: monthRow ? parseSnapshot(monthRow) : null,
+    previous: baselineRow ? parseSnapshot(baselineRow) : null,
+    week: null,
+    month: null,
   }
 }

@@ -8,9 +8,9 @@ import { staticOrigin, region } from '../../constants/atlasacademy'
 const servantFaceUrl = (servantId: string): string =>
   `${staticOrigin}/${region}/Faces/f_${Number(servantId) * 10}.png`
 
-// 「いつと比べて」のラベル。
-// previous は「前回」だと時点が曖昧なので経過日数(昨日 / N日前)で表す。
-// week / month はバケット名そのまま。
+// 「いつと比べて」のラベル。baseline は単一(約1ヶ月前に最も近いスナップショット)で
+// 常に previous スロットに載るため、経過日数(昨日 / N日前)で時点を表す。
+// week / month スロットは現在使用しない(後方互換のためのフォールバック表記のみ残置)。
 const compareLabel = (summary: PeriodSummary): string => {
   if (summary.period === 'previous') {
     const days = Math.round(summary.elapsedMinutes / 1440)
