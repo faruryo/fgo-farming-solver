@@ -29,6 +29,27 @@ describe('finalizeBaselineSummary', () => {
     expect(f.itemsConsumed).toBe(279)
   })
 
+  it('reducedAp>0 のとき tier は AP/日(classifyTier)で判定する', () => {
+    // 3,848AP / 5日(7200分): 自然回復=7200/5=1440、1440*1.5=2160 を超える → large。
+    const f = finalizeBaselineSummary(base({ elapsedMinutes: 7200 }), {
+      itemsFarmed: 0,
+      itemsConsumed: 0,
+      reducedAp: 3848,
+    })
+    expect(f.tier).toBe('large')
+    expect(f.fallback).toBeNull()
+  })
+
+  it('reducedAp<=0 でもスループットがあれば tier を補完(none 固定回避)', () => {
+    const f = finalizeBaselineSummary(base({ elapsedMinutes: 1440 }), {
+      itemsFarmed: 60, // 60/日 → large(throughput 経路)
+      itemsConsumed: 0,
+      reducedAp: -10,
+    })
+    expect(f.tier).not.toBe('none')
+    expect(f.fallback).toBeNull()
+  })
+
   it('全指標ゼロなら zero_progress(実比較済の印は保持)', () => {
     const f = finalizeBaselineSummary(base(), {
       itemsFarmed: 0,

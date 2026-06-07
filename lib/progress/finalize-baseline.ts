@@ -1,5 +1,6 @@
 import type { PeriodSummary } from './types'
 import { classifyTierByThroughput } from './throughput'
+import { classifyTier } from './tier'
 
 // 残りAP → 概算費用(円)。AP/2(半額) → スタミナ → 課金石 → 円の素朴換算。
 export const yenFromAp = (ap: number): number =>
@@ -16,8 +17,11 @@ export type EnrichInputs = {
 }
 
 // enriched(クライアント)で baseline を確定する純ロジック。
-//   - tier はスループット(獲得+育成投入)で判定(育成投入した日も none にしない)。
-//   - reducedAp/Lap/Yen は副指標として保持(>0 の日のみ表示は描画側の責務)。
+//   - tier の主指標は「目標に近づいた量(reducedAp) ÷ 経過日数」。classifyTier が
+//     自然回復(≈288AP/日)を基準に small/medium/large を判定する。
+//   - reducedAp が無い/0以下の日(育成で素材消費が上回った・drops 未ロード等)は、
+//     素材スループット(獲得+育成投入)で tier を補完し none 固定を避ける。
+//   - reducedAp/Lap/Yen・itemsFarmed/Consumed は表示用に保持。
 //   - fallback(zero_progress)はスループット・育成総量・新規入手・reducedAp が
 //     すべて無いときのみ。いずれかがあれば実進捗として扱う。
 //
@@ -30,9 +34,11 @@ export const finalizeBaselineSummary = (
 ): PeriodSummary => {
   const { itemsFarmed, itemsConsumed, reducedAp, reducedLap } = inputs
   const throughput = itemsFarmed + itemsConsumed
-  const tier = classifyTierByThroughput(throughput, baseline.elapsedMinutes)
-
   const noReduced = reducedAp == null || reducedAp <= 0
+  // 主指標: 目標に近づいた AP/日。無い/0以下ならスループットで補完。
+  const tier = noReduced
+    ? classifyTierByThroughput(throughput, baseline.elapsedMinutes)
+    : classifyTier(reducedAp as number, baseline.elapsedMinutes)
   const fallback: PeriodSummary['fallback'] =
     throughput <= 0 &&
     baseline.growthTotal <= 0 &&

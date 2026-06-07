@@ -121,10 +121,22 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
           {(() => {
             const farmed = summary.itemsFarmed ?? 0
             const skill = summary.skillDelta ?? 0
-            const hasMain = farmed > 0 || skill > 0
-            // 見出し(ヒーロー)は活動量(獲得素材)とスキル育成を主役にする。
-            // 活動が無ければ reducedAp(参考)→育成総量の順でフォールバック。
-            if (hasMain) {
+            // 見出し(ヒーロー)は「目標に近づいた量(AP換算)」を主役にする。
+            // 無ければ活動量(獲得素材/スキル)→育成総量の順でフォールバック。
+            if (typeof summary.reducedAp === 'number' && summary.reducedAp > 0) {
+              return (
+                <div>
+                  <CompareCaption summary={summary} />
+                  <div
+                    className={`${style.numSize} font-bold tabular-nums`}
+                    style={{ color: style.border }}
+                  >
+                    目標へ +{Math.round(summary.reducedAp).toLocaleString()} 前進
+                  </div>
+                </div>
+              )
+            }
+            if (farmed > 0 || skill > 0) {
               const parts = [
                 farmed > 0 ? `獲得素材 +${farmed.toLocaleString()}` : null,
                 skill > 0 ? `スキル +${skill.toLocaleString()}` : null,
@@ -138,19 +150,6 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                     style={{ color: style.border }}
                   >
                     {parts.join(' / ')}
-                  </div>
-                </div>
-              )
-            }
-            if (typeof summary.reducedAp === 'number' && summary.reducedAp > 0) {
-              return (
-                <div>
-                  <CompareCaption summary={summary} />
-                  <div
-                    className={`${style.numSize} font-bold tabular-nums`}
-                    style={{ color: style.border }}
-                  >
-                    残りAP −{Math.round(summary.reducedAp).toLocaleString()}
                   </div>
                 </div>
               )
