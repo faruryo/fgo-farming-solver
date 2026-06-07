@@ -120,14 +120,14 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
         <>
           {(() => {
             const farmed = summary.itemsFarmed ?? 0
-            const consumed = summary.itemsConsumed ?? 0
-            const hasThroughput = farmed > 0 || consumed > 0
-            // 見出し(ヒーロー)は活動量(素材スループット)を主役にする。
+            const skill = summary.skillDelta ?? 0
+            const hasMain = farmed > 0 || skill > 0
+            // 見出し(ヒーロー)は活動量(獲得素材)とスキル育成を主役にする。
             // 活動が無ければ reducedAp(参考)→育成総量の順でフォールバック。
-            if (hasThroughput) {
+            if (hasMain) {
               const parts = [
-                farmed > 0 ? `獲得 +${farmed.toLocaleString()}` : null,
-                consumed > 0 ? `育成投入 ${consumed.toLocaleString()}` : null,
+                farmed > 0 ? `獲得素材 +${farmed.toLocaleString()}` : null,
+                skill > 0 ? `スキル +${skill.toLocaleString()}` : null,
               ].filter(Boolean)
               return (
                 <div>
@@ -137,7 +137,7 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                     className="text-base font-bold tabular-nums"
                     style={{ color: style.border }}
                   >
-                    素材 {parts.join(' / ')}
+                    {parts.join(' / ')}
                   </div>
                 </div>
               )
@@ -179,10 +179,10 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                 highlight
               />
             )}
-            {(summary.itemsConsumed ?? 0) > 0 && (
+            {(summary.skillDelta ?? 0) > 0 && (
               <Row
-                label="育成投入(消費素材)"
-                value={`${(summary.itemsConsumed ?? 0).toLocaleString()}`}
+                label="スキル合計"
+                value={`+${(summary.skillDelta ?? 0).toLocaleString()}`}
                 highlight
               />
             )}

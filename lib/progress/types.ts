@@ -39,6 +39,8 @@ export type PeriodSummary = {
   itemsFarmed?: number
   /** 素材スループット: 比較スナップショット以降に育成等で消費した素材の合計個数(QP除外)。 */
   itemsConsumed?: number
+  /** スキル合計の変化: 所持サーヴァントのスキル現在レベル合計の増分(新規入手も含む)。 */
+  skillDelta?: number
   /** 比較スナップショット時点の所持数(atlasId キー)。クライアントの再ソルブに使う。 */
   pastPosession?: Record<string, number>
   elapsedMinutes: number

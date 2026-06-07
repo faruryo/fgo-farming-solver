@@ -4,7 +4,7 @@ import {
   extractChaldeaState,
   extractPosession,
 } from './diff'
-import { computeServantGrowthDeltas } from './growth'
+import { computeServantGrowthDeltas, computeSkillLevelDelta } from './growth'
 import type { Rarity } from './rarity-ap-sample'
 import type { Snapshot, SnapshotPeriod } from './snapshot'
 import { fetchAllSnapshotsByPeriod } from './snapshot'
@@ -98,6 +98,8 @@ export const buildPeriodSummary = (
   )
   // 育成総量: 育成で縮んだ目標レンジ(再臨/スキル/アペンド)の合計。
   const growthTotal = servantGrowth.reduce((sum, g) => sum + g.delta, 0)
+  // スキル合計の変化(新規入手鯖も含む)。
+  const skillDelta = computeSkillLevelDelta(ctx.current.chaldea, pastChaldea)
 
   // 「アイテム入手による残りの減少(reducedAp/Lap/Yen)」は目標を現在で固定した
   // 再ソルブが必要で、現在の目標(material/result)と所持(posession)を持つ
@@ -109,6 +111,7 @@ export const buildPeriodSummary = (
     period,
     tier: 'none',
     growthTotal,
+    skillDelta,
     newServantCount: newServants.length,
     newServants: newServantEntries,
     servantGrowth,
