@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import { Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PeriodSummary, ProgressTier } from '../../lib/progress/types'
 import { staticOrigin, region } from '../../constants/atlasacademy'
 
@@ -28,31 +30,27 @@ const CompareCaption: React.FC<{ summary: PeriodSummary }> = ({ summary }) => (
 
 const TIER_STYLES: Record<
   ProgressTier,
-  { bg: string; border: string; label: string; numSize: string }
+  { bg: string; border: string; label: string }
 > = {
   large: {
     bg: 'linear-gradient(135deg, rgba(217,176,68,0.25), rgba(217,176,68,0.06))',
     border: '#d9b044',
     label: '大きな進捗！',
-    numSize: 'text-2xl',
   },
   medium: {
     bg: 'rgba(96,200,144,0.12)',
     border: '#60c890',
     label: '着実な前進',
-    numSize: 'text-xl',
   },
   small: {
     bg: 'rgba(120,150,200,0.10)',
     border: '#7896c8',
     label: '少しずつ',
-    numSize: 'text-lg',
   },
   none: {
     bg: 'rgba(180,180,180,0.08)',
     border: '#888',
     label: 'お疲れさまでした',
-    numSize: 'text-xl',
   },
 }
 
@@ -118,113 +116,85 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
 
       {!summary.fallback && (
         <>
-          {(() => {
-            const farmed = summary.itemsFarmed ?? 0
-            const skill = summary.skillDelta ?? 0
-            // 見出し(ヒーロー)は「目標に近づいた量(AP換算)」を主役にする。
-            // 無ければ活動量(獲得素材/スキル)→育成総量の順でフォールバック。
-            if (typeof summary.reducedAp === 'number' && summary.reducedAp > 0) {
-              return (
-                <div>
-                  <CompareCaption summary={summary} />
-                  <div
-                    className={`${style.numSize} font-bold tabular-nums`}
-                    style={{ color: style.border }}
-                  >
-                    目標へ +{Math.round(summary.reducedAp).toLocaleString()} 前進
-                  </div>
-                </div>
-              )
-            }
-            if (farmed > 0 || skill > 0) {
-              const parts = [
-                farmed > 0 ? `獲得素材 +${farmed.toLocaleString()}` : null,
-                skill > 0 ? `スキル +${skill.toLocaleString()}` : null,
-              ].filter(Boolean)
-              return (
-                <div>
-                  <CompareCaption summary={summary} />
-                  {/* 複合文字列で長いため、tier 連動の numSize ではなく控えめ固定。 */}
-                  <div
-                    className="text-base font-bold tabular-nums"
-                    style={{ color: style.border }}
-                  >
-                    {parts.join(' / ')}
-                  </div>
-                </div>
-              )
-            }
-            if (summary.growthTotal > 0) {
-              return (
-                <div>
-                  <CompareCaption summary={summary} />
-                  <div
-                    className={`${style.numSize} font-bold tabular-nums`}
-                    style={{ color: style.border }}
-                  >
-                    育成 +{summary.growthTotal.toLocaleString()}
-                  </div>
-                </div>
-              )
-            }
-            return null
-          })()}
+          <CompareCaption summary={summary} />
 
-          <div className="flex flex-col">
-            {(summary.itemsFarmed ?? 0) > 0 && (
-              <Row
-                label="獲得素材"
-                value={`+${(summary.itemsFarmed ?? 0).toLocaleString()}`}
-                highlight
-              />
-            )}
-            {(summary.skillDelta ?? 0) > 0 && (
-              <Row
-                label="スキル合計"
-                value={`+${(summary.skillDelta ?? 0).toLocaleString()}`}
-                highlight
-              />
-            )}
-            {summary.growthTotal > 0 && (
-              <Row
-                label="育成総量"
-                value={`+${summary.growthTotal.toLocaleString()}`}
-                highlight
-              />
-            )}
-          </div>
-
-          {/* 目標達成への前進。残りの減少分を「これだけ近づいた」とプラスで見せる。 */}
+          {/* 主役: 目標への前進(AP)。周回/費用は同じ前進の単位換算なので小さく内訳表示。 */}
           {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 && (
-            <div
-              className="rounded-md border border-dashed p-2.5 flex flex-col"
-              style={{ borderColor: 'var(--border, rgba(140,140,140,0.4))' }}
-            >
-              <div className="text-xs font-semibold mb-1">
-                目標にこれだけ近づきました
+            <div>
+              <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+                目標への前進
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        aria-label="計算について"
+                        className="inline-flex items-center cursor-help"
+                      />
+                    }
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[240px] text-left leading-relaxed">
+                    目標達成に必要な残りが、アイテム入手でどれだけ減ったかの試算です。AP・費用は「消費AP最小」、周回は「周回数最小」の周回プランで計算しているため、両者の増減はずれることがあります。
+                  </TooltipContent>
+                </Tooltip>
               </div>
-              <Row
-                label="AP換算"
-                value={Math.round(summary.reducedAp).toLocaleString()}
-              />
-              {typeof summary.reducedLap === 'number' &&
-                summary.reducedLap > 0 && (
-                  <Row
-                    label="周回換算"
-                    value={`${Math.round(summary.reducedLap).toLocaleString()}周`}
-                  />
-                )}
-              {typeof summary.reducedYen === 'number' && (
+              <div
+                className="text-2xl font-bold tabular-nums leading-tight"
+                style={{ color: style.border }}
+              >
+                +{Math.round(summary.reducedAp).toLocaleString()}
+                <span className="text-sm font-semibold ml-1">AP相当</span>
+              </div>
+              {(() => {
+                const parts = [
+                  typeof summary.reducedLap === 'number' &&
+                  summary.reducedLap > 0
+                    ? `周回 ${Math.round(summary.reducedLap).toLocaleString()}周`
+                    : null,
+                  typeof summary.reducedYen === 'number'
+                    ? `費用 ¥${Math.round(summary.reducedYen).toLocaleString()}`
+                    : null,
+                ].filter(Boolean)
+                return parts.length ? (
+                  <div className="text-[11px] text-muted-foreground tabular-nums">
+                    {parts.join(' ・ ')} 相当
+                  </div>
+                ) : null
+              })()}
+            </div>
+          )}
+
+          {/* この期間の活動(事実ベースの内訳)。AP前進とは重複しない別指標。 */}
+          {((summary.itemsFarmed ?? 0) > 0 ||
+            (summary.skillDelta ?? 0) > 0 ||
+            summary.growthTotal > 0) && (
+            <div className="flex flex-col">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                この期間の活動
+              </div>
+              {(summary.itemsFarmed ?? 0) > 0 && (
                 <Row
-                  label="費用換算"
-                  value={`¥${Math.round(summary.reducedYen).toLocaleString()}`}
+                  label="獲得素材"
+                  value={`+${(summary.itemsFarmed ?? 0).toLocaleString()}`}
+                  highlight
                 />
               )}
-              <p className="text-[10px] leading-relaxed text-muted-foreground mt-1.5">
-                目標達成に必要な残りが、アイテム入手でどれだけ減ったかの試算です。
-                AP・費用は<strong>消費AP最小</strong>、周回は<strong>周回数最小</strong>の
-                周回プランで計算しているため、両者の増減はずれることがあります。
-              </p>
+              {(summary.skillDelta ?? 0) > 0 && (
+                <Row
+                  label="スキル合計"
+                  value={`+${(summary.skillDelta ?? 0).toLocaleString()}`}
+                  highlight
+                />
+              )}
+              {summary.growthTotal > 0 && (
+                <Row
+                  label="育成総量"
+                  value={`+${summary.growthTotal.toLocaleString()}`}
+                  highlight
+                />
+              )}
             </div>
           )}
 
