@@ -220,6 +220,11 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                   value={`¥${Math.round(summary.reducedYen).toLocaleString()}`}
                 />
               )}
+              <p className="text-[10px] leading-relaxed text-muted-foreground mt-1.5">
+                目標達成に必要な残りが、アイテム入手でどれだけ減ったかの試算です。
+                AP・費用は<strong>消費AP最小</strong>、周回は<strong>周回数最小</strong>の
+                周回プランで計算しているため、両者の増減はずれることがあります。
+              </p>
             </div>
           )}
 
