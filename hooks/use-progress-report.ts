@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
+import type { ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
 import { buildNeedByApiItemId, solveTotals } from '../lib/progress/compute-reduction'
-import {
-  classifyTierByThroughput,
-  computeItemThroughput,
-} from '../lib/progress/throughput'
+import { computeItemThroughput } from '../lib/progress/throughput'
+import { finalizeBaselineSummary } from '../lib/progress/finalize-baseline'
 import { selectBaseline } from '../lib/progress/select-baseline'
 
 const readJson = <T,>(key: string): T | null => {
@@ -35,8 +33,6 @@ export type UseProgressReport = {
   loading: boolean
   error: string | null
 }
-
-const yenFromAp = (ap: number): number => Math.round((ap / 144 / 168) * 10000)
 
 export const useProgressReport = (
   totalAp: number | null,
@@ -97,8 +93,6 @@ export const useProgressReport = (
       baseline.pastPosession,
       posession
     )
-    const throughput = itemsFarmed + itemsConsumed
-    const tier = classifyTierByThroughput(throughput, baseline.elapsedMinutes)
 
     // 副指標 reducedAp は drops(ソルバー)が必要。無ければ未算出のまま。
     let reducedAp: number | undefined
@@ -116,24 +110,12 @@ export const useProgressReport = (
       reducedLap = past.totalLap - now.totalLap
     }
 
-    const noReduced = reducedAp == null || reducedAp <= 0
-    const fallback: PeriodSummary['fallback'] =
-      throughput <= 0 &&
-      baseline.growthTotal <= 0 &&
-      baseline.newServantCount === 0 &&
-      noReduced
-        ? 'zero_progress'
-        : null
-    const finalized: PeriodSummary = {
-      ...baseline,
+    const finalized = finalizeBaselineSummary(baseline, {
       itemsFarmed,
       itemsConsumed,
       reducedAp,
       reducedLap,
-      reducedYen: reducedAp != null ? yenFromAp(reducedAp) : undefined,
-      tier,
-      fallback,
-    }
+    })
 
     return {
       ...data,
