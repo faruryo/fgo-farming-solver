@@ -195,30 +195,30 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
             )}
           </div>
 
-          {/* 参考: 目標達成への前進(残りの減少)。主指標(活動量)とは別枠で控えめに。 */}
+          {/* 目標達成への前進。残りの減少分を「これだけ近づいた」とプラスで見せる。 */}
           {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 && (
             <div
               className="rounded-md border border-dashed p-2.5 flex flex-col"
               style={{ borderColor: 'var(--border, rgba(140,140,140,0.4))' }}
             >
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                参考: 目標までの残りの減少
+              <div className="text-xs font-semibold mb-1">
+                目標にこれだけ近づきました
               </div>
               <Row
-                label="残りAP"
-                value={`−${Math.round(summary.reducedAp).toLocaleString()}`}
+                label="AP換算"
+                value={Math.round(summary.reducedAp).toLocaleString()}
               />
               {typeof summary.reducedLap === 'number' &&
                 summary.reducedLap > 0 && (
                   <Row
-                    label="残り周回数"
-                    value={`−${Math.round(summary.reducedLap).toLocaleString()}`}
+                    label="周回換算"
+                    value={`${Math.round(summary.reducedLap).toLocaleString()}周`}
                   />
                 )}
               {typeof summary.reducedYen === 'number' && (
                 <Row
-                  label="残り費用"
-                  value={`−¥${Math.round(summary.reducedYen).toLocaleString()}`}
+                  label="費用換算"
+                  value={`¥${Math.round(summary.reducedYen).toLocaleString()}`}
                 />
               )}
             </div>
