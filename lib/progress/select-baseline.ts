@@ -20,6 +20,12 @@ const hasComparableContent = (p: PeriodSummary): boolean =>
   p.newServantCount > 0 ||
   p.servantGrowth.length > 0
 
+// 実際に過去スナップショットと比較できた period か。zero_progress(変化ゼロ)でも
+// pastPosession や snapshotCreatedAt は baseline から引き継がれるため真になる。
+// no_snapshot_for_period / first_time は比較対象が無いので偽。
+const isRealComparison = (p: PeriodSummary): boolean =>
+  hasComparableContent(p) || p.snapshotCreatedAt != null
+
 export const selectBaseline = (
   periods: ProgressResponse['periods'] | undefined | null
 ): PeriodSummary | null => {
@@ -30,6 +36,11 @@ export const selectBaseline = (
   return (
     ordered.find((p) => !p.fallback && hasComparableContent(p)) ??
     ordered.find((p) => !p.fallback) ??
+    // fallback 付きでも「実際に比較できた」period(zero_progress 等)を、
+    // no_snapshot_for_period / first_time より優先する。enriched が baseline に
+    // zero_progress を付けた後、パネルが再度 selectBaseline する際に最古の
+    // no_snapshot へ誤って落ちるのを防ぐ。
+    ordered.find((p) => isRealComparison(p)) ??
     ordered[0] ??
     null
   )

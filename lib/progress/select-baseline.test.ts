@@ -88,4 +88,22 @@ describe('selectBaseline (最古の存在スナップショット優先)', () =>
     })
     expect(b?.period).toBe('month')
   })
+
+  it('zero_progress(実比較済)は、最古の no_snapshot より優先される', () => {
+    // 再現: enriched が previous(06-06と実比較)に zero_progress を付与。
+    // month/week は該当スナップショット無し(no_snapshot)。パネルの再 selectBaseline で
+    // 最古の month(no_snapshot)へ落ちず、実比較できた previous を返すべき。
+    const comparedPrev: PeriodSummary = {
+      ...mk('previous', 'zero_progress'),
+      pastPosession: { '6512': 10 },
+      snapshotCreatedAt: '2026-06-06T17:04:00.000Z',
+    }
+    const b = selectBaseline({
+      previous: comparedPrev,
+      week: mk('week', 'no_snapshot_for_period'),
+      month: mk('month', 'no_snapshot_for_period'),
+    })
+    expect(b?.period).toBe('previous')
+    expect(b?.fallback).toBe('zero_progress')
+  })
 })
