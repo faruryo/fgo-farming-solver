@@ -192,12 +192,13 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                   label="アイテム入手による残りAPの減少(参考)"
                   value={`−${Math.round(summary.reducedAp).toLocaleString()}`}
                 />
-                {typeof summary.reducedLap === 'number' && (
-                  <Row
-                    label="残り周回数の減少"
-                    value={`−${Math.round(summary.reducedLap).toLocaleString()}`}
-                  />
-                )}
+                {typeof summary.reducedLap === 'number' &&
+                  summary.reducedLap > 0 && (
+                    <Row
+                      label="残り周回数の減少"
+                      value={`−${Math.round(summary.reducedLap).toLocaleString()}`}
+                    />
+                  )}
                 {typeof summary.reducedYen === 'number' && (
                   <Row
                     label="残り費用の減少"
