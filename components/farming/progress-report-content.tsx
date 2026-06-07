@@ -186,27 +186,6 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                 highlight
               />
             )}
-            {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 && (
-              <>
-                <Row
-                  label="アイテム入手による残りAPの減少(参考)"
-                  value={`−${Math.round(summary.reducedAp).toLocaleString()}`}
-                />
-                {typeof summary.reducedLap === 'number' &&
-                  summary.reducedLap > 0 && (
-                    <Row
-                      label="残り周回数の減少"
-                      value={`−${Math.round(summary.reducedLap).toLocaleString()}`}
-                    />
-                  )}
-                {typeof summary.reducedYen === 'number' && (
-                  <Row
-                    label="残り費用の減少"
-                    value={`−¥${Math.round(summary.reducedYen).toLocaleString()}`}
-                  />
-                )}
-              </>
-            )}
             {summary.growthTotal > 0 && (
               <Row
                 label="育成総量"
@@ -215,6 +194,35 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
               />
             )}
           </div>
+
+          {/* 参考: 目標達成への前進(残りの減少)。主指標(活動量)とは別枠で控えめに。 */}
+          {typeof summary.reducedAp === 'number' && summary.reducedAp > 0 && (
+            <div
+              className="rounded-md border border-dashed p-2.5 flex flex-col"
+              style={{ borderColor: 'var(--border, rgba(140,140,140,0.4))' }}
+            >
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                参考: 目標までの残りの減少
+              </div>
+              <Row
+                label="残りAP"
+                value={`−${Math.round(summary.reducedAp).toLocaleString()}`}
+              />
+              {typeof summary.reducedLap === 'number' &&
+                summary.reducedLap > 0 && (
+                  <Row
+                    label="残り周回数"
+                    value={`−${Math.round(summary.reducedLap).toLocaleString()}`}
+                  />
+                )}
+              {typeof summary.reducedYen === 'number' && (
+                <Row
+                  label="残り費用"
+                  value={`−¥${Math.round(summary.reducedYen).toLocaleString()}`}
+                />
+              )}
+            </div>
+          )}
 
           {(summary.newServants?.length ?? 0) > 0 && (
             <div className="mt-2">
