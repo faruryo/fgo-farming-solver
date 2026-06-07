@@ -136,7 +136,7 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                     <Info className="w-3.5 h-3.5" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-[240px] text-left leading-relaxed">
-                    目標達成に必要な残りが、アイテム入手でどれだけ減ったかの試算です。AP・費用は「消費AP最小」、周回は「周回数最小」の周回プランで計算しているため、両者の増減はずれることがあります。
+                    目標達成に必要な残りが、アイテム入手でどれだけ減ったかの試算です。AP・費用は「消費AP最小」、周回数は「周回数最小」という別々の周回プランで計算するため結果がずれることがあり、周回数が減っていない場合は表示しません。
                   </TooltipContent>
                 </Tooltip>
               </div>
