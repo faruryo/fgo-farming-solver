@@ -38,6 +38,7 @@ import { buildRarityApTables } from '../lib/progress/rarity-ap-table'
 import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
+import { waveCountSeedFrom } from '../lib/master-data/wave-count'
 
 const REFRESH = process.argv.includes('--refresh')
 const CACHE_DIR = path.resolve(process.cwd(), 'scripts', '.cache-bench')
@@ -111,20 +112,12 @@ async function measure<T>(name: string, worker: WorkerName, fn: () => Promise<T>
   return out
 }
 
-// mocks/all.json から aaQuestId→waveCount の seed を作る(worker の KV seed 相当)
-function readWaveCountSeedFromMock(): Map<number, number> | undefined {
+// mocks/all.json を前回ペイロードとして読む(worker の KV read 相当)。
+// waveCount seed と短縮ID安定化レジストリの両方をここから導出する。
+function readPreviousFromMock(): MasterData | undefined {
   try {
     const p = path.resolve(process.cwd(), 'mocks', 'all.json')
-    const raw = JSON.parse(readFileSync(p, 'utf8')) as {
-      quests?: Array<{ aaQuestId?: number; waveCount?: number }>
-    }
-    const seed = new Map<number, number>()
-    for (const q of raw.quests ?? []) {
-      if (typeof q.aaQuestId === 'number' && typeof q.waveCount === 'number') {
-        seed.set(q.aaQuestId, q.waveCount)
-      }
-    }
-    return seed.size > 0 ? seed : undefined
+    return JSON.parse(readFileSync(p, 'utf8')) as MasterData
   } catch {
     return undefined
   }
@@ -145,13 +138,14 @@ async function main() {
     return await fetchActiveEvents()
   })
 
-  // 既存 mocks/all.json の waveCount を seed にして、本番 KV キャッシュ時の
-  // 定常 subrequest 数を再現する(初回 cold 時は --refresh で seed 無効化はしない)。
-  const waveCountSeed = readWaveCountSeedFromMock()
+  // 既存 mocks/all.json を前回ペイロードとして読み、本番 KV キャッシュ時の
+  // 定常 subrequest 数と短縮IDのピン留めを再現する(初回 cold 時は --refresh で無効化はしない)。
+  const previous = readPreviousFromMock()
+  const waveCountSeed = waveCountSeedFrom(previous)
 
   // A. updateDrops
   const drops = await measure('A. updateDrops (fetchAndTransformData)', 'updater', async () => {
-    const d = await fetchAndTransformData({ events, waveCountSeed })
+    const d = await fetchAndTransformData({ events, waveCountSeed, previous })
     const v = validateMasterData(d)
     if (v.ok) await MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(d))
     else console.warn(`  (degraded payload: ${v.reason})`)

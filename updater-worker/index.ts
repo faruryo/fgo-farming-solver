@@ -2,6 +2,7 @@ import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '..
 import type { NiceWarCache, NiceWarQuest } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
+import { waveCountSeedFrom } from '../lib/master-data/wave-count'
 
 // アクティブイベントは cron 1回で複数フェーズが必要とするため、先頭で1回だけ取得して共有する。
 type NiceEvents = Awaited<ReturnType<typeof fetchActiveEvents>>
@@ -51,11 +52,13 @@ const worker = {
     } catch (e) {
       console.warn('Failed to prefetch active events; phases will fetch individually:', e)
     }
-    // 前回 KV の all_drops_json から waveCount(aaQuestId→ターン数)を seed として読む。
-    // これで populateWaveCounts の per-quest fetch(180件超 = subrequest 上限超過の
-    // 主因)を新規クエスト分だけに削減する。
-    const waveCountSeed = await readWaveCountSeed(env)
-    const dropsData = await updateDrops(env, events, waveCountSeed)
+    // 前回 KV の all_drops_json を丸ごと読む(既存のKV read 1回のまま)。
+    // - waveCount seed: populateWaveCounts の per-quest fetch(180件超 = subrequest
+    //   上限超過の主因)を新規クエスト分だけに削減する。
+    // - 短縮ID安定化: 前回の id_registry(無ければ公開済みID)を引き継ぎ、
+    //   データ更新をまたいで同一クエスト/アイテムに同一IDを割り当て続ける。
+    const previous = await readPreviousMasterData(env)
+    const dropsData = await updateDrops(env, events, previous)
     await Promise.all([
       updateDashboardMeta(env, dropsData, events),
       updateServantsList(env),
@@ -65,39 +68,40 @@ const worker = {
 
 export default worker
 
-async function readWaveCountSeed(env: Env): Promise<Map<number, number> | undefined> {
+async function readPreviousMasterData(env: Env): Promise<MasterData | null> {
   try {
     const prior = await env.MASTER_DATA.get(MASTER_DATA_KEY)
-    if (!prior) return undefined
+    if (!prior) return null
     const parsed = JSON.parse(prior) as MasterData
-    const seed = new Map<number, number>()
-    for (const q of parsed.quests ?? []) {
-      if (typeof q.aaQuestId === 'number' && typeof q.waveCount === 'number') {
-        seed.set(q.aaQuestId, q.waveCount)
-      }
-    }
-    return seed.size > 0 ? seed : undefined
+    console.log(
+      `Loaded previous master data: ${parsed.quests?.length ?? 0} quests, registry ${
+        Object.keys(parsed.id_registry?.quests ?? {}).length
+      } quest entries / ${Object.keys(parsed.id_registry?.items ?? {}).length} item entries`
+    )
+    return parsed
   } catch (e) {
-    console.warn('Failed to read waveCount seed from prior KV:', e)
-    return undefined
+    console.warn('Failed to read previous master data from KV:', e)
+    return null
   }
 }
 
 async function updateDrops(
   env: Env,
   events?: NiceEvents,
-  waveCountSeed?: Map<number, number>
+  previous?: MasterData | null
 ): Promise<MasterData | null> {
   try {
     console.log('Fetching and transforming master data (drops)...')
     // 無料プランの subrequest 上限(1 invocation ~50)内に収めるため、waveCount の
     // 新規 fetch は 1 回あたり 20 件までに制限。seed と併用で数回の cron で全件埋まり、
     // 以後は 0 件になる。これで dashboard/servants 更新が starve しない。
+    // previous を渡すことで短縮IDが世代間で安定する(reused/new 件数は update 側でログ)。
     const dropsData = await fetchAndTransformData({
       events,
-      waveCountSeed,
+      waveCountSeed: waveCountSeedFrom(previous),
       waveCountMaxFetch: 20,
       niceWarCache: makeNiceWarCache(env),
+      previous: previous ?? undefined,
     })
     const v = validateMasterData(dropsData)
     if (!v.ok) {

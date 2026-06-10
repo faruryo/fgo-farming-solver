@@ -1,3 +1,5 @@
+import type { IdRegistry } from './stable-ids'
+
 export interface Item {
   category: string
   name: string
@@ -52,6 +54,12 @@ export interface MasterData {
   quests: Quest[]
   drop_rates: DropRate[]
   campaigns: Campaign[]
+  /**
+   * 短縮IDの世代間安定化のための append-only な採番レジストリ。
+   * 更新ワーカーが前回公開ペイロードから引き継ぎ、同一対象に同一IDを割り当て続ける。
+   * 既存消費者（lib/get-drops.ts 等）には不可視（後方互換）。
+   */
+  id_registry?: IdRegistry
 }
 
 export interface DashboardCampaignInfo {

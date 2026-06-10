@@ -1,7 +1,8 @@
 /* eslint-disable */
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
-import { toApiItemId } from '../to-api-item-id'
+import { assignItemId, assignQuestIds, registryFromPrevious } from './stable-ids'
+import type { PreviousMasterData } from './stable-ids'
 import { populateWaveCounts } from './wave-count'
 
 export type {
@@ -266,6 +267,11 @@ export async function fetchAndTransformData(
     waveCountSeed?: Map<number, number>
     waveCountMaxFetch?: number
     niceWarCache?: NiceWarCache
+    /**
+     * 前回公開済みペイロード。短縮IDの世代間安定化（採番の永続化）に使う。
+     * 未指定/不正時は空レジストリ = 現行の位置ベース採番と完全一致。
+     */
+    previous?: PreviousMasterData
   } = {}
 ): Promise<MasterData> {
   let fs: any
@@ -366,7 +372,13 @@ export async function fetchAndTransformData(
   const aaItemsForId = aaItems
     .filter(i => FARMING_ITEM_TYPES.has(i.type))
     .sort((a, b) => a.priority - b.priority)
-  
+
+  // 短縮IDの世代間安定化: 前回公開ペイロードの id_registry（無ければ公開済み quests/items
+  // から合成）を引き継ぎ、同一対象に同一IDを割り当て続ける。前回データが無い場合は
+  // 空レジストリ = 現行の位置ベース採番と完全一致。
+  const registry = registryFromPrevious(opts.previous)
+
+
   // 2. Fetch Drop Data from Spreadsheet
   console.log('Fetching drop data from spreadsheet...')
   const sheetResponse = await fetch(SHEET_URL)
@@ -413,9 +425,9 @@ export async function fetchAndTransformData(
     }
 
     if (aaItem) {
-      // Use toApiItemId with the same filtered+sorted list that getLocalItems() uses,
-      // so IDs are consistent between KV data and the farming page display.
-      const id = toApiItemId(aaItem as AtlasItem, aaItemsForId as AtlasItem[])
+      // atlasId がレジストリ登録済みなら再利用、新規は getLocalItems() と同じ
+      // filtered+sorted リストでの位置ベース候補（衝突時は intercept 空間内 max+1）。
+      const id = assignItemId(aaItem as AtlasItem, aaItemsForId as AtlasItem[], registry)
       if (!id) continue
       if (!items.find(i => i.id === id)) {
         const cat = getCategory(aaItem.priority, aaItem.background)
@@ -501,22 +513,18 @@ export async function fetchAndTransformData(
   console.log(`Matched ${items.length} items and ${quests.length} raw quests.`)
 
   // 5. Assign short quest IDs: "{sectionChar}{areaChar}{questIndexChar}" in base-36
-  //    Prefix "0X" = Daily (修練場), "1X"/"2X"/... = Free (by area order)
+  //    Prefix "0X" = Daily (修練場), "1X"/"2X"/... = Free
   //    This keeps IDs compact for URL params and matches the frontend's prefix-based quest grouping.
-  const dailyAreas = [...new Set(quests.filter(q => q.section === 'Daily').map(q => q.area))].sort()
-  const freeAreas = [...new Set(quests.filter(q => q.section !== 'Daily').map(q => q.area))].sort()
-  const areaPrefix = new Map<string, string>()
-  dailyAreas.forEach((area, i) => areaPrefix.set(area, '0' + i.toString(36)))
-  freeAreas.forEach((area, i) => {
-    areaPrefix.set(area, (Math.floor(i / 36) + 1).toString(36) + (i % 36).toString(36))
-  })
-  const questIndexInArea = new Map<string, number>()
-  const longToShortQuestId = new Map<string, string>()
-  for (const q of quests) {
-    const idx = questIndexInArea.get(q.area) ?? 0
-    longToShortQuestId.set(q.id, (areaPrefix.get(q.area) ?? '?') + idx.toString(36))
-    questIndexInArea.set(q.area, idx + 1)
+  //    レジストリ一致分は前回IDを再利用し、新規のみ採番する（世代間安定化）。
+  const prevQuestIds = new Set(Object.values(registry.quests).map(e => e.id))
+  const longToShortQuestId = assignQuestIds(quests, registry)
+  let reusedQuestIds = 0
+  for (const id of longToShortQuestId.values()) {
+    if (prevQuestIds.has(id)) reusedQuestIds++
   }
+  console.log(
+    `Quest IDs: reused ${reusedQuestIds}, new ${longToShortQuestId.size - reusedQuestIds} (registry ${Object.keys(registry.quests).length} quests, ${Object.keys(registry.items).length} items)`
+  )
   quests.forEach(q => { q.id = longToShortQuestId.get(q.id) ?? q.id })
   all_drop_rates.forEach(dr => { dr.quest_id = longToShortQuestId.get(dr.quest_id) ?? dr.quest_id })
 
@@ -627,6 +635,7 @@ export async function fetchAndTransformData(
     quests: finalQuests,
     drop_rates: filtered_drop_rates,
     campaigns,
+    id_registry: registry,
   }
 }
 

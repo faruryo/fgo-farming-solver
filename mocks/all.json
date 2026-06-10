@@ -352,6 +352,15 @@
       "atlasId": 6561
     },
     {
+      "id": "1q",
+      "category": "銀素材",
+      "largeCategory": "強化素材",
+      "shortName": "真珠",
+      "name": "創生の真珠",
+      "icon": "https://static.atlasacademy.io/JP/Items/6564.png",
+      "atlasId": 6564
+    },
+    {
       "id": "20",
       "category": "金素材",
       "largeCategory": "強化素材",
@@ -539,6 +548,15 @@
       "name": "遺霊箱",
       "icon": "https://static.atlasacademy.io/JP/Items/6563.png",
       "atlasId": 6563
+    },
+    {
+      "id": "2m",
+      "category": "金素材",
+      "largeCategory": "強化素材",
+      "shortName": "琥珀",
+      "name": "黎溟琥珀",
+      "icon": "https://static.atlasacademy.io/JP/Items/6565.png",
+      "atlasId": 6565
     },
     {
       "id": "30",
@@ -864,10 +882,10 @@
       "id": "020",
       "section": "Daily",
       "aaQuestId": 94066101,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（月）",
@@ -876,10 +894,10 @@
       "id": "021",
       "section": "Daily",
       "aaQuestId": 94006808,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（月）",
@@ -888,10 +906,10 @@
       "id": "022",
       "section": "Daily",
       "aaQuestId": 94006807,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（月）",
@@ -920,10 +938,10 @@
       "id": "050",
       "section": "Daily",
       "aaQuestId": 94066102,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（火）",
@@ -932,10 +950,10 @@
       "id": "051",
       "section": "Daily",
       "aaQuestId": 94006812,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（火）",
@@ -944,10 +962,10 @@
       "id": "052",
       "section": "Daily",
       "aaQuestId": 94006811,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（火）",
@@ -976,10 +994,10 @@
       "id": "040",
       "section": "Daily",
       "aaQuestId": 94066103,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（水）",
@@ -988,10 +1006,10 @@
       "id": "041",
       "section": "Daily",
       "aaQuestId": 94004316,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（水）",
@@ -1000,10 +1018,10 @@
       "id": "042",
       "section": "Daily",
       "aaQuestId": 94004315,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（水）",
@@ -1032,10 +1050,10 @@
       "id": "030",
       "section": "Daily",
       "aaQuestId": 94066104,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（木）",
@@ -1044,10 +1062,10 @@
       "id": "031",
       "section": "Daily",
       "aaQuestId": 94006820,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（木）",
@@ -1056,10 +1074,10 @@
       "id": "032",
       "section": "Daily",
       "aaQuestId": 94006819,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（木）",
@@ -1088,10 +1106,10 @@
       "id": "060",
       "section": "Daily",
       "aaQuestId": 94066105,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（金）",
@@ -1100,10 +1118,10 @@
       "id": "061",
       "section": "Daily",
       "aaQuestId": 94006824,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（金）",
@@ -1112,10 +1130,10 @@
       "id": "062",
       "section": "Daily",
       "aaQuestId": 94006823,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（金）",
@@ -1144,10 +1162,10 @@
       "id": "000",
       "section": "Daily",
       "aaQuestId": 94066106,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（土）",
@@ -1156,10 +1174,10 @@
       "id": "001",
       "section": "Daily",
       "aaQuestId": 94006828,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（土）",
@@ -1168,10 +1186,10 @@
       "id": "002",
       "section": "Daily",
       "aaQuestId": 94006827,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（土）",
@@ -1200,10 +1218,10 @@
       "id": "010",
       "section": "Daily",
       "aaQuestId": 94066107,
-      "waveCount": 3,
       "qp": 8400,
       "bondPoints": 815,
-      "exp": 29690
+      "exp": 29690,
+      "waveCount": 3
     },
     {
       "area": "修練場（日）",
@@ -1212,10 +1230,10 @@
       "id": "011",
       "section": "Daily",
       "aaQuestId": 94006804,
-      "waveCount": 3,
       "qp": 6400,
       "bondPoints": 615,
-      "exp": 15690
+      "exp": 15690,
+      "waveCount": 3
     },
     {
       "area": "修練場（日）",
@@ -1224,10 +1242,10 @@
       "id": "012",
       "section": "Daily",
       "aaQuestId": 94006803,
-      "waveCount": 3,
       "qp": 4400,
       "bondPoints": 415,
-      "exp": 5690
+      "exp": 5690,
+      "waveCount": 3
     },
     {
       "area": "修練場（日）",
@@ -1266,10 +1284,10 @@
       "id": "1e5",
       "section": "Free",
       "aaQuestId": 91201501,
-      "waveCount": 3,
       "qp": 5720,
       "bondPoints": 415,
-      "exp": 4552
+      "exp": 4552,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1278,10 +1296,10 @@
       "id": "160",
       "section": "Free",
       "aaQuestId": 1000301,
-      "waveCount": 3,
       "qp": 4160,
       "bondPoints": 295,
-      "exp": 1288
+      "exp": 1288,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1290,10 +1308,10 @@
       "id": "166",
       "section": "Free",
       "aaQuestId": 1000306,
-      "waveCount": 3,
       "qp": 5460,
       "bondPoints": 395,
-      "exp": 3928
+      "exp": 3928,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1302,10 +1320,10 @@
       "id": "168",
       "section": "Free",
       "aaQuestId": 1000309,
-      "waveCount": 3,
       "qp": 5720,
       "bondPoints": 415,
-      "exp": 4552
+      "exp": 4552,
+      "waveCount": 3
     },
     {
       "area": "オケアノス",
@@ -1324,10 +1342,10 @@
       "id": "1l0",
       "section": "Free",
       "aaQuestId": 1000401,
-      "waveCount": 1,
       "qp": 5980,
       "bondPoints": 435,
-      "exp": 5208
+      "exp": 5208,
+      "waveCount": 1
     },
     {
       "area": "ロンドン",
@@ -1336,10 +1354,10 @@
       "id": "1l2",
       "section": "Free",
       "aaQuestId": 1000403,
-      "waveCount": 3,
       "qp": 5980,
       "bondPoints": 435,
-      "exp": 5208
+      "exp": 5208,
+      "waveCount": 3
     },
     {
       "area": "ロンドン",
@@ -1348,10 +1366,10 @@
       "id": "1l7",
       "section": "Free",
       "aaQuestId": 91601803,
-      "waveCount": 1,
       "qp": 8840,
       "bondPoints": 655,
-      "exp": 14536
+      "exp": 14536,
+      "waveCount": 1
     },
     {
       "area": "ロンドン",
@@ -1360,10 +1378,10 @@
       "id": "1l8",
       "section": "Free",
       "aaQuestId": 91100901,
-      "waveCount": 3,
       "qp": 9360,
       "bondPoints": 695,
-      "exp": 16648
+      "exp": 16648,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1372,10 +1390,10 @@
       "id": "1p3",
       "section": "Free",
       "aaQuestId": 1000506,
-      "waveCount": 3,
       "qp": 7540,
       "bondPoints": 555,
-      "exp": 9816
+      "exp": 9816,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1384,10 +1402,10 @@
       "id": "1p4",
       "section": "Free",
       "aaQuestId": 1000508,
-      "waveCount": 2,
       "qp": 7540,
       "bondPoints": 555,
-      "exp": 9816
+      "exp": 9816,
+      "waveCount": 2
     },
     {
       "area": "北米",
@@ -1396,10 +1414,10 @@
       "id": "1p7",
       "section": "Free",
       "aaQuestId": 1000517,
-      "waveCount": 3,
       "qp": 8060,
       "bondPoints": 595,
-      "exp": 11608
+      "exp": 11608,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1408,10 +1426,10 @@
       "id": "1p8",
       "section": "Free",
       "aaQuestId": 1000507,
-      "waveCount": 2,
       "qp": 8320,
       "bondPoints": 615,
-      "exp": 12552
+      "exp": 12552,
+      "waveCount": 2
     },
     {
       "area": "北米",
@@ -1420,10 +1438,10 @@
       "id": "1p9",
       "section": "Free",
       "aaQuestId": 1000509,
-      "waveCount": 2,
       "qp": 8320,
       "bondPoints": 615,
-      "exp": 12552
+      "exp": 12552,
+      "waveCount": 2
     },
     {
       "area": "北米",
@@ -1432,10 +1450,10 @@
       "id": "1pa",
       "section": "Free",
       "aaQuestId": 1000514,
-      "waveCount": 3,
       "qp": 8320,
       "bondPoints": 615,
-      "exp": 12552
+      "exp": 12552,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1444,10 +1462,10 @@
       "id": "1pb",
       "section": "Free",
       "aaQuestId": 1000520,
-      "waveCount": 3,
       "qp": 9620,
       "bondPoints": 715,
-      "exp": 17752
+      "exp": 17752,
+      "waveCount": 3
     },
     {
       "area": "北米",
@@ -1456,10 +1474,10 @@
       "id": "1pd",
       "section": "Free",
       "aaQuestId": 93000504,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1468,10 +1486,10 @@
       "id": "1a0",
       "section": "Free",
       "aaQuestId": 1000601,
-      "waveCount": 3,
       "qp": 8580,
       "bondPoints": 635,
-      "exp": 13528
+      "exp": 13528,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1480,10 +1498,10 @@
       "id": "1a2",
       "section": "Free",
       "aaQuestId": 1000606,
-      "waveCount": 3,
       "qp": 8840,
       "bondPoints": 655,
-      "exp": 14536
+      "exp": 14536,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1492,10 +1510,10 @@
       "id": "1a5",
       "section": "Free",
       "aaQuestId": 1000618,
-      "waveCount": 3,
       "qp": 9100,
       "bondPoints": 675,
-      "exp": 15576
+      "exp": 15576,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1504,10 +1522,10 @@
       "id": "1a6",
       "section": "Free",
       "aaQuestId": 93000607,
-      "waveCount": 3,
       "qp": 9100,
       "bondPoints": 675,
-      "exp": 15576
+      "exp": 15576,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1516,10 +1534,10 @@
       "id": "1a8",
       "section": "Free",
       "aaQuestId": 1000607,
-      "waveCount": 2,
       "qp": 9620,
       "bondPoints": 715,
-      "exp": 17752
+      "exp": 17752,
+      "waveCount": 2
     },
     {
       "area": "キャメロット",
@@ -1528,10 +1546,10 @@
       "id": "1a9",
       "section": "Free",
       "aaQuestId": 1000629,
-      "waveCount": 2,
       "qp": 9620,
       "bondPoints": 715,
-      "exp": 17752
+      "exp": 17752,
+      "waveCount": 2
     },
     {
       "area": "キャメロット",
@@ -1540,10 +1558,10 @@
       "id": "1aa",
       "section": "Free",
       "aaQuestId": 1000625,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1552,10 +1570,10 @@
       "id": "1ab",
       "section": "Free",
       "aaQuestId": 1000631,
-      "waveCount": 1,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 1
     },
     {
       "area": "キャメロット",
@@ -1564,10 +1582,10 @@
       "id": "1ac",
       "section": "Free",
       "aaQuestId": 93000614,
-      "waveCount": 3,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 3
     },
     {
       "area": "キャメロット",
@@ -1576,10 +1594,10 @@
       "id": "1ad",
       "section": "Free",
       "aaQuestId": 1000604,
-      "waveCount": 2,
       "qp": 11440,
       "bondPoints": 855,
-      "exp": 26376
+      "exp": 26376,
+      "waveCount": 2
     },
     {
       "area": "バビロニア",
@@ -1588,10 +1606,10 @@
       "id": "1h0",
       "section": "Free",
       "aaQuestId": 1000701,
-      "waveCount": 2,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 2
     },
     {
       "area": "バビロニア",
@@ -1600,10 +1618,10 @@
       "id": "1h1",
       "section": "Free",
       "aaQuestId": 1000702,
-      "waveCount": 3,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1612,10 +1630,10 @@
       "id": "1h3",
       "section": "Free",
       "aaQuestId": 93000704,
-      "waveCount": 3,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1635,10 +1653,10 @@
       "id": "1h6",
       "section": "Free",
       "aaQuestId": 1000713,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1647,10 +1665,10 @@
       "id": "1h7",
       "section": "Free",
       "aaQuestId": 1000718,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "バビロニア",
@@ -1659,10 +1677,10 @@
       "id": "1h8",
       "section": "Free",
       "aaQuestId": 93000709,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1671,10 +1689,10 @@
       "id": "1h9",
       "section": "Free",
       "aaQuestId": 1000714,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1694,10 +1712,10 @@
       "id": "1hb",
       "section": "Free",
       "aaQuestId": 93000712,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1706,10 +1724,10 @@
       "id": "1hc",
       "section": "Free",
       "aaQuestId": 91700602,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "バビロニア",
@@ -1718,10 +1736,10 @@
       "id": "1hd",
       "section": "Free",
       "aaQuestId": 1000716,
-      "waveCount": 1,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 1
     },
     {
       "area": "新宿",
@@ -1740,10 +1758,10 @@
       "id": "1r1",
       "section": "Free",
       "aaQuestId": 2000103,
-      "waveCount": 1,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 1
     },
     {
       "area": "新宿",
@@ -1752,10 +1770,10 @@
       "id": "1r2",
       "section": "Free",
       "aaQuestId": 93020103,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "新宿",
@@ -1764,10 +1782,10 @@
       "id": "1r3",
       "section": "Free",
       "aaQuestId": 2000105,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "新宿",
@@ -1776,10 +1794,10 @@
       "id": "1r5",
       "section": "Free",
       "aaQuestId": 2000110,
-      "waveCount": 2,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 2
     },
     {
       "area": "新宿",
@@ -1788,10 +1806,10 @@
       "id": "1r7",
       "section": "Free",
       "aaQuestId": 2000117,
-      "waveCount": 1,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 1
     },
     {
       "area": "新宿",
@@ -1800,10 +1818,10 @@
       "id": "1r8",
       "section": "Free",
       "aaQuestId": 93020109,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "新宿",
@@ -1812,10 +1830,10 @@
       "id": "1r9",
       "section": "Free",
       "aaQuestId": 93020110,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アガルタ",
@@ -1824,10 +1842,10 @@
       "id": "101",
       "section": "Free",
       "aaQuestId": 2000202,
-      "waveCount": 2,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 2
     },
     {
       "area": "アガルタ",
@@ -1836,10 +1854,10 @@
       "id": "103",
       "section": "Free",
       "aaQuestId": 2000204,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "アガルタ",
@@ -1870,10 +1888,10 @@
       "id": "107",
       "section": "Free",
       "aaQuestId": 2000210,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "アガルタ",
@@ -1893,10 +1911,10 @@
       "id": "109",
       "section": "Free",
       "aaQuestId": 93020209,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "アガルタ",
@@ -1916,10 +1934,10 @@
       "id": "10b",
       "section": "Free",
       "aaQuestId": 93020212,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "下総国",
@@ -1950,10 +1968,10 @@
       "id": "1m3",
       "section": "Free",
       "aaQuestId": 2000305,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "下総国",
@@ -1962,10 +1980,10 @@
       "id": "1m5",
       "section": "Free",
       "aaQuestId": 2000308,
-      "waveCount": 1,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 1
     },
     {
       "area": "下総国",
@@ -1984,10 +2002,10 @@
       "id": "1m7",
       "section": "Free",
       "aaQuestId": 93020308,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "下総国",
@@ -2006,10 +2024,10 @@
       "id": "1d0",
       "section": "Free",
       "aaQuestId": 2000401,
-      "waveCount": 2,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 2
     },
     {
       "area": "セイレム",
@@ -2040,10 +2058,10 @@
       "id": "1d3",
       "section": "Free",
       "aaQuestId": 93020404,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -2052,10 +2070,10 @@
       "id": "1d4",
       "section": "Free",
       "aaQuestId": 93020406,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -2064,10 +2082,10 @@
       "id": "1d5",
       "section": "Free",
       "aaQuestId": 93020405,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -2076,10 +2094,10 @@
       "id": "1d6",
       "section": "Free",
       "aaQuestId": 93020408,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "セイレム",
@@ -2121,10 +2139,10 @@
       "id": "1da",
       "section": "Free",
       "aaQuestId": 93020411,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -2166,10 +2184,10 @@
       "id": "124",
       "section": "Free",
       "aaQuestId": 93030205,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -2178,10 +2196,10 @@
       "id": "125",
       "section": "Free",
       "aaQuestId": 93030206,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -2190,10 +2208,10 @@
       "id": "126",
       "section": "Free",
       "aaQuestId": 93030207,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -2213,10 +2231,10 @@
       "id": "129",
       "section": "Free",
       "aaQuestId": 93030210,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "アナスタシア",
@@ -2225,10 +2243,10 @@
       "id": "12a",
       "section": "Free",
       "aaQuestId": 3000124,
-      "waveCount": 1,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 1
     },
     {
       "area": "アナスタシア",
@@ -2237,10 +2255,10 @@
       "id": "12d",
       "section": "Free",
       "aaQuestId": 93030214,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -2249,10 +2267,10 @@
       "id": "1b2",
       "section": "Free",
       "aaQuestId": 93030303,
-      "waveCount": 3,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -2272,10 +2290,10 @@
       "id": "1b5",
       "section": "Free",
       "aaQuestId": 3000206,
-      "waveCount": 2,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 2
     },
     {
       "area": "ゲッテルデメルング",
@@ -2284,10 +2302,10 @@
       "id": "1b6",
       "section": "Free",
       "aaQuestId": 93030307,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -2296,10 +2314,10 @@
       "id": "1b7",
       "section": "Free",
       "aaQuestId": 93030308,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -2308,10 +2326,10 @@
       "id": "1b8",
       "section": "Free",
       "aaQuestId": 93030309,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -2320,10 +2338,10 @@
       "id": "1b9",
       "section": "Free",
       "aaQuestId": 93030310,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ゲッテルデメルング",
@@ -2332,10 +2350,10 @@
       "id": "1ba",
       "section": "Free",
       "aaQuestId": 93030311,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "シン",
@@ -2344,10 +2362,10 @@
       "id": "1c0",
       "section": "Free",
       "aaQuestId": 3000305,
-      "waveCount": 1,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 1
     },
     {
       "area": "シン",
@@ -2356,10 +2374,10 @@
       "id": "1c2",
       "section": "Free",
       "aaQuestId": 93030403,
-      "waveCount": 3,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 3
     },
     {
       "area": "シン",
@@ -2368,10 +2386,10 @@
       "id": "1c4",
       "section": "Free",
       "aaQuestId": 3000314,
-      "waveCount": 2,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 2
     },
     {
       "area": "シン",
@@ -2380,10 +2398,10 @@
       "id": "1c6",
       "section": "Free",
       "aaQuestId": 3000315,
-      "waveCount": 2,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 2
     },
     {
       "area": "シン",
@@ -2392,10 +2410,10 @@
       "id": "1c7",
       "section": "Free",
       "aaQuestId": 3000317,
-      "waveCount": 1,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 1
     },
     {
       "area": "シン",
@@ -2404,10 +2422,10 @@
       "id": "1c8",
       "section": "Free",
       "aaQuestId": 93030409,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "シン",
@@ -2416,10 +2434,10 @@
       "id": "1ca",
       "section": "Free",
       "aaQuestId": 93030411,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -2428,10 +2446,10 @@
       "id": "1k0",
       "section": "Free",
       "aaQuestId": 3000403,
-      "waveCount": 1,
       "qp": 9880,
       "bondPoints": 735,
-      "exp": 18888
+      "exp": 18888,
+      "waveCount": 1
     },
     {
       "area": "ユガ・クシェートラ",
@@ -2440,10 +2458,10 @@
       "id": "1k2",
       "section": "Free",
       "aaQuestId": 93030503,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -2463,10 +2481,10 @@
       "id": "1k5",
       "section": "Free",
       "aaQuestId": 93030506,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -2475,10 +2493,10 @@
       "id": "1k6",
       "section": "Free",
       "aaQuestId": 3000419,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 795,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "ユガ・クシェートラ",
@@ -2487,10 +2505,10 @@
       "id": "1k8",
       "section": "Free",
       "aaQuestId": 93030509,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ユガ・クシェートラ",
@@ -2499,10 +2517,10 @@
       "id": "1k9",
       "section": "Free",
       "aaQuestId": 93030510,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アトランティス",
@@ -2511,10 +2529,10 @@
       "id": "110",
       "section": "Free",
       "aaQuestId": 3000505,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -2523,10 +2541,10 @@
       "id": "111",
       "section": "Free",
       "aaQuestId": 3000506,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -2546,22 +2564,10 @@
       "id": "113",
       "section": "Free",
       "aaQuestId": 3000515,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
-    },
-    {
-      "area": "アトランティス",
-      "ap": 21,
-      "name": "アストライア島",
-      "id": "114",
-      "section": "Free",
-      "aaQuestId": 3000516,
-      "waveCount": 1,
-      "qp": 10400,
-      "bondPoints": 775,
-      "exp": 21256
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "アトランティス",
@@ -2570,10 +2576,10 @@
       "id": "115",
       "section": "Free",
       "aaQuestId": 93030606,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "アトランティス",
@@ -2582,10 +2588,10 @@
       "id": "118",
       "section": "Free",
       "aaQuestId": 93030609,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "オリュンポス",
@@ -2605,10 +2611,10 @@
       "id": "171",
       "section": "Free",
       "aaQuestId": 3000603,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "オリュンポス",
@@ -2617,10 +2623,10 @@
       "id": "172",
       "section": "Free",
       "aaQuestId": 3000607,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "オリュンポス",
@@ -2629,10 +2635,10 @@
       "id": "173",
       "section": "Free",
       "aaQuestId": 3000612,
-      "waveCount": 2,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 2
     },
     {
       "area": "オリュンポス",
@@ -2674,10 +2680,10 @@
       "id": "17a",
       "section": "Free",
       "aaQuestId": 93030711,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2686,10 +2692,10 @@
       "id": "1q0",
       "section": "Free",
       "aaQuestId": 93030801,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2698,10 +2704,10 @@
       "id": "1q1",
       "section": "Free",
       "aaQuestId": 3000702,
-      "waveCount": 1,
       "qp": 10270,
       "bondPoints": 765,
-      "exp": 20652
+      "exp": 20652,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2721,10 +2727,10 @@
       "id": "1q3",
       "section": "Free",
       "aaQuestId": 3000704,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2733,10 +2739,10 @@
       "id": "1q4",
       "section": "Free",
       "aaQuestId": 3000715,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2745,10 +2751,10 @@
       "id": "1q5",
       "section": "Free",
       "aaQuestId": 93030806,
-      "waveCount": 3,
       "qp": 10530,
       "bondPoints": 785,
-      "exp": 21868
+      "exp": 21868,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2757,10 +2763,10 @@
       "id": "1q7",
       "section": "Free",
       "aaQuestId": 93030808,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "平安京",
@@ -2780,10 +2786,10 @@
       "id": "1qa",
       "section": "Free",
       "aaQuestId": 3000712,
-      "waveCount": 1,
       "qp": 10790,
       "bondPoints": 805,
-      "exp": 23116
+      "exp": 23116,
+      "waveCount": 1
     },
     {
       "area": "平安京",
@@ -2803,10 +2809,10 @@
       "id": "1qc",
       "section": "Free",
       "aaQuestId": 93030813,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2815,10 +2821,10 @@
       "id": "130",
       "section": "Free",
       "aaQuestId": 93031000,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2838,10 +2844,10 @@
       "id": "133",
       "section": "Free",
       "aaQuestId": 3000806,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "アヴァロン",
@@ -2850,10 +2856,10 @@
       "id": "134",
       "section": "Free",
       "aaQuestId": 93031004,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2873,10 +2879,10 @@
       "id": "137",
       "section": "Free",
       "aaQuestId": 3000902,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2885,10 +2891,10 @@
       "id": "138",
       "section": "Free",
       "aaQuestId": 3000911,
-      "waveCount": 2,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 2
     },
     {
       "area": "アヴァロン",
@@ -2908,10 +2914,10 @@
       "id": "13b",
       "section": "Free",
       "aaQuestId": 3000913,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アヴァロン",
@@ -2942,10 +2948,10 @@
       "id": "13f",
       "section": "Free",
       "aaQuestId": 93031015,
-      "waveCount": 3,
       "qp": 11440,
       "bondPoints": 855,
-      "exp": 26376
+      "exp": 26376,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2954,10 +2960,10 @@
       "id": "1f0",
       "section": "Free",
       "aaQuestId": 3001202,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -2966,10 +2972,10 @@
       "id": "1f2",
       "section": "Free",
       "aaQuestId": 93031203,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2978,10 +2984,10 @@
       "id": "1f3",
       "section": "Free",
       "aaQuestId": 93031204,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -2990,10 +2996,10 @@
       "id": "1f4",
       "section": "Free",
       "aaQuestId": 93031205,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -3002,10 +3008,10 @@
       "id": "1f6",
       "section": "Free",
       "aaQuestId": 93031207,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -3014,10 +3020,10 @@
       "id": "1f7",
       "section": "Free",
       "aaQuestId": 3001213,
-      "waveCount": 1,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -3026,10 +3032,10 @@
       "id": "1f9",
       "section": "Free",
       "aaQuestId": 3001215,
-      "waveCount": 2,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 2
     },
     {
       "area": "トラオム",
@@ -3038,10 +3044,10 @@
       "id": "1fa",
       "section": "Free",
       "aaQuestId": 3001205,
-      "waveCount": 1,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -3050,10 +3056,10 @@
       "id": "1fb",
       "section": "Free",
       "aaQuestId": 93031212,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -3073,10 +3079,10 @@
       "id": "1fd",
       "section": "Free",
       "aaQuestId": 3001221,
-      "waveCount": 1,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 1
     },
     {
       "area": "トラオム",
@@ -3085,10 +3091,10 @@
       "id": "1fe",
       "section": "Free",
       "aaQuestId": 93031215,
-      "waveCount": 3,
       "qp": 11440,
       "bondPoints": 855,
-      "exp": 26376
+      "exp": 26376,
+      "waveCount": 3
     },
     {
       "area": "トラオム",
@@ -3097,10 +3103,10 @@
       "id": "1ff",
       "section": "Free",
       "aaQuestId": 93031216,
-      "waveCount": 3,
       "qp": 11440,
       "bondPoints": 855,
-      "exp": 26376
+      "exp": 26376,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -3109,10 +3115,10 @@
       "id": "1j0",
       "section": "Free",
       "aaQuestId": 93031301,
-      "waveCount": 3,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -3131,10 +3137,10 @@
       "id": "1j2",
       "section": "Free",
       "aaQuestId": 3001306,
-      "waveCount": 1,
       "qp": 10140,
       "bondPoints": 755,
-      "exp": 20056
+      "exp": 20056,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -3143,10 +3149,10 @@
       "id": "1j3",
       "section": "Free",
       "aaQuestId": 3001303,
-      "waveCount": 2,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 2
     },
     {
       "area": "ミクトラン",
@@ -3155,10 +3161,10 @@
       "id": "1j4",
       "section": "Free",
       "aaQuestId": 3001308,
-      "waveCount": 1,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -3178,10 +3184,10 @@
       "id": "1j6",
       "section": "Free",
       "aaQuestId": 3001307,
-      "waveCount": 1,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -3201,10 +3207,10 @@
       "id": "1ja",
       "section": "Free",
       "aaQuestId": 3001321,
-      "waveCount": 1,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 1
     },
     {
       "area": "ミクトラン",
@@ -3213,10 +3219,10 @@
       "id": "1jb",
       "section": "Free",
       "aaQuestId": 93031310,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -3225,10 +3231,10 @@
       "id": "1jc",
       "section": "Free",
       "aaQuestId": 3001315,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -3237,10 +3243,10 @@
       "id": "1jd",
       "section": "Free",
       "aaQuestId": 3001316,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "ミクトラン",
@@ -3260,10 +3266,10 @@
       "id": "1jf",
       "section": "Free",
       "aaQuestId": 93031315,
-      "waveCount": 3,
       "qp": 11440,
       "bondPoints": 855,
-      "exp": 26376
+      "exp": 26376,
+      "waveCount": 3
     },
     {
       "area": "オーディール・コール",
@@ -3272,10 +3278,10 @@
       "id": "190",
       "section": "Free",
       "aaQuestId": 93040101,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3284,10 +3290,10 @@
       "id": "191",
       "section": "Free",
       "aaQuestId": 93040102,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3296,10 +3302,10 @@
       "id": "192",
       "section": "Free",
       "aaQuestId": 93040103,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3308,10 +3314,10 @@
       "id": "193",
       "section": "Free",
       "aaQuestId": 94095301,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3320,10 +3326,10 @@
       "id": "195",
       "section": "Free",
       "aaQuestId": 93040105,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3332,10 +3338,10 @@
       "id": "196",
       "section": "Free",
       "aaQuestId": 94086601,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3344,10 +3350,10 @@
       "id": "197",
       "section": "Free",
       "aaQuestId": 94086602,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3356,10 +3362,10 @@
       "id": "198",
       "section": "Free",
       "aaQuestId": 94089601,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3368,10 +3374,10 @@
       "id": "199",
       "section": "Free",
       "aaQuestId": 94089602,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3380,10 +3386,10 @@
       "id": "19a",
       "section": "Free",
       "aaQuestId": 94090701,
-      "waveCount": 1,
       "qp": 324870,
       "bondPoints": 3164,
-      "exp": 131986
+      "exp": 131986,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3392,10 +3398,10 @@
       "id": "19b",
       "section": "Free",
       "aaQuestId": 94090702,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3404,10 +3410,10 @@
       "id": "19c",
       "section": "Free",
       "aaQuestId": 94093201,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3416,10 +3422,10 @@
       "id": "19d",
       "section": "Free",
       "aaQuestId": 94093202,
-      "waveCount": 1,
       "qp": 324870,
       "bondPoints": 3164,
-      "exp": 131986
+      "exp": 131986,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3428,10 +3434,10 @@
       "id": "19e",
       "section": "Free",
       "aaQuestId": 94095302,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3440,10 +3446,10 @@
       "id": "19f",
       "section": "Free",
       "aaQuestId": 94100501,
-      "waveCount": 1,
       "qp": 389850,
       "bondPoints": 3797,
-      "exp": 158384
+      "exp": 158384,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3452,10 +3458,10 @@
       "id": "19g",
       "section": "Free",
       "aaQuestId": 94100502,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3464,10 +3470,10 @@
       "id": "19h",
       "section": "Free",
       "aaQuestId": 94137201,
-      "waveCount": 1,
       "qp": 270720,
       "bondPoints": 2636,
-      "exp": 109988
+      "exp": 109988,
+      "waveCount": 1
     },
     {
       "area": "オーディール・コール",
@@ -3476,10 +3482,10 @@
       "id": "19i",
       "section": "Free",
       "aaQuestId": 94137202,
-      "waveCount": 1,
       "qp": 389850,
       "bondPoints": 3797,
-      "exp": 158384
+      "exp": 158384,
+      "waveCount": 1
     },
     {
       "area": "ペーパームーン",
@@ -3488,10 +3494,10 @@
       "id": "1i0",
       "section": "Free",
       "aaQuestId": 93040201,
-      "waveCount": 3,
       "qp": 10270,
       "bondPoints": 765,
-      "exp": 20652
+      "exp": 20652,
+      "waveCount": 3
     },
     {
       "area": "ペーパームーン",
@@ -3511,10 +3517,10 @@
       "id": "1i4",
       "section": "Free",
       "aaQuestId": 93040205,
-      "waveCount": 3,
       "qp": 10530,
       "bondPoints": 785,
-      "exp": 21868
+      "exp": 21868,
+      "waveCount": 3
     },
     {
       "area": "ペーパームーン",
@@ -3523,10 +3529,10 @@
       "id": "1i6",
       "section": "Free",
       "aaQuestId": 4000210,
-      "waveCount": 1,
       "qp": 11050,
       "bondPoints": 825,
-      "exp": 24396
+      "exp": 24396,
+      "waveCount": 1
     },
     {
       "area": "ペーパームーン",
@@ -3535,10 +3541,10 @@
       "id": "1i7",
       "section": "Free",
       "aaQuestId": 93040210,
-      "waveCount": 3,
       "qp": 11050,
       "bondPoints": 825,
-      "exp": 24396
+      "exp": 24396,
+      "waveCount": 3
     },
     {
       "area": "ペーパームーン",
@@ -3558,10 +3564,10 @@
       "id": "150",
       "section": "Free",
       "aaQuestId": 93040301,
-      "waveCount": 3,
       "qp": 10270,
       "bondPoints": 765,
-      "exp": 20652
+      "exp": 20652,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3570,10 +3576,10 @@
       "id": "151",
       "section": "Free",
       "aaQuestId": 93040307,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3582,10 +3588,10 @@
       "id": "152",
       "section": "Free",
       "aaQuestId": 93040309,
-      "waveCount": 3,
       "qp": 10530,
       "bondPoints": 785,
-      "exp": 21868
+      "exp": 21868,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3594,10 +3600,10 @@
       "id": "153",
       "section": "Free",
       "aaQuestId": 93040310,
-      "waveCount": 3,
       "qp": 11050,
       "bondPoints": 825,
-      "exp": 24396
+      "exp": 24396,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3606,10 +3612,10 @@
       "id": "154",
       "section": "Free",
       "aaQuestId": 93040302,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3618,10 +3624,10 @@
       "id": "155",
       "section": "Free",
       "aaQuestId": 93040303,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3630,10 +3636,10 @@
       "id": "156",
       "section": "Free",
       "aaQuestId": 93040304,
-      "waveCount": 3,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3642,10 +3648,10 @@
       "id": "157",
       "section": "Free",
       "aaQuestId": 93040306,
-      "waveCount": 3,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3654,10 +3660,10 @@
       "id": "158",
       "section": "Free",
       "aaQuestId": 93040305,
-      "waveCount": 3,
       "qp": 10790,
       "bondPoints": 805,
-      "exp": 23116
+      "exp": 23116,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3666,10 +3672,10 @@
       "id": "159",
       "section": "Free",
       "aaQuestId": 93040312,
-      "waveCount": 3,
       "qp": 11310,
       "bondPoints": 845,
-      "exp": 25708
+      "exp": 25708,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3678,10 +3684,10 @@
       "id": "15a",
       "section": "Free",
       "aaQuestId": 93040308,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "イド",
@@ -3690,10 +3696,10 @@
       "id": "15b",
       "section": "Free",
       "aaQuestId": 93040311,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3702,10 +3708,10 @@
       "id": "140",
       "section": "Free",
       "aaQuestId": 93040401,
-      "waveCount": 3,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3714,10 +3720,10 @@
       "id": "143",
       "section": "Free",
       "aaQuestId": 93040404,
-      "waveCount": 3,
       "qp": 10270,
       "bondPoints": 765,
-      "exp": 20652
+      "exp": 20652,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3726,10 +3732,10 @@
       "id": "144",
       "section": "Free",
       "aaQuestId": 93040405,
-      "waveCount": 3,
       "qp": 10530,
       "bondPoints": 785,
-      "exp": 21868
+      "exp": 21868,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3738,10 +3744,10 @@
       "id": "145",
       "section": "Free",
       "aaQuestId": 93040406,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3750,10 +3756,10 @@
       "id": "146",
       "section": "Free",
       "aaQuestId": 93040407,
-      "waveCount": 3,
       "qp": 10790,
       "bondPoints": 805,
-      "exp": 23116
+      "exp": 23116,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3762,10 +3768,10 @@
       "id": "148",
       "section": "Free",
       "aaQuestId": 93040409,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3774,10 +3780,10 @@
       "id": "149",
       "section": "Free",
       "aaQuestId": 93040410,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3786,10 +3792,10 @@
       "id": "14b",
       "section": "Free",
       "aaQuestId": 93040412,
-      "waveCount": 3,
       "qp": 11180,
       "bondPoints": 835,
-      "exp": 25048
+      "exp": 25048,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3798,10 +3804,10 @@
       "id": "14d",
       "section": "Free",
       "aaQuestId": 93040414,
-      "waveCount": 3,
       "qp": 11310,
       "bondPoints": 845,
-      "exp": 25708
+      "exp": 25708,
+      "waveCount": 3
     },
     {
       "area": "アーキタイプ",
@@ -3810,10 +3816,10 @@
       "id": "14e",
       "section": "Free",
       "aaQuestId": 93040415,
-      "waveCount": 3,
       "qp": 11310,
       "bondPoints": 845,
-      "exp": 25708
+      "exp": 25708,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3822,10 +3828,10 @@
       "id": "1g0",
       "section": "Free",
       "aaQuestId": 93040501,
-      "waveCount": 3,
       "qp": 11310,
       "bondPoints": 845,
-      "exp": 25708
+      "exp": 25708,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3834,10 +3840,10 @@
       "id": "1g1",
       "section": "Free",
       "aaQuestId": 93040502,
-      "waveCount": 3,
       "qp": 10530,
       "bondPoints": 785,
-      "exp": 21868
+      "exp": 21868,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3846,10 +3852,10 @@
       "id": "1g3",
       "section": "Free",
       "aaQuestId": 93040504,
-      "waveCount": 3,
       "qp": 10270,
       "bondPoints": 765,
-      "exp": 20652
+      "exp": 20652,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3858,10 +3864,10 @@
       "id": "1g5",
       "section": "Free",
       "aaQuestId": 93040506,
-      "waveCount": 3,
       "qp": 10400,
       "bondPoints": 775,
-      "exp": 21256
+      "exp": 21256,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3870,10 +3876,10 @@
       "id": "1g6",
       "section": "Free",
       "aaQuestId": 93040507,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3882,10 +3888,10 @@
       "id": "1g8",
       "section": "Free",
       "aaQuestId": 93040509,
-      "waveCount": 3,
       "qp": 10790,
       "bondPoints": 805,
-      "exp": 23116
+      "exp": 23116,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3894,10 +3900,10 @@
       "id": "1g9",
       "section": "Free",
       "aaQuestId": 93040510,
-      "waveCount": 3,
       "qp": 11050,
       "bondPoints": 825,
-      "exp": 24396
+      "exp": 24396,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3906,10 +3912,10 @@
       "id": "1ga",
       "section": "Free",
       "aaQuestId": 93040511,
-      "waveCount": 3,
       "qp": 10660,
       "bondPoints": 795,
-      "exp": 22488
+      "exp": 22488,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3918,10 +3924,10 @@
       "id": "1gb",
       "section": "Free",
       "aaQuestId": 93040512,
-      "waveCount": 3,
       "qp": 11310,
       "bondPoints": 845,
-      "exp": 25708
+      "exp": 25708,
+      "waveCount": 3
     },
     {
       "area": "トリニティ",
@@ -3930,10 +3936,10 @@
       "id": "1gc",
       "section": "Free",
       "aaQuestId": 93040514,
-      "waveCount": 3,
       "qp": 10920,
       "bondPoints": 815,
-      "exp": 23752
+      "exp": 23752,
+      "waveCount": 3
     },
     {
       "area": "冠位研鑽戦",
@@ -3942,10 +3948,10 @@
       "id": "1n1",
       "section": "Free",
       "aaQuestId": 94145402,
-      "waveCount": 1,
       "qp": 34761,
       "bondPoints": 3385,
-      "exp": 141225
+      "exp": 141225,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3954,10 +3960,10 @@
       "id": "1n2",
       "section": "Free",
       "aaQuestId": 94145403,
-      "waveCount": 1,
       "qp": 37194,
       "bondPoints": 3622,
-      "exp": 151111
+      "exp": 151111,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3966,10 +3972,10 @@
       "id": "1n3",
       "section": "Free",
       "aaQuestId": 94145404,
-      "waveCount": 1,
       "qp": 39798,
       "bondPoints": 3876,
-      "exp": 161689
+      "exp": 161689,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3978,10 +3984,10 @@
       "id": "1n4",
       "section": "Free",
       "aaQuestId": 94145405,
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -3990,10 +3996,10 @@
       "id": "1n5",
       "section": "Free",
       "aaQuestId": 94145406,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4002,10 +4008,10 @@
       "id": "1n6",
       "section": "Free",
       "aaQuestId": 94145407,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4014,10 +4020,10 @@
       "id": "1nc",
       "section": "Free",
       "aaQuestId": 94146506,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4026,10 +4032,10 @@
       "id": "1nd",
       "section": "Free",
       "aaQuestId": 94146507,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4038,10 +4044,10 @@
       "id": "1ni",
       "section": "Free",
       "aaQuestId": 94146805,
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4050,10 +4056,10 @@
       "id": "1nj",
       "section": "Free",
       "aaQuestId": 94146806,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4062,10 +4068,10 @@
       "id": "1nk",
       "section": "Free",
       "aaQuestId": 94146807,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4073,10 +4079,10 @@
       "name": "〔エクストラⅠ〕火 Ⅵ",
       "id": "1nq",
       "section": "Free",
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4084,10 +4090,10 @@
       "name": "〔エクストラⅠ〕火 Ⅶ",
       "id": "1nr",
       "section": "Free",
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4095,10 +4101,10 @@
       "name": "〔エクストラⅠ〕地 Ⅶ",
       "id": "1ny",
       "section": "Free",
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4106,10 +4112,10 @@
       "name": "〔エクストラⅡ〕風 Ⅴ",
       "id": "1n13",
       "section": "Free",
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4117,10 +4123,10 @@
       "name": "〔エクストラⅡ〕風 Ⅵ",
       "id": "1n14",
       "section": "Free",
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4128,10 +4134,10 @@
       "name": "〔エクストラⅡ〕風 Ⅶ",
       "id": "1n15",
       "section": "Free",
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4139,10 +4145,10 @@
       "name": "〔エクストラⅡ〕水 Ⅴ",
       "id": "1n1a",
       "section": "Free",
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4150,10 +4156,10 @@
       "name": "〔エクストラⅡ〕水 Ⅵ",
       "id": "1n1b",
       "section": "Free",
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4161,10 +4167,10 @@
       "name": "〔エクストラⅡ〕水 Ⅶ",
       "id": "1n1c",
       "section": "Free",
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4173,10 +4179,10 @@
       "id": "1n1h",
       "section": "Free",
       "aaQuestId": 94149805,
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4185,10 +4191,10 @@
       "id": "1n1i",
       "section": "Free",
       "aaQuestId": 94149806,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4197,10 +4203,10 @@
       "id": "1n1j",
       "section": "Free",
       "aaQuestId": 94149807,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4209,10 +4215,10 @@
       "id": "1n1o",
       "section": "Free",
       "aaQuestId": 94150505,
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4221,10 +4227,10 @@
       "id": "1n1p",
       "section": "Free",
       "aaQuestId": 94150506,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4233,10 +4239,10 @@
       "id": "1n1q",
       "section": "Free",
       "aaQuestId": 94150507,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4245,10 +4251,10 @@
       "id": "1n1v",
       "section": "Free",
       "aaQuestId": 94150805,
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4257,10 +4263,10 @@
       "id": "1n1w",
       "section": "Free",
       "aaQuestId": 94150806,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4269,10 +4275,10 @@
       "id": "1n1x",
       "section": "Free",
       "aaQuestId": 94150807,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4281,10 +4287,10 @@
       "id": "1n20",
       "section": "Free",
       "aaQuestId": 94151203,
-      "waveCount": 1,
       "qp": 37194,
       "bondPoints": 3622,
-      "exp": 151111
+      "exp": 151111,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4293,10 +4299,10 @@
       "id": "1n21",
       "section": "Free",
       "aaQuestId": 94151204,
-      "waveCount": 1,
       "qp": 39798,
       "bondPoints": 3876,
-      "exp": 161689
+      "exp": 161689,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4305,10 +4311,10 @@
       "id": "1n22",
       "section": "Free",
       "aaQuestId": 94151205,
-      "waveCount": 1,
       "qp": 42584,
       "bondPoints": 4147,
-      "exp": 173007
+      "exp": 173007,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4317,10 +4323,10 @@
       "id": "1n23",
       "section": "Free",
       "aaQuestId": 94151206,
-      "waveCount": 1,
       "qp": 45565,
       "bondPoints": 4438,
-      "exp": 185117
+      "exp": 185117,
+      "waveCount": 1
     },
     {
       "area": "冠位研鑽戦",
@@ -4329,22 +4335,118 @@
       "id": "1n24",
       "section": "Free",
       "aaQuestId": 94151207,
-      "waveCount": 1,
       "qp": 48754,
       "bondPoints": 4748,
-      "exp": 198075
+      "exp": 198075,
+      "waveCount": 1
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 21,
+      "name": "邪竜の残影",
+      "id": "1s0",
+      "section": "Free",
+      "aaQuestId": 93050101,
+      "qp": 10270,
+      "bondPoints": 765,
+      "exp": 20652,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 21,
+      "name": "封鎖された海域",
+      "id": "1s2",
+      "section": "Free",
+      "aaQuestId": 93050103,
+      "qp": 10530,
+      "bondPoints": 785,
+      "exp": 21868,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 21,
+      "name": "魔霧に覆われし都",
+      "id": "1s3",
+      "section": "Free",
+      "aaQuestId": 93050104,
+      "qp": 10660,
+      "bondPoints": 795,
+      "exp": 22488,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 21,
+      "name": "神話息づく大地",
+      "id": "1s4",
+      "section": "Free",
+      "aaQuestId": 93050105,
+      "qp": 10790,
+      "bondPoints": 805,
+      "exp": 23116,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 22,
+      "name": "母なる海の仔",
+      "id": "1s6",
+      "section": "Free",
+      "aaQuestId": 93050107,
+      "qp": 11050,
+      "bondPoints": 825,
+      "exp": 24396,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 22,
+      "name": "終点の神殿",
+      "id": "1s7",
+      "section": "Free",
+      "aaQuestId": 93050108,
+      "qp": 11180,
+      "bondPoints": 835,
+      "exp": 25048,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 22,
+      "name": "恐竜たちの楽園",
+      "id": "1s8",
+      "section": "Free",
+      "aaQuestId": 93050109,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708,
+      "waveCount": 3
+    },
+    {
+      "area": "パスト・カルデア",
+      "ap": 22,
+      "name": "原初の海",
+      "id": "1s9",
+      "section": "Free",
+      "aaQuestId": 93050110,
+      "qp": 11310,
+      "bondPoints": 845,
+      "exp": 25708,
+      "waveCount": 3
     }
   ],
   "drop_rates": [
     {
       "quest_id": "020",
       "item_id": "03",
-      "drop_rate": 0.293
+      "drop_rate": 0.292
     },
     {
       "quest_id": "020",
       "item_id": "06",
-      "drop_rate": 0.364
+      "drop_rate": 0.365
     },
     {
       "quest_id": "020",
@@ -4364,12 +4466,12 @@
     {
       "quest_id": "020",
       "item_id": "2b",
-      "drop_rate": 0.09300000000000001
+      "drop_rate": 0.092
     },
     {
       "quest_id": "020",
       "item_id": "31",
-      "drop_rate": 0.281
+      "drop_rate": 0.28
     },
     {
       "quest_id": "020",
@@ -4384,7 +4486,7 @@
     {
       "quest_id": "020",
       "item_id": "61",
-      "drop_rate": 0.65
+      "drop_rate": 0.649
     },
     {
       "quest_id": "020",
@@ -5749,7 +5851,7 @@
     {
       "quest_id": "010",
       "item_id": "1b",
-      "drop_rate": 0.259
+      "drop_rate": 0.258
     },
     {
       "quest_id": "010",
@@ -5764,17 +5866,17 @@
     {
       "quest_id": "010",
       "item_id": "40",
-      "drop_rate": 1.074
+      "drop_rate": 1.075
     },
     {
       "quest_id": "010",
       "item_id": "50",
-      "drop_rate": 0.5529999999999999
+      "drop_rate": 0.552
     },
     {
       "quest_id": "010",
       "item_id": "60",
-      "drop_rate": 0.6509999999999999
+      "drop_rate": 0.652
     },
     {
       "quest_id": "010",
@@ -6314,7 +6416,7 @@
     {
       "quest_id": "1pb",
       "item_id": "03",
-      "drop_rate": 0.691
+      "drop_rate": 0.6920000000000001
     },
     {
       "quest_id": "1pb",
@@ -6569,7 +6671,7 @@
     {
       "quest_id": "1ac",
       "item_id": "33",
-      "drop_rate": 0.177
+      "drop_rate": 0.17800000000000002
     },
     {
       "quest_id": "1ac",
@@ -6959,7 +7061,7 @@
     {
       "quest_id": "1r9",
       "item_id": "41",
-      "drop_rate": 0.092
+      "drop_rate": 0.091
     },
     {
       "quest_id": "1r9",
@@ -7259,7 +7361,7 @@
     {
       "quest_id": "1m7",
       "item_id": "03",
-      "drop_rate": 0.314
+      "drop_rate": 0.315
     },
     {
       "quest_id": "1m7",
@@ -7809,7 +7911,7 @@
     {
       "quest_id": "1ba",
       "item_id": "50",
-      "drop_rate": 0.048
+      "drop_rate": 0.049
     },
     {
       "quest_id": "1c0",
@@ -7964,7 +8066,7 @@
     {
       "quest_id": "1k0",
       "item_id": "42",
-      "drop_rate": 0.171
+      "drop_rate": 0.17
     },
     {
       "quest_id": "1k2",
@@ -7979,7 +8081,7 @@
     {
       "quest_id": "1k2",
       "item_id": "36",
-      "drop_rate": 0.285
+      "drop_rate": 0.284
     },
     {
       "quest_id": "1k2",
@@ -8144,42 +8246,17 @@
     {
       "quest_id": "113",
       "item_id": "28",
-      "drop_rate": 0.13699999999999998
+      "drop_rate": 0.136
     },
     {
       "quest_id": "113",
       "item_id": "40",
-      "drop_rate": 0.39899999999999997
+      "drop_rate": 0.4
     },
     {
       "quest_id": "113",
       "item_id": "54",
       "drop_rate": 0.071
-    },
-    {
-      "quest_id": "114",
-      "item_id": "03",
-      "drop_rate": 0.311
-    },
-    {
-      "quest_id": "114",
-      "item_id": "1h",
-      "drop_rate": 0.23
-    },
-    {
-      "quest_id": "114",
-      "item_id": "23",
-      "drop_rate": 0.105
-    },
-    {
-      "quest_id": "114",
-      "item_id": "40",
-      "drop_rate": 0.342
-    },
-    {
-      "quest_id": "114",
-      "item_id": "50",
-      "drop_rate": 0.037000000000000005
     },
     {
       "quest_id": "115",
@@ -8424,22 +8501,22 @@
     {
       "quest_id": "1q2",
       "item_id": "1b",
-      "drop_rate": 0.295
+      "drop_rate": 0.29600000000000004
     },
     {
       "quest_id": "1q2",
       "item_id": "1j",
-      "drop_rate": 0.292
+      "drop_rate": 0.29100000000000004
     },
     {
       "quest_id": "1q2",
       "item_id": "40",
-      "drop_rate": 0.28800000000000003
+      "drop_rate": 0.289
     },
     {
       "quest_id": "1q2",
       "item_id": "42",
-      "drop_rate": 0.228
+      "drop_rate": 0.22699999999999998
     },
     {
       "quest_id": "1q3",
@@ -8584,7 +8661,7 @@
     {
       "quest_id": "1qc",
       "item_id": "2h",
-      "drop_rate": 0.135
+      "drop_rate": 0.136
     },
     {
       "quest_id": "1qc",
@@ -9534,7 +9611,7 @@
     {
       "quest_id": "198",
       "item_id": "1f",
-      "drop_rate": 1.2770000000000001
+      "drop_rate": 1.276
     },
     {
       "quest_id": "198",
@@ -9574,17 +9651,17 @@
     {
       "quest_id": "19b",
       "item_id": "10",
-      "drop_rate": 1.436
+      "drop_rate": 1.4369999999999998
     },
     {
       "quest_id": "19c",
       "item_id": "1h",
-      "drop_rate": 1.278
+      "drop_rate": 1.285
     },
     {
       "quest_id": "19d",
       "item_id": "2g",
-      "drop_rate": 1.315
+      "drop_rate": 1.3159999999999998
     },
     {
       "quest_id": "19e",
@@ -9594,12 +9671,12 @@
     {
       "quest_id": "19f",
       "item_id": "13",
-      "drop_rate": 1.087
+      "drop_rate": 1.0959999999999999
     },
     {
       "quest_id": "19f",
       "item_id": "22",
-      "drop_rate": 1.12
+      "drop_rate": 1.126
     },
     {
       "quest_id": "19g",
@@ -9624,7 +9701,7 @@
     {
       "quest_id": "19i",
       "item_id": "2j",
-      "drop_rate": 1.129
+      "drop_rate": 1.13
     },
     {
       "quest_id": "1i0",
@@ -9699,7 +9776,7 @@
     {
       "quest_id": "1i7",
       "item_id": "0d",
-      "drop_rate": 0.737
+      "drop_rate": 0.738
     },
     {
       "quest_id": "1i7",
@@ -9789,27 +9866,27 @@
     {
       "quest_id": "153",
       "item_id": "03",
-      "drop_rate": 0.312
+      "drop_rate": 0.308
     },
     {
       "quest_id": "153",
       "item_id": "11",
-      "drop_rate": 0.247
+      "drop_rate": 0.244
     },
     {
       "quest_id": "153",
       "item_id": "28",
-      "drop_rate": 0.10099999999999999
+      "drop_rate": 0.10300000000000001
     },
     {
       "quest_id": "153",
       "item_id": "34",
-      "drop_rate": 0.28300000000000003
+      "drop_rate": 0.29
     },
     {
       "quest_id": "153",
       "item_id": "54",
-      "drop_rate": 0.069
+      "drop_rate": 0.066
     },
     {
       "quest_id": "154",
@@ -10194,7 +10271,7 @@
     {
       "quest_id": "14e",
       "item_id": "45",
-      "drop_rate": 0.518
+      "drop_rate": 0.519
     },
     {
       "quest_id": "1g0",
@@ -10289,17 +10366,17 @@
     {
       "quest_id": "1g6",
       "item_id": "1p",
-      "drop_rate": 0.299
+      "drop_rate": 0.294
     },
     {
       "quest_id": "1g6",
       "item_id": "41",
-      "drop_rate": 0.34600000000000003
+      "drop_rate": 0.344
     },
     {
       "quest_id": "1g6",
       "item_id": "51",
-      "drop_rate": 0.049
+      "drop_rate": 0.048
     },
     {
       "quest_id": "1g8",
@@ -10379,7 +10456,7 @@
     {
       "quest_id": "1gb",
       "item_id": "1a",
-      "drop_rate": 0.161
+      "drop_rate": 0.163
     },
     {
       "quest_id": "1gb",
@@ -10389,7 +10466,7 @@
     {
       "quest_id": "1gb",
       "item_id": "36",
-      "drop_rate": 0.17800000000000002
+      "drop_rate": 0.17600000000000002
     },
     {
       "quest_id": "1gb",
@@ -10409,7 +10486,7 @@
     {
       "quest_id": "1gb",
       "item_id": "52",
-      "drop_rate": 0.018000000000000002
+      "drop_rate": 0.019
     },
     {
       "quest_id": "1gc",
@@ -11099,7 +11176,7 @@
     {
       "quest_id": "1nd",
       "item_id": "36",
-      "drop_rate": 0.45299999999999996
+      "drop_rate": 0.452
     },
     {
       "quest_id": "1nd",
@@ -11384,7 +11461,7 @@
     {
       "quest_id": "1nk",
       "item_id": "62",
-      "drop_rate": 0.23399999999999999
+      "drop_rate": 0.233
     },
     {
       "quest_id": "1nk",
@@ -11559,87 +11636,87 @@
     {
       "quest_id": "1nr",
       "item_id": "03",
-      "drop_rate": 0.368
+      "drop_rate": 0.371
     },
     {
       "quest_id": "1nr",
       "item_id": "04",
-      "drop_rate": 0.37799999999999995
+      "drop_rate": 0.381
     },
     {
       "quest_id": "1nr",
       "item_id": "06",
-      "drop_rate": 0.385
+      "drop_rate": 0.382
     },
     {
       "quest_id": "1nr",
       "item_id": "09",
-      "drop_rate": 0.40399999999999997
+      "drop_rate": 0.4
     },
     {
       "quest_id": "1nr",
       "item_id": "15",
-      "drop_rate": 0.267
-    },
-    {
-      "quest_id": "1nr",
-      "item_id": "16",
-      "drop_rate": 0.255
-    },
-    {
-      "quest_id": "1nr",
-      "item_id": "1e",
       "drop_rate": 0.266
     },
     {
       "quest_id": "1nr",
+      "item_id": "16",
+      "drop_rate": 0.254
+    },
+    {
+      "quest_id": "1nr",
+      "item_id": "1e",
+      "drop_rate": 0.268
+    },
+    {
+      "quest_id": "1nr",
       "item_id": "1k",
-      "drop_rate": 0.298
+      "drop_rate": 0.299
     },
     {
       "quest_id": "1nr",
       "item_id": "26",
-      "drop_rate": 0.136
+      "drop_rate": 0.138
     },
     {
       "quest_id": "1nr",
       "item_id": "2a",
-      "drop_rate": 0.106
+      "drop_rate": 0.10400000000000001
     },
     {
       "quest_id": "1nr",
       "item_id": "2c",
-      "drop_rate": 0.13699999999999998
+      "drop_rate": 0.135
     },
     {
       "quest_id": "1nr",
       "item_id": "2d",
-      "drop_rate": 0.11199999999999999
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1nr",
       "item_id": "2l",
-      "drop_rate": 0.391
+      "drop_rate": 0.396
     },
     {
       "quest_id": "1nr",
       "item_id": "30",
-      "drop_rate": 0.11599999999999999
+      "drop_rate": 0.11699999999999999
     },
     {
       "quest_id": "1nr",
       "item_id": "31",
-      "drop_rate": 0.115
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1nr",
       "item_id": "32",
-      "drop_rate": 0.114
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1nr",
       "item_id": "36",
-      "drop_rate": 0.109
+      "drop_rate": 0.107
     },
     {
       "quest_id": "1nr",
@@ -11654,17 +11731,17 @@
     {
       "quest_id": "1nr",
       "item_id": "42",
-      "drop_rate": 0.174
-    },
-    {
-      "quest_id": "1nr",
-      "item_id": "46",
       "drop_rate": 0.17300000000000001
     },
     {
       "quest_id": "1nr",
+      "item_id": "46",
+      "drop_rate": 0.171
+    },
+    {
+      "quest_id": "1nr",
       "item_id": "50",
-      "drop_rate": 0.141
+      "drop_rate": 0.138
     },
     {
       "quest_id": "1nr",
@@ -11679,27 +11756,27 @@
     {
       "quest_id": "1nr",
       "item_id": "56",
-      "drop_rate": 0.146
+      "drop_rate": 0.14300000000000002
     },
     {
       "quest_id": "1nr",
       "item_id": "60",
-      "drop_rate": 0.062
+      "drop_rate": 0.061
     },
     {
       "quest_id": "1nr",
       "item_id": "61",
-      "drop_rate": 0.062
+      "drop_rate": 0.063
     },
     {
       "quest_id": "1nr",
       "item_id": "62",
-      "drop_rate": 0.055
+      "drop_rate": 0.055999999999999994
     },
     {
       "quest_id": "1nr",
       "item_id": "66",
-      "drop_rate": 0.059000000000000004
+      "drop_rate": 0.057999999999999996
     },
     {
       "quest_id": "1nr",
@@ -11709,37 +11786,37 @@
     {
       "quest_id": "1nr",
       "item_id": "71",
-      "drop_rate": 0.195
+      "drop_rate": 0.191
     },
     {
       "quest_id": "1nr",
       "item_id": "72",
-      "drop_rate": 0.193
+      "drop_rate": 0.19399999999999998
     },
     {
       "quest_id": "1nr",
       "item_id": "76",
-      "drop_rate": 0.185
+      "drop_rate": 0.188
     },
     {
       "quest_id": "1ny",
       "item_id": "03",
-      "drop_rate": 0.34700000000000003
+      "drop_rate": 0.348
     },
     {
       "quest_id": "1ny",
       "item_id": "04",
-      "drop_rate": 0.366
+      "drop_rate": 0.365
     },
     {
       "quest_id": "1ny",
       "item_id": "06",
-      "drop_rate": 0.379
+      "drop_rate": 0.381
     },
     {
       "quest_id": "1ny",
       "item_id": "09",
-      "drop_rate": 0.41
+      "drop_rate": 0.406
     },
     {
       "quest_id": "1ny",
@@ -11749,12 +11826,12 @@
     {
       "quest_id": "1ny",
       "item_id": "16",
-      "drop_rate": 0.263
+      "drop_rate": 0.259
     },
     {
       "quest_id": "1ny",
       "item_id": "1e",
-      "drop_rate": 0.27399999999999997
+      "drop_rate": 0.272
     },
     {
       "quest_id": "1ny",
@@ -11764,7 +11841,7 @@
     {
       "quest_id": "1ny",
       "item_id": "26",
-      "drop_rate": 0.14300000000000002
+      "drop_rate": 0.141
     },
     {
       "quest_id": "1ny",
@@ -11774,17 +11851,17 @@
     {
       "quest_id": "1ny",
       "item_id": "2c",
-      "drop_rate": 0.132
+      "drop_rate": 0.133
     },
     {
       "quest_id": "1ny",
       "item_id": "2d",
-      "drop_rate": 0.11900000000000001
+      "drop_rate": 0.11800000000000001
     },
     {
       "quest_id": "1ny",
       "item_id": "2l",
-      "drop_rate": 0.423
+      "drop_rate": 0.42
     },
     {
       "quest_id": "1ny",
@@ -11794,27 +11871,27 @@
     {
       "quest_id": "1ny",
       "item_id": "31",
-      "drop_rate": 0.113
+      "drop_rate": 0.111
     },
     {
       "quest_id": "1ny",
       "item_id": "32",
-      "drop_rate": 0.113
+      "drop_rate": 0.114
     },
     {
       "quest_id": "1ny",
       "item_id": "36",
-      "drop_rate": 0.11900000000000001
+      "drop_rate": 0.11800000000000001
     },
     {
       "quest_id": "1ny",
       "item_id": "40",
-      "drop_rate": 0.166
+      "drop_rate": 0.16699999999999998
     },
     {
       "quest_id": "1ny",
       "item_id": "41",
-      "drop_rate": 0.165
+      "drop_rate": 0.166
     },
     {
       "quest_id": "1ny",
@@ -11829,12 +11906,12 @@
     {
       "quest_id": "1ny",
       "item_id": "50",
-      "drop_rate": 0.142
+      "drop_rate": 0.141
     },
     {
       "quest_id": "1ny",
       "item_id": "51",
-      "drop_rate": 0.138
+      "drop_rate": 0.14
     },
     {
       "quest_id": "1ny",
@@ -11844,7 +11921,7 @@
     {
       "quest_id": "1ny",
       "item_id": "56",
-      "drop_rate": 0.147
+      "drop_rate": 0.14800000000000002
     },
     {
       "quest_id": "1ny",
@@ -11859,27 +11936,27 @@
     {
       "quest_id": "1ny",
       "item_id": "62",
-      "drop_rate": 0.06
+      "drop_rate": 0.059000000000000004
     },
     {
       "quest_id": "1ny",
       "item_id": "66",
-      "drop_rate": 0.062
+      "drop_rate": 0.061
     },
     {
       "quest_id": "1ny",
       "item_id": "70",
-      "drop_rate": 0.188
+      "drop_rate": 0.19
     },
     {
       "quest_id": "1ny",
       "item_id": "71",
-      "drop_rate": 0.19399999999999998
+      "drop_rate": 0.192
     },
     {
       "quest_id": "1ny",
       "item_id": "72",
-      "drop_rate": 0.196
+      "drop_rate": 0.19699999999999998
     },
     {
       "quest_id": "1ny",
@@ -11889,7 +11966,7 @@
     {
       "quest_id": "1n13",
       "item_id": "00",
-      "drop_rate": 0.273
+      "drop_rate": 0.276
     },
     {
       "quest_id": "1n13",
@@ -11899,47 +11976,47 @@
     {
       "quest_id": "1n13",
       "item_id": "07",
-      "drop_rate": 0.32799999999999996
+      "drop_rate": 0.331
     },
     {
       "quest_id": "1n13",
       "item_id": "0a",
-      "drop_rate": 0.348
+      "drop_rate": 0.35200000000000004
     },
     {
       "quest_id": "1n13",
       "item_id": "11",
-      "drop_rate": 0.2
+      "drop_rate": 0.221
     },
     {
       "quest_id": "1n13",
       "item_id": "1b",
-      "drop_rate": 0.22
+      "drop_rate": 0.223
     },
     {
       "quest_id": "1n13",
       "item_id": "1f",
-      "drop_rate": 0.235
+      "drop_rate": 0.23399999999999999
     },
     {
       "quest_id": "1n13",
       "item_id": "1j",
-      "drop_rate": 0.25
+      "drop_rate": 0.265
     },
     {
       "quest_id": "1n13",
       "item_id": "20",
-      "drop_rate": 0.135
+      "drop_rate": 0.132
     },
     {
       "quest_id": "1n13",
       "item_id": "27",
-      "drop_rate": 0.105
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1n13",
       "item_id": "2b",
-      "drop_rate": 0.065
+      "drop_rate": 0.085
     },
     {
       "quest_id": "1n13",
@@ -11949,7 +12026,7 @@
     {
       "quest_id": "1n13",
       "item_id": "33",
-      "drop_rate": 0.128
+      "drop_rate": 0.129
     },
     {
       "quest_id": "1n13",
@@ -11959,57 +12036,57 @@
     {
       "quest_id": "1n13",
       "item_id": "35",
-      "drop_rate": 0.115
+      "drop_rate": 0.105
     },
     {
       "quest_id": "1n13",
       "item_id": "36",
-      "drop_rate": 0.09
+      "drop_rate": 0.09699999999999999
     },
     {
       "quest_id": "1n13",
       "item_id": "43",
-      "drop_rate": 0.14800000000000002
+      "drop_rate": 0.134
     },
     {
       "quest_id": "1n13",
       "item_id": "44",
-      "drop_rate": 0.175
+      "drop_rate": 0.163
     },
     {
       "quest_id": "1n13",
       "item_id": "45",
-      "drop_rate": 0.14
+      "drop_rate": 0.14800000000000002
     },
     {
       "quest_id": "1n13",
       "item_id": "46",
-      "drop_rate": 0.153
+      "drop_rate": 0.14800000000000002
     },
     {
       "quest_id": "1n13",
       "item_id": "53",
-      "drop_rate": 0.133
+      "drop_rate": 0.127
     },
     {
       "quest_id": "1n13",
       "item_id": "54",
-      "drop_rate": 0.1
+      "drop_rate": 0.11
     },
     {
       "quest_id": "1n13",
       "item_id": "55",
-      "drop_rate": 0.145
+      "drop_rate": 0.135
     },
     {
       "quest_id": "1n13",
       "item_id": "56",
-      "drop_rate": 0.125
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1n13",
       "item_id": "63",
-      "drop_rate": 0.05
+      "drop_rate": 0.048
     },
     {
       "quest_id": "1n13",
@@ -12029,22 +12106,22 @@
     {
       "quest_id": "1n13",
       "item_id": "73",
-      "drop_rate": 0.19
+      "drop_rate": 0.198
     },
     {
       "quest_id": "1n13",
       "item_id": "74",
-      "drop_rate": 0.195
+      "drop_rate": 0.19699999999999998
     },
     {
       "quest_id": "1n13",
       "item_id": "75",
-      "drop_rate": 0.203
+      "drop_rate": 0.198
     },
     {
       "quest_id": "1n13",
       "item_id": "76",
-      "drop_rate": 0.183
+      "drop_rate": 0.177
     },
     {
       "quest_id": "1n14",
@@ -12209,7 +12286,7 @@
     {
       "quest_id": "1n15",
       "item_id": "00",
-      "drop_rate": 0.379
+      "drop_rate": 0.386
     },
     {
       "quest_id": "1n15",
@@ -12219,7 +12296,7 @@
     {
       "quest_id": "1n15",
       "item_id": "07",
-      "drop_rate": 0.382
+      "drop_rate": 0.385
     },
     {
       "quest_id": "1n15",
@@ -12229,12 +12306,12 @@
     {
       "quest_id": "1n15",
       "item_id": "11",
-      "drop_rate": 0.262
+      "drop_rate": 0.26
     },
     {
       "quest_id": "1n15",
       "item_id": "1b",
-      "drop_rate": 0.266
+      "drop_rate": 0.264
     },
     {
       "quest_id": "1n15",
@@ -12244,7 +12321,7 @@
     {
       "quest_id": "1n15",
       "item_id": "1j",
-      "drop_rate": 0.302
+      "drop_rate": 0.301
     },
     {
       "quest_id": "1n15",
@@ -12254,27 +12331,27 @@
     {
       "quest_id": "1n15",
       "item_id": "27",
-      "drop_rate": 0.13699999999999998
+      "drop_rate": 0.136
     },
     {
       "quest_id": "1n15",
       "item_id": "2b",
-      "drop_rate": 0.10099999999999999
+      "drop_rate": 0.102
     },
     {
       "quest_id": "1n15",
       "item_id": "2l",
-      "drop_rate": 0.413
+      "drop_rate": 0.408
     },
     {
       "quest_id": "1n15",
       "item_id": "33",
-      "drop_rate": 0.11199999999999999
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1n15",
       "item_id": "34",
-      "drop_rate": 0.114
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1n15",
@@ -12284,12 +12361,12 @@
     {
       "quest_id": "1n15",
       "item_id": "36",
-      "drop_rate": 0.11199999999999999
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1n15",
       "item_id": "43",
-      "drop_rate": 0.171
+      "drop_rate": 0.16899999999999998
     },
     {
       "quest_id": "1n15",
@@ -12299,22 +12376,22 @@
     {
       "quest_id": "1n15",
       "item_id": "45",
-      "drop_rate": 0.16699999999999998
+      "drop_rate": 0.17
     },
     {
       "quest_id": "1n15",
       "item_id": "46",
-      "drop_rate": 0.17300000000000001
+      "drop_rate": 0.17
     },
     {
       "quest_id": "1n15",
       "item_id": "53",
-      "drop_rate": 0.145
+      "drop_rate": 0.14400000000000002
     },
     {
       "quest_id": "1n15",
       "item_id": "54",
-      "drop_rate": 0.14
+      "drop_rate": 0.141
     },
     {
       "quest_id": "1n15",
@@ -12324,7 +12401,7 @@
     {
       "quest_id": "1n15",
       "item_id": "56",
-      "drop_rate": 0.14
+      "drop_rate": 0.141
     },
     {
       "quest_id": "1n15",
@@ -12334,17 +12411,17 @@
     {
       "quest_id": "1n15",
       "item_id": "64",
-      "drop_rate": 0.06
+      "drop_rate": 0.057999999999999996
     },
     {
       "quest_id": "1n15",
       "item_id": "65",
-      "drop_rate": 0.057
+      "drop_rate": 0.057999999999999996
     },
     {
       "quest_id": "1n15",
       "item_id": "66",
-      "drop_rate": 0.059000000000000004
+      "drop_rate": 0.057999999999999996
     },
     {
       "quest_id": "1n15",
@@ -12354,17 +12431,17 @@
     {
       "quest_id": "1n15",
       "item_id": "74",
-      "drop_rate": 0.188
+      "drop_rate": 0.19
     },
     {
       "quest_id": "1n15",
       "item_id": "75",
-      "drop_rate": 0.195
+      "drop_rate": 0.193
     },
     {
       "quest_id": "1n15",
       "item_id": "76",
-      "drop_rate": 0.188
+      "drop_rate": 0.19
     },
     {
       "quest_id": "1n1a",
@@ -12689,7 +12766,7 @@
     {
       "quest_id": "1n1c",
       "item_id": "00",
-      "drop_rate": 0.39799999999999996
+      "drop_rate": 0.4
     },
     {
       "quest_id": "1n1c",
@@ -12699,12 +12776,12 @@
     {
       "quest_id": "1n1c",
       "item_id": "07",
-      "drop_rate": 0.371
+      "drop_rate": 0.37
     },
     {
       "quest_id": "1n1c",
       "item_id": "0a",
-      "drop_rate": 0.405
+      "drop_rate": 0.406
     },
     {
       "quest_id": "1n1c",
@@ -12724,42 +12801,42 @@
     {
       "quest_id": "1n1c",
       "item_id": "1j",
-      "drop_rate": 0.312
+      "drop_rate": 0.31
     },
     {
       "quest_id": "1n1c",
       "item_id": "20",
-      "drop_rate": 0.134
+      "drop_rate": 0.132
     },
     {
       "quest_id": "1n1c",
       "item_id": "27",
-      "drop_rate": 0.124
+      "drop_rate": 0.125
     },
     {
       "quest_id": "1n1c",
       "item_id": "2b",
-      "drop_rate": 0.095
+      "drop_rate": 0.098
     },
     {
       "quest_id": "1n1c",
       "item_id": "2l",
-      "drop_rate": 0.41200000000000003
+      "drop_rate": 0.415
     },
     {
       "quest_id": "1n1c",
       "item_id": "33",
-      "drop_rate": 0.105
+      "drop_rate": 0.107
     },
     {
       "quest_id": "1n1c",
       "item_id": "34",
-      "drop_rate": 0.11699999999999999
+      "drop_rate": 0.11599999999999999
     },
     {
       "quest_id": "1n1c",
       "item_id": "35",
-      "drop_rate": 0.12300000000000001
+      "drop_rate": 0.122
     },
     {
       "quest_id": "1n1c",
@@ -12769,7 +12846,7 @@
     {
       "quest_id": "1n1c",
       "item_id": "43",
-      "drop_rate": 0.174
+      "drop_rate": 0.17300000000000001
     },
     {
       "quest_id": "1n1c",
@@ -12779,7 +12856,7 @@
     {
       "quest_id": "1n1c",
       "item_id": "45",
-      "drop_rate": 0.159
+      "drop_rate": 0.157
     },
     {
       "quest_id": "1n1c",
@@ -12789,12 +12866,12 @@
     {
       "quest_id": "1n1c",
       "item_id": "53",
-      "drop_rate": 0.156
+      "drop_rate": 0.155
     },
     {
       "quest_id": "1n1c",
       "item_id": "54",
-      "drop_rate": 0.14
+      "drop_rate": 0.139
     },
     {
       "quest_id": "1n1c",
@@ -12804,7 +12881,7 @@
     {
       "quest_id": "1n1c",
       "item_id": "56",
-      "drop_rate": 0.142
+      "drop_rate": 0.14400000000000002
     },
     {
       "quest_id": "1n1c",
@@ -12814,7 +12891,7 @@
     {
       "quest_id": "1n1c",
       "item_id": "64",
-      "drop_rate": 0.054000000000000006
+      "drop_rate": 0.055
     },
     {
       "quest_id": "1n1c",
@@ -12829,22 +12906,22 @@
     {
       "quest_id": "1n1c",
       "item_id": "73",
-      "drop_rate": 0.18899999999999997
+      "drop_rate": 0.188
     },
     {
       "quest_id": "1n1c",
       "item_id": "74",
-      "drop_rate": 0.19399999999999998
+      "drop_rate": 0.193
     },
     {
       "quest_id": "1n1c",
       "item_id": "75",
-      "drop_rate": 0.191
+      "drop_rate": 0.19
     },
     {
       "quest_id": "1n1c",
       "item_id": "76",
-      "drop_rate": 0.196
+      "drop_rate": 0.198
     },
     {
       "quest_id": "1n1h",
@@ -13029,22 +13106,22 @@
     {
       "quest_id": "1n1j",
       "item_id": "01",
-      "drop_rate": 0.385
+      "drop_rate": 0.386
     },
     {
       "quest_id": "1n1j",
       "item_id": "02",
-      "drop_rate": 0.38799999999999996
+      "drop_rate": 0.389
     },
     {
       "quest_id": "1n1j",
       "item_id": "04",
-      "drop_rate": 0.384
+      "drop_rate": 0.382
     },
     {
       "quest_id": "1n1j",
       "item_id": "09",
-      "drop_rate": 0.402
+      "drop_rate": 0.4
     },
     {
       "quest_id": "1n1j",
@@ -13059,7 +13136,7 @@
     {
       "quest_id": "1n1j",
       "item_id": "1f",
-      "drop_rate": 0.254
+      "drop_rate": 0.257
     },
     {
       "quest_id": "1n1j",
@@ -13069,12 +13146,12 @@
     {
       "quest_id": "1n1j",
       "item_id": "24",
-      "drop_rate": 0.134
+      "drop_rate": 0.135
     },
     {
       "quest_id": "1n1j",
       "item_id": "28",
-      "drop_rate": 0.10400000000000001
+      "drop_rate": 0.10300000000000001
     },
     {
       "quest_id": "1n1j",
@@ -13089,32 +13166,32 @@
     {
       "quest_id": "1n1j",
       "item_id": "2l",
-      "drop_rate": 0.409
+      "drop_rate": 0.408
     },
     {
       "quest_id": "1n1j",
       "item_id": "33",
-      "drop_rate": 0.45799999999999996
+      "drop_rate": 0.457
     },
     {
       "quest_id": "1n1j",
       "item_id": "43",
-      "drop_rate": 0.675
+      "drop_rate": 0.677
     },
     {
       "quest_id": "1n1j",
       "item_id": "53",
-      "drop_rate": 0.564
+      "drop_rate": 0.562
     },
     {
       "quest_id": "1n1j",
       "item_id": "63",
-      "drop_rate": 0.22699999999999998
+      "drop_rate": 0.225
     },
     {
       "quest_id": "1n1j",
       "item_id": "73",
-      "drop_rate": 0.774
+      "drop_rate": 0.775
     },
     {
       "quest_id": "1n1o",
@@ -13209,97 +13286,97 @@
     {
       "quest_id": "1n1p",
       "item_id": "01",
-      "drop_rate": 0.331
+      "drop_rate": 0.324
     },
     {
       "quest_id": "1n1p",
       "item_id": "05",
-      "drop_rate": 0.33899999999999997
+      "drop_rate": 0.332
     },
     {
       "quest_id": "1n1p",
       "item_id": "08",
-      "drop_rate": 0.384
+      "drop_rate": 0.366
     },
     {
       "quest_id": "1n1p",
       "item_id": "0c",
-      "drop_rate": 0.35
+      "drop_rate": 0.353
     },
     {
       "quest_id": "1n1p",
       "item_id": "10",
-      "drop_rate": 0.262
+      "drop_rate": 0.26
     },
     {
       "quest_id": "1n1p",
       "item_id": "11",
-      "drop_rate": 0.255
+      "drop_rate": 0.248
     },
     {
       "quest_id": "1n1p",
       "item_id": "1h",
-      "drop_rate": 0.24600000000000002
+      "drop_rate": 0.242
     },
     {
       "quest_id": "1n1p",
       "item_id": "1j",
-      "drop_rate": 0.281
+      "drop_rate": 0.27699999999999997
     },
     {
       "quest_id": "1n1p",
       "item_id": "26",
-      "drop_rate": 0.111
+      "drop_rate": 0.114
     },
     {
       "quest_id": "1n1p",
       "item_id": "27",
-      "drop_rate": 0.121
+      "drop_rate": 0.129
     },
     {
       "quest_id": "1n1p",
       "item_id": "2b",
-      "drop_rate": 0.10400000000000001
+      "drop_rate": 0.096
     },
     {
       "quest_id": "1n1p",
       "item_id": "2h",
-      "drop_rate": 0.09699999999999999
+      "drop_rate": 0.1
     },
     {
       "quest_id": "1n1p",
       "item_id": "2l",
-      "drop_rate": 0.387
+      "drop_rate": 0.385
     },
     {
       "quest_id": "1n1p",
       "item_id": "35",
-      "drop_rate": 0.424
+      "drop_rate": 0.43700000000000006
     },
     {
       "quest_id": "1n1p",
       "item_id": "45",
-      "drop_rate": 0.669
+      "drop_rate": 0.655
     },
     {
       "quest_id": "1n1p",
       "item_id": "55",
-      "drop_rate": 0.555
+      "drop_rate": 0.5579999999999999
     },
     {
       "quest_id": "1n1p",
       "item_id": "65",
-      "drop_rate": 0.23399999999999999
+      "drop_rate": 0.235
     },
     {
       "quest_id": "1n1p",
       "item_id": "75",
-      "drop_rate": 0.7659999999999999
+      "drop_rate": 0.765
     },
     {
       "quest_id": "1n1q",
       "item_id": "01",
-      "drop_rate": 0.36
+      "drop_rate": 0.363
     },
     {
       "quest_id": "1n1q",
@@ -13309,32 +13386,32 @@
     {
       "quest_id": "1n1q",
       "item_id": "08",
-      "drop_rate": 0.382
+      "drop_rate": 0.38299999999999995
     },
     {
       "quest_id": "1n1q",
       "item_id": "0c",
-      "drop_rate": 0.401
+      "drop_rate": 0.402
     },
     {
       "quest_id": "1n1q",
       "item_id": "10",
-      "drop_rate": 0.278
+      "drop_rate": 0.284
     },
     {
       "quest_id": "1n1q",
       "item_id": "11",
-      "drop_rate": 0.252
+      "drop_rate": 0.254
     },
     {
       "quest_id": "1n1q",
       "item_id": "1h",
-      "drop_rate": 0.275
+      "drop_rate": 0.27399999999999997
     },
     {
       "quest_id": "1n1q",
       "item_id": "1j",
-      "drop_rate": 0.308
+      "drop_rate": 0.303
     },
     {
       "quest_id": "1n1q",
@@ -13349,37 +13426,37 @@
     {
       "quest_id": "1n1q",
       "item_id": "2b",
-      "drop_rate": 0.102
+      "drop_rate": 0.10099999999999999
     },
     {
       "quest_id": "1n1q",
       "item_id": "2h",
-      "drop_rate": 0.11
+      "drop_rate": 0.111
     },
     {
       "quest_id": "1n1q",
       "item_id": "2l",
-      "drop_rate": 0.415
+      "drop_rate": 0.418
     },
     {
       "quest_id": "1n1q",
       "item_id": "35",
-      "drop_rate": 0.462
+      "drop_rate": 0.45799999999999996
     },
     {
       "quest_id": "1n1q",
       "item_id": "45",
-      "drop_rate": 0.672
+      "drop_rate": 0.6729999999999999
     },
     {
       "quest_id": "1n1q",
       "item_id": "55",
-      "drop_rate": 0.5660000000000001
+      "drop_rate": 0.5670000000000001
     },
     {
       "quest_id": "1n1q",
       "item_id": "65",
-      "drop_rate": 0.22899999999999998
+      "drop_rate": 0.228
     },
     {
       "quest_id": "1n1q",
@@ -13479,17 +13556,17 @@
     {
       "quest_id": "1n1w",
       "item_id": "05",
-      "drop_rate": 0.319
+      "drop_rate": 0.32
     },
     {
       "quest_id": "1n1w",
       "item_id": "07",
-      "drop_rate": 0.305
+      "drop_rate": 0.304
     },
     {
       "quest_id": "1n1w",
       "item_id": "08",
-      "drop_rate": 0.316
+      "drop_rate": 0.318
     },
     {
       "quest_id": "1n1w",
@@ -13499,12 +13576,12 @@
     {
       "quest_id": "1n1w",
       "item_id": "14",
-      "drop_rate": 0.207
+      "drop_rate": 0.21
     },
     {
       "quest_id": "1n1w",
       "item_id": "15",
-      "drop_rate": 0.215
+      "drop_rate": 0.218
     },
     {
       "quest_id": "1n1w",
@@ -13524,12 +13601,12 @@
     {
       "quest_id": "1n1w",
       "item_id": "25",
-      "drop_rate": 0.11199999999999999
+      "drop_rate": 0.111
     },
     {
       "quest_id": "1n1w",
       "item_id": "2c",
-      "drop_rate": 0.099
+      "drop_rate": 0.098
     },
     {
       "quest_id": "1n1w",
@@ -13539,37 +13616,37 @@
     {
       "quest_id": "1n1w",
       "item_id": "2l",
-      "drop_rate": 0.35
+      "drop_rate": 0.349
     },
     {
       "quest_id": "1n1w",
       "item_id": "31",
-      "drop_rate": 0.391
+      "drop_rate": 0.392
     },
     {
       "quest_id": "1n1w",
       "item_id": "41",
-      "drop_rate": 0.5760000000000001
+      "drop_rate": 0.574
     },
     {
       "quest_id": "1n1w",
       "item_id": "51",
-      "drop_rate": 0.45299999999999996
+      "drop_rate": 0.45399999999999996
     },
     {
       "quest_id": "1n1w",
       "item_id": "61",
-      "drop_rate": 0.214
+      "drop_rate": 0.21600000000000003
     },
     {
       "quest_id": "1n1w",
       "item_id": "71",
-      "drop_rate": 0.7859999999999999
+      "drop_rate": 0.784
     },
     {
       "quest_id": "1n1x",
       "item_id": "05",
-      "drop_rate": 0.366
+      "drop_rate": 0.365
     },
     {
       "quest_id": "1n1x",
@@ -13639,7 +13716,7 @@
     {
       "quest_id": "1n1x",
       "item_id": "41",
-      "drop_rate": 0.59
+      "drop_rate": 0.591
     },
     {
       "quest_id": "1n1x",
@@ -13649,7 +13726,7 @@
     {
       "quest_id": "1n1x",
       "item_id": "61",
-      "drop_rate": 0.21899999999999997
+      "drop_rate": 0.218
     },
     {
       "quest_id": "1n1x",
@@ -13664,12 +13741,12 @@
     {
       "quest_id": "1n20",
       "item_id": "03",
-      "drop_rate": 0.252
+      "drop_rate": 0.253
     },
     {
       "quest_id": "1n20",
       "item_id": "06",
-      "drop_rate": 0.265
+      "drop_rate": 0.264
     },
     {
       "quest_id": "1n20",
@@ -13729,7 +13806,7 @@
     {
       "quest_id": "1n20",
       "item_id": "44",
-      "drop_rate": 0.541
+      "drop_rate": 0.54
     },
     {
       "quest_id": "1n20",
@@ -13839,92 +13916,92 @@
     {
       "quest_id": "1n22",
       "item_id": "01",
-      "drop_rate": 0.337
+      "drop_rate": 0.33
     },
     {
       "quest_id": "1n22",
       "item_id": "03",
-      "drop_rate": 0.307
+      "drop_rate": 0.311
     },
     {
       "quest_id": "1n22",
       "item_id": "06",
-      "drop_rate": 0.33299999999999996
+      "drop_rate": 0.337
     },
     {
       "quest_id": "1n22",
       "item_id": "09",
-      "drop_rate": 0.35
+      "drop_rate": 0.33899999999999997
     },
     {
       "quest_id": "1n22",
       "item_id": "16",
-      "drop_rate": 0.242
+      "drop_rate": 0.23800000000000002
     },
     {
       "quest_id": "1n22",
       "item_id": "1b",
-      "drop_rate": 0.203
+      "drop_rate": 0.209
     },
     {
       "quest_id": "1n22",
       "item_id": "1c",
-      "drop_rate": 0.22899999999999998
+      "drop_rate": 0.23
     },
     {
       "quest_id": "1n22",
       "item_id": "1k",
-      "drop_rate": 0.266
+      "drop_rate": 0.259
     },
     {
       "quest_id": "1n22",
       "item_id": "25",
-      "drop_rate": 0.121
+      "drop_rate": 0.113
     },
     {
       "quest_id": "1n22",
       "item_id": "27",
-      "drop_rate": 0.122
+      "drop_rate": 0.125
     },
     {
       "quest_id": "1n22",
       "item_id": "2d",
-      "drop_rate": 0.08800000000000001
+      "drop_rate": 0.08900000000000001
     },
     {
       "quest_id": "1n22",
       "item_id": "2e",
-      "drop_rate": 0.11
+      "drop_rate": 0.102
     },
     {
       "quest_id": "1n22",
       "item_id": "2l",
-      "drop_rate": 0.34600000000000003
+      "drop_rate": 0.35100000000000003
     },
     {
       "quest_id": "1n22",
       "item_id": "34",
-      "drop_rate": 0.425
+      "drop_rate": 0.42700000000000005
     },
     {
       "quest_id": "1n22",
       "item_id": "44",
-      "drop_rate": 0.622
+      "drop_rate": 0.624
     },
     {
       "quest_id": "1n22",
       "item_id": "54",
-      "drop_rate": 0.525
+      "drop_rate": 0.513
     },
     {
       "quest_id": "1n22",
       "item_id": "64",
-      "drop_rate": 0.22399999999999998
+      "drop_rate": 0.23800000000000002
     },
     {
       "quest_id": "1n22",
       "item_id": "74",
-      "drop_rate": 0.7759999999999999
+      "drop_rate": 0.762
     },
     {
       "quest_id": "1n23",
@@ -14019,17 +14096,17 @@
     {
       "quest_id": "1n24",
       "item_id": "01",
-      "drop_rate": 0.382
+      "drop_rate": 0.38299999999999995
     },
     {
       "quest_id": "1n24",
       "item_id": "03",
-      "drop_rate": 0.361
+      "drop_rate": 0.36
     },
     {
       "quest_id": "1n24",
       "item_id": "06",
-      "drop_rate": 0.384
+      "drop_rate": 0.382
     },
     {
       "quest_id": "1n24",
@@ -14044,7 +14121,7 @@
     {
       "quest_id": "1n24",
       "item_id": "1b",
-      "drop_rate": 0.259
+      "drop_rate": 0.258
     },
     {
       "quest_id": "1n24",
@@ -14054,7 +14131,7 @@
     {
       "quest_id": "1n24",
       "item_id": "1k",
-      "drop_rate": 0.303
+      "drop_rate": 0.302
     },
     {
       "quest_id": "1n24",
@@ -14064,12 +14141,12 @@
     {
       "quest_id": "1n24",
       "item_id": "27",
-      "drop_rate": 0.134
+      "drop_rate": 0.13699999999999998
     },
     {
       "quest_id": "1n24",
       "item_id": "2d",
-      "drop_rate": 0.099
+      "drop_rate": 0.10099999999999999
     },
     {
       "quest_id": "1n24",
@@ -14079,12 +14156,12 @@
     {
       "quest_id": "1n24",
       "item_id": "2l",
-      "drop_rate": 0.408
+      "drop_rate": 0.409
     },
     {
       "quest_id": "1n24",
       "item_id": "34",
-      "drop_rate": 0.457
+      "drop_rate": 0.456
     },
     {
       "quest_id": "1n24",
@@ -14094,1659 +14171,2102 @@
     {
       "quest_id": "1n24",
       "item_id": "54",
-      "drop_rate": 0.568
+      "drop_rate": 0.57
     },
     {
       "quest_id": "1n24",
       "item_id": "64",
-      "drop_rate": 0.23
+      "drop_rate": 0.22899999999999998
     },
     {
       "quest_id": "1n24",
       "item_id": "74",
       "drop_rate": 0.7709999999999999
+    },
+    {
+      "quest_id": "1s0",
+      "item_id": "02",
+      "drop_rate": 0.475
+    },
+    {
+      "quest_id": "1s0",
+      "item_id": "2m",
+      "drop_rate": 0.115
+    },
+    {
+      "quest_id": "1s0",
+      "item_id": "33",
+      "drop_rate": 0.355
+    },
+    {
+      "quest_id": "1s0",
+      "item_id": "43",
+      "drop_rate": 0.14300000000000002
+    },
+    {
+      "quest_id": "1s0",
+      "item_id": "53",
+      "drop_rate": 0.037000000000000005
+    },
+    {
+      "quest_id": "1s2",
+      "item_id": "11",
+      "drop_rate": 0.204
+    },
+    {
+      "quest_id": "1s2",
+      "item_id": "1q",
+      "drop_rate": 0.223
+    },
+    {
+      "quest_id": "1s2",
+      "item_id": "2m",
+      "drop_rate": 0.107
+    },
+    {
+      "quest_id": "1s2",
+      "item_id": "35",
+      "drop_rate": 0.447
+    },
+    {
+      "quest_id": "1s2",
+      "item_id": "41",
+      "drop_rate": 0.175
+    },
+    {
+      "quest_id": "1s2",
+      "item_id": "53",
+      "drop_rate": 0.039
+    },
+    {
+      "quest_id": "1s3",
+      "item_id": "16",
+      "drop_rate": 0.252
+    },
+    {
+      "quest_id": "1s3",
+      "item_id": "17",
+      "drop_rate": 0.19399999999999998
+    },
+    {
+      "quest_id": "1s3",
+      "item_id": "2m",
+      "drop_rate": 0.136
+    },
+    {
+      "quest_id": "1s3",
+      "item_id": "32",
+      "drop_rate": 0.34
+    },
+    {
+      "quest_id": "1s3",
+      "item_id": "34",
+      "drop_rate": 0.379
+    },
+    {
+      "quest_id": "1s3",
+      "item_id": "53",
+      "drop_rate": 0.049
+    },
+    {
+      "quest_id": "1s4",
+      "item_id": "23",
+      "drop_rate": 0.15
+    },
+    {
+      "quest_id": "1s4",
+      "item_id": "25",
+      "drop_rate": 0.15
+    },
+    {
+      "quest_id": "1s4",
+      "item_id": "2m",
+      "drop_rate": 0.11
+    },
+    {
+      "quest_id": "1s4",
+      "item_id": "41",
+      "drop_rate": 0.096
+    },
+    {
+      "quest_id": "1s4",
+      "item_id": "50",
+      "drop_rate": 0.044000000000000004
+    },
+    {
+      "quest_id": "1s4",
+      "item_id": "53",
+      "drop_rate": 0.048
+    },
+    {
+      "quest_id": "1s6",
+      "item_id": "05",
+      "drop_rate": 0.3
+    },
+    {
+      "quest_id": "1s6",
+      "item_id": "1q",
+      "drop_rate": 0.22
+    },
+    {
+      "quest_id": "1s6",
+      "item_id": "22",
+      "drop_rate": 0.14
+    },
+    {
+      "quest_id": "1s6",
+      "item_id": "32",
+      "drop_rate": 0.19
+    },
+    {
+      "quest_id": "1s6",
+      "item_id": "41",
+      "drop_rate": 0.19
+    },
+    {
+      "quest_id": "1s6",
+      "item_id": "53",
+      "drop_rate": 0.05
+    },
+    {
+      "quest_id": "1s7",
+      "item_id": "1q",
+      "drop_rate": 0.292
+    },
+    {
+      "quest_id": "1s7",
+      "item_id": "2m",
+      "drop_rate": 0.132
+    },
+    {
+      "quest_id": "1s7",
+      "item_id": "41",
+      "drop_rate": 0.35100000000000003
+    },
+    {
+      "quest_id": "1s7",
+      "item_id": "53",
+      "drop_rate": 0.044000000000000004
+    },
+    {
+      "quest_id": "1s8",
+      "item_id": "1l",
+      "drop_rate": 0.21
+    },
+    {
+      "quest_id": "1s8",
+      "item_id": "2m",
+      "drop_rate": 0.13
+    },
+    {
+      "quest_id": "1s8",
+      "item_id": "46",
+      "drop_rate": 0.15
+    },
+    {
+      "quest_id": "1s8",
+      "item_id": "53",
+      "drop_rate": 0.11
+    },
+    {
+      "quest_id": "1s9",
+      "item_id": "1q",
+      "drop_rate": 0.461
+    },
+    {
+      "quest_id": "1s9",
+      "item_id": "41",
+      "drop_rate": 0.52
     }
   ],
-  "campaigns": [
-    {
-      "id": 71003,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1484114400,
-      "validTo": 1484719199,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001"
-      ]
-    },
-    {
-      "id": 71014,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1501491600,
-      "validTo": 1502251199,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001"
-      ]
-    },
-    {
-      "id": 71065,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1532849400,
-      "validTo": 1533700799,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001"
-      ]
-    },
-    {
-      "id": 71225,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1627812000,
-      "validTo": 1628999999,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001"
-      ]
-    },
-    {
-      "id": 71230,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1629104400,
-      "validTo": 1629691199,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001"
-      ]
-    },
-    {
-      "id": 71247,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1640962800,
-      "validTo": 1641787199,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71286,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1659259800,
-      "validTo": 1660103999,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71328,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1672498800,
-      "validTo": 1673409599,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71336,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1676278800,
-      "validTo": 1676865599,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71371,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1690707600,
-      "validTo": 1691726399,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71373,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1690707600,
-      "validTo": 1691726399,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195"
-      ]
-    },
-    {
-      "id": 71396,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1700038800,
-      "validTo": 1701230399,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b"
-      ]
-    },
-    {
-      "id": 71404,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1704034800,
-      "validTo": 1704859199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b"
-      ]
-    },
-    {
-      "id": 71420,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1707296400,
-      "validTo": 1707883199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d"
-      ]
-    },
-    {
-      "id": 71439,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1712739600,
-      "validTo": 1713931199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e"
-      ]
-    },
-    {
-      "id": 71442,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1714129200,
-      "validTo": 1715918399,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e"
-      ]
-    },
-    {
-      "id": 71443,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1715936400,
-      "validTo": 1717732799,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e"
-      ]
-    },
-    {
-      "id": 71444,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1717750800,
-      "validTo": 1719547199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e"
-      ]
-    },
-    {
-      "id": 71455,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1719572400,
-      "validTo": 1721361599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g"
-      ]
-    },
-    {
-      "id": 71463,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1722762000,
-      "validTo": 1723607999,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71464,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1722762000,
-      "validTo": 1723607999,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g"
-      ]
-    },
-    {
-      "id": 71465,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1723633200,
-      "validTo": 1727841599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71479,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1729076400,
-      "validTo": 1730865599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71480,
-      "calcType": "multiplication",
-      "value": 334,
-      "validFrom": 1728039600,
-      "validTo": 1729396799,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71488,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1731495600,
-      "validTo": 1733284799,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71493,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1733907600,
-      "validTo": 1735052399,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71498,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1735117200,
-      "validTo": 1735657199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71507,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1735657200,
-      "validTo": 1736913599,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71508,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1735657200,
-      "validTo": 1736913599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71513,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1736931600,
-      "validTo": 1738727999,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71522,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1739350800,
-      "validTo": 1741147199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71528,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1741172400,
-      "validTo": 1742961599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71541,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1743584400,
-      "validTo": 1745380799,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71549,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1746781200,
-      "validTo": 1748404799,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71550,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1746781200,
-      "validTo": 1748404799,
-      "questIds": [
-        "012",
-        "011",
-        "010"
-      ]
-    },
-    {
-      "id": 71561,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1749034800,
-      "validTo": 1750823999,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71565,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1747825200,
-      "validTo": 1748404799,
-      "questIds": [
-        "1n1",
-        "1n2",
-        "1n3",
-        "1n4",
-        "1n5",
-        "1n6"
-      ]
-    },
-    {
-      "id": 71566,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1750410000,
-      "validTo": 1750996799,
-      "questIds": [
-        "1nc",
-        "1nd"
-      ]
-    },
-    {
-      "id": 71567,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1749459600,
-      "validTo": 1750996799,
-      "questIds": [
-        "040"
-      ]
-    },
-    {
-      "id": 71568,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1751454000,
-      "validTo": 1753243199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71569,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1751706000,
-      "validTo": 1753243199,
-      "questIds": [
-        "052",
-        "051",
-        "050"
-      ]
-    },
-    {
-      "id": 71572,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1752656400,
-      "validTo": 1753243199,
-      "questIds": [
-        "1ni",
-        "1nj",
-        "1nk"
-      ]
-    },
-    {
-      "id": 71578,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1754211600,
-      "validTo": 1755057599,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71579,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1755082800,
-      "validTo": 1756871999,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71580,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1754211600,
-      "validTo": 1755057599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71581,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1755075600,
-      "validTo": 1756871999,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71585,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1756890000,
-      "validTo": 1757995199,
-      "questIds": [
-        "032",
-        "031",
-        "030"
-      ]
-    },
-    {
-      "id": 71586,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1756890000,
-      "validTo": 1758686399,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71591,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1758711600,
-      "validTo": 1761105599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71592,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1757408400,
-      "validTo": 1757995199,
-      "questIds": [
-        "1n1h",
-        "1n1i",
-        "1n1j"
-      ]
-    },
-    {
-      "id": 71593,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1759568400,
-      "validTo": 1761105599,
-      "questIds": [
-        "002",
-        "001",
-        "000"
-      ]
-    },
-    {
-      "id": 71596,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1758099600,
-      "validTo": 1758686399,
-      "questIds": [
-        "1n1",
-        "1n2",
-        "1n3",
-        "1n4",
-        "1n5",
-        "1n6",
-        "1nc",
-        "1nd"
-      ]
-    },
-    {
-      "id": 71607,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1760518800,
-      "validTo": 1761105599,
-      "questIds": [
-        "1n1o",
-        "1n1p",
-        "1n1q"
-      ]
-    },
-    {
-      "id": 71608,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1761130800,
-      "validTo": 1763697599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71610,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1762488000,
-      "validTo": 1763697599,
-      "questIds": [
-        "022",
-        "021",
-        "020"
-      ]
-    },
-    {
-      "id": 71613,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1761901200,
-      "validTo": 1762487999,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71628,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1762419600,
-      "validTo": 1763006399,
-      "questIds": [
-        "1ni",
-        "1nj",
-        "1nk"
-      ]
-    },
-    {
-      "id": 71629,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1763110800,
-      "validTo": 1763697599,
-      "questIds": [
-        "1n1v",
-        "1n1w",
-        "1n1x"
-      ]
-    },
-    {
-      "id": 71630,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1763974800,
-      "validTo": 1765339199,
-      "questIds": [
-        "062",
-        "061",
-        "060"
-      ]
-    },
-    {
-      "id": 71631,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1763974800,
-      "validTo": 1765339199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71635,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1763715600,
-      "validTo": 1764302399,
-      "questIds": [
-        "1n1h",
-        "1n1i",
-        "1n1j",
-        "1n1o",
-        "1n1p",
-        "1n1q"
-      ]
-    },
-    {
-      "id": 71636,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1764752400,
-      "validTo": 1765339199,
-      "questIds": [
-        "1n20",
-        "1n21",
-        "1n22",
-        "1n23",
-        "1n24"
-      ]
-    },
-    {
-      "id": 71638,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1765357200,
-      "validTo": 1766203199,
-      "questIds": [
-        "1n1",
-        "1n2",
-        "1n3",
-        "1n4",
-        "1n5",
-        "1n6",
-        "1nc",
-        "1nd",
-        "1ni",
-        "1nj",
-        "1nk",
-        "1n1h",
-        "1n1i",
-        "1n1j",
-        "1n1o",
-        "1n1p",
-        "1n1q",
-        "1n1v",
-        "1n1w",
-        "1n1x",
-        "1n20",
-        "1n21",
-        "1n22",
-        "1n23",
-        "1n24"
-      ]
-    },
-    {
-      "id": 71639,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1767193200,
-      "validTo": 1768363199,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
-    },
-    {
-      "id": 71646,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1769158800,
-      "validTo": 1770955199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71650,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1770973200,
-      "validTo": 1772769599,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71657,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1772442000,
-      "validTo": 1773028799,
-      "questIds": [
-        "1nc",
-        "1nd"
-      ]
-    },
-    {
-      "id": 71658,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1773046800,
-      "validTo": 1773633599,
-      "questIds": [
-        "1ni",
-        "1nj",
-        "1nk"
-      ]
-    },
-    {
-      "id": 71664,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1773910800,
-      "validTo": 1775707199,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71666,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1775206800,
-      "validTo": 1775793599,
-      "questIds": [
-        "1n1",
-        "1n2",
-        "1n3",
-        "1n4",
-        "1n5",
-        "1n6"
-      ]
-    },
-    {
-      "id": 71673,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1777114800,
-      "validTo": 1778903999,
-      "questIds": [
-        "190",
-        "191",
-        "192",
-        "195",
-        "196",
-        "197",
-        "198",
-        "199",
-        "19a",
-        "19b",
-        "19c",
-        "19d",
-        "193",
-        "19e",
-        "19f",
-        "19g",
-        "19h",
-        "19i"
-      ]
-    },
-    {
-      "id": 71674,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1776416400,
-      "validTo": 1777003199,
-      "questIds": [
-        "1n1v",
-        "1n1w",
-        "1n1x"
-      ]
-    },
-    {
-      "id": 71675,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1778230800,
-      "validTo": 1778817599,
-      "questIds": [
-        "1n1h",
-        "1n1i",
-        "1n1j"
-      ]
-    },
-    {
-      "id": 71676,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1778835600,
-      "validTo": 1779422399,
-      "questIds": [
-        "1n1o",
-        "1n1p",
-        "1n1q"
-      ]
-    },
-    {
-      "id": 71677,
-      "calcType": "multiplication",
-      "value": 1000,
-      "validFrom": 1779440400,
-      "validTo": 1780027199,
-      "questIds": [
-        "1n20",
-        "1n21",
-        "1n22",
-        "1n23",
-        "1n24"
-      ]
-    },
-    {
-      "id": 71689,
-      "calcType": "multiplication",
-      "value": 500,
-      "validFrom": 1779267600,
-      "validTo": 1780459199,
-      "questIds": [
-        "012",
-        "011",
-        "022",
-        "021",
-        "052",
-        "051",
-        "032",
-        "031",
-        "062",
-        "061",
-        "002",
-        "001",
-        "020",
-        "050",
-        "040",
-        "030",
-        "060",
-        "000",
-        "010"
-      ]
+  "campaigns": [],
+  "id_registry": {
+    "version": 1,
+    "areas": {
+      "修練場（月）": "02",
+      "修練場（火）": "05",
+      "修練場（水）": "04",
+      "修練場（木）": "03",
+      "修練場（金）": "06",
+      "修練場（土）": "00",
+      "修練場（日）": "01",
+      "冬木": "1o",
+      "セプテム": "1e",
+      "オケアノス": "16",
+      "ロンドン": "1l",
+      "北米": "1p",
+      "キャメロット": "1a",
+      "バビロニア": "1h",
+      "新宿": "1r",
+      "アガルタ": "10",
+      "下総国": "1m",
+      "セイレム": "1d",
+      "アナスタシア": "12",
+      "ゲッテルデメルング": "1b",
+      "シン": "1c",
+      "ユガ・クシェートラ": "1k",
+      "アトランティス": "11",
+      "オリュンポス": "17",
+      "平安京": "1q",
+      "アヴァロン": "13",
+      "トラオム": "1f",
+      "ミクトラン": "1j",
+      "オーディール・コール": "19",
+      "ペーパームーン": "1i",
+      "イド": "15",
+      "アーキタイプ": "14",
+      "トリニティ": "1g",
+      "冠位研鑽戦": "1n",
+      "オルレアン": "18",
+      "パスト・カルデア": "1s"
+    },
+    "quests": {
+      "修練場（月）\t弓極級": {
+        "id": "020",
+        "aa": 94066101
+      },
+      "修練場（月）\t弓超級": {
+        "id": "021",
+        "aa": 94006808
+      },
+      "修練場（月）\t弓上級": {
+        "id": "022",
+        "aa": 94006807
+      },
+      "修練場（月）\t弓中級": {
+        "id": "023"
+      },
+      "修練場（月）\t弓初級": {
+        "id": "024"
+      },
+      "修練場（火）\t槍極級": {
+        "id": "050",
+        "aa": 94066102
+      },
+      "修練場（火）\t槍超級": {
+        "id": "051",
+        "aa": 94006812
+      },
+      "修練場（火）\t槍上級": {
+        "id": "052",
+        "aa": 94006811
+      },
+      "修練場（火）\t槍中級": {
+        "id": "053"
+      },
+      "修練場（火）\t槍初級": {
+        "id": "054"
+      },
+      "修練場（水）\t狂極級": {
+        "id": "040",
+        "aa": 94066103
+      },
+      "修練場（水）\t狂超級": {
+        "id": "041",
+        "aa": 94004316
+      },
+      "修練場（水）\t狂上級": {
+        "id": "042",
+        "aa": 94004315
+      },
+      "修練場（水）\t狂中級": {
+        "id": "043"
+      },
+      "修練場（水）\t狂初級": {
+        "id": "044"
+      },
+      "修練場（木）\t騎極級": {
+        "id": "030",
+        "aa": 94066104
+      },
+      "修練場（木）\t騎超級": {
+        "id": "031",
+        "aa": 94006820
+      },
+      "修練場（木）\t騎上級": {
+        "id": "032",
+        "aa": 94006819
+      },
+      "修練場（木）\t騎中級": {
+        "id": "033"
+      },
+      "修練場（木）\t騎初級": {
+        "id": "034"
+      },
+      "修練場（金）\t術極級": {
+        "id": "060",
+        "aa": 94066105
+      },
+      "修練場（金）\t術超級": {
+        "id": "061",
+        "aa": 94006824
+      },
+      "修練場（金）\t術上級": {
+        "id": "062",
+        "aa": 94006823
+      },
+      "修練場（金）\t術中級": {
+        "id": "063"
+      },
+      "修練場（金）\t術初級": {
+        "id": "064"
+      },
+      "修練場（土）\t殺極級": {
+        "id": "000",
+        "aa": 94066106
+      },
+      "修練場（土）\t殺超級": {
+        "id": "001",
+        "aa": 94006828
+      },
+      "修練場（土）\t殺上級": {
+        "id": "002",
+        "aa": 94006827
+      },
+      "修練場（土）\t殺中級": {
+        "id": "003"
+      },
+      "修練場（土）\t殺初級": {
+        "id": "004"
+      },
+      "修練場（日）\t剣極級": {
+        "id": "010",
+        "aa": 94066107
+      },
+      "修練場（日）\t剣超級": {
+        "id": "011",
+        "aa": 94006804
+      },
+      "修練場（日）\t剣上級": {
+        "id": "012",
+        "aa": 94006803
+      },
+      "修練場（日）\t剣中級": {
+        "id": "013"
+      },
+      "修練場（日）\t剣初級": {
+        "id": "014"
+      },
+      "冬木\tX-G（燃え盛る森）": {
+        "id": "1o3"
+      },
+      "セプテム\tゲルマニア": {
+        "id": "1e5",
+        "aa": 91201501
+      },
+      "オケアノス\t海賊船": {
+        "id": "160",
+        "aa": 1000301
+      },
+      "オケアノス\t翼竜の島": {
+        "id": "166",
+        "aa": 1000306
+      },
+      "オケアノス\t嵐の海域": {
+        "id": "168",
+        "aa": 1000309
+      },
+      "オケアノス\t群島（隠された島）": {
+        "id": "16a"
+      },
+      "ロンドン\tオールドストリート": {
+        "id": "1l0",
+        "aa": 1000401
+      },
+      "ロンドン\tシティ・オブ・ロンドン": {
+        "id": "1l2",
+        "aa": 1000403
+      },
+      "ロンドン\tサザーク": {
+        "id": "1l7",
+        "aa": 91601803
+      },
+      "ロンドン\tハイドパーク": {
+        "id": "1l8",
+        "aa": 91100901
+      },
+      "北米\tデミング": {
+        "id": "1p3",
+        "aa": 1000506
+      },
+      "北米\tダラス": {
+        "id": "1p4",
+        "aa": 1000508
+      },
+      "北米\tモントゴメリー": {
+        "id": "1p7",
+        "aa": 1000517
+      },
+      "北米\tラボック": {
+        "id": "1p8",
+        "aa": 1000507
+      },
+      "北米\tアレクサンドリア": {
+        "id": "1p9",
+        "aa": 1000509
+      },
+      "北米\tカーニー": {
+        "id": "1pa",
+        "aa": 1000514
+      },
+      "北米\tシャーロット": {
+        "id": "1pb",
+        "aa": 1000520
+      },
+      "北米\tシカゴ": {
+        "id": "1pd",
+        "aa": 93000504
+      },
+      "キャメロット\t砂嵐の砂漠": {
+        "id": "1a0",
+        "aa": 1000601
+      },
+      "キャメロット\t死の荒野": {
+        "id": "1a2",
+        "aa": 1000606
+      },
+      "キャメロット\t晩鐘廟": {
+        "id": "1a5",
+        "aa": 1000618
+      },
+      "キャメロット\t西の村跡": {
+        "id": "1a6",
+        "aa": 93000607
+      },
+      "キャメロット\t聖都正門": {
+        "id": "1a8",
+        "aa": 1000607
+      },
+      "キャメロット\t聖都市街": {
+        "id": "1a9",
+        "aa": 1000629
+      },
+      "キャメロット\t隠れ村": {
+        "id": "1aa",
+        "aa": 1000625
+      },
+      "キャメロット\t王城": {
+        "id": "1ab",
+        "aa": 1000631
+      },
+      "キャメロット\t無の大地": {
+        "id": "1ac",
+        "aa": 93000614
+      },
+      "キャメロット\t大神殿": {
+        "id": "1ad",
+        "aa": 1000604
+      },
+      "バビロニア\t廃都バビロン": {
+        "id": "1h0",
+        "aa": 1000701
+      },
+      "バビロニア\t北の高台": {
+        "id": "1h1",
+        "aa": 1000702
+      },
+      "バビロニア\t高原": {
+        "id": "1h3",
+        "aa": 93000704
+      },
+      "バビロニア\tウル": {
+        "id": "1h5",
+        "aa": 1000708
+      },
+      "バビロニア\tエリドゥ": {
+        "id": "1h6",
+        "aa": 1000713
+      },
+      "バビロニア\t観測所": {
+        "id": "1h7",
+        "aa": 1000718
+      },
+      "バビロニア\t葦の原": {
+        "id": "1h8",
+        "aa": 93000709
+      },
+      "バビロニア\tクタ": {
+        "id": "1h9",
+        "aa": 1000714
+      },
+      "バビロニア\t北壁": {
+        "id": "1ha",
+        "aa": 1000708
+      },
+      "バビロニア\tニップル": {
+        "id": "1hb",
+        "aa": 93000712
+      },
+      "バビロニア\tエビフ山": {
+        "id": "1hc",
+        "aa": 91700602
+      },
+      "バビロニア\t鮮血神殿": {
+        "id": "1hd",
+        "aa": 1000716
+      },
+      "新宿\t代々木二丁目": {
+        "id": "1r0"
+      },
+      "新宿\t国道20号": {
+        "id": "1r1",
+        "aa": 2000103
+      },
+      "新宿\t新宿駅": {
+        "id": "1r2",
+        "aa": 93020103
+      },
+      "新宿\t新宿四丁目": {
+        "id": "1r3",
+        "aa": 2000105
+      },
+      "新宿\tバレルタワー": {
+        "id": "1r5",
+        "aa": 2000110
+      },
+      "新宿\tタワー最上階": {
+        "id": "1r7",
+        "aa": 2000117
+      },
+      "新宿\t新宿御苑": {
+        "id": "1r8",
+        "aa": 93020109
+      },
+      "新宿\t新宿二丁目": {
+        "id": "1r9",
+        "aa": 93020110
+      },
+      "アガルタ\t野営地": {
+        "id": "101",
+        "aa": 2000202
+      },
+      "アガルタ\t桃源郷": {
+        "id": "103",
+        "aa": 2000204
+      },
+      "アガルタ\t北の断崖": {
+        "id": "105",
+        "aa": 2000207
+      },
+      "アガルタ\t不夜城": {
+        "id": "106",
+        "aa": 2000207
+      },
+      "アガルタ\t山裾の密林": {
+        "id": "107",
+        "aa": 2000210
+      },
+      "アガルタ\t竜宮城": {
+        "id": "108",
+        "aa": 2000212
+      },
+      "アガルタ\t地底大河": {
+        "id": "109",
+        "aa": 93020209
+      },
+      "アガルタ\tエルドラド": {
+        "id": "10a",
+        "aa": 2000213
+      },
+      "アガルタ\t大地の裂け目": {
+        "id": "10b",
+        "aa": 93020212
+      },
+      "下総国\t田んぼ": {
+        "id": "1m0",
+        "aa": 2000300
+      },
+      "下総国\t庵": {
+        "id": "1m2",
+        "aa": 2000304
+      },
+      "下総国\t城下町": {
+        "id": "1m3",
+        "aa": 2000305
+      },
+      "下総国\t土気城": {
+        "id": "1m5",
+        "aa": 2000308
+      },
+      "下総国\t裏山（名もなき霊峰）": {
+        "id": "1m6"
+      },
+      "下総国\t荒川の原": {
+        "id": "1m7",
+        "aa": 93020308
+      },
+      "下総国\t裏山（戦戦恐恐）": {
+        "id": "1m8"
+      },
+      "セイレム\t静寂な森": {
+        "id": "1d0",
+        "aa": 2000401
+      },
+      "セイレム\tカーター家": {
+        "id": "1d1",
+        "aa": 2000402
+      },
+      "セイレム\t公会堂": {
+        "id": "1d2",
+        "aa": 2000403
+      },
+      "セイレム\t波止場": {
+        "id": "1d3",
+        "aa": 93020404
+      },
+      "セイレム\tウェイトリー家": {
+        "id": "1d4",
+        "aa": 93020406
+      },
+      "セイレム\t郊外の屋敷": {
+        "id": "1d5",
+        "aa": 93020405
+      },
+      "セイレム\tガローの丘": {
+        "id": "1d6",
+        "aa": 93020408
+      },
+      "セイレム\t牧草地": {
+        "id": "1d7",
+        "aa": 2000409
+      },
+      "セイレム\t空き家": {
+        "id": "1d8",
+        "aa": 2000406
+      },
+      "セイレム\t隠れ家": {
+        "id": "1d9",
+        "aa": 2000405
+      },
+      "セイレム\t留置所": {
+        "id": "1da",
+        "aa": 93020411
+      },
+      "アナスタシア\tアンカーポイント": {
+        "id": "120",
+        "aa": 3000102
+      },
+      "アナスタシア\tヤガ・スモレンスク": {
+        "id": "121",
+        "aa": 3000103
+      },
+      "アナスタシア\t叛逆軍の砦": {
+        "id": "123",
+        "aa": 3000106
+      },
+      "アナスタシア\tヤガ・スィチョーフカ": {
+        "id": "124",
+        "aa": 93030205
+      },
+      "アナスタシア\t焼き払われた村": {
+        "id": "125",
+        "aa": 93030206
+      },
+      "アナスタシア\tヤガ・ヴャジマ": {
+        "id": "126",
+        "aa": 93030207
+      },
+      "アナスタシア\tヤガ・ジェメンスク": {
+        "id": "127",
+        "aa": 3000112
+      },
+      "アナスタシア\t潰れた村": {
+        "id": "129",
+        "aa": 93030210
+      },
+      "アナスタシア\tヤガ・モスクワ": {
+        "id": "12a",
+        "aa": 3000124
+      },
+      "アナスタシア\tヤガ・リャザン": {
+        "id": "12d",
+        "aa": 93030214
+      },
+      "ゲッテルデメルング\t巨人の花園": {
+        "id": "1b2",
+        "aa": 93030303
+      },
+      "ゲッテルデメルング\t英雄の穴倉": {
+        "id": "1b4",
+        "aa": 3000213
+      },
+      "ゲッテルデメルング\t雪と氷の城": {
+        "id": "1b5",
+        "aa": 3000206
+      },
+      "ゲッテルデメルング\t果てへと至る道": {
+        "id": "1b6",
+        "aa": 93030307
+      },
+      "ゲッテルデメルング\t炎の館": {
+        "id": "1b7",
+        "aa": 93030308
+      },
+      "ゲッテルデメルング\t第67集落": {
+        "id": "1b8",
+        "aa": 93030309
+      },
+      "ゲッテルデメルング\t北の境界": {
+        "id": "1b9",
+        "aa": 93030310
+      },
+      "ゲッテルデメルング\t忘れられた神殿": {
+        "id": "1ba",
+        "aa": 93030311
+      },
+      "シン\tシーディングポイント": {
+        "id": "1c0",
+        "aa": 3000305
+      },
+      "シン\t氷冷窟": {
+        "id": "1c2",
+        "aa": 93030403
+      },
+      "シン\t景陽原": {
+        "id": "1c4",
+        "aa": 3000314
+      },
+      "シン\t収容所": {
+        "id": "1c6",
+        "aa": 3000315
+      },
+      "シン\t石泉峡": {
+        "id": "1c7",
+        "aa": 3000317
+      },
+      "シン\t大坪峪": {
+        "id": "1c8",
+        "aa": 93030409
+      },
+      "シン\t八門洞": {
+        "id": "1ca",
+        "aa": 93030411
+      },
+      "ユガ・クシェートラ\tイニシエートポイント": {
+        "id": "1k0",
+        "aa": 3000403
+      },
+      "ユガ・クシェートラ\t隠遁窟": {
+        "id": "1k2",
+        "aa": 93030503
+      },
+      "ユガ・クシェートラ\t西の断層": {
+        "id": "1k4",
+        "aa": 3000408
+      },
+      "ユガ・クシェートラ\tディーヴァール": {
+        "id": "1k5",
+        "aa": 93030506
+      },
+      "ユガ・クシェートラ\t神の空岩跡": {
+        "id": "1k6",
+        "aa": 3000419
+      },
+      "ユガ・クシェートラ\t無窮の地": {
+        "id": "1k8",
+        "aa": 93030509
+      },
+      "ユガ・クシェートラ\t東の花園": {
+        "id": "1k9",
+        "aa": 93030510
+      },
+      "アトランティス\tセーリングポイント": {
+        "id": "110",
+        "aa": 3000505
+      },
+      "アトランティス\tヘスティア島": {
+        "id": "111",
+        "aa": 3000506
+      },
+      "アトランティス\tヘカテ島": {
+        "id": "112",
+        "aa": 3000513
+      },
+      "アトランティス\tデイモス島": {
+        "id": "113",
+        "aa": 3000515
+      },
+      "アトランティス\tアストライア島": {
+        "id": "114",
+        "aa": 3000516
+      },
+      "アトランティス\tテティス島": {
+        "id": "115",
+        "aa": 93030606
+      },
+      "アトランティス\tタナトス島": {
+        "id": "118",
+        "aa": 93030609
+      },
+      "オリュンポス\tグライディングポイント": {
+        "id": "170",
+        "aa": 3000601
+      },
+      "オリュンポス\t星間都市西部": {
+        "id": "171",
+        "aa": 3000603
+      },
+      "オリュンポス\t星間都市南部": {
+        "id": "172",
+        "aa": 3000607
+      },
+      "オリュンポス\t星間都市東部": {
+        "id": "173",
+        "aa": 3000612
+      },
+      "オリュンポス\t大工房": {
+        "id": "174",
+        "aa": 3000617
+      },
+      "オリュンポス\t破神同盟基地": {
+        "id": "175",
+        "aa": 3000604
+      },
+      "オリュンポス\t祭壇街": {
+        "id": "176",
+        "aa": 3000620
+      },
+      "オリュンポス\t地下機構帯・外周部": {
+        "id": "17a",
+        "aa": 93030711
+      },
+      "平安京\t七条四坊": {
+        "id": "1q0",
+        "aa": 93030801
+      },
+      "平安京\t七条二坊": {
+        "id": "1q1",
+        "aa": 3000702
+      },
+      "平安京\t六条大路": {
+        "id": "1q2",
+        "aa": 3000703
+      },
+      "平安京\t貴族邸": {
+        "id": "1q3",
+        "aa": 3000704
+      },
+      "平安京\t朱雀門": {
+        "id": "1q4",
+        "aa": 3000715
+      },
+      "平安京\t平安宮": {
+        "id": "1q5",
+        "aa": 93030806
+      },
+      "平安京\t稲荷神社": {
+        "id": "1q7",
+        "aa": 93030808
+      },
+      "平安京\t頼光の屋敷": {
+        "id": "1q9",
+        "aa": 3000707
+      },
+      "平安京\t五条の橋": {
+        "id": "1qa",
+        "aa": 3000712
+      },
+      "平安京\t大江山": {
+        "id": "1qb",
+        "aa": 3000713
+      },
+      "平安京\t三条三坊": {
+        "id": "1qc",
+        "aa": 93030813
+      },
+      "アヴァロン\t霧の海岸": {
+        "id": "130",
+        "aa": 93031000
+      },
+      "アヴァロン\tソールズベリー": {
+        "id": "132",
+        "aa": 3000803
+      },
+      "アヴァロン\tグロスター": {
+        "id": "133",
+        "aa": 3000806
+      },
+      "アヴァロン\t涙の河": {
+        "id": "134",
+        "aa": 93031004
+      },
+      "アヴァロン\tノリッジ": {
+        "id": "135",
+        "aa": 3000901
+      },
+      "アヴァロン\tロンディニウム": {
+        "id": "137",
+        "aa": 3000902
+      },
+      "アヴァロン\tマンチェスター": {
+        "id": "138",
+        "aa": 3000911
+      },
+      "アヴァロン\tニュー・ダーリントン": {
+        "id": "13a",
+        "aa": 3000917
+      },
+      "アヴァロン\t湖水地方": {
+        "id": "13b",
+        "aa": 3000913
+      },
+      "アヴァロン\tオークニー": {
+        "id": "13d",
+        "aa": 3000915
+      },
+      "アヴァロン\tオックスフォード": {
+        "id": "13e",
+        "aa": 3000918
+      },
+      "アヴァロン\tドーバーハウス": {
+        "id": "13f",
+        "aa": 93031015
+      },
+      "トラオム\t狭間の街": {
+        "id": "1f0",
+        "aa": 3001202
+      },
+      "トラオム\t中つ森": {
+        "id": "1f2",
+        "aa": 93031203
+      },
+      "トラオム\t薄暮れの森": {
+        "id": "1f3",
+        "aa": 93031204
+      },
+      "トラオム\t天嶮山脈": {
+        "id": "1f4",
+        "aa": 93031205
+      },
+      "トラオム\tクサンテンの塔": {
+        "id": "1f6",
+        "aa": 93031207
+      },
+      "トラオム\tアツァガウク砦": {
+        "id": "1f7",
+        "aa": 3001213
+      },
+      "トラオム\tシルミウム": {
+        "id": "1f9",
+        "aa": 3001215
+      },
+      "トラオム\t復権界域拠点": {
+        "id": "1fa",
+        "aa": 3001205
+      },
+      "トラオム\t門前の平原": {
+        "id": "1fb",
+        "aa": 93031212
+      },
+      "トラオム\t復讐界域拠点": {
+        "id": "1fc",
+        "aa": 3001206
+      },
+      "トラオム\tライヘンバッハ": {
+        "id": "1fd",
+        "aa": 3001221
+      },
+      "トラオム\t果ての荒野": {
+        "id": "1fe",
+        "aa": 93031215
+      },
+      "トラオム\tヨウィヌス砦": {
+        "id": "1ff",
+        "aa": 93031216
+      },
+      "ミクトラン\tチコモストク": {
+        "id": "1j0",
+        "aa": 93031301
+      },
+      "ミクトラン\t賢者の隠れ家": {
+        "id": "1j1"
+      },
+      "ミクトラン\tトウモロコシ畑": {
+        "id": "1j2",
+        "aa": 3001306
+      },
+      "ミクトラン\tトラトラウキ": {
+        "id": "1j3",
+        "aa": 3001303
+      },
+      "ミクトラン\t大平原": {
+        "id": "1j4",
+        "aa": 3001308
+      },
+      "ミクトラン\tチチェン・イツァー": {
+        "id": "1j5",
+        "aa": 3001305
+      },
+      "ミクトラン\tクラッシュポイント": {
+        "id": "1j6",
+        "aa": 3001307
+      },
+      "ミクトラン\tヤヤウキ": {
+        "id": "1j9",
+        "aa": 3001320
+      },
+      "ミクトラン\tカラクムル": {
+        "id": "1ja",
+        "aa": 3001321
+      },
+      "ミクトラン\tカーンの廃墟": {
+        "id": "1jb",
+        "aa": 93031310
+      },
+      "ミクトラン\tソソアウワキ": {
+        "id": "1jc",
+        "aa": 3001315
+      },
+      "ミクトラン\tメツィティトラン": {
+        "id": "1jd",
+        "aa": 3001316
+      },
+      "ミクトラン\t焼きモロコシ畑": {
+        "id": "1je",
+        "aa": 3001318
+      },
+      "ミクトラン\tティカル遺跡": {
+        "id": "1jf",
+        "aa": 93031315
+      },
+      "オーディール・コール\tロシアエリア": {
+        "id": "190",
+        "aa": 93040101
+      },
+      "オーディール・コール\t東欧エリア": {
+        "id": "191",
+        "aa": 93040102
+      },
+      "オーディール・コール\tハワイエリア": {
+        "id": "192",
+        "aa": 93040103
+      },
+      "オーディール・コール\t常夏即売会場": {
+        "id": "193",
+        "aa": 94095301
+      },
+      "オーディール・コール\tオセアニア北部エリア": {
+        "id": "195",
+        "aa": 93040105
+      },
+      "オーディール・コール\t北欧エリア": {
+        "id": "196",
+        "aa": 94086601
+      },
+      "オーディール・コール\tカリブ海エリア": {
+        "id": "197",
+        "aa": 94086602
+      },
+      "オーディール・コール\t東アジアエリア": {
+        "id": "198",
+        "aa": 94089601
+      },
+      "オーディール・コール\tアメリカ南部エリア": {
+        "id": "199",
+        "aa": 94089602
+      },
+      "オーディール・コール\t南アジアエリア": {
+        "id": "19a",
+        "aa": 94090701
+      },
+      "オーディール・コール\tアフリカ南部エリア": {
+        "id": "19b",
+        "aa": 94090702
+      },
+      "オーディール・コール\t光糸導く迷宮": {
+        "id": "19c",
+        "aa": 94093201
+      },
+      "オーディール・コール\t久遠の微笑": {
+        "id": "19d",
+        "aa": 94093202
+      },
+      "オーディール・コール\t女神像を求めて": {
+        "id": "19e",
+        "aa": 94095302
+      },
+      "オーディール・コール\t蛇竜のいたずら": {
+        "id": "19f",
+        "aa": 94100501
+      },
+      "オーディール・コール\t復活の黄金都市": {
+        "id": "19g",
+        "aa": 94100502
+      },
+      "オーディール・コール\t賞金稼ぎに幾光年": {
+        "id": "19h",
+        "aa": 94137201
+      },
+      "オーディール・コール\t月光採掘場": {
+        "id": "19i",
+        "aa": 94137202
+      },
+      "ペーパームーン\t修理部郊外": {
+        "id": "1i0",
+        "aa": 93040201
+      },
+      "ペーパームーン\t生産部農地": {
+        "id": "1i3",
+        "aa": 4000205
+      },
+      "ペーパームーン\t警防部広場": {
+        "id": "1i4",
+        "aa": 93040205
+      },
+      "ペーパームーン\t維持部モール": {
+        "id": "1i6",
+        "aa": 4000210
+      },
+      "ペーパームーン\t構築部本部": {
+        "id": "1i7",
+        "aa": 93040210
+      },
+      "ペーパームーン\t外周部": {
+        "id": "1i8",
+        "aa": 4000209
+      },
+      "イド\tかいもの帰り": {
+        "id": "150",
+        "aa": 93040301
+      },
+      "イド\tいつもの通い道": {
+        "id": "151",
+        "aa": 93040307
+      },
+      "イド\tであいの交差点": {
+        "id": "152",
+        "aa": 93040309
+      },
+      "イド\tたたずむ摩天楼": {
+        "id": "153",
+        "aa": 93040310
+      },
+      "イド\tないしょの待ち合わせ": {
+        "id": "154",
+        "aa": 93040302
+      },
+      "イド\tしずかな放課後": {
+        "id": "155",
+        "aa": 93040303
+      },
+      "イド\tななふしぎ調査": {
+        "id": "156",
+        "aa": 93040304
+      },
+      "イド\tいのこり特訓": {
+        "id": "157",
+        "aa": 93040306
+      },
+      "イド\tとつぜんの呼び出し": {
+        "id": "158",
+        "aa": 93040305
+      },
+      "イド\tバードウォッチング": {
+        "id": "159",
+        "aa": 93040312
+      },
+      "イド\tたびだちの駅": {
+        "id": "15a",
+        "aa": 93040308
+      },
+      "イド\tあいにくの空模様": {
+        "id": "15b",
+        "aa": 93040311
+      },
+      "アーキタイプ\tトップ・オブ・ザ・ムーン": {
+        "id": "140",
+        "aa": 93040401
+      },
+      "アーキタイプ\tラグジュアリー・ビュッフェ": {
+        "id": "143",
+        "aa": 93040404
+      },
+      "アーキタイプ\tワームズ・サンドボックス": {
+        "id": "144",
+        "aa": 93040405
+      },
+      "アーキタイプ\tムーン・ウォーキング": {
+        "id": "145",
+        "aa": 93040406
+      },
+      "アーキタイプ\tマシーナリー・タウン": {
+        "id": "146",
+        "aa": 93040407
+      },
+      "アーキタイプ\tムーン・クルージング": {
+        "id": "148",
+        "aa": 93040409
+      },
+      "アーキタイプ\tスター・ピッキング": {
+        "id": "149",
+        "aa": 93040410
+      },
+      "アーキタイプ\tファンタズム・パレード": {
+        "id": "14b",
+        "aa": 93040412
+      },
+      "アーキタイプ\tムーン・ドバイ・ファウンテン": {
+        "id": "14d",
+        "aa": 93040414
+      },
+      "アーキタイプ\tセレブリティ・ボート": {
+        "id": "14e",
+        "aa": 93040415
+      },
+      "トリニティ\t悪しきは罰せよ": {
+        "id": "1g0",
+        "aa": 93040501
+      },
+      "トリニティ\t色情に染まる街": {
+        "id": "1g1",
+        "aa": 93040502
+      },
+      "トリニティ\t禁じられた果実の園": {
+        "id": "1g3",
+        "aa": 93040504
+      },
+      "トリニティ\t愛に溺れた罪人たち": {
+        "id": "1g5",
+        "aa": 93040506
+      },
+      "トリニティ\t獄犬の縄張り": {
+        "id": "1g6",
+        "aa": 93040507
+      },
+      "トリニティ\t憤怒の集う死沼": {
+        "id": "1g8",
+        "aa": 93040509
+      },
+      "トリニティ\t魅惑の絶対支配": {
+        "id": "1g9",
+        "aa": 93040510
+      },
+      "トリニティ\t渦巻く悪意の応酬": {
+        "id": "1ga",
+        "aa": 93040511
+      },
+      "トリニティ\t氷原に轟く嘆き": {
+        "id": "1gb",
+        "aa": 93040512
+      },
+      "トリニティ\t悔悟の祈り": {
+        "id": "1gc",
+        "aa": 93040514
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅱ": {
+        "id": "1n1",
+        "aa": 94145402
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅲ": {
+        "id": "1n2",
+        "aa": 94145403
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅳ": {
+        "id": "1n3",
+        "aa": 94145404
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅴ": {
+        "id": "1n4",
+        "aa": 94145405
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅵ": {
+        "id": "1n5",
+        "aa": 94145406
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅶ": {
+        "id": "1n6",
+        "aa": 94145407
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅵ": {
+        "id": "1nc",
+        "aa": 94146506
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅶ": {
+        "id": "1nd",
+        "aa": 94146507
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅴ": {
+        "id": "1ni",
+        "aa": 94146805
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅵ": {
+        "id": "1nj",
+        "aa": 94146806
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅶ": {
+        "id": "1nk",
+        "aa": 94146807
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅵ": {
+        "id": "1nq"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅶ": {
+        "id": "1nr"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅶ": {
+        "id": "1ny"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅴ": {
+        "id": "1n13"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅵ": {
+        "id": "1n14"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅶ": {
+        "id": "1n15"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅴ": {
+        "id": "1n1a"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅵ": {
+        "id": "1n1b"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅶ": {
+        "id": "1n1c"
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅴ": {
+        "id": "1n1h",
+        "aa": 94149805
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅵ": {
+        "id": "1n1i",
+        "aa": 94149806
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅶ": {
+        "id": "1n1j",
+        "aa": 94149807
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅴ": {
+        "id": "1n1o",
+        "aa": 94150505
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅵ": {
+        "id": "1n1p",
+        "aa": 94150506
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅶ": {
+        "id": "1n1q",
+        "aa": 94150507
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅴ": {
+        "id": "1n1v",
+        "aa": 94150805
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅵ": {
+        "id": "1n1w",
+        "aa": 94150806
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅶ": {
+        "id": "1n1x",
+        "aa": 94150807
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅲ": {
+        "id": "1n20",
+        "aa": 94151203
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅳ": {
+        "id": "1n21",
+        "aa": 94151204
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅴ": {
+        "id": "1n22",
+        "aa": 94151205
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅵ": {
+        "id": "1n23",
+        "aa": 94151206
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅶ": {
+        "id": "1n24",
+        "aa": 94151207
+      },
+      "冬木\tX-D（港）": {
+        "id": "1o4"
+      },
+      "冬木\tX-E（教会）": {
+        "id": "1o5"
+      },
+      "冬木\tX-F（校舎）": {
+        "id": "1o6"
+      },
+      "冬木\t変動座標点0号（大空洞）": {
+        "id": "1o7"
+      },
+      "オルレアン\tドンレミ": {
+        "id": "180",
+        "aa": 1000101
+      },
+      "オルレアン\tヴォークルール": {
+        "id": "181",
+        "aa": 1000102
+      },
+      "オルレアン\tラ・シャリテ": {
+        "id": "182",
+        "aa": 1000104
+      },
+      "オルレアン\tジュラ": {
+        "id": "183",
+        "aa": 1000106
+      },
+      "オルレアン\tリヨン": {
+        "id": "184",
+        "aa": 1000107
+      },
+      "オルレアン\tマルセイユ": {
+        "id": "185",
+        "aa": 91100301
+      },
+      "オルレアン\tティエール": {
+        "id": "186",
+        "aa": 1000110
+      },
+      "オルレアン\tボルドー": {
+        "id": "187",
+        "aa": 91300401
+      },
+      "オルレアン\tオルレアン": {
+        "id": "188",
+        "aa": 1000114
+      },
+      "オルレアン\tパリ": {
+        "id": "189",
+        "aa": 91102601
+      },
+      "セプテム\tアッピア街道": {
+        "id": "1e6",
+        "aa": 1000201
+      },
+      "セプテム\tローマ": {
+        "id": "1e7",
+        "aa": 1000202
+      },
+      "セプテム\tエトナ火山": {
+        "id": "1e8",
+        "aa": 1000204
+      },
+      "セプテム\tフロレンティア": {
+        "id": "1e9",
+        "aa": 91600201
+      },
+      "セプテム\tメディオラヌム": {
+        "id": "1ea",
+        "aa": 1000205
+      },
+      "セプテム\tマッシリア": {
+        "id": "1eb",
+        "aa": 1000206
+      },
+      "セプテム\tガリア": {
+        "id": "1ec",
+        "aa": 1000205
+      },
+      "セプテム\tブリタニア": {
+        "id": "1ed",
+        "aa": 91300101
+      },
+      "セプテム\t形ある島": {
+        "id": "1ee",
+        "aa": 1000209
+      },
+      "セプテム\t連合首都": {
+        "id": "1ef",
+        "aa": 1000213
+      },
+      "オケアノス\t海賊島": {
+        "id": "16b",
+        "aa": 1000302
+      },
+      "オケアノス\t王の住まう島": {
+        "id": "16c",
+        "aa": 1000303
+      },
+      "オケアノス\t地図に記された島": {
+        "id": "16d",
+        "aa": 1000304
+      },
+      "オケアノス\t暗礁海域": {
+        "id": "16e",
+        "aa": 93000309
+      },
+      "オケアノス\t潮目の海": {
+        "id": "16f",
+        "aa": 1000305
+      },
+      "オケアノス\tカルデラの島": {
+        "id": "16g",
+        "aa": 91400901
+      },
+      "オケアノス\t群島（静かな入り江）": {
+        "id": "16h"
+      },
+      "オケアノス\t豊かな海": {
+        "id": "16i",
+        "aa": 93000311
+      },
+      "ロンドン\tホワイトチャペル": {
+        "id": "1l9",
+        "aa": 1000402
+      },
+      "ロンドン\tソーホー": {
+        "id": "1la",
+        "aa": 1000404
+      },
+      "ロンドン\tウェストミンスター": {
+        "id": "1lb",
+        "aa": 1000405
+      },
+      "ロンドン\tリージェントパーク": {
+        "id": "1lc",
+        "aa": 1000408
+      },
+      "ロンドン\tクラーケンウェル": {
+        "id": "1ld",
+        "aa": 91700401
+      },
+      "北米\tブラックヒルズ": {
+        "id": "1pe",
+        "aa": 1000501
+      },
+      "北米\tリバートン": {
+        "id": "1pf",
+        "aa": 1000502
+      },
+      "北米\tデンバー": {
+        "id": "1pg",
+        "aa": 1000504
+      },
+      "北米\tアルカトラズ": {
+        "id": "1ph",
+        "aa": 1000511
+      },
+      "北米\tデモイン": {
+        "id": "1pi",
+        "aa": 1000513
+      },
+      "北米\tワシントン": {
+        "id": "1pj",
+        "aa": 1000521
+      },
+      "キャメロット\t明けの砂丘": {
+        "id": "1ae",
+        "aa": 1000605
+      },
+      "キャメロット\t東の村": {
+        "id": "1af",
+        "aa": 1000610
+      },
+      "キャメロット\t円卓の砦": {
+        "id": "1ag",
+        "aa": 1000614
+      },
+      "キャメロット\tアトラス院": {
+        "id": "1ah",
+        "aa": 1000623
+      },
+      "バビロニア\t黒い杉の森": {
+        "id": "1he",
+        "aa": 91300801
+      },
+      "バビロニア\t湿原": {
+        "id": "1hf",
+        "aa": 93000705
+      },
+      "新宿\t歌舞伎町": {
+        "id": "1ra",
+        "aa": 2000108
+      },
+      "新宿\tパーティー会場": {
+        "id": "1rb",
+        "aa": 2000112
+      },
+      "アガルタ\t地底平原": {
+        "id": "10c",
+        "aa": 2000201
+      },
+      "アガルタ\t川辺の町": {
+        "id": "10d",
+        "aa": 2000203
+      },
+      "アガルタ\tイース": {
+        "id": "10e",
+        "aa": 2000205
+      },
+      "下総国\t里": {
+        "id": "1m9",
+        "aa": 93020302
+      },
+      "下総国\t合戦場": {
+        "id": "1ma",
+        "aa": 93020305
+      },
+      "アナスタシア\t風穴氷窟": {
+        "id": "12e",
+        "aa": 93030203
+      },
+      "アナスタシア\tヤガ・トゥーラ": {
+        "id": "12f",
+        "aa": 3000116
+      },
+      "アナスタシア\t大渓谷の砦": {
+        "id": "12g",
+        "aa": 3000118
+      },
+      "アナスタシア\t大樹の根元": {
+        "id": "12h",
+        "aa": 93030213
+      },
+      "ゲッテルデメルング\tランディングポイント": {
+        "id": "1bb",
+        "aa": 3000202
+      },
+      "ゲッテルデメルング\t薄氷の丘": {
+        "id": "1bc",
+        "aa": 93030302
+      },
+      "ゲッテルデメルング\t第23集落": {
+        "id": "1bd",
+        "aa": 3000205
+      },
+      "シン\t隣村": {
+        "id": "1cb",
+        "aa": 3000308
+      },
+      "シン\t芥の陣幕": {
+        "id": "1cc",
+        "aa": 93030404
+      },
+      "シン\t山陽丘": {
+        "id": "1cd",
+        "aa": 93030406
+      },
+      "シン\t咸陽": {
+        "id": "1ce",
+        "aa": 3000318
+      },
+      "ユガ・クシェートラ\tビーチュ": {
+        "id": "1ka",
+        "aa": 3000406
+      },
+      "ユガ・クシェートラ\t北の霊峰": {
+        "id": "1kb",
+        "aa": 3000404
+      },
+      "ユガ・クシェートラ\t南の町": {
+        "id": "1kc",
+        "aa": 93030508
+      },
+      "アトランティス\tエリス島": {
+        "id": "119",
+        "aa": 93030607
+      },
+      "アトランティス\tネメシス島": {
+        "id": "11a",
+        "aa": 3000530
+      },
+      "オリュンポス\t空中庭園": {
+        "id": "17b",
+        "aa": 3000608
+      },
+      "オリュンポス\t機神回廊": {
+        "id": "17c",
+        "aa": 93030709
+      },
+      "オリュンポス\t大祭壇": {
+        "id": "17d",
+        "aa": 3000622
+      },
+      "平安京\t朱雀大路": {
+        "id": "1qd",
+        "aa": 3000710
+      },
+      "平安京\t大宮大路": {
+        "id": "1qe",
+        "aa": 93030809
+      },
+      "アヴァロン\tコーンウォールの村": {
+        "id": "13g",
+        "aa": 93031001
+      },
+      "アヴァロン\tキャメロット": {
+        "id": "13h",
+        "aa": 3000901
+      },
+      "アヴァロン\tエディンバラ": {
+        "id": "13i",
+        "aa": 3000916
+      },
+      "アヴァロン\t果ての海岸": {
+        "id": "13j",
+        "aa": 3000915
+      },
+      "トラオム\t暁の平原": {
+        "id": "1fg",
+        "aa": 3001204
+      },
+      "トラオム\t王道界域拠点": {
+        "id": "1fh",
+        "aa": 3001208
+      },
+      "トラオム\t湖畔の平原": {
+        "id": "1fi",
+        "aa": 93031209
+      },
+      "ミクトラン\tイスタウキ": {
+        "id": "1jg",
+        "aa": 3001309
+      },
+      "ミクトラン\tメヒコシティ": {
+        "id": "1jh",
+        "aa": 3001311
+      },
+      "オーディール・コール\tアメリカ西部エリア": {
+        "id": "19j",
+        "aa": 93040104
+      },
+      "ペーパームーン\t修理部本部": {
+        "id": "1i9",
+        "aa": 93040202
+      },
+      "ペーパームーン\t警防部本部": {
+        "id": "1ia",
+        "aa": 4000203
+      },
+      "ペーパームーン\t維持部本部": {
+        "id": "1ib",
+        "aa": 4000207
+      },
+      "ペーパームーン\t移送部本部": {
+        "id": "1ic",
+        "aa": 93040208
+      },
+      "ペーパームーン\t生産部本部": {
+        "id": "1id",
+        "aa": 93040211
+      },
+      "アーキタイプ\tムーン・ストリート": {
+        "id": "14f",
+        "aa": 93040402
+      },
+      "アーキタイプ\tコンピューティング・シティ": {
+        "id": "14g",
+        "aa": 93040403
+      },
+      "アーキタイプ\tムーン・ショッピング": {
+        "id": "14h",
+        "aa": 93040408
+      },
+      "アーキタイプ\tケーキテーブル・ガーデン": {
+        "id": "14i",
+        "aa": 93040411
+      },
+      "アーキタイプ\tムーンバス・アイランド": {
+        "id": "14j",
+        "aa": 93040413
+      },
+      "トリニティ\t住めば都のグラナート": {
+        "id": "1gd",
+        "aa": 93040503
+      },
+      "トリニティ\t亡者の群がる河": {
+        "id": "1ge",
+        "aa": 93040505
+      },
+      "トリニティ\t可憐な強欲城主": {
+        "id": "1gf",
+        "aa": 93040508
+      },
+      "冠位研鑽戦\t〔セイバー〕 Ⅰ": {
+        "id": "1n25",
+        "aa": 94145401
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅰ": {
+        "id": "1n26",
+        "aa": 94146501
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅱ": {
+        "id": "1n27",
+        "aa": 94146502
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅲ": {
+        "id": "1n28",
+        "aa": 94146503
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅳ": {
+        "id": "1n29",
+        "aa": 94146504
+      },
+      "冠位研鑽戦\t〔バーサーカー〕 Ⅴ": {
+        "id": "1n2a",
+        "aa": 94146505
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅰ": {
+        "id": "1n2b",
+        "aa": 94146801
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅱ": {
+        "id": "1n2c",
+        "aa": 94146802
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅲ": {
+        "id": "1n2d",
+        "aa": 94146803
+      },
+      "冠位研鑽戦\t〔ランサー〕 Ⅳ": {
+        "id": "1n2e",
+        "aa": 94146804
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅰ": {
+        "id": "1n2f"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅱ": {
+        "id": "1n2g"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅲ": {
+        "id": "1n2h"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅳ": {
+        "id": "1n2i"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕火 Ⅴ": {
+        "id": "1n2j"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅰ": {
+        "id": "1n2k"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅱ": {
+        "id": "1n2l"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅲ": {
+        "id": "1n2m"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅳ": {
+        "id": "1n2n"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅴ": {
+        "id": "1n2o"
+      },
+      "冠位研鑽戦\t〔エクストラⅠ〕地 Ⅵ": {
+        "id": "1n2p"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅰ": {
+        "id": "1n2q"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅱ": {
+        "id": "1n2r"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅲ": {
+        "id": "1n2s"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕風 Ⅳ": {
+        "id": "1n2t"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅰ": {
+        "id": "1n2u"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅱ": {
+        "id": "1n2v"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅲ": {
+        "id": "1n2w"
+      },
+      "冠位研鑽戦\t〔エクストラⅡ〕水 Ⅳ": {
+        "id": "1n2x"
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅰ": {
+        "id": "1n2y",
+        "aa": 94149801
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅱ": {
+        "id": "1n2z",
+        "aa": 94149802
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅲ": {
+        "id": "1n30",
+        "aa": 94149803
+      },
+      "冠位研鑽戦\t〔ライダー〕 Ⅳ": {
+        "id": "1n31",
+        "aa": 94149804
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅰ": {
+        "id": "1n32",
+        "aa": 94150501
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅱ": {
+        "id": "1n33",
+        "aa": 94150502
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅲ": {
+        "id": "1n34",
+        "aa": 94150503
+      },
+      "冠位研鑽戦\t〔アサシン〕 Ⅳ": {
+        "id": "1n35",
+        "aa": 94150504
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅰ": {
+        "id": "1n36",
+        "aa": 94150801
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅱ": {
+        "id": "1n37",
+        "aa": 94150802
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅲ": {
+        "id": "1n38",
+        "aa": 94150803
+      },
+      "冠位研鑽戦\t〔アーチャー〕 Ⅳ": {
+        "id": "1n39",
+        "aa": 94150804
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅰ": {
+        "id": "1n3a",
+        "aa": 94151201
+      },
+      "冠位研鑽戦\t〔キャスター〕 Ⅱ": {
+        "id": "1n3b",
+        "aa": 94151202
+      },
+      "パスト・カルデア\t邪竜の残影": {
+        "id": "1s0",
+        "aa": 93050101
+      },
+      "パスト・カルデア\t永久に続く帝国": {
+        "id": "1s1",
+        "aa": 93050102
+      },
+      "パスト・カルデア\t封鎖された海域": {
+        "id": "1s2",
+        "aa": 93050103
+      },
+      "パスト・カルデア\t魔霧に覆われし都": {
+        "id": "1s3",
+        "aa": 93050104
+      },
+      "パスト・カルデア\t神話息づく大地": {
+        "id": "1s4",
+        "aa": 93050105
+      },
+      "パスト・カルデア\t聖地の争い": {
+        "id": "1s5",
+        "aa": 93050106
+      },
+      "パスト・カルデア\t母なる海の仔": {
+        "id": "1s6",
+        "aa": 93050107
+      },
+      "パスト・カルデア\t終点の神殿": {
+        "id": "1s7",
+        "aa": 93050108
+      },
+      "パスト・カルデア\t恐竜たちの楽園": {
+        "id": "1s8",
+        "aa": 93050109
+      },
+      "パスト・カルデア\t原初の海": {
+        "id": "1s9",
+        "aa": 93050110
+      }
+    },
+    "items": {
+      "6001": "30",
+      "6002": "31",
+      "6003": "32",
+      "6004": "33",
+      "6005": "34",
+      "6006": "35",
+      "6007": "36",
+      "6101": "40",
+      "6102": "41",
+      "6103": "42",
+      "6104": "43",
+      "6105": "44",
+      "6106": "45",
+      "6107": "46",
+      "6201": "50",
+      "6202": "51",
+      "6203": "52",
+      "6204": "53",
+      "6205": "54",
+      "6206": "55",
+      "6207": "56",
+      "6501": "14",
+      "6502": "10",
+      "6503": "00",
+      "6505": "03",
+      "6506": "22",
+      "6507": "20",
+      "6508": "11",
+      "6509": "13",
+      "6510": "15",
+      "6511": "16",
+      "6512": "02",
+      "6513": "18",
+      "6514": "17",
+      "6515": "12",
+      "6516": "01",
+      "6517": "21",
+      "6518": "23",
+      "6519": "24",
+      "6520": "25",
+      "6521": "26",
+      "6522": "04",
+      "6523": "27",
+      "6524": "19",
+      "6525": "28",
+      "6526": "1a",
+      "6527": "05",
+      "6528": "29",
+      "6529": "2a",
+      "6530": "06",
+      "6531": "2b",
+      "6532": "1b",
+      "6533": "07",
+      "6534": "08",
+      "6535": "1c",
+      "6536": "1e",
+      "6537": "1d",
+      "6538": "1f",
+      "6539": "2c",
+      "6540": "2d",
+      "6541": "1g",
+      "6542": "2e",
+      "6543": "1h",
+      "6545": "1i",
+      "6546": "2g",
+      "6547": "1j",
+      "6548": "2h",
+      "6549": "09",
+      "6550": "1k",
+      "6551": "0a",
+      "6552": "0b",
+      "6553": "1l",
+      "6554": "0c",
+      "6555": "0d",
+      "6557": "1n",
+      "6558": "2i",
+      "6559": "1o",
+      "6560": "2j",
+      "6561": "1p",
+      "6562": "2k",
+      "6563": "2l",
+      "6564": "1q",
+      "6565": "2m",
+      "7001": "60",
+      "7002": "61",
+      "7003": "62",
+      "7004": "63",
+      "7005": "64",
+      "7006": "65",
+      "7007": "66",
+      "7101": "70",
+      "7102": "71",
+      "7103": "72",
+      "7104": "73",
+      "7105": "74",
+      "7106": "75",
+      "7107": "76"
     }
-  ]
+  }
 }

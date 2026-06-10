@@ -1,65 +1,6 @@
 {
   "events": [
     {
-      "id": 71662,
-      "name": "コンティニューアイテム使用可能！",
-      "banner": null,
-      "startedAt": 1774861200,
-      "endedAt": 1780239599,
-      "shopFinishedAt": 1780239599,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questUseContinueItem",
-          "calcType": "multiplication",
-          "value": 94155501,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 676
-    },
-    {
-      "id": 71667,
-      "name": "絆獲得量アップ",
-      "banner": null,
-      "startedAt": 1774969200,
-      "endedAt": 1780239599,
-      "shopFinishedAt": 1780239599,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questUseFriendshipUpItem",
-          "calcType": "multiplication",
-          "value": 2000,
-          "targetIds": [
-            94138219
-          ]
-        }
-      ],
-      "campaignQuestsCount": 0
-    },
-    {
-      "id": 71677,
-      "name": "期間限定 ストーム・ポッド消費なし！",
-      "banner": null,
-      "startedAt": 1779440400,
-      "endedAt": 1780027199,
-      "shopFinishedAt": 1780027199,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questAp",
-          "calcType": "multiplication",
-          "value": 1000,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 28
-    },
-    {
       "id": 71679,
       "name": "消費AP0！",
       "banner": null,
@@ -135,7 +76,7 @@
           "targetIds": []
         }
       ],
-      "campaignQuestsCount": 676
+      "campaignQuestsCount": 688
     },
     {
       "id": 71683,
@@ -157,769 +98,120 @@
       "campaignQuestsCount": 17
     },
     {
-      "id": 71684,
-      "name": "消費AP 75%DOWN",
+      "id": 71691,
+      "name": "絆獲得量アップ",
       "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
+      "startedAt": 1780239600,
+      "endedAt": 1785509999,
+      "shopFinishedAt": 1785509999,
       "type": "questCampaign",
       "drops": [],
       "campaigns": [
         {
-          "target": "questAp",
+          "target": "questUseFriendshipUpItem",
           "calcType": "multiplication",
-          "value": 250,
-          "targetIds": []
+          "value": 2000,
+          "targetIds": [
+            94138221
+          ]
         }
       ],
-      "campaignQuestsCount": 61
+      "campaignQuestsCount": 0
     },
     {
-      "id": 71685,
-      "name": "消費AP 50%DOWN",
+      "id": 71692,
+      "name": "コンティニューアイテム使用可能！",
       "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
+      "startedAt": 1780239600,
+      "endedAt": 1785509999,
+      "shopFinishedAt": 1785509999,
       "type": "questCampaign",
       "drops": [],
       "campaigns": [
         {
-          "target": "questAp",
+          "target": "questUseContinueItem",
           "calcType": "multiplication",
-          "value": 500,
+          "value": 94158601,
           "targetIds": []
         }
       ],
-      "campaignQuestsCount": 650
-    },
-    {
-      "id": 71686,
-      "name": "消費AP 50%DOWN",
-      "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questAp",
-          "calcType": "multiplication",
-          "value": 500,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 416
-    },
-    {
-      "id": 71687,
-      "name": "消費AP 50%DOWN",
-      "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questAp",
-          "calcType": "multiplication",
-          "value": 500,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 286
-    },
-    {
-      "id": 71688,
-      "name": "初回クリアまで 消費AP 50%DOWN",
-      "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questApFirstTime",
-          "calcType": "multiplication",
-          "value": 500,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 333
-    },
-    {
-      "id": 71689,
-      "name": "消費AP 50%DOWN",
-      "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questAp",
-          "calcType": "multiplication",
-          "value": 500,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 70
-    },
-    {
-      "id": 71690,
-      "name": "消費AP 75%DOWN",
-      "banner": null,
-      "startedAt": 1779267600,
-      "endedAt": 1780459199,
-      "shopFinishedAt": 1780459199,
-      "type": "questCampaign",
-      "drops": [],
-      "campaigns": [
-        {
-          "target": "questAp",
-          "calcType": "multiplication",
-          "value": 250,
-          "targetIds": []
-        }
-      ],
-      "campaignQuestsCount": 43
+      "campaignQuestsCount": 688
     }
   ],
   "gachas": [
     {
-      "id": 50041841,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nアナスタシアピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83630.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
+      "id": 50041571,
+      "name": "パスト･カルデア ウルズ(終末のアーチャー)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83673.png",
+      "openedAt": 1780484400,
+      "closedAt": 1782273599,
       "pickupServants": [
         {
-          "id": 503500,
-          "name": "アナスタシア",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_5035000.png"
-        },
-        {
-          "id": 703000,
-          "name": "アタランテ〔オルタ〕",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_7030000.png"
-        },
-        {
-          "id": 503600,
-          "name": "アヴィケブロン",
+          "id": 200600,
+          "name": "ダビデ",
           "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_5036000.png"
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2006000.png"
+        },
+        {
+          "id": 205500,
+          "name": "ウルズ",
+          "rarity": 5,
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2055000.png"
         }
       ]
     },
     {
-      "id": 50041851,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nイヴァン雷帝ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83631.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
+      "id": 50041581,
+      "name": "パスト･カルデア 紫式部(キャスター)ピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83613.png",
+      "openedAt": 1780650000,
+      "closedAt": 1782273599,
       "pickupServants": [
         {
-          "id": 703000,
-          "name": "アタランテ〔オルタ〕",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_7030000.png"
-        },
-        {
-          "id": 1100600,
-          "name": "アントニオ・サリエリ",
+          "id": 200600,
+          "name": "ダビデ",
           "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_11006000.png"
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2006000.png"
         },
         {
-          "id": 402800,
-          "name": "イヴァン雷帝",
+          "id": 504200,
+          "name": "紫式部",
           "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4028000.png"
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5042000.png"
         }
       ]
     },
     {
-      "id": 50041861,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nナポレオンピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83632.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
+      "id": 50041591,
+      "name": "パスト･カルデア ミス･クレーンピックアップ召喚",
+      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83614.png",
+      "openedAt": 1780650000,
+      "closedAt": 1782273599,
       "pickupServants": [
         {
-          "id": 203100,
-          "name": "ナポレオン",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2031000.png"
-        },
-        {
-          "id": 303300,
-          "name": "ワルキューレ",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3033000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041871,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nスカサハ＝スカディ(キャスター)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83633.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 303300,
-          "name": "ワルキューレ",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3033000.png"
-        },
-        {
-          "id": 503900,
-          "name": "スカサハ＝スカディ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_5039000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041881,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nシトナイピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83634.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 303300,
-          "name": "ワルキューレ",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3033000.png"
-        },
-        {
-          "id": 1000800,
-          "name": "シトナイ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_10008000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041891,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nシグルドピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83635.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 103300,
-          "name": "シグルド",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1033000.png"
-        },
-        {
-          "id": 303300,
-          "name": "ワルキューレ",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3033000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041901,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \n始皇帝ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83636.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 603500,
-          "name": "虞美人",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_6035000.png"
-        },
-        {
-          "id": 403100,
-          "name": "赤兎馬",
+          "id": 200600,
+          "name": "ダビデ",
           "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4031000.png"
+          "face": "https://static.atlasacademy.io/JP/Faces/f_2006000.png"
         },
         {
-          "id": 900600,
-          "name": "始皇帝",
+          "id": 504600,
+          "name": "ミス・クレーン",
           "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_9006000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041911,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \n李書文(アサシン)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83637.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 603600,
-          "name": "李書文",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_6036000.png"
-        },
-        {
-          "id": 103600,
-          "name": "蘭陵王",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1036000.png"
-        },
-        {
-          "id": 403100,
-          "name": "赤兎馬",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4031000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041921,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \n項羽ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83638.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 703200,
-          "name": "項羽",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_7032000.png"
-        },
-        {
-          "id": 303500,
-          "name": "秦良玉",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3035000.png"
-        },
-        {
-          "id": 403100,
-          "name": "赤兎馬",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4031000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041931,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nカルナピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83639.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 300400,
-          "name": "カルナ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3004000.png"
-        },
-        {
-          "id": 103900,
-          "name": "ラクシュミー・バーイー",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1039000.png"
-        },
-        {
-          "id": 203400,
-          "name": "ウィリアム・テル",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2034000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041941,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nアルジュナ〔オルタ〕ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83640.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 703300,
-          "name": "アルジュナ〔オルタ〕",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_7033000.png"
-        },
-        {
-          "id": 203300,
-          "name": "アシュヴァッターマン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2033000.png"
-        },
-        {
-          "id": 504300,
-          "name": "アスクレピオス",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_5043000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041951,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nジナコ＝カリギリ(大いなる石像神)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83641.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 2300300,
-          "name": "大いなる石像神",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_23003000.png"
-        },
-        {
-          "id": 203300,
-          "name": "アシュヴァッターマン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2033000.png"
-        },
-        {
-          "id": 504300,
-          "name": "アスクレピオス",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_5043000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041961,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \n超人オリオンピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83642.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 203800,
-          "name": "超人オリオン",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2038000.png"
-        },
-        {
-          "id": 403900,
-          "name": "マンドリカルド",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4039000.png"
-        },
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041971,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nオデュッセウスピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83643.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 403900,
-          "name": "マンドリカルド",
-          "rarity": 3,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4039000.png"
-        },
-        {
-          "id": 403800,
-          "name": "オデュッセウス",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4038000.png"
-        },
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041981,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nディオスクロイピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83644.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 104200,
-          "name": "ディオスクロイ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1042000.png"
-        },
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        }
-      ]
-    },
-    {
-      "id": 50041991,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nエウロペピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83645.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 404000,
-          "name": "エウロペ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_4040000.png"
-        },
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042001,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \n宮本武蔵(セイバー)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83646.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 101700,
-          "name": "宮本武蔵",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1017000.png"
-        },
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042011,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nロムルス＝クィリヌスピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83647.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        },
-        {
-          "id": 304200,
-          "name": "ロムルス＝クィリヌス",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3042000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042021,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nシャーロック･ホームズピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83648.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 900500,
-          "name": "シャーロック・ホームズ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_9005000.png"
-        },
-        {
-          "id": 304100,
-          "name": "カイニス",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3041000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042031,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nアルトリア･キャスター(キャスター)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83649.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 504500,
-          "name": "アルトリア・キャスター",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_5045000.png"
-        },
-        {
-          "id": 105000,
-          "name": "妖精騎士ガウェイン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1050000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042041,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nモルガンピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83650.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 704000,
-          "name": "モルガン",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_7040000.png"
-        },
-        {
-          "id": 105000,
-          "name": "妖精騎士ガウェイン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1050000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042051,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nメリュジーヌ(ランサー)(妖精騎士ランスロット)ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83651.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 304800,
-          "name": "妖精騎士ランスロット",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_3048000.png"
-        },
-        {
-          "id": 204300,
-          "name": "妖精騎士トリスタン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2043000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042061,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nオベロンピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83652.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 204300,
-          "name": "妖精騎士トリスタン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_2043000.png"
-        },
-        {
-          "id": 2800100,
-          "name": "オベロン",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_28001000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042071,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \n千子村正ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83653.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 104900,
-          "name": "千子村正",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1049000.png"
-        },
-        {
-          "id": 105000,
-          "name": "妖精騎士ガウェイン",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_1050000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042081,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nテスカトリポカピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83654.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 604700,
-          "name": "テスカトリポカ",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_6047000.png"
-        },
-        {
-          "id": 2800500,
-          "name": "トラロック",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_28005000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042091,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nククルカンピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83655.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 2800500,
-          "name": "トラロック",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_28005000.png"
-        },
-        {
-          "id": 2501100,
-          "name": "ククルカン",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_25011000.png"
-        }
-      ]
-    },
-    {
-      "id": 50042101,
-      "name": "「郷愁永巡刻盤 パスト･カルデア」開幕直前キャンペーン \nニトクリス〔オルタ〕ピックアップ召喚",
-      "banner": "https://static.atlasacademy.io/JP/SummonBanners/img_summon_83656.png",
-      "openedAt": 1779267600,
-      "closedAt": 1779854399,
-      "pickupServants": [
-        {
-          "id": 1101500,
-          "name": "ニトクリス〔オルタ〕",
-          "rarity": 5,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_11015000.png"
-        },
-        {
-          "id": 2800500,
-          "name": "トラロック",
-          "rarity": 4,
-          "face": "https://static.atlasacademy.io/JP/Faces/f_28005000.png"
+          "face": "https://static.atlasacademy.io/JP/Faces/f_5046000.png"
         }
       ]
     }
   ],
   "recentServants": [
+    {
+      "id": 205500,
+      "name": "ウルズ",
+      "rarity": 5,
+      "collectionNo": 470,
+      "face": "https://static.atlasacademy.io/JP/Faces/f_2055000.png",
+      "releasedAt": 1780484400
+    },
     {
       "id": 1102000,
       "name": "ジョン・ラックランド",
@@ -935,30 +227,8 @@
       "collectionNo": 467,
       "face": "https://static.atlasacademy.io/JP/Faces/f_5056000.png",
       "releasedAt": 1777114800
-    },
-    {
-      "id": 106600,
-      "name": "ジャック・ド・モレー",
-      "rarity": 5,
-      "collectionNo": 466,
-      "face": "https://static.atlasacademy.io/JP/Faces/f_1066000.png",
-      "releasedAt": 1773219600
     }
   ],
-  "updatedAt": 1779547969628,
-  "podFreePeriods": [
-    {
-      "id": 71677,
-      "name": "期間限定 ストーム・ポッド消費なし！",
-      "startedAt": 1779440400,
-      "endedAt": 1780027199,
-      "questIds": [
-        "1n20",
-        "1n21",
-        "1n22",
-        "1n23",
-        "1n24"
-      ]
-    }
-  ]
+  "updatedAt": 1781127460080,
+  "podFreePeriods": []
 }

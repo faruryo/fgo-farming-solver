@@ -183,6 +183,104 @@ describe('fetchAndTransformData', () => {
     expect(data.campaigns).toEqual([])
   })
 
+  it('pins quest/item IDs across generations when previous payload is provided (stable short IDs)', async () => {
+    const mockAAItems = [
+      { id: 6001, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 },
+      { id: 6002, name: '凶骨',     type: 'skillLvUp', background: 'bronze', priority: 201 },
+    ]
+
+    const gen1CSV = `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材,,,銅素材2
+,,AP,データ数,証,骨
+エリア1,クエストA,20,100,50,10
+エリア1,クエストB,20,100,60,5
+エリア2,クエストD,21,100,70,1
+`
+
+    // 世代2: エリア0 が上流（ソート順で先頭）に挿入され、エリア1 内にも クエストA2 が挿入される
+    const gen2CSV = `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材,,,銅素材2
+,,AP,データ数,証,骨
+エリア0,クエストZ,20,100,30,20
+エリア1,クエストA,20,100,50,10
+エリア1,クエストA2,20,100,55,8
+エリア1,クエストB,20,100,60,5
+エリア2,クエストD,21,100,70,1
+`
+
+    const mockRun = (csv: string) => {
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response)
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+        .mockResolvedValueOnce({ text: () => Promise.resolve(csv) } as Response)
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+    }
+
+    mockRun(gen1CSV)
+    const gen1 = await fetchAndTransformData()
+
+    // 世代1は位置ベース採番と一致し、id_registry が同梱される
+    const idOf = (d: typeof gen1, name: string) => d.quests.find(q => q.name === name)?.id
+    expect(idOf(gen1, 'クエストA')).toBe('100')
+    expect(idOf(gen1, 'クエストB')).toBe('101')
+    expect(idOf(gen1, 'クエストD')).toBe('110')
+    expect(gen1.id_registry?.version).toBe(1)
+    expect(Object.keys(gen1.id_registry?.quests ?? {})).toHaveLength(3)
+
+    mockRun(gen2CSV)
+    const gen2 = await fetchAndTransformData({ previous: gen1 })
+
+    // 既存クエストのIDは上流挿入の影響を受けない（ピン留め）
+    expect(idOf(gen2, 'クエストA')).toBe('100')
+    expect(idOf(gen2, 'クエストB')).toBe('101')
+    expect(idOf(gen2, 'クエストD')).toBe('110')
+    // 新規はエリア内 max+1 / 新エリアは未使用プレフィックス
+    expect(idOf(gen2, 'クエストA2')).toBe('102')
+    expect(idOf(gen2, 'クエストZ')).toBe('120')
+
+    // アイテムIDも atlasId ベースで維持される
+    expect(gen2.items.find(i => i.name === '英雄の証')?.id).toBe('00')
+    expect(gen2.items.find(i => i.name === '凶骨')?.id).toBe('01')
+
+    // drop_rates の remap 整合: すべての quest_id が quests に存在する
+    const questIds = new Set(gen2.quests.map(q => q.id))
+    expect(gen2.drop_rates.every(dr => questIds.has(dr.quest_id))).toBe(true)
+
+    // レジストリは追記されて同梱される（次世代へ引き継げる）
+    expect(Object.keys(gen2.id_registry?.quests ?? {})).toHaveLength(5)
+    expect(gen2.id_registry?.items['6001']).toBe('00')
+    expect(gen2.id_registry?.areas['エリア0']).toBe('12')
+  })
+
+  it('pins published IDs when the previous payload has no id_registry (migration first run)', async () => {
+    const mockAAItems = [
+      { id: 6001, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 },
+    ]
+    const gen2CSV = `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材
+,,AP,データ数,証
+エリア0,クエストZ,20,100,30
+エリア1,クエストA,20,100,50
+`
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ json: () => Promise.resolve(mockAAItems) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+      .mockResolvedValueOnce({ text: () => Promise.resolve(gen2CSV) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+
+    // id_registry を持たない旧形式ペイロード（公開済みの quests/items のみ）
+    const previous = {
+      quests: [{ area: 'エリア1', name: 'クエストA', id: '100', section: 'Free', ap: 20 }],
+      items: [{ id: '00', name: '英雄の証', category: '銅素材', atlasId: 6001 }],
+    }
+    const data = await fetchAndTransformData({ previous })
+
+    expect(data.quests.find(q => q.name === 'クエストA')?.id).toBe('100')
+    expect(data.quests.find(q => q.name === 'クエストZ')?.id).toBe('110')
+    expect(data.items.find(i => i.name === '英雄の証')?.id).toBe('00')
+    expect(data.id_registry?.areas['エリア1']).toBe('10')
+  })
+
   it('resolves aaQuestId for 冠位研鑽戦 quests via 冠位戴冠戦 war alias', async () => {
     const mockAAItems = [
       { id: 6001, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 },

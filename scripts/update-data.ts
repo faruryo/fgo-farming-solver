@@ -5,10 +5,26 @@ async function main() {
   console.log('Updating master data...')
   try {
     const { fetchAndTransformData, fetchDashboardMeta } = await import('../lib/master-data/update')
-    
-    // Update main master data
-    const data = await fetchAndTransformData()
+
+    // 既存 mocks/all.json を previous として渡し、コミット済みモックの短縮IDを
+    // ピン留めする（再生成でIDがずれて保存済みクエスト選択が壊れるのを防ぐ）。
     const allPath = path.resolve(process.cwd(), 'mocks', 'all.json')
+    let previous
+    try {
+      previous = JSON.parse(await fs.readFile(allPath, 'utf-8'))
+    } catch {
+      console.log('No existing mocks/all.json; assigning IDs from scratch.')
+    }
+
+    // Update main master data
+    const data = await fetchAndTransformData({ previous })
+    // KV 書込みと同じ整合性ゲート（ID一意性・Daily形状・参照整合）。
+    // 不正な採番結果をモックとしてコミットしてしまうのを防ぐ。
+    const { validateMasterData } = await import('../lib/master-data/validation')
+    const v = validateMasterData(data)
+    if (!v.ok) {
+      throw new Error(`Refusing to write degraded mocks/all.json: ${v.reason}`)
+    }
     await fs.writeFile(allPath, JSON.stringify(data, null, 2))
     console.log(`Successfully updated master data at ${allPath}`)
 

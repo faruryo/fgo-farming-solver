@@ -11,6 +11,22 @@ import { questConsumesPod } from '../quest-consumes-pod'
 
 type WaveQuest = { id: string; area: string; name: string; aaQuestId?: number; waveCount?: number }
 
+/**
+ * 前回公開ペイロードから aaQuestId → waveCount の seed を導出する純粋ヘルパー。
+ * worker / bench の双方で、per-quest fetch を新規クエスト分だけに削減するために使う。
+ */
+export const waveCountSeedFrom = (
+  previous?: { quests?: Array<{ aaQuestId?: number; waveCount?: number }> } | null
+): Map<number, number> | undefined => {
+  const seed = new Map<number, number>()
+  for (const q of previous?.quests ?? []) {
+    if (typeof q.aaQuestId === 'number' && typeof q.waveCount === 'number') {
+      seed.set(q.aaQuestId, q.waveCount)
+    }
+  }
+  return seed.size > 0 ? seed : undefined
+}
+
 const fetchWaveCount = async (aaQuestId: number): Promise<number | null> => {
   try {
     const res = await fetch(`${origin}/nice/${region}/quest/${aaQuestId}/1`)

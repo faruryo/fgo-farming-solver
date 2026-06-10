@@ -17,18 +17,29 @@ export const getLocalItems = async <I extends Item>(
   if (items.length === 0) return []
 
   let atlasItemMap = new Map<string, EnrichedItem>()
+  let atlasItemById = new Map<number, EnrichedItem>()
   try {
     const atlasItems = await getItems(locale)
     atlasItemMap = atlasItems.reduce(
       (map, item) => map.set(toApiItemId(item, atlasItems), item),
       new Map<string, EnrichedItem>()
     )
+    // 短縮IDは世代間で固定化される（stable-ids）ため、Atlas 側の並び替えで
+    // toApiItemId の位置ベースIDとずれる（別アイテムを指す）ことがある。
+    // atlasId が判明している場合はそちらを正としてアイコン/カテゴリ解決する。
+    atlasItemById = atlasItems.reduce(
+      (map, item) => map.set(item.id, item),
+      new Map<number, EnrichedItem>()
+    )
   } catch {
     // Atlas Academy unavailable — fall back to master data names
   }
 
   return items.map(({ id, category, name, ...rest }) => {
-    const atlasItem = atlasItemMap.get(id)
+    const masterAtlasId = (rest as { atlasId?: number }).atlasId
+    const atlasItem =
+      (masterAtlasId != null ? atlasItemById.get(masterAtlasId) : undefined) ??
+      atlasItemMap.get(id)
     return {
       id,
       category: atlasItem?.category ?? category,
