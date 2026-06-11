@@ -18,7 +18,7 @@ npm run deploy
 
 ### 2. GitHub 連携による自動デプロイ (CI/CD) 【推奨】
 
-GitHub に push するだけで、メインアプリとデータ更新用 Worker の両方が自動的にデプロイされます。
+GitHub に push するだけで、メインアプリと rarity worker が自動的にデプロイされます（master-data 更新は worker ではなく定期ワークフローが担当。下記「マスターデータの自動更新」参照）。
 
 #### A. GitHub Secrets の設定
 リポジトリの **[Settings] > [Secrets and variables] > [Actions]** に以下の Secret を登録してください：
@@ -29,7 +29,7 @@ GitHub に push するだけで、メインアプリとデータ更新用 Worker
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare ダッシュボードの右側に表示されている ID |
 
 #### B. ワークフローの構成
-`.github/workflows/deploy.yml` に記述されている内容は以下の通りです。メインアプリのビルド後に、更新用 Worker も順番にデプロイされます。
+`.github/workflows/deploy.yml` に記述されている内容は以下の通りです。
 
 ```yaml
 # (前略)
@@ -38,14 +38,6 @@ GitHub に push するだけで、メインアプリとデータ更新用 Worker
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
-
-      - name: Deploy Updater Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: 'updater-worker'
           command: deploy
 ```
 
@@ -67,18 +59,16 @@ pnpm exec wrangler kv namespace create "MASTER_DATA"
 
 実行後、表示される `id` を `wrangler.toml` の `[[kv_namespaces]]` セクションにそれぞれ記述してください。
 
-#### 2. データ更新用 Worker のデプロイ
+#### 2. マスターデータの自動更新（GitHub Actions）
 
-マスターデータを自動更新するための Worker をデプロイします：
+マスターデータ(`all_drops_json` / `dashboard_meta` / `servants_list`)の更新は GitHub Actions の定期ワークフローが行います（旧 fgo-data-updater cron worker は廃止済み。Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため、worker では実行しない）:
 
-```bash
-cd updater-worker
-pnpm exec wrangler deploy
-```
+- `.github/workflows/update-master-data.yml` — 30分ごと。`scripts/run-updater.ts` を実行し Cloudflare REST API で KV を更新
+- `.github/workflows/refresh-nice-war.yml` — 6時間ごと。nice_war(23MB)の compact マッピングを KV (`nice_war_aaquests`) へ
 
-これにより、毎時 0 分に `all_drops_json` と `dashboard_meta` が更新されます。Atlas が空応答を返したり fetch が落ちた場合は、KV 保護層が働いて既存の正常データを温存します。
+前提: リポジトリ secrets の `CLOUDFLARE_API_TOKEN` に **Workers KV Storage:Edit** 権限が必要です。Atlas が空応答を返したり fetch が落ちた場合は、KV 保護層（validation）が働いて既存の正常データを温存します。
 
-緊急で即時更新が必要なときは、Cloudflare ダッシュボードの Worker → Triggers → Cron Triggers から "Trigger" ボタンで cron を手動発火できます。
+緊急で即時更新が必要なときは、GitHub の Actions タブから各ワークフローを "Run workflow" で手動発火できます。
 
 #### 3. Cloudflare D1 (データベース) の作成
 

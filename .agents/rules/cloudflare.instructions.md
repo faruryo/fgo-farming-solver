@@ -2,8 +2,8 @@
 paths:
   - "wrangler.toml"
   - "open-next.config.ts"
-  - "updater-worker/**/*"
-applyTo: "wrangler.toml,open-next.config.ts,updater-worker/**/*"
+  - "rarity-worker/**/*"
+applyTo: "wrangler.toml,open-next.config.ts,rarity-worker/**/*"
 ---
 
 # Cloudflare Workers & Deployment
