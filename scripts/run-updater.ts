@@ -7,15 +7,12 @@
  * かかる本ジョブを worker で回す限り exceededCpu はゼロにならないため、
  * CPU 無制限の CI へ移管した。
  *
- * KV へは Cloudflare REST API でアクセスする(要 env: CLOUDFLARE_API_TOKEN /
- * CLOUDFLARE_ACCOUNT_ID)。トークンには Workers KV Storage:Edit 権限が必要。
+ * KV へは Cloudflare REST API でアクセスする(scripts/kv-rest.ts 参照)。
  *
  * ローカル検証: DRY_RUN=1 で KV 書き込みをスキップし、読み込みは
  * /tmp/adj2.json(all_drops_json)・/tmp/nwaa.json(nice_war_aaquests)が
  * あればそれを使う。
  */
-import { readFileSync, existsSync } from 'node:fs'
-
 import {
   fetchAndTransformData,
   fetchDashboardMeta,
@@ -26,59 +23,16 @@ import type { NiceWarCache, BasicServantEntry } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'
+import { kvGet, kvPut, dryRunLocalFiles } from './kv-rest'
 
-const NAMESPACE_ID = '306bbe537e9d4907809f82468df500e4'
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
 const SERVANTS_LIST_KEY = 'servants_list'
 const NICE_WAR_CACHE_KEY = 'nice_war_aaquests'
 
 const DRY_RUN = process.env.DRY_RUN === '1'
-
-const kvUrl = (key: string) => {
-  const account = process.env.CLOUDFLARE_ACCOUNT_ID
-  if (!account) throw new Error('CLOUDFLARE_ACCOUNT_ID is not set')
-  return `https://api.cloudflare.com/client/v4/accounts/${account}/storage/kv/namespaces/${NAMESPACE_ID}/values/${key}`
-}
-
-const authHeaders = () => {
-  const token = process.env.CLOUDFLARE_API_TOKEN
-  if (!token) throw new Error('CLOUDFLARE_API_TOKEN is not set')
-  return { Authorization: `Bearer ${token}` }
-}
-
-async function kvGet(key: string): Promise<string | null> {
-  if (DRY_RUN) {
-    const local: Record<string, string> = {
-      [MASTER_DATA_KEY]: '/tmp/adj2.json',
-      [NICE_WAR_CACHE_KEY]: '/tmp/nwaa.json',
-    }
-    const p = local[key]
-    if (p && existsSync(p)) {
-      console.log(`[dry-run] kvGet ${key} <- ${p}`)
-      return readFileSync(p, 'utf8')
-    }
-    console.log(`[dry-run] kvGet ${key} -> null`)
-    return null
-  }
-  const res = await fetch(kvUrl(key), { headers: authHeaders() })
-  if (res.status === 404) return null
-  if (!res.ok) throw new Error(`KV get ${key} failed: ${res.status} ${await res.text()}`)
-  return await res.text()
-}
-
-async function kvPut(key: string, value: string): Promise<void> {
-  if (DRY_RUN) {
-    console.log(`[dry-run] kvPut ${key} (${(value.length / 1024).toFixed(1)} KB) skipped`)
-    return
-  }
-  const res = await fetch(kvUrl(key), {
-    method: 'PUT',
-    headers: { ...authHeaders(), 'Content-Type': 'text/plain' },
-    body: value,
-  })
-  if (!res.ok) throw new Error(`KV put ${key} failed: ${res.status} ${await res.text()}`)
-}
+dryRunLocalFiles[MASTER_DATA_KEY] = '/tmp/adj2.json'
+dryRunLocalFiles[NICE_WAR_CACHE_KEY] = '/tmp/nwaa.json'
 
 const niceWarCache: NiceWarCache = {
   async get() {
