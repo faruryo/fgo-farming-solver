@@ -261,6 +261,26 @@ export interface NiceWarQuest {
   warLongName?: string
 }
 
+/**
+ * nice_war の war 配列から後段で使う 5 項目だけの compact クエスト一覧を作る。
+ * ⚠️ メモリ対策: `{...q}` で全フィールド(~30項目)を 15,000+ 件コピーすると
+ * nice_war(23MB)の object graph が二重化し、128MB の Worker で GC が暴走して
+ * exceededCpu を招く。worker の cold フォールバックと CI の refresh スクリプト
+ * (scripts/refresh-nice-war-cache.ts)の両方で共有する。
+ */
+export const compactNiceWarQuests = (aaWars: any[]): NiceWarQuest[] =>
+  aaWars.flatMap(war =>
+    (war.spots || []).flatMap((spot: any) =>
+      (spot.quests || []).map((q: any) => ({
+        id: q.id,
+        name: q.name,
+        spotName: q.spotName,
+        afterClear: q.afterClear,
+        warLongName: war.longName,
+      }))
+    )
+  )
+
 export async function fetchAndTransformData(
   opts: {
     events?: AtlasEvent[]
@@ -299,28 +319,29 @@ export async function fetchAndTransformData(
       }
     }
 
-    // KV キャッシュ経路(worker): nice_war は 23MB あり、その fetch+parse が
-    // phase A の exceededCpu の主因。ETag を使った条件付き GET で、データ未変更時は
-    // 304(本体0バイト)を受けて parse 済み compact マッピングを KV から再利用し、
-    // 23MB の download+parse+変換を丸ごとスキップする。Atlas は週数回しか war を
-    // 更新しないため、大半の cron run がこの 304 経路に乗る。
+    // KV キャッシュ経路(worker): nice_war は 23MB あり、その fetch+parse は
+    // 無料プランの CPU 予算では確実に exceededCpu 圏。しかも殺されると KV が
+    // 未更新のまま次回も full fetch に入り失敗が連鎖する。そのため worker は
+    // キャッシュがあれば nice_war.json への条件付き GET 自体を行わず、KV の
+    // compact マッピングを無条件に使う(subrequest も -1)。鮮度の維持は CI の
+    // 定期ジョブ(.github/workflows/refresh-nice-war.yml → CPU 無制限)が
+    // KV を更新することで担保する。
     if (!aaWars && opts.niceWarCache) {
       const cached = await opts.niceWarCache.get()
-      // 条件付き GET。etag は normalizeEtag で strong に戻す(weak だと Atlas が 304 を
-      // 返さない)。保険として Last-Modified ベースの If-Modified-Since も併送する。
-      const condHeaders: Record<string, string> = {}
-      if (cached?.etag) condHeaders['If-None-Match'] = normalizeEtag(cached.etag)
-      if (cached?.lastModified) condHeaders['If-Modified-Since'] = cached.lastModified
-      const warRes = await fetch(`${origin}/export/${region}/nice_war.json`,
-        Object.keys(condHeaders).length ? { headers: condHeaders } : {})
-      if (warRes.status === 304 && cached?.aaQuests) {
+      if (cached?.aaQuests && cached.aaQuests.length > 0) {
         aaQuests = cached.aaQuests
-        console.log(`nice_war unchanged (304); reused ${aaQuests.length} cached quests (skipped 23MB parse).`)
-      } else if (warRes.ok) {
-        console.log('nice_war changed or uncached; fetching full metadata (~23MB)...')
-        aaWars = await warRes.json()
-        warEtag = normalizeEtag(warRes.headers.get('etag') ?? '')
-        warLastModified = warRes.headers.get('last-modified') ?? ''
+        console.log(`Using ${aaQuests.length} cached nice_war quests (refreshed out-of-band).`)
+      } else {
+        // 初回 cold(キャッシュ無し)のみのフォールバック: 従来どおり全量取得して
+        // KV を温める。この run は CPU 超過で殺されるリスクがあるが、一度成功すれば
+        // 以後は CI ジョブが更新を引き継ぐ。
+        console.log('nice_war cache empty; fetching full metadata (~23MB) to warm it...')
+        const warRes = await fetch(`${origin}/export/${region}/nice_war.json`)
+        if (warRes.ok) {
+          aaWars = await warRes.json()
+          warEtag = normalizeEtag(warRes.headers.get('etag') ?? '')
+          warLastModified = warRes.headers.get('last-modified') ?? ''
+        }
       }
     }
 
@@ -335,20 +356,7 @@ export async function fetchAndTransformData(
     }
 
     if (aaWars) {
-      // ⚠️ メモリ対策: `{...q}` で全フィールド(~30項目)を 15,000+ 件コピーすると
-      // nice_war(23MB)の object graph が二重化し、128MB の Worker で GC が暴走して
-      // exceededCpu を招く。後段で実際に使う 5 項目だけの compact オブジェクトにする。
-      aaQuests = aaWars.flatMap(war =>
-        (war.spots || []).flatMap((spot: any) =>
-          (spot.quests || []).map((q: any) => ({
-            id: q.id,
-            name: q.name,
-            spotName: q.spotName,
-            afterClear: q.afterClear,
-            warLongName: war.longName,
-          }))
-        )
-      )
+      aaQuests = compactNiceWarQuests(aaWars)
       // 元の巨大配列を早期に解放可能にする(以降 aaWars は参照しない)。
       aaWars = null
       console.log(`Extracted ${aaQuests.length} quests from Atlas Academy wars.`)

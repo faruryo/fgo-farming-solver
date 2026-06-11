@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods, fetchActiveEvents, eventDropItems, normalizeEtag } from './update'
+import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods, fetchActiveEvents, eventDropItems, normalizeEtag, compactNiceWarQuests } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
@@ -677,9 +677,11 @@ describe('fetchAndTransformData niceWarCache', () => {
   })
 
   // Regression: nice_war (~23MB) parse is the phase-A exceededCpu hot spot. When the
-  // ETag is unchanged, the conditional GET must return 304 and we reuse the cached
-  // compact mapping WITHOUT re-parsing 23MB.
-  it('reuses cached aaQuests on 304 and never re-parses or re-caches', async () => {
+  // KV cache has a compact mapping (refreshed out-of-band by the refresh-nice-war CI
+  // job), the worker must use it as-is and must NOT fetch nice_war.json at all —
+  // the conditional-GET path was removed because a killed 23MB-parse run leaves the
+  // cache stale and makes the next run fail the same way (failure cascade).
+  it('uses cached aaQuests without fetching nice_war.json at all', async () => {
     const cached = {
       etag: 'abc',
       aaQuests: [{ id: 94150501, name: 'Q1', spotName: '', afterClear: 'open', warLongName: 'W' }],
@@ -690,21 +692,20 @@ describe('fetchAndTransformData niceWarCache', () => {
     }
     vi.mocked(fetch)
       .mockResolvedValueOnce({ json: () => Promise.resolve(mockItem) } as Response) // nice_item
-      .mockResolvedValueOnce({ status: 304, ok: false, json: () => Promise.resolve(null) } as Response) // nice_war 304
       .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response) // CSV
       .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response) // basic_event (events)
 
     await fetchAndTransformData({ niceWarCache: cache })
 
     expect(cache.get).toHaveBeenCalledOnce()
-    expect(cache.put).not.toHaveBeenCalled() // unchanged → no re-cache
-    const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
-    expect((warCall?.[1] as RequestInit | undefined)?.headers).toMatchObject({ 'If-None-Match': 'abc' })
+    expect(cache.put).not.toHaveBeenCalled() // CI ジョブが更新主体。worker は再キャッシュしない
+    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    expect(urls.some(u => u.includes('nice_war.json'))).toBe(false)
   })
 
-  // Regression: on a cache miss / changed data (200), parse once and persist the
-  // compact mapping (id/name/spotName/afterClear/warLongName) keyed by the new ETag.
-  it('parses and caches the compact mapping on 200', async () => {
+  // 初回 cold(キャッシュ無し)のフォールバック: 全量取得して compact 化し、
+  // compact mapping (id/name/spotName/afterClear/warLongName) を ETag 付きで KV へ温める。
+  it('parses and caches the compact mapping on a cold cache', async () => {
     const cache = {
       get: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(undefined),
@@ -741,34 +742,53 @@ describe('fetchAndTransformData niceWarCache', () => {
     expect((warCall?.[1] as RequestInit | undefined)?.headers).toBeUndefined()
   })
 
-  // Regression (root cause of recurring exceededCpu): global_fetch_strictly_public は
-  // Atlas の strong ETag を weak (W/"...") 化して返す。その weak etag を If-None-Match に
-  // そのまま渡すと Atlas は 304 を返さず毎回 23MB を再 parse する。送信時に W/ を剥がして
-  // strong に戻し、保険として保存済み Last-Modified を If-Modified-Since に載せること。
-  it('strips the weak W/ prefix and sends If-Modified-Since for the conditional GET', async () => {
-    const cached = {
-      etag: 'W/"dj0zv3q9vm7ydtwcm-gzip"',
-      lastModified: 'Fri, 05 Jun 2026 09:05:36 GMT',
-      aaQuests: [{ id: 94150501, name: 'Q1', spotName: '', afterClear: 'open', warLongName: 'W' }],
-    }
+  // 空配列キャッシュ(壊れた値)は cold と同じ扱いで full fetch フォールバックに入ること。
+  it('falls back to the full fetch when the cached aaQuests is empty', async () => {
     const cache = {
-      get: vi.fn().mockResolvedValue(cached),
+      get: vi.fn().mockResolvedValue({ etag: 'abc', aaQuests: [] }),
       put: vi.fn().mockResolvedValue(undefined),
     }
     vi.mocked(fetch)
       .mockResolvedValueOnce({ json: () => Promise.resolve(mockItem) } as Response) // nice_item
-      .mockResolvedValueOnce({ status: 304, ok: false, json: () => Promise.resolve(null) } as Response) // nice_war 304
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve([]),
+        headers: { get: () => null },
+      } as unknown as Response) // nice_war full fetch
       .mockResolvedValueOnce({ text: () => Promise.resolve(mockCSV) } as Response) // CSV
       .mockResolvedValueOnce({ json: () => Promise.resolve([]) } as Response) // basic_event
 
     await fetchAndTransformData({ niceWarCache: cache })
 
-    expect(cache.put).not.toHaveBeenCalled()
-    const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
-    expect((warCall?.[1] as RequestInit | undefined)?.headers).toMatchObject({
-      'If-None-Match': '"dj0zv3q9vm7ydtwcm-gzip"', // W/ stripped → strong
-      'If-Modified-Since': 'Fri, 05 Jun 2026 09:05:36 GMT',
-    })
+    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    expect(urls.some(u => u.includes('nice_war.json'))).toBe(true)
+  })
+})
+
+describe('compactNiceWarQuests', () => {
+  // CI の refresh-nice-war ジョブと worker の cold フォールバックが共有する変換。
+  // 後段で使う 5 項目だけを持つこと(全フィールドコピーは 23MB の object graph を
+  // 二重化して GC 暴走 → exceededCpu を招くため禁止)。
+  it('extracts only the 5 fields used downstream', () => {
+    const wars = [
+      {
+        id: 8405,
+        longName: 'War',
+        extra: 'dropme',
+        spots: [
+          {
+            quests: [
+              { id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open', consume: 5, recommendLv: '90' },
+            ],
+          },
+        ],
+      },
+      { id: 8406, longName: 'Empty war' }, // spots 無し
+    ]
+    expect(compactNiceWarQuests(wars)).toEqual([
+      { id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open', warLongName: 'War' },
+    ])
   })
 })
 

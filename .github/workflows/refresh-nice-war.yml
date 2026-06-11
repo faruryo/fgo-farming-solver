@@ -1,0 +1,44 @@
+name: Refresh nice_war KV cache
+
+# fgo-data-updater(Workers 無料プラン)で 23MB の nice_war を parse すると
+# exceededCpu がほぼ確実なため、CPU 無制限の CI 側で compact 化して KV を更新する。
+# worker は KV(nice_war_aaquests)を読むだけ(lib/master-data/update.ts 参照)。
+# Atlas の war 更新は週数回程度なので 6 時間ごとで十分。
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    name: Refresh nice_war_aaquests KV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build compact nice_war mapping
+        run: pnpm exec tsx scripts/refresh-nice-war-cache.ts nice_war_aaquests.json
+
+      - name: Put mapping into KV
+        run: >-
+          pnpm exec wrangler kv key put nice_war_aaquests
+          --path nice_war_aaquests.json
+          --namespace-id 306bbe537e9d4907809f82468df500e4
+          --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
