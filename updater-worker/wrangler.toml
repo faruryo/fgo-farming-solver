@@ -4,7 +4,11 @@ compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 [triggers]
-crons = ["*/5 * * * *"] # 一時的に */5 (perf 改善の cpuTime 検証用。検証後 */30 へ戻す)
+crons = ["*/30 * * * *"] # 30 分ごとに実行 (失敗時の MTTR 短縮)
+# ⚠️ 検証等で頻度を上げる場合の注意: 無料プランの CPU enforcement は「直近の超過頻度」に
+# 応じて段階的に厳格化する(2026-06-11 実測: */5 で2時間回した後、92ms→24ms→10ms と
+# kill 閾値が下がる連続 exceededCpu クラスタが発生)。頻度を上げると超過頻度も上がり
+# enforcement を悪化させるため、長時間の高頻度運用は避けること。
 
 # 注: このアカウントは Workers 無料プランのため [limits](cpu_ms / subrequests)は
 # 設定不可(設定すると wrangler deploy が code:100328 で失敗する)。subrequest 上限
