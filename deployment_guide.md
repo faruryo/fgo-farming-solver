@@ -18,7 +18,7 @@ npm run deploy
 
 ### 2. GitHub 連携による自動デプロイ (CI/CD) 【推奨】
 
-GitHub に push するだけで、メインアプリと rarity worker が自動的にデプロイされます（master-data 更新は worker ではなく定期ワークフローが担当。下記「マスターデータの自動更新」参照）。
+GitHub に push するだけで、メインアプリが自動的にデプロイされます（master-data / rarity 更新は worker ではなく定期ワークフローが担当。下記「マスターデータの自動更新」参照）。
 
 #### A. GitHub Secrets の設定
 リポジトリの **[Settings] > [Secrets and variables] > [Actions]** に以下の Secret を登録してください：
@@ -64,6 +64,7 @@ pnpm exec wrangler kv namespace create "MASTER_DATA"
 マスターデータ(`all_drops_json` / `dashboard_meta` / `servants_list`)の更新は GitHub Actions の定期ワークフローが行います（旧 fgo-data-updater cron worker は廃止済み。Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため、worker では実行しない）:
 
 - `.github/workflows/update-master-data.yml` — 30分ごと。`scripts/run-updater.ts` を実行し Cloudflare REST API で KV を更新
+- `.github/workflows/update-rarity-tables.yml` — 毎時 :15。`scripts/run-rarity-updater.ts`(指紋ゲートつき LP ソルブ)で `rarity_ap_tables` を更新
 - `.github/workflows/refresh-nice-war.yml` — 6時間ごと。nice_war(23MB)の compact マッピングを KV (`nice_war_aaquests`) へ
 
 前提: リポジトリ secrets の `CLOUDFLARE_API_TOKEN` に **Workers KV Storage:Edit** 権限が必要です。Atlas が空応答を返したり fetch が落ちた場合は、KV 保護層（validation）が働いて既存の正常データを温存します。

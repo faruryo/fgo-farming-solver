@@ -147,31 +147,6 @@ jobs:
           wranglerVersion: "4.87.0"
           packageManager: pnpm
 
-  # 旧 deploy-updater ジョブは廃止: master-data 更新は cron worker から
-  # GitHub Actions (.github/workflows/update-master-data.yml) へ移管した。
-  deploy-rarity:
-    name: Deploy Rarity Worker
-    needs: ci
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Deploy Rarity Worker to Cloudflare Workers
-        run: pnpm exec wrangler deploy -c rarity-worker/wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  # 旧 deploy-updater / deploy-rarity ジョブは廃止: master-data / rarity 更新は
+  # cron worker から GitHub Actions の定期ワークフローへ移管した
+  # (.github/workflows/update-master-data.yml / update-rarity-tables.yml)。
