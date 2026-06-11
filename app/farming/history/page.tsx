@@ -4,11 +4,22 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '../../../components/common/link'
 import { motion } from 'framer-motion'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Trash2 } from 'lucide-react'
 import { FaExternalLinkAlt, FaHistory } from 'react-icons/fa'
 import { FarmingHistoryChart, HistoryItem } from '../../../components/farming/FarmingHistoryChart'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -18,10 +29,92 @@ const OBJECTIVE_BADGE: Record<string, string> = {
   both: 'AP+LAP',
 }
 
+interface QuestSelection {
+  total: number
+  selected: number
+  mode: 'excluded' | 'selected'
+  quests: { area: string; name: string }[]
+  truncated?: boolean
+}
+
+const parseQuestSelection = (raw?: string | null): QuestSelection | null => {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as QuestSelection
+  } catch {
+    return null
+  }
+}
+
+const QuestSelectionCell: React.FC<{ raw?: string | null }> = ({ raw }) => {
+  const { t } = useTranslation(['farming'])
+  const selection = parseQuestSelection(raw)
+
+  if (!selection) {
+    return <span style={{ color: 'var(--gold-dim)' }}>—</span>
+  }
+
+  const ratio = `${selection.selected}/${selection.total}`
+  if (selection.selected >= selection.total || selection.quests.length === 0) {
+    return <Badge variant="outline" className="text-[10px]">{ratio}</Badge>
+  }
+
+  const sideTotal =
+    selection.mode === 'excluded'
+      ? selection.total - selection.selected
+      : selection.selected
+  const remaining = sideTotal - selection.quests.length
+
+  return (
+    <Popover>
+      <PopoverTrigger className="cursor-pointer">
+        <Badge variant="outline" className="text-[10px]">{ratio}</Badge>
+      </PopoverTrigger>
+      <PopoverContent className="max-h-72 overflow-y-auto">
+        <div className="text-xs font-bold" style={{ color: 'var(--gold-dim)' }}>
+          {t(selection.mode === 'excluded' ? '除外クエスト' : '選択クエスト')}
+        </div>
+        <ul className="flex flex-col gap-1">
+          {selection.quests.map((q, i) => (
+            <li key={i} className="text-xs" style={{ color: 'var(--text)' }}>
+              〔{q.area}〕{q.name}
+            </li>
+          ))}
+        </ul>
+        {selection.truncated && remaining > 0 && (
+          <div className="text-xs" style={{ color: 'var(--gold-dim)' }}>
+            {t('他{{count}}件', { count: remaining })}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export default function HistoryPage() {
   const { t } = useTranslation(['farming', 'common', 'dashboard'])
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmItem, setConfirmItem] = useState<HistoryItem | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(false)
+
+  const handleDelete = async () => {
+    if (!confirmItem) return
+    setDeleting(true)
+    setDeleteError(false)
+    try {
+      const res = await fetch(`/api/farming/results/${confirmItem.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`DELETE failed: ${res.status}`)
+      setHistory(prev => prev.filter(h => h.id !== confirmItem.id))
+    } catch (err) {
+      console.error(err)
+      setDeleteError(true)
+    } finally {
+      setDeleting(false)
+      setConfirmItem(null)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/farming/history')
@@ -64,12 +157,17 @@ export default function HistoryPage() {
             </motion.div>
           )}
 
+          {deleteError && (
+            <div className="text-sm text-red-400">{t('削除に失敗しました')}</div>
+          )}
+
           <div className="c-card overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="px-4" style={{ color: 'var(--gold-dim)' }}>{t('日時')}</TableHead>
                   <TableHead className="px-4" style={{ color: 'var(--gold-dim)' }}>{t('目的')}</TableHead>
+                  <TableHead className="px-4" style={{ color: 'var(--gold-dim)' }}>{t('対象クエスト')}</TableHead>
                   <TableHead className="text-right px-4" style={{ color: 'var(--gold)' }}>合計消費AP</TableHead>
                   <TableHead className="text-right px-4" style={{ color: 'var(--gold)' }}>合計周回数</TableHead>
                   <TableHead className="px-4" />
@@ -86,6 +184,9 @@ export default function HistoryPage() {
                         {OBJECTIVE_BADGE[item.objective] ?? item.objective}
                       </Badge>
                     </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <QuestSelectionCell raw={item.quest_selection} />
+                    </TableCell>
                     <TableCell className="text-right py-3 px-4" style={{ color: 'var(--text2)' }}>
                       {Math.round(item.total_ap).toLocaleString()}
                     </TableCell>
@@ -93,27 +194,43 @@ export default function HistoryPage() {
                       {Math.round(item.total_lap).toLocaleString()}
                     </TableCell>
                     <TableCell className="py-3 px-4">
-                      <Tooltip>
-                        <TooltipTrigger render={<span />}>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            style={{ color: 'var(--gold-dim)' }}
-                            render={<Link href={`/farming/results/${item.id}`} />}
-                            nativeButton={false}
-                          >
-                            <FaExternalLinkAlt />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('結果を見る')}</TooltipContent>
-                      </Tooltip>
+                      <div className="flex items-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger render={<span />}>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              style={{ color: 'var(--gold-dim)' }}
+                              render={<Link href={`/farming/results/${item.id}`} />}
+                              nativeButton={false}
+                            >
+                              <FaExternalLinkAlt />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('結果を見る')}</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger render={<span />}>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              style={{ color: 'var(--gold-dim)' }}
+                              onClick={() => setConfirmItem(item)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('削除')}</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
                 {history.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10" style={{ color: 'var(--gold-dim)' }}>
+                    <TableCell colSpan={6} className="text-center py-10" style={{ color: 'var(--gold-dim)' }}>
                       {t('履歴がありません')}
                     </TableCell>
                   </TableRow>
@@ -129,6 +246,24 @@ export default function HistoryPage() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={!!confirmItem} onOpenChange={(open) => { if (!open) setConfirmItem(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('この履歴を削除しますか？')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('グラフからも除外されます。共有済みの結果ページは引き続き閲覧できます。')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{t('common:キャンセル')}</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" disabled={deleting} onClick={handleDelete}>
+              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t('削除')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

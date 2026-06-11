@@ -28,7 +28,7 @@ export async function GET() {
 
   try {
     const results = await db.prepare(
-      'SELECT id, objective, target_items, total_ap, total_lap, created_at FROM farming_results WHERE user_id = ? ORDER BY created_at DESC LIMIT 50'
+      'SELECT id, objective, target_items, total_ap, total_lap, quest_selection, created_at FROM farming_results WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 50'
     )
       .bind(session.user.id)
       .all()

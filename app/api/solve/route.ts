@@ -8,6 +8,28 @@ import type { CloudflareEnv } from '../../../types/cloudflare-env'
 
 export const dynamic = 'force-dynamic'
 
+const QUEST_SELECTION_LIMIT = 100
+
+// Denormalized by name (not short ID — IDs were unstable across generations).
+// Stores whichever side (selected/excluded) is smaller so the JSON stays compact.
+const buildQuestSelection = (
+  quests: { id: string; area: string; name: string }[],
+  allowedQuests: string[]
+): string => {
+  const allowed = new Set(allowedQuests)
+  const selectedQuests = quests.filter((q) => allowed.has(q.id))
+  const excludedQuests = quests.filter((q) => !allowed.has(q.id))
+  const mode = selectedQuests.length <= excludedQuests.length ? 'selected' : 'excluded'
+  const side = mode === 'selected' ? selectedQuests : excludedQuests
+  return JSON.stringify({
+    total: quests.length,
+    selected: selectedQuests.length,
+    mode,
+    quests: side.slice(0, QUEST_SELECTION_LIMIT).map(({ area, name }) => ({ area, name })),
+    ...(side.length > QUEST_SELECTION_LIMIT ? { truncated: true } : {}),
+  })
+}
+
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams
   const itemsRaw = searchParams.get('items') || ''
@@ -63,7 +85,7 @@ export async function GET(req: NextRequest) {
   if (db) {
     try {
       await db.prepare(
-        'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
       )
         .bind(
           id,
@@ -72,7 +94,8 @@ export async function GET(req: NextRequest) {
           JSON.stringify(itemCounts),
           result.ap.total_ap,
           result.lap.total_lap,
-          JSON.stringify(result)
+          JSON.stringify(result),
+          buildQuestSelection(drops.quests, allowedQuests)
         )
         .run()
     } catch (e) {

@@ -92,7 +92,15 @@
     "tooltip-total-ap": "Total AP consumed (Saint Quartz: AP÷144)",
     "tooltip-cost": "Estimated cost based on 168 SQ for ¥10,000 pack (totalAP÷144÷168×10000 yen)",
     "tooltip-ap": "AP cost per run of this quest",
-    "tooltip-lap": "Number of runs required for this quest"
+    "tooltip-lap": "Number of runs required for this quest",
+    "対象クエスト": "Target Quests",
+    "除外クエスト": "Excluded quests",
+    "選択クエスト": "Selected quests",
+    "他{{count}}件": "+{{count}} more",
+    "削除": "Delete",
+    "この履歴を削除しますか？": "Delete this history entry?",
+    "グラフからも除外されます。共有済みの結果ページは引き続き閲覧できます。": "It will also be excluded from charts. Shared result pages will remain accessible.",
+    "削除に失敗しました": "Failed to delete"
   },
   "items": {
     "アイテム一覧": "Item List",

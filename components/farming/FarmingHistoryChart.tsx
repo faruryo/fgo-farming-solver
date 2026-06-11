@@ -20,6 +20,8 @@ export interface HistoryItem {
   objective: string
   total_ap: number
   total_lap: number
+  // JSON string (QuestSelection). NULL for rows saved before the feature.
+  quest_selection?: string | null
   created_at: string
 }
 
