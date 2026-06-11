@@ -33,5 +33,5 @@
 - [x] 4.1 `pnpm test` / `pnpm run type-check` / `pnpm run lint` 通過
 - [x] 4.2 `scripts/update-data.ts` でモック再生成し、既存 `mocks/all.json` とのID差分がゼロであることを確認
 - [x] 4.3 `openspec validate stable-short-ids` 通過
-- [ ] 4.4 デプロイ後、初回 cron ログで `reused ≒ 297, new = フィルタ外残数` を確認（observability）
-- [ ] 4.5 翌日以降の cron でIDが不変であることを本番 `/api/drops` のスナップショット比較で確認
+- [x] 4.4 デプロイ後、初回 cron ログで `reused ≒ 297, new = フィルタ外残数` を確認（observability）
+- [x] 4.5 翌日以降の cron でIDが不変であることを本番 `/api/drops` のスナップショット比較で確認
