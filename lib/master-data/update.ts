@@ -240,8 +240,8 @@ export async function fetchActiveEvents(nowSec?: number): Promise<AtlasEvent[]> 
 }
 
 // nice_war(約23MB)の parse 済み compact マッピングを KV にキャッシュするための
-// アクセサ。worker が env.MASTER_DATA を裏に差し込む。bench/test では未指定で
-// 従来どおり毎回 fetch する。
+// アクセサ。CI ジョブ(scripts/run-updater.ts)が KV REST 実装を差し込む。
+// bench/test では未指定で従来どおり毎回 fetch する。
 export interface NiceWarCache {
   get(): Promise<{ etag: string; lastModified?: string; aaQuests: NiceWarQuest[] } | null>
   put(value: { etag: string; lastModified?: string; aaQuests: NiceWarQuest[] }): Promise<void>
@@ -264,9 +264,10 @@ export interface NiceWarQuest {
 /**
  * nice_war の war 配列から後段で使う 5 項目だけの compact クエスト一覧を作る。
  * ⚠️ メモリ対策: `{...q}` で全フィールド(~30項目)を 15,000+ 件コピーすると
- * nice_war(23MB)の object graph が二重化し、128MB の Worker で GC が暴走して
- * exceededCpu を招く。worker の cold フォールバックと CI の refresh スクリプト
- * (scripts/refresh-nice-war-cache.ts)の両方で共有する。
+ * nice_war(23MB)の object graph が二重化しメモリを浪費する(Workers 時代は
+ * 128MB 上限で GC 暴走 → exceededCpu の原因だった)。更新ジョブの cold
+ * フォールバックと CI の refresh スクリプト(scripts/refresh-nice-war-cache.ts)
+ * の両方で共有する。
  */
 export const compactNiceWarQuests = (aaWars: any[]): NiceWarQuest[] =>
   aaWars.flatMap(war =>
@@ -319,13 +320,12 @@ export async function fetchAndTransformData(
       }
     }
 
-    // KV キャッシュ経路(worker): nice_war は 23MB あり、その fetch+parse は
-    // 無料プランの CPU 予算では確実に exceededCpu 圏。しかも殺されると KV が
-    // 未更新のまま次回も full fetch に入り失敗が連鎖する。そのため worker は
-    // キャッシュがあれば nice_war.json への条件付き GET 自体を行わず、KV の
-    // compact マッピングを無条件に使う(subrequest も -1)。鮮度の維持は CI の
-    // 定期ジョブ(.github/workflows/refresh-nice-war.yml → CPU 無制限)が
-    // KV を更新することで担保する。
+    // KV キャッシュ経路: nice_war は 23MB あり、その fetch+parse は重い
+    // (Workers 時代は確実に exceededCpu 圏で、殺されると KV が未更新のまま
+    // 次回も full fetch に入り失敗が連鎖した)。そのため更新ジョブは
+    // キャッシュがあれば nice_war.json の取得自体を行わず、KV の compact
+    // マッピングを無条件に使う。鮮度の維持は CI の定期ジョブ
+    // (.github/workflows/refresh-nice-war.yml)が KV を更新することで担保する。
     if (!aaWars && opts.niceWarCache) {
       const cached = await opts.niceWarCache.get()
       if (cached?.aaQuests && cached.aaQuests.length > 0) {
@@ -333,8 +333,7 @@ export async function fetchAndTransformData(
         console.log(`Using ${aaQuests.length} cached nice_war quests (refreshed out-of-band).`)
       } else {
         // 初回 cold(キャッシュ無し)のみのフォールバック: 従来どおり全量取得して
-        // KV を温める。この run は CPU 超過で殺されるリスクがあるが、一度成功すれば
-        // 以後は CI ジョブが更新を引き継ぐ。
+        // KV を温める。一度成功すれば以後は CI ジョブが更新を引き継ぐ。
         console.log('nice_war cache empty; fetching full metadata (~23MB) to warm it...')
         const warRes = await fetch(`${origin}/export/${region}/nice_war.json`)
         if (warRes.ok) {

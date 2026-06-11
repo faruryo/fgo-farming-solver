@@ -14,8 +14,9 @@
 - **Data**: lib/ & data/
 
 ## Deployment
-- **Auto-deploy**: push to `main` → Cloudflare Workers Builds が自動でビルド & デプロイ。手動デプロイ不要。
+- **Auto-deploy**: push to `main` → GitHub Actions(`.github/workflows/deploy.yml`)が自動でビルド & デプロイ。手動デプロイ不要。
 - **Manual deploy**: `pnpm run deploy` は原則禁止。ローカルビルドの差異が本番に混入するリスクがあるため、明示的な指示がない限り実行しないこと。
+- **Data update jobs**: master-data / rarity の KV 更新は cron worker ではなく GitHub Actions の定期ワークフロー(`update-master-data.yml` 30分ごと / `update-rarity-tables.yml` 毎時 / `refresh-nice-war.yml` 6時間ごと)。Workers 無料プランは CPU 10ms 超の invocation を確率的に kill するため、**重い定期処理を Cloudflare cron worker に置かないこと**。詳細は `deployment_guide.md`。
 
 ## Key Commands
 - `pnpm dev` — local dev server

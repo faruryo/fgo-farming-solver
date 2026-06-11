@@ -1,14 +1,15 @@
 /**
- * fgo-data-updater (updater-worker) ローカル CPU 計測ハーネス。
+ * master-data / rarity 更新パイプラインのローカル CPU 計測ハーネス。
  *
- * 目的:
- *   Cloudflare Workers の `scheduled()` が cron 1回で消費する **CPU 時間** を
- *   ローカルで再現可能に観測する。無料プランの上限(CPU 10ms / subrequest 50)
- *   に対して、現状どのフェーズがどれだけ食っているかを数値化する。
+ * 歴史的経緯: もとは Cloudflare cron worker(fgo-data-updater / fgo-rarity-updater)
+ * の CPU を無料プラン上限(公称 10ms / subrequest 50)に対して数値化するために作られた。
+ * 2026-06-11 に更新処理は GitHub Actions(scripts/run-updater.ts /
+ * run-rarity-updater.ts)へ移管され CPU 制約は消えたが、フェーズ別の CPU/subrequest
+ * 内訳の回帰観測用としてそのまま使える(Atlas への負荷感の把握にも有用)。
  *
  * 計測方針:
  *   - CPU 時間は `process.cpuUsage()` で測る。fetch / KV 待ち(I/O)は CPU に
- *     計上されない ── これは Cloudflare の CPU 計測と同じ定義。
+ *     計上されない。
  *   - fetch はディスクキャッシュ化(scripts/.cache-bench/)。2回目以降は
  *     ネットワークを排して `.json()` の parse コスト(= CPU の主因)だけを
  *     安定計測できる。`--refresh` で再取得。
@@ -16,14 +17,11 @@
  *     なのでカウントする)。
  *   - ピーク RSS を 25ms 間隔でサンプリング。
  *
- * フェーズは updater-worker/index.ts の scheduled() と同じ4分割:
+ * フェーズは run-updater.ts / run-rarity-updater.ts と同じ4分割:
  *   A. updateDrops          (fetchAndTransformData)
  *   B. updateDashboardMeta  (fetchDashboardMeta)
  *   C. updateRarityApTables (buildRarityApTables ← LP ソルバ)
  *   D. updateServantsList   (basic_servant fetch + filter)
- *
- * 注: 本番は B/C/D を Promise.all で並行実行するが、JS は単一スレッドなので
- *     CPU 時間の合計は逐次実行と同じ。ここでは内訳を取るため逐次で測る。
  *
  * 実行: pnpm bench:updater  [--refresh]
  */
@@ -88,8 +86,8 @@ const sampler = setInterval(() => {
 }, 25)
 
 // ── フェーズ計測 ───────────────────────────────────────────────────
-// rarity 計算は別 worker (rarity-worker) に分離済み。subrequest は worker ごとに
-// 別予算なので、どの worker に属すフェーズかを記録して per-worker で集計する。
+// rarity 計算は別ジョブ(run-rarity-updater.ts)に分離済み。どのジョブに属す
+// フェーズかを記録して per-job で集計する(型名は歴史的経緯で WorkerName のまま)。
 type WorkerName = 'updater' | 'rarity'
 type PhaseResult = {
   name: string
@@ -112,7 +110,7 @@ async function measure<T>(name: string, worker: WorkerName, fn: () => Promise<T>
   return out
 }
 
-// mocks/all.json を前回ペイロードとして読む(worker の KV read 相当)。
+// mocks/all.json を前回ペイロードとして読む(本番ジョブの KV read 相当)。
 // waveCount seed と短縮ID安定化レジストリの両方をここから導出する。
 function readPreviousFromMock(): MasterData | undefined {
   try {
@@ -123,17 +121,17 @@ function readPreviousFromMock(): MasterData | undefined {
   }
 }
 
-// updater-worker/index.ts の各フェーズと同じ処理を再現
+// run-updater.ts / run-rarity-updater.ts の各フェーズと同じ処理を再現
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
 const RARITY_AP_TABLES_KEY = 'rarity_ap_tables'
 const SERVANTS_LIST_KEY = 'servants_list'
 
 async function main() {
-  console.log(`\n=== fgo-data-updater CPU bench (${REFRESH ? 'network refresh' : 'cached'}) ===\n`)
+  console.log(`\n=== master-data update CPU bench (${REFRESH ? 'network refresh' : 'cached'}) ===\n`)
 
-  // ── updater worker (fgo-data-updater): A/B/D ──
-  // 0. アクティブイベントを1回だけ取得 (worker scheduled() と同じく共有)
+  // ── updater ジョブ (run-updater.ts): A/B/D ──
+  // 0. アクティブイベントを1回だけ取得 (run-updater.ts と同じく共有)
   const events = await measure('0. prefetch active events (shared)', 'updater', async () => {
     return await fetchActiveEvents()
   })
@@ -159,9 +157,9 @@ async function main() {
     if (v.ok) await MASTER_DATA.put(DASHBOARD_META_KEY, JSON.stringify(meta))
   })
 
-  // ── rarity worker (fgo-rarity-updater): C のみ・独立 invocation ──
+  // ── rarity ジョブ (run-rarity-updater.ts): C のみ・独立 run ──
   // 本番では all_drops_json を KV から読んで buildRarityApTables(drops) を呼ぶ。
-  await measure('C. rarity worker (buildRarityApTables / LP solver)', 'rarity', async () => {
+  await measure('C. rarity job (buildRarityApTables / LP solver)', 'rarity', async () => {
     const raw = await MASTER_DATA.get(MASTER_DATA_KEY)
     const d = raw ? (JSON.parse(raw) as MasterData) : drops
     const tables = await buildRarityApTables(d || undefined)
@@ -212,24 +210,17 @@ function report() {
   console.log('\n--- Peak memory (プロセス全体・参考値) ---')
   console.log(`  peak RSS: ${(peakRss / 1024 / 1024).toFixed(1)} MB`)
 
-  // 実態(observability + CI ログで確認): アカウントは Workers 無料プラン。
-  //   - [limits](cpu_ms / subrequests)は設定不可(無料プランでは deploy が拒否)。
-  //   - subrequest は 1 invocation あたりの上限が厳しい ← これが律速。
-  //   - rarity 計算 (C) は per-servant 取得を含むため別 worker に分離し、独立した
-  //     subrequest 予算を確保している。
+  // 2026-06-11 に worker → GitHub Actions 移管済みのため Workers の上限制約は
+  // 消えたが、ジョブ別の内訳は回帰観測用に残す。
   const subBy = (w: WorkerName) =>
     results.filter((r) => r.worker === w).reduce((a, r) => a + r.subrequests, 0)
   const cpuBy = (w: WorkerName) =>
     results.filter((r) => r.worker === w).reduce((a, r) => a + r.cpuMs, 0)
 
-  console.log('\n--- worker 別 subrequest / CPU (各 worker は独立 invocation = 独立予算) ---')
-  console.log(`  updater (fgo-data-updater)  : subreq ${subBy('updater')},  CPU ${cpuBy('updater').toFixed(0)}ms`)
-  console.log(`  rarity  (fgo-rarity-updater): subreq ${subBy('rarity')},  CPU ${cpuBy('rarity').toFixed(0)}ms`)
+  console.log('\n--- ジョブ別 subrequest / CPU ---')
+  console.log(`  updater (run-updater.ts)        : subreq ${subBy('updater')},  CPU ${cpuBy('updater').toFixed(0)}ms`)
+  console.log(`  rarity  (run-rarity-updater.ts) : subreq ${subBy('rarity')},  CPU ${cpuBy('rarity').toFixed(0)}ms`)
   console.log(`  (参考) 合算: subreq ${totalSub}, CPU ${totalCpu.toFixed(0)}ms`)
-  console.log(
-    '\n  注: 無料プランは subrequest が律速。worker ごとに上限内へ収めること。\n' +
-    '      ローカルはメモリ潤沢で GC 暴走を再現しないため、CPU は参考値。\n'
-  )
 }
 
 main().catch((e) => {
