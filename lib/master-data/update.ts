@@ -446,6 +446,30 @@ export async function fetchAndTransformData(
     }
   }
 
+  // クエストマッチングの高速化: 旧実装はスプレッドシート行ごとに aaQuests 全件
+  // (15,000+)を warLongName 条件込みで線形 find しており、これが cron の CPU 主因
+  // だった(440行 × 15,675件 ≈ 690万回の文字列比較)。war 条件は warLongName のみに
+  // 依存するため、エリアごとに「条件を満たす war の quest 群(元の配列順を保存)」を
+  // 一度だけ作り、行ループでは名前条件だけを候補内で find する。
+  // filter は順序を保存するので、旧 find(name条件 && war条件) と完全に同じ要素を返す。
+  const warNameMatchesArea = (w: string | undefined, area: string): boolean =>
+    (w !== undefined &&
+      (w.includes(area) ||
+        area.includes(w) ||
+        (area === '冠位研鑽戦' && w.includes('冠位戴冠戦')))) ||
+    (area.includes('修練場') && w === '曜日クエスト')
+  const distinctWarNames = [...new Set(aaQuests.map(q => q.warLongName))]
+  const areaCandidatesCache = new Map<string, NiceWarQuest[]>()
+  const candidatesForArea = (area: string): NiceWarQuest[] => {
+    let list = areaCandidatesCache.get(area)
+    if (!list) {
+      const wars = new Set(distinctWarNames.filter(w => warNameMatchesArea(w, area)))
+      list = aaQuests.filter(q => wars.has(q.warLongName))
+      areaCandidatesCache.set(area, list)
+    }
+    return list
+  }
+
   // Parse quests and drop rates
   for (let i = 3; i < rows.length; i++) {
     const row = rows[i]
@@ -470,12 +494,9 @@ export async function fetchAndTransformData(
       // Spreadsheet area と Atlas warLongName が表記揺れする場合のエイリアスマップ:
       //   - 冠位研鑽戦 (spreadsheet) ↔ 冠位戴冠戦 (Atlas, 例: "冠位戴冠戦\nアサシン")
       //   - 修練場 (spreadsheet) ↔ 曜日クエスト (Atlas)
-      const aaQuestInWar = aaQuests.find(q =>
-        (q.name === searchName || q.name.includes(searchName) || q.spotName === searchName) &&
-        (q.warLongName?.includes(area) ||
-          (q.warLongName !== undefined && area.includes(q.warLongName)) ||
-          (area.includes('修練場') && q.warLongName === '曜日クエスト') ||
-          (area === '冠位研鑽戦' && q.warLongName?.includes('冠位戴冠戦')))
+      // (war 条件は candidatesForArea で事前フィルタ済み)
+      const aaQuestInWar = candidatesForArea(area).find(
+        q => q.name === searchName || q.name.includes(searchName) || q.spotName === searchName
       )
 
       quests.push({
@@ -552,10 +573,13 @@ export async function fetchAndTransformData(
   // This metric treats every item as equally important by normalizing its efficiency
   // relative to the best known quest for that specific item.
   
+  // drop_rate ループ内の quests.find(線形)は O(rates×quests) で CPU を食うため Map 化
+  const questById = new Map(quests.map(q => [q.id, q]))
+
   // 1. Find the best efficiency (drop/AP) for each item
   const bestEfficiencyPerItem: Record<string, number> = {}
   for (const dr of all_drop_rates) {
-    const quest = quests.find(q => q.id === dr.quest_id)
+    const quest = questById.get(dr.quest_id)
     if (quest) {
       const efficiency = dr.drop_rate / quest.ap
       bestEfficiencyPerItem[dr.item_id] = Math.max(bestEfficiencyPerItem[dr.item_id] || 0, efficiency)
@@ -565,7 +589,7 @@ export async function fetchAndTransformData(
   // 2. Score each quest by the sum of its relative efficiencies
   const questToRelativeScore: Record<string, number> = {}
   for (const dr of all_drop_rates) {
-    const quest = quests.find(q => q.id === dr.quest_id)
+    const quest = questById.get(dr.quest_id)
     const bestEff = bestEfficiencyPerItem[dr.item_id]
     if (quest && bestEff > 0) {
       const relativeEff = (dr.drop_rate / quest.ap) / bestEff
@@ -814,21 +838,35 @@ interface AtlasGacha {
   featuredSvtIds?: number[]
 }
 
+// basic_servant.json のエントリ(必要フィールドのみ)。dashboard と servants_list の
+// 両フェーズで使うため、cron 1回で二重 fetch+parse しないよう共有できるようにする。
+export interface BasicServantEntry {
+  id: number
+  name: string
+  rarity: number
+  collectionNo: number
+  type: string
+}
+
+export async function fetchBasicServants(): Promise<BasicServantEntry[]> {
+  const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
+  return (await res.json()) as BasicServantEntry[]
+}
+
 export async function fetchDashboardMeta(
   masterQuests?: Quest[],
-  opts: { events?: AtlasEvent[] } = {}
+  opts: { events?: AtlasEvent[]; servants?: BasicServantEntry[] } = {}
 ): Promise<DashboardMeta> {
   const now = Math.floor(Date.now() / 1000)
 
   console.log('Fetching event, gacha and servant data from Atlas Academy...')
-  const [allEvents, gachaRes, servantRes] = await Promise.all([
+  const [allEvents, gachaRes, allServants] = await Promise.all([
     opts.events ? Promise.resolve(opts.events) : fetchActiveEvents(),
     fetch(`${origin}/export/${region}/nice_gacha.json`),
-    fetch(`${origin}/export/${region}/basic_servant.json`)
+    opts.servants ? Promise.resolve(opts.servants) : fetchBasicServants(),
   ])
 
   const allGachas: AtlasGacha[] = await gachaRes.json()
-  const allServants: { id: number; name: string; rarity: number; collectionNo: number; type: string }[] = await servantRes.json()
 
   // Atlas Academy uses 1893423600 as a sentinel for permanently available content
   const PERMANENT_SENTINEL = 1893423600

@@ -1,5 +1,10 @@
-import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
-import type { NiceWarCache, NiceWarQuest } from '../lib/master-data/update'
+import {
+  fetchAndTransformData,
+  fetchDashboardMeta,
+  fetchActiveEvents,
+  fetchBasicServants,
+} from '../lib/master-data/update'
+import type { NiceWarCache, NiceWarQuest, BasicServantEntry } from '../lib/master-data/update'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'
@@ -59,9 +64,17 @@ const worker = {
     //   データ更新をまたいで同一クエスト/アイテムに同一IDを割り当て続ける。
     const previous = await readPreviousMasterData(env)
     const dropsData = await updateDrops(env, events, previous)
+    // basic_servant(~500KB)は dashboard と servants_list の両方で使うため、
+    // 1回だけ fetch+parse して共有する(CPU と subrequest の二重消費を回避)。
+    let servants: BasicServantEntry[] | undefined
+    try {
+      servants = await fetchBasicServants()
+    } catch (e) {
+      console.warn('Failed to prefetch basic servants; phases will fetch individually:', e)
+    }
     await Promise.all([
-      updateDashboardMeta(env, dropsData, events),
-      updateServantsList(env),
+      updateDashboardMeta(env, dropsData, events, servants),
+      updateServantsList(env, servants),
     ])
   }
 }
@@ -117,10 +130,15 @@ async function updateDrops(
   }
 }
 
-async function updateDashboardMeta(env: Env, dropsData: MasterData | null, events?: NiceEvents) {
+async function updateDashboardMeta(
+  env: Env,
+  dropsData: MasterData | null,
+  events?: NiceEvents,
+  servants?: BasicServantEntry[]
+) {
   try {
     console.log('Fetching dashboard metadata...')
-    const dashboardMeta = await fetchDashboardMeta(dropsData?.quests, { events })
+    const dashboardMeta = await fetchDashboardMeta(dropsData?.quests, { events, servants })
     const v = validateDashboardMeta(dashboardMeta)
     if (!v.ok) {
       console.warn(`Refusing to overwrite DASHBOARD_META KV with degraded payload: ${v.reason}`)
@@ -133,18 +151,10 @@ async function updateDashboardMeta(env: Env, dropsData: MasterData | null, event
   }
 }
 
-async function updateServantsList(env: Env) {
+async function updateServantsList(env: Env, servants?: BasicServantEntry[]) {
   try {
     console.log('Fetching basic servant list from Atlas Academy...')
-    const { origin, region } = await import('../constants/atlasacademy')
-    const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
-    const allServants = (await res.json()) as Array<{
-      id: number
-      name: string
-      rarity: number
-      type: string
-      collectionNo: number
-    }>
+    const allServants = servants ?? (await fetchBasicServants())
     const filtered = allServants
       .filter((s) => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0)
       .map((s) => ({ id: s.id, name: s.name, rarity: s.rarity }))
