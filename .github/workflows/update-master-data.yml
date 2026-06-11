@@ -4,11 +4,12 @@ name: Update master data
 # Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため
 # (実測: 改善後でも定常 ~120ms → 時折 exceededCpu)、CPU 無制限の CI で実行する。
 # 処理本体: scripts/run-updater.ts(drops / dashboard_meta / servants_list を KV へ)。
-# 注: GitHub の schedule は混雑時に数分遅延することがあるが、30分周期の鮮度要件には十分。
+# 注: GitHub の schedule は混雑帯(:00/:15/:30/:45)で大幅に間引かれる(実測:
+# */30 指定で 8 時間に 1 回しか発火しなかった)。混雑を避けた半端な分を指定すること。
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '8,38 * * * *'
   workflow_dispatch:
 
 concurrency:

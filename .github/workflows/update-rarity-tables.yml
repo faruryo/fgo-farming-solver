@@ -3,11 +3,12 @@ name: Update rarity AP tables
 # 旧 fgo-rarity-updater worker(1時間ごとの cron)の移管先。
 # 移管理由は update-master-data.yml と同じ(無料プランの確率的 CPU kill の回避)。
 # 処理本体: scripts/run-rarity-updater.ts(指紋ゲートつき LP ソルブ → rarity_ap_tables)。
-# master-data 更新(毎時 :00/:30 ごろ)の後に走るよう :15 にオフセットする。
+# master-data 更新(毎時 :08/:38)の後に走るよう :52 を指定。混雑帯(:00/:15/:30/:45)
+# は GitHub scheduler に間引かれるため避ける(update-master-data.yml の注を参照)。
 
 on:
   schedule:
-    - cron: '15 * * * *'
+    - cron: '52 * * * *'
   workflow_dispatch:
 
 concurrency:
