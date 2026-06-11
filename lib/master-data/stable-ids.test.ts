@@ -101,14 +101,14 @@ describe('assignQuestIds', () => {
 
   it('keeps the ID through a quest rename when aaQuestId matches', () => {
     const reg = emptyRegistry()
-    const m1 = assignQuestIds([quest('エリアA', '旧名', 'Free', 94001)], reg)
+    const m1 = assignQuestIds([quest('エリアA', '旧名', 'Free', 94001)], reg, '2026-06-01')
     expect(m1.get('エリアA_旧名')).toBe('100')
 
-    const m2 = assignQuestIds([quest('エリアA', '新名', 'Free', 94001)], reg)
+    const m2 = assignQuestIds([quest('エリアA', '新名', 'Free', 94001)], reg, '2026-06-11')
     expect(m2.get('エリアA_新名')).toBe('100')
-    // 新キーが登録され、旧キーも墓標として残る
-    expect(reg.quests[questKey('エリアA', '新名')]).toEqual({ id: '100', aa: 94001 })
-    expect(reg.quests[questKey('エリアA', '旧名')]).toEqual({ id: '100', aa: 94001 })
+    // 新キーが登録され、旧キーも墓標として残る。リネームは新規扱いせず addedAt も引き継ぐ
+    expect(reg.quests[questKey('エリアA', '新名')]).toEqual({ id: '100', aa: 94001, addedAt: '2026-06-01' })
+    expect(reg.quests[questKey('エリアA', '旧名')]).toEqual({ id: '100', aa: 94001, addedAt: '2026-06-01' })
   })
 
   // 回帰: スプレッドシート→Atlas の名前マッチは曖昧で、別クエストに同一 aaQuestId が
@@ -178,6 +178,36 @@ describe('assignQuestIds', () => {
     const m2 = assignQuestIds(flipped, reg)
     expect(m2.get('エリアA_Q1')![0]).toBe('0')
     expect(m2.get('エリアA_Q1')).toBe('010')
+  })
+
+  it('records addedAt only on new assignment and keeps it on reuse', () => {
+    const reg = emptyRegistry()
+    // 世代1: 新規割当 → 割当日が記録される
+    assignQuestIds([quest('エリアA', 'Q1')], reg, '2026-06-01')
+    expect(reg.quests[questKey('エリアA', 'Q1')].addedAt).toBe('2026-06-01')
+
+    // 世代2: 再利用 → 既存の addedAt を維持（更新日で上書きしない）
+    const m2 = assignQuestIds(
+      [quest('エリアA', 'Q1'), quest('エリアA', 'Q2')],
+      reg,
+      '2026-06-11'
+    )
+    expect(m2.get('エリアA_Q1')).toBe('100')
+    expect(reg.quests[questKey('エリアA', 'Q1')].addedAt).toBe('2026-06-01')
+    // 新規追加分のみ世代2の日付
+    expect(reg.quests[questKey('エリアA', 'Q2')].addedAt).toBe('2026-06-11')
+  })
+
+  it('does not stamp addedAt on entries synthesized from a legacy payload', () => {
+    // 移行初回: id_registry の無い旧ペイロードからの合成 → addedAt 無し
+    const reg = registryFromPrevious({
+      quests: [{ area: 'エリアA', name: 'Q1', id: '100', section: 'Free' }],
+    })
+    expect(reg.quests[questKey('エリアA', 'Q1')].addedAt).toBeUndefined()
+
+    // 合成エントリを再利用しても addedAt は付かない（既存クエストが NEW にならない）
+    assignQuestIds([quest('エリアA', 'Q1')], reg, '2026-06-11')
+    expect(reg.quests[questKey('エリアA', 'Q1')].addedAt).toBeUndefined()
   })
 
   it('produces 4-char IDs beyond index 35 while keeping the 2-char prefix', () => {

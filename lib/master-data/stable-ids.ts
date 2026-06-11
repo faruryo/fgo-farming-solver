@@ -16,6 +16,12 @@ export interface QuestIdEntry {
   id: string
   /** aaQuestId（判明している場合）。クエスト名リネーム時のフォールバックマッチに使う。 */
   aa?: number
+  /**
+   * 新規ID割当日（ISO 8601 日付）。NEW バッジ表示の判定に使う。
+   * 再利用時は既存値を維持し、registryFromPrevious の合成時は付与しない
+   * （移行初回に既存全クエストが一斉に NEW になる事故を防ぐ）。
+   */
+  addedAt?: string
 }
 
 export interface IdRegistry {
@@ -98,7 +104,9 @@ const isDailyPrefix = (prefix: string): boolean => prefix[0] === '0'
  */
 export const assignQuestIds = (
   quests: RegistryQuest[],
-  registry: IdRegistry
+  registry: IdRegistry,
+  /** 新規割当エントリに記録する日付（ISO 8601）。テストから注入可能。 */
+  addedAtDate: string = new Date().toISOString().slice(0, 10)
 ): Map<string, string> => {
   // レジストリから使用済みプレフィックス / aa 逆引き / プレフィックス毎の最大 index を構築。
   // プレフィックスは areas だけでなく墓標クエストの id からも回収し、
@@ -189,8 +197,12 @@ export const assignQuestIds = (
     }
 
     // レジストリへ追記。aa 一致で新キーになった場合、旧キーは無害な墓標として残る。
+    // addedAt: レジストリ未知のクエスト（真の新規）のみ現在日付を記録。既存エントリが
+    // ある場合（再利用・リネーム・エリア移動での再採番）は既存値をそのまま引き継ぐ。
     const newEntry: QuestIdEntry =
       q.aaQuestId != null ? { id: shortId, aa: q.aaQuestId } : { id: shortId }
+    const addedAt = entry ? entry.addedAt : addedAtDate
+    if (addedAt != null) newEntry.addedAt = addedAt
     registry.quests[key] = newEntry
     if (q.aaQuestId != null && !byAa.has(q.aaQuestId)) {
       byAa.set(q.aaQuestId, { key, entry: newEntry })

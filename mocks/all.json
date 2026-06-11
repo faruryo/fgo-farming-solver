@@ -4410,7 +4410,8 @@
       "qp": 11180,
       "bondPoints": 835,
       "exp": 25048,
-      "waveCount": 3
+      "waveCount": 3,
+      "addedAt": "2026-01-01"
     },
     {
       "area": "パスト・カルデア",
@@ -4422,7 +4423,8 @@
       "qp": 11310,
       "bondPoints": 845,
       "exp": 25708,
-      "waveCount": 3
+      "waveCount": 3,
+      "addedAt": "2026-06-05"
     },
     {
       "area": "パスト・カルデア",
@@ -4434,7 +4436,8 @@
       "qp": 11310,
       "bondPoints": 845,
       "exp": 25708,
-      "waveCount": 3
+      "waveCount": 3,
+      "addedAt": "2026-06-05"
     }
   ],
   "drop_rates": [

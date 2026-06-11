@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
-import { assignItemId, assignQuestIds, registryFromPrevious } from './stable-ids'
+import { assignItemId, assignQuestIds, questKey, registryFromPrevious } from './stable-ids'
 import type { PreviousMasterData } from './stable-ids'
 import { populateWaveCounts } from './wave-count'
 
@@ -555,6 +555,15 @@ export async function fetchAndTransformData(
   )
   quests.forEach(q => { q.id = longToShortQuestId.get(q.id) ?? q.id })
   all_drop_rates.forEach(dr => { dr.quest_id = longToShortQuestId.get(dr.quest_id) ?? dr.quest_id })
+
+  // NEW バッジ用: レジストリの addedAt（新規ID割当日）を公開 Quest へ射影する。
+  // 合成レジストリ由来の既存クエストには addedAt が無く、その場合は未設定のまま。
+  // ⚠️ rarity fingerprint(computeRaritySourceFingerprint)は quests の id/ap しか
+  // 見ないため、addedAt の有無/変化で再計算は走らない。指紋入力に含めないこと。
+  quests.forEach(q => {
+    const addedAt = registry.quests[questKey(q.area, q.name)]?.addedAt
+    if (addedAt != null) q.addedAt = addedAt
+  })
 
   // 6. Filter Candidates
   // Strategy:

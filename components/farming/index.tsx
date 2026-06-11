@@ -5,7 +5,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { useChecked } from '../../hooks/use-checked-from-quest-state'
@@ -75,7 +83,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   useEffect(migrateLocalInput, [])
   const { t } = useTranslation('farming')
   const { tree } = useQuestTree(quests)
-  const questIds = quests.map(({ id }) => id)
+  const questIds = useMemo(() => quests.map(({ id }) => id), [quests])
   const initialItemCounts = useMemo(
     () => Object.fromEntries(items.map((item) => [item.id, ''])),
     [items]
@@ -84,7 +92,68 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     'items',
     initialItemCounts
   )
-  const [checkedQuests, setCheckedQuests] = useLocalStorage('quests', questIds)
+
+  // 旧 'quests'(チェック済みリスト) → 'excludedQuests'(除外リスト) への一方向移行。
+  // 除外リスト方式により、マスターデータに追加された新クエストは既定でチェックONになる。
+  // 'excludedQuests' 既存時はスキップ（クラウド復元で旧 'quests' が後から書かれても
+  // 上書きしない）。useLocalStorage('excludedQuests') より先に宣言し、その読み出し
+  // effect より前に移行が完了するようにする（effect は宣言順に実行される）。
+  useEffect(() => {
+    if (localStorage.getItem('excludedQuests') != null) return
+    const json = localStorage.getItem('quests')
+    if (json == null) return
+    try {
+      const checked = JSON.parse(json) as unknown
+      if (!Array.isArray(checked)) return
+      const checkedSet = new Set(checked as string[])
+      const excluded = questIds.filter((id) => !checkedSet.has(id))
+      localStorage.setItem('excludedQuests', JSON.stringify(excluded))
+    } catch (e) {
+      console.error(e)
+    }
+  }, [])
+
+  const [excludedQuests, setExcludedQuests] = useLocalStorage<string[]>(
+    'excludedQuests',
+    []
+  )
+
+  // checked semantics（チェック済みリスト + setter）への反転アダプタ。
+  // useChecked / useCheckboxTree / URL クエリ反映 / solve 送信は従来どおり
+  // チェック済みリストで動き、永続化だけが除外リストになる。
+  const checkedQuests = useMemo(() => {
+    const excludedSet = new Set(excludedQuests)
+    return questIds.filter((id) => !excludedSet.has(id))
+  }, [questIds, excludedQuests])
+  const setCheckedQuests = useCallback<Dispatch<SetStateAction<string[]>>>(
+    (action) => {
+      setExcludedQuests((prevExcluded) => {
+        const excludedSet = new Set(prevExcluded)
+        const prevChecked = questIds.filter((id) => !excludedSet.has(id))
+        const nextChecked =
+          typeof action === 'function' ? action(prevChecked) : action
+        const checkedSet = new Set(nextChecked)
+        return questIds.filter((id) => !checkedSet.has(id))
+      })
+    },
+    [questIds, setExcludedQuests]
+  )
+
+  // legacy 'quests' キーへのデュアルライト（状態スナップショット / クラウド同期の
+  // 既存契約維持）。初回 flush は excludedQuests が localStorage から読まれる前の
+  // 「全チェック」状態なので skip する（保存済みの 'quests' を破壊しない）。
+  const dualWriteStarted = useRef(false)
+  useEffect(() => {
+    if (!dualWriteStarted.current) {
+      dualWriteStarted.current = true
+      return
+    }
+    const json = JSON.stringify(checkedQuests)
+    if (localStorage.getItem('quests') !== json) {
+      localStorage.setItem('quests', json)
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'quests' } }))
+    }
+  }, [checkedQuests])
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isConfirming_, setIsConfirming_] = useState(false)

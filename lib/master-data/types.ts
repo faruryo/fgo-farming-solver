@@ -30,6 +30,8 @@ export interface Quest {
   section: string
   aaQuestId?: number
   waveCount?: number
+  /** 新規ID割当日（ISO 8601 日付）。id_registry から射影。NEW バッジ判定に使う。 */
+  addedAt?: string
 }
 
 export interface DropRate {

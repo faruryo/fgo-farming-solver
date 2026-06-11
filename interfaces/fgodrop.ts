@@ -24,6 +24,8 @@ export type Quest = {
   bondPoints?: number
   /** マスターEXP。 */
   exp?: number
+  /** 新規ID割当日（ISO 8601 日付）。30日以内なら NEW バッジ表示に使う。 */
+  addedAt?: string
 }
 export type DropRate = {
   item_id: string

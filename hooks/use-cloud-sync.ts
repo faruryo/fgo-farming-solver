@@ -15,6 +15,7 @@ export const KEYS = [
   'objective',
   'items',
   'quests',
+  'excludedQuests',
   'halfDailyAp',
   'dropMergeMethod',
   'farming/results',
