@@ -345,6 +345,9 @@ export const Index = ({
   const handleCalc = () => {
     const result = sumMaterials(chaldeaState, materials)
     localStorage.setItem('material/result', JSON.stringify(result))
+    // Notify change tracking (dirty metadata / auto-save) — direct setItem
+    // is invisible to the cloud-sync modification listener otherwise.
+    window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'material/result' } }))
     router.push('/material/result')
   }
 

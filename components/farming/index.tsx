@@ -214,6 +214,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       if (hasId(result) && typeof result.id == 'string') {
         const url = `/farming/results/${result.id}`
         localStorage.setItem('farming/results', url)
+        // Notify change tracking (dirty metadata / auto-save) — direct
+        // setItem is invisible to the cloud-sync modification listener.
+        window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'farming/results' } }))
         // Persist a full-state progress snapshot (incl. material) for this run.
         // Fire-and-forget so it never blocks navigation to the result page.
         void saveProgressSnapshot()

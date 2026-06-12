@@ -3,6 +3,7 @@
 import { SessionProvider } from 'next-auth/react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
+import { CloudSyncEngine } from '@/components/cloud/sync-engine'
 import '../lib/i18n'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <TooltipProvider>
         {children}
         <Toaster />
+        <CloudSyncEngine />
       </TooltipProvider>
     </SessionProvider>
   )
