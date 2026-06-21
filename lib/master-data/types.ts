@@ -64,6 +64,116 @@ export interface MasterData {
   id_registry?: IdRegistry
 }
 
+// ── Event / Lottery planner types ───────────────────────────────────
+
+/**
+ * イベント通貨アイテム。Atlas Academy のアイテム ID を使用（atlasId 空間）。
+ */
+export interface EventCurrency {
+  /** Atlas Academy item id */
+  id: number
+  name: string
+  icon: string
+}
+
+/**
+ * 1箱分（1 boxIndex 分）のロトボックス情報。
+ * 11箱ロトなら boxIndex 0 〜 10 に相当する。
+ */
+export interface EventLotteryBox {
+  /** 箱ラウンドインデックス（0 始まり）。 */
+  boxIndex: number
+  /** 1箱を開けるのに必要なイベント通貨の合計数。 */
+  costPerBox: number
+  /** 箱確定報酬の集計（素材。レア報酬は rareRewards に分離）。 */
+  contents: { itemId: number; num: number; name: string; icon?: string }[]
+  /**
+   * レアボックス報酬。素材なら充当計算に含める。
+   * サーヴァント/礼装/コマンドコード（objType で判定）は別バッジ表示する。
+   */
+  rareRewards: { itemId: number; num: number; objType: string; name: string; icon?: string }[]
+}
+
+/**
+ * 交換所の1エントリー（purchaseType='item' かつ payType='eventItem' のみ）。
+ */
+export interface EventShopItem {
+  /** 獲得アイテムの Atlas Academy item id。 */
+  itemId: number
+  /** 1回の購入で得られる個数（Atlas setNum）。 */
+  qty: number
+  /** 対価となるイベント通貨の Atlas Academy item id。 */
+  costItemId: number
+  /** 1回の購入に必要な通貨量。 */
+  costAmount: number
+  /** 購入上限（在庫数）。 */
+  limitNum: number
+  /** アイテム名（UI 表示用。旧 KV データとの後方互換のためオプショナル）。 */
+  name?: string
+  /** アイテムアイコン URL（UI 表示用。オプショナル）。 */
+  icon?: string
+}
+
+/**
+ * 周回ノード（farmable quest）とそのドロップ情報。
+ */
+export interface EventFarmingNode {
+  /** Atlas Academy quest id。 */
+  questId: number
+  name: string
+  /** AP 消費。 */
+  ap: number
+  /**
+   * 1周あたり期待ドロップ数。
+   * Atlas ドロップデータ（dropCount / runs * num）から算出。
+   * 新規イベント序盤は空配列（手入力フォールバック用）。
+   */
+  drops: { itemId: number; perRun: number; name?: string; icon?: string }[]
+}
+
+/**
+ * コンパクト化されたイベントデータ（KV `event_data_json` の1エントリー）。
+ * ロト（ボックス）型イベントのみを対象とする。
+ */
+export interface EventPlannerEvent {
+  /** Atlas Academy event id。 */
+  id: number
+  name: string
+  /** Atlas Academy event type（"eventQuest" 等）。 */
+  type: string
+  /** 開催開始 Unix timestamp（秒）。 */
+  startedAt: number
+  /** 開催終了 Unix timestamp（秒）。 */
+  endedAt: number
+  /** ロトで使用するイベント通貨。 */
+  currency: EventCurrency
+  /**
+   * 最終箱が無限ループするか（Atlas lottery.limited === false）。
+   * true のとき目標箱数は箱種類数（lotteries.length）を超えて指定でき、
+   * 超過分は最終箱の cost / contents の繰り返しとして計算する。
+   */
+  unlimitedBoxes: boolean
+  /**
+   * ロトボックスの箱ラウンドごとの情報（boxIndex 昇順）。
+   * 11箱ロトなら 11 要素。
+   */
+  lotteries: EventLotteryBox[]
+  /** 交換所の素材エントリー（purchaseType='item' かつ payType='eventItem' のみ）。 */
+  shop: EventShopItem[]
+  /** イベント周回ノード。 */
+  farmingNodes: EventFarmingNode[]
+}
+
+/**
+ * KV `event_data_json` のルート構造。
+ */
+export interface EventData {
+  /** ロト型イベントの一覧（開催中＋直近終了を含む）。 */
+  events: EventPlannerEvent[]
+  /** この KV が最後に更新された Unix timestamp（秒）。 */
+  updatedAt: number
+}
+
 export interface DashboardCampaignInfo {
   target: string
   calcType: string

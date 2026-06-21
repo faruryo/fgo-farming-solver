@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useTranslation } from 'react-i18next'
 import { DashboardEvent } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
+import { Link } from '../common/link'
+import { FaBox } from 'react-icons/fa'
 
 interface EventSectionProps {
   events: DashboardEvent[]
@@ -59,24 +61,45 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
                   </Badge>
                 )}
               </div>
-              {event.drops.length > 0 && (
-                <div className="flex gap-2">
-                  {event.drops.slice(0, 8).map(drop => (
-                    <Tooltip key={drop.id}>
-                      <TooltipTrigger render={<span />}>
-                        <div className="w-[22px] h-[22px] rounded overflow-hidden flex-shrink-0" style={{ background: 'var(--bg2)' }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={drop.icon} alt={drop.name} className="w-full h-full" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>{drop.name}</TooltipContent>
-                    </Tooltip>
-                  ))}
-                  {event.drops.length > 8 && (
-                    <span className="text-[10px]" style={{ color: 'var(--text3)' }}>+{event.drops.length - 8}</span>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {event.drops.length > 0 && (
+                  <div className="flex gap-2">
+                    {event.drops.slice(0, 8).map(drop => (
+                      <Tooltip key={drop.id}>
+                        <TooltipTrigger render={<span />}>
+                          <div className="w-[22px] h-[22px] rounded overflow-hidden flex-shrink-0" style={{ background: 'var(--bg2)' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={drop.icon} alt={drop.name} className="w-full h-full" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{drop.name}</TooltipContent>
+                      </Tooltip>
+                    ))}
+                    {event.drops.length > 8 && (
+                      <span className="text-[10px]" style={{ color: 'var(--text3)' }}>+{event.drops.length - 8}</span>
+                    )}
+                  </div>
+                )}
+                <Link
+                  href={`/events/${event.id}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '3px 8px',
+                    background: 'var(--panel)',
+                    color: 'var(--text3)',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    flexShrink: 0,
+                  }}
+                >
+                  <FaBox size={9} />
+                  {t('ロト計画')}
+                </Link>
+              </div>
             </div>
           </div>
         </div>

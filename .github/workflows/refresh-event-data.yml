@@ -1,0 +1,47 @@
+name: Refresh event_data KV cache
+
+# ロト（ボックス）型イベントの情報を Atlas Academy から取得・コンパクト化して KV に書き込む。
+# Workers 無料プランは CPU 10ms 超の invocation を確率的に kill するため、
+# 重い fetch は CPU 無制限の GH Actions 側で行い、Worker は KV を読むだけにする
+# (refresh-nice-war.yml / lib/master-data/update.ts と同じ方針)。
+#
+# 周回ドロップのサンプルは会期が進むにつれて増えるため日次更新で精度が上がる。
+# 会期終了後 30 日以内のイベントも対象に含める（スクリプト側で制御）。
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    name: Refresh event_data_json KV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build compact event data
+        run: pnpm exec tsx scripts/refresh-event-data.ts event_data.json
+
+      - name: Put event data into KV
+        run: >-
+          pnpm exec wrangler kv key put event_data_json
+          --path event_data.json
+          --namespace-id 306bbe537e9d4907809f82468df500e4
+          --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
