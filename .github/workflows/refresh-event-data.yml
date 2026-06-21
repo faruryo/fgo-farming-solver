@@ -34,9 +34,20 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build compact event data
-        run: pnpm exec tsx scripts/refresh-event-data.ts event_data.json
+        id: build
+        run: |
+          pnpm exec tsx scripts/refresh-event-data.ts event_data.json
+          # ボックスイベント不在時はスクリプトがファイルを書かずに正常終了する。
+          # その場合は KV put をスキップし、既存 KV を温存する（空書きで壊さない）。
+          if [ -f event_data.json ]; then
+            echo "wrote=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "wrote=false" >> "$GITHUB_OUTPUT"
+            echo "No event_data.json produced (no active box events); skipping KV put."
+          fi
 
       - name: Put event data into KV
+        if: steps.build.outputs.wrote == 'true'
         run: >-
           pnpm exec wrangler kv key put event_data_json
           --path event_data.json
