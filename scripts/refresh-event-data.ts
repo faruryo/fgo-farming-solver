@@ -438,7 +438,20 @@ async function main() {
   }
 
   if (results.length === 0) {
-    throw new Error('Refusing to write: no lottery events extracted (would blank KV)')
+    // basic_event.json 自体が空なら Atlas 側の障害の可能性が高い。既存 KV を
+    // 空書きで壊さないよう失敗扱いにする（毎日の cron でも本当の異常は赤くする）。
+    if (basicEvents.length === 0) {
+      throw new Error('Refusing to write: basic_event.json was empty (likely upstream issue)')
+    }
+    // カタログ取得には成功しているがボックスイベントが1件も無い、というのは
+    // 年の大半で「正常」な状態（ボックスは年1〜3回）。ここで exit 1 にすると
+    // 開催していない期間ずっと日次ジョブが赤く失敗し通知が飛び続けるため、
+    // 既存 KV はそのまま温存して正常終了する（no-op）。
+    console.log(
+      `No active box events (${targets.length} eventQuest checked, none had lotteries). ` +
+      `Leaving existing KV untouched and exiting successfully.`
+    )
+    return
   }
 
   const output: EventData = {
