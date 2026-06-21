@@ -201,6 +201,12 @@ export interface DashboardEvent {
   campaigns?: DashboardCampaignInfo[]
   /** Atlas Academy `event.campaignQuests` の件数 (`isExcepted=true` を含む生件数)。 */
   campaignQuestsCount?: number
+  /**
+   * ボックスガチャ(抽選 `lotteries`)を持つイベントか。
+   * ダッシュボードの「ボックス計画」導線を出すのはこれが true のときだけ。
+   * 旧 KV データには無いため optional（未定義時は導線を出さない安全側）。
+   */
+  hasLottery?: boolean
 }
 
 export interface DashboardGacha {

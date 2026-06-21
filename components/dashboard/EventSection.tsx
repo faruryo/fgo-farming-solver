@@ -80,25 +80,27 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
                     )}
                   </div>
                 )}
-                <Link
-                  href={`/events/${event.id}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 8px',
-                    background: 'var(--panel)',
-                    color: 'var(--text3)',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    flexShrink: 0,
-                  }}
-                >
-                  <FaBox size={9} />
-                  {t('ロト計画')}
-                </Link>
+                {event.hasLottery && (
+                  <Link
+                    href={`/events/${event.id}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '3px 8px',
+                      background: 'var(--panel)',
+                      color: 'var(--text3)',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FaBox size={9} />
+                    {t('ロト計画')}
+                  </Link>
+                )}
               </div>
             </div>
           </div>

@@ -170,7 +170,7 @@
     "強化・育成": "Enhance & Train",
     "その他": "Other",
     "ストーム・ポッド消費なし期間中": "Storm Pod Free Period",
-    "ロト計画": "Lottery Plan"
+    "ロト計画": "Box Plan"
   },
   "quests": {
     "クエスト効率": "Quest Efficiency",
@@ -218,7 +218,7 @@
   "events": {
     "ロトイベント一覧": "Lottery Events",
     "イベント一覧説明": "Plan your box lottery runs: calculate currency needed, boxes to open, and farming laps.",
-    "ロト計画": "Lottery Plan",
+    "ロト計画": "Box Plan",
     "開催中": "Active",
     "開催予定": "Upcoming",
     "終了": "Ended",

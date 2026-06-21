@@ -713,6 +713,9 @@ interface AtlasEvent {
   svts?: { svtId: number }[]
   campaigns?: AtlasEventCampaign[]
   campaignQuests?: AtlasEventCampaignQuest[]
+  // ボックスガチャ(抽選)を持つイベントのみ。ダッシュボードの「ボックス計画」導線の
+  // 出し分けに使う(lotteries が無いイベントはボックスイベントではない)。
+  lotteries?: unknown[]
 }
 
 /**
@@ -954,7 +957,8 @@ export async function fetchDashboardMeta(
     endedAt: e.endedAt,
     shopFinishedAt: e.finishedAt,
     type: e.type,
-    drops: eventDropItems(e)
+    drops: eventDropItems(e),
+    hasLottery: (e.lotteries?.length ?? 0) > 0
   }))
 
   // 6b. Map banner-less questCampaign events for CampaignSection.
