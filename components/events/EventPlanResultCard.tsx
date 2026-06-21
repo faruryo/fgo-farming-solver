@@ -48,6 +48,18 @@ export const EventPlanResultCard: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation('events')
 
+  // confirmedMaterials 描画用に itemId → {name, icon} を事前構築（チップ毎の
+  // flatMap().find() の O(N*M) を回避）。
+  const itemMetaMap = React.useMemo(() => {
+    const map = new Map<number, { name: string; icon?: string }>()
+    for (const box of event.lotteries) {
+      for (const c of box.contents) {
+        if (!map.has(c.itemId)) map.set(c.itemId, { name: c.name, icon: c.icon })
+      }
+    }
+    return map
+  }, [event.lotteries])
+
   const totalLap = solverResult?.result.total_lap ?? 0
   const totalAp = solverResult?.result.total_ap ?? 0
 
@@ -137,8 +149,8 @@ export const EventPlanResultCard: React.FC<Props> = ({
           </p>
           <div className="flex flex-wrap gap-2">
             {Array.from(boxLayer.confirmedMaterials.entries()).slice(0, 20).map(([itemId, num]) => {
-              // Find name/icon from box contents (any box, same item)
-              const meta = event.lotteries.flatMap(b => b.contents).find(c => c.itemId === itemId)
+              // Find name/icon from prebuilt lookup map
+              const meta = itemMetaMap.get(itemId)
               const name = meta?.name || ''
               const icon = meta?.icon
               return (

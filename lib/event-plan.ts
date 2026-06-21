@@ -232,14 +232,38 @@ export const buildEventDrops = (
     itemIdSet.add(String(id))
   }
 
-  const items: Drops['items'] = Array.from(itemIdSet).map((id) => ({
-    id,
-    category: 'イベント',
-    name: id === currencyIdStr ? event.currency.name : `item_${id}`,
-    largeCategory: 'イベント',
-    shortName: id === currencyIdStr ? event.currency.name : `item_${id}`,
-    atlasId: Number(id),
-  }))
+  // atlasId → アイテム名のマップをイベントデータ（取込時に Atlas nice_item で解決済み）
+  // から構築する。これがないとソルバー結果（周回ドロップ見込み等）で生 ID 表示になる。
+  const itemNameMap = new Map<number, string>()
+  itemNameMap.set(currencyAtlasId, event.currency.name)
+  for (const node of event.farmingNodes) {
+    for (const drop of node.drops) {
+      if (drop.name) itemNameMap.set(drop.itemId, drop.name)
+    }
+  }
+  for (const item of event.shop) {
+    if (item.name) itemNameMap.set(item.itemId, item.name)
+  }
+  for (const box of event.lotteries) {
+    for (const c of box.contents) {
+      if (c.name) itemNameMap.set(c.itemId, c.name)
+    }
+    for (const r of box.rareRewards) {
+      if (r.name) itemNameMap.set(r.itemId, r.name)
+    }
+  }
+
+  const items: Drops['items'] = Array.from(itemIdSet).map((id) => {
+    const name = itemNameMap.get(Number(id)) ?? `item_${id}`
+    return {
+      id,
+      category: 'イベント',
+      name,
+      largeCategory: 'イベント',
+      shortName: name,
+      atlasId: Number(id),
+    }
+  })
 
   // ── quests ─────────────────────────────────────────────────────────────────
   const quests: Drops['quests'] = event.farmingNodes

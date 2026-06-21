@@ -190,6 +190,17 @@ describe('buildEventDrops', () => {
     expect(drops.campaigns).toHaveLength(0)
   })
 
+  it('通貨以外のアイテム名もイベントデータから解決される（item_ ハードコードしない）', () => {
+    // contents の素材を直接需要に指定 → solver items に登場する
+    const sample = mockEvent.lotteries[0].contents.find((c) => c.name)
+    expect(sample).toBeDefined()
+    const { drops } = buildEventDrops(mockEvent, 0, new Map([[sample!.itemId, 1]]))
+    const item = drops.items.find((i) => i.id === String(sample!.itemId))
+    expect(item).toBeDefined()
+    expect(item!.name).toBe(sample!.name)
+    expect(item!.name.startsWith('item_')).toBe(false)
+  })
+
   it('ID は短縮 ID ではなく Atlas 数値 ID の文字列', () => {
     const { drops } = buildEventDrops(mockEvent, 100)
     // イベント通貨 ID = 94151101 → '94151101'（6桁以下の短縮 ID にはならない）
