@@ -43,5 +43,5 @@
 
 - [x] 8.1 `pnpm test` と type-check が通る(type-check clean / 1001 tests passed / lint clean)
 - [x] 8.2 所持数モーダルの「ストック目標設定」セクション(OFF/ON でカード強調・説明文切替)とクエスト効率一覧の「ストック込み」表示を実機確認(:3000)。取り込み・アドバイザーの整合は共有 `effectiveDeficiency` 経由をコード監査で確認
-- [ ] 8.3 育成計算機の副表示・計算履歴 badge・既存履歴(stockIncluded 無し)の後方互換を実機確認(コード監査済み。ブラウザ視認は未実施)
+- [x] 8.3 育成計算機の副表示・計算履歴 badge を実機確認。+ストック副表示はローカル(:3000)、結果 badge は実 D1 backed のプレビューURL(wrangler versions upload)で goSolver→solve→結果ページに「ストック込み」badge 表示を確認。stockIncluded が /api/solve〜D1〜結果まで貫通。既存履歴(stockIncluded 無し)は optional で false 扱い(コード監査)
 - [x] 8.4 既定OFF(`efficiency/stockEnabled` 未設定/false)で従来挙動・保存値が不変であることを確認(検証後 OFF にリセット済み)
