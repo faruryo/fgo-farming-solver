@@ -1,94 +1,114 @@
 ## Context
 
-クエスト効率(`lib/quest-efficiency.ts`)の重み決定 `computeItemWeight` は現在2段階:
+クエスト効率(`lib/quest-efficiency.ts`)の `computeItemWeight` は現在2段階(不足のみ時): `owned<goal→1` / 余剰 `owned-goal` ≤ `threshold[rarity]`→0.3 / 超→0。`threshold` は `efficiency/surplusThreshold`(金50/銀100/銅200、クラウド同期)。
 
-```
-不足のみ(shortageOnly=true):
-  owned < goal           → 1   (不足=主優先)
-  owned ≥ goal & 余剰 ≤ threshold[rarity] → 0.3 (次点)
-  余剰 > threshold        → 0
-全部(shortageOnly=false): 常に 1
-```
+「不足/必要数」から不足を出す計算は5画面に分散して存在する:
 
-- `threshold` = `efficiency/surplusThreshold`(金50/銀100/銅200、クラウド同期)。
-- `goal` = `mergeGoals(material/result, items, dropItems)`(育成計算機の必要数が主、周回ソルバー目標で補完)。
-- 対象モードは `quests/efficiency/shortageOnly`(boolean, localStorage)で2値。
-- 周回ソルバー連携: `components/material/result.tsx` の `goSolver` が `deficiency = max(0, required − owned)` を計算し `/farming?items=短縮ID:個数,...` へ push。
+| 画面 | 不足の出し方 | ファイル |
+|---|---|---|
+| クエスト効率 | 重み判定(2段階) | `lib/quest-efficiency.ts` `computeItemWeight` |
+| 育成計算機 result | `max(0, 必要数−所持)` 表示 | `components/material/result.tsx` |
+| 周回ソルバー取り込み | `goSolver`: `max(0, 必要数−所持)` → `/farming?items=` | `components/material/result.tsx` |
+| 配布アドバイザー | `buildNeedByApiItemId`: `max(0, 必要数−所持)` | `components/material/material-selection-advisor.tsx` |
+| 計算履歴 | 解いた `params.items` を保存・表示(as-solved) | `interfaces/api.ts` `Params`, `lib/get-result.ts` |
 
-タイプB(育成必要数 + レア別余剰ストックを目標にする)プレイヤーは、この「余剰ストックぶん」を次点0.3ではなく目標そのものとして扱いたい。クエスト効率と周回ソルバーの双方で同じ目標解釈にする必要がある。
-
-**位置づけ**: 本機能は育成目標の達成が近いプレイヤー(主要素材は概ね充足し、あとは余剰ストックの積み増しが関心事)向けの**上級者向けニッチ機能**である。一般ユーザーの導線・既定挙動を変えないことを最優先とし、対象モードはオプトイン(既定は現状の `shortage`)、UI はフィルターポップオーバー内に留めて主行を増やさない。
+余剰ストックは「育成必要数(`goal`)に +レア別バッファ」するだけで全画面に効く。設計の肝は **実効目標を出す関数を1つに集約し、全画面が参照する**こと。これにより「今どちらの目標で見ているか」の不整合を構造的に防ぐ。
 
 ## Goals / Non-Goals
 
 **Goals:**
-- レア別余剰ストック個数を目標に上乗せする第3モード `不足+余剰ストック` を `computeItemWeight` に追加。
-- クエスト効率ランキングと周回ソルバー取り込みの双方で、同一の「実効目標 = 育成必要数 + 余剰ストック個数[レア]」を使えるようにする。
-- 既存ストレージ(`surplusThreshold` 流用、`shortageOnly` 後方互換移行)を壊さない。
+- 余剰ストックを「育成必要数 + レア別バッファ」の実効目標として定義し、共有純関数に集約。
+- グローバル単一トグル `stockEnabled` で farming 方向の全画面を一括切替。
+- クエスト効率・周回ソルバー取り込み・配布アドバイザーが同一の実効不足を使い、整合する。
+- 既定OFF・一般ユーザーの既定挙動/導線/保存値を変えない(上級者向けオプトイン)。
 
 **Non-Goals:**
-- 余剰ストック個数の新規 UI 設定追加(既存 `surplusThreshold` の値を流用する。別軸の設定は導入しない)。
-- 報酬(QP/絆/EXP)加算ロジックの変更。
-- ソルバー(`lib/solver.ts`)本体の最適化アルゴリズム変更(目標 `items` の入力値を変えるのみ)。
-- イベント周回プランナー(`event-planner`)への展開。
+- クエスト効率の対象モードの3値化(2値=全部/不足のみ のまま)。
+- ストック設定のアイテム個別上書き(MVP はレア別バッファのみ。将来拡張)。
+- 計算履歴での「育成目標/ストック目標」の並列保存・並列表示(as-solved + badge のみ)。
+- ソルバー(`lib/solver.ts`)本体の最適化アルゴリズム変更(目標入力値を変えるのみ)。
+- ダッシュボード「達成間近の素材」への波及(育成目標のまま)。
 
 ## Decisions
 
-### D1: 対象モードを2値 boolean → 3値へ拡張
-`quests/efficiency/shortageOnly`(boolean)を `quests/efficiency/targetMode`(`'all' | 'shortage' | 'shortage-plus-stock'`)へ移行する。
-- 移行読み替え: 旧 `shortageOnly===true → 'shortage'`、`false → 'all'`。新キーが未設定なら旧キーを読んで初期化する(片方向移行、旧キーは削除しても残してもよい)。
-- 理由: ユーザーは「モードを追加」と表現しており、独立トグルの重ね掛けより3択セグメントが意図に合う。`computeItemWeight` も `shortageOnly: boolean` を `mode` 受け取りに変更し分岐を一本化できる。
-- 代替案: `shortageOnly` を残し別途 `includeSurplusStock` boolean を追加 → 「全部モード時に余剰ストック」という無意味な組合せが生じ状態が直交しないため却下。
+### D1: 切替はグローバル単一トグル(所持数モーダルの専用セクション)
+`efficiency/stockEnabled`(boolean, 既定false, クラウド同期)を新設し、所持数モーダル内の「ストック目標設定」専用セクションに `stockBuffer` 編集とまとめて1つだけ置く。
+- 理由: 「私はストックする人」はペルソナ単位の持続的スタンスで、画面ごとに切替える対象ではない。1スイッチで farming 方向の全画面(クエスト効率・取り込み・アドバイザー)が一括追従し、「どちらの目標で見ているか」が常に一意になる。「どこにトグルを置くか」問題も解消する。設定の置き場所は所持数モーダル内専用セクション(ユーザー確認済み)。`stockBuffer` がカテゴリ群×レアで最大8値になるため、所持数入力の主部とは分けた折りたたみ/サブセクションにする。
+- 代替案: クエスト効率3値モード+画面個別トグル → 画面間で状態が直交せず不整合・説明困難なため却下(ユーザー確認済み)。専用設定ページ/モーダルやクエスト効率フィルター内も候補だったが、所持数(=不足判定の入力)と同じ場所が文脈的に近いため所持数モーダルを採用。
 
-### D2: 目標モードの重み式
-`mode === 'shortage-plus-stock'` のとき:
+### D7: `stockBuffer` はカテゴリ群×レア(最大8区分)
+`getRarityByCategory` は秘石/モニュメント等も金銀銅に丸めるため、レア単独だと「竜の逆鱗も秘石もモニュメントも金=同値」となり、育成で大量消費するスキル石/モニュメントを多めにストックできない。そこで `stockBuffer` を **カテゴリ群 × レア** のネストで保持する:
 ```
-effGoal = goal + stock[rarity]      (stock = surplusThreshold の値)
-owned < effGoal → 1
-owned ≥ effGoal → 0
+group(item) = isSkillStone(largeCategory) ? 'skillStone'
+            : isMonumentOrPiece(largeCategory) ? 'monumentPiece'
+            : 'normal'
+stockBuffer = {
+  normal:        { gold, silver, bronze },   // 通常ドロップ素材(既定 50/100/200 = 既存踏襲)
+  skillStone:    { gold, silver, bronze },   // 秘石/魔石/輝石(育成で大量消費 → 多めの既定)
+  monumentPiece: { gold, silver },           // モニュメント/ピース(銅は存在しない)
+}
+buffer(item) = stockBuffer[group(item)][rarity(item)]   // レア不明は 0
 ```
-- 次点0.3バンドは使わない(ストックぶんが既に目標に入っており、その先をさらに拾う動機が薄い)。レアリティ不明素材は従来どおり該当時0扱い。
-- 代替案: padded goal の先にさらに0.3バンドを残す → 二重しきい値で説明が難しく、ストックを「目標」と捉えるモードの趣旨に反するため却下(将来必要なら別途)。
+- 分類は既存 `isSkillStone`/`isMonumentOrPiece`(largeCategory)を流用。`monumentPiece` に bronze は無いため設定UIでも非表示。
+- 既存 `efficiency/surplusThreshold`(flat 金銀銅)は `normal` 群へ移行し、`skillStone`/`monumentPiece` 未設定群はデフォルト。通常素材のデフォルトを既存値に揃えることで、OFF時の次点バンド挙動を通常素材については不変に保つ。
+- 代替案: レアのみ(粗すぎ)/通常素材のみ対象(スキル石を狙えない)/カテゴリ群別単一値(レア差が出せない) → いずれも上級者のきめ細かな制御要求に対して不足(ユーザー確認済み)。
 
-### D3: 余剰ストック個数のソースは `surplusThreshold` を流用
-新しい設定キーを足さず、`efficiency/surplusThreshold` の数値をモードによって解釈し分ける:
-- `shortage`: 「次点0.3で拾う余剰の上限」
-- `shortage-plus-stock`: 「目標に上乗せするストック個数」
-- 理由: 同一の数値(レア別に何個まで持っておきたいか)を2つの用途が共有でき、設定が一箇所で済む。クラウド同期も既存のまま。
-- リスク: 同じ数値が文脈で意味を変えるため、UI で誤解されうる(→ D5 で説明文をモード連動)。
-
-### D4: 周回ソルバー取り込みの上乗せ
-`material/result.tsx` の `goSolver` に「余剰ストックも目標に含める」トグルを追加し、ON 時のデフィシットを
+### D2: `stockBuffer` のデュアル強度(次点0.3 ↔ 目標1.0)
+同じ `buffer = stockBuffer[group][rarity]`(D7)の数値を、`stockEnabled` で強度切替する:
 ```
-deficiency = max(0, (required + stock[rarity]) − owned)
+不足のみモード:
+  owned < goal                         → 1
+  stockEnabled=OFF & goal ≤ owned < goal+buffer  → 0.3 (次点・従来)
+  stockEnabled=ON  & goal ≤ owned < goal+buffer  → 1   (目標に昇格)
+  それ以外(buffer 超 / レア不明)        → 0
 ```
-で算出して `/farming?items=` に渡す。`stock` は同じ `surplusThreshold`、レアリティは `getRarityByCategory`(quest-efficiency と同一関数)で判定。
-- これによりクエスト効率の目標モードと周回計画が同じ目標で一致する。
-- 注意: `goSolver` の対象は `requiredItems`(育成必要数がある素材)。余剰ストックは「育成目標がある素材に上乗せ」する形で、育成目標ゼロの素材を新たに目標化はしない(クエスト効率も `goal` ベースのため整合)。
+- 実効目標 `effGoal = goal + (stockEnabled ? buffer : 0)` を導入し、`stockEnabled=ON` 時は `owned < effGoal → 1` の1段階に帰着(次点バンドなし)。
+- `goal=0`(育成目標なし)の素材は `effGoal = buffer` となり、ON 時は所持がバッファ未満なら重み1。「全素材を一定数ストック」の意図に合致。
+- 理由: 「次点で拾う」と「目標にする」は同じバッファを弱く/強く狙う関係。3値モードを足さず既存の2値モードに直交させられる。
+- 代替案: 目標1.0の先にさらに0.3バンドを残す → 二重しきい値で説明が複雑なため却下(ユーザー確認済み)。
 
-### D5: UI(フィルターポップオーバー & 所持数モーダル)
-- `/quests` フィルターポップオーバーの対象モードを3択に。`不足+余剰ストック` 選択時はバッジ/説明で「育成目標+レア別ストックを目標に」と示す。
-- `PossessionModal` の余剰しきい値説明文を現在の対象モードに応じて出し分ける(次点上限 / 目標上乗せ個数)。
-- i18n キーを `locales/` に追加。
+### D3: 共有実効不足を全 farming 画面で使用
+`lib/quest-efficiency.ts` に純関数を切り出し、クエスト効率・`goSolver`・配布アドバイザーの3者が呼ぶ:
+```
+buffer(item, stockBuffer)  = stockBuffer[group(item)][rarity(item)]   // レア不明は 0
+effectiveRequired(item, trainingRequired, stockBuffer, stockEnabled)  = trainingRequired + (stockEnabled ? buffer(item, stockBuffer) : 0)
+effectiveDeficiency(...)   = max(0, effectiveRequired − owned)
+```
+カテゴリ群判定(`group`)とレアリティ判定(`getRarityByCategory`)は既存 `lib/item-rarity.ts` を共有。これによりクエスト効率の重み判定と取り込み個数・アドバイザー評価が必ず一致する(ユーザーの「整合」要件)。
+
+### D4: 配布アドバイザーは `stockEnabled` に追従
+`buildNeedByApiItemId(amounts, possession, drops)` の need を `effectiveDeficiency` に置換。
+- 理由: ストックを狙うユーザーはアドバイザーの推奨もストック込みで評価してほしい(全画面一貫)。
+- リスク: 希少な配布/交換枠をストックに使う推奨が出うる → アドバイザーUIで現在 `stockEnabled=ON` であることを示し、ユーザーが意図して有効化している前提に立つ。育成目標固定にしたい場合はトグルOFFで足りる。
+
+### D5: 育成計算機は育成目標が主、ストックは控えめ副表示
+`material/result` の表示は育成必要数/不足が主。保存値 `material/result`(育成必要数)はストックで**書き換えない**(stock は表示/取り込み時に計算)。`stockEnabled=ON` のときだけ各素材に「+ストック分」を控えめに併記。`goSolver` の取り込みは実効不足(D3)。
+
+### D6: 計算履歴は as-solved + badge
+`Params` に `stockIncluded?: boolean` を追加し、`goSolver` がストック込みで遷移したら true をセット。履歴/結果は解いた `params.items` をそのまま表示し、`stockIncluded` の履歴に「ストック込み」badge を出す。
+- 後方互換: 既存履歴は `stockIncluded` 未設定 → false 扱い(badge なし)。
+- 理由: 履歴は「実際に解いた目標」の忠実な記録。育成/ストックの並列保存は複雑でメリット薄。
 
 ## Risks / Trade-offs
 
-- [余剰しきい値のデュアルセマンティクスで混乱] → D5 の説明文出し分けと、モードラベルを明確化(「不足+余剰ストック」)。値そのものは不変なので破壊的影響はない。
-- [`shortageOnly` 移行の取りこぼし] → 新キー未設定時に旧 boolean を読む読み替えで既存ユーザーの選択を保持。`lib/quest-efficiency.test.ts` で移行と境界(owned == effGoal、stock=0、レア不明)を回帰テスト。
-- [クエスト効率の目標モードとソルバー取り込みの不一致] → どちらも `goal + stock[rarity]`、`getRarityByCategory` を共有する純関数として実装し、ストック上乗せの算出を1関数に集約して両者から呼ぶ。
-- [ダッシュボード「達成間近」への波及懸念] → 本変更は対象外(達成間近は `goal − owned` のまま)。目標モードはクエスト効率ランキングとソルバー取り込みに限定。
+- [グローバルトグルで複数画面が一斉に変わり驚く] → 既定OFF・上級者オプトイン。トグルは所持数モーダルに集約し、ON 中はクエスト効率/アドバイザーに「ストック込み」表示を出して状態を明示。
+- [`stockBuffer` のデュアル強度で混乱] → 所持数モーダルの説明文を `stockEnabled` で出し分け(次点上限 / 目標個数)。値は不変。
+- [画面間の不整合(ユーザーの主懸念)] → 実効不足を単一純関数(D3)に集約し3者が共有。`lib/quest-efficiency.test.ts` で境界(owned==effGoal、buffer=0、goal=0、レア不明、stockEnabled の ON/OFF)を回帰テスト。
+- [`Params` 拡張の互換] → optional フィールドで追加、既存履歴は未設定=false。型と保存/読込の双方を確認。
 
 ## Migration Plan
 
-1. `lib/quest-efficiency.ts`: `computeItemWeight` / `QuestEfficiencyOptions` を mode 対応に拡張(`shortageOnly` 互換は呼び出し側で吸収 or オーバーロード)。ストック上乗せの純関数を切り出す。
-2. `QuestEfficiencyList.tsx`: `targetMode` state と旧 `shortageOnly` 読み替え、UI 3択化。
-3. `material/result.tsx`: `goSolver` にストック上乗せトグル。
-4. テスト追加 → `pnpm test` / type-check。
-5. `pnpm dev` で `/quests` のモード切替と `/farming` 取り込みを実機確認(push 前の視認)。
+1. `lib/item-rarity.ts`: `categoryGroup(item)` を追加(`isSkillStone`/`isMonumentOrPiece` 流用)。`lib/quest-efficiency.ts`: `stockBuffer`(群×レア)型・`buffer()`/`effectiveRequired`/`effectiveDeficiency` 切り出し、`computeItemWeight` を `stockEnabled`+群×レア対応、`QuestEfficiencyOptions` に `stockEnabled`/`stockBuffer`。
+2. `interfaces/api.ts`: `Params.stockIncluded?: boolean`。
+3. `PossessionModal.tsx`: 「ストック目標設定」セクション(`stockEnabled` トグル + 群×レアの `stockBuffer` 編集、`surplusThreshold` → `normal` 群移行、説明出し分け)。`QuestEfficiencyList.tsx`: `stockEnabled`/`stockBuffer` を読み反映。
+4. `material/result.tsx`: `goSolver` 実効不足 + `stockIncluded` 付与、ON時副表示。
+5. `material-selection-advisor.tsx`: need を実効不足に。
+6. 計算履歴(結果/履歴ページ): `stockIncluded` badge。
+7. テスト → type-check → `pnpm dev` で全画面の整合を実機確認(push 前視認)。
 
-ロールバック: localStorage 移行は加算的(旧キーを破壊しない)ため、コード revert で旧2モードに戻る。
+ロールバック: `stockEnabled` 既定OFF・`Params` 追加は加算的なので、コード revert で従来挙動に戻る(保存データ破壊なし)。
 
 ## Open Questions
 
-- `不足+余剰ストック` を `/quests` の既定にはしない(既定は現状維持 `shortage`)で良いか — 既定変更は別途判断。
-- ソルバー取り込みトグルの状態を localStorage 永続化するか、その場限りにするか(初期は永続化なしの素朴実装で可)。
+- farming 画面で目標の内訳(育成X+ストックY)を補助表示するか — 初期は合算のみで可、余力で内訳。
+- `stockEnabled=ON` 中にクエスト効率「全部」モードを選んだ場合は従来どおり全素材重み1(stock 無関係)で問題ないか — 想定どおりで可。

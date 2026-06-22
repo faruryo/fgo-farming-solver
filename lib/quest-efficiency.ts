@@ -1,7 +1,14 @@
 import { Drops } from './get-drops'
 import { Campaign } from '../interfaces/fgodrop'
 import { computeEffectiveAp } from './solver'
-import { getRarityByCategory, isMonumentOrPiece, isSkillStone, Rarity } from './item-rarity'
+import {
+  categoryGroup,
+  CategoryGroup,
+  getRarityByCategory,
+  isMonumentOrPiece,
+  isSkillStone,
+  Rarity,
+} from './item-rarity'
 
 // クエストの「効率ポイント」を算出する純粋関数群。
 //
@@ -28,6 +35,31 @@ export const DEFAULT_SURPLUS_THRESHOLD: SurplusThreshold = {
 export const SECONDARY_WEIGHT = 0.3
 
 /**
+ * 余剰ストック(`stockBuffer`)。カテゴリ群(通常素材/スキル石/モニュピ)× レア
+ * (金銀銅、モニュピは金銀のみ)で保持する。`stockEnabled` でこの値の強度が
+ * 「次点(0.3)で拾う余剰の上限」(OFF)↔「目標(1.0)に上乗せするストック個数」
+ * (ON)に切り替わる(D2/D7)。
+ */
+export type StockBuffer = {
+  normal: Record<Rarity, number>
+  skillStone: Record<Rarity, number>
+  monumentPiece: Partial<Record<Rarity, number>>
+}
+
+/**
+ * カテゴリ群×レア別ストックバッファのデフォルト。
+ * - normal: 既存 `DEFAULT_SURPLUS_THRESHOLD`(金50/銀100/銅200)を踏襲し、OFF時の
+ *   次点バンド挙動を通常素材については不変に保つ。
+ * - skillStone: 育成で大量消費するため多めの既定(金60/銀120/銅180)。
+ * - monumentPiece: 銅レアが存在しないため金銀のみ(金30/銀30)。
+ */
+export const DEFAULT_STOCK_BUFFER: StockBuffer = {
+  normal: { gold: 50, silver: 100, bronze: 200 },
+  skillStone: { gold: 60, silver: 120, bronze: 180 },
+  monumentPiece: { gold: 30, silver: 30 },
+}
+
+/**
  * 効率の分母。
  * - 'ap'   : 実効AP(AP効率 = AP1あたりのドロップ)
  * - 'turn' : ターン数=wave数(周回効率 = 1ターンあたりのドロップ)。
@@ -52,8 +84,16 @@ export type QuestEfficiencyOptions = {
   includeSkillStones?: boolean
   /** ピース(銀の霊基再臨素材)を含めるか(default true)。false で「ピース除く」。 */
   includePieces?: boolean
-  /** レア別余剰しきい値(部分指定可、デフォルトとマージ)。 */
+  /** レア別余剰しきい値(部分指定可、デフォルトとマージ)。`stockBuffer.normal` の指定が無い場合のフォールバックにも使う。 */
   surplusThreshold?: Partial<SurplusThreshold>
+  /** カテゴリ群×レア別ストックバッファ(部分指定可、デフォルトとマージ)。 */
+  stockBuffer?: Partial<{
+    normal: Partial<Record<Rarity, number>>
+    skillStone: Partial<Record<Rarity, number>>
+    monumentPiece: Partial<Record<Rarity, number>>
+  }>
+  /** 余剰ストックを目標に含めるグローバル設定(default false)。ON で余剰ストック帯が次点(0.3)から目標(1.0)に昇格する。 */
+  stockEnabled?: boolean
   /** 効率の分母。'ap'(default=AP効率) か 'turn'(周回効率=ターン数で割る)。 */
   denominator?: EfficiencyDenominator
   /** QP 報酬を効率ポイントに加算する(default false)。 */
@@ -97,28 +137,94 @@ type ItemLike = { id: string; category: string; largeCategory?: string; atlasId?
 const possessionKey = (item: ItemLike): string => (item.atlasId != null ? String(item.atlasId) : item.id)
 
 /**
+ * 旧 `efficiency/surplusThreshold`(flat 金銀銅)から `stockBuffer.normal` への移行込みで
+ * `stockBuffer` を解決する。`storedStockBuffer` が既に保存されていればそれを優先し、
+ * 無ければ `legacySurplusThreshold`(旧キー)を `normal` 群の初期値として使う
+ * (skillStone/monumentPiece は常にデフォルト)。新規ユーザー(両方未設定)はデフォルトのまま。
+ */
+export const resolveStockBuffer = (
+  storedStockBuffer: Partial<StockBuffer> | null | undefined,
+  legacySurplusThreshold: Partial<SurplusThreshold> | null | undefined,
+): StockBuffer => {
+  if (storedStockBuffer != null) {
+    return {
+      normal: { ...DEFAULT_STOCK_BUFFER.normal, ...storedStockBuffer.normal },
+      skillStone: { ...DEFAULT_STOCK_BUFFER.skillStone, ...storedStockBuffer.skillStone },
+      monumentPiece: { ...DEFAULT_STOCK_BUFFER.monumentPiece, ...storedStockBuffer.monumentPiece },
+    }
+  }
+  return {
+    normal: { ...DEFAULT_STOCK_BUFFER.normal, ...(legacySurplusThreshold ?? {}) },
+    skillStone: { ...DEFAULT_STOCK_BUFFER.skillStone },
+    monumentPiece: { ...DEFAULT_STOCK_BUFFER.monumentPiece },
+  }
+}
+
+/**
+ * アイテムのストックバッファ個数(`stockBuffer[group(item)][rarity(item)]`)。
+ * レアリティ不明の素材はストック対象外として 0 を返す(D7/D3)。
+ */
+export const buffer = (item: ItemLike, stockBuffer: StockBuffer): number => {
+  const rarity = getRarityByCategory(item.category)
+  if (!rarity) return 0
+  const group: CategoryGroup = categoryGroup(item.largeCategory)
+  return stockBuffer[group][rarity] ?? 0
+}
+
+/**
+ * 実効必要数 = 育成必要数 + (stockEnabled ? buffer(item) : 0)。
+ * 全 farming 画面(クエスト効率・周回ソルバー取り込み・配布アドバイザー)が
+ * 同じ定義を参照することで「今どちらの目標で見ているか」の不整合を構造的に防ぐ(D3)。
+ */
+export const effectiveRequired = (
+  item: ItemLike,
+  trainingRequired: number,
+  stockBuffer: StockBuffer,
+  stockEnabled: boolean,
+): number => trainingRequired + (stockEnabled ? buffer(item, stockBuffer) : 0)
+
+/** 実効不足 = max(0, 実効必要数 − 所持)。 */
+export const effectiveDeficiency = (
+  item: ItemLike,
+  trainingRequired: number,
+  owned: number,
+  stockBuffer: StockBuffer,
+  stockEnabled: boolean,
+): number => Math.max(0, effectiveRequired(item, trainingRequired, stockBuffer, stockEnabled) - owned)
+
+/**
  * 単一素材の重みを決定する(2段階)。
  *   - includeSkillStones=false かつスキル石 → 0
- *   - 全部モード → 1
- *   - 不足(owned < goal) → 1
- *   - 充足済みで余剰 ≤ レア別しきい値 → SECONDARY_WEIGHT(次点)
- *   - 余剰 > しきい値 / レア不明 → 0
- * 目標未設定(goal=0)の素材は余剰=所持数となり、同じしきい値が「低所持素材を拾う」基準も兼ねる。
+ *   - includePieces=false かつモニュピ → 0
+ *   - 全部モード → 1(stockEnabled に関わらず)
+ *   - 不足(owned < goal) → 1(主優先)
+ *   - goal ≤ owned < effGoal(余剰ストック範囲) → stockEnabled=OFF なら次点(0.3)、ON なら目標(1)に昇格
+ *   - owned ≥ effGoal(ストック込み目標達成 / レア不明) → 0
+ * `effGoal = goal + (stockEnabled ? buffer(item) : 0)`。目標未設定(goal=0)の素材は
+ * `effGoal = stockEnabled ? buffer(item) : 0` となり、ON 時は「全素材を一定数ストック」の
+ * 意図に合致する。
  */
 export const computeItemWeight = (
   item: ItemLike,
   owned: number,
   goal: number,
-  opts: { shortageOnly: boolean; includeSkillStones: boolean; includePieces: boolean; threshold: SurplusThreshold },
+  opts: {
+    shortageOnly: boolean
+    includeSkillStones: boolean
+    includePieces: boolean
+    stockBuffer: StockBuffer
+    stockEnabled: boolean
+  },
 ): number => {
   if (!opts.includeSkillStones && isSkillStone(item.largeCategory)) return 0
   if (!opts.includePieces && isMonumentOrPiece(item.largeCategory)) return 0
   if (!opts.shortageOnly) return 1
   if (owned < goal) return 1
-  const rarity = getRarityByCategory(item.category)
-  if (!rarity) return 0
-  const surplus = owned - goal
-  return surplus <= opts.threshold[rarity] ? SECONDARY_WEIGHT : 0
+  const buf = buffer(item, opts.stockBuffer)
+  // 余剰ストック範囲(goal <= owned < goal+buf)の判定には常に buf(=stockBuffer)を使う。
+  // stockEnabled はこの範囲内での重みの強度(次点0.3 / 目標1.0)だけを切り替える(D2)。
+  if (owned >= goal + buf) return 0
+  return opts.stockEnabled ? 1 : SECONDARY_WEIGHT
 }
 
 /**
@@ -136,12 +242,24 @@ export const computeQuestEfficiency = (
     shortageOnly = true,
     includeSkillStones = true,
     includePieces = true,
+    stockEnabled = false,
     denominator = 'ap',
     includeQp = false,
     includeBond = false,
     includeExp = false,
   } = options
-  const threshold: SurplusThreshold = { ...DEFAULT_SURPLUS_THRESHOLD, ...(options.surplusThreshold ?? {}) }
+  // surplusThreshold は normal 群のフォールバック(旧 API・旧ストレージキーからの移行元)。
+  // stockBuffer.normal が明示されればそちらが優先される。
+  const normalFallback: SurplusThreshold = {
+    ...DEFAULT_SURPLUS_THRESHOLD,
+    ...(options.surplusThreshold ?? {}),
+  }
+  const stockBufferOpt = options.stockBuffer
+  const resolvedStockBuffer: StockBuffer = {
+    normal: { ...normalFallback, ...(stockBufferOpt?.normal ?? {}) },
+    skillStone: { ...DEFAULT_STOCK_BUFFER.skillStone, ...(stockBufferOpt?.skillStone ?? {}) },
+    monumentPiece: { ...DEFAULT_STOCK_BUFFER.monumentPiece, ...(stockBufferOpt?.monumentPiece ?? {}) },
+  }
   const enabledRewards = REWARD_DEFS.filter(
     r => (r.key === 'qp' && includeQp) || (r.key === 'bond' && includeBond) || (r.key === 'exp' && includeExp),
   )
@@ -189,7 +307,8 @@ export const computeQuestEfficiency = (
           shortageOnly,
           includeSkillStones,
           includePieces,
-          threshold,
+          stockBuffer: resolvedStockBuffer,
+          stockEnabled,
         })
       : 0
     weightByItem.set(itemId, w)
@@ -285,6 +404,38 @@ export const mergeGoals = (
     if (Number.isFinite(n) && n > 0) out[atlasId] = n // material/result が優先
   }
   return out
+}
+
+/**
+ * 必要数(目標)・所持数(いずれも atlasId キー)から、ストック込みの実効不足を
+ * apiItemId キー(drops の短縮ID)で組み立てる。`lib/progress/compute-reduction.ts`
+ * の `buildNeedByApiItemId`(育成進捗の過去比較専用、ストック非対応)とは別物 ──
+ * 配布アドバイザー(material-selection-advisor.tsx)・周回ソルバー取り込み(material/result.tsx)
+ * など、ストック目標を反映すべき全消費者がこの関数(or 同じ `effectiveDeficiency`)を
+ * 経由することで、画面間の不足数の不整合を構造的に防ぐ(D3)。
+ */
+export const buildNeedByApiItemId = (
+  targets: Record<string, number | string | undefined>,
+  possession: Record<string, number | string | undefined>,
+  drops: Drops,
+  stockBuffer: StockBuffer,
+  stockEnabled: boolean,
+): Record<string, number> => {
+  const toNum = (v: number | string | undefined): number => {
+    const n = typeof v === 'string' ? Number(v) : v
+    return Number.isFinite(n) ? (n as number) : 0
+  }
+  const need: Record<string, number> = {}
+  for (const item of drops.items) {
+    const atlasId = (item as { atlasId?: number }).atlasId
+    if (atlasId == null) continue
+    const key = String(atlasId)
+    const required = toNum(targets[key])
+    const owned = toNum(possession[key])
+    const deficit = effectiveDeficiency(item, required, owned, stockBuffer, stockEnabled)
+    if (deficit > 0) need[item.id] = deficit
+  }
+  return need
 }
 
 /** 単一クエストの効率ポイント(詳細ページ用)。該当が無ければ null。 */

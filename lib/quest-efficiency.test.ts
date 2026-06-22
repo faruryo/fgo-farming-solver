@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { computeQuestEfficiency, QuestEfficiency, SECONDARY_WEIGHT } from './quest-efficiency'
+import {
+  buildNeedByApiItemId,
+  computeItemWeight,
+  computeQuestEfficiency,
+  DEFAULT_STOCK_BUFFER,
+  effectiveDeficiency,
+  QuestEfficiency,
+  SECONDARY_WEIGHT,
+  StockBuffer,
+} from './quest-efficiency'
 import { Drops } from './get-drops'
 import { Campaign } from '../interfaces/fgodrop'
 
@@ -187,5 +196,178 @@ describe('computeQuestEfficiency', () => {
     )
     // effAp(qB)=20 で bestEff(g)=0.05 に並ぶ → relativeEff(g,qB)=1
     expect(contrib(res.qB, 'g')!.relativeEff).toBeCloseTo(1)
+  })
+})
+
+// gold 素材(通常素材): DEFAULT_STOCK_BUFFER.normal.gold = 50
+const goldMat = { id: 'g', category: '金素材', largeCategory: '強化素材' }
+// gold 秘石(スキル石): DEFAULT_STOCK_BUFFER.skillStone.gold = 60
+const goldGem = { id: 'gem', category: '秘石', largeCategory: 'スキル石' }
+// レア不明(category がマッピングに無い)
+const unknownRarity = { id: 'u', category: '謎の素材', largeCategory: '強化素材' }
+
+describe('computeItemWeight: stockEnabled の ON/OFF と境界(D2)', () => {
+  const baseOpts = {
+    shortageOnly: true,
+    includeSkillStones: true,
+    includePieces: true,
+    stockBuffer: DEFAULT_STOCK_BUFFER,
+  }
+
+  it('育成不足(owned<goal)は stockEnabled に関わらず重み1', () => {
+    expect(computeItemWeight(goldMat, 5, 10, { ...baseOpts, stockEnabled: false })).toBe(1)
+    expect(computeItemWeight(goldMat, 5, 10, { ...baseOpts, stockEnabled: true })).toBe(1)
+  })
+
+  it('OFF: owned==effGoal(goal+buffer)は境界外(重み0)', () => {
+    // goal=10, buffer(gold,normal)=50 → effGoal=60
+    expect(computeItemWeight(goldMat, 60, 10, { ...baseOpts, stockEnabled: false })).toBe(0)
+  })
+
+  it('OFF: owned==effGoal-1 は次点(0.3)', () => {
+    expect(computeItemWeight(goldMat, 59, 10, { ...baseOpts, stockEnabled: false })).toBeCloseTo(
+      SECONDARY_WEIGHT,
+    )
+  })
+
+  it('ON: owned==effGoal-1 は目標(1.0)に昇格', () => {
+    expect(computeItemWeight(goldMat, 59, 10, { ...baseOpts, stockEnabled: true })).toBe(1)
+  })
+
+  it('ON: owned==effGoal は重み0(ストック込み目標に到達)', () => {
+    expect(computeItemWeight(goldMat, 60, 10, { ...baseOpts, stockEnabled: true })).toBe(0)
+  })
+
+  it('buffer=0(モニュピ銅相当の未設定レア)は OFF/ON 双方で owned>=goal なら重み0', () => {
+    const stockBuffer: StockBuffer = {
+      normal: { gold: 0, silver: 100, bronze: 200 },
+      skillStone: DEFAULT_STOCK_BUFFER.skillStone,
+      monumentPiece: DEFAULT_STOCK_BUFFER.monumentPiece,
+    }
+    expect(computeItemWeight(goldMat, 10, 10, { ...baseOpts, stockBuffer, stockEnabled: false })).toBe(0)
+    expect(computeItemWeight(goldMat, 10, 10, { ...baseOpts, stockBuffer, stockEnabled: true })).toBe(0)
+  })
+
+  it('goal=0 かつ stockEnabled=ON は effGoal=buffer になり、所持がそれ未満なら重み1', () => {
+    // buffer(gold,normal)=50
+    expect(computeItemWeight(goldMat, 49, 0, { ...baseOpts, stockEnabled: true })).toBe(1)
+    expect(computeItemWeight(goldMat, 50, 0, { ...baseOpts, stockEnabled: true })).toBe(0)
+  })
+
+  it('goal=0 かつ stockEnabled=OFF は次点(0.3)で低所持を拾う(従来挙動)', () => {
+    expect(computeItemWeight(goldMat, 49, 0, { ...baseOpts, stockEnabled: false })).toBeCloseTo(
+      SECONDARY_WEIGHT,
+    )
+  })
+
+  it('レア不明の素材はストック対象外(buffer=0)で owned>=goal なら重み0', () => {
+    expect(computeItemWeight(unknownRarity, 0, 0, { ...baseOpts, stockEnabled: true })).toBe(0)
+    expect(computeItemWeight(unknownRarity, 0, 0, { ...baseOpts, stockEnabled: false })).toBe(0)
+  })
+
+  it('カテゴリ群でストック個数が異なる(通常素材 gold=50 / スキル石 gold=60)', () => {
+    // 同じ owned=55, goal=0 で、normal は ON 時に重み0(effGoal=50を超過)、
+    // skillStone は ON 時に重み1(effGoal=60未満)。
+    expect(computeItemWeight(goldMat, 55, 0, { ...baseOpts, stockEnabled: true })).toBe(0)
+    expect(computeItemWeight(goldGem, 55, 0, { ...baseOpts, stockEnabled: true })).toBe(1)
+  })
+})
+
+describe('effectiveDeficiency: 共有純関数の境界(クエスト効率の重み判定と整合)', () => {
+  it('stockEnabled=OFF は育成不足のみ(従来の max(0, goal-owned))', () => {
+    expect(effectiveDeficiency(goldMat, 10, 4, DEFAULT_STOCK_BUFFER, false)).toBe(6)
+    expect(effectiveDeficiency(goldMat, 10, 10, DEFAULT_STOCK_BUFFER, false)).toBe(0)
+    // 余剰があっても OFF では実効不足はそのまま 0(次点バンドは重み判定側のみの概念)
+    expect(effectiveDeficiency(goldMat, 10, 30, DEFAULT_STOCK_BUFFER, false)).toBe(0)
+  })
+
+  it('stockEnabled=ON は effGoal(=goal+buffer)基準の不足になる', () => {
+    // goal=10, buffer(gold,normal)=50 → effGoal=60
+    expect(effectiveDeficiency(goldMat, 10, 0, DEFAULT_STOCK_BUFFER, true)).toBe(60)
+    expect(effectiveDeficiency(goldMat, 10, 59, DEFAULT_STOCK_BUFFER, true)).toBe(1)
+    expect(effectiveDeficiency(goldMat, 10, 60, DEFAULT_STOCK_BUFFER, true)).toBe(0)
+    expect(effectiveDeficiency(goldMat, 10, 100, DEFAULT_STOCK_BUFFER, true)).toBe(0)
+  })
+
+  it('goal=0・stockEnabled=ON は effGoal=buffer のみの不足になる', () => {
+    expect(effectiveDeficiency(goldMat, 0, 0, DEFAULT_STOCK_BUFFER, true)).toBe(50)
+    expect(effectiveDeficiency(goldMat, 0, 50, DEFAULT_STOCK_BUFFER, true)).toBe(0)
+  })
+
+  it('クエスト効率の重み判定(computeItemWeight)と同じ境界で一致する', () => {
+    // owned=effGoal-1 では不足>0(重み1/0.3いずれかで寄与) / owned=effGoal では不足0(重み0)
+    const goal = 10
+    const buf = DEFAULT_STOCK_BUFFER.normal.gold // 50
+    const effGoalMinus1 = goal + buf - 1
+    const effGoal = goal + buf
+    expect(effectiveDeficiency(goldMat, goal, effGoalMinus1, DEFAULT_STOCK_BUFFER, true)).toBeGreaterThan(0)
+    expect(
+      computeItemWeight(goldMat, effGoalMinus1, goal, {
+        shortageOnly: true,
+        includeSkillStones: true,
+        includePieces: true,
+        stockBuffer: DEFAULT_STOCK_BUFFER,
+        stockEnabled: true,
+      }),
+    ).toBe(1)
+    expect(effectiveDeficiency(goldMat, goal, effGoal, DEFAULT_STOCK_BUFFER, true)).toBe(0)
+    expect(
+      computeItemWeight(goldMat, effGoal, goal, {
+        shortageOnly: true,
+        includeSkillStones: true,
+        includePieces: true,
+        stockBuffer: DEFAULT_STOCK_BUFFER,
+        stockEnabled: true,
+      }),
+    ).toBe(0)
+  })
+})
+
+describe('buildNeedByApiItemId', () => {
+  const dropsWithAtlas: Drops = {
+    items: [
+      { id: 'g', atlasId: 1, category: '金素材', largeCategory: '強化素材', name: 'gold', shortName: 'g' },
+      { id: 's', atlasId: 2, category: '銀素材', largeCategory: '強化素材', name: 'silver', shortName: 's' },
+      // atlasId 無し(短縮ID側のみ存在)は対象外になるべき
+      { id: 'noAtlas', category: '銀素材', largeCategory: '強化素材', name: 'no atlas', shortName: 'n' },
+    ],
+    quests: [],
+    drop_rates: [],
+    campaigns: [],
+  } as unknown as Drops
+
+  it('stockEnabled=false では育成不足(max(0,目標-所持))のみを apiItemId キーで返す', () => {
+    const need = buildNeedByApiItemId(
+      { '1': 100, '2': 50 },
+      { '1': 40, '2': 50 },
+      dropsWithAtlas,
+      DEFAULT_STOCK_BUFFER,
+      false,
+    )
+    expect(need).toEqual({ g: 60 })
+  })
+
+  it('stockEnabled=true では effectiveDeficiency と同じ値(育成必要+ストック)になる', () => {
+    const need = buildNeedByApiItemId(
+      { '1': 10 },
+      { '1': 0, '2': 100 },
+      dropsWithAtlas,
+      DEFAULT_STOCK_BUFFER,
+      true,
+    )
+    // gold(normal) buffer=50 → effGoal=60
+    // silver(normal) 目標未設定(0)・所持100 = buffer(100) なので effGoal=100, 不足0
+    expect(need).toEqual({ g: 60 })
+  })
+
+  it('atlasId が無いアイテムは対象外', () => {
+    const need = buildNeedByApiItemId(
+      { noAtlas: 100 },
+      {},
+      dropsWithAtlas,
+      DEFAULT_STOCK_BUFFER,
+      false,
+    )
+    expect(need).toEqual({})
   })
 })

@@ -23,6 +23,8 @@ import {
   DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
   mergeGoals,
+  resolveStockBuffer,
+  StockBuffer,
   SurplusThreshold,
 } from '../../lib/quest-efficiency'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
@@ -77,6 +79,16 @@ export const QuestEfficiencyList: React.FC = () => {
     'efficiency/surplusThreshold',
     DEFAULT_SURPLUS_THRESHOLD,
   )
+  const [stockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
+  const [rawStockBuffer] = useLocalStorage<Partial<StockBuffer>>('efficiency/stockBuffer', {})
+  const resolvedStockBuffer = useMemo(
+    () =>
+      resolveStockBuffer(
+        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
+        threshold,
+      ),
+    [rawStockBuffer, threshold],
+  )
   const [shortageOnly, setShortageOnly] = useLocalStorage<boolean>(
     'quests/efficiency/shortageOnly',
     true,
@@ -116,7 +128,8 @@ export const QuestEfficiencyList: React.FC = () => {
       shortageOnly,
       includeSkillStones,
       includePieces,
-      surplusThreshold: threshold,
+      stockBuffer: resolvedStockBuffer,
+      stockEnabled,
       denominator,
       includeQp,
       includeBond,
@@ -137,7 +150,7 @@ export const QuestEfficiencyList: React.FC = () => {
       // 冠位研鑽戦の VI以下 は既定で隠す(showLowKanni で表示)。
       .filter(r => showLowKanni || !isLowKanni(r.quest.area, r.quest.name))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, includePieces, threshold, denominator, includeQp, includeBond, includeExp, showLowKanni])
+  }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, includePieces, resolvedStockBuffer, stockEnabled, denominator, includeQp, includeBond, includeExp, showLowKanni])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -343,6 +356,15 @@ export const QuestEfficiencyList: React.FC = () => {
             {t('効率ポイントとは')}
           </TooltipContent>
         </Tooltip>
+
+        {stockEnabled && (
+          <span
+            className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            style={{ background: 'var(--accent)', color: 'var(--gold)', border: '1px solid var(--gold-dim)' }}
+          >
+            {t('ストック込み')}
+          </span>
+        )}
 
         <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
           {t('所持数を入力')}

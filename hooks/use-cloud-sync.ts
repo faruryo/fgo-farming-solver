@@ -34,6 +34,8 @@ export const KEYS = [
   'dropRateKey',
   'dropRateStyle',
   'efficiency/surplusThreshold',
+  'efficiency/stockEnabled',
+  'efficiency/stockBuffer',
 ]
 
 export const MOCK_CLOUD_KEY = 'fgo_mock_cloud_data'

@@ -35,6 +35,9 @@ export async function GET(req: NextRequest) {
   const itemsRaw = searchParams.get('items') || ''
   const questsRaw = searchParams.get('quests') || ''
   const apCoefficients = searchParams.get('ap_coefficients') || ''
+  // 育成計算機(goSolver)が余剰ストック込みの実効目標で遷移したかのフラグ。
+  // 計算履歴/結果ページの「ストック込み」badge 表示に使う(D6)。
+  const stockIncluded = searchParams.get('stockIncluded') === '1'
 
   const itemCounts = Object.fromEntries(
     itemsRaw.split(',').map((pair) => {
@@ -73,6 +76,7 @@ export async function GET(req: NextRequest) {
     objective: 'both',
     items: itemCounts,
     quests: allowedQuests,
+    ...(stockIncluded ? { stockIncluded: true } : {}),
   }
 
   // Saved farming results and snapshots must use nominal (campaign-free) AP so

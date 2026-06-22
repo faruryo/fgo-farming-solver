@@ -8,6 +8,14 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import { Item } from '../../interfaces/atlas-academy'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
+import {
+  buffer,
+  DEFAULT_SURPLUS_THRESHOLD,
+  effectiveDeficiency,
+  resolveStockBuffer,
+  StockBuffer,
+  SurplusThreshold,
+} from '../../lib/quest-efficiency'
 import { Toggle } from '@/components/ui/toggle'
 import {
   Accordion,
@@ -31,6 +39,23 @@ const LARGE_SECTIONS = [
 const bgColor = (bg: string) =>
   bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
 
+// lib/get-items.ts の getCategory(locale='ja') と同じロジック。
+// この画面の Item(interfaces/atlas-academy)には category/largeCategory が無いため、
+// effectiveDeficiency 等(lib/item-rarity.ts ベース)に渡す ItemLike をここで組み立てる。
+const LARGE_CATEGORIES_JA = ['QP', 'スキル石', '強化素材', 'モニュピ']
+const CATEGORIES_JA: { [background: string]: string }[] = [
+  { zero: 'QP' },
+  { bronze: '輝石', silver: '魔石', gold: '秘石' },
+  { bronze: '銅素材', silver: '銀素材', gold: '金素材' },
+  { silver: 'ピース', gold: 'モニュメント' },
+]
+const toStockItemLike = (item: Item): { id: string; category: string; largeCategory: string } => {
+  const index = Math.floor(item.priority / 100)
+  const largeCategory = LARGE_CATEGORIES_JA[index] ?? 'イベントアイテム'
+  const category = CATEGORIES_JA[index]?.[item.background] ?? '特殊霊基再臨素材'
+  return { id: item.id.toString(), category, largeCategory }
+}
+
 type MatCardProps = {
   item: Item
   required: number
@@ -38,11 +63,22 @@ type MatCardProps = {
   deficiency: number
   rarityColor: string
   onChange: (id: string, val: number) => void
+  stockEnabled?: boolean
+  stockBufferAmount?: number
 }
 
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
-const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: MatCardProps) => {
+const MatCard = ({
+  item,
+  required,
+  owned,
+  deficiency,
+  rarityColor,
+  onChange,
+  stockEnabled,
+  stockBufferAmount,
+}: MatCardProps) => {
   const [editing, setEditing] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const isShort = deficiency > 0
@@ -81,6 +117,11 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
         <div className="c-mat-count-row">
           <span className="c-mat-count-label">必要</span>
           <span className="c-mat-count-val required">{required}</span>
+          {stockEnabled && (stockBufferAmount ?? 0) > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>
+              +ストック {stockBufferAmount}
+            </span>
+          )}
         </div>
         <div className="c-mat-count-row">
           <span className="c-mat-count-label">所持</span>
@@ -130,6 +171,21 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     Object.fromEntries(requiredItems.map(item => [item.id.toString(), 0]))
   )
 
+  const [stockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
+  const [rawStockBuffer] = useLocalStorage<Partial<StockBuffer>>('efficiency/stockBuffer', {})
+  const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
+    'efficiency/surplusThreshold',
+    DEFAULT_SURPLUS_THRESHOLD,
+  )
+  const resolvedStockBuffer = useMemo(
+    () =>
+      resolveStockBuffer(
+        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
+        surplusThreshold,
+      ),
+    [rawStockBuffer, surplusThreshold],
+  )
+
   const [shortOnly, setShortOnly] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -157,12 +213,21 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   }, [setPossession])
 
   const goSolver = useCallback(() => {
+    const stockAwareDeficiency = (item: Item): number =>
+      effectiveDeficiency(
+        toStockItemLike(item),
+        amounts[item.id.toString()] ?? 0,
+        possession[item.id.toString()] ?? 0,
+        resolvedStockBuffer,
+        stockEnabled,
+      )
     const queryItems = requiredItems
-      .filter(item => deficiencies[item.id.toString()] > 0 && toApiItemId(item, items))
-      .map(item => `${toApiItemId(item, items)}:${deficiencies[item.id.toString()]}`)
+      .filter(item => stockAwareDeficiency(item) > 0 && toApiItemId(item, items))
+      .map(item => `${toApiItemId(item, items)}:${stockAwareDeficiency(item)}`)
       .join(',')
-    router.push(`/farming?items=${queryItems}`)
-  }, [requiredItems, router, deficiencies, items])
+    const stockParam = stockEnabled ? '&stockIncluded=1' : ''
+    router.push(`/farming?items=${queryItems}${stockParam}`)
+  }, [requiredItems, router, amounts, possession, resolvedStockBuffer, stockEnabled, items])
 
   const displayedItems = shortOnly
     ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
@@ -242,6 +307,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                       deficiency={deficiencies[item.id.toString()] ?? 0}
                       rarityColor={bgColor(item.background)}
                       onChange={onChange}
+                      stockEnabled={stockEnabled}
+                      stockBufferAmount={buffer(toStockItemLike(item), resolvedStockBuffer)}
                     />
                   ))}
                 </div>

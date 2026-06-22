@@ -2,6 +2,8 @@ export type Params = {
   objective: string
   items: { [key: string]: number }
   quests: string[]
+  /** 余剰ストックを含めた実効目標で解いたか(既定 false・未設定は false 扱い)。 */
+  stockIncluded?: boolean
 }
 
 export type SolveOptions = {

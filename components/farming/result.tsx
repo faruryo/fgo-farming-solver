@@ -10,6 +10,7 @@ import { ResultAccordion } from './result-accordion'
 import { HistoryGraph } from '../dashboard/HistoryGraph'
 import { ResultStatsBar } from './ResultStatsBar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Result } from '../../interfaces/api'
 import { formatDate } from '../../lib/format-date'
@@ -52,6 +53,14 @@ const ResultPanel = ({
 
   return (
     <div className="flex flex-col gap-12">
+      {result.params?.stockIncluded === true && (
+        <div>
+          <Badge variant="outline" className="text-[10px]">
+            {t('ストック込み')}
+          </Badge>
+        </div>
+      )}
+
       {progressPanel}
 
       <div className="c-card p-6 overflow-x-auto">
