@@ -24,11 +24,15 @@ import {
 
 export type SurplusThreshold = Record<Rarity, number>
 
-/** レア別余剰しきい値のデフォルト。充足済みでも余剰がこれ以下なら「次点」で拾う。 */
+/**
+ * 通常素材(強化素材)レア別の既定ストック数。`stockBuffer.normal` の既定であり、
+ * `stockEnabled=OFF` 時は「次点(0.3)で拾う余剰の上限」も兼ねる。
+ * 値の根拠は `DEFAULT_STOCK_BUFFER` のコメント参照(1体あたり平均必要数 × 約3)。
+ */
 export const DEFAULT_SURPLUS_THRESHOLD: SurplusThreshold = {
-  gold: 50,
-  silver: 100,
-  bronze: 200,
+  gold: 60,
+  silver: 150,
+  bronze: 300,
 }
 
 /** 次点(充足済みだが余剰が少ない素材)の重み。 */
@@ -53,15 +57,21 @@ export type PartialStockBuffer = {
 
 /**
  * カテゴリ群×レア別ストックバッファのデフォルト。
- * - normal: 既存 `DEFAULT_SURPLUS_THRESHOLD`(金50/銀100/銅200)を踏襲し、OFF時の
- *   次点バンド挙動を通常素材については不変に保つ。
- * - skillStone: 育成で大量消費するため多めの既定(金60/銀120/銅180)。
- * - monumentPiece: 銅レアが存在しないため金銀のみ(金30/銀30)。
+ *
+ * 「★5を1体、最終再臨＋3スキル全Lv10にできる量」を目安に、直近の★5 25体
+ * (Atlas Academy: 最終再臨4段 + 各スキルのLv10化を3スキル分)を集計した
+ * 「1種あたりの平均必要数」を約3倍(≒3体ぶんのストック)した値:
+ *   - 通常素材 1種あたり平均  : 金≈20 / 銀≈50 / 銅≈100  → ×3 = 金60 / 銀150 / 銅300
+ *   - スキル石 1種あたり平均  : 各≈51 (5+12を3スキル)   → ×3 ≈ 各150
+ *   - モニュピ 1種あたり平均  : 各≈17 (5+12)            → ×3 ≈ 各50
+ * 通常素材は banded で個体差が大きい(銅は最大260/種の例も)ため、これは“平均的に
+ * 1〜3体まかなえる”目安。ユーザーは所持数モーダルで上書きできる。
  */
 export const DEFAULT_STOCK_BUFFER: StockBuffer = {
-  normal: { gold: 50, silver: 100, bronze: 200 },
-  skillStone: { gold: 60, silver: 120, bronze: 180 },
-  monumentPiece: { gold: 30, silver: 30 },
+  // 通常素材は DEFAULT_SURPLUS_THRESHOLD と同値(次点バンドの既定と共有)。
+  normal: { ...DEFAULT_SURPLUS_THRESHOLD },
+  skillStone: { gold: 150, silver: 150, bronze: 150 },
+  monumentPiece: { gold: 50, silver: 50 },
 }
 
 /**
