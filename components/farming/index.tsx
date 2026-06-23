@@ -204,8 +204,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       if (searchParams.get('stockIncluded') === '1') setStockIncluded(true)
       router.replace('/farming')
     }
-
-  }, [])
+    // 取り込みは isInputState ガード＋直後の router.replace('/farming') で初回のみ実行。
+    // searchParams が遅延設定されても取りこぼさないよう依存に含める(以降は空クエリで no-op)。
+  }, [searchParams, router, questIds, setItemCounts, setCheckedQuests])
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
