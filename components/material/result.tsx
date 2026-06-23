@@ -5,9 +5,11 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
-import { Item } from '../../interfaces/atlas-academy'
+import { useStockTarget } from '../../hooks/use-stock-target'
+import { EnrichedItem } from '../../lib/get-items'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
+import { buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
 import { Toggle } from '@/components/ui/toggle'
 import {
   Accordion,
@@ -18,7 +20,7 @@ import {
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
 
 export type MaterialResultProps = {
-  items: Item[]
+  items: EnrichedItem[]
   locale?: string
 }
 
@@ -31,18 +33,37 @@ const LARGE_SECTIONS = [
 const bgColor = (bg: string) =>
   bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
 
+// getItems が付与済みの category/largeCategory を、effectiveDeficiency/buffer
+// (lib/item-rarity.ts ベース)が読む ItemLike 形にそのまま渡す。
+const toStockItemLike = (item: EnrichedItem): { id: string; category: string; largeCategory: string } => ({
+  id: item.id.toString(),
+  category: item.category,
+  largeCategory: item.largeCategory,
+})
+
 type MatCardProps = {
-  item: Item
+  item: EnrichedItem
   required: number
   owned: number | undefined
   deficiency: number
   rarityColor: string
   onChange: (id: string, val: number) => void
+  stockEnabled?: boolean
+  stockBufferAmount?: number
 }
 
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
 
-const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: MatCardProps) => {
+const MatCard = ({
+  item,
+  required,
+  owned,
+  deficiency,
+  rarityColor,
+  onChange,
+  stockEnabled,
+  stockBufferAmount,
+}: MatCardProps) => {
   const [editing, setEditing] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const isShort = deficiency > 0
@@ -81,6 +102,11 @@ const MatCard = ({ item, required, owned, deficiency, rarityColor, onChange }: M
         <div className="c-mat-count-row">
           <span className="c-mat-count-label">必要</span>
           <span className="c-mat-count-val required">{required}</span>
+          {stockEnabled && (stockBufferAmount ?? 0) > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>
+              +ストック {stockBufferAmount}
+            </span>
+          )}
         </div>
         <div className="c-mat-count-row">
           <span className="c-mat-count-label">所持</span>
@@ -130,6 +156,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     Object.fromEntries(requiredItems.map(item => [item.id.toString(), 0]))
   )
 
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
+
   const [shortOnly, setShortOnly] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -157,12 +185,21 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   }, [setPossession])
 
   const goSolver = useCallback(() => {
+    const stockAwareDeficiency = (item: EnrichedItem): number =>
+      effectiveDeficiency(
+        toStockItemLike(item),
+        amounts[item.id.toString()] ?? 0,
+        possession[item.id.toString()] ?? 0,
+        resolvedStockBuffer,
+        stockEnabled,
+      )
     const queryItems = requiredItems
-      .filter(item => deficiencies[item.id.toString()] > 0 && toApiItemId(item, items))
-      .map(item => `${toApiItemId(item, items)}:${deficiencies[item.id.toString()]}`)
+      .filter(item => stockAwareDeficiency(item) > 0 && toApiItemId(item, items))
+      .map(item => `${toApiItemId(item, items)}:${stockAwareDeficiency(item)}`)
       .join(',')
-    router.push(`/farming?items=${queryItems}`)
-  }, [requiredItems, router, deficiencies, items])
+    const stockParam = stockEnabled ? '&stockIncluded=1' : ''
+    router.push(`/farming?items=${queryItems}${stockParam}`)
+  }, [requiredItems, router, amounts, possession, resolvedStockBuffer, stockEnabled, items])
 
   const displayedItems = shortOnly
     ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
@@ -172,7 +209,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     () => groupBy(
       [...displayedItems].sort((a, b) => a.priority - b.priority),
       item => String(Math.floor(item.priority / 100))
-    ) as Partial<Record<string, Item[]>>,
+    ) as Partial<Record<string, EnrichedItem[]>>,
     [displayedItems]
   )
 
@@ -233,7 +270,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                   <span className="c-mat-section-line" style={{ background: color }} />
                 </div>
                 <div className="c-mat-grid">
-                  {sectionItems.map((item: Item) => (
+                  {sectionItems.map((item: EnrichedItem) => (
                     <MatCard
                       key={item.id}
                       item={item}
@@ -242,6 +279,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                       deficiency={deficiencies[item.id.toString()] ?? 0}
                       rarityColor={bgColor(item.background)}
                       onChange={onChange}
+                      stockEnabled={stockEnabled}
+                      stockBufferAmount={buffer(toStockItemLike(item), resolvedStockBuffer)}
                     />
                   ))}
                 </div>

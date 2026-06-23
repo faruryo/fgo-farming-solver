@@ -100,7 +100,8 @@
     "削除": "Delete",
     "この履歴を削除しますか？": "Delete this history entry?",
     "グラフからも除外されます。共有済みの結果ページは引き続き閲覧できます。": "It will also be excluded from charts. Shared result pages will remain accessible.",
-    "削除に失敗しました": "Failed to delete"
+    "削除に失敗しました": "Failed to delete",
+    "ストック込み": "Incl. Stock"
   },
   "items": {
     "アイテム一覧": "Item List",
@@ -182,7 +183,6 @@
     "不足のみ": "Needed only",
     "全部": "All",
     "所持数を入力": "Edit stock",
-    "余剰しきい値": "Surplus threshold",
     "金": "Gold",
     "銀": "Silver",
     "銅": "Bronze",
@@ -213,7 +213,12 @@
     "QP": "QP",
     "報酬データなし": "No reward data",
     "所持数モーダル説明": "Enter how many of each material you own. The efficiency favors materials you still need. Blank counts as 0 owned.",
-    "余剰しきい値の説明": "Even after a goal is met, a material is kept as a secondary candidate while its surplus (owned − goal) is within this amount; larger surpluses are excluded. Set per rarity (gold/silver/bronze)."
+    "ストック目標設定": "Stock Target Settings",
+    "ストック目標OFF説明": "If the surplus is within this amount, it's still considered a secondary candidate (lower priority) in the efficiency ranking. Turn the switch ON to promote this amount to an actual goal, also reflected in the route solver and the distribution advisor.",
+    "ストック目標ON説明": "On top of the training requirement, this amount is treated as an actual goal and reflected in the efficiency ranking, route solver, and distribution advisor. You can set it per category.",
+    "目標に含める": "Include as goal",
+    "通常素材": "Common Items",
+    "ストック込み": "Incl. Stock"
   },
   "events": {
     "ロトイベント一覧": "Lottery Events",

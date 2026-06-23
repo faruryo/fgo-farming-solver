@@ -9,12 +9,11 @@ import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import {
   computeSingleQuestEfficiency,
-  DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
   mergeGoals,
   REWARD_ITEM_PREFIX,
-  SurplusThreshold,
 } from '../../lib/quest-efficiency'
+import { useStockTarget } from '../../hooks/use-stock-target'
 
 const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
 
@@ -31,10 +30,7 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
   const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
   const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
   const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
-  const [threshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
-    DEFAULT_SURPLUS_THRESHOLD,
-  )
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
   const [shortageOnly] = useLocalStorage<boolean>('quests/efficiency/shortageOnly', true)
   const [includeSkillStones] = useLocalStorage<boolean>(
     'quests/efficiency/includeSkillStones',
@@ -58,13 +54,14 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
       shortageOnly,
       includeSkillStones,
       includePieces,
-      surplusThreshold: threshold,
+      stockBuffer: resolvedStockBuffer,
+      stockEnabled,
       denominator,
       includeQp,
       includeBond,
       includeExp,
     })
-  }, [drops, isLoading, questId, possession, materialResult, itemsRaw, dropItems, activeCampaigns, shortageOnly, includeSkillStones, includePieces, threshold, denominator, includeQp, includeBond, includeExp])
+  }, [drops, isLoading, questId, possession, materialResult, itemsRaw, dropItems, activeCampaigns, shortageOnly, includeSkillStones, includePieces, resolvedStockBuffer, stockEnabled, denominator, includeQp, includeBond, includeExp])
 
   if (isLoading || !eff || eff.score <= 0) return null
   const itemById = new Map((dropItems ?? []).map(i => [i.id, i]))
@@ -78,6 +75,14 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
             <h3 className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>
               {t('効率ポイント')}
             </h3>
+            {stockEnabled && (
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: 'var(--accent)', color: 'var(--gold)', border: '1px solid var(--gold-dim)' }}
+              >
+                {t('ストック込み')}
+              </span>
+            )}
           </div>
           <span className="text-2xl font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
             {eff.score.toFixed(2)}

@@ -42,3 +42,18 @@ const MONUMENT_PIECE_LARGE_CATEGORIES = new Set(['モニュピ', 'Monuments and 
 
 export const isMonumentOrPiece = (largeCategory: string | undefined): boolean =>
   largeCategory != null && MONUMENT_PIECE_LARGE_CATEGORIES.has(largeCategory)
+
+/** 余剰ストック(`stockBuffer`)のカテゴリ群。 */
+export type CategoryGroup = 'normal' | 'skillStone' | 'monumentPiece'
+
+/**
+ * アイテムのカテゴリ群を判定する。`getRarityByCategory` は秘石/モニュメントも
+ * 金銀銅に丸めてしまうため、レア単独では「竜の逆鱗も秘石も金=同値」になる。
+ * ストック個数(`stockBuffer`)はこのカテゴリ群×レアで持つことで、育成で大量
+ * 消費するスキル石/モニュピに多めの既定値を割り当てられるようにする。
+ */
+export const categoryGroup = (largeCategory: string | undefined): CategoryGroup => {
+  if (isSkillStone(largeCategory)) return 'skillStone'
+  if (isMonumentOrPiece(largeCategory)) return 'monumentPiece'
+  return 'normal'
+}

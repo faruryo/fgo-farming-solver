@@ -156,6 +156,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   }, [checkedQuests])
   const router = useRouter()
   const searchParams = useSearchParams()
+  // 育成計算機の goSolver からの遷移で `?stockIncluded=1` が付いていれば、その計算は
+  // 余剰ストック込みの実効目標で解いたものとして記録する(D6: 計算履歴の badge 表示用)。
+  const [stockIncluded, setStockIncluded] = useState(false)
   const [isConfirming_, setIsConfirming_] = useState(false)
   const setIsConfirming = { on: () => setIsConfirming_(true), off: () => setIsConfirming_(false) }
   const isConfirming = isConfirming_
@@ -198,17 +201,23 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
           )
         }
       })
+      if (searchParams.get('stockIncluded') === '1') setStockIncluded(true)
       router.replace('/farming')
     }
-     
-  }, [])
+    // 取り込みは isInputState ガード＋直後の router.replace('/farming') で初回のみ実行。
+    // searchParams が遅延設定されても取りこぼさないよう依存に含める(以降は空クエリで no-op)。
+  }, [searchParams, router, questIds, setItemCounts, setCheckedQuests])
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       setIsLoading.on()
       const query = inputToQuery({ itemCounts, checkedQuests })
-      const params = new URLSearchParams({ ...query, fields: 'id' })
+      const params = new URLSearchParams({
+        ...query,
+        fields: 'id',
+        ...(stockIncluded ? { stockIncluded: '1' } : {}),
+      })
       const url = `/api/solve?${params.toString()}`
       const result = await fetch(url).then((res) => res.json() as unknown)
       if (hasId(result) && typeof result.id == 'string') {
@@ -225,7 +234,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         await router.push('/500')
       }
     },
-    [checkedQuests, itemCounts, router, setIsLoading]
+    [checkedQuests, itemCounts, router, setIsLoading, stockIncluded]
   )
 
   const onReset = useCallback(() => {
