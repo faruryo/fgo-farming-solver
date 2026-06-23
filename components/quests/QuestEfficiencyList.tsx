@@ -20,13 +20,10 @@ import { useLocalStorage } from '../../hooks/use-local-storage'
 import { computeEffectiveAp } from '../../lib/solver'
 import {
   computeQuestEfficiency,
-  DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
   mergeGoals,
-  resolveStockBuffer,
-  StockBuffer,
-  SurplusThreshold,
 } from '../../lib/quest-efficiency'
+import { useStockTarget } from '../../hooks/use-stock-target'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import { PossessionModal } from './PossessionModal'
 
@@ -75,20 +72,7 @@ export const QuestEfficiencyList: React.FC = () => {
   const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
   const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
   const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
-  const [threshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
-    DEFAULT_SURPLUS_THRESHOLD,
-  )
-  const [stockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
-  const [rawStockBuffer] = useLocalStorage<Partial<StockBuffer>>('efficiency/stockBuffer', {})
-  const resolvedStockBuffer = useMemo(
-    () =>
-      resolveStockBuffer(
-        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
-        threshold,
-      ),
-    [rawStockBuffer, threshold],
-  )
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
   const [shortageOnly, setShortageOnly] = useLocalStorage<boolean>(
     'quests/efficiency/shortageOnly',
     true,

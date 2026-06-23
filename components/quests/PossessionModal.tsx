@@ -13,12 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useLocalStorage } from '../../hooks/use-local-storage'
-import {
-  DEFAULT_SURPLUS_THRESHOLD,
-  resolveStockBuffer,
-  StockBuffer,
-  SurplusThreshold,
-} from '../../lib/quest-efficiency'
+import { useStockTarget } from '../../hooks/use-stock-target'
 import type { CategoryGroup } from '../../lib/item-rarity'
 import type { Rarity } from '../../lib/item-rarity'
 
@@ -59,25 +54,8 @@ export const PossessionModal: React.FC<{
     'posession',
     {},
   )
-  // 旧キー。新規には書き込まないが、ストック目標未設定ユーザーの移行元として読み続ける。
-  const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
-    DEFAULT_SURPLUS_THRESHOLD,
-  )
-  const [stockEnabled, setStockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
-  const [rawStockBuffer, setRawStockBuffer] = useLocalStorage<Partial<StockBuffer>>(
-    'efficiency/stockBuffer',
-    {},
-  )
-
-  const resolvedBuffer = useMemo(
-    () =>
-      resolveStockBuffer(
-        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
-        surplusThreshold,
-      ),
-    [rawStockBuffer, surplusThreshold],
-  )
+  const { stockEnabled, setStockEnabled, setRawStockBuffer, stockBuffer: resolvedBuffer } =
+    useStockTarget()
 
   const grouped = useMemo(() => {
     const map = new Map<string, ItemLike[]>()
@@ -97,7 +75,6 @@ export const PossessionModal: React.FC<{
   const setBufferCell = (group: CategoryGroup, rarity: Rarity, value: string) => {
     const n = Math.max(0, Math.floor(Number(value) || 0))
     setRawStockBuffer(prev => ({
-      ...resolvedBuffer,
       ...prev,
       [group]: { ...resolvedBuffer[group], ...prev[group], [rarity]: n },
     }))

@@ -13,14 +13,8 @@ import {
   CandidateRef,
   DenominatorMode,
 } from '../../lib/material-selection-advisor'
-import {
-  buildNeedByApiItemId,
-  DEFAULT_SURPLUS_THRESHOLD,
-  effectiveDeficiency,
-  resolveStockBuffer,
-  StockBuffer,
-  SurplusThreshold,
-} from '../../lib/quest-efficiency'
+import { buildNeedByApiItemId, effectiveDeficiency } from '../../lib/quest-efficiency'
+import { useStockTarget } from '../../hooks/use-stock-target'
 import { ServantPraise } from '../farming/ServantPraise'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -105,20 +99,7 @@ export const MaterialSelectionAdvisor = ({
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  const [stockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
-  const [rawStockBuffer] = useLocalStorage<Partial<StockBuffer>>('efficiency/stockBuffer', {})
-  const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
-    DEFAULT_SURPLUS_THRESHOLD,
-  )
-  const resolvedStockBuffer = useMemo(
-    () =>
-      resolveStockBuffer(
-        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
-        surplusThreshold,
-      ),
-    [rawStockBuffer, surplusThreshold],
-  )
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
 
   // 候補素材を追加するピッカー(検索可能)の開閉と検索クエリ。
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -142,19 +123,26 @@ export const MaterialSelectionAdvisor = ({
     return m
   }, [items])
 
-  // atlasId 文字列 -> 短縮 apiItemId(drops の item_id)。
-  const atlasToShort = useMemo(() => {
-    const m = new Map<string, string>()
-    for (const it of drops.items) if (it.atlasId != null) m.set(String(it.atlasId), it.id)
-    return m
-  }, [drops.items])
-
-  // atlasId 文字列 -> drops の Item(category/largeCategory 保持。effectiveDeficiency 用)。
+  // atlasId 文字列 -> drops の Item(短縮ID `id`・category/largeCategory を保持)。
   const dropItemByAtlasId = useMemo(() => {
     const m = new Map<string, Drops['items'][number]>()
     for (const it of drops.items) if (it.atlasId != null) m.set(String(it.atlasId), it)
     return m
   }, [drops.items])
+
+  // 実効不足(ストック目標 ON なら区分別バッファ上乗せ)。drops に無いアイテムは素の不足。
+  // 候補・追加リストの両方で同じ定義を使う(D3)。
+  const deficiencyFor = useCallback(
+    (id: string): number => {
+      const required = amounts[id] ?? 0
+      const owned = possession[id] ?? 0
+      const dropItem = dropItemByAtlasId.get(id)
+      return dropItem
+        ? effectiveDeficiency(dropItem, required, owned, resolvedStockBuffer, stockEnabled)
+        : Math.max(0, required - owned)
+    },
+    [amounts, possession, dropItemByAtlasId, resolvedStockBuffer, stockEnabled],
+  )
 
   // 全クエストID(LP の許可クエスト)。最適周回プランの基準にユーザーの全不足を回す。
   const questIds = useMemo(() => drops.quests.map(q => q.id), [drops.quests])
@@ -172,18 +160,12 @@ export const MaterialSelectionAdvisor = ({
     () =>
       config.candidateIds
         .map(id => {
-          const shortId = atlasToShort.get(id)
+          const shortId = dropItemByAtlasId.get(id)?.id
           if (shortId == null) return null
-          const required = amounts[id] ?? 0
-          const owned = possession[id] ?? 0
-          const dropItem = dropItemByAtlasId.get(id)
-          const deficiency = dropItem
-            ? effectiveDeficiency(dropItem, required, owned, resolvedStockBuffer, stockEnabled)
-            : Math.max(0, required - owned)
-          return { id, shortId, deficiency }
+          return { id, shortId, deficiency: deficiencyFor(id) }
         })
         .filter((c): c is CandidateRef => c != null),
-    [config.candidateIds, atlasToShort, dropItemByAtlasId, amounts, possession, resolvedStockBuffer, stockEnabled],
+    [config.candidateIds, dropItemByAtlasId, deficiencyFor],
   )
 
   // 各候補の「1個あたり限界削減量」(シャドウプライス)。total に依存しないのでキャッシュ可。
@@ -266,12 +248,7 @@ export const MaterialSelectionAdvisor = ({
       .map(it => {
         const id = it.id.toString()
         const required = amounts[id] ?? 0
-        const owned = possession[id] ?? 0
-        const dropItem = dropItemByAtlasId.get(id)
-        const deficiency = dropItem
-          ? effectiveDeficiency(dropItem, required, owned, resolvedStockBuffer, stockEnabled)
-          : Math.max(0, required - owned)
-        return { it, id, required, deficiency }
+        return { it, id, required, deficiency: deficiencyFor(id) }
       })
       .sort((a, b) => {
         const rank = (x: typeof a) => (x.deficiency > 0 ? 0 : x.required > 0 ? 1 : 2)
@@ -279,7 +256,7 @@ export const MaterialSelectionAdvisor = ({
         if (dr !== 0) return dr
         return a.it.priority - b.it.priority
       })
-  }, [items, config.candidateIds, amounts, possession, dropItemByAtlasId, resolvedStockBuffer, stockEnabled])
+  }, [items, config.candidateIds, amounts, deficiencyFor])
 
   // 検索クエリで候補をフィルタ(素材名の部分一致・大文字小文字無視)。
   const filteredAddable = useMemo(() => {

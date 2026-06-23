@@ -5,17 +5,11 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
-import { Item } from '../../interfaces/atlas-academy'
+import { useStockTarget } from '../../hooks/use-stock-target'
+import { EnrichedItem } from '../../lib/get-items'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
-import {
-  buffer,
-  DEFAULT_SURPLUS_THRESHOLD,
-  effectiveDeficiency,
-  resolveStockBuffer,
-  StockBuffer,
-  SurplusThreshold,
-} from '../../lib/quest-efficiency'
+import { buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
 import { Toggle } from '@/components/ui/toggle'
 import {
   Accordion,
@@ -26,7 +20,7 @@ import {
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
 
 export type MaterialResultProps = {
-  items: Item[]
+  items: EnrichedItem[]
   locale?: string
 }
 
@@ -39,25 +33,16 @@ const LARGE_SECTIONS = [
 const bgColor = (bg: string) =>
   bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
 
-// lib/get-items.ts の getCategory(locale='ja') と同じロジック。
-// この画面の Item(interfaces/atlas-academy)には category/largeCategory が無いため、
-// effectiveDeficiency 等(lib/item-rarity.ts ベース)に渡す ItemLike をここで組み立てる。
-const LARGE_CATEGORIES_JA = ['QP', 'スキル石', '強化素材', 'モニュピ']
-const CATEGORIES_JA: { [background: string]: string }[] = [
-  { zero: 'QP' },
-  { bronze: '輝石', silver: '魔石', gold: '秘石' },
-  { bronze: '銅素材', silver: '銀素材', gold: '金素材' },
-  { silver: 'ピース', gold: 'モニュメント' },
-]
-const toStockItemLike = (item: Item): { id: string; category: string; largeCategory: string } => {
-  const index = Math.floor(item.priority / 100)
-  const largeCategory = LARGE_CATEGORIES_JA[index] ?? 'イベントアイテム'
-  const category = CATEGORIES_JA[index]?.[item.background] ?? '特殊霊基再臨素材'
-  return { id: item.id.toString(), category, largeCategory }
-}
+// getItems が付与済みの category/largeCategory を、effectiveDeficiency/buffer
+// (lib/item-rarity.ts ベース)が読む ItemLike 形にそのまま渡す。
+const toStockItemLike = (item: EnrichedItem): { id: string; category: string; largeCategory: string } => ({
+  id: item.id.toString(),
+  category: item.category,
+  largeCategory: item.largeCategory,
+})
 
 type MatCardProps = {
-  item: Item
+  item: EnrichedItem
   required: number
   owned: number | undefined
   deficiency: number
@@ -171,20 +156,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     Object.fromEntries(requiredItems.map(item => [item.id.toString(), 0]))
   )
 
-  const [stockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
-  const [rawStockBuffer] = useLocalStorage<Partial<StockBuffer>>('efficiency/stockBuffer', {})
-  const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
-    DEFAULT_SURPLUS_THRESHOLD,
-  )
-  const resolvedStockBuffer = useMemo(
-    () =>
-      resolveStockBuffer(
-        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
-        surplusThreshold,
-      ),
-    [rawStockBuffer, surplusThreshold],
-  )
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
 
   const [shortOnly, setShortOnly] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -213,7 +185,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   }, [setPossession])
 
   const goSolver = useCallback(() => {
-    const stockAwareDeficiency = (item: Item): number =>
+    const stockAwareDeficiency = (item: EnrichedItem): number =>
       effectiveDeficiency(
         toStockItemLike(item),
         amounts[item.id.toString()] ?? 0,
@@ -237,7 +209,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     () => groupBy(
       [...displayedItems].sort((a, b) => a.priority - b.priority),
       item => String(Math.floor(item.priority / 100))
-    ) as Partial<Record<string, Item[]>>,
+    ) as Partial<Record<string, EnrichedItem[]>>,
     [displayedItems]
   )
 
@@ -298,7 +270,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                   <span className="c-mat-section-line" style={{ background: color }} />
                 </div>
                 <div className="c-mat-grid">
-                  {sectionItems.map((item: Item) => (
+                  {sectionItems.map((item: EnrichedItem) => (
                     <MatCard
                       key={item.id}
                       item={item}

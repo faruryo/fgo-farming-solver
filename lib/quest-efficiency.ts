@@ -46,6 +46,11 @@ export type StockBuffer = {
   monumentPiece: Partial<Record<Rarity, number>>
 }
 
+/** 部分指定可の `StockBuffer`(各群・各レアが欠けてよい)。保存値・オプションの入力型。 */
+export type PartialStockBuffer = {
+  [G in keyof StockBuffer]?: Partial<Record<Rarity, number>>
+}
+
 /**
  * カテゴリ群×レア別ストックバッファのデフォルト。
  * - normal: 既存 `DEFAULT_SURPLUS_THRESHOLD`(金50/銀100/銅200)を踏襲し、OFF時の
@@ -87,11 +92,7 @@ export type QuestEfficiencyOptions = {
   /** レア別余剰しきい値(部分指定可、デフォルトとマージ)。`stockBuffer.normal` の指定が無い場合のフォールバックにも使う。 */
   surplusThreshold?: Partial<SurplusThreshold>
   /** カテゴリ群×レア別ストックバッファ(部分指定可、デフォルトとマージ)。 */
-  stockBuffer?: Partial<{
-    normal: Partial<Record<Rarity, number>>
-    skillStone: Partial<Record<Rarity, number>>
-    monumentPiece: Partial<Record<Rarity, number>>
-  }>
+  stockBuffer?: PartialStockBuffer
   /** 余剰ストックを目標に含めるグローバル設定(default false)。ON で余剰ストック帯が次点(0.3)から目標(1.0)に昇格する。 */
   stockEnabled?: boolean
   /** 効率の分母。'ap'(default=AP効率) か 'turn'(周回効率=ターン数で割る)。 */
@@ -143,7 +144,7 @@ const possessionKey = (item: ItemLike): string => (item.atlasId != null ? String
  * (skillStone/monumentPiece は常にデフォルト)。新規ユーザー(両方未設定)はデフォルトのまま。
  */
 export const resolveStockBuffer = (
-  storedStockBuffer: Partial<StockBuffer> | null | undefined,
+  storedStockBuffer: PartialStockBuffer | null | undefined,
   legacySurplusThreshold: Partial<SurplusThreshold> | null | undefined,
 ): StockBuffer => {
   if (storedStockBuffer != null) {
@@ -248,18 +249,9 @@ export const computeQuestEfficiency = (
     includeBond = false,
     includeExp = false,
   } = options
-  // surplusThreshold は normal 群のフォールバック(旧 API・旧ストレージキーからの移行元)。
-  // stockBuffer.normal が明示されればそちらが優先される。
-  const normalFallback: SurplusThreshold = {
-    ...DEFAULT_SURPLUS_THRESHOLD,
-    ...(options.surplusThreshold ?? {}),
-  }
-  const stockBufferOpt = options.stockBuffer
-  const resolvedStockBuffer: StockBuffer = {
-    normal: { ...normalFallback, ...(stockBufferOpt?.normal ?? {}) },
-    skillStone: { ...DEFAULT_STOCK_BUFFER.skillStone, ...(stockBufferOpt?.skillStone ?? {}) },
-    monumentPiece: { ...DEFAULT_STOCK_BUFFER.monumentPiece, ...(stockBufferOpt?.monumentPiece ?? {}) },
-  }
+  // 旧 `surplusThreshold` は normal 群のフォールバック(移行元)。`stockBuffer` が明示されれば優先。
+  // 解決ロジックは resolveStockBuffer に集約(コンポーネント側のフック useStockTarget と同一)。
+  const resolvedStockBuffer = resolveStockBuffer(options.stockBuffer ?? null, options.surplusThreshold)
   const enabledRewards = REWARD_DEFS.filter(
     r => (r.key === 'qp' && includeQp) || (r.key === 'bond' && includeBond) || (r.key === 'exp' && includeExp),
   )

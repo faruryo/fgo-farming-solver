@@ -9,14 +9,11 @@ import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import {
   computeSingleQuestEfficiency,
-  DEFAULT_SURPLUS_THRESHOLD,
   EfficiencyDenominator,
   mergeGoals,
-  resolveStockBuffer,
   REWARD_ITEM_PREFIX,
-  StockBuffer,
-  SurplusThreshold,
 } from '../../lib/quest-efficiency'
+import { useStockTarget } from '../../hooks/use-stock-target'
 
 const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
 
@@ -33,20 +30,7 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
   const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
   const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
   const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
-  const [threshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
-    DEFAULT_SURPLUS_THRESHOLD,
-  )
-  const [stockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
-  const [rawStockBuffer] = useLocalStorage<Partial<StockBuffer>>('efficiency/stockBuffer', {})
-  const resolvedStockBuffer = useMemo(
-    () =>
-      resolveStockBuffer(
-        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
-        threshold,
-      ),
-    [rawStockBuffer, threshold],
-  )
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
   const [shortageOnly] = useLocalStorage<boolean>('quests/efficiency/shortageOnly', true)
   const [includeSkillStones] = useLocalStorage<boolean>(
     'quests/efficiency/includeSkillStones',
