@@ -34,6 +34,11 @@ interface FarmingHistoryChartProps {
 
 type ChartTab = 'ap' | 'lap'
 type PeriodRange = '1m' | '3m' | '6m' | '1y' | 'all'
+type StockFilter = 'normal' | 'stock'
+
+// 余剰ストック込みの目標で解いた履歴か。混在すると合計APの桁が変わり回帰(予測線)が破綻するため、
+// グラフはこのフラグで片方に絞って描画・回帰する。
+const isStock = (h: HistoryItem) => !!h.stock_included
 
 const CHART_CONFIG: Record<ChartTab, { label: string; dataKey: string; color: string; gradId: string }> = {
   ap:  { label: '消費AP推移',  dataKey: '消費AP',  color: '#9a7224', gradId: 'gradFarmingAP' },
@@ -106,8 +111,27 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
   const { t } = useTranslation(['dashboard', 'common'])
   const [chartTab, setChartTab] = useState<ChartTab>('ap')
   const [period, setPeriod] = useState<PeriodRange>('3m')
+  const [stockFilterOverride, setStockFilterOverride] = useState<StockFilter | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [responsiveHeight, setResponsiveHeight] = useState(180)
+
+  // ストック込み/通常の混在判定と既定フィルタ(直近の履歴の種別に合わせる)。
+  const { bothExist, defaultFilter } = useMemo(() => {
+    let hasStock = false
+    let hasNormal = false
+    let mostRecent: HistoryItem | null = null
+    for (const h of history) {
+      if (isStock(h)) hasStock = true
+      else hasNormal = true
+      if (!mostRecent || new Date(h.created_at) > new Date(mostRecent.created_at)) mostRecent = h
+    }
+    return {
+      bothExist: hasStock && hasNormal,
+      defaultFilter: (mostRecent && isStock(mostRecent) ? 'stock' : 'normal') as StockFilter,
+    }
+  }, [history])
+
+  const stockFilter = stockFilterOverride ?? defaultFilter
 
   useEffect(() => {
     const update = () => setResponsiveHeight(window.innerWidth >= 768 ? 220 : 180)
@@ -123,6 +147,10 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
   const { chartData, predictionDate, xDomain } = useMemo(() => {
     if (!history.length) return { chartData: [], predictionDate: null, xDomain: ['auto', 'auto'] as ['auto', 'auto'] };
 
+    // ストック込み/通常を分離。回帰も同一種別内だけで行い予測線の破綻を防ぐ。
+    const scoped = history.filter(h => isStock(h) === (stockFilter === 'stock'));
+    if (!scoped.length) return { chartData: [], predictionDate: null, xDomain: ['auto', 'auto'] as ['auto', 'auto'] };
+
     const now = new Date();
     const startTime = new Date();
     if (period === '1m') startTime.setMonth(now.getMonth() - 1);
@@ -131,7 +159,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
     else if (period === '1y') startTime.setFullYear(now.getFullYear() - 1);
     else startTime.setFullYear(2015); // Fallback to "all"
 
-    const filtered = history
+    const filtered = scoped
       .filter(h => new Date(h.created_at) >= startTime && h.total_ap > 0)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
@@ -143,8 +171,8 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
       [dataKey]: chartTab === 'ap' ? Math.round(h.total_ap) : Math.round(h.total_lap),
     }));
 
-    // Prediction logic - Use ALL available history for more stable regression
-    const allValidHistory = history
+    // Prediction logic - Use ALL available history (same stock type) for more stable regression
+    const allValidHistory = scoped
       .filter(h => h.total_ap > 0)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     
@@ -187,7 +215,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
       predictionDate: predTimestamp ? new Date(predTimestamp) : null,
       xDomain: [startX, endX] as [number, number]
     };
-  }, [history, period, chartTab]);
+  }, [history, period, chartTab, stockFilter]);
 
   const cfg = CHART_CONFIG[chartTab];
 
@@ -202,7 +230,27 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between flex-wrap gap-4">
-        <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
+        <div className="flex flex-wrap items-center gap-3">
+          {bothExist && (
+            <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
+              {([['normal', '通常'], ['stock', 'ストック込み']] as [StockFilter, string][]).map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setStockFilterOverride(val)}
+                  className="text-[10px] px-3 py-1 border-y border-r first:border-l transition-colors"
+                  style={{
+                    background: stockFilter === val ? 'var(--gold)' : 'transparent',
+                    color: stockFilter === val ? 'white' : 'var(--text2)',
+                    borderColor: 'var(--border)',
+                    fontWeight: stockFilter === val ? 'bold' : 'normal',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
           {PERIOD_OPTIONS.map(opt => (
             <button
               key={opt.value}
@@ -218,6 +266,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
               {opt.label}
             </button>
           ))}
+          </div>
         </div>
 
         <div className="flex gap-1">
