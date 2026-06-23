@@ -74,9 +74,11 @@ export const PossessionModal: React.FC<{
 
   const setBufferCell = (group: CategoryGroup, rarity: Rarity, value: string) => {
     const n = Math.max(0, Math.floor(Number(value) || 0))
+    // 編集したセルだけを保存する(デフォルト全体は焼き込まない)。未設定の群・レアは
+    // resolveStockBuffer が現行デフォルトで補完するため、将来のデフォルト変更にも追従する。
     setRawStockBuffer(prev => ({
       ...prev,
-      [group]: { ...resolvedBuffer[group], ...prev[group], [rarity]: n },
+      [group]: { ...prev[group], [rarity]: n },
     }))
   }
 

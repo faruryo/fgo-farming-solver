@@ -29,7 +29,8 @@ export const useStockTarget = () => {
   const stockBuffer = useMemo(
     () =>
       resolveStockBuffer(
-        Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
+        // localStorage に "null" 等が入っていても落ちないようガード(空/未設定は移行元 fallback へ)。
+        rawStockBuffer && Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
         surplusThreshold,
       ),
     [rawStockBuffer, surplusThreshold],
