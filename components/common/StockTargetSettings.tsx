@@ -29,12 +29,17 @@ export const StockTargetSettings: React.FC = () => {
   const { stockEnabled, setStockEnabled, setRawStockBuffer, stockBuffer } = useStockTarget()
 
   const setBufferCell = (group: CategoryGroup, rarity: Rarity, value: string) => {
-    const n = Math.max(0, Math.floor(Number(value) || 0))
     // 編集したセルだけ保存する(未設定の群・レアは resolveStockBuffer が現行デフォルトで補完)。
-    // localStorage に "null" 等が入っていた場合でも prev?.[group] で落ちないようガード。
+    // 空入力はそのセルのカスタム値を削除し既定へ戻す。prev?.[group] が null でも落ちないようガード。
     setRawStockBuffer(prev => {
       const safe = prev ?? {}
-      return { ...safe, [group]: { ...safe[group], [rarity]: n } }
+      const groupData: Partial<Record<Rarity, number>> = { ...safe[group] }
+      if (value === '') {
+        delete groupData[rarity]
+      } else {
+        groupData[rarity] = Math.max(0, Math.floor(Number(value) || 0))
+      }
+      return { ...safe, [group]: groupData }
     })
   }
 
