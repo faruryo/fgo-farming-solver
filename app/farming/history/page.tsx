@@ -180,9 +180,20 @@ export default function HistoryPage() {
                       {new Date(item.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell className="py-3 px-4">
-                      <Badge variant="outline" className="text-[10px]">
-                        {OBJECTIVE_BADGE[item.objective] ?? item.objective}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[10px]">
+                          {OBJECTIVE_BADGE[item.objective] ?? item.objective}
+                        </Badge>
+                        {item.stock_included ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px]"
+                            style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}
+                          >
+                            {t('ストック込み')}
+                          </Badge>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="py-3 px-4">
                       <QuestSelectionCell raw={item.quest_selection} />

@@ -22,6 +22,8 @@ export interface HistoryItem {
   total_lap: number
   // JSON string (QuestSelection). NULL for rows saved before the feature.
   quest_selection?: string | null
+  // 余剰ストック込みの目標で解いたか(json_extract 由来: 1 / null)。
+  stock_included?: number | boolean | null
   created_at: string
 }
 
