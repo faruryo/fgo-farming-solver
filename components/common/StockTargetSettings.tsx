@@ -109,6 +109,10 @@ export const StockTargetSettings: React.FC = () => {
           </React.Fragment>
         ))}
       </div>
+
+      <p className="text-[10px] leading-relaxed mt-3" style={{ color: 'var(--text3)' }}>
+        {t('ストック目安説明')}
+      </p>
     </div>
   )
 }

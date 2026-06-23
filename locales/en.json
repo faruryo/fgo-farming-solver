@@ -216,6 +216,7 @@
     "ストック目標設定": "Stock Target Settings",
     "ストック目標OFF説明": "If the surplus is within this amount, it's still considered a secondary candidate (lower priority) in the efficiency ranking. Turn the switch ON to promote this amount to an actual goal, also reflected in the route solver and the distribution advisor.",
     "ストック目標ON説明": "On top of the training requirement, this amount is treated as an actual goal and reflected in the efficiency ranking, route solver, and distribution advisor. You can set it per category.",
+    "ストック目安説明": "Rough guide: skill-maxing and fully ascending one 5★ needs about — Common 20/50/100, Gems 51 each, Monuments/Pieces 17 each (per item type). Defaults are ~3× that (≈3 servants of stock).",
     "目標に含める": "Include as goal",
     "通常素材": "Common Items",
     "ストック込み": "Incl. Stock"
