@@ -17,6 +17,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { StockTargetSettings } from '../common/StockTargetSettings'
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
 
 export type MaterialResultProps = {
@@ -159,6 +166,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
 
   const [shortOnly, setShortOnly] = useState(false)
+  const [stockOpen, setStockOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
@@ -246,6 +254,22 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             >
               {shortOnly ? '全て表示' : '不足のみ表示'}
             </Toggle>
+            <button
+              type="button"
+              className="c-back-btn"
+              style={stockEnabled ? { color: 'var(--gold2)', borderColor: 'var(--gold-dim)' } : undefined}
+              onClick={() => setStockOpen(true)}
+            >
+              ⚙ ストック目標
+            </button>
+            <Dialog open={stockOpen} onOpenChange={setStockOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>ストック目標設定</DialogTitle>
+                </DialogHeader>
+                <StockTargetSettings />
+              </DialogContent>
+            </Dialog>
             <Link href="/material" className="c-back-btn">← 設定に戻る</Link>
           </div>
         </div>
