@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { FaChartLine } from 'react-icons/fa'
 import { Link } from '../common/link'
-import { FarmingHistoryChart, HistoryItem } from '../farming/FarmingHistoryChart'
+import { FarmingHistoryChart, HistoryItem, deriveStockMeta, isStock } from '../farming/FarmingHistoryChart'
 
 export const HistoryGraph: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common'])
@@ -18,6 +18,12 @@ export const HistoryGraph: React.FC = () => {
       .catch(err => console.error(err))
       .finally(() => setLoading(false))
   }, [])
+
+  // 簡易表示なのでトグルは出さず、最新履歴の種別(ストック込み/通常)だけを表示し回帰の混在を防ぐ。
+  const visibleHistory = useMemo(() => {
+    const { bothExist, defaultFilter } = deriveStockMeta(history)
+    return bothExist ? history.filter(h => isStock(h) === (defaultFilter === 'stock')) : history
+  }, [history])
 
   if (loading) {
     return (
@@ -48,7 +54,7 @@ export const HistoryGraph: React.FC = () => {
         </div>
       </div>
 
-      <FarmingHistoryChart history={history} />
+      <FarmingHistoryChart history={visibleHistory} />
     </div>
   )
 }

@@ -27,18 +27,41 @@ export interface HistoryItem {
   created_at: string
 }
 
+export type StockFilter = 'normal' | 'stock'
+
 interface FarmingHistoryChartProps {
   history: HistoryItem[]
   height?: number | string
+  // ストック込み/通常の絞り込み(トグルのハイライト用)。一覧と同期させるため親が所有する(controlled)。
+  // 親は history をこの種別に絞り込んだ上で渡す前提。
+  stockFilter?: StockFilter
+  // 両種別が履歴に存在しトグルを出すべきか。省略時はトグル非表示(ダッシュボードの簡易表示など)。
+  showStockToggle?: boolean
+  onStockFilterChange?: (f: StockFilter) => void
 }
 
 type ChartTab = 'ap' | 'lap'
 type PeriodRange = '1m' | '3m' | '6m' | '1y' | 'all'
-type StockFilter = 'normal' | 'stock'
 
 // 余剰ストック込みの目標で解いた履歴か。混在すると合計APの桁が変わり回帰(予測線)が破綻するため、
-// グラフはこのフラグで片方に絞って描画・回帰する。
-const isStock = (h: HistoryItem) => !!h.stock_included
+// 一覧・グラフともこのフラグで片方に絞る。
+export const isStock = (h: HistoryItem) => !!h.stock_included
+
+// 履歴から「両種別が混在するか」と「既定の絞り込み(最新履歴の種別)」を導出。
+export const deriveStockMeta = (history: HistoryItem[]): { bothExist: boolean; defaultFilter: StockFilter } => {
+  let hasStock = false
+  let hasNormal = false
+  let mostRecent: HistoryItem | null = null
+  for (const h of history) {
+    if (isStock(h)) hasStock = true
+    else hasNormal = true
+    if (!mostRecent || new Date(h.created_at) > new Date(mostRecent.created_at)) mostRecent = h
+  }
+  return {
+    bothExist: hasStock && hasNormal,
+    defaultFilter: mostRecent && isStock(mostRecent) ? 'stock' : 'normal',
+  }
+}
 
 const CHART_CONFIG: Record<ChartTab, { label: string; dataKey: string; color: string; gradId: string }> = {
   ap:  { label: '消費AP推移',  dataKey: '消費AP',  color: '#9a7224', gradId: 'gradFarmingAP' },
@@ -107,31 +130,18 @@ const calculateRegression = (data: { x: number; y: number }[]) => {
   return { slope, intercept: intercept - slope * minX };
 };
 
-export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ history, height }) => {
+export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
+  history,
+  height,
+  stockFilter = 'normal',
+  showStockToggle = false,
+  onStockFilterChange,
+}) => {
   const { t } = useTranslation(['dashboard', 'common'])
   const [chartTab, setChartTab] = useState<ChartTab>('ap')
   const [period, setPeriod] = useState<PeriodRange>('3m')
-  const [stockFilterOverride, setStockFilterOverride] = useState<StockFilter | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [responsiveHeight, setResponsiveHeight] = useState(180)
-
-  // ストック込み/通常の混在判定と既定フィルタ(直近の履歴の種別に合わせる)。
-  const { bothExist, defaultFilter } = useMemo(() => {
-    let hasStock = false
-    let hasNormal = false
-    let mostRecent: HistoryItem | null = null
-    for (const h of history) {
-      if (isStock(h)) hasStock = true
-      else hasNormal = true
-      if (!mostRecent || new Date(h.created_at) > new Date(mostRecent.created_at)) mostRecent = h
-    }
-    return {
-      bothExist: hasStock && hasNormal,
-      defaultFilter: (mostRecent && isStock(mostRecent) ? 'stock' : 'normal') as StockFilter,
-    }
-  }, [history])
-
-  const stockFilter = stockFilterOverride ?? defaultFilter
 
   useEffect(() => {
     const update = () => setResponsiveHeight(window.innerWidth >= 768 ? 220 : 180)
@@ -147,9 +157,8 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
   const { chartData, predictionDate, xDomain } = useMemo(() => {
     if (!history.length) return { chartData: [], predictionDate: null, xDomain: ['auto', 'auto'] as ['auto', 'auto'] };
 
-    // ストック込み/通常を分離。回帰も同一種別内だけで行い予測線の破綻を防ぐ。
-    const scoped = history.filter(h => isStock(h) === (stockFilter === 'stock'));
-    if (!scoped.length) return { chartData: [], predictionDate: null, xDomain: ['auto', 'auto'] as ['auto', 'auto'] };
+    // history は親で既にストック込み/通常のどちらかに絞り込まれている(回帰も同一種別内で行われ予測線が破綻しない)。
+    const scoped = history;
 
     const now = new Date();
     const startTime = new Date();
@@ -215,14 +224,39 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
       predictionDate: predTimestamp ? new Date(predTimestamp) : null,
       xDomain: [startX, endX] as [number, number]
     };
-  }, [history, period, chartTab, stockFilter]);
+  }, [history, period, chartTab]);
 
   const cfg = CHART_CONFIG[chartTab];
 
+  // ストック込み/通常トグル。データ不足の早期returnでも表示し、片方が0〜1件でも
+  // もう片方へ切り替えられる(=操作不能に陥らない)ようにする。
+  const stockToggle = showStockToggle ? (
+    <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
+      {([['normal', '通常'], ['stock', 'ストック込み']] as [StockFilter, string][]).map(([val, label]) => (
+        <button
+          key={val}
+          onClick={() => onStockFilterChange?.(val)}
+          className="text-[10px] px-3 py-1 border-y border-r first:border-l transition-colors"
+          style={{
+            background: stockFilter === val ? 'var(--gold)' : 'transparent',
+            color: stockFilter === val ? 'white' : 'var(--text2)',
+            borderColor: 'var(--border)',
+            fontWeight: stockFilter === val ? 'bold' : 'normal',
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  ) : null
+
   if (!history.length || chartData.length < 2) {
     return (
-      <div className="p-8 text-center rounded-xl" style={{ color: 'var(--gold-dim)', background: 'var(--panel2)' }}>
-        <p className="text-sm">{t('履歴が不足しているためグラフを表示できません')}</p>
+      <div className="flex flex-col gap-4">
+        {stockToggle}
+        <div className="p-8 text-center rounded-xl" style={{ color: 'var(--gold-dim)', background: 'var(--panel2)' }}>
+          <p className="text-sm">{t('履歴が不足しているためグラフを表示できません')}</p>
+        </div>
       </div>
     )
   }
@@ -231,25 +265,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({ histor
     <div className="flex flex-col gap-4">
       <div className="flex justify-between flex-wrap gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          {bothExist && (
-            <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
-              {([['normal', '通常'], ['stock', 'ストック込み']] as [StockFilter, string][]).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setStockFilterOverride(val)}
-                  className="text-[10px] px-3 py-1 border-y border-r first:border-l transition-colors"
-                  style={{
-                    background: stockFilter === val ? 'var(--gold)' : 'transparent',
-                    color: stockFilter === val ? 'white' : 'var(--text2)',
-                    borderColor: 'var(--border)',
-                    fontWeight: stockFilter === val ? 'bold' : 'normal',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
+          {stockToggle}
           <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
           {PERIOD_OPTIONS.map(opt => (
             <button

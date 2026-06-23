@@ -1,12 +1,18 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '../../../components/common/link'
 import { motion } from 'framer-motion'
 import { Loader2, Trash2 } from 'lucide-react'
 import { FaExternalLinkAlt, FaHistory } from 'react-icons/fa'
-import { FarmingHistoryChart, HistoryItem } from '../../../components/farming/FarmingHistoryChart'
+import {
+  FarmingHistoryChart,
+  HistoryItem,
+  StockFilter,
+  deriveStockMeta,
+  isStock,
+} from '../../../components/farming/FarmingHistoryChart'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,6 +104,15 @@ export default function HistoryPage() {
   const [confirmItem, setConfirmItem] = useState<HistoryItem | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(false)
+  // ストック込み/通常の絞り込み。グラフと一覧で共有するためページが所有する。
+  const [stockOverride, setStockOverride] = useState<StockFilter | null>(null)
+
+  const { bothExist, defaultFilter } = useMemo(() => deriveStockMeta(history), [history])
+  const stockFilter = stockOverride ?? defaultFilter
+  const visibleHistory = useMemo(
+    () => (bothExist ? history.filter(h => isStock(h) === (stockFilter === 'stock')) : history),
+    [history, bothExist, stockFilter],
+  )
 
   const handleDelete = async () => {
     if (!confirmItem) return
@@ -152,7 +167,12 @@ export default function HistoryPage() {
           {history.length > 1 && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="c-card p-6">
-                <FarmingHistoryChart history={history} />
+                <FarmingHistoryChart
+                  history={visibleHistory}
+                  stockFilter={stockFilter}
+                  showStockToggle={bothExist}
+                  onStockFilterChange={setStockOverride}
+                />
               </div>
             </motion.div>
           )}
@@ -174,7 +194,7 @@ export default function HistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.map(item => (
+                {visibleHistory.map(item => (
                   <TableRow key={item.id}>
                     <TableCell className="text-sm py-3 px-4" style={{ color: 'var(--text)' }}>
                       {new Date(item.created_at).toLocaleString()}
@@ -239,7 +259,7 @@ export default function HistoryPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {history.length === 0 && (
+                {visibleHistory.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-10" style={{ color: 'var(--gold-dim)' }}>
                       {t('履歴がありません')}
