@@ -27,6 +27,8 @@ export type SurplusThreshold = Record<Rarity, number>
 /**
  * 通常素材(強化素材)レア別の既定ストック数。`stockBuffer.normal` の既定であり、
  * `stockEnabled=OFF` 時は「次点(0.3)で拾う余剰の上限」も兼ねる。
+ * 旧キー `efficiency/surplusThreshold` の既定値かつ移行フォールバックでもある
+ * (`hooks/use-stock-target.ts` / `resolveStockBuffer`)。
  * 値の根拠は `DEFAULT_STOCK_BUFFER` のコメント参照(1体あたり平均必要数 × 約3)。
  */
 export const DEFAULT_SURPLUS_THRESHOLD: SurplusThreshold = {
