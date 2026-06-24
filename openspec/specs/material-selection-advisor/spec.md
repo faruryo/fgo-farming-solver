@@ -2,7 +2,6 @@
 
 ## Purpose
 交換券や配布で得られる限られた素材枠を、ユーザーの全不足素材に対して最も効果的に配分するためのアドバイザー機能。各候補素材の価値を周回ソルバー（LP）の限界削減量（シャドウプライス）で評価し、AP または周回数の総削減量を最大化する配分を算出してマシュ・キリエライトのアドバイスとともに可視化する。
-
 ## Requirements
 ### Requirement: 候補素材の動的追加と削除 (Dynamic Material Candidates)
 システムは、ユーザーが任意の素材候補（FGOの育成素材）を追加・削除できるUIを提供しなければならない (SHALL)。
@@ -66,3 +65,20 @@
 - **THEN** 即座に `localStorage['material/selection-advisor-config']` に保存される。
 - **WHEN** ページが初回ロードされたとき
 - **THEN** localStorage から前回の設定が復元され、アドバイザー画面に初期表示される。
+
+### Requirement: 推奨評価の余剰ストック追従
+
+システムは配布アドバイザーの need(不足)算出を、グローバル設定 `stockEnabled` に追従して行う SHALL。`stockEnabled=ON` のとき各素材の need を共有純関数 `max(0, (育成必要数 + buffer(item)) − 所持)`、`OFF` のとき `max(0, 育成必要数 − 所持)` とする。`stockBuffer`・レアリティ判定はクエスト効率と同一の値・関数を共有 SHALL。これにより、ストックを狙うユーザーには配布/交換素材の推奨もストック込み不足で評価される。アドバイザーは現在 `stockEnabled=ON` であることをユーザーに示す SHALL。
+
+#### Scenario: stockEnabled=ON はストック込みで評価
+- **WHEN** `stockEnabled=ON` で配布アドバイザーが推奨を算出する
+- **THEN** 各候補素材の価値は、ストック込み不足を周回ソルバーで解いたときの限界削減量で評価される
+
+#### Scenario: stockEnabled=OFF は育成不足のみ
+- **WHEN** `stockEnabled=OFF` で配布アドバイザーが推奨を算出する
+- **THEN** 各候補素材の価値は育成不足のみに基づいて評価される
+
+#### Scenario: ストック反映中の明示
+- **WHEN** `stockEnabled=ON` の状態で配布アドバイザーを表示する
+- **THEN** ストック込みで評価している旨が UI に示される
+
