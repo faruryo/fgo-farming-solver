@@ -36,6 +36,7 @@ export const KEYS = [
   'efficiency/surplusThreshold',
   'efficiency/stockEnabled',
   'efficiency/stockBuffer',
+  'masterLevel',
 ]
 
 export const MOCK_CLOUD_KEY = 'fgo_mock_cloud_data'

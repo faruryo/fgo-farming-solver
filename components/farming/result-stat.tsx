@@ -4,6 +4,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useMasterLevel } from '../../hooks/use-master-level'
+import { computeApBudget } from '../../lib/ap-budget'
 
 export const ResultStat = ({
   totalLap,
@@ -14,6 +16,9 @@ export const ResultStat = ({
 }) => {
   const [showSum, setShowSum] = useState(false)
   const { t } = useTranslation('farming')
+  // AP→聖晶石→円換算は ap-budget に統一（最大AP基準。固定144換算は廃止）。
+  const { maxAp } = useMasterLevel()
+  const budget = computeApBudget(totalAp, maxAp)
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -31,8 +36,8 @@ export const ResultStat = ({
         {[
           { label: '周回数', value: totalLap },
           { label: 'AP', value: totalAp },
-          { label: '聖晶石', value: Math.round(totalAp / 144) },
-          { label: '費用', value: `¥${Math.round((totalAp / 144 / 168) * 10000)}` },
+          { label: '聖晶石', value: budget.quartzCount },
+          { label: '費用', value: `¥${budget.yen.toLocaleString()}` },
         ].map(({ label, value }) => (
           <div key={label} className="c-stat m-5">
             <div className="c-stat-label">{t(label)}</div>
