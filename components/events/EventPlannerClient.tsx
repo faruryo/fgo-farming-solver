@@ -26,10 +26,12 @@ import {
 import type { MaterialsForServants } from '../../lib/get-materials'
 import { getMaterialsForServantIds } from '../../lib/get-materials'
 import { EventPlanResultCard } from './EventPlanResultCard'
+import { useMasterLevel } from '../../hooks/use-master-level'
+import { MAX_MASTER_LEVEL } from '../../lib/master-profile/max-ap'
+import { computeApBudget } from '../../lib/ap-budget'
 
-/** AP per 果実 (golden apple): 40. 林檎 (silver apple): 20. */
-const AP_PER_GOLDEN_APPLE = 40
-const AP_PER_SILVER_APPLE = 20
+/** 所持黄金の果実数の localStorage キー（端末ローカル: KEYS 非登録）。 */
+const GOLDEN_FRUIT_KEY = 'events/goldenFruit'
 
 interface Props {
   event: EventPlannerEvent
@@ -227,10 +229,14 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     }
   }, [effectiveEvent, boxLayer.remainingCurrency, shopAllocation.totalCurrencyUsed, inputMode, rosterImpact, reverseResult])
 
-  // ── AP → Apple conversion ───────────────────────────────────────────────────
+  // ── AP予算（マスターレベル → 最大AP → 黄金の果実 → 聖晶石 → 課金額）───────────
+  const { level: masterLevel, setLevel: setMasterLevel, maxAp } = useMasterLevel()
+  const [goldenFruitOwned, setGoldenFruitOwned] = useLocalStorage<number>(GOLDEN_FRUIT_KEY, 0)
   const totalAp = solverResult?.result.total_ap ?? 0
-  const goldenApples = totalAp > 0 ? Math.ceil(totalAp / AP_PER_GOLDEN_APPLE) : 0
-  const silverApples = totalAp > 0 ? Math.ceil(totalAp / AP_PER_SILVER_APPLE) : 0
+  const apBudget = useMemo(
+    () => computeApBudget(totalAp, maxAp, goldenFruitOwned),
+    [totalAp, maxAp, goldenFruitOwned],
+  )
 
   const [clientNowSec, setClientNowSec] = useState(0)
   useEffect(() => { setClientNowSec(Math.floor(Date.now() / 1000)) }, [])
@@ -464,6 +470,54 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 </div>
               </div>
 
+              {/* Master profile: AP予算（マスターレベル + 所持黄金の果実） */}
+              <div
+                className="rounded-lg p-4 flex flex-col gap-3"
+                style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-xs font-semibold" style={{ color: 'var(--text3)' }}>
+                  {t('AP予算')}
+                </p>
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs">
+                    {t('マスターレベル')}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={MAX_MASTER_LEVEL}
+                      value={masterLevel}
+                      onChange={e =>
+                        setMasterLevel(
+                          Math.min(MAX_MASTER_LEVEL, Math.max(1, Math.floor(Number(e.target.value)) || 1)),
+                        )
+                      }
+                      className="w-24 text-sm"
+                    />
+                    <span className="text-xs" style={{ color: 'var(--text3)' }}>
+                      {t('最大APN', { ap: maxAp })}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs">
+                    {t('所持黄金の果実')}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={goldenFruitOwned}
+                    onChange={e => setGoldenFruitOwned(Math.max(0, Math.floor(Number(e.target.value))))}
+                    className="w-24 text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <p className="text-[10px]" style={{ color: 'var(--text3)' }}>
+                  {t('AP予算入力注記')}
+                </p>
+              </div>
+
               {/* Manual drop fallback (US-5) */}
               {!hasAtlasDrops && (
                 <div
@@ -533,8 +587,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 boxLayer={boxLayer}
                 shopAllocation={shopAllocation}
                 solverResult={solverResult}
-                goldenApples={goldenApples}
-                silverApples={silverApples}
+                apBudget={apBudget}
                 dropSource={
                   usingManualDrops
                     ? 'manual'
