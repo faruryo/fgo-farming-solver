@@ -27,7 +27,11 @@ export const EventListClient: React.FC<Props> = ({ events }) => {
   // nowSec=0（SSR/初回描画）時は時刻未確定。全件を「開催予定」に誤分類して
   // マウント後にフラッシュするのを防ぐため、確定するまで空にする。
   const activeEvents = nowSec === 0 ? [] : events.filter(e => e.startedAt <= nowSec && e.endedAt >= nowSec)
-  const endedEvents = nowSec === 0 ? [] : events.filter(e => e.endedAt < nowSec)
+  // 終了済みは「最近終わったものが上」になるよう endedAt 降順（新しい順）で並べる。
+  const endedEvents =
+    nowSec === 0
+      ? []
+      : events.filter(e => e.endedAt < nowSec).sort((a, b) => b.endedAt - a.endedAt)
   const upcomingEvents = nowSec === 0 ? [] : events.filter(e => e.startedAt > nowSec)
 
   return (
