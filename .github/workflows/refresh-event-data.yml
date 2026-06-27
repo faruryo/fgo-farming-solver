@@ -7,11 +7,20 @@ name: Refresh event_data KV cache
 #
 # 周回ドロップのサンプルは会期が進むにつれて増えるため日次更新で精度が上がる。
 # 会期終了後 30 日以内のイベントも対象に含める（スクリプト側で制御）。
+#
+# 取り込みは「全置換」ではなく「蓄積マージ」: put 前に既存 KV を取得して
+# スクリプトに渡し、過去のロト型イベントを温存したまま今回フェッチ分を upsert する。
+# 過去ロトの初期投入は workflow_dispatch の `backfill_since` で下限を遡って一回実行する。
 
 on:
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
+    inputs:
+      backfill_since:
+        description: '過去バックフィルの下限（ISO 日付 or Unix 秒）。空＝通常の30日窓。'
+        required: false
+        default: ''
 
 jobs:
   refresh:
@@ -33,17 +42,66 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # マージのベースとして現行 KV を取得する。蓄積マージのため、これに失敗
+      # したら（ネットワーク等）既存を壊さないよう put をスキップする（3.3）。
+      # 値が無い（初回）場合は existing.json 無し＝既存なし扱いで続行する。
+      - name: Fetch existing event data from KV
+        id: existing
+        run: |
+          if pnpm exec wrangler kv key get event_data_json \
+            --namespace-id 306bbe537e9d4907809f82468df500e4 \
+            --remote > existing.json 2>/dev/null && [ -s existing.json ]; then
+            echo "fetched=true" >> "$GITHUB_OUTPUT"
+            echo "Fetched existing event_data_json ($(wc -c < existing.json) bytes)."
+          else
+            rm -f existing.json
+            # get 失敗時: 「初回でキーが無い」のか「取得失敗」なのかを区別する。
+            # ここで list を使うが、get の失敗原因（API障害・認証失効・ネットワーク断）は
+            # list の失敗とも相関する。よって list 自体の終了コードを確認し、list が
+            # 失敗したら fail-safe に error 扱い（build/put をスキップして既存 KV を温存）。
+            # キー不在を「初回」と断定するのは list が成功したときだけにする。
+            if keys=$(pnpm exec wrangler kv key list \
+              --namespace-id 306bbe537e9d4907809f82468df500e4 \
+              --remote 2>/dev/null); then
+              if echo "$keys" | grep -q '"event_data_json"'; then
+                # キーは存在するのに get できなかった → 異常。上書きせず温存。
+                echo "fetched=error" >> "$GITHUB_OUTPUT"
+                echo "::warning::event_data_json exists but could not be fetched; skipping put to preserve KV."
+              else
+                echo "fetched=empty" >> "$GITHUB_OUTPUT"
+                echo "No existing event_data_json in KV (first run); proceeding without merge base."
+              fi
+            else
+              # list 自体が失敗 = KV 状態を確認できない。既存温存のため put をスキップ。
+              echo "fetched=error" >> "$GITHUB_OUTPUT"
+              echo "::warning::Could not read KV state (get and list both failed); skipping put to preserve KV."
+            fi
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Build compact event data
         id: build
+        # 既存取得が失敗（error）したときは既存温存のためビルド／put をスキップ。
+        if: steps.existing.outputs.fetched != 'error'
+        # backfill_since は run: に直書きせず env 経由で渡す（command injection 回避）。
+        env:
+          BACKFILL_SINCE: ${{ inputs.backfill_since }}
         run: |
-          pnpm exec tsx scripts/refresh-event-data.ts event_data.json
-          # ボックスイベント不在時はスクリプトがファイルを書かずに正常終了する。
-          # その場合は KV put をスキップし、既存 KV を温存する（空書きで壊さない）。
+          # existing.json があれば第2引数として渡し蓄積マージ（無ければ既存なし）。
+          if [ -f existing.json ]; then
+            pnpm exec tsx scripts/refresh-event-data.ts event_data.json existing.json
+          else
+            pnpm exec tsx scripts/refresh-event-data.ts event_data.json
+          fi
+          # マージ結果が既存と同一／ボックス不在のときスクリプトはファイルを書かず
+          # 正常終了する。その場合は put をスキップし既存 KV を温存する。
           if [ -f event_data.json ]; then
             echo "wrote=true" >> "$GITHUB_OUTPUT"
           else
             echo "wrote=false" >> "$GITHUB_OUTPUT"
-            echo "No event_data.json produced (no active box events); skipping KV put."
+            echo "No event_data.json produced (no change / no box events); skipping KV put."
           fi
 
       - name: Put event data into KV

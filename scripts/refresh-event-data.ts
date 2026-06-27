@@ -6,24 +6,40 @@
  * 重い fetch は GH Actions 側で行い、Worker は KV を読むだけにする
  * (`refresh-nice-war.yml` / `lib/master-data/update.ts` の方針を踏襲)。
  *
- * 実行: pnpm exec tsx scripts/refresh-event-data.ts [出力パス]
+ * 実行: pnpm exec tsx scripts/refresh-event-data.ts [出力パス] [既存パス]
  *   出力: EventData 型の JSON（既定 ./event_data.json）。
+ *   既存パス（任意）: ワークフローが `wrangler kv key get event_data_json` で取得した
+ *     現行 KV の JSON。あれば「既存 + 今回フェッチ」を id キーで蓄積マージする
+ *     （省略時は既存なし＝従来の全置換相当）。
  *   後続の `wrangler kv key put event_data_json --path <出力パス>` で KV へ投入する
  *   (.github/workflows/refresh-event-data.yml 参照)。
  *
  * 対象イベント:
  *   - Atlas `basic_event.json` から type='eventQuest' のイベントを取得。
  *   - 開催中 (now < endedAt) または終了後 30 日以内を対象。
+ *   - 環境変数 `BACKFILL_SINCE`（ISO 日付 or Unix 秒）があれば、下限を
+ *     `endedAt > BACKFILL_SINCE` に切り替えて過去ロトを一括バックフィルする。
  *   - `nice_event/{eventId}` の lotteries[] が空のものはロト型でないためスキップ。
+ *
+ * 蓄積マージ思想（全置換しない）:
+ *   - 既存イベントは id をキーに温存し、今回フェッチ分で upsert（新優先）。
+ *   - 取り込み窓の外になった過去イベントも KV から削除しない。
+ *   - マージ結果が既存と同一なら書き出さない（差分があるときだけ put）。
  *
  * バリデーション思想（lib/master-data/validation.ts の DRY_RUN 思想を踏襲）:
  *   - スキーマ不整合のイベントはスキップ（他イベントへの影響なし）。
- *   - 最低 1 件のイベントが抽出できなければ書き出し拒否してエラー終了。
+ *   - `basic_event.json` が空（上流障害）なら書き出し拒否してエラー終了。
  *   - 既存 KV は本スクリプト外でのみ操作する（wrangler kv key put は GH Actions 側）。
  */
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 
 import { origin, region } from '../constants/atlasacademy'
+import {
+  eventsUnchanged,
+  mergeEvents,
+  parseBackfillSince,
+  parseExistingEvents,
+} from '../lib/refresh-event-data-merge'
 import type {
   EventCurrency,
   EventData,
@@ -341,8 +357,35 @@ async function compactFarmingNodes(
 
 async function main() {
   const outPath = process.argv[2] ?? './event_data.json'
+  const existingPath = process.argv[3]
   const nowSec = Math.floor(Date.now() / 1000)
   const graceSec = ENDED_GRACE_DAYS * 24 * 60 * 60
+
+  // ── マージのベース（既存 KV）を読む（任意） ──
+  // ファイルが無い／読めない＝ベース未供給 → 既存なしにフォールバック（従来動作相当）。
+  // ファイルはあるが非空で壊れている＝ベース供給を期待されたのに不正 → strict で
+  // throw し実行を失敗させる（空配列に倒すとフェッチ分のみで KV を上書きし履歴を失う）。
+  let existingEvents: EventPlannerEvent[] = []
+  if (existingPath) {
+    let raw = ''
+    try {
+      raw = readFileSync(existingPath, 'utf8')
+    } catch (e) {
+      console.warn(`  existing file ${existingPath} not readable (${e}); treating as none.`)
+    }
+    existingEvents = parseExistingEvents(raw, { strict: true })
+    console.log(`Loaded ${existingEvents.length} existing event(s) from ${existingPath}`)
+  }
+
+  // ── 取り込み窓の下限: 通常は now-30日、バックフィル時は BACKFILL_SINCE ──
+  const backfillSince = parseBackfillSince(process.env.BACKFILL_SINCE)
+  const sinceSec = backfillSince ?? nowSec - graceSec
+  if (backfillSince !== undefined) {
+    console.log(
+      `BACKFILL mode: lower bound = endedAt > ${backfillSince} ` +
+      `(${new Date(backfillSince * 1000).toISOString()})`
+    )
+  }
 
   console.log(`Fetching item map from ${origin}/export/${region}/nice_item.json...`)
   const itemMap = await fetchItemMap()
@@ -353,18 +396,19 @@ async function main() {
     `${origin}/export/${region}/basic_event.json`
   )
 
-  // 対象フィルタ: eventQuest 型 & (開催中 or 終了後30日以内)
+  // 対象フィルタ: eventQuest 型 & endedAt > 下限（通常 now-30日／バックフィル時は指定下限）
   const targets = basicEvents.filter(
-    e =>
-      e.type === 'eventQuest' &&
-      e.endedAt > nowSec - graceSec
+    e => e.type === 'eventQuest' && e.endedAt > sinceSec
   )
-  console.log(`Found ${targets.length} eventQuest events within window (now=${nowSec})`)
+  console.log(
+    `Found ${targets.length} eventQuest event(s) to fetch within window ` +
+    `(now=${nowSec}, since=${sinceSec})`
+  )
 
   const results: EventPlannerEvent[] = []
 
-  for (const basic of targets) {
-    console.log(`\nProcessing event ${basic.id} "${basic.name}"...`)
+  for (const [idx, basic] of targets.entries()) {
+    console.log(`\n[${idx + 1}/${targets.length}] Processing event ${basic.id} "${basic.name}"...`)
     let rawEvent: unknown
     try {
       rawEvent = await fetchJson<unknown>(`${origin}/nice/${region}/event/${basic.id}`)
@@ -437,31 +481,43 @@ async function main() {
     )
   }
 
-  if (results.length === 0) {
-    // basic_event.json 自体が空なら Atlas 側の障害の可能性が高い。既存 KV を
-    // 空書きで壊さないよう失敗扱いにする（毎日の cron でも本当の異常は赤くする）。
-    if (basicEvents.length === 0) {
-      throw new Error('Refusing to write: basic_event.json was empty (likely upstream issue)')
-    }
-    // カタログ取得には成功しているがボックスイベントが1件も無い、というのは
-    // 年の大半で「正常」な状態（ボックスは年1〜3回）。ここで exit 1 にすると
-    // 開催していない期間ずっと日次ジョブが赤く失敗し通知が飛び続けるため、
-    // 既存 KV はそのまま温存して正常終了する（no-op）。
+  // basic_event.json 自体が空なら Atlas 側の障害の可能性が高い。既存 KV を
+  // 空書きで壊さないよう失敗扱いにする（毎日の cron でも本当の異常は赤くする）。
+  if (basicEvents.length === 0) {
+    throw new Error('Refusing to write: basic_event.json was empty (likely upstream issue)')
+  }
+
+  // 蓄積マージ: 既存 + 今回フェッチを id upsert（過去イベントは温存）。
+  const merged = mergeEvents(existingEvents, results)
+
+  if (merged.length === 0) {
+    // 既存も今回も 0 件（初回・完全空）。従来どおりファイル未書き込みで no-op。
     console.log(
-      `No active box events (${targets.length} eventQuest checked, none had lotteries). ` +
-      `Leaving existing KV untouched and exiting successfully.`
+      `No events at all (fetched 0, existing 0). Leaving KV untouched and exiting successfully.`
+    )
+    return
+  }
+
+  if (eventsUnchanged(existingEvents, merged)) {
+    // マージ結果が既存と同一。不要 put を避けるためファイルを書かずスキップ
+    // （ワークフローが `if -f` で put を飛ばし、既存 KV を温存する）。
+    console.log(
+      `Merge result identical to existing (${merged.length} event(s), ` +
+      `${results.length} fetched, none changed). Skipping write.`
     )
     return
   }
 
   const output: EventData = {
-    events: results,
+    events: merged,
     updatedAt: nowSec,
   }
 
   writeFileSync(outPath, JSON.stringify(output))
   console.log(
-    `\nWrote ${results.length} event(s) to ${outPath} (${JSON.stringify(output).length} bytes)`
+    `\nWrote ${merged.length} event(s) to ${outPath} ` +
+    `(${results.length} fetched, +${merged.length - existingEvents.length} net new, ` +
+    `${JSON.stringify(output).length} bytes)`
   )
 }
 
