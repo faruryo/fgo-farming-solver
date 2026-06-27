@@ -18,5 +18,5 @@
 ## 4. 検証
 - [x] 4.1 `pnpm run type-check` / `pnpm run lint` / 関連テスト緑。
 - [x] 4.2 ローカルで擬似 existing.json＋mock フェッチによりマージ出力を確認（温存・upsert・差分なしスキップ）。
-- [ ] 4.3 （任意・要許可）ステージング相当でバックフィル一回実行 → `/events` プレビューで過去イベントが出る・終了済みシミュレートできることを browser-use で実機確認。
+- [x] 4.3 本番でバックフィル実行（backfill_since=2023-01-01、過去ロト5件をKV投入）→ `/events` で過去イベント表示・終了済みシミュレートを browser-use で実機確認済み。
 - [x] 4.4 `openspec validate event-data-accumulate --strict` → valid。
