@@ -4,7 +4,7 @@
 TBD - created by archiving change event-lottery-planner. Update Purpose after archive.
 ## Requirements
 ### Requirement: イベントデータの取り込み
-システムは、開催中（および直近終了）のロト型イベントについて、Atlas Academy の `nice_event` からロトボックス・交換所・イベント通貨の情報を取得し、コンパクト化して KV (`event_data_json`) に保存しなければならない (SHALL)。取得・整形は GitHub Actions 定期ワークフローで行い、Cloudflare Workers では KV を読むだけとする。
+システムは、ロト型イベントのロトボックス・交換所・イベント通貨の情報を Atlas Academy の `nice_event` から取得・コンパクト化して KV (`event_data_json`) に保存しなければならない (SHALL)。取得・整形は GitHub Actions 定期ワークフローで行い、Cloudflare Workers では KV を読むだけとする。保存は**全置換ではなく蓄積マージ**とし、過去に取り込んだロト型イベントは取り込み窓の外になっても KV から削除してはならない (SHALL NOT)。
 
 #### Scenario: ロトボックスと箱コストの取得
 - **WHEN** 取り込みワークフローが対象イベントを処理するとき
@@ -14,9 +14,25 @@ TBD - created by archiving change event-lottery-planner. Update Purpose after ar
 - **WHEN** 取り込みワークフローが対象イベントを処理するとき
 - **THEN** 交換所アイテムの「獲得物」「コスト（通貨・個数）」「在庫上限（`limitNum`）」が KV に保存される。
 
+#### Scenario: 過去イベントの蓄積保持（マージ）
+- **WHEN** 取り込みワークフローが実行され、既存 KV に過去のロト型イベントが存在するとき
+- **THEN** 既存イベントは `id` をキーに温存され、今回フェッチしたイベントは同一 `id` を新データで上書き（upsert）、今回フェッチに含まれない過去イベントは削除されずに残る。
+
+#### Scenario: 過去イベントのバックフィル
+- **WHEN** 取り込み対象期間の下限を過去に遡って指定して取り込みを実行したとき
+- **THEN** 指定期間内の過去ロト型イベントが `nice_event` から取得され、蓄積マージで KV に追加される。
+
 #### Scenario: スキーマ不整合のスキップ
 - **WHEN** あるイベントの `nice_event` がバリデーションに失敗したとき
 - **THEN** そのイベントはスキップされ、他のイベントの取り込みと既存 KV データは影響を受けない。
+
+#### Scenario: 上流障害時の既存データ保護
+- **WHEN** 取り込み元のイベントカタログ (`basic_event.json`) が空、または既存 KV の取得に失敗したとき
+- **THEN** KV への書き込みは行われず、既存の `event_data_json` がそのまま温存される（空データで上書きしない）。
+
+#### Scenario: 変化が無いときの非書き込み
+- **WHEN** マージ結果が既存 KV と同一（新規追加・更新が無い）のとき
+- **THEN** KV への書き込みはスキップされ、既存データが温存される。
 
 #### Scenario: 既存恒常データの不可侵
 - **WHEN** イベントデータを取り込むとき
