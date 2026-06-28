@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { Cinzel } from 'next/font/google'
 import { Providers } from './providers'
 import { Layout } from '../components/common/layout'
+import { CfWebAnalytics } from '../components/common/cf-web-analytics'
 import './globals.css'
 
 const cinzel = Cinzel({
@@ -33,6 +34,7 @@ export default function RootLayout({
             {children}
           </Layout>
         </Providers>
+        <CfWebAnalytics />
       </body>
     </html>
   )

@@ -18,6 +18,9 @@
 - **Manual deploy**: `pnpm run deploy` は原則禁止。ローカルビルドの差異が本番に混入するリスクがあるため、明示的な指示がない限り実行しないこと。
 - **Data update jobs**: master-data / rarity の KV 更新は cron worker ではなく GitHub Actions の定期ワークフロー(`update-master-data.yml` 30分ごと / `update-rarity-tables.yml` 毎時 / `refresh-nice-war.yml` 6時間ごと)。Workers 無料プランは CPU 10ms 超の invocation を確率的に kill するため、**重い定期処理を Cloudflare cron worker に置かないこと**。詳細は `deployment_guide.md`。
 
+## Analytics / 利用状況分析
+- 本番の利用者数・人/ボット・機能の使われ方を調べる手段と制約は `analytics_guide.md` を参照。要点: **Workers Logs(UA/IP/ボット判定)は約7日しか残らない**・`farming_results` に UA/IP は無い・未ログインは全員 `anonymous` に潰れる・ローカル検証は本番 D1 を汚さない(local/prod は `batch_id` 列の有無で見分け)。継続分析には保存時シグナル記録(案B)等の追加が必要。
+
 ## Key Commands
 - `pnpm dev` — local dev server
 - `pnpm run build` — Next.js build + OpenNext Cloudflare build
