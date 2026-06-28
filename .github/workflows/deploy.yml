@@ -94,6 +94,10 @@ jobs:
             ${{ runner.os }}-nextjs-
 
       - name: Build
+        env:
+          # Cloudflare Web Analytics beacon token。ブラウザに配信される公開値で秘密ではない。
+          # NEXT_PUBLIC_ はビルド時インラインのため、static prerender にも焼き込むにはここで供給する。
+          NEXT_PUBLIC_CF_BEACON_TOKEN: "c3599281fa6d4ae4a4ba26e996b8fb45" # gitleaks:allow
         run: pnpm run build
 
       - name: Upload build artifact
