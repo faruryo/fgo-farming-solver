@@ -1,5 +1,27 @@
 [
   {
+    "id": "mock-id-50-a",
+    "objective": "both",
+    "target_items": "証, 骨, 牙, 鐘...",
+    "total_ap": 28000,
+    "total_lap": 900,
+    "quest_selection": "{\"total\":304,\"selected\":297,\"mode\":\"excluded\",\"quests\":[{\"area\":\"冬木\",\"name\":\"未確認座標X-A\"}]}",
+    "stock_included": null,
+    "batch_id": "mock-batch-uuid-50",
+    "created_at": "2026-05-18T00:00:00.000Z"
+  },
+  {
+    "id": "mock-id-50-b",
+    "objective": "both",
+    "target_items": "証, 骨, 牙, 鐘...",
+    "total_ap": 36500,
+    "total_lap": 1150,
+    "quest_selection": "{\"total\":304,\"selected\":297,\"mode\":\"excluded\",\"quests\":[{\"area\":\"冬木\",\"name\":\"未確認座標X-A\"}]}",
+    "stock_included": 1,
+    "batch_id": "mock-batch-uuid-50",
+    "created_at": "2026-05-18T00:00:00.000Z"
+  },
+  {
     "id": "mock-id-49",
     "objective": "both",
     "target_items": "証, 骨, 牙, 鐘...",
@@ -7,17 +29,30 @@
     "total_lap": 1080,
     "quest_selection": "{\"total\":304,\"selected\":297,\"mode\":\"excluded\",\"quests\":[{\"area\":\"冬木\",\"name\":\"未確認座標X-A\"},{\"area\":\"冬木\",\"name\":\"未確認座標X-B\"},{\"area\":\"オルレアン\",\"name\":\"ティエール\"},{\"area\":\"セプテム\",\"name\":\"軍神の丘\"},{\"area\":\"オケアノス\",\"name\":\"隠された島\"},{\"area\":\"ロンドン\",\"name\":\"ソーホー\"},{\"area\":\"北米\",\"name\":\"デモイン\"}]}",
     "stock_included": 1,
+    "batch_id": null,
     "created_at": "2026-05-14T00:00:00.000Z"
   },
   {
-    "id": "mock-id-48",
+    "id": "mock-id-48-a",
     "objective": "both",
     "target_items": "証, 骨, 牙, 鐘...",
     "total_ap": 21483,
     "total_lap": 752,
     "quest_selection": "{\"total\":304,\"selected\":3,\"mode\":\"selected\",\"quests\":[{\"area\":\"カルデアゲート\",\"name\":\"極級\"},{\"area\":\"オーディール・コール\",\"name\":\"冠位研鑽戦・槍\"},{\"area\":\"トラオム\",\"name\":\"裁定の地\"}]}",
-    "created_at": "2026-05-10T00:00:00.000Z",
-    "stock_included": 1
+    "stock_included": null,
+    "batch_id": "mock-batch-uuid-48",
+    "created_at": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "id": "mock-id-48-b",
+    "objective": "both",
+    "target_items": "証, 骨, 牙, 鐘...",
+    "total_ap": 28100,
+    "total_lap": 980,
+    "quest_selection": "{\"total\":304,\"selected\":3,\"mode\":\"selected\",\"quests\":[{\"area\":\"カルデアゲート\",\"name\":\"極級\"},{\"area\":\"オーディール・コール\",\"name\":\"冠位研鑽戦・槍\"},{\"area\":\"トラオム\",\"name\":\"裁定の地\"}]}",
+    "stock_included": 1,
+    "batch_id": "mock-batch-uuid-48",
+    "created_at": "2026-05-10T00:00:00.000Z"
   },
   {
     "id": "mock-id-47",

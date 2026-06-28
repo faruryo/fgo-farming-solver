@@ -156,9 +156,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   }, [checkedQuests])
   const router = useRouter()
   const searchParams = useSearchParams()
-  // 育成計算機の goSolver からの遷移で `?stockIncluded=1` が付いていれば、その計算は
-  // 余剰ストック込みの実効目標で解いたものとして記録する(D6: 計算履歴の badge 表示用)。
-  const [stockIncluded, setStockIncluded] = useState(false)
+  // goSolver が URL 経由で渡した目標B(itemsStock=)を保持する。
+  // /farming の submit でそのまま /api/solve へ転送する(再導出しない)。
+  const [stockItemsParam, setStockItemsParam] = useState<string | null>(null)
   const [isConfirming_, setIsConfirming_] = useState(false)
   const setIsConfirming = { on: () => setIsConfirming_(true), off: () => setIsConfirming_(false) }
   const isConfirming = isConfirming_
@@ -201,7 +201,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
           )
         }
       })
-      if (searchParams.get('stockIncluded') === '1') setStockIncluded(true)
+      // goSolver が計算した目標B(effectiveDeficiency)を state に保持して submit で転送する。
+      const itemsStockRaw = searchParams.get('itemsStock')
+      setStockItemsParam(itemsStockRaw || null)
       router.replace('/farming')
     }
     // 取り込みは isInputState ガード＋直後の router.replace('/farming') で初回のみ実行。
@@ -213,10 +215,12 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       event.preventDefault()
       setIsLoading.on()
       const query = inputToQuery({ itemCounts, checkedQuests })
+      // goSolver が算出した目標B(itemsStock)をそのまま /api/solve へ転送する(D2)。
+      // B==A の最終判定はサーバ側(itemMapsEqual)が行う。
       const params = new URLSearchParams({
         ...query,
         fields: 'id',
-        ...(stockIncluded ? { stockIncluded: '1' } : {}),
+        ...(stockItemsParam ? { itemsStock: stockItemsParam } : {}),
       })
       const url = `/api/solve?${params.toString()}`
       const result = await fetch(url).then((res) => res.json() as unknown)
@@ -234,7 +238,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         await router.push('/500')
       }
     },
-    [checkedQuests, itemCounts, router, setIsLoading, stockIncluded]
+    [checkedQuests, itemCounts, router, setIsLoading, stockItemsParam]
   )
 
   const onReset = useCallback(() => {

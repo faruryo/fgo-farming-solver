@@ -30,21 +30,35 @@ const buildQuestSelection = (
   })
 }
 
-export async function GET(req: NextRequest) {
-  const searchParams = req.nextUrl.searchParams
-  const itemsRaw = searchParams.get('items') || ''
-  const questsRaw = searchParams.get('quests') || ''
-  const apCoefficients = searchParams.get('ap_coefficients') || ''
-  // 育成計算機(goSolver)が余剰ストック込みの実効目標で遷移したかのフラグ。
-  // 計算履歴/結果ページの「ストック込み」badge 表示に使う(D6)。
-  const stockIncluded = searchParams.get('stockIncluded') === '1'
-
-  const itemCounts = Object.fromEntries(
-    itemsRaw.split(',').map((pair) => {
+/** `items=` / `itemsStock=` クエリ文字列をパースして { [id]: count } マップを返す。 */
+const parseItemCounts = (raw: string): Record<string, number> =>
+  Object.fromEntries(
+    raw.split(',').filter(Boolean).map((pair) => {
       const [id, count] = pair.split(':')
       return [id, parseInt(count, 10) || 0]
     })
   )
+
+/** 2つのアイテムマップが全キー・全値で一致するか(B==A 早期判定)。 */
+const itemMapsEqual = (a: Record<string, number>, b: Record<string, number>): boolean => {
+  const keysA = Object.keys(a)
+  if (keysA.length !== Object.keys(b).length) return false
+  return keysA.every((k) => a[k] === b[k])
+}
+
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams
+  const itemsRaw = searchParams.get('items') || ''
+  const itemsStockRaw = searchParams.get('itemsStock') || ''
+  const questsRaw = searchParams.get('quests') || ''
+  const apCoefficients = searchParams.get('ap_coefficients') || ''
+
+  const itemCounts = parseItemCounts(itemsRaw)
+  const itemCountsStock = itemsStockRaw ? parseItemCounts(itemsStockRaw) : null
+
+  // B==A のときはバッチ不要(無駄 solve を回避する早期判定)。
+  const hasBatch =
+    itemCountsStock !== null && !itemMapsEqual(itemCounts, itemCountsStock)
 
   const allowedQuests = questsRaw.split(',').filter(Boolean)
 
@@ -72,17 +86,65 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  const params: Params = {
-    objective: 'both',
-    items: itemCounts,
-    quests: allowedQuests,
-    ...(stockIncluded ? { stockIncluded: true } : {}),
+  const questSelectionJson = buildQuestSelection(drops.quests, allowedQuests)
+  const userId = session?.user?.id || 'anonymous'
+
+  if (hasBatch) {
+    // 2目標(目標A=必要分 / 目標B=ストック込み)の同時計算・2行保存。
+    const paramsA: Params = { objective: 'both', items: itemCounts, quests: allowedQuests }
+    const paramsB: Params = {
+      objective: 'both',
+      items: itemCountsStock!,
+      quests: allowedQuests,
+      stockIncluded: true,
+    }
+
+    // Saved farming results must use nominal (campaign-free) AP so downstream KPIs
+    // (calculation history, progress comparisons) stay stable across campaign periods.
+    const [resultA, resultB] = [
+      solveBoth(drops, paramsA, { applyCampaigns: false }),
+      solveBoth(drops, paramsB, { applyCampaigns: false }),
+    ]
+
+    const batchId = crypto.randomUUID()
+    const idA = crypto.randomUUID()
+    const idB = crypto.randomUUID()
+
+    if (db) {
+      try {
+        await db.batch([
+          db.prepare(
+            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(
+            idA, userId, 'both',
+            JSON.stringify(itemCounts),
+            resultA.ap.total_ap, resultA.lap.total_lap,
+            JSON.stringify(resultA),
+            questSelectionJson,
+            batchId,
+          ),
+          db.prepare(
+            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(
+            idB, userId, 'both',
+            JSON.stringify(itemCountsStock),
+            resultB.ap.total_ap, resultB.lap.total_lap,
+            JSON.stringify(resultB),
+            questSelectionJson,
+            batchId,
+          ),
+        ])
+      } catch (e) {
+        console.error('Failed to save batch to D1:', e)
+      }
+    }
+
+    // 着地は目標A行(進捗アンカー)。batchId をレスポンスに含める。
+    return Response.json({ ...resultA, id: idA, batchId })
   }
 
-  // Saved farming results and snapshots must use nominal (campaign-free) AP so
-  // that downstream KPIs (calculation history, progress comparisons) stay
-  // stable across campaign periods. Dashboard views re-solve client-side with
-  // applyCampaigns=true when needed.
+  // 従来どおり: 単独目標(stockEnabled=OFF / B==A)は batch_id=NULL の1行。
+  const params: Params = { objective: 'both', items: itemCounts, quests: allowedQuests }
   const result = solveBoth(drops, params, { applyCampaigns: false })
   const id = crypto.randomUUID()
 
@@ -93,23 +155,18 @@ export async function GET(req: NextRequest) {
       )
         .bind(
           id,
-          session?.user?.id || 'anonymous',
+          userId,
           'both',
           JSON.stringify(itemCounts),
           result.ap.total_ap,
           result.lap.total_lap,
           JSON.stringify(result),
-          buildQuestSelection(drops.quests, allowedQuests)
+          questSelectionJson
         )
         .run()
     } catch (e) {
       console.error('Failed to save to D1:', e)
     }
-
-    // Progress snapshots are persisted client-side via /api/progress/snapshot
-    // after a successful run, so the snapshot includes `material` (needed for
-    // new-servant detection). The server no longer writes a material-less
-    // snapshot here, which previously clobbered material-containing snapshots.
   }
 
   return Response.json({ ...result, id })

@@ -97,21 +97,64 @@ const QuestSelectionCell: React.FC<{ raw?: string | null }> = ({ raw }) => {
   )
 }
 
+// 同一 batch_id を持つ A(必要分)と B(ストック込み)のペア。
+type GroupedHistoryItem = HistoryItem & {
+  // B行(stockIncluded=true)の行。batch_id=null のときは undefined。
+  stockSibling?: HistoryItem
+}
+
+/**
+ * 生の履歴行リストを batch_id でグルーピングし、ペアを1エントリに集約する。
+ * - batch_id=null の行は単独エントリとして保持。
+ * - ペアの主(A)は stock_included=false の行。
+ * - 元の順序(created_at DESC)を維持する。
+ */
+const groupByBatch = (history: HistoryItem[]): GroupedHistoryItem[] => {
+  // batch_id → { a: A行, b: B行 } のマップ
+  const batchMap = new Map<string, { a: HistoryItem | null; b: HistoryItem | null }>()
+  for (const item of history) {
+    if (!item.batch_id) continue
+    if (!batchMap.has(item.batch_id)) batchMap.set(item.batch_id, { a: null, b: null })
+    const g = batchMap.get(item.batch_id)!
+    if (item.stock_included) g.b = item
+    else g.a = item
+  }
+
+  const seenBatches = new Set<string>()
+  const result: GroupedHistoryItem[] = []
+  for (const item of history) {
+    if (!item.batch_id) {
+      result.push(item)
+    } else if (!seenBatches.has(item.batch_id)) {
+      seenBatches.add(item.batch_id)
+      const g = batchMap.get(item.batch_id)!
+      // 主は A行(stock_included=false)。A が無いなら B を主にする(防御)。
+      const primary = g.a ?? g.b!
+      result.push({ ...primary, stockSibling: g.b ?? undefined })
+    }
+  }
+  return result
+}
+
 export default function HistoryPage() {
   const { t } = useTranslation(['farming', 'common', 'dashboard'])
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [confirmItem, setConfirmItem] = useState<HistoryItem | null>(null)
+  const [confirmItem, setConfirmItem] = useState<GroupedHistoryItem | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(false)
   // ストック込み/通常の絞り込み。グラフと一覧で共有するためページが所有する。
   const [stockOverride, setStockOverride] = useState<StockFilter | null>(null)
 
-  const { bothExist, defaultFilter } = useMemo(() => deriveStockMeta(history), [history])
+  // batch_id でグルーピングした一覧(表示用)。B 行は主カードに集約されるため除外。
+  const groupedHistory = useMemo(() => groupByBatch(history), [history])
+
+  // bothExist / defaultFilter はグループ化後のリスト(主行のみ)を基準にする。
+  const { bothExist, defaultFilter } = useMemo(() => deriveStockMeta(groupedHistory), [groupedHistory])
   const stockFilter = stockOverride ?? defaultFilter
   const visibleHistory = useMemo(
-    () => (bothExist ? history.filter(h => isStock(h) === (stockFilter === 'stock')) : history),
-    [history, bothExist, stockFilter],
+    () => (bothExist ? groupedHistory.filter(h => isStock(h) === (stockFilter === 'stock')) : groupedHistory),
+    [groupedHistory, bothExist, stockFilter],
   )
 
   const handleDelete = async () => {
@@ -121,7 +164,12 @@ export default function HistoryPage() {
     try {
       const res = await fetch(`/api/farming/results/${confirmItem.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(`DELETE failed: ${res.status}`)
-      setHistory(prev => prev.filter(h => h.id !== confirmItem.id))
+      // batch_id があれば同一バッチの全行(A+B)を raw history からも除去する。
+      setHistory(prev =>
+        confirmItem.batch_id
+          ? prev.filter(h => h.batch_id !== confirmItem.batch_id)
+          : prev.filter(h => h.id !== confirmItem.id)
+      )
     } catch (err) {
       console.error(err)
       setDeleteError(true)
@@ -164,7 +212,7 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {history.length > 1 && (
+          {groupedHistory.length > 1 && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="c-card p-6">
                 <FarmingHistoryChart
@@ -204,7 +252,8 @@ export default function HistoryPage() {
                         <Badge variant="outline" className="text-[10px]">
                           {OBJECTIVE_BADGE[item.objective] ?? item.objective}
                         </Badge>
-                        {item.stock_included ? (
+                        {item.stock_included && !item.stockSibling ? (
+                          // 旧形式の単独ストック込み行(batch_id=null)
                           <Badge
                             variant="outline"
                             className="text-[10px]"
@@ -219,10 +268,36 @@ export default function HistoryPage() {
                       <QuestSelectionCell raw={item.quest_selection} />
                     </TableCell>
                     <TableCell className="text-right py-3 px-4" style={{ color: 'var(--text2)' }}>
-                      {Math.round(item.total_ap).toLocaleString()}
+                      {item.stockSibling ? (
+                        // バッチペア: 必要分 / +ストック差分を並べて表示
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span>{Math.round(item.total_ap).toLocaleString()}</span>
+                          <span className="text-xs" style={{ color: 'var(--gold-dim)' }}>
+                            +{Math.round(item.stockSibling.total_ap - item.total_ap).toLocaleString()}
+                            <Badge
+                              variant="outline"
+                              className="ml-1 text-[9px] px-1"
+                              style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}
+                            >
+                              {t('ストック込み')}
+                            </Badge>
+                          </span>
+                        </div>
+                      ) : (
+                        Math.round(item.total_ap).toLocaleString()
+                      )}
                     </TableCell>
                     <TableCell className="text-right py-3 px-4" style={{ color: 'var(--text2)' }}>
-                      {Math.round(item.total_lap).toLocaleString()}
+                      {item.stockSibling ? (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span>{Math.round(item.total_lap).toLocaleString()}</span>
+                          <span className="text-xs" style={{ color: 'var(--gold-dim)' }}>
+                            +{Math.round(item.stockSibling.total_lap - item.total_lap).toLocaleString()}周
+                          </span>
+                        </div>
+                      ) : (
+                        Math.round(item.total_lap).toLocaleString()
+                      )}
                     </TableCell>
                     <TableCell className="py-3 px-4">
                       <div className="flex items-center gap-1">
@@ -283,7 +358,9 @@ export default function HistoryPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('この履歴を削除しますか？')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('グラフからも除外されます。共有済みの結果ページは引き続き閲覧できます。')}
+              {confirmItem?.stockSibling
+                ? t('必要分・ストック込みの両方の履歴が削除されます。共有済みの結果ページは引き続き閲覧できます。')
+                : t('グラフからも除外されます。共有済みの結果ページは引き続き閲覧できます。')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

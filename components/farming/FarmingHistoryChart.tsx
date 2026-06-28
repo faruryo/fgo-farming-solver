@@ -24,6 +24,8 @@ export interface HistoryItem {
   quest_selection?: string | null
   // 余剰ストック込みの目標で解いたか(json_extract 由来: 1 / null)。
   stock_included?: number | boolean | null
+  // 2目標(A/B)のペアを紐付ける UUID。NULL = 単独行。
+  batch_id?: string | null
   created_at: string
 }
 

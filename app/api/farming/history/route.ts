@@ -30,7 +30,8 @@ export async function GET() {
     const results = await db.prepare(
       // stock_included は result_data(常に BothResult)の params から抽出。マイグレーション不要。
       // 旧データ(stockIncluded 無し)は NULL=falsy として扱われる。
-      "SELECT id, objective, target_items, total_ap, total_lap, quest_selection, created_at, json_extract(result_data, '$.ap.params.stockIncluded') AS stock_included FROM farming_results WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 50"
+      // batch_id: 同一 UUID を持つ2行(目標A/B)をクライアント側でグルーピングするために返す。
+      "SELECT id, objective, target_items, total_ap, total_lap, quest_selection, batch_id, created_at, json_extract(result_data, '$.ap.params.stockIncluded') AS stock_included FROM farming_results WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 50"
     )
       .bind(session.user.id)
       .all()

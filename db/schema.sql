@@ -6,11 +6,15 @@ CREATE TABLE IF NOT EXISTS farming_results (
   total_ap REAL NOT NULL,
   total_lap REAL NOT NULL,
   result_data TEXT NOT NULL, -- JSON string
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME,
+  quest_selection TEXT,       -- JSON string. NULL = pre-feature rows.
+  batch_id TEXT               -- UUID shared by A/B dual-goal pair. NULL = single-goal row.
 );
 
 CREATE INDEX IF NOT EXISTS idx_results_user_id ON farming_results(user_id);
 CREATE INDEX IF NOT EXISTS idx_results_created_at ON farming_results(created_at);
+CREATE INDEX IF NOT EXISTS idx_results_batch ON farming_results(batch_id);
 
 -- id format: "{user_id}:{YYYY-MM-DD}" so daily UPSERT works via ON CONFLICT(id).
 CREATE TABLE IF NOT EXISTS state_snapshots (

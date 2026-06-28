@@ -21,8 +21,17 @@ type LocalResult = Omit<Result, 'items' | 'quests'> & {
 }
 
 export type PageProps =
-  | { apResult: LocalResult; lapResult: LocalResult; legacyResult?: undefined; createdAt?: string }
-  | { legacyResult: LocalResult; apResult?: undefined; lapResult?: undefined; createdAt?: string }
+  | {
+      apResult: LocalResult
+      lapResult: LocalResult
+      legacyResult?: undefined
+      createdAt?: string
+      /** 目標B(ストック込み)の AP最小結果。batch_id ペアのときのみ設定。 */
+      stockApResult?: LocalResult
+      /** 目標B(ストック込み)の 周回数最小結果。batch_id ペアのときのみ設定。 */
+      stockLapResult?: LocalResult
+    }
+  | { legacyResult: LocalResult; apResult?: undefined; lapResult?: undefined; createdAt?: string; stockApResult?: undefined; stockLapResult?: undefined }
 
 const ResultPanel = ({
   result,
@@ -86,7 +95,53 @@ const ResultPanel = ({
   )
 }
 
-export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps) => {
+type ApLapTabsProps = {
+  ap: LocalResult
+  lap: LocalResult
+  apYenVal: number
+  lapYenVal: number
+}
+
+// AP/LAP 内部タブ(消費AP最小/周回数最小の切り替え)。Page の外で定義してコンポーネント再生成を防ぐ。
+const ApLapTabs = ({ ap, lap, apYenVal, lapYenVal }: ApLapTabsProps) => {
+  const { t } = useTranslation(['farming', 'common'])
+  return (
+    <Tabs defaultValue="ap">
+      <TabsList className="mb-6">
+        <TabsTrigger value="ap">消費AP 最小</TabsTrigger>
+        <TabsTrigger value="lap">周回数 最小</TabsTrigger>
+      </TabsList>
+      <TabsContent value="ap">
+        <ResultPanel
+          result={ap}
+          progressPanel={
+            <ResultStatsBar
+              totalLap={ap.total_lap}
+              totalAp={ap.total_ap}
+              yen={apYenVal}
+              tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+            />
+          }
+        />
+      </TabsContent>
+      <TabsContent value="lap">
+        <ResultPanel
+          result={lap}
+          progressPanel={
+            <ResultStatsBar
+              totalLap={lap.total_lap}
+              totalAp={lap.total_ap}
+              yen={lapYenVal}
+              tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
+            />
+          }
+        />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+export const Page = ({ apResult, lapResult, legacyResult, createdAt, stockApResult, stockLapResult }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
   const formattedDate = formatDate(createdAt)
 
@@ -125,7 +180,7 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps
             <HistoryGraph />
           </div>
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>
+            <Link href="/farming/manual" className="c-back-btn">{t('戻って条件を調整する')}</Link>
           </div>
         </div>
       </div>
@@ -134,6 +189,8 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps
 
   const apYen = Math.round(apResult!.total_ap / 144 / 168 * 10000)
   const lapYen = Math.round(lapResult!.total_ap / 144 / 168 * 10000)
+  const stockApYen = stockApResult ? Math.round(stockApResult.total_ap / 144 / 168 * 10000) : 0
+  const stockLapYen = stockLapResult ? Math.round(stockLapResult.total_ap / 144 / 168 * 10000) : 0
 
   return (
     <div className="c-page">
@@ -153,45 +210,35 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt }: PageProps
           <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
         </div>
 
-        <Tabs defaultValue="ap">
-          <TabsList className="mb-6">
-            <TabsTrigger value="ap">消費AP 最小</TabsTrigger>
-            <TabsTrigger value="lap">周回数 最小</TabsTrigger>
-          </TabsList>
-          <TabsContent value="ap">
-            <ResultPanel
-              result={apResult!}
-              progressPanel={
-                <ResultStatsBar
-                  totalLap={apResult!.total_lap}
-                  totalAp={apResult!.total_ap}
-                  yen={apYen}
-                  tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
-                />
-              }
-            />
-          </TabsContent>
-          <TabsContent value="lap">
-            <ResultPanel
-              result={lapResult!}
-              progressPanel={
-                <ResultStatsBar
-                  totalLap={lapResult!.total_lap}
-                  totalAp={lapResult!.total_ap}
-                  yen={lapYen}
-                  tooltips={{ lap: t('tooltip-total-lap'), ap: t('tooltip-total-ap'), cost: t('tooltip-cost') }}
-                />
-              }
-            />
-          </TabsContent>
-        </Tabs>
+        {stockApResult && stockLapResult ? (
+          // バッチペア: 必要分 / +ストック の外側タブ
+          <Tabs defaultValue="required">
+            <TabsList className="mb-6">
+              <TabsTrigger value="required">必要分</TabsTrigger>
+              <TabsTrigger value="stock">
+                +ストック
+                <Badge variant="outline" className="ml-1.5 text-[9px] px-1" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}>
+                  ストック込み
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="required">
+              <ApLapTabs ap={apResult!} lap={lapResult!} apYenVal={apYen} lapYenVal={lapYen} />
+            </TabsContent>
+            <TabsContent value="stock">
+              <ApLapTabs ap={stockApResult} lap={stockLapResult} apYenVal={stockApYen} lapYenVal={stockLapYen} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <ApLapTabs ap={apResult!} lap={lapResult!} apYenVal={apYen} lapYenVal={lapYen} />
+        )}
 
         <div className="mt-12">
           <HistoryGraph />
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 32 }}>
-          <Link href="/farming" className="c-back-btn">{t('戻って条件を調整する')}</Link>
+          <Link href="/farming/manual" className="c-back-btn">{t('戻って条件を調整する')}</Link>
         </div>
       </div>
     </div>

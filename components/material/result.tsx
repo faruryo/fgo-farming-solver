@@ -40,7 +40,7 @@ const LARGE_SECTIONS = [
 const bgColor = (bg: string) =>
   bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
 
-// getItems が付与済みの category/largeCategory を、effectiveDeficiency/buffer
+// getItems が付与済みの category/largeCategory を、buffer
 // (lib/item-rarity.ts ベース)が読む ItemLike 形にそのまま渡す。
 const toStockItemLike = (item: EnrichedItem): { id: string; category: string; largeCategory: string } => ({
   id: item.id.toString(),
@@ -193,21 +193,42 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   }, [setPossession])
 
   const goSolver = useCallback(() => {
-    const stockAwareDeficiency = (item: EnrichedItem): number =>
-      effectiveDeficiency(
-        toStockItemLike(item),
-        amounts[item.id.toString()] ?? 0,
-        possession[item.id.toString()] ?? 0,
-        resolvedStockBuffer,
-        stockEnabled,
+    // 目標A: max(0, 必要数 − 所持)。stock-only 素材(充足済みだが buffer 分が不足)は含まれない。
+    const plainDeficiency = (item: EnrichedItem): number =>
+      Math.max(
+        0,
+        (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0),
       )
-    const queryItems = requiredItems
-      .filter(item => stockAwareDeficiency(item) > 0 && toApiItemId(item, items))
-      .map(item => `${toApiItemId(item, items)}:${stockAwareDeficiency(item)}`)
+
+    const queryItemsA = requiredItems
+      .filter(item => plainDeficiency(item) > 0 && toApiItemId(item, items))
+      .map(item => `${toApiItemId(item, items)}:${plainDeficiency(item)}`)
       .join(',')
-    const stockParam = stockEnabled ? '&stockIncluded=1' : ''
-    router.push(`/farming?items=${queryItems}${stockParam}`)
-  }, [requiredItems, router, amounts, possession, resolvedStockBuffer, stockEnabled, items])
+
+    // 目標B: effectiveDeficiency = max(0, 必要数+buffer(item)−所持)。
+    // stock-only 素材(A=0 だが B>0)も含む。goSolver 側で算出して URL 搬送する(D2訂正)。
+    let stockParam = ''
+    if (stockEnabled) {
+      const effDef = (item: EnrichedItem): number =>
+        effectiveDeficiency(
+          toStockItemLike(item),
+          amounts[item.id.toString()] ?? 0,
+          possession[item.id.toString()] ?? 0,
+          resolvedStockBuffer,
+          true,
+        )
+      const queryItemsB = requiredItems
+        .filter(item => effDef(item) > 0 && toApiItemId(item, items))
+        .map(item => `${toApiItemId(item, items)}:${effDef(item)}`)
+        .join(',')
+      // B と A が完全一致(全素材 buffer=0)のときは送らない。
+      if (queryItemsB && queryItemsB !== queryItemsA) {
+        stockParam = `&itemsStock=${queryItemsB}`
+      }
+    }
+
+    router.push(`/farming?items=${queryItemsA}${stockParam}`)
+  }, [requiredItems, router, amounts, possession, items, stockEnabled, resolvedStockBuffer])
 
   const displayedItems = shortOnly
     ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
