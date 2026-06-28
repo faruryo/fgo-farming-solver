@@ -537,6 +537,12 @@ body {
 }
 .c-mat-card.short::before { background: var(--red); opacity: 0.8; }
 
+.c-mat-card.stock-short {
+  border-color: var(--gold-dim);
+  background: linear-gradient(180deg, rgba(154,114,36,0.05) 0%, var(--panel2) 50%);
+}
+.c-mat-card.stock-short::before { background: var(--gold2); opacity: 0.75; }
+
 .c-mat-card.met {
   border-color: rgba(30,112,64,0.3);
   background: linear-gradient(180deg, rgba(30,112,64,0.04) 0%, var(--panel2) 50%);
@@ -566,12 +572,29 @@ body {
   font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 0 0 0 4px; line-height: 1; z-index: 2;
   box-shadow: -1px 1px 4px rgba(0,0,0,0.1);
 }
+.c-mat-stock-badge {
+  position: absolute; top: -1px; right: -1px; background: var(--gold2); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 0 0 0 4px; line-height: 1; z-index: 2;
+  box-shadow: -1px 1px 4px rgba(0,0,0,0.1);
+}
 .c-mat-met-badge {
   position: absolute; top: 1px; right: 4px;
   font-size: 14px; color: var(--green); font-weight: bold;
   opacity: 0.8;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
 }
+
+/* 表示フィルタの3分割セグメント */
+.c-seg { display: inline-flex; border: 1px solid var(--border2); border-radius: 6px; overflow: hidden; }
+.c-seg-btn {
+  padding: 5px 11px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--text2); background: transparent; border: none; border-left: 1px solid var(--border2);
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+}
+.c-seg-btn:first-child { border-left: none; }
+.c-seg-btn:hover { background: rgba(30,46,74,0.05); color: var(--text); }
+.c-seg-btn.active { background: var(--navy); color: #fff; }
+.c-seg-btn.stock.active { background: var(--gold); color: #fff; }
 
 .c-mat-name { font-size: 11px; color: var(--text); text-align: center; line-height: 1.4; margin-bottom: 8px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .c-mat-counts { display: flex; flex-direction: column; gap: 3px; }

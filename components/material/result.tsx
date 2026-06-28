@@ -10,7 +10,6 @@ import { EnrichedItem } from '../../lib/get-items'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 import { buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
-import { Toggle } from '@/components/ui/toggle'
 import {
   Accordion,
   AccordionContent,
@@ -53,6 +52,8 @@ type MatCardProps = {
   required: number
   owned: number | undefined
   deficiency: number
+  /** 必要数+buffer 未達分(effectiveDeficiency)。stock OFF 時は deficiency と一致。 */
+  stockDeficiency?: number
   rarityColor: string
   onChange: (id: string, val: number) => void
   stockEnabled?: boolean
@@ -66,6 +67,7 @@ const MatCard = ({
   required,
   owned,
   deficiency,
+  stockDeficiency = 0,
   rarityColor,
   onChange,
   stockEnabled,
@@ -74,7 +76,9 @@ const MatCard = ({
   const [editing, setEditing] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const isShort = deficiency > 0
-  const isMet = deficiency === 0 && required > 0
+  // 必要数は満たすが buffer 分が足りない(stock-only)。stock ON のときだけ立つ。
+  const isStockShort = deficiency === 0 && stockDeficiency > 0
+  const isMet = deficiency === 0 && stockDeficiency === 0 && required > 0
 
   useEffect(() => {
     if (editing && cardRef.current) {
@@ -85,7 +89,7 @@ const MatCard = ({
   return (
     <div
       ref={cardRef}
-      className={`c-mat-card${isShort ? ' short' : isMet ? ' met' : ''}`}
+      className={`c-mat-card${isShort ? ' short' : isStockShort ? ' stock-short' : isMet ? ' met' : ''}`}
       style={{ '--rarity-color': rarityColor } as React.CSSProperties}
     >
       {isMet && <div className="c-mat-met-badge">✓</div>}
@@ -102,6 +106,7 @@ const MatCard = ({
           <div className="c-mat-icon-placeholder" />
         )}
         {isShort && <div className="c-mat-short-badge">−{deficiency}</div>}
+        {isStockShort && <div className="c-mat-stock-badge">−{stockDeficiency}</div>}
       </div>
       <div className="c-mat-name">{item.name}</div>
 
@@ -153,19 +158,24 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   )
   const [amounts] = useLocalStorage<Record<string, number>>('material/result', initialAmounts)
 
-  const requiredItems = useMemo(
-    () => items.filter(item => item.id.toString() in amounts),
-    [amounts, items]
+  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
+
+  // 表示・計算対象のアイテム。stock ON 時はバッファ込みの所持トラッキングのため
+  // 全アイテムを対象にする(育成必要数=0 でも buffer 目標があるため)。
+  // stock OFF 時は従来どおり育成必要分(amounts に含まれる)のみ。
+  const trackedItems = useMemo(
+    () => stockEnabled ? items : items.filter(item => item.id.toString() in amounts),
+    [stockEnabled, amounts, items]
   )
 
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
     'posession',
-    Object.fromEntries(requiredItems.map(item => [item.id.toString(), 0]))
+    Object.fromEntries(trackedItems.map(item => [item.id.toString(), 0]))
   )
 
-  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
-
-  const [shortOnly, setShortOnly] = useState(false)
+  // 表示フィルタ: all=全て / short=不足(必要数未達) / stock=ストック不足(必要数+buffer未達)。
+  // stock は stockEnabled のときだけ選べる。
+  const [filterMode, setFilterMode] = useState<'all' | 'short' | 'stock'>('all')
   const [stockOpen, setStockOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -180,13 +190,35 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
 
   const deficiencies = useMemo(
     () => Object.fromEntries(
-      requiredItems.map(item => [
+      trackedItems.map(item => [
         item.id.toString(),
         Math.max(0, (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0)),
       ])
     ),
-    [amounts, possession, requiredItems]
+    [amounts, possession, trackedItems]
   )
+
+  // ストック不足(目標B): max(0, 必要数+buffer−所持)。stock OFF 時は deficiencies と一致。
+  const stockDeficiencies = useMemo(
+    () => Object.fromEntries(
+      trackedItems.map(item => [
+        item.id.toString(),
+        effectiveDeficiency(
+          toStockItemLike(item),
+          amounts[item.id.toString()] ?? 0,
+          possession[item.id.toString()] ?? 0,
+          resolvedStockBuffer,
+          stockEnabled,
+        ),
+      ])
+    ),
+    [amounts, possession, trackedItems, resolvedStockBuffer, stockEnabled]
+  )
+
+  // stock を OFF にしたら「ストック不足」フィルタは選べないので不足にフォールバック。
+  useEffect(() => {
+    if (!stockEnabled && filterMode === 'stock') setFilterMode('short')
+  }, [stockEnabled, filterMode])
 
   const onChange = useCallback((id: string, val: number) => {
     setPossession(prev => ({ ...prev, [id]: val }))
@@ -200,7 +232,11 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
         (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0),
       )
 
-    const queryItemsA = requiredItems
+    // 周回対象は育成関連素材(amounts に含まれる)に限定。育成不要な素材は表示・所持追跡のみで、
+    // Goal B のストックを「全素材」に広げない(全素材ストック=AP膨張を防ぐ)。
+    const solverItems = trackedItems.filter(item => item.id.toString() in amounts)
+
+    const queryItemsA = solverItems
       .filter(item => plainDeficiency(item) > 0 && toApiItemId(item, items))
       .map(item => `${toApiItemId(item, items)}:${plainDeficiency(item)}`)
       .join(',')
@@ -217,7 +253,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           resolvedStockBuffer,
           true,
         )
-      const queryItemsB = requiredItems
+      const queryItemsB = solverItems
         .filter(item => effDef(item) > 0 && toApiItemId(item, items))
         .map(item => `${toApiItemId(item, items)}:${effDef(item)}`)
         .join(',')
@@ -228,11 +264,14 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     }
 
     router.push(`/farming?items=${queryItemsA}${stockParam}`)
-  }, [requiredItems, router, amounts, possession, items, stockEnabled, resolvedStockBuffer])
+  }, [trackedItems, router, amounts, possession, items, stockEnabled, resolvedStockBuffer])
 
-  const displayedItems = shortOnly
-    ? requiredItems.filter(item => deficiencies[item.id.toString()] > 0)
-    : requiredItems
+  const displayedItems =
+    filterMode === 'short'
+      ? trackedItems.filter(item => deficiencies[item.id.toString()] > 0)
+      : filterMode === 'stock' && stockEnabled
+        ? trackedItems.filter(item => stockDeficiencies[item.id.toString()] > 0)
+        : trackedItems
 
   const itemsByFloor = useMemo(
     () => groupBy(
@@ -242,8 +281,36 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     [displayedItems]
   )
 
-  const totalShort = requiredItems.filter(item => deficiencies[item.id.toString()] > 0).length
-  const totalMet   = requiredItems.filter(item => (amounts[item.id.toString()] ?? 0) > 0 && deficiencies[item.id.toString()] === 0).length
+  // floor 1〜3(スキル石/強化素材/モニュピ)に加え、それ以外の floor
+  // (伝承結晶・特殊素材など)も「その他」へまとめて必ず描画する(取りこぼし防止)。
+  const sections = useMemo(() => {
+    const known = new Set(LARGE_SECTIONS.map(s => s.floor))
+    const base = LARGE_SECTIONS.map(s => ({
+      key: String(s.floor), label: s.label, color: s.color,
+      items: itemsByFloor[String(s.floor)] ?? [],
+    }))
+    // floor 1〜3 以外(QP=floor0 / 聖杯=floor4 / 星光の砂等=floor10…)をまとめる。
+    // これらは toApiItemId が空=ソルバー対象外で、表示・所持トラッキング専用。
+    const otherItems = Object.entries(itemsByFloor)
+      .filter(([floor]) => !known.has(Number(floor)))
+      .flatMap(([, arr]) => arr ?? [])
+      .sort((a, b) => a.priority - b.priority)
+    if (otherItems.length > 0) {
+      base.push({ key: 'other', label: 'その他', color: 'var(--steel)', items: otherItems })
+    }
+    return base.filter(s => s.items.length > 0)
+  }, [itemsByFloor])
+
+  const totalShort = trackedItems.filter(item => deficiencies[item.id.toString()] > 0).length
+  // ストック不足(必要数は満たすが buffer 未達 = stock-only)。stock ON のときのみ。
+  const totalStockShort = stockEnabled
+    ? trackedItems.filter(item => deficiencies[item.id.toString()] === 0 && stockDeficiencies[item.id.toString()] > 0).length
+    : 0
+  const totalMet = trackedItems.filter(item =>
+    (amounts[item.id.toString()] ?? 0) > 0 &&
+    deficiencies[item.id.toString()] === 0 &&
+    (!stockEnabled || stockDeficiencies[item.id.toString()] === 0)
+  ).length
 
   if (!mounted) return null
 
@@ -261,20 +328,41 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                 不足 {totalShort}種
               </span>
             )}
-            {totalShort === 0 && totalMet > 0 && (
+            {totalStockShort > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--gold2)', fontWeight: 600, letterSpacing: '0.02em' }}>
+                ストック不足 {totalStockShort}種
+              </span>
+            )}
+            {totalShort === 0 && totalStockShort === 0 && totalMet > 0 && (
               <span style={{ fontSize: 12, color: '#60c890', fontWeight: 600 }}>
                 充足 {totalMet}種
               </span>
             )}
-            <Toggle
-              variant="outline"
-              size="sm"
-              pressed={shortOnly}
-              onPressedChange={setShortOnly}
-              aria-label="不足のみ表示"
-            >
-              {shortOnly ? '全て表示' : '不足のみ表示'}
-            </Toggle>
+            <div className="c-seg" role="group" aria-label="表示フィルタ">
+              <button
+                type="button"
+                className={`c-seg-btn${filterMode === 'all' ? ' active' : ''}`}
+                onClick={() => setFilterMode('all')}
+              >
+                全て
+              </button>
+              <button
+                type="button"
+                className={`c-seg-btn${filterMode === 'short' ? ' active' : ''}`}
+                onClick={() => setFilterMode('short')}
+              >
+                {stockEnabled ? '不足' : '不足のみ'}
+              </button>
+              {stockEnabled && (
+                <button
+                  type="button"
+                  className={`c-seg-btn stock${filterMode === 'stock' ? ' active' : ''}`}
+                  onClick={() => setFilterMode('stock')}
+                >
+                  ストック不足
+                </button>
+              )}
+            </div>
             <button
               type="button"
               className="c-back-btn"
@@ -299,16 +387,18 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
           <div className="c-empty">
             <div className="c-empty-icon">◎</div>
             <div className="c-empty-msg">
-              {shortOnly ? '不足素材はありません' : 'サーヴァントを所持済みに設定してください'}
+              {filterMode === 'short'
+                ? '不足素材はありません'
+                : filterMode === 'stock'
+                  ? 'ストック不足の素材はありません'
+                  : 'サーヴァントを所持済みに設定してください'}
             </div>
           </div>
         ) : (
           <>
-          {LARGE_SECTIONS.map(({ floor, label, color }) => {
-            const sectionItems = itemsByFloor[String(floor)] ?? []
-            if (sectionItems.length === 0) return null
+          {sections.map(({ key, label, color, items: sectionItems }) => {
             return (
-              <div key={floor} className="c-mat-section">
+              <div key={key} className="c-mat-section">
                 <div className="c-mat-section-title" style={{ color }}>
                   <span className="c-mat-section-line" style={{ background: color }} />
                   {label}
@@ -322,6 +412,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                       required={amounts[item.id.toString()] ?? 0}
                       owned={possession[item.id.toString()]}
                       deficiency={deficiencies[item.id.toString()] ?? 0}
+                      stockDeficiency={stockDeficiencies[item.id.toString()] ?? 0}
                       rarityColor={bgColor(item.background)}
                       onChange={onChange}
                       stockEnabled={stockEnabled}
