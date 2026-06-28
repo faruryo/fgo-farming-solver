@@ -67,7 +67,7 @@ export default function HomePage() {
                   素材計算 →
                 </Link>
                 <Link
-                  href="/farming"
+                  href="/farming/manual"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',

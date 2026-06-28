@@ -61,7 +61,7 @@ export const FarmingWizard: React.FC = () => {
                   <Button
                     variant="outline"
                     className="justify-between border-blue-400 text-blue-400 hover:bg-blue-400/10"
-                    onClick={() => router.push('/farming')}
+                    onClick={() => router.push('/farming/manual')}
                   >
                     {t('今の素材状況で最適な周回場所を探したい')}
                     <FaArrowRight />

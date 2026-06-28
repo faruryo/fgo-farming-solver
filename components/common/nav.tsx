@@ -70,7 +70,7 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { href: '/material',         icon: FlaskConical, label: { ja: '育成素材計算機',   en: 'Material Calculator' } },
       { href: '/material/result#advisor', icon: Sparkles, label: { ja: '配布アドバイザー', en: 'Advisor' } },
-      { href: '/farming',         icon: Route,        label: { ja: '周回ソルバー',     en: 'Farming Solver' } },
+      { href: '/farming/manual',  icon: Route,        label: { ja: '手動で周回',       en: 'Manual Solver' } },
       { href: '/quests',          icon: Gauge,        label: { ja: 'クエスト効率',   en: 'Quest Efficiency' } },
       { href: '/events',          icon: Gift,         label: { ja: 'ボックスイベント', en: 'Box Events' } },
       { href: '/farming/history', icon: History,      label: { ja: '計算履歴',       en: 'History' } },
