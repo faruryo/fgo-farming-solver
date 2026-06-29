@@ -233,7 +233,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
   // ストック込み/通常トグル。データ不足の早期returnでも表示し、片方が0〜1件でも
   // もう片方へ切り替えられる(=操作不能に陥らない)ようにする。
   const stockToggle = showStockToggle ? (
-    <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
+    <div className="flex w-fit self-start rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
       {([['normal', '通常'], ['stock', 'ストック込み']] as [StockFilter, string][]).map(([val, label]) => (
         <button
           key={val}

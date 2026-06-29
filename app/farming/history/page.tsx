@@ -10,7 +10,6 @@ import {
   FarmingHistoryChart,
   HistoryItem,
   StockFilter,
-  deriveStockMeta,
   isStock,
 } from '../../../components/farming/FarmingHistoryChart'
 import {
@@ -149,12 +148,37 @@ export default function HistoryPage() {
   // batch_id でグルーピングした一覧(表示用)。B 行は主カードに集約されるため除外。
   const groupedHistory = useMemo(() => groupByBatch(history), [history])
 
-  // bothExist / defaultFilter はグループ化後のリスト(主行のみ)を基準にする。
-  const { bothExist, defaultFilter } = useMemo(() => deriveStockMeta(groupedHistory), [groupedHistory])
+  // バッチペアは1エントリで通常(A)とストック込み(B)の両方を持つため、ペアが1件でもあれば
+  // 両種別が存在する扱い。defaultFilter は最新エントリ基準(単独ストック行のみ stock 既定)。
+  const { bothExist, defaultFilter } = useMemo(() => {
+    let hasNormal = false
+    let hasStock = false
+    let mostRecent: GroupedHistoryItem | null = null
+    for (const h of groupedHistory) {
+      if (h.stockSibling) { hasNormal = true; hasStock = true }
+      else if (isStock(h)) hasStock = true
+      else hasNormal = true
+      if (!mostRecent || new Date(h.created_at) > new Date(mostRecent.created_at)) mostRecent = h
+    }
+    return {
+      bothExist: hasNormal && hasStock,
+      defaultFilter: (mostRecent && !mostRecent.stockSibling && isStock(mostRecent) ? 'stock' : 'normal') as StockFilter,
+    }
+  }, [groupedHistory])
   const stockFilter = stockOverride ?? defaultFilter
-  const visibleHistory = useMemo(
-    () => (bothExist ? groupedHistory.filter(h => isStock(h) === (stockFilter === 'stock')) : groupedHistory),
-    [groupedHistory, bothExist, stockFilter],
+
+  // グラフ用データ。一覧は常に全件表示(バッチカードが両値を持つため絞らない)。
+  // グラフは種別が混在すると合計APの桁が変わり回帰(予測線)が破綻するため、stockFilter で
+  // 系列を1つに絞る。バッチペアは通常=A値 / ストック込み=B値(stockSibling)を選ぶ。
+  const chartHistory = useMemo(
+    () => groupedHistory.flatMap(h => {
+      if (h.stockSibling) {
+        return [stockFilter === 'stock' ? h.stockSibling : { ...h, stockSibling: undefined }]
+      }
+      if (bothExist) return isStock(h) === (stockFilter === 'stock') ? [h] : []
+      return [h]
+    }),
+    [groupedHistory, stockFilter, bothExist],
   )
 
   const handleDelete = async () => {
@@ -216,7 +240,7 @@ export default function HistoryPage() {
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="c-card p-6">
                 <FarmingHistoryChart
-                  history={visibleHistory}
+                  history={chartHistory}
                   stockFilter={stockFilter}
                   showStockToggle={bothExist}
                   onStockFilterChange={setStockOverride}
@@ -242,7 +266,7 @@ export default function HistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibleHistory.map(item => (
+                {groupedHistory.map(item => (
                   <TableRow key={item.id}>
                     <TableCell className="text-sm py-3 px-4" style={{ color: 'var(--text)' }}>
                       {new Date(item.created_at).toLocaleString()}
@@ -334,7 +358,7 @@ export default function HistoryPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {visibleHistory.length === 0 && (
+                {groupedHistory.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-10" style={{ color: 'var(--gold-dim)' }}>
                       {t('履歴がありません')}

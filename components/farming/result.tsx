@@ -36,9 +36,13 @@ export type PageProps =
 const ResultPanel = ({
   result,
   progressPanel,
+  hideStockBadge,
 }: {
   result: LocalResult
   progressPanel?: React.ReactNode
+  // バッチペアの外側タブ([必要分|+ストック])配下では「ストック込み」がタブで明示されるため
+  // パネル内バッジは重複。抑制する。
+  hideStockBadge?: boolean
 }) => {
   const { t } = useTranslation(['farming', 'common'])
   const yen = Math.round(result.total_ap / 144 / 168 * 10000)
@@ -62,7 +66,7 @@ const ResultPanel = ({
 
   return (
     <div className="flex flex-col gap-12">
-      {result.params?.stockIncluded === true && (
+      {result.params?.stockIncluded === true && !hideStockBadge && (
         <div>
           <Badge variant="outline" className="text-[10px]">
             {t('ストック込み')}
@@ -100,10 +104,11 @@ type ApLapTabsProps = {
   lap: LocalResult
   apYenVal: number
   lapYenVal: number
+  hideStockBadge?: boolean
 }
 
 // AP/LAP 内部タブ(消費AP最小/周回数最小の切り替え)。Page の外で定義してコンポーネント再生成を防ぐ。
-const ApLapTabs = ({ ap, lap, apYenVal, lapYenVal }: ApLapTabsProps) => {
+const ApLapTabs = ({ ap, lap, apYenVal, lapYenVal, hideStockBadge }: ApLapTabsProps) => {
   const { t } = useTranslation(['farming', 'common'])
   return (
     <Tabs defaultValue="ap">
@@ -114,6 +119,7 @@ const ApLapTabs = ({ ap, lap, apYenVal, lapYenVal }: ApLapTabsProps) => {
       <TabsContent value="ap">
         <ResultPanel
           result={ap}
+          hideStockBadge={hideStockBadge}
           progressPanel={
             <ResultStatsBar
               totalLap={ap.total_lap}
@@ -127,6 +133,7 @@ const ApLapTabs = ({ ap, lap, apYenVal, lapYenVal }: ApLapTabsProps) => {
       <TabsContent value="lap">
         <ResultPanel
           result={lap}
+          hideStockBadge={hideStockBadge}
           progressPanel={
             <ResultStatsBar
               totalLap={lap.total_lap}
@@ -215,18 +222,13 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt, stockApResu
           <Tabs defaultValue="required">
             <TabsList className="mb-6">
               <TabsTrigger value="required">必要分</TabsTrigger>
-              <TabsTrigger value="stock">
-                +ストック
-                <Badge variant="outline" className="ml-1.5 text-[9px] px-1" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}>
-                  ストック込み
-                </Badge>
-              </TabsTrigger>
+              <TabsTrigger value="stock">+ストック</TabsTrigger>
             </TabsList>
             <TabsContent value="required">
-              <ApLapTabs ap={apResult!} lap={lapResult!} apYenVal={apYen} lapYenVal={lapYen} />
+              <ApLapTabs ap={apResult!} lap={lapResult!} apYenVal={apYen} lapYenVal={lapYen} hideStockBadge />
             </TabsContent>
             <TabsContent value="stock">
-              <ApLapTabs ap={stockApResult} lap={stockLapResult} apYenVal={stockApYen} lapYenVal={stockLapYen} />
+              <ApLapTabs ap={stockApResult} lap={stockLapResult} apYenVal={stockApYen} lapYenVal={stockLapYen} hideStockBadge />
             </TabsContent>
           </Tabs>
         ) : (
