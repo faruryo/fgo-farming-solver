@@ -293,11 +293,13 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
       key: String(s.floor), label: s.label, color: s.color,
       items: itemsByFloor[String(s.floor)] ?? [],
     }))
-    // floor 1〜3 以外(QP=floor0 / 聖杯=floor4 / 星光の砂等=floor10…)をまとめる。
+    // floor 1〜3 以外(QP=floor0 / 聖杯=floor4 / 星光の砂等=floor10…)のうち、
+    // 「その他」は当面 QP のみ表示する(聖杯・特殊素材等は出さない)。
     // これらは toApiItemId が空=ソルバー対象外で、表示・所持トラッキング専用。
     const otherItems = Object.entries(itemsByFloor)
       .filter(([floor]) => !known.has(Number(floor)))
       .flatMap(([, arr]) => arr ?? [])
+      .filter(item => item.type === 'qp')
       .sort((a, b) => a.priority - b.priority)
     if (otherItems.length > 0) {
       base.push({ key: 'other', label: 'その他', color: 'var(--steel)', items: otherItems })
