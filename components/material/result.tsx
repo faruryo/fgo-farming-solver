@@ -36,6 +36,9 @@ const LARGE_SECTIONS = [
   { floor: 2, label: '強化素材',  color: '#7a5c34' },  // 汎用強化素材
   { floor: 3, label: 'モニュピ', color: '#9a7224' },  // ピース/モニュメント
 ]
+// 育成と無関係なため必要数画面に表示しないアイテム(Atlas ID)。
+const EXCLUDED_ITEM_IDS = new Set([7998]) // 聖杯の雫
+
 const bgColor = (bg: string) =>
   bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
 
@@ -164,7 +167,8 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   // 全アイテムを対象にする(育成必要数=0 でも buffer 目標があるため)。
   // stock OFF 時は従来どおり育成必要分(amounts に含まれる)のみ。
   const trackedItems = useMemo(
-    () => stockEnabled ? items : items.filter(item => item.id.toString() in amounts),
+    () => (stockEnabled ? items : items.filter(item => item.id.toString() in amounts))
+      .filter(item => !EXCLUDED_ITEM_IDS.has(Number(item.id))),
     [stockEnabled, amounts, items]
   )
 
