@@ -43,6 +43,9 @@ export const generateAutoTasks = (params: {
 
   if (settings.autoEvent) {
     for (const event of events) {
+      // drops が空 = 交換ショップを持たないイベント（AP割引/絆獲得量アップ等の
+      // バフ専用キャンペーン、type: 'questCampaign'）。交換対象が無いので除外する。
+      if (event.drops.length === 0) continue
       if (!isEventActiveForShop(event, now)) continue
       tasks.push({
         id: buildEventShopTaskId(event.id),

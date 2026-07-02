@@ -22,8 +22,8 @@ const event = (overrides: Partial<DashboardEvent> = {}): DashboardEvent => ({
   startedAt: Math.floor(jst('2026-06-01T00:00:00') / 1000),
   endedAt: Math.floor(jst('2026-06-15T23:59:00') / 1000),
   shopFinishedAt: Math.floor(jst('2026-06-30T23:59:00') / 1000),
-  type: 'questCampaign',
-  drops: [],
+  type: 'eventQuest',
+  drops: [{ id: 1, name: 'ダミー交換アイテム', icon: '' }],
   ...overrides,
 })
 
@@ -59,6 +59,12 @@ describe('generateAutoTasks', () => {
       settings: settings({ autoEvent: true }),
       events: [notStarted, shopFinished],
     })
+    expect(tasks).toEqual([])
+  })
+
+  it('excludes events with no shop items (e.g. AP-discount/bond-up campaigns), even when active and autoEvent is on', () => {
+    const campaign = event({ id: 1, type: 'questCampaign', drops: [] })
+    const tasks = generateAutoTasks({ now: NOW, settings: settings({ autoEvent: true }), events: [campaign] })
     expect(tasks).toEqual([])
   })
 
