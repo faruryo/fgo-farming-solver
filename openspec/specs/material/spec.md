@@ -46,6 +46,25 @@
 - **WHEN** 所持済みサーヴァントのアペンドカード（1〜5）をクリックしたとき
 - **THEN** アペンドスキルレベルが 1 上昇し、10 に達した次のクリックで 0 に戻る（範囲: 0〜10、0 はロック状態、サイクル動作）。
 
+#### Scenario: 未所持サーヴァントの現在値は毎回正しいデフォルトへ矯正される
+- **GIVEN** サーヴァントが未所持（`disabled: true`）である
+- **WHEN** `localStorage['material']` の読み込み時（`mergeChaldeaState`）に状態がマージされるとき
+- **THEN** そのサーヴァントの `targets.ascension/skill/appendSkill.ranges[].start` は、保存されていた値に関わらず、常に `createServantState()` が定義する正しいデフォルト値（霊基再臨=0, スキル=1, アペンド=0）へ上書きされる (SHALL)。
+- **THEN** `end`（目標値）はこの上書きの対象外であり、既存値がそのまま維持される。
+- **THEN** 未所持サーヴァントの `start` を UI から直接編集する手段は存在しないため、「未所持のまま」ユーザーが意図的に入力した値が失われることはない（所持中に入力した値が未所持化後に失われる経路は、次のシナリオで扱う）。
+
+#### Scenario: 所持済みサーヴァントの現在値は矯正されない
+- **GIVEN** サーヴァントが所持済み（`disabled: false`）である
+- **WHEN** `localStorage['material']` の読み込み時に状態がマージされるとき
+- **THEN** そのサーヴァントの `start` は、既存の保存値（`all` 由来か個別編集かを問わず）がそのまま維持され、上記の矯正ロジックの対象外となる (SHALL NOT be overwritten)。
+
+#### Scenario: 未所持へ戻したサーヴァントの現在値編集履歴は保持されない
+- **GIVEN** サーヴァントが所持済みで `start` が編集されている
+- **WHEN** ユーザーが「未所持」に切り替え、その後（ページ再読み込み、または同一セッション内での `ls-sync` 再同期を含む）次回のマージ処理が走ったとき
+- **THEN** そのサーヴァントの `start` は正しいデフォルト値へリセットされる（上記の未所持矯正ロジックが適用されるため）。
+- **THEN** その後再び「所持」に切り替えても、リセット前の `start` は復元されない。
+- **THEN** この経路は個別の所持トグルに限らない。`ms-servants-io.tsx` の一括インポート欄を空にする操作のように、複数サーヴァントを一括で未所持へ変更する経路も同様にリセット対象となる。
+
 ### Requirement: 共通目標設定
 ユーザーは、全サーヴァントに対する育成目標（霊基再臨、スキル、アペンド）を一括で設定できなければならない (SHALL)。
 
@@ -53,6 +72,16 @@
 - **WHEN** 共通目標パネルで霊基再臨/スキル/アペンドの目標値を変更したとき
 - **THEN** 全サーヴァントの該当目標値（`ranges[].end`）がただちに更新される。
 - **THEN** 各サーヴァントの育成完了判定はこの共通目標値を基準として行われる。
+
+#### Scenario: `all` キーによる共通目標の保持と伝播
+- **GIVEN** `chaldeaState` は実サーヴァントに加えて特殊 ID `all` のエントリを持つ（サーヴァント一覧・所持数カウント・育成完了判定からは常に除外される）。
+- **WHEN** 共通目標パネルで霊基再臨/スキル/アペンドの目標値（`end`）を変更したとき
+- **THEN** `chaldeaState.all.targets.*.ranges[].end` にも同じ値が書き込まれる（`applyGlobal` は `prev` の全キーを走査するため `all` も対象になる）。
+- **WHEN** `localStorage['material']` の読み込み時（`mergeChaldeaState`）に `state.all` が存在し、かつ個別の保存データを持たないサーヴァントが存在するとき
+- **THEN** そのサーヴァントの `targets` は、`end` のみ `state.all.targets` から継承した値で初期化される (SHALL)。
+- **THEN** `start`（現在値）は `state.all.targets` から継承**しない** (SHALL NOT)。常に `createServantState()` が定義する正しいデフォルト値が使われる。
+- **THEN** `chaldeaState.all.targets.*.ranges[].start` を直接編集する UI は存在しない。この値は `mergeChaldeaState` のいかなる複製経路にも使われないため、他のサーヴァントの表示に影響しない。
+- **THEN** `state.all` の `targets` が欠落・不正な形式であった場合、`mergeChaldeaState` は例外を送出せず、`state.all` が存在しない場合と同様に個別データのみで状態を組み立てる。
 
 ### Requirement: フィルタリングとソート
 育成素材計算機は、サーヴァント一覧をクラス・レアリティ・育成状態でフィルタリングし、複数のソート順を切り替えられなければならない (SHALL)。
@@ -308,4 +337,4 @@ Chaldea state はブラウザの localStorage（キー `material`）に保存さ
 - **データモデル**: 各サーヴァント状態は `{ disabled: boolean, targets: { ascension, skill, appendSkill } }` の形式で、各 target は `{ disabled, ranges: [{ start, end }] }` 構造を持つ。
 - **値域**: `ascension.start/end` は 0〜4、`skill.start/end` は 1〜10、`appendSkill.start/end` は 0〜10。
 - **スキル/アペンドの個数**: スキルは 3 個固定、アペンドは 5 個固定。
-- **全体共通の目標保持**: `chaldeaState.all` キーに共通目標を保持し、各サーヴァント追加時のデフォルト値の参照元として利用する。
+- **全体共通の目標保持**: `chaldeaState.all` キーに共通目標を保持する。個別データを持たないサーヴァントの `targets` を `mergeChaldeaState` が組み立てる際、`end` のみを `state.all.targets` から継承する（共通目標パネルの操作により継続的に更新される）。`start` は `all` から継承せず、常に `createServantState()` の正しいデフォルト値が使われる。`chaldeaState.all.targets.*.start` を編集する手段は UI 上に存在しないため、この値自体は恒久的に凍結されたまま残るが、`mergeChaldeaState` のいかなる複製経路にも使われないため他のサーヴァントに影響しない。加えて `mergeChaldeaState` は、`disabled: true`（未所持）の各サーヴァントについて `targets.*.ranges[].start` を毎回無条件に正しいデフォルトへ矯正する後処理を行う（`end` は対象外）。これにより `all` からの継承経路を断つ前に既に `localStorage` へ書き戻し済みの汚染データも、次回のマージ処理で自動的に是正される。
