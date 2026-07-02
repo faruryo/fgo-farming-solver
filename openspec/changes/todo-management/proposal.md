@@ -21,9 +21,9 @@ FGO (Fate/Grand Order) features daily and weekly missions, as well as time-limit
 ## Impact
 
 - **UI**: Added a TODO widget on the main dashboard, a dedicated TODO settings page/tab, and service worker registration for Web Push subscriptions.
-- **Database/Storage**: Update D1 database schemas to store Web Push subscriptions (`push_subscriptions` table) and user TODO task states (`todo_tasks` table). User notification settings will also be saved in local storage and synced.
+- **Database/Storage**: Add D1 tables for Web Push subscriptions (`push_subscriptions`) and notification dedup tracking (`notification_log`). User TODO task states (`todoState`) and settings (`todoSettings`) are stored local-first and synced via the existing `/api/cloud` (Cloudflare KV) mechanism, not a dedicated D1 table.
 - **Backend/API**:
-  - New API route `/api/todos` for managing manual check-offs and custom TODOs.
-  - New API route `/api/notifications/subscribe` for managing push subscription tokens.
-  - A background notification dispatcher script or worker endpoint (e.g., `/api/notifications/dispatch`) that is triggered periodically to check deadlines and send push messages.
-- **Dependencies**: Add `web-push` library for signing VAPID pushes on the server/worker.
+  - New API route `/api/notifications/subscribe` for managing push subscription registration/cancellation (requires login).
+  - No new API route for manual check-offs/custom TODOs — they go through the existing `/api/cloud` sync path via `todoState`.
+  - A GitHub Actions Node script (`scripts/send-todo-notifications.ts`, hourly cron) that reads D1/KV directly via wrangler to check deadlines and send push messages. No Worker HTTP endpoint for dispatch (see design.md Decisions #3 for the CPU-limit rationale).
+- **Dependencies**: Add `web-push` library for signing VAPID pushes in the dispatcher script.
