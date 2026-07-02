@@ -61,6 +61,9 @@ jobs:
       - name: Type check
         run: pnpm run type-check
 
+      - name: Apply D1 migrations (local)
+        run: pnpm exec wrangler d1 migrations apply fgo-farming-solver-db --local
+
       - name: Test
         run: pnpm test --run
 
