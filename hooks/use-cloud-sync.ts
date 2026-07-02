@@ -37,6 +37,8 @@ export const KEYS = [
   'efficiency/stockEnabled',
   'efficiency/stockBuffer',
   'masterLevel',
+  'todoState',
+  'todoSettings',
 ]
 
 export const MOCK_CLOUD_KEY = 'fgo_mock_cloud_data'

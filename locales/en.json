@@ -37,7 +37,15 @@
     "cloud-load-confirm-message": "Loading data from cloud. Your current data will be overwritten. Are you sure?",
     "データを適用する": "Apply Data",
     "キャンセル": "Cancel",
-    "auto-load-success": "Automatically loaded the latest data from cloud"
+    "auto-load-success": "Automatically loaded the latest data from cloud",
+    "TODO自動生成・通知設定": "TODO Auto-Generation & Notifications",
+    "デイリーミッションの自動追加": "Auto-add Daily Missions",
+    "ウィークリーミッションの自動追加": "Auto-add Weekly Missions",
+    "イベント交換ショップの自動追加": "Auto-add Event Exchange Shop",
+    "プッシュ通知を有効にする": "Enable Push Notifications",
+    "プッシュ通知にはログインが必要です": "Sign in required to enable push notifications",
+    "プッシュ通知の登録に失敗しました": "Failed to enable push notifications",
+    "プッシュ通知の解除に失敗しました": "Failed to disable push notifications"
   },
   "farming": {
     "1": "Use old data primarily",
@@ -171,7 +179,8 @@
     "強化・育成": "Enhance & Train",
     "その他": "Other",
     "ストーム・ポッド消費なし期間中": "Storm Pod Free Period",
-    "ロト計画": "Box Plan"
+    "ロト計画": "Box Plan",
+    "期限間近のタスク": "Upcoming Tasks"
   },
   "quests": {
     "クエスト効率": "Quest Efficiency",
@@ -295,5 +304,25 @@
     "確定ドロップ内訳注記": "Box rewards and farming drops are shown separately. Coverage uses the combined total.",
     "交換所": "Shop",
     "必要通貨N": "{{count}} currency"
+  },
+  "todo": {
+    "TODO管理": "TODO Management",
+    "ダッシュボードへ戻る": "Back to dashboard",
+    "未完了のタスク": "Incomplete Tasks",
+    "完了済み": "Completed",
+    "タスクがありません": "No tasks",
+    "カスタムタスクを追加": "Add Custom Task",
+    "タスクを編集": "Edit Task",
+    "タイトル": "Title",
+    "タスク名を入力": "Enter task title",
+    "期限": "Deadline",
+    "保存": "Save",
+    "編集": "Edit",
+    "削除": "Delete",
+    "このタスクを削除しますか？": "Delete this task?",
+    "デイリー": "Daily",
+    "ウィークリー": "Weekly",
+    "イベント交換": "Event",
+    "カスタム": "Custom"
   }
 }

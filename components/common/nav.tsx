@@ -24,6 +24,7 @@ import {
   Bell,
   FileText,
   Sparkles,
+  ListChecks,
   type LucideIcon,
 } from 'lucide-react'
 import NextLink from 'next/link'
@@ -74,6 +75,7 @@ export const menuGroups: MenuGroup[] = [
       { href: '/quests',          icon: Gauge,        label: { ja: 'クエスト効率',   en: 'Quest Efficiency' } },
       { href: '/events',          icon: Gift,         label: { ja: 'ボックスイベント', en: 'Box Events' } },
       { href: '/farming/history', icon: History,      label: { ja: '計算履歴',       en: 'History' } },
+      { href: '/todo',            icon: ListChecks,   label: { ja: 'TODO管理',       en: 'TODO' } },
     ],
   },
   {

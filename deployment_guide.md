@@ -108,6 +108,7 @@ pnpm exec wrangler d1 execute fgo-farming-solver-db --remote --file=db/schema.sq
 | `AUTH_SECRET` | Auth.js 用シークレット | `openssl rand -base64 32` で生成 |
 | `GOOGLE_CLIENT_ID` | Google OAuth ID | Google Cloud Console から取得 |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Secret | Google Cloud Console から取得 |
+| `VAPID_PUBLIC_KEY` | Web Push VAPID 公開鍵（クライアントの購読登録に使用） | `pnpm exec web-push generate-vapid-keys` で生成。秘密鍵 (`VAPID_PRIVATE_KEY`) は Worker には設定せず、GitHub Secrets（通知ディスパッチャ用）にのみ設定する |
 
 ---
 

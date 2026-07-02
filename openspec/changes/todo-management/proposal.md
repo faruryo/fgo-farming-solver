@@ -1,29 +1,29 @@
 ## Why
 
-FGO (Fate/Grand Order) features daily and weekly missions, as well as time-limited event item exchanges, that require players to complete tasks before specific deadlines. Forgetting to complete these tasks results in irreversible resource loss, such as Saint Quartz, Mana Prisms, and critical ascension materials. Currently, there is no centralized todo list or notification system in the application to keep track of these time-sensitive tasks, leading to player forgetfulness.
+FGO（Fate/Grand Order）にはデイリーミッション・ウィークリーミッション、および期限付きのイベントアイテム交換など、決まった期限までに完了させる必要があるタスクが存在する。これらを完了し忘れると、聖晶石・マナプリズム・強化に必要な貴重な素材などが取り返しのつかない形で失われる。現状このアプリには、こうした期限のあるタスクをまとめて管理するTODOリストや通知の仕組みが無く、ユーザーがうっかり完了を忘れてしまう原因になっている。
 
 ## What Changes
 
-- **New TODO Management Panel/Page**: A centralized area in the user interface to manage game-related TODOs (Daily Missions, Weekly Missions, Event Exchanges, and custom tasks).
-- **Automated Task Generation**: The system automatically adds daily mission, weekly mission, and event exchange tasks based on current master and event data, avoiding manual entry.
-- **Deadline Notifications**: Sends Web Push notifications to users' browsers when TODO deadlines are near (e.g., 3 hours before daily reset, 12 hours before weekly reset, 24 hours before event exchange closing).
-- **Notification Settings**: A configuration interface under user preferences allowing users to toggle ON/OFF automatic task generation and push notifications for specific categories.
-- **Manual Task Check-off**: Ability for users to check off tasks which synchronizes across their devices.
+- **TODO管理パネル/ページの新設**: デイリーミッション・ウィークリーミッション・イベント交換・カスタムタスクといったゲーム内TODOをまとめて管理できる画面を新設する。
+- **タスクの自動生成**: 現在のマスターデータ・イベントデータをもとに、デイリー/ウィークリーミッション・イベント交換のタスクを手入力なしで自動的に追加する。
+- **期限通知**: TODOの期限が近づいたときにブラウザへWeb Push通知を送る（例: デイリーリセット3時間前、ウィークリーリセット12時間前、イベント交換終了24時間前）。
+- **通知設定**: カテゴリごとにタスク自動生成のON/OFF、およびプッシュ通知のON/OFFを切り替えられる設定画面をユーザー設定に追加する。
+- **手動でのチェック**: ユーザーがタスクを手動でチェック（完了）でき、その状態は端末間で同期される。
 
 ## Capabilities
 
 ### New Capabilities
-- `todo-notifications`: Covers the TODO management system, task auto-generation, notification settings, Web Push registration, service worker support, and background worker logic for dispatching push notifications.
+- `todo-notifications`: TODO管理システム、タスク自動生成、通知設定、Web Push登録、Service Worker対応、プッシュ通知配信のバックグラウンドワーカーロジックをカバーする。
 
 ### Modified Capabilities
-- `dashboard`: Modified to integrate an "Upcoming Deadlines" or "TODO Summary" widget at the top of the dashboard, allowing users to quickly see what needs attention upon opening the application.
+- `dashboard`: ダッシュボード上部に「期限間近」または「TODOサマリー」ウィジェットを組み込み、アプリを開いた瞬間に対応が必要な項目をひと目で把握できるようにする。
 
 ## Impact
 
-- **UI**: Added a TODO widget on the main dashboard, a dedicated TODO settings page/tab, and service worker registration for Web Push subscriptions.
-- **Database/Storage**: Add D1 tables for Web Push subscriptions (`push_subscriptions`) and notification dedup tracking (`notification_log`). User TODO task states (`todoState`) and settings (`todoSettings`) are stored local-first and synced via the existing `/api/cloud` (Cloudflare KV) mechanism, not a dedicated D1 table.
-- **Backend/API**:
-  - New API route `/api/notifications/subscribe` for managing push subscription registration/cancellation (requires login).
-  - No new API route for manual check-offs/custom TODOs — they go through the existing `/api/cloud` sync path via `todoState`.
-  - A GitHub Actions Node script (`scripts/send-todo-notifications.ts`, hourly cron) that reads D1/KV directly via wrangler to check deadlines and send push messages. No Worker HTTP endpoint for dispatch (see design.md Decisions #3 for the CPU-limit rationale).
-- **Dependencies**: Add `web-push` library for signing VAPID pushes in the dispatcher script.
+- **UI**: メインダッシュボードへのTODOウィジェット追加、専用のTODO設定ページ/タブの追加、Web Push購読のためのService Worker登録。
+- **データベース/ストレージ**: Web Push購読情報用（`push_subscriptions`）と通知の重複送信防止用（`notification_log`）のD1テーブルを追加する。ユーザーのTODOタスク状態（`todoState`）と設定（`todoSettings`）は、専用のD1テーブルではなく、ローカルファーストで保持しつつ既存の `/api/cloud`（Cloudflare KV）の仕組みで同期する。
+- **バックエンド/API**:
+  - プッシュ通知購読の登録/解除を扱う新規APIルート `/api/notifications/subscribe`（要ログイン）。
+  - 手動チェックやカスタムTODOのための新規APIルートは無い — いずれも `todoState` 経由で既存の `/api/cloud` 同期パスを通る。
+  - D1/KVをwrangler経由で直接読み取り、期限を判定してプッシュを送るGitHub ActionsのNodeスクリプト（`scripts/send-todo-notifications.ts`、毎時cron）。配信専用のWorker HTTPエンドポイントは設けない（CPU制限を理由とするアーキテクチャ判断の詳細はdesign.md Decisions #3を参照）。
+- **依存関係**: ディスパッチャースクリプトでVAPIDプッシュに署名するため `web-push` ライブラリを追加する。

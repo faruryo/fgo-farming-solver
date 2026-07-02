@@ -12,6 +12,7 @@ import { RecommendedQuest } from '../components/dashboard/RecommendedQuest'
 import { FarmingWizard } from '../components/dashboard/FarmingWizard'
 import { HistoryGraph } from '../components/dashboard/HistoryGraph'
 import { NearGoalSection } from '../components/dashboard/NearGoalSection'
+import { TodoWidget } from '../components/todo/TodoWidget'
 import { Link } from '../components/common/link'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -103,6 +104,8 @@ export default function HomePage() {
               </div>
             </div>
           </motion.div>
+
+          <TodoWidget />
 
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
