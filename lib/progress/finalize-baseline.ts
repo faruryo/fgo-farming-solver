@@ -19,8 +19,9 @@ export type EnrichInputs = {
 // enriched(クライアント)で baseline を確定する純ロジック。
 //   - tier の主指標は「目標に近づいた量(reducedAp) ÷ 経過日数」。classifyTier が
 //     自然回復(≈288AP/日)を基準に small/medium/large を判定する。
-//   - reducedAp が無い/0以下の日(育成で素材消費が上回った・drops 未ロード等)は、
-//     素材スループット(獲得+育成投入)で tier を補完し none 固定を避ける。
+//   - reducedAp が無い/0以下の日(獲得ゼロの日・drops 未ロード等。クランプにより
+//     負にはならない)は、素材スループット(獲得+育成投入)で tier を補完し
+//     none 固定を避ける。
 //   - reducedAp/Lap/Yen・itemsFarmed/Consumed は表示用に保持。
 //   - fallback(zero_progress)はスループット・育成総量・新規入手・reducedAp が
 //     すべて無いときのみ。いずれかがあれば実進捗として扱う。

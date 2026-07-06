@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import type { ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
-import { buildNeedByApiItemId, solveTotals } from '../lib/progress/compute-reduction'
+import { computeReduction } from '../lib/progress/compute-reduction'
 import { computeItemThroughput } from '../lib/progress/throughput'
 import { finalizeBaselineSummary } from '../lib/progress/finalize-baseline'
 import { selectBaseline } from '../lib/progress/select-baseline'
@@ -77,10 +77,13 @@ export const useProgressReport = (
 
   // 進捗指標をクライアント算出する。比較基準は最古の存在スナップショット1つ
   // (selectBaseline)のみ。
-  //   - tier の主指標: 素材スループット(獲得+育成投入の個数, QP除外)。ソルバー不要で
-  //     pastPosession と現在 posession から算出。育成に素材を使った日も none にしない。
-  //   - 副指標: reducedAp(目標固定の残りAP減少)。drops があれば再ソルブで算出し、>0 の
-  //     日のみ表示する参考値(tier は駆動しない)。
+  //   - tier の主指標: reducedAp(目標固定・消費中立の残りAP減少)。drops があれば
+  //     computeReduction で算出する。現在所持を過去所持で下限クランプしてから
+  //     再ソルブするため、育成消費が純増分を目減りさせることはなく常に非負
+  //     (周回獲得のみが計上される)。
+  //   - 補完指標: 素材スループット(獲得+育成投入の個数, QP除外)。ソルバー不要で
+  //     pastPosession と現在 posession から算出し、reducedAp が無い/0 のとき tier を
+  //     補完する。育成に素材を使った日も none にしない。
   // pastPosession が無い場合(初期データや dev モック)は元の値を保持。
   const enriched = useMemo<ProgressResponse | null>(() => {
     if (!data) return null
@@ -94,20 +97,17 @@ export const useProgressReport = (
       posession
     )
 
-    // 副指標 reducedAp は drops(ソルバー)が必要。無ければ未算出のまま。
+    // 副指標 reducedAp/reducedLap は drops(ソルバー)が必要。無ければ未算出のまま。
     let reducedAp: number | undefined
     let reducedLap: number | undefined
     if (drops && drops.items.length > 0) {
       const targets = readJson<Record<string, number>>('material/result') ?? {}
       const quests = readJson<string[]>('quests') ?? []
-      const now = solveTotals(drops, buildNeedByApiItemId(targets, posession, drops), quests)
-      const past = solveTotals(
-        drops,
-        buildNeedByApiItemId(targets, baseline.pastPosession, drops),
-        quests
-      )
-      reducedAp = past.totalAp - now.totalAp
-      reducedLap = past.totalLap - now.totalLap
+      const reduction = computeReduction(drops, targets, posession, baseline.pastPosession, quests)
+      if (reduction) {
+        reducedAp = reduction.reducedAp
+        reducedLap = reduction.reducedLap
+      }
     }
 
     const finalized = finalizeBaselineSummary(baseline, {

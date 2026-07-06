@@ -14,6 +14,54 @@ const makeDrops = (): Drops =>
     campaigns: [],
   }) as unknown as Drops
 
+// 2アイテム/2クエスト版フィクスチャ(各アイテム専用クエスト、ap20、drop_rate1.0)。
+// item g は atlasId 6503(qA)、item h は atlasId 7001(qB)。
+const makeTwoItemDrops = (): Drops =>
+  ({
+    items: [
+      { id: 'g', atlasId: 6503, category: '金素材', largeCategory: '強化素材', name: 'gold', shortName: 'g' },
+      { id: 'h', atlasId: 7001, category: '金素材', largeCategory: '強化素材', name: 'holy', shortName: 'h' },
+    ],
+    quests: [
+      { id: 'qA', area: 'A', name: 'qA', section: 'Free', ap: 20 },
+      { id: 'qB', area: 'B', name: 'qB', section: 'Free', ap: 20 },
+    ],
+    drop_rates: [
+      { quest_id: 'qA', item_id: 'g', drop_rate: 1.0 },
+      { quest_id: 'qB', item_id: 'h', drop_rate: 1.0 },
+    ],
+    campaigns: [],
+  }) as unknown as Drops
+
+describe('computeReduction (消費中立化: 過去所持クランプ)', () => {
+  it('(a) 獲得のみ: 過去30→現在50、目標100 → reducedAp=400, reducedLap=20(従来どおり)', () => {
+    const r = computeReduction(makeDrops(), { '6503': 100 }, { '6503': 50 }, { '6503': 30 }, ['qA'])
+    expect(r).not.toBeNull()
+    expect(r!.reducedAp).toBeCloseTo(400)
+    expect(r!.reducedLap).toBeCloseTo(20)
+  })
+
+  it('(b) 獲得+消費の混在: gは獲得(過去30→現在50)、hは育成消費で純減(過去20→現在5)。修正前ならhの純減分がマイナス寄与するが、修正後はhがクランプされgの獲得分(20*20=400)のみ計上される', () => {
+    const r = computeReduction(
+      makeTwoItemDrops(),
+      { '6503': 100, '7001': 50 },
+      { '6503': 50, '7001': 5 },
+      { '6503': 30, '7001': 20 },
+      ['qA', 'qB']
+    )
+    expect(r).not.toBeNull()
+    expect(r!.reducedAp).toBeCloseTo(400)
+    expect(r!.reducedLap).toBeCloseTo(20)
+  })
+
+  it('(c) 消費のみ: 過去50→現在30(純減)、目標100 → reducedAp=0, reducedLap=0(負にならない)', () => {
+    const r = computeReduction(makeDrops(), { '6503': 100 }, { '6503': 30 }, { '6503': 50 }, ['qA'])
+    expect(r).not.toBeNull()
+    expect(r!.reducedAp).toBeCloseTo(0)
+    expect(r!.reducedLap).toBeCloseTo(0)
+  })
+})
+
 describe('computeReduction (方式1: 目標固定の再ソルブ)', () => {
   it('目標固定で所持が増えた分だけ残りAP/周回が減る', () => {
     // 目標 g=10(atlasId 6503)。過去所持 0 → needPast 10、現在所持 5 → needNow 5。

@@ -1,7 +1,6 @@
 import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import type { ProgressTier } from './types'
 import type { Rarity } from './rarity-ap-sample'
-import type { RarityApTable } from './rarity-ap-table'
 
 const isOwned = (entry: ChaldeaState[string] | undefined): boolean =>
   entry != null && entry.disabled === false
@@ -31,18 +30,6 @@ export const detectNewServants = (
     entries.push({ servantId: id, rarity: rarityById.get(id) ?? null })
   }
   return entries
-}
-
-export const sumNewServantOffsetAp = (
-  newServants: NewServantEntry[],
-  apTable: RarityApTable
-): number => {
-  let total = 0
-  for (const { rarity } of newServants) {
-    if (rarity == null) continue
-    total += apTable[rarity] ?? 0
-  }
-  return total
 }
 
 // 4-tier classification.

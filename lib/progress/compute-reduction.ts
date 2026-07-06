@@ -3,6 +3,8 @@ import { solveBoth } from '../solver'
 import type { Params } from '../../interfaces/api'
 
 // 「アイテム入手による残りの減少」算出(方式1: 目標を現在で固定して再ソルブ)。
+// 育成による素材消費が他サーヴァントの目標にマイナス寄与しないよう、現在所持を
+// アイテムごとに過去所持で下限クランプしてから再ソルブする(消費中立)。
 //
 // 育成計算機の `material/result`(目標総数)と `posession`(所持)は atlasId キー、
 // ソルバーは drops の短縮ID(apiItemId = item.id)キーで解く。drops の各 item が
@@ -54,12 +56,34 @@ export const solveTotals = (
   return { totalAp: res.ap.total_ap, totalLap: res.lap.total_lap }
 }
 
+/**
+ * 現在所持をアイテムごとに過去所持で下限クランプする(消費中立化)。
+ * adjustedNow[i] = max(現在所持[i], 過去所持[i])。
+ * 育成で消費して純減したアイテムは過去所持まで足し戻され、
+ * 純増したアイテム(周回獲得)はそのまま現在所持が使われる。
+ */
+const clampPosessionToPast = (
+  currentPosession: CountMap,
+  pastPosession: CountMap
+): CountMap => {
+  const keys = new Set([...Object.keys(currentPosession), ...Object.keys(pastPosession)])
+  const adjusted: CountMap = {}
+  for (const key of keys) {
+    adjusted[key] = Math.max(toNum(currentPosession[key]), toNum(pastPosession[key]))
+  }
+  return adjusted
+}
+
 export type Reduction = { reducedAp: number; reducedLap: number }
 
 /**
- * 目標を現在で固定し、所持だけ過去→現在へ動かしたときの残りAP/周回の減少量。
- *   reducedAp  = solve(現在目標 − 過去所持).total_ap  − solve(現在目標 − 現在所持).total_ap
+ * 目標を現在で固定し、所持だけ過去→現在へ動かしたときの残りAP/周回の減少量(消費中立)。
+ *   adjustedNow[i] = max(現在所持[i], 過去所持[i])  ※アイテムごとの下限クランプ
+ *   reducedAp  = solve(現在目標 − 過去所持).total_ap  − solve(現在目標 − adjustedNow).total_ap
  *   reducedLap = 同上の total_lap
+ * アイテムごとに adjustedNow >= 過去所持 なので need は単調減少し、
+ * reducedAp/reducedLap は常に非負になる(育成で素材を消費しても目減りしない)。
+ * 周回で純増した分だけが計上され、育成消費はスループット指標側で評価する。
  * 過去所持が無い場合は算出不能として null を返す。
  */
 export const computeReduction = (
@@ -70,7 +94,8 @@ export const computeReduction = (
   quests: string[]
 ): Reduction | null => {
   if (pastPosession == null) return null
-  const now = solveTotals(drops, buildNeedByApiItemId(currentTargets, currentPosession, drops), quests)
+  const adjustedNow = clampPosessionToPast(currentPosession, pastPosession)
+  const now = solveTotals(drops, buildNeedByApiItemId(currentTargets, adjustedNow, drops), quests)
   const past = solveTotals(drops, buildNeedByApiItemId(currentTargets, pastPosession, drops), quests)
   return {
     reducedAp: past.totalAp - now.totalAp,
