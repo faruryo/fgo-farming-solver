@@ -40,5 +40,5 @@
 ## OpenSpec Workflow
 All implementation work MUST be done through OpenSpec to keep specs in sync with code.
 
-- **Large changes** (new features, refactors): use `openspec new change <name>` → see `/opsx-propose` skill for details.
+- **Large changes** (new features, refactors): use `openspec new change <name>` → see `openspec-propose` skill for details.
 - **Small changes** (bug fixes, tweaks): edit `openspec/specs/<capability>/spec.md` directly, then run `openspec validate --specs`.
