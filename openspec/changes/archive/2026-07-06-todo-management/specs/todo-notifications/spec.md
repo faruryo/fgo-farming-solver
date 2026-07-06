@@ -1,9 +1,4 @@
-# 仕様書: TODO通知 (TODO Notifications)
-
-## Purpose
-デイリー/ウィークリーミッションやイベント交換の期限切れによる取りこぼしを防ぐため、TODO の自動生成・手動管理と、期限間近の Web Push 通知を提供する。あわせて Web Push の環境ゲーティング（対応可否の検出）とユーザーガイダンスの要件を定義する。
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: 自動 TODO 追加 (Auto TODO Generation)
 システムは、ユーザー向けに以下の標準TODOタスクを自動的に生成しなければならない (SHALL)。
@@ -25,6 +20,8 @@
 - **WHEN** 開催中のイベントが存在し、そのイベントのアイテム交換ショップの終了期限（`DashboardEvent.shopFinishedAt`。現状は `endedAt` のエイリアス、design.md Non-Goals 参照）が設定されているとき
 - **THEN** 「[イベント名] アイテム交換を完了する」というタスクが自動生成され、期限にイベント交換終了日時が設定される。
 
+---
+
 ### Requirement: 自動追加の ON/OFF 設定 (Auto-Add Settings)
 システムは、ユーザー設定画面において、自動 TODO 生成の有効/無効をカテゴリ（デイリー、ウィークリー、イベント交換）ごとに個別にトグルで切り替える設定項目を提供しなければならない (SHALL)。プッシュ通知については、全カテゴリ一括の有効/無効トグル（`pushEnabled`）を1つ提供する。
 
@@ -35,6 +32,8 @@
 #### Scenario: 設定の同期
 - **WHEN** ユーザーが設定を変更したとき
 - **THEN** 設定値は localStorage の `todoSettings` キーに保存され、既存のオートシンク機構を通じて Cloudflare KV に同期される。
+
+---
 
 ### Requirement: プッシュ通知の許諾と登録 (Push Notification Permission and Subscription)
 システムは、ブラウザの Web Push API を使用して、ユーザーのブラウザから通知許可を取得し、プッシュ通知の購読情報をサーバーに登録しなければならない (SHALL)。
@@ -47,6 +46,8 @@
 #### Scenario: 購読情報の失効処理
 - **WHEN** 配信スクリプト（GitHub Actions 上の通知ディスパッチャ）がプッシュ通知を送信した際に、ブラウザ側の購読が失効している（410 Gone などのエラーが返る）とき
 - **THEN** 配信スクリプトは D1 データベースから該当する PushSubscription レコードおよび対応する `notification_log` レコードを削除する。
+
+---
 
 ### Requirement: 期限間近のプッシュ通知 (Deadline Near Notifications)
 システムは、完了していない自動生成 TODO の期限が近づいた場合、Web Push 通知をユーザーに配信しなければならない (SHALL)。
@@ -76,6 +77,8 @@
 - **WHEN** 配信バッチ（毎時実行）が同一の `notification_key`（タスクID）に対して複数回実行されるとき
 - **THEN** 通知は `notification_log` への `INSERT ... ON CONFLICT DO NOTHING` によって最初の1回のみ配信され、以降の実行では新規挿入されないためスキップされる。
 
+---
+
 ### Requirement: 手動チェックと永続化 (Manual Task Check-off and Sync)
 ユーザーは、自動生成された TODO および手動で追加した TODO の完了状態（チェックボックス）を切り替えることができ、その状態はクラウド間で同期されなければならない (SHALL)。
 
@@ -83,6 +86,8 @@
 - **WHEN** ユーザーが TODO アイテムのチェックボックスをオン（完了）にしたとき
 - **THEN** 該当タスクのステータスが「完了」に変更され、localStorage が更新され、オートシンク経由で `/api/cloud` に送信される。
 - **THEN** 期限間近になってもこのタスクに関するプッシュ通知は送信されない。
+
+---
 
 ### Requirement: カスタムタスクの管理 (Custom Task Management)
 ユーザーは、任意のタイトルと期限日時を持つカスタム TODO タスクを作成・編集・削除できなければならない (SHALL)。カスタムタスクは `category: 'custom'` として `todoState` に保存され、既存のオートシンク機構を通じて Cloudflare KV に同期される。
@@ -99,6 +104,8 @@
 - **WHEN** 配信バッチが実行され、未完了のカスタムタスクの期限まで24時間を切っており、かつプッシュ通知が有効なユーザーの購読情報が存在するとき
 - **THEN** 「[タスク名] の期限が残り24時間です！」という通知が、当該タスクにつき1回だけ配信される（`notification_log` により重複配信を防止する）。
 
+---
+
 ### Requirement: 未ログインユーザーのプッシュ通知ゲーティング (Guest Push Gating)
 プッシュ通知の購読はサーバー側 `user_id`（Google ログインの ID）に紐付くため、システムは未ログイン状態でのプッシュ通知有効化を防がなければならない (SHALL)。
 
@@ -109,44 +116,3 @@
 #### Scenario: ログイン後の有効化
 - **WHEN** ユーザーがサインインを完了したとき
 - **THEN** プッシュ通知トグルが有効化され、通常の許諾・購読フローが利用可能になる。
-
-### Requirement: 非対応環境でのプッシュ通知ゲーティング (Unsupported Environment Push Gating)
-システムは、プッシュ通知トグルの操作を受け付ける前に Web Push の利用可否（Service Worker / PushManager / Notification API の存在）をクライアント側で検出しなければならない（MUST）。非対応環境ではトグルを無効化し、例外による失敗を発生させてはならない（MUST NOT）。
-
-#### Scenario: 非対応ブラウザでのトグル無効化
-- **WHEN** Web Push API が利用できないブラウザで TODO 通知設定を表示する
-- **THEN** プッシュ通知トグルは disabled 表示になり、操作しても登録処理は実行されない
-
-#### Scenario: 対応環境での従来動作の維持
-- **WHEN** Web Push API が利用できるブラウザ（デスクトップ Chrome、ホーム画面追加済み iOS PWA 等）で設定を表示する
-- **THEN** トグルは従来どおり操作でき、許諾 → 購読 → サーバー登録のフローが実行される
-
-### Requirement: iOS 向けホーム画面追加ガイダンス (iOS Add-to-Home-Screen Guidance)
-システムは、Web Push 非対応かつ iOS 系デバイス（iPhone / iPad）と判定した場合、共有メニューから「ホーム画面に追加」し追加したアイコンから開くことでプッシュ通知を利用できる旨の案内を通知設定内に表示しなければならない（MUST）。iOS 系以外の非対応環境には、ブラウザが対応していない旨の汎用メッセージを表示しなければならない（MUST）。
-
-#### Scenario: iPhone の Safari タブでの案内表示
-- **WHEN** iPhone の Safari（ホーム画面未追加）で TODO 通知設定を表示する
-- **THEN** 無効化されたトグルとともに「ホーム画面に追加」の手順案内が表示される
-
-#### Scenario: iOS 以外の非対応ブラウザでの汎用メッセージ
-- **WHEN** iOS 系以外で Web Push 非対応のブラウザで TODO 通知設定を表示する
-- **THEN** 「このブラウザはプッシュ通知に対応していません」相当の汎用メッセージが表示される
-
-#### Scenario: ホーム画面追加済み iOS PWA では案内を出さない
-- **WHEN** ホーム画面に追加した PWA として iOS で開き、TODO 通知設定を表示する
-- **THEN** 案内文は表示されず、トグルが通常どおり操作できる
-
-### Requirement: プッシュ登録失敗の原因別フィードバック (Reason-Specific Push Failure Feedback)
-システムは、プッシュ通知の登録が失敗した場合、失敗理由（通知許可の拒否 / 購読の失敗 / サーバーへの登録失敗）を区別したエラーメッセージを表示しなければならない（MUST）。通知許可拒否のメッセージには、iOS では再プロンプトが行われないため PWA の再インストールが必要になる場合がある旨を含めなければならない（MUST）。
-
-#### Scenario: 通知許可を拒否した場合
-- **WHEN** トグル ON 後の許諾ダイアログでユーザーが通知を拒否する
-- **THEN** 「通知が許可されていない」旨と、iOS では再インストールが必要になる場合がある旨のメッセージが表示され、トグルは OFF のまま維持される
-
-#### Scenario: サーバー登録に失敗した場合
-- **WHEN** 購読情報のサーバー登録（POST /api/notifications/subscribe）がエラーになる
-- **THEN** 通信・サーバー起因である旨のメッセージが表示され、トグルは OFF のまま維持される
-
-#### Scenario: エラーメッセージの i18n
-- **WHEN** 言語設定を英語にして上記いずれかの失敗が発生する
-- **THEN** 対応する英語のメッセージが表示される
