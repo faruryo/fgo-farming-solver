@@ -1,10 +1,8 @@
-import type { ProgressTier } from './types'
-
-// 「素材スループット」= 比較スナップショット以降の素材の活動量。
-// reducedAp(ゴールまでの距離の縮小)と違い、所持の増減そのものを進捗とみなす:
+// 「素材スループット」= 比較スナップショット以降の所持数の増減の個数集計(表示用)。
 //   - 所持が増えた分 = 獲得素材(周回)
 //   - 所持が減った分 = 育成投入(霊基再臨/スキル強化等で消費)
-// どちらも「活動」として加点するため、素材を育成に使った日も tier=none にならない。
+// tier 判定は lap-value.ts の周回換算(forwardLaps/effortLaps)が担い、ここでの
+// 個数集計は「この期間の活動」表示にのみ使う(classifyTierByThroughput は撤去)。
 
 // QP(atlasId '1')は所持が ~1e20、消費も数千万単位で、個数ベースの指標では
 // 他素材を完全に埋もれさせる。進捗からは除外する。将来の拡張に備え集合で持つ。
@@ -42,18 +40,4 @@ export const computeItemThroughput = (
     else if (delta < 0) itemsConsumed += -delta
   }
   return { itemsFarmed, itemsConsumed }
-}
-
-// スループット合計(獲得 + 投入)を経過日数でならして tier を決める。
-// しきい値は素材個数ベースの暫定値(実利用の体感で調整可能)。
-export const classifyTierByThroughput = (
-  throughput: number,
-  elapsedMinutes: number
-): ProgressTier => {
-  if (throughput <= 0) return 'none'
-  const days = Math.max(1, elapsedMinutes / 1440)
-  const perDay = throughput / days
-  if (perDay >= 50) return 'large'
-  if (perDay >= 10) return 'medium'
-  return 'small'
 }

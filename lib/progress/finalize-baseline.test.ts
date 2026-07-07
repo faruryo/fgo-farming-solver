@@ -18,10 +18,11 @@ const base = (over: Partial<PeriodSummary> = {}): PeriodSummary => ({
 })
 
 describe('finalizeBaselineSummary', () => {
-  it('スループットがあれば tier を付け zero_progress にしない', () => {
-    const f = finalizeBaselineSummary(base(), {
+  it('effortLaps があれば tier を付け zero_progress にしない(前進ゼロの補完)', () => {
+    const f = finalizeBaselineSummary(base({ elapsedMinutes: 1440 }), {
       itemsFarmed: 57,
       itemsConsumed: 279,
+      effortLaps: 60, // 60/日 → large 相当(補完でキャップされ large)
     })
     expect(f.tier).not.toBe('none')
     expect(f.fallback).toBeNull()
@@ -29,24 +30,26 @@ describe('finalizeBaselineSummary', () => {
     expect(f.itemsConsumed).toBe(279)
   })
 
-  it('reducedAp>0 のとき tier は AP/日(classifyTier)で判定する', () => {
-    // 3,848AP / 5日(7200分): 自然回復=7200/5=1440、1440*1.5=2160 を超える → large。
-    const f = finalizeBaselineSummary(base({ elapsedMinutes: 7200 }), {
+  it('forwardLaps>0 のとき tier は前進周回/日(classifyTier)で判定する', () => {
+    // 450周 / 30日: 15周/日 → large。
+    const f = finalizeBaselineSummary(base({ elapsedMinutes: 1440 * 30 }), {
       itemsFarmed: 0,
       itemsConsumed: 0,
-      reducedAp: 3848,
+      forwardLaps: 450,
+      forwardApEquivalent: 9000,
     })
     expect(f.tier).toBe('large')
     expect(f.fallback).toBeNull()
   })
 
-  it('reducedAp<=0 でもスループットがあれば tier を補完(none 固定回避)', () => {
-    const f = finalizeBaselineSummary(base({ elapsedMinutes: 1440 }), {
-      itemsFarmed: 60, // 60/日 → large(throughput 経路)
+  it('forwardLaps<=0 でも effortLaps があれば tier を補完(none 固定回避、large を上限)', () => {
+    const f = finalizeBaselineSummary(base({ elapsedMinutes: 1440 * 30 }), {
+      itemsFarmed: 60,
       itemsConsumed: 0,
-      reducedAp: -10,
+      forwardLaps: 0,
+      effortLaps: 2700, // 90周/日 → legendary 相当だが補完では large 止まり
     })
-    expect(f.tier).not.toBe('none')
+    expect(f.tier).toBe('large')
     expect(f.fallback).toBeNull()
   })
 
@@ -62,7 +65,7 @@ describe('finalizeBaselineSummary', () => {
     expect(f.snapshotCreatedAt).toBe('2026-06-06T17:04:00.000Z')
   })
 
-  it('育成/新規/reducedAp のいずれかがあれば zero_progress にしない', () => {
+  it('育成/新規/forwardLaps のいずれかがあれば zero_progress にしない', () => {
     expect(
       finalizeBaselineSummary(base({ growthTotal: 2 }), {
         itemsFarmed: 0,
@@ -79,22 +82,23 @@ describe('finalizeBaselineSummary', () => {
       finalizeBaselineSummary(base(), {
         itemsFarmed: 0,
         itemsConsumed: 0,
-        reducedAp: 120,
+        forwardLaps: 120,
       }).fallback
     ).toBeNull()
   })
 
-  it('reducedYen は reducedAp があるときだけ算出する', () => {
+  it('forwardYen は forwardApEquivalent があるときだけ算出する', () => {
     expect(
       finalizeBaselineSummary(base(), {
         itemsFarmed: 1,
         itemsConsumed: 0,
-        reducedAp: 1680,
-      }).reducedYen
+        forwardLaps: 42,
+        forwardApEquivalent: 1680,
+      }).forwardYen
     ).toBeGreaterThan(0)
     expect(
       finalizeBaselineSummary(base(), { itemsFarmed: 1, itemsConsumed: 0 })
-        .reducedYen
+        .forwardYen
     ).toBeUndefined()
   })
 })

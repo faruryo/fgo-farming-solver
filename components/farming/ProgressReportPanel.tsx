@@ -67,7 +67,9 @@ export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
         <div className="text-muted-foreground py-2 text-center text-xs">読み込み中...</div>
       ) : (
         <>
-          {message && <ServantPraise message={message} size={40} />}
+          {message && (
+            <ServantPraise message={message} size={40} tier={current?.tier} />
+          )}
           {current && <ProgressReportContent summary={current} />}
         </>
       )}

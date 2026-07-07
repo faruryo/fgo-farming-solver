@@ -10,7 +10,7 @@ const OLDEST_FIRST: Array<keyof ProgressResponse['periods']> = [
   'previous',
 ]
 
-// 比較に使える中身があるか。reducedAp 用の過去所持(pastPosession)か、material 由来の
+// 比較に使える中身があるか。forwardLaps 用の過去所持(pastPosession)か、material 由来の
 // 進捗(育成総量・新規/成長サーヴァント)のいずれかを持てば「実比較できる」。
 // material も posession も無い degenerate スナップショット(サーバが fallback 化し損ねた
 // 場合の保険)はここで弾く。

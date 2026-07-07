@@ -412,8 +412,8 @@ export const mergeGoals = (
 
 /**
  * 必要数(目標)・所持数(いずれも atlasId キー)から、ストック込みの実効不足を
- * apiItemId キー(drops の短縮ID)で組み立てる。`lib/progress/compute-reduction.ts`
- * の `buildNeedByApiItemId`(育成進捗の過去比較専用、ストック非対応)とは別物 ──
+ * apiItemId キー(drops の短縮ID)で組み立てる。進捗レポートの周回換算(`lib/progress/lap-value.ts`)
+ * は素材ごとの単価換算に `effectiveRequired` を直接使うため本関数は経由しない ──
  * 配布アドバイザー(material-selection-advisor.tsx)・周回ソルバー取り込み(material/result.tsx)
  * など、ストック目標を反映すべき全消費者がこの関数(or 同じ `effectiveDeficiency`)を
  * 経由することで、画面間の不足数の不整合を構造的に防ぐ(D3)。

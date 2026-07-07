@@ -32,21 +32,38 @@ export const detectNewServants = (
   return entries
 }
 
-// 4-tier classification.
-// reducedAp: アイテム入手により「残りに必要なAP」が減った量(正で進捗)。
-// 目標を現在で固定した再ソルブで算出され、目標増加の影響は含まない。
+// 5段階しきい値(1日あたり推定周回数)。design.md D2。一箇所に集約し調整可能にする。
+export const LAP_TIER_THRESHOLDS = {
+  legendary: 60,
+  large: 15,
+  medium: 5,
+} as const
+
+// 5-tier classification (design.md D1/D2)。
+// laps: 周回換算値(前進周回、または補完時は労力周回)。目標に対する消費中立の
+// 増分を周回数に独立換算したもので、LP再ソルブ(compute-reduction.ts)を経由しない。
 export const classifyTier = (
-  reducedAp: number,
+  laps: number,
   elapsedMinutes: number
 ): ProgressTier => {
-  const deltaAp = reducedAp
-  if (deltaAp <= 0) return 'none'
-  const naturalRecoveryAp = elapsedMinutes / 5
-  if (naturalRecoveryAp <= 0) {
-    // No elapsed time → any positive delta counts as large.
+  if (laps <= 0) return 'none'
+  if (elapsedMinutes <= 0) {
+    // No elapsed time → any positive value counts as large (legendary は避ける)。
     return 'large'
   }
-  if (deltaAp >= naturalRecoveryAp * 1.5) return 'large'
-  if (deltaAp >= naturalRecoveryAp) return 'medium'
+  const perDay = laps / (elapsedMinutes / 1440)
+  if (perDay >= LAP_TIER_THRESHOLDS.legendary) return 'legendary'
+  if (perDay >= LAP_TIER_THRESHOLDS.large) return 'large'
+  if (perDay >= LAP_TIER_THRESHOLDS.medium) return 'medium'
   return 'small'
+}
+
+// 労力周回による tier 補完(design.md D4)。同じしきい値を適用するが、legendary は
+// 前進周回限定のため large を上限にキャップする(備蓄王が毎回最上位になるインフレ防止)。
+export const classifyEffortTier = (
+  effortLaps: number,
+  elapsedMinutes: number
+): ProgressTier => {
+  const tier = classifyTier(effortLaps, elapsedMinutes)
+  return tier === 'legendary' ? 'large' : tier
 }

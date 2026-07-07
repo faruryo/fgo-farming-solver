@@ -55,11 +55,11 @@ export const buildPeriodSummary = (
   }
 
   const pastChaldea = extractChaldeaState(snapshot.data)
-  // 「アイテム入手による残りの減少」を再ソルブするための過去所持。
+  // 前進周回(forwardLaps)を周回換算するための過去所持。
   const pastPosession = extractPosession(snapshot.data) ?? undefined
 
   // degenerate スナップショット: material も posession も持たないレコード(旧 /api/solve が
-  // 書いた `{items,quests}` のみの残骸など)は、育成総量も reducedAp も算出できず比較に
+  // 書いた `{items,quests}` のみの残骸など)は、育成総量も forwardLaps も算出できず比較に
   // 使えない。non-null でも「スナップショット無し」と同様に扱い、比較基準に選ばせない。
   if (pastChaldea == null && pastPosession == null) {
     return {
@@ -101,10 +101,10 @@ export const buildPeriodSummary = (
   // スキル合計の変化(新規入手鯖も含む)。
   const skillDelta = computeSkillLevelDelta(ctx.current.chaldea, pastChaldea)
 
-  // 「アイテム入手による残りの減少(reducedAp/Lap/Yen)」は目標を現在で固定した
-  // 再ソルブが必要で、現在の目標(material/result)と所持(posession)を持つ
-  // クライアント側で算出する(方式1)。そのためサーバは過去所持(pastPosession)を
-  // 返すだけにし、tier はクライアントが reducedAp 確定後に再判定する。
+  // 「目標への前進(forwardLaps/ApEquivalent/Yen)」は素材ごとの周回換算(lap-value.ts)が
+  // 必要で、現在の目標(material/result)・所持(posession)・drops(ドロップ率)を持つ
+  // クライアント側で算出する。そのためサーバは過去所持(pastPosession)を返すだけにし、
+  // tier はクライアントが forwardLaps 確定後に再判定する。
   // ここでの tier は暫定の 'none'(ダッシュボードが上書きする)。
 
   return {

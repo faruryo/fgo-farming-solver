@@ -38,9 +38,10 @@
         ],
         "elapsedMinutes": 43200,
         "fallback": null,
-        "reducedAp": 3100,
-        "reducedLap": 78,
-        "reducedYen": 1281
+        "forwardLaps": 210,
+        "forwardApEquivalent": 4200,
+        "forwardYen": 1736,
+        "effortLaps": 210
       }
     }
   },
@@ -81,7 +82,7 @@
     }
   },
   {
-    "_scenario": "小〜中進捗（全期間）+ 目標増加",
+    "_scenario": "5段階: small（触った月）",
     "generatedAt": "2026-05-17T00:00:00.000Z",
     "current": {
       "totalAp": 34200
@@ -95,27 +96,24 @@
         "servantGrowth": [],
         "elapsedMinutes": 2880,
         "fallback": null,
-        "reducedAp": 800,
-        "reducedLap": 20,
-        "reducedYen": 331
+        "forwardLaps": 6,
+        "forwardApEquivalent": 120,
+        "forwardYen": 50,
+        "effortLaps": 6,
+        "itemsFarmed": 12
       },
       "week": {
         "period": "week",
-        "tier": "medium",
-        "growthTotal": 3,
+        "tier": "small",
+        "growthTotal": 0,
         "newServantCount": 0,
-        "servantGrowth": [
-          {
-            "servantId": "100100",
-            "servantName": "アルトリア・ペンドラゴン",
-            "delta": 3
-          }
-        ],
+        "servantGrowth": [],
         "elapsedMinutes": 10080,
         "fallback": null,
-        "reducedAp": 2500,
-        "reducedLap": 62,
-        "reducedYen": 1033
+        "forwardLaps": 20,
+        "forwardApEquivalent": 400,
+        "forwardYen": 165,
+        "effortLaps": 20
       },
       "month": {
         "period": "month",
@@ -125,14 +123,15 @@
         "servantGrowth": [],
         "elapsedMinutes": 43200,
         "fallback": null,
-        "reducedAp": 900,
-        "reducedLap": 22,
-        "reducedYen": 372
+        "forwardLaps": 40,
+        "forwardApEquivalent": 800,
+        "forwardYen": 331,
+        "effortLaps": 40
       }
     }
   },
   {
-    "_scenario": "中進捗（全期間）+ サーヴァント成長",
+    "_scenario": "5段階: medium（コツコツ継続）+ サーヴァント成長",
     "generatedAt": "2026-05-17T00:00:00.000Z",
     "current": {
       "totalAp": 32800
@@ -157,37 +156,29 @@
         ],
         "elapsedMinutes": 2880,
         "fallback": null,
-        "reducedAp": 2200,
-        "reducedLap": 55,
-        "reducedYen": 909
+        "forwardLaps": 11,
+        "forwardApEquivalent": 220,
+        "forwardYen": 91,
+        "effortLaps": 11
       },
       "week": {
         "period": "week",
-        "tier": "large",
-        "growthTotal": 33,
+        "tier": "medium",
+        "growthTotal": 9,
         "newServantCount": 0,
         "servantGrowth": [
           {
             "servantId": "100100",
             "servantName": "アルトリア・ペンドラゴン",
-            "delta": 18
-          },
-          {
-            "servantId": "200200",
-            "servantName": "エミヤ",
             "delta": 9
-          },
-          {
-            "servantId": "300300",
-            "servantName": "キャスター・ニコラ",
-            "delta": 6
           }
         ],
         "elapsedMinutes": 10080,
         "fallback": null,
-        "reducedAp": 5800,
-        "reducedLap": 145,
-        "reducedYen": 2397
+        "forwardLaps": 49,
+        "forwardApEquivalent": 980,
+        "forwardYen": 405,
+        "effortLaps": 49
       },
       "month": {
         "period": "month",
@@ -203,14 +194,15 @@
         ],
         "elapsedMinutes": 43200,
         "fallback": null,
-        "reducedAp": 3100,
-        "reducedLap": 78,
-        "reducedYen": 1281
+        "forwardLaps": 210,
+        "forwardApEquivalent": 4200,
+        "forwardYen": 1736,
+        "effortLaps": 210
       }
     }
   },
   {
-    "_scenario": "大進捗（全期間）+ 新規サーヴァント入手",
+    "_scenario": "5段階: large（イベント全力月）+ 新規サーヴァント入手",
     "generatedAt": "2026-05-17T00:00:00.000Z",
     "current": {
       "totalAp": 28000
@@ -235,9 +227,11 @@
         ],
         "elapsedMinutes": 2880,
         "fallback": null,
-        "reducedAp": 9500,
-        "reducedLap": 238,
-        "reducedYen": 3927
+        "forwardLaps": 40,
+        "forwardApEquivalent": 800,
+        "forwardYen": 331,
+        "effortLaps": 55,
+        "itemsFarmed": 180
       },
       "week": {
         "period": "week",
@@ -258,27 +252,161 @@
         ],
         "elapsedMinutes": 10080,
         "fallback": null,
-        "reducedAp": 12200,
-        "reducedLap": 305,
-        "reducedYen": 5043
+        "forwardLaps": 175,
+        "forwardApEquivalent": 3500,
+        "forwardYen": 1447,
+        "effortLaps": 210
       },
       "month": {
         "period": "month",
-        "tier": "medium",
-        "growthTotal": 6,
-        "newServantCount": 0,
+        "tier": "large",
+        "growthTotal": 24,
+        "newServantCount": 1,
         "servantGrowth": [
           {
             "servantId": "100100",
             "servantName": "アルトリア・ペンドラゴン",
-            "delta": 6
+            "delta": 15
+          },
+          {
+            "servantId": "200200",
+            "servantName": "エミヤ",
+            "delta": 9
           }
         ],
         "elapsedMinutes": 43200,
         "fallback": null,
-        "reducedAp": 3500,
-        "reducedLap": 88,
-        "reducedYen": 1447
+        "forwardLaps": 1260,
+        "forwardApEquivalent": 25200,
+        "forwardYen": 10417,
+        "effortLaps": 1320
+      }
+    }
+  },
+  {
+    "_scenario": "5段階: legendary（ボックス・レイド全力月）",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": {
+      "totalAp": 12000
+    },
+    "periods": {
+      "previous": {
+        "period": "previous",
+        "tier": "legendary",
+        "growthTotal": 45,
+        "newServantCount": 2,
+        "servantGrowth": [
+          {
+            "servantId": "100100",
+            "servantName": "アルトリア・ペンドラゴン",
+            "delta": 24
+          },
+          {
+            "servantId": "200200",
+            "servantName": "エミヤ",
+            "delta": 21
+          }
+        ],
+        "elapsedMinutes": 2880,
+        "fallback": null,
+        "forwardLaps": 140,
+        "forwardApEquivalent": 2800,
+        "forwardYen": 1157,
+        "effortLaps": 168,
+        "itemsFarmed": 620
+      },
+      "week": {
+        "period": "week",
+        "tier": "legendary",
+        "growthTotal": 60,
+        "newServantCount": 2,
+        "servantGrowth": [
+          {
+            "servantId": "100100",
+            "servantName": "アルトリア・ペンドラゴン",
+            "delta": 30
+          },
+          {
+            "servantId": "200200",
+            "servantName": "エミヤ",
+            "delta": 30
+          }
+        ],
+        "elapsedMinutes": 10080,
+        "fallback": null,
+        "forwardLaps": 490,
+        "forwardApEquivalent": 9800,
+        "forwardYen": 4051,
+        "effortLaps": 560
+      },
+      "month": {
+        "period": "month",
+        "tier": "legendary",
+        "growthTotal": 72,
+        "newServantCount": 3,
+        "servantGrowth": [
+          {
+            "servantId": "100100",
+            "servantName": "アルトリア・ペンドラゴン",
+            "delta": 36
+          },
+          {
+            "servantId": "200200",
+            "servantName": "エミヤ",
+            "delta": 36
+          }
+        ],
+        "elapsedMinutes": 43200,
+        "fallback": null,
+        "forwardLaps": 2100,
+        "forwardApEquivalent": 42000,
+        "forwardYen": 17361,
+        "effortLaps": 2400
+      }
+    }
+  },
+  {
+    "_scenario": "労力修飾: 前進ゼロ（備蓄済）+ 労力大（備蓄王）",
+    "generatedAt": "2026-05-17T00:00:00.000Z",
+    "current": {
+      "totalAp": 41000
+    },
+    "periods": {
+      "previous": {
+        "period": "previous",
+        "tier": "large",
+        "growthTotal": 0,
+        "newServantCount": 0,
+        "servantGrowth": [],
+        "elapsedMinutes": 2880,
+        "fallback": null,
+        "forwardLaps": 0,
+        "effortLaps": 180,
+        "itemsFarmed": 260
+      },
+      "week": {
+        "period": "week",
+        "tier": "large",
+        "growthTotal": 0,
+        "newServantCount": 0,
+        "servantGrowth": [],
+        "elapsedMinutes": 10080,
+        "fallback": null,
+        "forwardLaps": 0,
+        "effortLaps": 630,
+        "itemsFarmed": 900
+      },
+      "month": {
+        "period": "month",
+        "tier": "large",
+        "growthTotal": 0,
+        "newServantCount": 0,
+        "servantGrowth": [],
+        "elapsedMinutes": 43200,
+        "fallback": null,
+        "forwardLaps": 0,
+        "effortLaps": 2700,
+        "itemsFarmed": 3800
       }
     }
   },
@@ -297,9 +425,10 @@
         "servantGrowth": [],
         "elapsedMinutes": 1440,
         "fallback": null,
-        "reducedAp": 600,
-        "reducedLap": 15,
-        "reducedYen": 248
+        "forwardLaps": 3,
+        "forwardApEquivalent": 60,
+        "forwardYen": 25,
+        "effortLaps": 3
       },
       "week": {
         "period": "week",

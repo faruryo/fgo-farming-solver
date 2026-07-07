@@ -5,10 +5,11 @@ import { useSession } from 'next-auth/react'
 import type { ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
-import { computeReduction } from '../lib/progress/compute-reduction'
+import { computeForwardProgress, computeEffortLaps } from '../lib/progress/lap-value'
 import { computeItemThroughput } from '../lib/progress/throughput'
 import { finalizeBaselineSummary } from '../lib/progress/finalize-baseline'
 import { selectBaseline } from '../lib/progress/select-baseline'
+import { resolveStockBuffer, type PartialStockBuffer, type SurplusThreshold } from '../lib/quest-efficiency'
 
 const readJson = <T,>(key: string): T | null => {
   if (typeof window === 'undefined') return null
@@ -77,13 +78,13 @@ export const useProgressReport = (
 
   // 進捗指標をクライアント算出する。比較基準は最古の存在スナップショット1つ
   // (selectBaseline)のみ。
-  //   - tier の主指標: reducedAp(目標固定・消費中立の残りAP減少)。drops があれば
-  //     computeReduction で算出する。現在所持を過去所持で下限クランプしてから
-  //     再ソルブするため、育成消費が純増分を目減りさせることはなく常に非負
-  //     (周回獲得のみが計上される)。
-  //   - 補完指標: 素材スループット(獲得+育成投入の個数, QP除外)。ソルバー不要で
-  //     pastPosession と現在 posession から算出し、reducedAp が無い/0 のとき tier を
-  //     補完する。育成に素材を使った日も none にしない。
+  //   - tier の主指標: forwardLaps(バッファ込み実効不足の周回換算、消費中立)。
+  //     drops があれば lap-value.ts の computeForwardProgress で算出する。現在所持を
+  //     過去所持で下限クランプしてから合算するため、育成消費が純増分を目減りさせる
+  //     ことはなく常に非負(周回獲得のみが計上される、design.md D1)。
+  //   - 補完指標: effortLaps(全獲得の周回換算、QP除外)。forwardLaps が無い/0の
+  //     とき tier を補完する(design.md D3/D4)。
+  //   - itemsFarmed/itemsConsumed(個数集計)は表示専用として維持。
   // pastPosession が無い場合(初期データや dev モック)は元の値を保持。
   const enriched = useMemo<ProgressResponse | null>(() => {
     if (!data) return null
@@ -97,24 +98,40 @@ export const useProgressReport = (
       posession
     )
 
-    // 副指標 reducedAp/reducedLap は drops(ソルバー)が必要。無ければ未算出のまま。
-    let reducedAp: number | undefined
-    let reducedLap: number | undefined
+    // 前進周回・AP相当・労力周回は drops(ドロップ率)が必要。無ければ未算出のまま。
+    let forwardLaps: number | undefined
+    let forwardApEquivalent: number | undefined
+    let effortLaps: number | undefined
     if (drops && drops.items.length > 0) {
       const targets = readJson<Record<string, number>>('material/result') ?? {}
-      const quests = readJson<string[]>('quests') ?? []
-      const reduction = computeReduction(drops, targets, posession, baseline.pastPosession, quests)
-      if (reduction) {
-        reducedAp = reduction.reducedAp
-        reducedLap = reduction.reducedLap
+      const selectedQuestIds = readJson<string[]>('quests') ?? []
+      const stockEnabled = readJson<boolean>('efficiency/stockEnabled') ?? false
+      const rawStockBuffer = readJson<PartialStockBuffer>('efficiency/stockBuffer')
+      const legacySurplusThreshold = readJson<SurplusThreshold>('efficiency/surplusThreshold')
+      const stockBuffer = resolveStockBuffer(rawStockBuffer, legacySurplusThreshold)
+
+      const forward = computeForwardProgress({
+        drops,
+        selectedQuestIds,
+        targets,
+        currentPosession: posession,
+        pastPosession: baseline.pastPosession,
+        stockBuffer,
+        stockEnabled,
+      })
+      if (forward) {
+        forwardLaps = forward.forwardLaps
+        forwardApEquivalent = forward.forwardApEquivalent
       }
+      effortLaps = computeEffortLaps(drops, selectedQuestIds, baseline.pastPosession, posession)
     }
 
     const finalized = finalizeBaselineSummary(baseline, {
       itemsFarmed,
       itemsConsumed,
-      reducedAp,
-      reducedLap,
+      forwardLaps,
+      forwardApEquivalent,
+      effortLaps,
     })
 
     return {

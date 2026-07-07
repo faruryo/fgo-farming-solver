@@ -41,10 +41,10 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
       true
     )
     expect(summary?.pastPosession).toEqual({ '6503': 3, '6512': 10 })
-    // サーバ側 tier は暫定 none(クライアントが reducedAp 確定後に上書き)
+    // サーバ側 tier は暫定 none(クライアントが forwardLaps 確定後に上書き)
     expect(summary?.tier).toBe('none')
-    // reduced* はサーバでは未確定
-    expect(summary?.reducedAp).toBeUndefined()
+    // forward* はサーバでは未確定
+    expect(summary?.forwardLaps).toBeUndefined()
   })
 
   it('育成で目標レンジが縮んだ分を growthTotal に集計する', () => {

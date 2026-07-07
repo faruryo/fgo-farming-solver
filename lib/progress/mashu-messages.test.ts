@@ -47,4 +47,40 @@ describe('selectMashuMessage', () => {
     )
     expect(m).toContain('先輩')
   })
+
+  it('tier=legendary は伝説級の称賛メッセージを返す(large 等とは異なる語彙)', () => {
+    for (let i = 0; i < 20; i++) {
+      const m = selectMashuMessage(
+        base({ tier: 'legendary', forwardLaps: 3000, elapsedMinutes: 1440 * 30 })
+      )
+      expect(/伝説|歴代|語り継ぐ/.test(m)).toBe(true)
+    }
+  })
+
+  it('労力修飾: 前進が medium 以下でも労力周回が large 相当以上なら備蓄・活動を労う', () => {
+    // forwardLaps=0(方向性=none) だが effortLaps=90周/日相当(large 以上)。
+    for (let i = 0; i < 20; i++) {
+      const m = selectMashuMessage(
+        base({
+          tier: 'large', // finalize-baseline の補完により large になり得るが、修飾は方向性側で判定
+          forwardLaps: 0,
+          effortLaps: 2700,
+          elapsedMinutes: 1440 * 30,
+        })
+      )
+      expect(/たくさん動いた|備蓄|活動量/.test(m)).toBe(true)
+    }
+  })
+
+  it('前進が large 以上(方向性が高い)なら労力が高くても修飾せず tier 別メッセージを使う', () => {
+    const m = selectMashuMessage(
+      base({
+        tier: 'large',
+        forwardLaps: 900, // 30周/日 → large
+        effortLaps: 2700, // 90周/日 → large 以上だが方向性が高いので修飾しない
+        elapsedMinutes: 1440 * 30,
+      })
+    )
+    expect(/たくさん動いた|備蓄|活動量/.test(m)).toBe(false)
+  })
 })

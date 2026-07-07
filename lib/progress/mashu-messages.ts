@@ -1,9 +1,11 @@
 import type { PeriodSummary, ProgressTier } from './types'
+import { classifyTier } from './tier'
 
 // Message categories crossed with tier. Tone reference: appmedia の引用リスト
 // (https://appmedia.jp/fategrandorder/75727618) — 敬語 + 先輩呼び。
 
 type MessageBucket = {
+  legendary: string[]
   large: string[]
   medium: string[]
   small: string[]
@@ -11,6 +13,12 @@ type MessageBucket = {
 }
 
 const apProgress: MessageBucket = {
+  legendary: [
+    '先輩……これは伝説級の戦果です……！ 言葉になりません。',
+    'まさかここまでとは……ボックスもレイドも、先輩の伝説的な全力を見せつけられました。',
+    '歴代最高クラスの進捗です、先輩。カルデアの誇りです。',
+    'この結果は語り継ぐべきです、先輩。本当にお疲れさまでした、そして、おめでとうございます。',
+  ],
   large: [
     '先輩、すごい消費 AP の削減です……！ 圧倒されてしまいました。',
     'これだけの周回成果、わたしも誇らしいです、先輩。',
@@ -64,8 +72,23 @@ const fallbackZero: string[] = [
   '今日もデータ更新、ありがとうございます、先輩。',
 ]
 
+// 労力修飾(design.md D3): 方向性(前進周回)は控えめでも、労力周回(獲得の周回換算、
+// 余剰・備蓄含む)が大きい月に活動量・備蓄を労うトーン。備蓄王(前進0でも大量獲得)の
+// ような「効率は低くても動いた月」を、tier とは独立に認知するためのメッセージ群。
+const effortPraise: string[] = [
+  '目に見える前進は控えめでも、たくさん動いた月でしたね、先輩。備蓄、しっかり積み上がっています。',
+  '効率よりも量、という月だったようです、先輩。その活動量はきっと後で効いてきます。',
+  '今回は備蓄に回った分が多かったようですね、先輩。それも立派な活動量です。',
+]
+
 const pickRandom = <T,>(list: T[]): T =>
   list[Math.floor(Math.random() * list.length)]
+
+// 「労力が large 相当以上」= classifyTier(値, 経過分)が large/legendary。
+const isHighEffort = (effortLaps: number, elapsedMinutes: number): boolean => {
+  const effortTier = classifyTier(effortLaps, elapsedMinutes)
+  return effortTier === 'large' || effortTier === 'legendary'
+}
 
 export const selectMashuMessage = (summary: PeriodSummary | null): string => {
   if (summary == null) return pickRandom(fallbackNoSnapshot)
@@ -80,7 +103,7 @@ export const selectMashuMessage = (summary: PeriodSummary | null): string => {
   }
 
   // Layered selection: prefer the most "notable" event of the period.
-  // 新規入手・育成は tier(=アイテム周回による残りAP減少)とは独立した「達成」なので、
+  // 新規入手・育成は tier(=方向性/労力の周回換算)とは独立した「達成」なので、
   // tier が none(周回の純増がゼロ/マイナス)でも必ず労う。素材を育成に使った日に
   // 「お疲れさま(休んで)」が出る不整合を避ける。
   if (summary.newServantCount > 0) {
@@ -89,5 +112,17 @@ export const selectMashuMessage = (summary: PeriodSummary | null): string => {
   if (summary.growthTotal > 0) {
     return pickRandom(growth)
   }
+
+  // 2軸修飾: 方向性(前進周回、tier とは別に summary.forwardLaps から再判定)が
+  // medium 以下で、労力周回が large 相当以上なら、労いトーンを優先する。
+  // summary.tier は前進ゼロ時に労力周回で補完済み(D4)のため、ここでは補完前の
+  // 「方向性そのもの」を forwardLaps から独立に判定する必要がある。
+  const directionTier = classifyTier(summary.forwardLaps ?? 0, summary.elapsedMinutes)
+  const isDirectionLowOrMid =
+    directionTier === 'none' || directionTier === 'small' || directionTier === 'medium'
+  if (isDirectionLowOrMid && isHighEffort(summary.effortLaps ?? 0, summary.elapsedMinutes)) {
+    return pickRandom(effortPraise)
+  }
+
   return pickRandom(apProgress[summary.tier as ProgressTier])
 }
