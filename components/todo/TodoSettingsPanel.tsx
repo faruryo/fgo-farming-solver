@@ -10,7 +10,11 @@ import { DEFAULT_TODO_SETTINGS } from '../../lib/todo/settings'
 import { urlBase64ToUint8Array, isPushSupported, isIosFamily, PushSubscribeError } from '../../lib/todo/push'
 import type { TodoSettings } from '../../types/todo'
 
-const ROWS: { key: keyof Omit<TodoSettings, 'pushEnabled'>; labelKey: string }[] = [
+// プッシュ通知 ON/OFF の端末ローカル専用キー。todoSettings(クラウド同期対象)からは
+// 分離済み(openspec/changes/push-settings-isolation design.md Decisions #1)。
+const PUSH_ENABLED_KEY = 'fgo_push_enabled'
+
+const ROWS: { key: keyof TodoSettings; labelKey: string }[] = [
   { key: 'autoDaily', labelKey: 'デイリーミッションの自動追加' },
   { key: 'autoWeekly', labelKey: 'ウィークリーミッションの自動追加' },
   { key: 'autoEvent', labelKey: 'イベント交換ショップの自動追加' },
@@ -19,7 +23,8 @@ const ROWS: { key: keyof Omit<TodoSettings, 'pushEnabled'>; labelKey: string }[]
 /**
  * 通知許可の要求 → Service Worker 経由での購読 → サーバーへの登録、の順で行う
  * (specs/todo-notifications/spec.md「プッシュ通知の許諾と登録」のシナリオ順)。
- * 途中で失敗した場合は理由別の PushSubscribeError を投げ、呼び出し側で pushEnabled を false のまま保つ。
+ * 途中で失敗した場合は理由別の PushSubscribeError を投げ、呼び出し側で fgo_push_enabled
+ * を false のまま保つ。
  */
 const subscribeToPush = async (): Promise<void> => {
   if (!isPushSupported()) throw new PushSubscribeError('unsupported')
@@ -52,22 +57,70 @@ const subscribeToPush = async (): Promise<void> => {
   if (!res.ok) throw new PushSubscribeError('server-error', 'Failed to register subscription')
 }
 
+/**
+ * ブラウザ側の購読解除自体は行うが、D1 への DELETE が失敗した場合は unsubscribe-failed
+ * を投げる。呼び出し側はこれを受けてトグルを OFF にせず維持する（D1 に購読レコードが
+ * 残っていても、次回 ON 操作では pushManager.subscribe が既存購読を返すため再 POST で
+ * 復旧できる）。
+ */
 const unsubscribeFromPush = async (): Promise<void> => {
   const registration = await navigator.serviceWorker.ready
   const subscription = await registration.pushManager.getSubscription()
   if (!subscription) return
-  await subscription.unsubscribe()
-  await fetch('/api/notifications/subscribe', {
+
+  try {
+    await subscription.unsubscribe()
+  } catch (error) {
+    throw new PushSubscribeError('unsubscribe-failed', error instanceof Error ? error.message : undefined)
+  }
+
+  const res = await fetch('/api/notifications/subscribe', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ endpoint: subscription.endpoint }),
   })
+  if (!res.ok) throw new PushSubscribeError('unsubscribe-failed', 'Failed to delete subscription on server')
 }
 
 /**
- * TODO 自動生成(daily/weekly/event)・プッシュ通知の ON/OFF を localStorage の
- * `todoSettings` に永続化するトグル群。useLocalStorage が ls-sync を発火するため、
- * useCloudSync の autosave にそのまま乗る。
+ * 旧 todoSettings.pushEnabled はクラウド同期されていたため、この端末では「他端末で ON
+ * にした値」が同期されているだけの可能性がある。専用キー(fgo_push_enabled)が未作成の
+ * 場合のみ、当該端末の実際のブラウザ購読(pushManager.getSubscription())の有無を確認
+ * し、旧値 && 購読ありのときだけ true として一度だけ移行する
+ * (openspec/changes/push-settings-isolation design.md Decisions #1)。
+ */
+const migratePushEnabled = async (): Promise<void> => {
+  if (localStorage.getItem(PUSH_ENABLED_KEY) !== null) return // 移行済み、またはユーザーが既に操作済み
+
+  let legacyEnabled = false
+  try {
+    const raw = localStorage.getItem('todoSettings')
+    if (raw) legacyEnabled = (JSON.parse(raw) as { pushEnabled?: boolean }).pushEnabled === true
+  } catch (e) {
+    console.error('Failed to parse legacy todoSettings during pushEnabled migration', e)
+  }
+  if (!legacyEnabled || !isPushSupported()) return
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration()
+    const subscription = await registration?.pushManager.getSubscription()
+    if (!subscription) return // 購読の実在が無ければ移行しない(表示だけONになる不整合を防ぐ)
+    localStorage.setItem(PUSH_ENABLED_KEY, 'true')
+    // 同一タブで既にマウント済みの useLocalStorage(PUSH_ENABLED_KEY) 側へ反映する
+    window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: PUSH_ENABLED_KEY } }))
+  } catch (e) {
+    console.error('Failed to migrate pushEnabled to fgo_push_enabled', e)
+  }
+}
+
+/**
+ * TODO 自動生成(daily/weekly/event)の ON/OFF を localStorage の `todoSettings` に永続化
+ * するトグル群。useLocalStorage が ls-sync を発火するため、useCloudSync の autosave に
+ * そのまま乗る。
+ * プッシュ通知の ON/OFF は `todoSettings` から分離した端末ローカル専用キー
+ * `fgo_push_enabled` で管理し、クラウド同期・autosave の対象外にする
+ * (openspec/changes/push-settings-isolation。use-cloud-sync 側の allowlist によって
+ * KEYS に含まれないこのキーの ls-sync では dirty/autosave が発火しない)。
  * プッシュ通知は未ログイン時はトグルを disabled にしてサインイン導線を出し
  * (specs/todo-notifications/spec.md「未ログインユーザーのプッシュ通知ゲーティング」)、
  * ON 時は Service Worker 経由で購読しサーバーに登録、OFF 時は購読解除する。
@@ -76,6 +129,7 @@ export const TodoSettingsPanel: React.FC = () => {
   const { t } = useTranslation('common')
   const { data: session } = useSession()
   const [settings, setSettings] = useLocalStorage<TodoSettings>('todoSettings', DEFAULT_TODO_SETTINGS)
+  const [pushEnabled, setPushEnabled] = useLocalStorage<boolean>(PUSH_ENABLED_KEY, false)
   const [pushBusy, setPushBusy] = useState(false)
   // 判定中(null)はトグルを disabled にし、SSR/ハイドレーション不一致を避けるためマウント後に評価する
   const [pushSupported, setPushSupported] = useState<boolean | null>(null)
@@ -84,7 +138,11 @@ export const TodoSettingsPanel: React.FC = () => {
     setPushSupported(isPushSupported())
   }, [])
 
-  const toggle = (key: keyof Omit<TodoSettings, 'pushEnabled'>) => (checked: boolean) => {
+  useEffect(() => {
+    void migratePushEnabled()
+  }, [])
+
+  const toggle = (key: keyof TodoSettings) => (checked: boolean) => {
     setSettings((prev) => ({ ...prev, [key]: checked }))
   }
 
@@ -97,7 +155,7 @@ export const TodoSettingsPanel: React.FC = () => {
       } else {
         await unsubscribeFromPush()
       }
-      setSettings((prev) => ({ ...prev, pushEnabled: checked }))
+      setPushEnabled(checked)
     } catch (error) {
       console.error(error)
       if (error instanceof PushSubscribeError) {
@@ -107,16 +165,25 @@ export const TodoSettingsPanel: React.FC = () => {
             break
           case 'permission-denied':
             toast.error(
-              t(
-                '通知が許可されませんでした。iOSでは一度拒否すると再確認が表示されないため、ホーム画面に追加したアプリを削除して入れ直す必要がある場合があります',
-              ),
+              isIosFamily()
+                ? t(
+                    '通知が許可されませんでした。iOSでは一度拒否すると再確認が表示されないため、ホーム画面に追加したアプリを削除して入れ直す必要がある場合があります',
+                  )
+                : t('通知が許可されませんでした。ブラウザのサイト設定から通知の許可をブロック解除して再度お試しください'),
             )
             break
           case 'server-error':
-            toast.error(t('サーバーへの登録に失敗しました。通信環境を確認して再度お試しください'))
-            break
           case 'subscribe-failed':
-            toast.error(t('プッシュ通知の登録に失敗しました'))
+            toast.error(
+              t(
+                'プッシュ通知の登録に失敗しました。通信環境が不安定か、ログインセッションが切れている可能性があります。時間をおいて再試行するか、再度ログインしてください',
+              ),
+            )
+            break
+          case 'unsubscribe-failed':
+            // D1 の解除に失敗しただけの可能性があるため、ここでは pushEnabled を false へ
+            // 倒さずトグル ON を維持する（次回 ON 操作で既存のブラウザ購読を再 POST し復旧できる）。
+            toast.error(t('プッシュ通知の解除に失敗しました。時間をおいて再度お試しください'))
             break
         }
       } else {
@@ -148,7 +215,7 @@ export const TodoSettingsPanel: React.FC = () => {
               {t('プッシュ通知を有効にする')}
             </span>
             <Switch
-              checked={settings.pushEnabled}
+              checked={pushEnabled}
               onCheckedChange={(checked) => {
                 void togglePush(checked)
               }}

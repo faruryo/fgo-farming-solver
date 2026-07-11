@@ -13,7 +13,9 @@
  *     純粋関数をそのまま import する（クライアントと独立実装しない）。
  *   - 自動生成タスク（daily/weekly/event）は todoState に「存在しない」場合も
  *     未完了として扱う（未オープンユーザーへのリマインドが主目的）。
- *   - カスタムタスクは autoX トグルの対象外。pushEnabled のみで判定する。
+ *   - カスタムタスクは autoX トグルの対象外。配信可否は D1 の購読レコード存在のみで
+ *     判定する（pushEnabled は端末ローカル専用キーに分離済みで KV からは参照しない。
+ *     openspec/changes/push-settings-isolation）。
  *
  * 重複防止（アトミック）:
  *   - 送信前に `INSERT INTO notification_log ... ON CONFLICT DO NOTHING RETURNING`
@@ -78,7 +80,6 @@ const DEFAULT_SETTINGS: TodoSettings = {
   autoDaily: true,
   autoWeekly: true,
   autoEvent: true,
-  pushEnabled: false,
 }
 
 // ── wrangler CLI ラッパー ────────────────────────────────────────────
@@ -280,7 +281,7 @@ const buildCandidates = (params: {
     candidates.push({ notificationKey: task.id, title })
   }
 
-  // カスタムタスクは autoX トグルの対象外。pushEnabled のみで判定する（design.md）。
+  // カスタムタスクは autoX トグルの対象外。D1 に購読レコードがあること自体が配信条件。
   for (const task of tasks) {
     if (task.category !== 'custom' || task.completed) continue
     const deadlineMs = new Date(task.deadline).getTime()
@@ -316,19 +317,14 @@ async function main() {
   console.log(`Fetched ${events.length} dashboard event(s) for event-shop deadline checks`)
 
   let sentCount = 0
-  let skippedPushDisabledCount = 0
   let expiredCleanedCount = 0
   let failedCount = 0
 
   for (const sub of subscriptions) {
     const { settings, tasks } = fetchUserTodoData(sub.user_id)
 
-    // pushEnabled は全カテゴリ一括のゲート（design.md Decisions #1）。
-    if (!settings.pushEnabled) {
-      skippedPushDisabledCount++
-      continue
-    }
-
+    // D1 に購読レコードが存在すること自体が配信条件（pushEnabled は端末ローカル専用
+    // キーに分離済みのため KV からは参照しない。openspec/changes/push-settings-isolation）。
     const candidates = buildCandidates({ nowMs, settings, tasks, events })
     for (const candidate of candidates) {
       const won = tryClaimNotification(sub.id, candidate.notificationKey)
@@ -360,7 +356,7 @@ async function main() {
 
   console.log(
     `[send-todo-notifications] done. subscriptions=${subscriptions.length} sent=${sentCount} ` +
-      `pushDisabledSkipped=${skippedPushDisabledCount} expiredCleaned=${expiredCleanedCount} failed=${failedCount}`
+      `expiredCleaned=${expiredCleanedCount} failed=${failedCount}`
   )
 }
 

@@ -232,7 +232,20 @@ const [isSaving, setIsSaving] = useState(false)
     try {
       const entries = KEYS.map((key) => [key, localStorage.getItem(key)] as const)
       const dataObj = Object.fromEntries(entries.filter(([, value]) => value !== null)) as Record<string, string>
-      
+
+      // pushEnabled は端末ローカル専用キー(fgo_push_enabled)に分離済みのため、
+      // 過去のクラウドデータに残っていても次回セーブでクラウド側から除去する
+      // (openspec/changes/push-settings-isolation design.md Decisions #1)。
+      if (typeof dataObj.todoSettings === 'string') {
+        try {
+          const todoSettings = JSON.parse(dataObj.todoSettings) as Record<string, unknown>
+          delete todoSettings.pushEnabled
+          dataObj.todoSettings = JSON.stringify(todoSettings)
+        } catch (e) {
+          console.error('Failed to strip pushEnabled from todoSettings before cloud save', e)
+        }
+      }
+
       const local = getLocalMetadata()
       const now = new Date().toISOString()
       const newMeta = metadataAfterSave(local, now)
@@ -273,7 +286,15 @@ const [isSaving, setIsSaving] = useState(false)
   // here would re-mark a cloud apply done in another tab as dirty.
   useEffect(() => {
     const listener = (e: Event) => {
-      if (e instanceof CustomEvent && (e.detail as { key?: string } | null)?.key === LOCAL_METADATA_KEY) return
+      const detailKey = e instanceof CustomEvent ? (e.detail as { key?: string } | null)?.key : undefined
+      if (detailKey === LOCAL_METADATA_KEY) return
+      // Allowlist: only keys we actually sync (KEYS) are allowed to mark dirty /
+      // trigger autosave — e.g. the device-local `fgo_push_enabled` key must NOT
+      // (openspec/changes/push-settings-isolation). Events with no detail.key at
+      // all (the bulk 'localStorageUpdated' dispatched by local backup import,
+      // which can touch many keys at once) conservatively still mark dirty since
+      // we can't tell which keys changed from the event alone.
+      if (detailKey !== undefined && !KEYS.includes(detailKey)) return
       // Skip updates triggered by applyData (any instance) to keep
       // updatedAt === lastSyncedAt (clean state)
       if (isApplyingCloudData) return

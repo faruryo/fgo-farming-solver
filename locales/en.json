@@ -49,7 +49,10 @@
     "このブラウザはプッシュ通知に対応していません": "This browser does not support push notifications",
     "共有メニューから『ホーム画面に追加』し、追加したアイコンから開くとプッシュ通知を利用できます": "Add this app to your Home Screen from the Share menu, then open it from the added icon to use push notifications",
     "通知が許可されませんでした。iOSでは一度拒否すると再確認が表示されないため、ホーム画面に追加したアプリを削除して入れ直す必要がある場合があります": "Notification permission was denied. On iOS, once denied you won't be prompted again, so you may need to remove and re-add the Home Screen app to try again",
-    "サーバーへの登録に失敗しました。通信環境を確認して再度お試しください": "Failed to register with the server. Please check your connection and try again"
+    "サーバーへの登録に失敗しました。通信環境を確認して再度お試しください": "Failed to register with the server. Please check your connection and try again",
+    "通知が許可されませんでした。ブラウザのサイト設定から通知の許可をブロック解除して再度お試しください": "Notification permission was denied. Please unblock notifications for this site in your browser settings and try again",
+    "プッシュ通知の登録に失敗しました。通信環境が不安定か、ログインセッションが切れている可能性があります。時間をおいて再試行するか、再度ログインしてください": "Failed to register for push notifications. Your connection may be unstable or your session may have expired. Please try again later or sign in again",
+    "プッシュ通知の解除に失敗しました。時間をおいて再度お試しください": "Failed to disable push notifications. Please try again later"
   },
   "farming": {
     "1": "Use old data primarily",

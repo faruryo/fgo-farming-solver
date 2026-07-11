@@ -11,7 +11,6 @@ const settings = (overrides: Partial<TodoSettings> = {}): TodoSettings => ({
   autoDaily: false,
   autoWeekly: false,
   autoEvent: false,
-  pushEnabled: false,
   ...overrides,
 })
 

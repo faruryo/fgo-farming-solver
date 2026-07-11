@@ -35,7 +35,12 @@ export const isIosFamily = (): boolean => {
   )
 }
 
-export type PushSubscribeErrorReason = 'unsupported' | 'permission-denied' | 'subscribe-failed' | 'server-error'
+export type PushSubscribeErrorReason =
+  | 'unsupported'
+  | 'permission-denied'
+  | 'subscribe-failed'
+  | 'server-error'
+  | 'unsubscribe-failed'
 
 /** プッシュ通知の購読失敗を理由別に区別して呼び出し側に伝えるための Error サブクラス。 */
 export class PushSubscribeError extends Error {

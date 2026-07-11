@@ -7,11 +7,12 @@ export interface TodoTask {
   completedAt?: string
 }
 
+// プッシュ通知の ON/OFF (旧 pushEnabled) はクラウド同期対象から除外し、端末ローカルキー
+// `fgo_push_enabled` でのみ管理する（openspec/changes/push-settings-isolation）。
 export interface TodoSettings {
   autoDaily: boolean
   autoWeekly: boolean
   autoEvent: boolean
-  pushEnabled: boolean
 }
 
 // D1 push_subscriptions row shape (snake_case columns, matches migrations/0004_todo_notifications.sql)
