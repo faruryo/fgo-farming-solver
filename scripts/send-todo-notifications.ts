@@ -69,7 +69,9 @@ const DASHBOARD_META_KEY = 'dashboard_meta'
 const VAPID_SUBJECT = 'https://fgo-farming-solver.faru.jp'
 
 const THRESHOLD_MS: Record<TodoTask['category'], number> = {
-  daily: 3 * 60 * 60 * 1000,
+  // デイリーは就寝前(22:59 JST〜)に受け取れるよう5時間前
+  // (openspec/changes/daily-notification-evening-threshold)
+  daily: 5 * 60 * 60 * 1000,
   weekly: 12 * 60 * 60 * 1000,
   event: 24 * 60 * 60 * 1000,
   custom: 24 * 60 * 60 * 1000,

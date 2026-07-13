@@ -6,7 +6,7 @@
 ## 2. Verification
 
 - [x] 2.1 `isDueForNotification`（必要なら `buildCandidates` も）を export してテスト可能にし、`scripts/send-todo-notifications.dedup.test.ts` または新規テストで「窓開始から1時間経過後・期限前 → 送信」「期限超過 → 送信しない」「窓開始前 → 送信しない」を追加する。`pnpm run type-check` と `pnpm test` が通ることを確認する。
-- [ ] 2.2 デプロイ後、次回バッチ実行のログで、窓内の未送信タスクが配信されること（または対象なしで正常終了すること）を確認する。
+- [x] 2.2 デプロイ後、次回バッチ実行のログで、窓内の未送信タスクが配信されること（または対象なしで正常終了すること）を確認する。
 
 ## 3. Change Ordering Note
 

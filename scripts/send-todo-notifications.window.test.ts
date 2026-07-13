@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 import { isDueForNotification } from './send-todo-notifications'
 
 describe('isDueForNotification', () => {
-  const thresholdMs = 3 * 60 * 60 * 1000 // daily の閾値（3h）を代表値として使う
+  const thresholdMs = 3 * 60 * 60 * 1000 // 代表値（実際の閾値は THRESHOLD_MS 側で定義）
   const deadlineMs = Date.parse('2026-07-11T12:00:00.000Z')
   const dueAt = deadlineMs - thresholdMs // 2026-07-11T09:00:00.000Z
 
