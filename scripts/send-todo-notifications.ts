@@ -51,6 +51,7 @@
  *   （このファイル自体は --remote 前提で実装し、モック差し替えは行わない）。
  */
 import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 import { sendNotification, setVapidDetails, WebPushError } from 'web-push'
 
@@ -66,8 +67,6 @@ const CLOUD_SAVE_NAMESPACE_ID = 'c621d47e509445a3a7f713702b3cb07e'
 const MASTER_DATA_NAMESPACE_ID = '306bbe537e9d4907809f82468df500e4'
 const DASHBOARD_META_KEY = 'dashboard_meta'
 const VAPID_SUBJECT = 'https://fgo-farming-solver.faru.jp'
-
-const ONE_HOUR_MS = 60 * 60 * 1000
 
 const THRESHOLD_MS: Record<TodoTask['category'], number> = {
   daily: 3 * 60 * 60 * 1000,
@@ -220,25 +219,26 @@ const fetchUserTodoData = (userId: string): UserTodoData => {
 // ── 通知対象判定 ──────────────────────────────────────────────────────
 
 /**
- * 「毎時実行」で閾値（例: 期限3時間前）を1回だけ捉えるための窓判定。
- * しきい値到達の瞬間 dueAt = deadline - threshold から1時間の半開区間
- * [dueAt, dueAt + 1h) を「対象」とする。
+ * 閾値到達（dueAt = deadline - threshold）から期限までを対象とする窓判定。
  *
  * 理由:
- *   - cron '0 * * * *' は毎時ちょうどに実行される想定だが、GitHub Actions の
- *     schedule は混雑時に遅延・間引かれ得る（update-master-data.yml のコメント
- *     参照）。dueAt ちょうどの瞬間だけを狙う判定だと、その回の実行がスキップ
- *     されると通知が永久に飛ばない。
- *   - 逆に「残り時間が閾値以下なら常に対象」という判定だと、閾値を跨いだ後の
- *     毎時実行すべてで対象になり、notification_log が無ければ何度も送ってしまう
- *     （notification_log による重複排除と二重に守る設計にする）。
- *   - 1時間幅の窓にすることで、cron が毎時1回どこかで実行されている限り
- *     必ずちょうど1回だけこの窓に入り、かつ notification_key は期間ごとに
- *     一意なので前回実行分との重複は notification_log 側で吸収される。
+ *   - GitHub Actions の schedule 実行は遅延・欠落が常態（実測で実行間隔
+ *     1.5〜3.5時間）であり、「毎時必ず1回実行される」前提のワンショット窓
+ *     （dueAt から1時間だけ）は、その1時間にバッチが1回も走らないと通知が
+ *     永久に飛ばないという欠陥があった（design.md 参照。weekly 通知は実績
+ *     ゼロだった）。
+ *   - 窓を [dueAt, deadline) まで拡張することで、バッチがいつ実行されても
+ *     期限前である限り必ず対象になる。
+ *   - 同一タスクへの重複送信は、この窓の広さではなく送信直前の
+ *     notification_log へのアトミックな INSERT ... ON CONFLICT DO NOTHING
+ *     RETURNING（tryClaimNotification）が防ぐ。窓を広げても送信は
+ *     notification_key ごとに最大1回のまま。
+ *   - 上限を deadline に取ることで、期限超過後（もう間に合わない）の通知は
+ *     送らない。
  */
-const isDueForNotification = (deadlineMs: number, thresholdMs: number, nowMs: number): boolean => {
+export const isDueForNotification = (deadlineMs: number, thresholdMs: number, nowMs: number): boolean => {
   const dueAt = deadlineMs - thresholdMs
-  return nowMs >= dueAt && nowMs < dueAt + ONE_HOUR_MS
+  return nowMs >= dueAt && nowMs < deadlineMs
 }
 
 interface NotificationCandidate {
@@ -246,7 +246,7 @@ interface NotificationCandidate {
   title: string
 }
 
-const buildCandidates = (params: {
+export const buildCandidates = (params: {
   nowMs: number
   settings: TodoSettings
   tasks: TodoTask[]
@@ -274,10 +274,10 @@ const buildCandidates = (params: {
 
     const title =
       task.category === 'daily'
-        ? 'デイリーミッションの期限が残り3時間です！'
+        ? 'デイリーミッションの期限が近づいています！'
         : task.category === 'weekly'
-          ? 'ウィークリーミッションの期限が残り12時間です！'
-          : `${eventNameByTaskId.get(task.id) ?? task.title} の交換期限が残り24時間です！`
+          ? 'ウィークリーミッションの期限が近づいています！'
+          : `${eventNameByTaskId.get(task.id) ?? task.title} の交換期限が近づいています！`
     candidates.push({ notificationKey: task.id, title })
   }
 
@@ -286,7 +286,7 @@ const buildCandidates = (params: {
     if (task.category !== 'custom' || task.completed) continue
     const deadlineMs = new Date(task.deadline).getTime()
     if (!isDueForNotification(deadlineMs, THRESHOLD_MS.custom, nowMs)) continue
-    candidates.push({ notificationKey: task.id, title: `${task.title} の期限が残り24時間です！` })
+    candidates.push({ notificationKey: task.id, title: `${task.title} の期限が近づいています！` })
   }
 
   return candidates
@@ -360,7 +360,14 @@ async function main() {
   )
 }
 
-main().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+// main() は module load 時に無条件実行されるため、テストからこのファイルの
+// export（isDueForNotification / buildCandidates）を安全に import できるよう、
+// スクリプトとして直接実行された（tsx scripts/send-todo-notifications.ts）場合
+// にのみ起動する。
+const isMainModule = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]
+if (isMainModule) {
+  main().catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+}
