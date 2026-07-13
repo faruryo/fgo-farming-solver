@@ -15,38 +15,44 @@ import {
 const jst = (iso: string): number => new Date(`${iso}+09:00`).getTime()
 
 describe('getJstDayKey', () => {
-  it('before the 4:00 AM boundary still belongs to the previous day', () => {
-    expect(getJstDayKey(jst('2026-06-23T02:00:00'))).toBe('20260622')
-    expect(getJstDayKey(jst('2026-06-23T03:59:00'))).toBe('20260622')
+  it('the 0:00-3:59 JST tail belongs to the new day (formerly the previous day under the old 4:00 AM boundary)', () => {
+    expect(getJstDayKey(jst('2026-06-23T00:00:00'))).toBe('20260623')
+    expect(getJstDayKey(jst('2026-06-23T00:30:00'))).toBe('20260623')
+    expect(getJstDayKey(jst('2026-06-23T03:59:00'))).toBe('20260623')
   })
 
-  it('at/after the 4:00 AM boundary belongs to the new day', () => {
+  it('the last instant of the previous day still belongs to the previous day', () => {
+    expect(getJstDayKey(jst('2026-06-22T23:59:00'))).toBe('20260622')
+  })
+
+  it('stays the same day through the rest of the day', () => {
     expect(getJstDayKey(jst('2026-06-23T04:00:00'))).toBe('20260623')
     expect(getJstDayKey(jst('2026-06-23T23:59:00'))).toBe('20260623')
   })
 
   it('handles a month/year rollover', () => {
-    expect(getJstDayKey(jst('2026-01-01T02:00:00'))).toBe('20251231')
-    expect(getJstDayKey(jst('2026-01-01T04:00:00'))).toBe('20260101')
+    expect(getJstDayKey(jst('2026-01-01T00:00:00'))).toBe('20260101')
+    expect(getJstDayKey(jst('2026-01-01T00:30:00'))).toBe('20260101')
+    expect(getJstDayKey(jst('2025-12-31T23:59:00'))).toBe('20251231')
   })
 })
 
 describe('getDailyTaskDeadlineMs', () => {
-  it('resolves to 3:59 AM JST of the next calendar day for a time within the period', () => {
+  it('resolves to 23:59 JST of the same calendar day for a time within the period', () => {
     const now = jst('2026-06-23T10:00:00')
-    expect(getDailyTaskDeadlineMs(now)).toBe(jst('2026-06-24T03:59:00'))
+    expect(getDailyTaskDeadlineMs(now)).toBe(jst('2026-06-23T23:59:00'))
   })
 
-  it('the deadline for the pre-4AM tail of a day is the same-day 3:59 AM', () => {
-    const now = jst('2026-06-23T02:00:00') // still "day 22" period
-    expect(getDailyTaskDeadlineMs(now)).toBe(jst('2026-06-23T03:59:00'))
+  it('the deadline for the early-morning (0:00-3:59) tail of a day is the same-day 23:59', () => {
+    const now = jst('2026-06-23T02:00:00')
+    expect(getDailyTaskDeadlineMs(now)).toBe(jst('2026-06-23T23:59:00'))
   })
 })
 
 describe('buildDailyTaskId', () => {
   it('brands the id with the JST day key', () => {
     expect(buildDailyTaskId(jst('2026-06-23T10:00:00'))).toBe('daily-20260623')
-    expect(buildDailyTaskId(jst('2026-06-23T02:00:00'))).toBe('daily-20260622')
+    expect(buildDailyTaskId(jst('2026-06-23T02:00:00'))).toBe('daily-20260623')
   })
 })
 
