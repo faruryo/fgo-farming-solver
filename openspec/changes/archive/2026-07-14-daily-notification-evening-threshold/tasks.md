@@ -5,8 +5,8 @@
 
 ## 2. Verification
 
-- [ ] 2.1 デプロイ後、22:59 JST 以降の最初のバッチ実行ログで当日のデイリー通知（daily-YYYYMMDD）が送信されることを確認する。
+- [x] 2.1 デプロイ後、22:59 JST 以降の最初のバッチ実行ログで当日のデイリー通知（daily-YYYYMMDD）が送信されることを確認する。（daily-boundary-midnight で開始が 21:59 JST に変更されたため本項の検証は同 change の 2.1 に引き継ぎ）
 
 ## 3. Change Ordering Note
 
-- [ ] 3.1 アーカイブは push-settings-isolation → notification-window-until-deadline → 本 change の順で行う。
+- [x] 3.1 アーカイブは push-settings-isolation → notification-window-until-deadline → 本 change の順で行う。

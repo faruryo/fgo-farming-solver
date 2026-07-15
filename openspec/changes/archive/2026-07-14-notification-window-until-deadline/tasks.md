@@ -10,4 +10,4 @@
 
 ## 3. Change Ordering Note
 
-- [ ] 3.1 アーカイブは push-settings-isolation → 本 change の順で行う（両方が todo-notifications の同一要件を MODIFIED しており、本 change のデルタは isolation 適用後の文面を前提に書かれているため）。
+- [x] 3.1 アーカイブは push-settings-isolation → 本 change の順で行う（両方が todo-notifications の同一要件を MODIFIED しており、本 change のデルタは isolation 適用後の文面を前提に書かれているため）。

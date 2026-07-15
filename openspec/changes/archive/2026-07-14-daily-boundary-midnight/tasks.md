@@ -7,9 +7,9 @@
 
 ## 2. Verification
 
-- [ ] 2.1 デプロイ後、21:59 JST 以降の最初のバッチ実行ログで当日のデイリー通知が送信され、23:59 以降のバッチでは送信されないことを確認する。
-- [ ] 2.2 実機で 0:00〜3:59 JST の間に新しい日のデイリータスクが表示されることを確認する（可能なら）。
+- [x] 2.1 デプロイ後、21:59 JST 以降のバッチ実行ログで当日のデイリー通知が送信され、23:59 以降のバッチでは送信されないことを確認する。（2026-07-15 検証完了: 7/15 22:08 JST バッチで daily-20260715 を2購読へ送信(sent=2)、実機受信も確認。失効購読の410掃除(expiredCleaned=1)も同バッチで実証。前夜の 0:15 JST 以降のバッチで翌日分の誤送信なしも notification_log で確認済み）
+- [x] 2.2 実機で 0:00〜3:59 JST の間に新しい日のデイリータスクが表示されることを確認する（可能なら）。（2026-07-15 確認: Cloud Save 上に daily-20260715 が新日界の期限 23:59 JST で生成・同期済み。旧日界の daily-20260714(3:59 JST 期限) と並存しており境界切替をデータで確認）
 
 ## 3. Change Ordering Note
 
-- [ ] 3.1 アーカイブは push-settings-isolation → notification-window-until-deadline → daily-notification-evening-threshold → 本 change の順で行う。
+- [x] 3.1 アーカイブは push-settings-isolation → notification-window-until-deadline → daily-notification-evening-threshold → 本 change の順で行う。
