@@ -161,6 +161,13 @@ const ServantCardComponent = ({
     applyStart(target, idx, cur, cur - 1)
   }
 
+  // ピップは点灯クリックの -1 と長押しが重複するため長押し対象外。ただし
+  // contextmenu 後の click 抑止フラグは pointerdown でリセットされる前提の
+  // 設計なので、フラグリセットだけはピップでも行う（タイマーは張らない）。
+  const handlePipPointerDown = () => {
+    longPressFired.current = false
+  }
+
   const handlePipClick = (val: number) => {
     if (longPressFired.current) {
       longPressFired.current = false
@@ -232,11 +239,8 @@ const ServantCardComponent = ({
             {[1, 2, 3, 4].map(i => (
               <div
                 key={i}
-                className={`c-sum-pip${ascCur >= i ? ' lit' : ''}${pressedKey === `asc-${i}` ? ' is-pressing' : ''}`}
-                onPointerDown={() => handlePointerDown('ascension', 0, ascCur, `asc-${i}`)}
-                onPointerUp={handlePointerEndOrLeave}
-                onPointerLeave={handlePointerEndOrLeave}
-                onPointerCancel={handlePointerEndOrLeave}
+                className={`c-sum-pip${ascCur >= i ? ' lit' : ''}`}
+                onPointerDown={handlePipPointerDown}
                 onContextMenu={(e) => handleContextMenu(e, 'ascension', 0, ascCur)}
                 onClick={() => handlePipClick(i)}
               />
