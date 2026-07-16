@@ -16,4 +16,4 @@
 ## 3. ドキュメンテーション & 公開
 
 - [x] 3.1 `openspec validate material-longpress-feedback --strict` をパス。
-- [ ] 3.2 マージ後、`openspec archive material-longpress-feedback` で specs を更新する。
+- [x] 3.2 マージ後、`openspec archive material-longpress-feedback` で specs を更新する。（2026-07-16 実施。ピップ長押し廃止を含む最終形で本specへ同期）
