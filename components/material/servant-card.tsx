@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useRef } from 'react'
+import { memo, useCallback, useRef, useState } from 'react'
 import Image from 'next/image'
 import NextLink from 'next/link'
 import { NiceServant } from '../../interfaces/atlas-academy'
@@ -118,6 +118,8 @@ const ServantCardComponent = ({
   // Long-press / contextmenu helpers
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longPressFired = useRef(false)
+  // 長押し中の視覚フィードバック用（押下中の要素キーのみ保持。判定ロジックには関与しない）
+  const [pressedKey, setPressedKey] = useState<string | null>(null)
 
   const clearLongPress = () => {
     if (longPressTimer.current) {
@@ -129,10 +131,12 @@ const ServantCardComponent = ({
   const handlePointerDown = (
     target: TargetKey,
     idx: number,
-    cur: number
+    cur: number,
+    key: string
   ) => {
     longPressFired.current = false
     clearLongPress()
+    setPressedKey(key)
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true
       applyStart(target, idx, cur, cur - 1)
@@ -141,6 +145,7 @@ const ServantCardComponent = ({
 
   const handlePointerEndOrLeave = () => {
     clearLongPress()
+    setPressedKey(null)
   }
 
   const handleContextMenu = (
@@ -151,8 +156,16 @@ const ServantCardComponent = ({
   ) => {
     e.preventDefault()
     clearLongPress()
+    setPressedKey(null)
     longPressFired.current = true
     applyStart(target, idx, cur, cur - 1)
+  }
+
+  // ピップは点灯クリックの -1 と長押しが重複するため長押し対象外。ただし
+  // contextmenu 後の click 抑止フラグは pointerdown でリセットされる前提の
+  // 設計なので、フラグリセットだけはピップでも行う（タイマーは張らない）。
+  const handlePipPointerDown = () => {
+    longPressFired.current = false
   }
 
   const handlePipClick = (val: number) => {
@@ -227,10 +240,7 @@ const ServantCardComponent = ({
               <div
                 key={i}
                 className={`c-sum-pip${ascCur >= i ? ' lit' : ''}`}
-                onPointerDown={() => handlePointerDown('ascension', 0, ascCur)}
-                onPointerUp={handlePointerEndOrLeave}
-                onPointerLeave={handlePointerEndOrLeave}
-                onPointerCancel={handlePointerEndOrLeave}
+                onPointerDown={handlePipPointerDown}
                 onContextMenu={(e) => handleContextMenu(e, 'ascension', 0, ascCur)}
                 onClick={() => handlePipClick(i)}
               />
@@ -241,8 +251,8 @@ const ServantCardComponent = ({
             {skillCur.map((v, i) => (
               <div
                 key={i}
-                className={`c-sum-card sk${v >= gtSkill ? ' done' : ''}`}
-                onPointerDown={() => handlePointerDown('skill', i, v)}
+                className={`c-sum-card sk${v >= gtSkill ? ' done' : ''}${pressedKey === `skill-${i}` ? ' is-pressing' : ''}`}
+                onPointerDown={() => handlePointerDown('skill', i, v, `skill-${i}`)}
                 onPointerUp={handlePointerEndOrLeave}
                 onPointerLeave={handlePointerEndOrLeave}
                 onPointerCancel={handlePointerEndOrLeave}
@@ -258,8 +268,8 @@ const ServantCardComponent = ({
             {appendCur.map((v, i) => (
               <div
                 key={i}
-                className={`c-sum-card ap${v >= gtAppend ? ' done' : ''}`}
-                onPointerDown={() => handlePointerDown('appendSkill', i, v)}
+                className={`c-sum-card ap${v >= gtAppend ? ' done' : ''}${pressedKey === `append-${i}` ? ' is-pressing' : ''}`}
+                onPointerDown={() => handlePointerDown('appendSkill', i, v, `append-${i}`)}
                 onPointerUp={handlePointerEndOrLeave}
                 onPointerLeave={handlePointerEndOrLeave}
                 onPointerCancel={handlePointerEndOrLeave}
