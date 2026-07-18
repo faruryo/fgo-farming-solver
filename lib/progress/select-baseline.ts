@@ -1,4 +1,5 @@
 import type { ProgressResponse, PeriodSummary } from './types'
+import { LAP_TIER_THRESHOLDS } from './tier'
 
 export type WindowKey = 'd30' | 'd60' | 'd90'
 
@@ -22,9 +23,12 @@ type Candidate = {
 
 // design.md D2 準拠の周/日正規化。elapsedMinutes<=0 でも laps===0 なら 0 とみなす
 // (経過ゼロで前進も無い = 変化ゼロ)。laps が未算出(undefined)なら常に undefined。
+// elapsedMinutes<=0 かつ laps>0 は classifyTier の「経過ゼロで正の値は large 扱い」
+// (tier.ts)と整合させ、large しきい値相当の perDay を返す(選定から不当に除外させない)。
 const perDay = (laps: number | undefined, elapsedMinutes: number): number | undefined => {
-  if (laps != null && elapsedMinutes > 0) return laps / (elapsedMinutes / 1440)
-  return laps === 0 ? 0 : undefined
+  if (laps == null) return undefined
+  if (elapsedMinutes > 0) return laps / (elapsedMinutes / 1440)
+  return laps > 0 ? LAP_TIER_THRESHOLDS.large : 0
 }
 
 // 比較対象にできるか: pastPosession が無い候補(degenerate/no_snapshot_for_period/

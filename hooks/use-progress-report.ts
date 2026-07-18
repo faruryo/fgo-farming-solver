@@ -93,6 +93,19 @@ export const useProgressReport = (
   //     とき tier を補完する(design.md D3/D4)。
   //   - itemsFarmed/itemsConsumed(個数集計)は表示専用として維持。
   // pastPosession が無い場合(初期データや dev モック)は元の値を保持。
+  // useMemo は data/drops のみを依存配列にしているため、localStorage の値そのものが
+  // (data/drops を変えずに)更新された場合は再計算されない。ここで生文字列を読んで
+  // 依存配列に含め、値が変わった際の再レンダリングで確実に再計算させる。
+  const rawPosession = typeof window !== 'undefined' ? localStorage.getItem('posession') : null
+  const rawTargets = typeof window !== 'undefined' ? localStorage.getItem('material/result') : null
+  const rawQuests = typeof window !== 'undefined' ? localStorage.getItem('quests') : null
+  const rawStockEnabled =
+    typeof window !== 'undefined' ? localStorage.getItem('efficiency/stockEnabled') : null
+  const rawStockBuffer =
+    typeof window !== 'undefined' ? localStorage.getItem('efficiency/stockBuffer') : null
+  const rawSurplusThreshold =
+    typeof window !== 'undefined' ? localStorage.getItem('efficiency/surplusThreshold') : null
+
   const current = useMemo<PeriodSummary | null>(() => {
     if (!data) return null
 
@@ -155,7 +168,16 @@ export const useProgressReport = (
       forwardApEquivalent: lv.forwardApEquivalent,
       effortLaps: lv.effortLaps,
     })
-  }, [data, drops])
+  }, [
+    data,
+    drops,
+    rawPosession,
+    rawTargets,
+    rawQuests,
+    rawStockEnabled,
+    rawStockBuffer,
+    rawSurplusThreshold,
+  ])
 
   return { current, loading, error }
 }
