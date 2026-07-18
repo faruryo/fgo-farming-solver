@@ -97,6 +97,12 @@ export type ForwardProgressInput = {
   pastPosession: CountMap | null | undefined
   stockBuffer: StockBuffer
   stockEnabled: boolean
+  /**
+   * 呼び出し側で resolveUnitPrices 済みなら渡す(省略時は内部で計算する)。
+   * drops/selectedQuestIds が同じなら pastPosession が異なっても単価表は不変なため、
+   * 複数窓(d30/d60/d90)分をまとめて算出する際に使い回して二重計算を避けられる。
+   */
+  unitPrices?: Map<string, UnitPrice>
 }
 
 export type ForwardProgress = {
@@ -124,10 +130,11 @@ export const computeForwardProgress = (
     pastPosession,
     stockBuffer,
     stockEnabled,
+    unitPrices: precomputedUnitPrices,
   } = input
   if (pastPosession == null) return null
 
-  const unitPrices = resolveUnitPrices(drops, selectedQuestIds)
+  const unitPrices = precomputedUnitPrices ?? resolveUnitPrices(drops, selectedQuestIds)
   let forwardLaps = 0
   let forwardApEquivalent = 0
 
@@ -164,10 +171,12 @@ export const computeEffortLaps = (
   drops: Drops,
   selectedQuestIds: string[],
   pastPosession: CountMap | null | undefined,
-  currentPosession: CountMap
+  currentPosession: CountMap,
+  /** 呼び出し側で resolveUnitPrices 済みなら渡す(省略時は内部で計算する)。 */
+  precomputedUnitPrices?: Map<string, UnitPrice>
 ): number => {
   if (pastPosession == null) return 0
-  const unitPrices = resolveUnitPrices(drops, selectedQuestIds)
+  const unitPrices = precomputedUnitPrices ?? resolveUnitPrices(drops, selectedQuestIds)
   let effortLaps = 0
 
   for (const item of drops.items) {

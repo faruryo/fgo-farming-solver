@@ -98,14 +98,25 @@ export const fetchAllSnapshotsByPeriod = async (
   const list = results || []
 
   // 30/60/90日前それぞれに最も近い候補を独立に選定する(design.md D2/D3)。
-  // 同一スナップショットに複数ターゲットが解決してもよい(dedupはクライアント側の責務)。
+  // 同一スナップショットに複数ターゲットが解決することが多い(履歴が90日分無い間は
+  // 常にそうなる)ため、id が同じ行は JSON.parse を使い回して二重処理を避ける。
   const d30Row = selectBaselineRow(list, nowMs - 30 * DAY_MS)
   const d60Row = selectBaselineRow(list, nowMs - 60 * DAY_MS)
   const d90Row = selectBaselineRow(list, nowMs - 90 * DAY_MS)
 
+  const parsedById = new Map<string, Snapshot>()
+  const resolve = (row: typeof d30Row): Snapshot | null => {
+    if (!row) return null
+    const cached = parsedById.get(row.id)
+    if (cached) return cached
+    const parsed = parseSnapshot(row)
+    parsedById.set(row.id, parsed)
+    return parsed
+  }
+
   return {
-    d30: d30Row ? parseSnapshot(d30Row) : null,
-    d60: d60Row ? parseSnapshot(d60Row) : null,
-    d90: d90Row ? parseSnapshot(d90Row) : null,
+    d30: resolve(d30Row),
+    d60: resolve(d60Row),
+    d90: resolve(d90Row),
   }
 }

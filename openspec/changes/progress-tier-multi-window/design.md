@@ -77,8 +77,11 @@ tier = classifyTier(採用候補.forwardLaps, 採用候補.elapsedMinutes)
 ## Risks / Trade-offs
 
 - [P1新米ペルソナがlarge到達不能になる(D1)] → 唯一の利用者は新米ではないため実害なし。将来複数ユーザー化する場合は再検討が必要(Non-Goalsに明記)。
-- [3候補それぞれでforward/effort計算を行うためクライアント計算量が3倍] → 単一ユーザー・月1回程度の表示更新のため無視できる規模。
-- [d30/d60/d90が同一snapshotに解決するケース(蓄積データが少ない期間)] → dedupしても実害はないが、実装時に「3候補全て同じ結果」になることをテストで確認する。
+- [3候補それぞれでforward/effort計算を行うためクライアント計算量が3倍] → 単一ユーザー・月1回程度の表示更新のため絶対量としては無視できる規模だが、「同じ入力を3回計算する」こと自体は素直な無駄のため以下のメモ化で解消した。
+  - サーバ(`fetchAllSnapshotsByPeriod`/`buildProgressResponse`): d30/d60/d90が同一snapshot idに解決する場合(履歴が90日分無い間は常態的)、JSON.parseと`buildPeriodSummary`(新規サーヴァント検出・育成成長計算等)をsnapshot id単位でメモ化し1回で済ませる。period フィールドだけ差し替えて返す。
+  - クライアント(`hooks/use-progress-report.ts`): `resolveUnitPrices`(単価表)は`pastPosession`に依存しないため3窓×forward/effortで最大6回呼ばれていたのを、`useMemo`ブロック内で1回だけ算出し`computeForwardProgress`/`computeEffortLaps`へ渡すよう変更(両関数に任意の`unitPrices`引数を追加、省略時は従来どおり内部計算)。
+  - CDN/edgeキャッシュは不採用: `/api/progress`はセッション認証付きPOSTで、`buildPeriodSummary`の計算がリクエストボディの`current`(ライブのchaldea状態)に依存するため、リクエストごとに実質ユニークでキャッシュヒットしない。キャッシュキー設計の複雑さが増すだけでメリットが薄く、リクエスト内メモ化のほうが単純で効果的。
+- [d30/d60/d90が同一snapshotに解決するケース(蓄積データが少ない期間)] → 上記メモ化の主対象。`summary.test.ts`でdetectNewServantsの呼び出し回数を1回に限定するテスト、`snapshot.test.ts`で同一オブジェクト参照になることを検証するテストで確認済み。
 - [しきい値100/30/15はユーザー1名の実感による指定値で、ゲーム内メカニクスへの厳密なアンカーが無い] → 許容(Non-Goals)。将来「自然回復ベースの再アンカー」を別changeで検討可能なようdesign.mdに記録する。
 
 ## Migration Plan

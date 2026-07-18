@@ -85,6 +85,9 @@ describe('fetchAllSnapshotsByPeriod (30/60/90日それぞれの候補選定)', (
     expect(result.d30?.id).toBe('u1:2026-06-06')
     expect(result.d60?.id).toBe('u1:2026-06-06')
     expect(result.d90?.id).toBe('u1:2026-06-06')
+    // 同一行への複数解決は JSON.parse を1回だけ実行して使い回す(同一オブジェクト参照)。
+    expect(result.d60).toBe(result.d30)
+    expect(result.d90).toBe(result.d30)
   })
 
   it('スナップショットが無ければ全て null', async () => {

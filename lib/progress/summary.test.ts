@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { buildPeriodSummary, buildProgressResponse, type BuildContext } from './summary'
 import type { Snapshot } from './snapshot'
 import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import type { D1Database } from '@cloudflare/workers-types'
+import * as tier from './tier'
 
 const makeCtx = (chaldea: ChaldeaState | null = null): BuildContext => ({
   current: {
@@ -191,5 +192,38 @@ describe('buildProgressResponse (d30/d60/d90 の3窓を返す)', () => {
     expect(response.periods.d30?.fallback).toBe('first_time')
     expect(response.periods.d60?.fallback).toBe('first_time')
     expect(response.periods.d90?.fallback).toBe('first_time')
+  })
+
+  it('d30/d60/d90 が同一スナップショットに解決するとき、比較計算(detectNewServants)を1回だけ実行する', async () => {
+    // 履歴が1件しかない(=90日分蓄積されていない)、単一ユーザー運用では常態的なケース。
+    const db = makeMockDb([
+      {
+        id: 'u1:2026-06-02',
+        user_id: 'u1',
+        data: JSON.stringify({ posession: { '6503': 3 } }),
+        created_at: '2026-06-02T00:00:00.000Z',
+      },
+    ])
+    const spy = vi.spyOn(tier, 'detectNewServants')
+
+    const response = await buildProgressResponse({
+      db,
+      userId: 'u1',
+      current: {
+        chaldea: null,
+        itemCounts: null,
+        checkedQuests: null,
+        totalAp: 1000,
+        generatedAtIso: '2026-07-01T00:00:00.000Z',
+      },
+      servants: [],
+    })
+
+    // 3窓とも同一 snapshot(id: u1:2026-06-02)に解決するため、重い比較計算は1回で
+    // 済ませ、結果を使い回して period だけ差し替える。
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(response.periods.d30?.growthTotal).toBe(response.periods.d60?.growthTotal)
+    expect(response.periods.d30?.pastPosession).toEqual(response.periods.d90?.pastPosession)
+    spy.mockRestore()
   })
 })

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
-import { computeForwardProgress, computeEffortLaps } from '../lib/progress/lap-value'
+import { computeForwardProgress, computeEffortLaps, resolveUnitPrices } from '../lib/progress/lap-value'
 import { computeItemThroughput } from '../lib/progress/throughput'
 import { finalizeBaselineSummary } from '../lib/progress/finalize-baseline'
 import {
@@ -108,6 +108,9 @@ export const useProgressReport = (
     // 全窓とも未算出のまま(selectBestWindow が d30 優先のフォールバック選定を行う)。
     const lapValuesByWindow: Partial<Record<WindowKey, WindowLapValues>> = {}
     if (drops && drops.items.length > 0) {
+      // 単価表は pastPosession に依存しないため、3窓分をまとめて算出する前に
+      // 1回だけ解決して使い回す(窓ごとの再計算を避ける)。
+      const unitPrices = resolveUnitPrices(drops, selectedQuestIds)
       for (const key of WINDOW_ORDER) {
         const summary = data.periods[key]
         if (!summary || !summary.pastPosession) continue
@@ -119,12 +122,14 @@ export const useProgressReport = (
           pastPosession: summary.pastPosession,
           stockBuffer,
           stockEnabled,
+          unitPrices,
         })
         const effortLaps = computeEffortLaps(
           drops,
           selectedQuestIds,
           summary.pastPosession,
-          posession
+          posession,
+          unitPrices
         )
         lapValuesByWindow[key] = {
           forwardLaps: forward?.forwardLaps,
