@@ -610,7 +610,7 @@ body {
 .c-mat-count-val.insufficient { color: var(--red); }
 .c-mat-count-input {
   background: var(--panel2); border: 1px solid var(--steel); color: var(--text);
-  font-family: var(--serif); font-size: 14px; font-weight: 700; width: 52px; text-align: right; padding: 0 4px; outline: none;
+  font-family: var(--serif); font-size: 14px; font-weight: 700; width: 72px; text-align: right; padding: 0 4px; outline: none;
 }
 
 /* ===== EMPTY ===== */
