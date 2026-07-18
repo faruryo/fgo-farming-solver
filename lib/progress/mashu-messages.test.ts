@@ -3,7 +3,7 @@ import { selectMashuMessage } from './mashu-messages'
 import type { PeriodSummary } from './types'
 
 const base = (over: Partial<PeriodSummary> = {}): PeriodSummary => ({
-  period: 'previous',
+  period: 'd30',
   tier: 'none',
   growthTotal: 0,
   newServantCount: 0,

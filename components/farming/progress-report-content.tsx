@@ -75,19 +75,13 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
   const showFirstTime = summary.fallback === 'first_time'
   const showNoSnapshot = summary.fallback === 'no_snapshot_for_period'
 
-  // 「いつと比べて」のラベル。baseline は単一(約1ヶ月前に最も近いスナップショット)で
-  // 常に previous スロットに載るため、経過日数(昨日 / N日前)で時点を表す。
-  // week / month スロットは現在使用しない(後方互換のためのフォールバック表記のみ残置)。
+  // 「いつと比べて」のラベル。baseline は30/60/90日候補のうちperDay最大の窓が単一で
+  // 選ばれる(design.md D2)ため、どの窓が選ばれても経過日数(昨日 / N日前)で時点を表す。
   const compareLabel = (): string => {
-    if (summary.period === 'previous') {
-      const days = Math.round(summary.elapsedMinutes / 1440)
-      if (days <= 0) return t('progress-compare-today')
-      if (days === 1) return t('progress-compare-yesterday')
-      return t('progress-compare-days-ago', { count: days })
-    }
-    return summary.period === 'week'
-      ? t('progress-compare-week')
-      : t('progress-compare-month')
+    const days = Math.round(summary.elapsedMinutes / 1440)
+    if (days <= 0) return t('progress-compare-today')
+    if (days === 1) return t('progress-compare-yesterday')
+    return t('progress-compare-days-ago', { count: days })
   }
 
   return (

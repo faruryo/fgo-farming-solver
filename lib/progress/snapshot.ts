@@ -7,7 +7,7 @@ export type Snapshot = {
   createdAt: string
 }
 
-export type SnapshotPeriod = 'previous' | 'week' | 'month'
+export type SnapshotPeriod = 'd30' | 'd60' | 'd90'
 
 const dateKey = (date: Date = new Date()) => date.toISOString().slice(0, 10)
 
@@ -53,18 +53,17 @@ export const saveSnapshot = async (
     .run()
 }
 
-// 比較の相手(baseline)に選ぶ「約1ヶ月前に最も近い」スナップショットを返す。
-// ちょうど30日前のデータは通常存在しないため、30日前との時刻差が最小のものを採る。
-//   - 手持ちが全て直近(<1ヶ月)なら、自然と最も古いものが選ばれる(最長比較)。
-//   - データが貯まれば約1ヶ月前のものへ寄る。
+// 比較の相手(baseline)に選ぶ「targetMs に最も近い」スナップショットを返す。
+// ちょうど targetMs のデータは通常存在しないため、targetMs との時刻差が最小のものを採る。
+//   - 手持ちが全て targetMs より新しいなら、自然と最も古いものが選ばれる(最長比較)。
+//   - データが貯まれば targetMs 付近のものへ寄る。
 // 「今(ライブ状態)」が比較の起点なので、baseline は常に過去側の1点のみ。
-const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
-
+// targetMs は呼び出し側が「now - 30日」「now - 60日」「now - 90日」等を渡す総称関数
+// (design.md D2/D3: 30/60/90日いずれの候補にも使い回す)。
 export const selectBaselineRow = <T extends { created_at: string }>(
   rows: T[],
-  nowMs: number
+  targetMs: number
 ): T | null => {
-  const targetMs = nowMs - ONE_MONTH_MS
   let best: T | null = null
   let bestDiff = Infinity
   for (const r of rows) {
@@ -79,9 +78,12 @@ export const selectBaselineRow = <T extends { created_at: string }>(
   return best
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 export const fetchAllSnapshotsByPeriod = async (
   db: D1Database,
-  userId: string
+  userId: string,
+  nowMs: number = Date.now()
 ): Promise<Record<SnapshotPeriod, Snapshot | null>> => {
   const { results } = await db
     .prepare(
@@ -95,13 +97,15 @@ export const fetchAllSnapshotsByPeriod = async (
 
   const list = results || []
 
-  // 単一比較: 約1ヶ月前に最も近いスナップショット1つを baseline(previous スロット)に
-  // 載せる。週/月スロットは廃し、比較相手はこの1点に集約する。
-  const baselineRow = selectBaselineRow(list, Date.now())
+  // 30/60/90日前それぞれに最も近い候補を独立に選定する(design.md D2/D3)。
+  // 同一スナップショットに複数ターゲットが解決してもよい(dedupはクライアント側の責務)。
+  const d30Row = selectBaselineRow(list, nowMs - 30 * DAY_MS)
+  const d60Row = selectBaselineRow(list, nowMs - 60 * DAY_MS)
+  const d90Row = selectBaselineRow(list, nowMs - 90 * DAY_MS)
 
   return {
-    previous: baselineRow ? parseSnapshot(baselineRow) : null,
-    week: null,
-    month: null,
+    d30: d30Row ? parseSnapshot(d30Row) : null,
+    d60: d60Row ? parseSnapshot(d60Row) : null,
+    d90: d90Row ? parseSnapshot(d90Row) : null,
   }
 }

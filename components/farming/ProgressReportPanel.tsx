@@ -2,11 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { ProgressResponse } from '../../lib/progress/types'
+import type { PeriodSummary } from '../../lib/progress/types'
 import { ProgressReportContent } from './progress-report-content'
 import { ServantPraise } from './ServantPraise'
 import { selectMashuMessage } from '../../lib/progress/mashu-messages'
-import { selectBaseline } from '../../lib/progress/select-baseline'
 
 export type ResultStats = {
   totalLap: number
@@ -15,20 +14,18 @@ export type ResultStats = {
 }
 
 export type ProgressReportPanelProps = {
-  data: ProgressResponse | null
+  current: PeriodSummary | null
   loading?: boolean
   stats?: ResultStats
   tooltips?: { lap: string; ap: string; cost: string }
 }
 
 export const ProgressReportPanel: React.FC<ProgressReportPanelProps> = ({
-  data,
+  current,
   loading = false,
   stats,
   tooltips,
 }) => {
-  // 比較基準は最古の存在スナップショット1つだけ(タブ廃止)。
-  const current = selectBaseline(data?.periods)
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {

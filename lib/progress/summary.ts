@@ -156,9 +156,7 @@ export const buildProgressResponse = async ({
   }
 
   const hasAnyPastSnapshot =
-    snapshots.previous != null ||
-    snapshots.week != null ||
-    snapshots.month != null
+    snapshots.d30 != null || snapshots.d60 != null || snapshots.d90 != null
 
   return {
     generatedAt: generatedAtIso,
@@ -166,19 +164,9 @@ export const buildProgressResponse = async ({
       totalAp: current.totalAp ?? 0,
     },
     periods: {
-      previous: buildPeriodSummary(
-        'previous',
-        snapshots.previous,
-        ctx,
-        hasAnyPastSnapshot
-      ),
-      week: buildPeriodSummary('week', snapshots.week, ctx, hasAnyPastSnapshot),
-      month: buildPeriodSummary(
-        'month',
-        snapshots.month,
-        ctx,
-        hasAnyPastSnapshot
-      ),
+      d30: buildPeriodSummary('d30', snapshots.d30, ctx, hasAnyPastSnapshot),
+      d60: buildPeriodSummary('d60', snapshots.d60, ctx, hasAnyPastSnapshot),
+      d90: buildPeriodSummary('d90', snapshots.d90, ctx, hasAnyPastSnapshot),
     },
   }
 }

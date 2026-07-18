@@ -32,11 +32,15 @@ export const detectNewServants = (
   return entries
 }
 
-// 5段階しきい値(1日あたり推定周回数)。design.md D2。一箇所に集約し調整可能にする。
+// 5段階しきい値(1日あたり推定周回数)。design.md 2026-07-18 の実測較正(ユーザー1名の
+// 体感に基づく指定値)による: legendary=100 / large=30 / medium=15。自然回復量
+// (288AP/日)への厳密なアンカーではない(比較窓を30/60/90日に拡張し「不当に低く出る」
+// 問題は窓選定側で解決したため、しきい値自体はユーザー最終判断の実測値を採用した)。
+// 一箇所に集約し調整可能にする。
 export const LAP_TIER_THRESHOLDS = {
-  legendary: 60,
-  large: 15,
-  medium: 5,
+  legendary: 100,
+  large: 30,
+  medium: 15,
 } as const
 
 // 5-tier classification (design.md D1/D2)。

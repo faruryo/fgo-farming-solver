@@ -95,8 +95,6 @@
     "progress-compare-today": "今日",
     "progress-compare-yesterday": "昨日",
     "progress-compare-days-ago": "{{count}}日前",
-    "progress-compare-week": "1週間前",
-    "progress-compare-month": "1ヶ月前",
     "progress-compare-caption": "{{label}}と比べて"
   },
   "items": {

@@ -6,8 +6,8 @@
       "totalAp": 35000
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -15,8 +15,8 @@
         "elapsedMinutes": 0,
         "fallback": "first_time"
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -24,8 +24,8 @@
         "elapsedMinutes": 10080,
         "fallback": "zero_progress"
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "medium",
         "growthTotal": 9,
         "newServantCount": 0,
@@ -52,8 +52,8 @@
       "totalAp": 35000
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -61,8 +61,8 @@
         "elapsedMinutes": 1440,
         "fallback": "zero_progress"
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -70,8 +70,8 @@
         "elapsedMinutes": 10080,
         "fallback": "zero_progress"
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -88,8 +88,8 @@
       "totalAp": 34200
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "small",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -102,8 +102,8 @@
         "effortLaps": 6,
         "itemsFarmed": 12
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "small",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -115,8 +115,8 @@
         "forwardYen": 165,
         "effortLaps": 20
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "small",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -137,8 +137,8 @@
       "totalAp": 32800
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "medium",
         "growthTotal": 12,
         "newServantCount": 0,
@@ -161,8 +161,8 @@
         "forwardYen": 91,
         "effortLaps": 11
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "medium",
         "growthTotal": 9,
         "newServantCount": 0,
@@ -180,8 +180,8 @@
         "forwardYen": 405,
         "effortLaps": 49
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "medium",
         "growthTotal": 9,
         "newServantCount": 0,
@@ -208,8 +208,8 @@
       "totalAp": 28000
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "large",
         "growthTotal": 15,
         "newServantCount": 1,
@@ -233,8 +233,8 @@
         "effortLaps": 55,
         "itemsFarmed": 180
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "large",
         "growthTotal": 24,
         "newServantCount": 1,
@@ -257,8 +257,8 @@
         "forwardYen": 1447,
         "effortLaps": 210
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "large",
         "growthTotal": 24,
         "newServantCount": 1,
@@ -290,8 +290,8 @@
       "totalAp": 12000
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "legendary",
         "growthTotal": 45,
         "newServantCount": 2,
@@ -315,8 +315,8 @@
         "effortLaps": 168,
         "itemsFarmed": 620
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "legendary",
         "growthTotal": 60,
         "newServantCount": 2,
@@ -339,8 +339,8 @@
         "forwardYen": 4051,
         "effortLaps": 560
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "legendary",
         "growthTotal": 72,
         "newServantCount": 3,
@@ -372,8 +372,8 @@
       "totalAp": 41000
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "large",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -384,8 +384,8 @@
         "effortLaps": 180,
         "itemsFarmed": 260
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "large",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -396,8 +396,8 @@
         "effortLaps": 630,
         "itemsFarmed": 900
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "large",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -417,8 +417,8 @@
       "totalAp": 31000
     },
     "periods": {
-      "previous": {
-        "period": "previous",
+      "d30": {
+        "period": "d30",
         "tier": "small",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -430,8 +430,8 @@
         "forwardYen": 25,
         "effortLaps": 3
       },
-      "week": {
-        "period": "week",
+      "d60": {
+        "period": "d60",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,
@@ -439,8 +439,8 @@
         "elapsedMinutes": 0,
         "fallback": "no_snapshot_for_period"
       },
-      "month": {
-        "period": "month",
+      "d90": {
+        "period": "d90",
         "tier": "none",
         "growthTotal": 0,
         "newServantCount": 0,

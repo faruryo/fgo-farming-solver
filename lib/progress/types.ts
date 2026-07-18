@@ -56,8 +56,8 @@ export type ProgressResponse = {
     totalAp: number
   }
   periods: {
-    previous: PeriodSummary | null
-    week: PeriodSummary | null
-    month: PeriodSummary | null
+    d30: PeriodSummary | null
+    d60: PeriodSummary | null
+    d90: PeriodSummary | null
   }
 }
