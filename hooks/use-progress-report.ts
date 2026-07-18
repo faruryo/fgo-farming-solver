@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import type { ProgressResponse } from '../lib/progress/types'
+import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
-import { computeForwardProgress, computeEffortLaps } from '../lib/progress/lap-value'
+import { computeForwardProgress, computeEffortLaps, resolveUnitPrices } from '../lib/progress/lap-value'
 import { computeItemThroughput } from '../lib/progress/throughput'
 import { finalizeBaselineSummary } from '../lib/progress/finalize-baseline'
-import { selectBaseline } from '../lib/progress/select-baseline'
+import {
+  selectBestWindow,
+  WINDOW_ORDER,
+  type WindowKey,
+  type WindowLapValues,
+} from '../lib/progress/select-baseline'
 import { resolveStockBuffer, type PartialStockBuffer, type SurplusThreshold } from '../lib/quest-efficiency'
 
 const readJson = <T,>(key: string): T | null => {
@@ -30,7 +35,7 @@ const buildCurrentState = (totalAp: number | null) => ({
 })
 
 export type UseProgressReport = {
-  data: ProgressResponse | null
+  current: PeriodSummary | null
   loading: boolean
   error: string | null
 }
@@ -76,8 +81,10 @@ export const useProgressReport = (
     return () => controller.abort()
   }, [load])
 
-  // 進捗指標をクライアント算出する。比較基準は最古の存在スナップショット1つ
-  // (selectBaseline)のみ。
+  // 進捗指標をクライアント算出する。比較基準は d30/d60/d90 の3候補それぞれについて
+  // forwardLaps/effortLaps を算出したうえで、design.md D2 のアルゴリズム
+  // (forwardPerDay 最大 → 無ければ effortPerDay 最大)で1候補を選定する
+  // (selectBestWindow、design.md D2b: 選定はここに一本化し、表示側では再選定しない)。
   //   - tier の主指標: forwardLaps(バッファ込み実効不足の周回換算、消費中立)。
   //     drops があれば lap-value.ts の computeForwardProgress で算出する。現在所持を
   //     過去所持で下限クランプしてから合算するため、育成消費が純増分を目減りさせる
@@ -86,59 +93,91 @@ export const useProgressReport = (
   //     とき tier を補完する(design.md D3/D4)。
   //   - itemsFarmed/itemsConsumed(個数集計)は表示専用として維持。
   // pastPosession が無い場合(初期データや dev モック)は元の値を保持。
-  const enriched = useMemo<ProgressResponse | null>(() => {
+  // useMemo は data/drops のみを依存配列にしているため、localStorage の値そのものが
+  // (data/drops を変えずに)更新された場合は再計算されない。ここで生文字列を読んで
+  // 依存配列に含め、値が変わった際の再レンダリングで確実に再計算させる。
+  const rawPosession = typeof window !== 'undefined' ? localStorage.getItem('posession') : null
+  const rawTargets = typeof window !== 'undefined' ? localStorage.getItem('material/result') : null
+  const rawQuests = typeof window !== 'undefined' ? localStorage.getItem('quests') : null
+  const rawStockEnabled =
+    typeof window !== 'undefined' ? localStorage.getItem('efficiency/stockEnabled') : null
+  const rawStockBuffer =
+    typeof window !== 'undefined' ? localStorage.getItem('efficiency/stockBuffer') : null
+  const rawSurplusThreshold =
+    typeof window !== 'undefined' ? localStorage.getItem('efficiency/surplusThreshold') : null
+
+  const current = useMemo<PeriodSummary | null>(() => {
     if (!data) return null
 
-    const baseline = selectBaseline(data.periods)
-    if (!baseline || !baseline.pastPosession) return data
-
     const posession = readJson<Record<string, number>>('posession') ?? {}
+    const targets = readJson<Record<string, number>>('material/result') ?? {}
+    const selectedQuestIds = readJson<string[]>('quests') ?? []
+    const stockEnabled = readJson<boolean>('efficiency/stockEnabled') ?? false
+    const rawStockBuffer = readJson<PartialStockBuffer>('efficiency/stockBuffer')
+    const legacySurplusThreshold = readJson<SurplusThreshold>('efficiency/surplusThreshold')
+    const stockBuffer = resolveStockBuffer(rawStockBuffer, legacySurplusThreshold)
+
+    // 各窓(d30/d60/d90)ごとに前進周回・AP相当・労力周回を算出する。drops が無ければ
+    // 全窓とも未算出のまま(selectBestWindow が d30 優先のフォールバック選定を行う)。
+    const lapValuesByWindow: Partial<Record<WindowKey, WindowLapValues>> = {}
+    if (drops && drops.items.length > 0) {
+      // 単価表は pastPosession に依存しないため、3窓分をまとめて算出する前に
+      // 1回だけ解決して使い回す(窓ごとの再計算を避ける)。
+      const unitPrices = resolveUnitPrices(drops, selectedQuestIds)
+      for (const key of WINDOW_ORDER) {
+        const summary = data.periods[key]
+        if (!summary || !summary.pastPosession) continue
+        const forward = computeForwardProgress({
+          drops,
+          selectedQuestIds,
+          targets,
+          currentPosession: posession,
+          pastPosession: summary.pastPosession,
+          stockBuffer,
+          stockEnabled,
+          unitPrices,
+        })
+        const effortLaps = computeEffortLaps(
+          drops,
+          selectedQuestIds,
+          summary.pastPosession,
+          posession,
+          unitPrices
+        )
+        lapValuesByWindow[key] = {
+          forwardLaps: forward?.forwardLaps,
+          forwardApEquivalent: forward?.forwardApEquivalent,
+          effortLaps,
+        }
+      }
+    }
+
+    const baseline = selectBestWindow(data.periods, lapValuesByWindow)
+    if (!baseline || !baseline.pastPosession) return baseline
+
     const { itemsFarmed, itemsConsumed } = computeItemThroughput(
       baseline.pastPosession,
       posession
     )
+    const lv = lapValuesByWindow[baseline.period] ?? {}
 
-    // 前進周回・AP相当・労力周回は drops(ドロップ率)が必要。無ければ未算出のまま。
-    let forwardLaps: number | undefined
-    let forwardApEquivalent: number | undefined
-    let effortLaps: number | undefined
-    if (drops && drops.items.length > 0) {
-      const targets = readJson<Record<string, number>>('material/result') ?? {}
-      const selectedQuestIds = readJson<string[]>('quests') ?? []
-      const stockEnabled = readJson<boolean>('efficiency/stockEnabled') ?? false
-      const rawStockBuffer = readJson<PartialStockBuffer>('efficiency/stockBuffer')
-      const legacySurplusThreshold = readJson<SurplusThreshold>('efficiency/surplusThreshold')
-      const stockBuffer = resolveStockBuffer(rawStockBuffer, legacySurplusThreshold)
-
-      const forward = computeForwardProgress({
-        drops,
-        selectedQuestIds,
-        targets,
-        currentPosession: posession,
-        pastPosession: baseline.pastPosession,
-        stockBuffer,
-        stockEnabled,
-      })
-      if (forward) {
-        forwardLaps = forward.forwardLaps
-        forwardApEquivalent = forward.forwardApEquivalent
-      }
-      effortLaps = computeEffortLaps(drops, selectedQuestIds, baseline.pastPosession, posession)
-    }
-
-    const finalized = finalizeBaselineSummary(baseline, {
+    return finalizeBaselineSummary(baseline, {
       itemsFarmed,
       itemsConsumed,
-      forwardLaps,
-      forwardApEquivalent,
-      effortLaps,
+      forwardLaps: lv.forwardLaps,
+      forwardApEquivalent: lv.forwardApEquivalent,
+      effortLaps: lv.effortLaps,
     })
+  }, [
+    data,
+    drops,
+    rawPosession,
+    rawTargets,
+    rawQuests,
+    rawStockEnabled,
+    rawStockBuffer,
+    rawSurplusThreshold,
+  ])
 
-    return {
-      ...data,
-      periods: { ...data.periods, [baseline.period]: finalized },
-    }
-  }, [data, drops])
-
-  return { data: enriched, loading, error }
+  return { current, loading, error }
 }

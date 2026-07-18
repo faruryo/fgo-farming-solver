@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { buildPeriodSummary, type BuildContext } from './summary'
+import { describe, it, expect, vi } from 'vitest'
+import { buildPeriodSummary, buildProgressResponse, type BuildContext } from './summary'
 import type { Snapshot } from './snapshot'
 import type { ChaldeaState } from '../../hooks/create-chaldea-state'
+import type { D1Database } from '@cloudflare/workers-types'
+import * as tier from './tier'
 
 const makeCtx = (chaldea: ChaldeaState | null = null): BuildContext => ({
   current: {
@@ -35,7 +37,7 @@ const chaldeaWithAscension = (start: number, end: number): ChaldeaState =>
 describe('buildPeriodSummary (実プレイ基準の指標)', () => {
   it('過去所持(posession)を pastPosession として返す', () => {
     const summary = buildPeriodSummary(
-      'previous',
+      'd30',
       makeSnapshot({ posession: { '6503': 3, '6512': 10 } }),
       makeCtx(),
       true
@@ -50,7 +52,7 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
   it('育成で目標レンジが縮んだ分を growthTotal に集計する', () => {
     // 過去: 再臨 0→4(残り4)、現在: 2→4(残り2) → 2 育成した
     const summary = buildPeriodSummary(
-      'previous',
+      'd30',
       makeSnapshot({ material: chaldeaWithAscension(0, 4) }),
       makeCtx(chaldeaWithAscension(2, 4)),
       true
@@ -60,23 +62,23 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
   })
 
   it('スナップショットが無ければ first_time/no_snapshot フォールバック', () => {
-    const first = buildPeriodSummary('previous', null, makeCtx(), false)
+    const first = buildPeriodSummary('d30', null, makeCtx(), false)
     expect(first?.fallback).toBe('first_time')
     expect(first?.growthTotal).toBe(0)
 
-    const none = buildPeriodSummary('week', null, makeCtx(), true)
+    const none = buildPeriodSummary('d60', null, makeCtx(), true)
     expect(none?.fallback).toBe('no_snapshot_for_period')
   })
 
   it('posession が無いスナップショットでは pastPosession は undefined', () => {
-    const summary = buildPeriodSummary('previous', makeSnapshot({ items: {} }), makeCtx(), true)
+    const summary = buildPeriodSummary('d30', makeSnapshot({ items: {} }), makeCtx(), true)
     expect(summary?.pastPosession).toBeUndefined()
   })
 
   it('material も posession も無い degenerate スナップショットは比較不能(fallback)扱い', () => {
     // 旧 /api/solve が書いた `{items,quests}` のみの残骸を模した snapshot。
     const summary = buildPeriodSummary(
-      'week',
+      'd60',
       makeSnapshot({ items: '10:617,11:5', quests: '101,103' }),
       makeCtx(),
       true
@@ -102,7 +104,7 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
       nameById: new Map([['100100', 'アルトリア・ペンドラゴン']]),
     }
     const summary = buildPeriodSummary(
-      'previous',
+      'd30',
       makeSnapshot({ material: pastMaterial }),
       ctx,
       true
@@ -115,12 +117,113 @@ describe('buildPeriodSummary (実プレイ基準の指標)', () => {
 
   it('material だけ持つ(posession 欠落)スナップショットは degenerate にしない', () => {
     const summary = buildPeriodSummary(
-      'previous',
+      'd30',
       makeSnapshot({ material: chaldeaWithAscension(0, 4) }),
       makeCtx(chaldeaWithAscension(2, 4)),
       true
     )
     expect(summary?.fallback).toBeNull()
     expect(summary?.growthTotal).toBe(2)
+  })
+})
+
+// D1Database の最小モック: prepare().bind().all() チェーンのみ提供する。
+const makeMockDb = (
+  rows: { id: string; user_id: string; data: string; created_at: string }[]
+): D1Database =>
+  ({
+    prepare: () => ({
+      bind: () => ({
+        all: async () => ({ results: rows }),
+      }),
+    }),
+  }) as unknown as D1Database
+
+describe('buildProgressResponse (d30/d60/d90 の3窓を返す)', () => {
+  it('periods が d30/d60/d90 キーで PeriodSummary を返す', async () => {
+    const db = makeMockDb([
+      {
+        id: 'u1:2026-06-02',
+        user_id: 'u1',
+        data: JSON.stringify({ posession: { '6503': 3 } }),
+        created_at: '2026-06-02T00:00:00.000Z',
+      },
+    ])
+
+    const response = await buildProgressResponse({
+      db,
+      userId: 'u1',
+      current: {
+        chaldea: null,
+        itemCounts: null,
+        checkedQuests: null,
+        totalAp: 1000,
+        generatedAtIso: '2026-07-01T00:00:00.000Z',
+      },
+      servants: [],
+    })
+
+    expect(Object.keys(response.periods).sort()).toEqual(['d30', 'd60', 'd90'])
+    expect(response.periods.d30?.period).toBe('d30')
+    expect(response.periods.d60?.period).toBe('d60')
+    expect(response.periods.d90?.period).toBe('d90')
+    // 唯一のスナップショットが全ターゲットの最近傍として選ばれる。
+    expect(response.periods.d30?.fallback).toBeNull()
+    expect(response.periods.d60?.fallback).toBeNull()
+    expect(response.periods.d90?.fallback).toBeNull()
+  })
+
+  it('スナップショットが無ければ全期間 first_time フォールバック', async () => {
+    const db = makeMockDb([])
+
+    const response = await buildProgressResponse({
+      db,
+      userId: 'u1',
+      current: {
+        chaldea: null,
+        itemCounts: null,
+        checkedQuests: null,
+        totalAp: 1000,
+        generatedAtIso: '2026-07-01T00:00:00.000Z',
+      },
+      servants: [],
+    })
+
+    expect(response.periods.d30?.fallback).toBe('first_time')
+    expect(response.periods.d60?.fallback).toBe('first_time')
+    expect(response.periods.d90?.fallback).toBe('first_time')
+  })
+
+  it('d30/d60/d90 が同一スナップショットに解決するとき、比較計算(detectNewServants)を1回だけ実行する', async () => {
+    // 履歴が1件しかない(=90日分蓄積されていない)、単一ユーザー運用では常態的なケース。
+    const db = makeMockDb([
+      {
+        id: 'u1:2026-06-02',
+        user_id: 'u1',
+        data: JSON.stringify({ posession: { '6503': 3 } }),
+        created_at: '2026-06-02T00:00:00.000Z',
+      },
+    ])
+    const spy = vi.spyOn(tier, 'detectNewServants')
+
+    const response = await buildProgressResponse({
+      db,
+      userId: 'u1',
+      current: {
+        chaldea: null,
+        itemCounts: null,
+        checkedQuests: null,
+        totalAp: 1000,
+        generatedAtIso: '2026-07-01T00:00:00.000Z',
+      },
+      servants: [],
+    })
+
+    // 3窓とも同一 snapshot(id: u1:2026-06-02)に解決するため、重い比較計算は1回で
+    // 済ませ、結果を使い回して period だけ差し替える。
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(response.periods.d30?.growthTotal).toBe(response.periods.d60?.growthTotal)
+    expect(response.periods.d30?.pastPosession).toEqual(response.periods.d90?.pastPosession)
+    spy.mockRestore()
   })
 })

@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { finalizeBaselineSummary } from './finalize-baseline'
-import { selectBaseline } from './select-baseline'
-import type { PeriodSummary, ProgressResponse } from './types'
+import type { PeriodSummary } from './types'
 
 const base = (over: Partial<PeriodSummary> = {}): PeriodSummary => ({
-  period: 'previous',
+  period: 'd30',
   tier: 'none',
   growthTotal: 0,
   newServantCount: 0,
@@ -31,12 +30,12 @@ describe('finalizeBaselineSummary', () => {
   })
 
   it('forwardLaps>0 のとき tier は前進周回/日(classifyTier)で判定する', () => {
-    // 450周 / 30日: 15周/日 → large。
+    // 900周 / 30日: 30周/日 → large。
     const f = finalizeBaselineSummary(base({ elapsedMinutes: 1440 * 30 }), {
       itemsFarmed: 0,
       itemsConsumed: 0,
-      forwardLaps: 450,
-      forwardApEquivalent: 9000,
+      forwardLaps: 900,
+      forwardApEquivalent: 18000,
     })
     expect(f.tier).toBe('large')
     expect(f.fallback).toBeNull()
@@ -103,51 +102,6 @@ describe('finalizeBaselineSummary', () => {
   })
 })
 
-describe('enriched→panel ラウンドトリップ(回帰: 変化ゼロで no_snapshot 誤表示を防ぐ)', () => {
-  it('変化ゼロの日でも、最古の no_snapshot ではなく実比較済 previous を表示する', () => {
-    // サーバ応答: previous=実比較可能(06-06), week/month=該当スナップショット無し。
-    const serverPeriods: ProgressResponse['periods'] = {
-      previous: base({ period: 'previous' }),
-      week: {
-        period: 'week',
-        tier: 'none',
-        growthTotal: 0,
-        newServantCount: 0,
-        newServants: [],
-        servantGrowth: [],
-        elapsedMinutes: 0,
-        fallback: 'no_snapshot_for_period',
-        snapshotCreatedAt: null,
-      },
-      month: {
-        period: 'month',
-        tier: 'none',
-        growthTotal: 0,
-        newServantCount: 0,
-        newServants: [],
-        servantGrowth: [],
-        elapsedMinutes: 0,
-        fallback: 'no_snapshot_for_period',
-        snapshotCreatedAt: null,
-      },
-    }
-
-    // 1) フックが baseline を選ぶ → previous。
-    const hookBaseline = selectBaseline(serverPeriods)
-    expect(hookBaseline?.period).toBe('previous')
-
-    // 2) フックが enriched で変化ゼロを確定 → previous に zero_progress を付与。
-    const finalized = finalizeBaselineSummary(hookBaseline!, {
-      itemsFarmed: 0,
-      itemsConsumed: 0,
-    })
-    expect(finalized.fallback).toBe('zero_progress')
-    const enrichedPeriods = { ...serverPeriods, previous: finalized }
-
-    // 3) パネルが enriched で再度 selectBaseline → 最古の month(no_snapshot)へ
-    //    落ちず、実比較済の previous(zero_progress)を返すこと。
-    const panelBaseline = selectBaseline(enrichedPeriods)
-    expect(panelBaseline?.period).toBe('previous')
-    expect(panelBaseline?.fallback).toBe('zero_progress')
-  })
-})
+// 旧「enriched→panel ラウンドトリップ」回帰テストは D2b(hook一本化)で選定が1箇所に
+// 統合されたため削除。同等の懸念(変化ゼロでも no_snapshot に落ちない)は
+// select-baseline.test.ts の selectBestWindow テストでカバーする。

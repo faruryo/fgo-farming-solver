@@ -146,6 +146,27 @@ describe('computeForwardProgress (前進周回)', () => {
     // g: resolved=50, lapPrice=1/0.5=2 → 100。h: resolved=0(クランプ) → 0。合計100。
     expect(r!.forwardLaps).toBeCloseTo(100)
   })
+
+  it('unitPrices を渡すと内部で resolveUnitPrices を再計算せず、同じ結果を返す(design.md D2複数窓の単価表使い回し)', () => {
+    const drops = makeSingleItemDrops()
+    const selectedQuestIds = ['qA']
+    const precomputed = resolveUnitPrices(drops, selectedQuestIds)
+    // 単価表に無いはずの atlasId は含めない(内部再計算に切り替わっていないことの目印)。
+    precomputed.delete('6503')
+
+    const r = computeForwardProgress({
+      drops,
+      selectedQuestIds,
+      targets: { '6503': 100 },
+      currentPosession: { '6503': 50 },
+      pastPosession: { '6503': 30 },
+      stockBuffer: resolveStockBuffer(null, null),
+      stockEnabled: false,
+      unitPrices: precomputed,
+    })
+    // 渡した単価表(削除済み)がそのまま使われるため、価格が無く forwardLaps は加算されない。
+    expect(r!.forwardLaps).toBe(0)
+  })
 })
 
 describe('computeEffortLaps (労力周回)', () => {
@@ -175,5 +196,15 @@ describe('computeEffortLaps (労力周回)', () => {
     }
     const laps = computeEffortLaps(drops, ['qA'], { '6503': 0, '1': 1000 }, { '6503': 10, '1': 999999 })
     expect(laps).toBeCloseTo(10)
+  })
+
+  it('unitPrices を渡すと内部で resolveUnitPrices を再計算せず、渡した単価表を使う', () => {
+    const drops = makeSingleItemDrops()
+    const precomputed = resolveUnitPrices(drops, ['qA'])
+    precomputed.delete('6503')
+
+    const laps = computeEffortLaps(drops, ['qA'], { '6503': 10 }, { '6503': 35 }, precomputed)
+    // 渡した単価表(削除済み)がそのまま使われるため、価格が無く加算されない。
+    expect(laps).toBe(0)
   })
 })

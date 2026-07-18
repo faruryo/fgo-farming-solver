@@ -57,7 +57,7 @@ export const ProgressSection: React.FC = () => {
     ].filter(d => d.total > 0)
   }, [chaldea, t])
 
-  const showProgressPanel = progress.loading || progress.data != null
+  const showProgressPanel = progress.loading || progress.current != null
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,7 +67,7 @@ export const ProgressSection: React.FC = () => {
       </div>
 
       {showProgressPanel && (
-        <ProgressReportPanel data={progress.data} loading={progress.loading} />
+        <ProgressReportPanel current={progress.current} loading={progress.loading} />
       )}
 
       {!stats || stats.length === 0 ? (

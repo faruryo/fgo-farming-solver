@@ -156,9 +156,21 @@ export const buildProgressResponse = async ({
   }
 
   const hasAnyPastSnapshot =
-    snapshots.previous != null ||
-    snapshots.week != null ||
-    snapshots.month != null
+    snapshots.d30 != null || snapshots.d60 != null || snapshots.d90 != null
+
+  // 複数窓(d30/d60/d90)が同一スナップショットに解決することが多い(履歴が90日分
+  // 無い間は常にそうなる)ため、snapshot id が同じなら新規サーヴァント検出・育成成長
+  // 計算等(buildPeriodSummary)を使い回し、period だけ差し替える。
+  const summaryById = new Map<string, PeriodSummary>()
+  const buildFor = (period: SnapshotPeriod, snapshot: Snapshot | null): PeriodSummary | null => {
+    if (snapshot) {
+      const cached = summaryById.get(snapshot.id)
+      if (cached) return { ...cached, period }
+    }
+    const summary = buildPeriodSummary(period, snapshot, ctx, hasAnyPastSnapshot)
+    if (snapshot && summary) summaryById.set(snapshot.id, summary)
+    return summary
+  }
 
   return {
     generatedAt: generatedAtIso,
@@ -166,19 +178,9 @@ export const buildProgressResponse = async ({
       totalAp: current.totalAp ?? 0,
     },
     periods: {
-      previous: buildPeriodSummary(
-        'previous',
-        snapshots.previous,
-        ctx,
-        hasAnyPastSnapshot
-      ),
-      week: buildPeriodSummary('week', snapshots.week, ctx, hasAnyPastSnapshot),
-      month: buildPeriodSummary(
-        'month',
-        snapshots.month,
-        ctx,
-        hasAnyPastSnapshot
-      ),
+      d30: buildFor('d30', snapshots.d30),
+      d60: buildFor('d60', snapshots.d60),
+      d90: buildFor('d90', snapshots.d90),
     },
   }
 }

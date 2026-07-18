@@ -143,8 +143,6 @@
     "progress-compare-today": "today",
     "progress-compare-yesterday": "yesterday",
     "progress-compare-days-ago": "{{count}} days ago",
-    "progress-compare-week": "a week ago",
-    "progress-compare-month": "a month ago",
     "progress-compare-caption": "Compared to {{label}}"
   },
   "items": {
