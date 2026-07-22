@@ -262,7 +262,21 @@
     "ストック目安説明": "Rough guide: skill-maxing and fully ascending one 5★ needs about — Common 20/50/100, Gems 51 each, Monuments/Pieces 17 each (per item type). Defaults are ~3× that (≈3 servants of stock).",
     "目標に含める": "Include as goal",
     "通常素材": "Common Items",
-    "ストック込み": "Incl. Stock"
+    "ストック込み": "Incl. Stock",
+    "スクリーンショットから取り込む": "Import from screenshots",
+    "スクリーンショットから所持数を取り込む": "Import possession counts from screenshots",
+    "スクリーンショット取り込み説明": "Select one or more screenshots of your My Room item list. Images are processed in your browser and never sent externally.",
+    "ここに画像をドラッグ&ドロップ、または": "Drag & drop images here, or",
+    "画像を選択": "Choose images",
+    "対応外ファイルを除外しました": "Skipped unsupported files",
+    "解析する": "Analyze",
+    "解析中": "Analyzing",
+    "認識できたアイテムがありません": "No items were recognized",
+    "矛盾あり": "Conflict",
+    "要確認": "Needs review",
+    "元画像を確認": "Show source image",
+    "反映する": "Apply",
+    "キャンセル": "Cancel"
   },
   "events": {
     "ロトイベント一覧": "Lottery Events",
