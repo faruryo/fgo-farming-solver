@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ImageUp } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { StockTargetSettings } from '../common/StockTargetSettings'
 import { useLocalStorage } from '../../hooks/use-local-storage'
-import { PossessionImportDialog } from './possession-import/PossessionImportDialog'
+import { PossessionImportDialog } from '../common/possession-import/PossessionImportDialog'
 
 type ItemLike = {
   id: string
@@ -67,6 +68,7 @@ export const PossessionModal: React.FC<{
         </DialogHeader>
 
         <Button variant="outline" size="sm" className="self-start" onClick={() => setImportOpen(true)}>
+          <ImageUp />
           {t('スクリーンショットから取り込む')}
         </Button>
 
