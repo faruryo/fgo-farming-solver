@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ImageUp } from 'lucide-react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useStockTarget } from '../../hooks/use-stock-target'
+import { parsePossessionInput } from '../../lib/possession-count'
 import { EnrichedItem } from '../../lib/get-items'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
@@ -134,7 +135,7 @@ const MatCard = ({
               defaultValue={owned ?? 0}
               min={0}
               autoFocus
-              onBlur={e => { onChange(item.id.toString(), Number(e.target.value)); setEditing(false) }}
+              onBlur={e => { onChange(item.id.toString(), parsePossessionInput(e.target.value) ?? 0); setEditing(false) }}
               onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
             />
           ) : (

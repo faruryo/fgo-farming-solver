@@ -16,6 +16,7 @@ import { ItemIdentity } from '../common/ItemIdentity'
 import { StockTargetSettings } from '../common/StockTargetSettings'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { PossessionImportDialog } from '../common/possession-import/PossessionImportDialog'
+import { parsePossessionInput } from '../../lib/possession-count'
 
 type ItemLike = {
   id: string
@@ -55,8 +56,7 @@ export const PossessionModal: React.FC<{
   }, [items])
 
   const setOwned = (id: string, value: string) => {
-    const n = value === '' ? undefined : Math.max(0, Math.floor(Number(value)))
-    setPossession(prev => ({ ...prev, [id]: Number.isFinite(n as number) ? n : undefined }))
+    setPossession(prev => ({ ...prev, [id]: parsePossessionInput(value) }))
   }
 
   return (
