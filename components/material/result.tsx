@@ -4,8 +4,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ImageUp } from 'lucide-react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useStockTarget } from '../../hooks/use-stock-target'
+import { parsePossessionInput } from '../../lib/possession-count'
 import { EnrichedItem } from '../../lib/get-items'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
@@ -23,6 +25,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { StockTargetSettings } from '../common/StockTargetSettings'
+import { PossessionImportDialog } from '../common/possession-import/PossessionImportDialog'
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
 
 export type MaterialResultProps = {
@@ -132,7 +135,7 @@ const MatCard = ({
               defaultValue={owned ?? 0}
               min={0}
               autoFocus
-              onBlur={e => { onChange(item.id.toString(), Number(e.target.value)); setEditing(false) }}
+              onBlur={e => { onChange(item.id.toString(), parsePossessionInput(e.target.value) ?? 0); setEditing(false) }}
               onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
             />
           ) : (
@@ -181,6 +184,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   // stock は stockEnabled のときだけ選べる。
   const [filterMode, setFilterMode] = useState<'all' | 'short' | 'stock'>('all')
   const [stockOpen, setStockOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
@@ -227,6 +231,19 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   const onChange = useCallback((id: string, val: number) => {
     setPossession(prev => ({ ...prev, [id]: val }))
   }, [setPossession])
+
+  // PossessionImportDialog は常時マウントされ、Result は所持数入力のたびに再レンダー
+  // される。items を毎回 map し直すと閉じている間もダイアログ側の Map 再構築を招くため
+  // メモ化して参照を固定する。
+  const importItems = useMemo(
+    () => items.map(item => ({
+      id: item.id.toString(),
+      name: item.name,
+      icon: item.icon,
+      atlasId: item.id,
+    })),
+    [items]
+  )
 
   const goSolver = useCallback(() => {
     // 目標A: max(0, 必要数 − 所持)。stock-only 素材(充足済みだが buffer 分が不足)は含まれない。
@@ -372,6 +389,15 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             <button
               type="button"
               className="c-back-btn"
+              onClick={() => setImportOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              <ImageUp size={14} />
+              スクショから取り込む
+            </button>
+            <button
+              type="button"
+              className="c-back-btn"
               style={stockEnabled ? { color: 'var(--gold2)', borderColor: 'var(--gold-dim)' } : undefined}
               onClick={() => setStockOpen(true)}
             >
@@ -385,6 +411,15 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
                 <StockTargetSettings />
               </DialogContent>
             </Dialog>
+            <PossessionImportDialog
+              open={importOpen}
+              onOpenChange={setImportOpen}
+              items={importItems}
+              possession={possession}
+              onConfirm={updates =>
+                setPossession(prev => ({ ...prev, ...updates }))
+              }
+            />
             <Link href="/material" className="c-back-btn">← 設定に戻る</Link>
           </div>
         </div>

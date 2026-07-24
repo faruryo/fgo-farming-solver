@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ImageUp } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -10,9 +11,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { StockTargetSettings } from '../common/StockTargetSettings'
 import { useLocalStorage } from '../../hooks/use-local-storage'
+import { PossessionImportDialog } from '../common/possession-import/PossessionImportDialog'
+import { parsePossessionInput } from '../../lib/possession-count'
 
 type ItemLike = {
   id: string
@@ -39,6 +43,7 @@ export const PossessionModal: React.FC<{
     'posession',
     {},
   )
+  const [importOpen, setImportOpen] = useState(false)
 
   const grouped = useMemo(() => {
     const map = new Map<string, ItemLike[]>()
@@ -51,8 +56,7 @@ export const PossessionModal: React.FC<{
   }, [items])
 
   const setOwned = (id: string, value: string) => {
-    const n = value === '' ? undefined : Math.max(0, Math.floor(Number(value)))
-    setPossession(prev => ({ ...prev, [id]: Number.isFinite(n as number) ? n : undefined }))
+    setPossession(prev => ({ ...prev, [id]: parsePossessionInput(value) }))
   }
 
   return (
@@ -62,6 +66,11 @@ export const PossessionModal: React.FC<{
           <DialogTitle>{t('所持数を登録')}</DialogTitle>
           <DialogDescription>{t('所持数モーダル説明')}</DialogDescription>
         </DialogHeader>
+
+        <Button variant="outline" size="sm" className="self-start" onClick={() => setImportOpen(true)}>
+          <ImageUp />
+          {t('スクリーンショットから取り込む')}
+        </Button>
 
         <StockTargetSettings />
 
@@ -104,6 +113,16 @@ export const PossessionModal: React.FC<{
           ))}
         </div>
       </DialogContent>
+
+      <PossessionImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        items={items}
+        possession={possession}
+        onConfirm={(updates) =>
+          setPossession((prev) => ({ ...prev, ...updates }))
+        }
+      />
     </Dialog>
   )
 }
