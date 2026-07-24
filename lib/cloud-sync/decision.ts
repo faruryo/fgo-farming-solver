@@ -1,8 +1,6 @@
 // Pure decision logic for cloud sync, extracted from hooks/use-cloud-sync.ts.
-// No window/localStorage access so the clean/dirty × newer/older × device
-// state machine can be regression-tested in Vitest's node environment
-// (the project doesn't use @testing-library/react — see the note in
-// hooks/use-dashboard-result.test.ts).
+// No window/localStorage access keeps the clean/dirty × newer/older × device
+// state machine fast to test; hook-level wiring is covered separately.
 
 export type CloudMetadata = {
   updatedAt: string
@@ -14,6 +12,28 @@ export type LocalMetadata = {
   deviceId: string
   lastSyncedAt?: string
 }
+
+export const INITIAL_SYNC_TIMESTAMP = new Date(0).toISOString()
+
+export const createInitialLocalMetadata = (
+  deviceId: string
+): LocalMetadata => ({
+  updatedAt: INITIAL_SYNC_TIMESTAMP,
+  deviceId,
+  lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+})
+
+export const isInitialSyncMetadata = (metadata: LocalMetadata): boolean =>
+  metadata.updatedAt === INITIAL_SYNC_TIMESTAMP &&
+  metadata.lastSyncedAt === INITIAL_SYNC_TIMESTAMP
+
+export const normalizeLocalMetadata = (
+  metadata: LocalMetadata
+): LocalMetadata =>
+  metadata.updatedAt === INITIAL_SYNC_TIMESTAMP &&
+  metadata.lastSyncedAt === undefined
+    ? { ...metadata, lastSyncedAt: INITIAL_SYNC_TIMESTAMP }
+    : metadata
 
 // Tolerated clock difference between devices before cloud counts as "newer".
 export const CLOCK_SKEW_MS = 1000

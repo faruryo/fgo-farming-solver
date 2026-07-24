@@ -9,11 +9,14 @@ import { getStats } from '../components/cloud/parts/stats-logic'
 import {
   CloudMetadata,
   LocalMetadata,
+  createInitialLocalMetadata,
   decideSyncAction,
+  isInitialSyncMetadata,
   isResumeTrigger,
   markDirty,
   metadataAfterApply,
   metadataAfterSave,
+  normalizeLocalMetadata,
   shouldRefetchOnResume,
 } from '../lib/cloud-sync/decision'
 
@@ -75,15 +78,22 @@ const [isSaving, setIsSaving] = useState(false)
 
   // Local metadata tracking
   const getLocalMetadata = useCallback((): LocalMetadata => {
-    if (typeof window === 'undefined') return { updatedAt: new Date(0).toISOString(), deviceId: 'server' }
+    if (typeof window === 'undefined') return createInitialLocalMetadata('server')
     const raw = localStorage.getItem(LOCAL_METADATA_KEY)
-    if (raw) return JSON.parse(raw) as unknown as LocalMetadata
-
-    // Initialize with epoch so cloud data is always recognized as newer on first login
-    const meta: LocalMetadata = {
-      updatedAt: new Date(0).toISOString(),
-      deviceId: Math.random().toString(36).substring(2, 10)
+    if (raw) {
+      const stored = JSON.parse(raw) as unknown as LocalMetadata
+      const normalized = normalizeLocalMetadata(stored)
+      if (normalized !== stored) {
+        localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(normalized))
+      }
+      return normalized
     }
+
+    // A new device starts clean at epoch. This lets a newer cloud save restore
+    // safely while a later real edit still breaks updatedAt === lastSyncedAt.
+    const meta = createInitialLocalMetadata(
+      Math.random().toString(36).substring(2, 10)
+    )
     localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(meta))
     return meta
   }, [])
@@ -138,9 +148,15 @@ const [isSaving, setIsSaving] = useState(false)
   }, [getLocalMetadata, router])
 
   const checkConflict = useCallback((cloud: CloudData) => {
-    const action = decideSyncAction(getLocalMetadata(), cloud.metadata)
+    const local = getLocalMetadata()
+    const action = decideSyncAction(local, cloud.metadata)
     setHasConflict(action === 'conflict')
-    if (action === 'auto-apply' && autoSyncEnabled) {
+    // First-device restore is safe even before this device has opted into
+    // ongoing auto-sync. Existing devices still respect the local toggle.
+    if (
+      action === 'auto-apply' &&
+      (autoSyncEnabled || isInitialSyncMetadata(local))
+    ) {
       console.log('Safe Auto-Load (Sync) triggered')
       applyData(cloud.storage, cloud.metadata)
     }

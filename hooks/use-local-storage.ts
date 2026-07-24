@@ -44,7 +44,12 @@ export const useLocalStorage = <T>(
     const oldJson = localStorage.getItem(key)
     if (json !== oldJson) {
       localStorage.setItem(key, json)
-      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key } }))
+      // Persisting a missing key's default value is initialization, not a user
+      // edit. Reporting it as dirty can turn a fresh device's safe cloud restore
+      // into a false conflict. Later writes still emit the normal sync signal.
+      if (oldJson !== null) {
+        window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key } }))
+      }
     }
   }, [key, state, isInitialized, options?.useInitial])
 
