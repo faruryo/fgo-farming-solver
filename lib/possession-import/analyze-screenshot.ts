@@ -65,7 +65,6 @@ export const analyzeScreenshot = async (
       ocrLines: lines,
       atlasId: accepted?.atlasId ?? null,
       matchedName: accepted?.name ?? null,
-      matchScore: accepted?.score ?? 0,
       quantity,
       clipped: region.clipped,
       cropDataUrl: cardCanvas.toDataURL('image/png'),

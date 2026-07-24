@@ -28,8 +28,6 @@ export type CardCandidate = {
   atlasId: number | null
   /** ファジーマッチしたアイテム名（表示用） */
   matchedName: string | null
-  /** ファジーマッチの一致度（0-1） */
-  matchScore: number
   /** 読み取れた所持数（読み取れなかった場合 null） */
   quantity: number | null
   /** 画像端で見切れているカード由来か */
@@ -52,12 +50,4 @@ export type MergedCandidate = {
   hasConflict: boolean
   /** 見切れカードのみに由来し、要確認扱いか */
   needsReview: boolean
-  /** ユーザーが除外操作をしたか */
-  excluded: boolean
-}
-
-export type AnalyzeProgress = {
-  imageIndex: number
-  imageCount: number
-  stage: 'detecting-cards' | 'ocr' | 'matching'
 }

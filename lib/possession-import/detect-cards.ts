@@ -10,7 +10,9 @@ import { CardRegion } from './types'
  * 切り捨てられる不具合があったため、B-R の閾値のみによる判定に変更した。
  * 固定解像度・固定座標に依存しない、色ベースの閾値判定。
  */
-const isCardish = (r: number, g: number, b: number): boolean => b - r <= 80
+const CARDISH_MAX_B_MINUS_R = 80
+const isCardish = (r: number, g: number, b: number): boolean =>
+  b - r <= CARDISH_MAX_B_MINUS_R
 
 const ROW_DENSITY_THRESHOLD = 0.25
 const COL_DENSITY_THRESHOLD = 0.25

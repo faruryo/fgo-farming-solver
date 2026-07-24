@@ -232,6 +232,19 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     setPossession(prev => ({ ...prev, [id]: val }))
   }, [setPossession])
 
+  // PossessionImportDialog は常時マウントされ、Result は所持数入力のたびに再レンダー
+  // される。items を毎回 map し直すと閉じている間もダイアログ側の Map 再構築を招くため
+  // メモ化して参照を固定する。
+  const importItems = useMemo(
+    () => items.map(item => ({
+      id: item.id.toString(),
+      name: item.name,
+      icon: item.icon,
+      atlasId: item.id,
+    })),
+    [items]
+  )
+
   const goSolver = useCallback(() => {
     // 目標A: max(0, 必要数 − 所持)。stock-only 素材(充足済みだが buffer 分が不足)は含まれない。
     const plainDeficiency = (item: EnrichedItem): number =>
@@ -401,12 +414,7 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             <PossessionImportDialog
               open={importOpen}
               onOpenChange={setImportOpen}
-              items={items.map(item => ({
-                id: item.id.toString(),
-                name: item.name,
-                icon: item.icon,
-                atlasId: item.id,
-              }))}
+              items={importItems}
               possession={possession}
               onConfirm={updates =>
                 setPossession(prev => ({ ...prev, ...updates }))

@@ -54,7 +54,5 @@ export const findBestNameMatch = (
   return best
 }
 
-/** 高信頼とみなす類似度の閾値（実装フェーズで実サンプルを用いて調整） */
-export const HIGH_CONFIDENCE_NAME_SCORE = 0.8
 /** これを下回るマッチは識別失敗として扱う */
 export const MIN_ACCEPTABLE_NAME_SCORE = 0.5

@@ -8,7 +8,6 @@ const card = (overrides: Partial<CardCandidate>): CardCandidate => ({
   ocrLines: [],
   atlasId: null,
   matchedName: null,
-  matchScore: 0,
   quantity: null,
   clipped: false,
   cropDataUrl: '',

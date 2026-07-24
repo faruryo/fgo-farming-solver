@@ -3,7 +3,7 @@
  * 動的 import で読み込み、`/material` の初回バンドルには含まれない
  * （design.md Decision 5, tasks.md 3.10）。
  */
-export type OcrLineResult = { text: string; confidence: number }
+import { OcrLine } from './types'
 
 let servicePromise: Promise<import('ppu-paddle-ocr/web').PaddleOcrService> | null = null
 
@@ -28,7 +28,7 @@ const getService = async () => {
 
 export const recognizeCard = async (
   canvas: HTMLCanvasElement | OffscreenCanvas
-): Promise<OcrLineResult[]> => {
+): Promise<OcrLine[]> => {
   const service = await getService()
   const result = await service.recognize(canvas as unknown as HTMLCanvasElement, {
     noCache: true,

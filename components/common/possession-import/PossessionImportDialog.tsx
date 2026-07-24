@@ -18,6 +18,7 @@ import { analyzeScreenshot } from '../../../lib/possession-import/analyze-screen
 import { mergeCandidates } from '../../../lib/possession-import/merge-candidates'
 import { MatchTarget } from '../../../lib/possession-import/fuzzy-match'
 import { MergedCandidate } from '../../../lib/possession-import/types'
+import { parsePossessionInput } from '../../../lib/possession-count'
 
 type ItemLike = {
   id: string
@@ -127,9 +128,9 @@ export const PossessionImportDialog: React.FC<{
     for (const c of candidates) {
       if (excluded[c.atlasId]) continue
       const raw = editedValues[c.atlasId]
-      if (raw === undefined || raw === '') continue
-      const n = Math.max(0, Math.floor(Number(raw)))
-      if (Number.isFinite(n)) updates[c.atlasId] = n
+      if (raw === undefined) continue
+      const n = parsePossessionInput(raw)
+      if (n !== undefined) updates[c.atlasId] = n
     }
     onConfirm(updates as Record<string, number>)
     handleClose(false)

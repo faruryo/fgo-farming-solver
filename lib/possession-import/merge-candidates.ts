@@ -48,7 +48,6 @@ export const mergeCandidates = (
       sources,
       hasConflict,
       needsReview: onlyClipped || hasConflict || proposedQuantity === null,
-      excluded: false,
     })
   }
 
