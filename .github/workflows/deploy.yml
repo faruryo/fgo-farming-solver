@@ -67,6 +67,11 @@ jobs:
       - name: Test
         run: pnpm test --run
 
+      # Wall-clock benchmarks, run on their own so the parallel suite above
+      # does not contend for CPU and inflate the measurements.
+      - name: Perf test
+        run: pnpm test:perf
+
   build:
     name: Build
     needs: ci
