@@ -17,6 +17,12 @@ export const useTodoTasks = () => {
   const { data } = useDashboardMeta()
 
   useEffect(() => {
+    // イベント一覧が未取得(フェッチ中/失敗)の間は merge しない。events: [] で
+    // 自動生成すると mergeAutoTasks が保存済みの event-* を「開催終了」とみなして
+    // 削除し、取得後に復活させるため todoState が往復する。往復のたびに ls-sync が
+    // 飛んで同期メタデータが dirty になり、新規端末の初回クラウド復元が競合に負ける。
+    if (data == null) return
+
     // マウント直後は useLocalStorage 側の localStorage 読み込み(非同期な hydration
     // effect)がまだ state に反映されていない可能性がある。ここで直接 todoState
     // (レンダー時点のスナップショット)を使って merge・setTodoState してしまうと、
@@ -26,7 +32,7 @@ export const useTodoTasks = () => {
     // 関数更新形で「適用時点の最新 state」を基準に merge することで、
     // hydration の setState が先に適用されていればそれを正しく引き継げる。
     setTodoState((prev) => {
-      const autoTasks = generateAutoTasks({ now: Date.now(), settings, events: data?.events ?? [] })
+      const autoTasks = generateAutoTasks({ now: Date.now(), settings, events: data.events })
       const merged = mergeAutoTasks(prev, autoTasks)
       return JSON.stringify(merged) === JSON.stringify(prev) ? prev : merged
     })
