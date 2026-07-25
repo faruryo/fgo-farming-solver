@@ -114,6 +114,73 @@ describe('useCloudSync first-device restore', () => {
     expect(result.current.hasConflict).toBe(false)
   })
 
+  // 一度も同期していない端末での編集はクラウドと共通の祖先を持たない。時刻の新旧で
+  // 黙って片方に倒すと、ローカルが新しいだけでクラウドが復元されないまま autosave が
+  // クラウドを上書きしうる。
+  it('reports divergence instead of silently keeping a never-synced local edit', async () => {
+    localStorage.setItem('material', JSON.stringify({ all: { source: 'local-edit' } }))
+    localStorage.setItem(
+      'fgo_sync_metadata',
+      JSON.stringify({
+        updatedAt: '2026-07-26T00:00:00.000Z', // クラウドの保存時刻より後
+        deviceId: 'mobile-device',
+        lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+      }),
+    )
+
+    const { result } = renderHook(() => useCloudSync())
+
+    await waitFor(() => {
+      expect(result.current.isDivergent).toBe(true)
+    })
+    // バナーと autosave 中断は conflict と同じ扱い
+    expect(result.current.hasConflict).toBe(true)
+    expect(localStorage.getItem('material')).toBe(
+      JSON.stringify({ all: { source: 'local-edit' } }),
+    )
+
+    // 選択モーダルの「クラウドから復元」で解消する
+    result.current.applyData(
+      { material: CLOUD_MATERIAL },
+      { updatedAt: CLOUD_UPDATED_AT, deviceId: 'desktop-device' },
+    )
+    await waitFor(() => {
+      expect(result.current.isDivergent).toBe(false)
+    })
+    expect(result.current.hasConflict).toBe(false)
+    expect(localStorage.getItem('material')).toBe(CLOUD_MATERIAL)
+  })
+
+  it('does not report divergence when the cloud has no data to restore', async () => {
+    localStorage.setItem('material', JSON.stringify({ all: { source: 'local-edit' } }))
+    localStorage.setItem(
+      'fgo_sync_metadata',
+      JSON.stringify({
+        updatedAt: '2026-07-26T00:00:00.000Z',
+        deviceId: 'mobile-device',
+        lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+      }),
+    )
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        status: 200,
+        json: async () => ({
+          storage: {},
+          metadata: { updatedAt: CLOUD_UPDATED_AT, deviceId: 'desktop-device' },
+        }),
+      })),
+    )
+
+    const { result } = renderHook(() => useCloudSync())
+
+    await waitFor(() => {
+      expect(result.current.cloudData).not.toBeNull()
+    })
+    expect(result.current.isDivergent).toBe(false)
+    expect(result.current.hasConflict).toBe(false)
+  })
+
   it('keeps a real unsynced local edit and reports a conflict', async () => {
     const localMaterial = JSON.stringify({ all: { source: 'local-edit' } })
     localStorage.setItem('material', localMaterial)

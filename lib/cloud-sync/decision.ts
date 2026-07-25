@@ -44,22 +44,34 @@ export const CLOCK_SKEW_MS = 1000
 // resume" — the very bug the resume refetch exists to fix.
 export const RESUME_REFETCH_COOLDOWN_MS = 5000
 
-export type SyncAction = 'none' | 'auto-apply' | 'conflict'
+export type SyncAction = 'none' | 'auto-apply' | 'conflict' | 'divergent'
+
+// この端末がまだ一度もクラウドと同期していないこと。lastSyncedAt を持たない旧
+// メタデータも同じ扱いにする。
+export const hasNeverSynced = (metadata: LocalMetadata): boolean =>
+  (metadata.lastSyncedAt ?? INITIAL_SYNC_TIMESTAMP) === INITIAL_SYNC_TIMESTAMP
 
 // Decision core of checkConflict: cloud must be newer beyond the skew
 // allowance; a dirty local combined with another device's cloud write is a
 // conflict, anything else is safe to apply automatically.
 export const decideSyncAction = (
   local: LocalMetadata,
-  cloud: CloudMetadata
+  cloud: CloudMetadata,
+  cloudHasData = false
 ): SyncAction => {
+  const isLocalDirty = local.updatedAt !== local.lastSyncedAt
+
+  // 一度も同期していない端末のローカル編集は、クラウドの内容を取り込んだ上での
+  // 編集ではない。共通の祖先がないため updatedAt の新旧比較に意味がなく、どちらを
+  // 残すかはユーザーが選ぶ。時刻比較より先に判定する。
+  if (hasNeverSynced(local) && isLocalDirty && cloudHasData) return 'divergent'
+
   const cloudDate = new Date(cloud.updatedAt).getTime()
   const localDate = new Date(local.updatedAt).getTime()
   const isCloudNewer = cloudDate > localDate + CLOCK_SKEW_MS
   if (!isCloudNewer) return 'none'
 
-  const isLocalClean = local.updatedAt === local.lastSyncedAt
-  const isConflict = !isLocalClean && cloud.deviceId !== local.deviceId
+  const isConflict = isLocalDirty && cloud.deviceId !== local.deviceId
   return isConflict ? 'conflict' : 'auto-apply'
 }
 

@@ -73,6 +73,7 @@ const [isSaving, setIsSaving] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
   const [hasConflict, setHasConflict] = useState(false)
+  const [isDivergent, setIsDivergent] = useState(false)
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -133,6 +134,7 @@ const [isSaving, setIsSaving] = useState(false)
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newLocalMeta))
 
       setHasConflict(false)
+      setIsDivergent(false)
       // Per-key detail so useLocalStorage consumers re-read their key: a
       // detail-less event is ignored by their key filter, and stale live
       // state would silently write the pre-apply data back on the next edit.
@@ -149,8 +151,12 @@ const [isSaving, setIsSaving] = useState(false)
 
   const checkConflict = useCallback((cloud: CloudData) => {
     const local = getLocalMetadata()
-    const action = decideSyncAction(local, cloud.metadata)
-    setHasConflict(action === 'conflict')
+    const cloudHasData = KEYS.some((key) => typeof cloud.storage[key] === 'string')
+    const action = decideSyncAction(local, cloud.metadata, cloudHasData)
+    // divergent も解決が必要な状態なので、バナーと autosave 中断は conflict と同じ
+    // 扱いにする。区別が要るのは選択モーダルを出すかどうかだけ。
+    setHasConflict(action === 'conflict' || action === 'divergent')
+    setIsDivergent(action === 'divergent')
     // First-device restore is safe even before this device has opted into
     // ongoing auto-sync. Existing devices still respect the local toggle.
     if (
@@ -287,6 +293,7 @@ const [isSaving, setIsSaving] = useState(false)
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newMeta))
       setSaveStatus(true)
       setHasConflict(false)
+      setIsDivergent(false)
       await fetchCloudData()
     } catch (e) {
       console.error(e)
@@ -363,6 +370,7 @@ const [isSaving, setIsSaving] = useState(false)
     autoSyncEnabled,
     toggleAutoSync,
     hasConflict,
+    isDivergent,
     items
   }
 }
