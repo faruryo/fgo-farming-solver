@@ -52,10 +52,11 @@ describe('useTodoTasks', () => {
       })
     )
 
-    const syncEvents: string[] = []
+    const syncEvents: { key?: string; derived?: boolean }[] = []
     const listener = (e: Event) => {
-      const key = e instanceof CustomEvent ? (e.detail as { key?: string })?.key : undefined
-      if (key) syncEvents.push(key)
+      if (e instanceof CustomEvent) {
+        syncEvents.push((e.detail as { key?: string; derived?: boolean }) ?? {})
+      }
     }
     window.addEventListener('ls-sync', listener)
 
@@ -76,6 +77,42 @@ describe('useTodoTasks', () => {
 
       // 取得後は daily/weekly が増えるだけで、イベントタスクは消えない
       expect(storedTasks().map((t) => t.id)).toContain(EVENT_TASK.id)
+
+      // 自動生成の書き込みは派生値として通知され、未同期のユーザー変更にならない
+      expect(syncEvents).not.toEqual([])
+      expect(syncEvents.every((d) => d.key === 'todoState' && d.derived === true)).toBe(true)
+    } finally {
+      window.removeEventListener('ls-sync', listener)
+    }
+  })
+
+  // 新規端末では初期値 [] の永続化(通知なし)の直後に自動生成の書き込みが来る。
+  // これを通常の変更として通知すると、初回のクラウド復元がコンフリクト扱いになる。
+  it('marks the first generated write on a fresh device as derived', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => dashboardMeta }) as Response)
+    )
+
+    const syncEvents: { key?: string; derived?: boolean }[] = []
+    const listener = (e: Event) => {
+      if (e instanceof CustomEvent) {
+        syncEvents.push((e.detail as { key?: string; derived?: boolean }) ?? {})
+      }
+    }
+    window.addEventListener('ls-sync', listener)
+
+    try {
+      renderHook(() => useTodoTasks())
+
+      await waitFor(() => {
+        expect(storedTasks().map((t) => t.id)).toContain(EVENT_TASK.id)
+      })
+
+      expect(syncEvents.filter((d) => d.key === 'todoState')).not.toEqual([])
+      expect(
+        syncEvents.filter((d) => d.key === 'todoState').every((d) => d.derived === true)
+      ).toBe(true)
     } finally {
       window.removeEventListener('ls-sync', listener)
     }

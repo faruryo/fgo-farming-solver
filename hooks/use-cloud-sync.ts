@@ -302,8 +302,13 @@ const [isSaving, setIsSaving] = useState(false)
   // here would re-mark a cloud apply done in another tab as dirty.
   useEffect(() => {
     const listener = (e: Event) => {
-      const detailKey = e instanceof CustomEvent ? (e.detail as { key?: string } | null)?.key : undefined
+      const detail = e instanceof CustomEvent ? (e.detail as { key?: string; derived?: boolean } | null) : null
+      const detailKey = detail?.key
       if (detailKey === LOCAL_METADATA_KEY) return
+      // 派生値の再計算(TODO の自動生成など)はユーザーの未同期編集ではない。dirty に
+      // すると、新規端末で初期値の直後に走る再計算だけで初回のクラウド復元がコンフリ
+      // クト扱いになり、復元されなくなる。
+      if (detail?.derived === true) return
       // Allowlist: only keys we actually sync (KEYS) are allowed to mark dirty /
       // trigger autosave — e.g. the device-local `fgo_push_enabled` key must NOT
       // (openspec/changes/push-settings-isolation). Events with no detail.key at

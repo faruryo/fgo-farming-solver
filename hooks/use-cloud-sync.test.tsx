@@ -96,6 +96,24 @@ describe('useCloudSync first-device restore', () => {
     expect(result.current.hasConflict).toBe(false)
   })
 
+  it('does not treat a derived recalculation as an unsynced local change', async () => {
+    const { result } = renderHook(() => useCloudSync())
+
+    await waitFor(() => {
+      expect(localStorage.getItem('material')).toBe(CLOUD_MATERIAL)
+    })
+    const afterRestore = localStorage.getItem('fgo_sync_metadata')
+
+    window.dispatchEvent(
+      new CustomEvent('ls-sync', { detail: { key: 'todoState', derived: true } }),
+    )
+    expect(localStorage.getItem('fgo_sync_metadata')).toBe(afterRestore)
+
+    window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'todoState' } }))
+    expect(localStorage.getItem('fgo_sync_metadata')).not.toBe(afterRestore)
+    expect(result.current.hasConflict).toBe(false)
+  })
+
   it('keeps a real unsynced local edit and reports a conflict', async () => {
     const localMaterial = JSON.stringify({ all: { source: 'local-edit' } })
     localStorage.setItem('material', localMaterial)

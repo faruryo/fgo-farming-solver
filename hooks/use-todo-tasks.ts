@@ -5,6 +5,17 @@ import { generateAutoTasks, mergeAutoTasks } from '../lib/todo/auto-generate'
 import { DEFAULT_TODO_SETTINGS } from '../lib/todo/settings'
 import type { TodoTask, TodoSettings } from '../types/todo'
 
+const TODO_STATE_KEY = 'todoState'
+
+const readStoredTasks = (): TodoTask[] => {
+  try {
+    return JSON.parse(localStorage.getItem(TODO_STATE_KEY) ?? '[]') as TodoTask[]
+  } catch (e) {
+    console.error('Failed to read stored todoState', e)
+    return []
+  }
+}
+
 /**
  * todoState/todoSettings を localStorage から読み込み、開催中イベントと設定から
  * 自動生成タスクを計算してマージ・永続化する共通フック。
@@ -12,7 +23,7 @@ import type { TodoTask, TodoSettings } from '../types/todo'
  * 生成・マージ・書き込みロジックの重複/差異を防ぐ。
  */
 export const useTodoTasks = () => {
-  const [todoState, setTodoState] = useLocalStorage<TodoTask[]>('todoState', [])
+  const [todoState, setTodoState] = useLocalStorage<TodoTask[]>(TODO_STATE_KEY, [])
   const [settings, setSettings] = useLocalStorage<TodoSettings>('todoSettings', DEFAULT_TODO_SETTINGS)
   const { data } = useDashboardMeta()
 
@@ -23,20 +34,25 @@ export const useTodoTasks = () => {
     // 飛んで同期メタデータが dirty になり、新規端末の初回クラウド復元が競合に負ける。
     if (data == null) return
 
-    // マウント直後は useLocalStorage 側の localStorage 読み込み(非同期な hydration
-    // effect)がまだ state に反映されていない可能性がある。ここで直接 todoState
-    // (レンダー時点のスナップショット)を使って merge・setTodoState してしまうと、
-    // 同一コミット内で hydration の setState と競合し、後着のこちらが「まだ空の
-    // 初期値」を基準に計算した結果で hydration 結果を上書きしてしまう
-    // (＝直前まで完了していたタスクが未完了に戻り、それがそのまま永続化される)。
-    // 関数更新形で「適用時点の最新 state」を基準に merge することで、
-    // hydration の setState が先に適用されていればそれを正しく引き継げる。
-    setTodoState((prev) => {
-      const autoTasks = generateAutoTasks({ now: Date.now(), settings, events: data.events })
-      const merged = mergeAutoTasks(prev, autoTasks)
-      return JSON.stringify(merged) === JSON.stringify(prev) ? prev : merged
-    })
-  }, [data, settings, setTodoState])
+    // マージ元は React state ではなく localStorage の現在値。マウント直後は
+    // useLocalStorage の hydration(非同期な effect)がまだ state に反映されておらず、
+    // レンダー時点のスナップショットを基準にすると「まだ空の初期値」で計算した結果が
+    // hydration 結果を上書きしてしまう(＝直前まで完了していたタスクが未完了に戻る)。
+    const stored = readStoredTasks()
+    const autoTasks = generateAutoTasks({ now: Date.now(), settings, events: data.events })
+    const merged = mergeAutoTasks(stored, autoTasks)
+    if (JSON.stringify(merged) === JSON.stringify(stored)) return
+
+    // 自動生成タスクはマスターデータと時刻から導出される派生値で、ユーザーの未同期
+    // 編集ではない。derived を付けて通知することで、useLocalStorage の各インスタンス
+    // は再読み込みする一方、クラウド同期の変更追跡はこの書き込みを dirty 扱いしない。
+    // (新規端末では初期値 [] の直後にこの書き込みが来るため、dirty にすると初回の
+    // クラウド復元がコンフリクト扱いになって走らない)
+    localStorage.setItem(TODO_STATE_KEY, JSON.stringify(merged))
+    window.dispatchEvent(
+      new CustomEvent('ls-sync', { detail: { key: TODO_STATE_KEY, derived: true } })
+    )
+  }, [data, settings])
 
   return { todoState, setTodoState, settings, setSettings }
 }
