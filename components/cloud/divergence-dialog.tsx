@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import {
@@ -15,7 +15,10 @@ import {
 } from '../ui/alert-dialog'
 import type { Stats } from './parts/stats-logic'
 
-export const DIVERGENCE_DISMISSED_KEY = 'fgo_divergence_dismissed'
+// 「あとで」の抑止はモジュールスコープのメモリに置く。sessionStorage はリロードを
+// またいで残るため、未解決のまま同期が止まっていることに気づけなくなる。画面遷移
+// (SPA)では出し直さず、リロードすれば再提示する。
+let dismissedInThisLoad = false
 
 type DivergenceDialogProps = {
   open: boolean
@@ -43,16 +46,10 @@ export const DivergenceDialog = ({
 }: DivergenceDialogProps) => {
   const { t } = useTranslation('common')
   const router = useRouter()
-  const [dismissed, setDismissed] = useState(true)
-
-  // 「あとで」はこのタブのセッション中だけ抑止する。リロードすれば再表示され、
-  // ナビの CONFLICT 表示は抑止中も残る。
-  useEffect(() => {
-    setDismissed(sessionStorage.getItem(DIVERGENCE_DISMISSED_KEY) === 'true')
-  }, [])
+  const [dismissed, setDismissed] = useState(dismissedInThisLoad)
 
   const dismiss = () => {
-    sessionStorage.setItem(DIVERGENCE_DISMISSED_KEY, 'true')
+    dismissedInThisLoad = true
     setDismissed(true)
   }
 
