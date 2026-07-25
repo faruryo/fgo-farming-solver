@@ -9,11 +9,14 @@ import { getStats } from '../components/cloud/parts/stats-logic'
 import {
   CloudMetadata,
   LocalMetadata,
+  createInitialLocalMetadata,
   decideSyncAction,
+  isInitialSyncMetadata,
   isResumeTrigger,
   markDirty,
   metadataAfterApply,
   metadataAfterSave,
+  normalizeLocalMetadata,
   shouldRefetchOnResume,
 } from '../lib/cloud-sync/decision'
 
@@ -70,20 +73,28 @@ const [isSaving, setIsSaving] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
   const [hasConflict, setHasConflict] = useState(false)
+  const [isDivergent, setIsDivergent] = useState(false)
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Local metadata tracking
   const getLocalMetadata = useCallback((): LocalMetadata => {
-    if (typeof window === 'undefined') return { updatedAt: new Date(0).toISOString(), deviceId: 'server' }
+    if (typeof window === 'undefined') return createInitialLocalMetadata('server')
     const raw = localStorage.getItem(LOCAL_METADATA_KEY)
-    if (raw) return JSON.parse(raw) as unknown as LocalMetadata
-
-    // Initialize with epoch so cloud data is always recognized as newer on first login
-    const meta: LocalMetadata = {
-      updatedAt: new Date(0).toISOString(),
-      deviceId: Math.random().toString(36).substring(2, 10)
+    if (raw) {
+      const stored = JSON.parse(raw) as unknown as LocalMetadata
+      const normalized = normalizeLocalMetadata(stored)
+      if (normalized !== stored) {
+        localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(normalized))
+      }
+      return normalized
     }
+
+    // A new device starts clean at epoch. This lets a newer cloud save restore
+    // safely while a later real edit still breaks updatedAt === lastSyncedAt.
+    const meta = createInitialLocalMetadata(
+      Math.random().toString(36).substring(2, 10)
+    )
     localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(meta))
     return meta
   }, [])
@@ -123,6 +134,7 @@ const [isSaving, setIsSaving] = useState(false)
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newLocalMeta))
 
       setHasConflict(false)
+      setIsDivergent(false)
       // Per-key detail so useLocalStorage consumers re-read their key: a
       // detail-less event is ignored by their key filter, and stale live
       // state would silently write the pre-apply data back on the next edit.
@@ -138,9 +150,19 @@ const [isSaving, setIsSaving] = useState(false)
   }, [getLocalMetadata, router])
 
   const checkConflict = useCallback((cloud: CloudData) => {
-    const action = decideSyncAction(getLocalMetadata(), cloud.metadata)
-    setHasConflict(action === 'conflict')
-    if (action === 'auto-apply' && autoSyncEnabled) {
+    const local = getLocalMetadata()
+    const cloudHasData = KEYS.some((key) => typeof cloud.storage[key] === 'string')
+    const action = decideSyncAction(local, cloud.metadata, cloudHasData)
+    // divergent も解決が必要な状態なので、バナーと autosave 中断は conflict と同じ
+    // 扱いにする。区別が要るのは選択モーダルを出すかどうかだけ。
+    setHasConflict(action === 'conflict' || action === 'divergent')
+    setIsDivergent(action === 'divergent')
+    // First-device restore is safe even before this device has opted into
+    // ongoing auto-sync. Existing devices still respect the local toggle.
+    if (
+      action === 'auto-apply' &&
+      (autoSyncEnabled || isInitialSyncMetadata(local))
+    ) {
       console.log('Safe Auto-Load (Sync) triggered')
       applyData(cloud.storage, cloud.metadata)
     }
@@ -271,6 +293,7 @@ const [isSaving, setIsSaving] = useState(false)
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newMeta))
       setSaveStatus(true)
       setHasConflict(false)
+      setIsDivergent(false)
       await fetchCloudData()
     } catch (e) {
       console.error(e)
@@ -286,8 +309,13 @@ const [isSaving, setIsSaving] = useState(false)
   // here would re-mark a cloud apply done in another tab as dirty.
   useEffect(() => {
     const listener = (e: Event) => {
-      const detailKey = e instanceof CustomEvent ? (e.detail as { key?: string } | null)?.key : undefined
+      const detail = e instanceof CustomEvent ? (e.detail as { key?: string; derived?: boolean } | null) : null
+      const detailKey = detail?.key
       if (detailKey === LOCAL_METADATA_KEY) return
+      // 派生値の再計算(TODO の自動生成など)はユーザーの未同期編集ではない。dirty に
+      // すると、新規端末で初期値の直後に走る再計算だけで初回のクラウド復元がコンフリ
+      // クト扱いになり、復元されなくなる。
+      if (detail?.derived === true) return
       // Allowlist: only keys we actually sync (KEYS) are allowed to mark dirty /
       // trigger autosave — e.g. the device-local `fgo_push_enabled` key must NOT
       // (openspec/changes/push-settings-isolation). Events with no detail.key at
@@ -342,6 +370,7 @@ const [isSaving, setIsSaving] = useState(false)
     autoSyncEnabled,
     toggleAutoSync,
     hasConflict,
+    isDivergent,
     items
   }
 }

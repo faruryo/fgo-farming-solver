@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import {
   CLOCK_SKEW_MS,
+  INITIAL_SYNC_TIMESTAMP,
   RESUME_REFETCH_COOLDOWN_MS,
+  createInitialLocalMetadata,
   decideSyncAction,
+  isInitialSyncMetadata,
   isResumeTrigger,
   markDirty,
   metadataAfterApply,
   metadataAfterSave,
+  normalizeLocalMetadata,
   shouldRefetchOnResume,
   LocalMetadata,
 } from './decision'
@@ -62,19 +66,87 @@ describe('decideSyncAction', () => {
       ).toBe('auto-apply')
     })
 
-    it('never-synced local (epoch metadata) → auto-apply on first login', () => {
-      const fresh: LocalMetadata = {
-        updatedAt: new Date(0).toISOString(),
-        deviceId: 'device-a',
-        // lastSyncedAt undefined → updatedAt !== lastSyncedAt → dirty,
-        // but on first login updatedAt is epoch so cloud is newer…
-      }
-      // …and dirty + other device would be a conflict; the epoch local is
-      // regarded as dirty=false only when lastSyncedAt matches. Document the
-      // actual behavior: epoch local without lastSyncedAt conflicts.
+    it('never-synced local starts clean and auto-applies cloud data on first login', () => {
+      const fresh = createInitialLocalMetadata('device-a')
+
       expect(
         decideSyncAction(fresh, { updatedAt: T0, deviceId: 'device-b' })
+      ).toBe('auto-apply')
+      expect(fresh).toEqual({
+        updatedAt: INITIAL_SYNC_TIMESTAMP,
+        deviceId: 'device-a',
+        lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+      })
+      expect(isInitialSyncMetadata(fresh)).toBe(true)
+    })
+  })
+
+  // 一度もクラウドと同期していない端末のローカル編集は、クラウドの内容を取り込んだ
+  // 上での編集ではない。共通の祖先がないので時刻の新旧で勝敗を決められず、ユーザーに
+  // 選ばせる必要がある。
+  describe('never-synced local with real edits (divergent history)', () => {
+    const neverSyncedDirty = localMeta({
+      updatedAt: at(5000),
+      lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+    })
+
+    it('cloud older than the local edit → divergent, not none', () => {
+      expect(
+        decideSyncAction(neverSyncedDirty, { updatedAt: T0, deviceId: 'device-b' }, true)
+      ).toBe('divergent')
+    })
+
+    it('cloud newer than the local edit → divergent, not conflict', () => {
+      expect(
+        decideSyncAction(
+          neverSyncedDirty,
+          { updatedAt: at(10000), deviceId: 'device-b' },
+          true
+        )
+      ).toBe('divergent')
+    })
+
+    it('same device id still diverges (a fresh device id never matches a real ancestor)', () => {
+      expect(
+        decideSyncAction(neverSyncedDirty, { updatedAt: T0, deviceId: 'device-a' }, true)
+      ).toBe('divergent')
+    })
+
+    it('empty cloud → no divergence to resolve', () => {
+      expect(
+        decideSyncAction(neverSyncedDirty, { updatedAt: T0, deviceId: 'device-b' }, false)
+      ).toBe('none')
+    })
+
+    it('never-synced but untouched local still auto-applies (first-device restore)', () => {
+      expect(
+        decideSyncAction(
+          createInitialLocalMetadata('device-a'),
+          { updatedAt: T0, deviceId: 'device-b' },
+          true
+        )
+      ).toBe('auto-apply')
+    })
+
+    it('a device that has synced before keeps the timestamp comparison', () => {
+      const syncedThenEdited = localMeta({ updatedAt: at(5000), lastSyncedAt: T0 })
+      expect(
+        decideSyncAction(syncedThenEdited, { updatedAt: T0, deviceId: 'device-b' }, true)
+      ).toBe('none')
+      expect(
+        decideSyncAction(
+          syncedThenEdited,
+          { updatedAt: at(10000), deviceId: 'device-b' },
+          true
+        )
       ).toBe('conflict')
+    })
+
+    it('legacy metadata without lastSyncedAt counts as never synced', () => {
+      const legacy: LocalMetadata = { updatedAt: at(5000), deviceId: 'device-a' }
+      expect(
+        decideSyncAction(legacy, { updatedAt: T0, deviceId: 'device-b' }, true)
+      ).toBe('divergent')
     })
   })
 
@@ -153,6 +225,25 @@ describe('isResumeTrigger', () => {
 })
 
 describe('metadata transitions', () => {
+  it('normalizes legacy epoch metadata without lastSyncedAt as a clean initial state', () => {
+    const legacy: LocalMetadata = {
+      updatedAt: INITIAL_SYNC_TIMESTAMP,
+      deviceId: 'device-a',
+    }
+
+    expect(normalizeLocalMetadata(legacy)).toEqual(
+      createInitialLocalMetadata('device-a')
+    )
+  })
+
+  it('marks initial metadata as no longer initial after a real local edit', () => {
+    const initial = createInitialLocalMetadata('device-a')
+    const dirty = markDirty(initial, at(100))
+
+    expect(isInitialSyncMetadata(dirty)).toBe(false)
+    expect(dirty.lastSyncedAt).toBe(INITIAL_SYNC_TIMESTAMP)
+  })
+
   it('markDirty bumps updatedAt and breaks the clean state', () => {
     const dirty = markDirty(localMeta(), at(100))
     expect(dirty.updatedAt).toBe(at(100))
