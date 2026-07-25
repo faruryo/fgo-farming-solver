@@ -3,9 +3,14 @@ import { solve, solveBoth, computeEffectiveAp, filterActiveCampaigns } from './s
 import { Drops } from './get-drops'
 import { Params } from '../interfaces/api'
 import { Campaign } from '../interfaces/fgodrop'
-import { performance } from 'perf_hooks'
 
-describe('Solver Performance and Correctness', () => {
+// Correctness at scale. The wall-clock assertions that used to live on the
+// two large-input cases below were removed: they timed a single solve of a
+// problem whose drop_rates are `Math.random()`-seeded, so the LP structure
+// (and its cost) differed every run, and under the parallel suite they
+// flaked at 520-717ms against a 500ms limit. Solver timing now lives in
+// solver.perf.test.ts, which uses real data, medians, and an isolated run.
+describe('Solver Correctness at scale', () => {
   const generateMockDrops = (): Drops => {
     const items = Array.from({ length: 200 }, (_, i) => ({
       id: `${6000 + i}`,
@@ -47,12 +52,8 @@ describe('Solver Performance and Correctness', () => {
       quests: allQuestIds,
     }
 
-    const start = performance.now()
     const result = solve(drops, params)
-    const duration = performance.now() - start
 
-    console.log(`Standard solver execution time: ${duration.toFixed(2)}ms`)
-    expect(duration).toBeLessThan(500)
     expect(result.quests.length).toBeGreaterThan(0)
   })
 
@@ -68,12 +69,8 @@ describe('Solver Performance and Correctness', () => {
       quests: allQuestIds,
     }
 
-    const start = performance.now()
     const result = solve(drops, params)
-    const duration = performance.now() - start
 
-    console.log(`Stress test (30 items) execution time: ${duration.toFixed(2)}ms`)
-    expect(duration).toBeLessThan(500)
     expect(result.quests.length).toBeGreaterThan(0)
   })
 

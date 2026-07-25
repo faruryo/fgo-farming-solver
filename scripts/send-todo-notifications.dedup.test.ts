@@ -12,9 +12,23 @@
  */
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 const DB_NAME = 'fgo-farming-solver-db'
+
+// Invoke the wrangler binary directly instead of going through
+// `pnpm exec wrangler`. Nearly all of the cost here is process startup, not
+// SQL: measured per call, `pnpm exec` adds ~0.6s on top of wrangler's own
+// ~0.6s CLI boot and ~0.3s of miniflare/workerd + SQLite (1.49s vs 0.90s).
+// With two calls per test that was 3.0s of the default 5s budget before any
+// CPU contention, which is what made this file time out under the parallel
+// suite. Resolved from the file's own location so it does not depend on cwd.
+const WRANGLER_BIN = path.resolve(__dirname, '..', 'node_modules', '.bin', 'wrangler')
+
+// wrangler boot plus workerd spawn is ~1s idle and 3-4s when the parallel
+// suite is saturating the cores; the 5s default leaves no room for that.
+const D1_TIMEOUT_MS = 30_000
 
 interface D1StatementResult<T> {
   results: T[]
@@ -25,7 +39,7 @@ interface D1StatementResult<T> {
 const sqlStr = (value: string): string => `'${value.replace(/'/g, "''")}'`
 
 const d1ExecuteLocal = <T = Record<string, unknown>>(sql: string): D1StatementResult<T>[] => {
-  const out = execFileSync('pnpm', ['exec', 'wrangler', 'd1', 'execute', DB_NAME, '--local', '--command', sql, '--json'], {
+  const out = execFileSync(WRANGLER_BIN, ['d1', 'execute', DB_NAME, '--local', '--command', sql, '--json'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -47,7 +61,7 @@ describe('notification_log dedup insert (local D1 integration)', () => {
       const id = insertedSubscriptionIds.pop()!
       d1ExecuteLocal(`DELETE FROM notification_log WHERE subscription_id = ${sqlStr(id)}`)
     }
-  })
+  }, D1_TIMEOUT_MS)
 
   it('claims the notification on the first insert and rejects an identical second insert', () => {
     const subscriptionId = `test-sub-${randomUUID()}`
@@ -56,7 +70,7 @@ describe('notification_log dedup insert (local D1 integration)', () => {
 
     expect(tryClaimNotification(subscriptionId, notificationKey)).toBe(true)
     expect(tryClaimNotification(subscriptionId, notificationKey)).toBe(false)
-  })
+  }, D1_TIMEOUT_MS)
 
   it('treats different notification_key values for the same subscription as independent claims', () => {
     const subscriptionId = `test-sub-${randomUUID()}`
@@ -64,5 +78,5 @@ describe('notification_log dedup insert (local D1 integration)', () => {
 
     expect(tryClaimNotification(subscriptionId, `key-a-${randomUUID()}`)).toBe(true)
     expect(tryClaimNotification(subscriptionId, `key-b-${randomUUID()}`)).toBe(true)
-  })
+  }, D1_TIMEOUT_MS)
 })

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import { performance } from 'perf_hooks'
 import fs from 'fs'
 import path from 'path'
@@ -8,13 +8,20 @@ import type { Params } from '../interfaces/api'
 
 // Regression benchmarks for the solver.
 //
-// Observed reference (M1 MacBook, Node 22, vitest, real mocks/all.json
-// — 297 quests / 1954 drop_rates):
-//   small (3 items):    ~4ms
-//   medium (10 items):  ~4-5ms
-//   large (30 items):   ~10-12ms
-//   xl (60 items):      ~20ms
-//   lap obj (30 items): ~4ms
+// Run in isolation via `pnpm test:perf` (vitest.perf.config.ts); the
+// default suite excludes `*.perf.test.ts`. This is not a preference:
+// sharing a machine with the 57-file parallel suite inflated every median
+// 3-5x (small went 5ms -> 30ms) and made these thresholds flake. Wall-clock
+// assertions only mean something when nothing else is competing for CPU.
+//
+// Observed reference (M1 MacBook, Node 22, isolated run, real mocks/all.json
+// — 297 quests / 1954 drop_rates), median of 10 iterations over 5 runs:
+//   small (3 items):    ~5ms
+//   medium (10 items):  ~5-6ms
+//   large (30 items):   ~10-11ms
+//   xl (60 items):      ~19-20ms
+//   lap obj (30 items): ~7ms
+//   JSON.parse:         ~0.85ms
 //
 // CI environments are typically slower and noisier than the reference
 // machine. Thresholds are set to ~5× the reference median so the suite
@@ -42,6 +49,23 @@ describe('Solver perf with real mock data', () => {
     campaigns: raw.campaigns ?? [],
   }
   const allQuestIds = drops.quests.map((q: any) => q.id)
+
+  const uniqueItemIds = Array.from(new Set(drops.drop_rates.map((dr) => dr.item_id)))
+
+  // Warm V8 up before anything is measured. `measure` only does a single
+  // warm-up call, which left the first test in the file running partly
+  // interpreted: measured with `medium` moved to the front, whichever case
+  // ran first paid a ~5-6ms penalty that followed the position, not the
+  // problem size. Tiering up here makes every case measure steady-state
+  // code and keeps the thresholds meaningful.
+  beforeAll(() => {
+    const warmupParams: Params = {
+      objective: 'ap',
+      items: Object.fromEntries(uniqueItemIds.slice(0, 10).map((id) => [id, 20])),
+      quests: allQuestIds,
+    } as any
+    for (let i = 0; i < 20; i++) solve(drops, warmupParams)
+  })
 
   const measure = (label: string, fn: () => unknown, runs = 10) => {
     fn()
