@@ -10,10 +10,22 @@ import { useTranslation } from 'react-i18next'
 import { AuthButton } from '../common/auth-button'
 import { getStats } from './parts/stats-logic'
 import { ComparisonView } from './parts/comparison-view'
+import { ShrinkDiff } from './parts/shrink-diff'
 import { LocalSection } from './parts/local-section'
 import { useCloudSync, KEYS, CloudData } from '../../hooks/use-cloud-sync'
 import { formatDate } from '../../lib/format-date'
 import type { PayloadScale } from '../../lib/cloud-sync/shrink-guard'
+
+// 「保存しようとした内容」は、いまこの端末の localStorage そのもの。保留中の保存は
+// まだ送られていないので、クラウドと突き合わせる相手はこれで正しい。SSR では読めない
+// ため空を返すが、保留パネル自体がクライアントでしか描画されないので実害はない。
+const localStorageSnapshot = (): Record<string, string | null> =>
+  Object.fromEntries(
+    KEYS.map((key) => [
+      key,
+      typeof window === 'undefined' ? null : localStorage.getItem(key),
+    ])
+  )
 
 const Cloud = () => {
   const { t } = useTranslation('common')
@@ -306,6 +318,19 @@ const Cloud = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* 集計値だけでは 461→0 の中身が分からない。どの素材がいくつ
+                          減り、どのキーが消えるのかまで出して初めて「見比べる」が
+                          判断材料になる。表示専用でガードの判定には関与しない。 */}
+                      {cloudData != null && (
+                        <ShrinkDiff
+                          next={localStorageSnapshot()}
+                          cloud={cloudData.storage}
+                          keys={KEYS}
+                          items={items}
+                        />
+                      )}
+
                       <div className="flex flex-col sm:flex-row gap-3 w-full">
                         <Button
                           className="flex-1 h-11 text-sm"
