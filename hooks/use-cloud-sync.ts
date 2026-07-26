@@ -115,6 +115,10 @@ const [isSaving, setIsSaving] = useState(false)
   const [hasConflict, setHasConflict] = useState(false)
   const [isDivergent, setIsDivergent] = useState(false)
   const [pendingShrinkState, setPendingShrinkState] = useState<PendingShrink | null>(null)
+  // ダイアログの開閉と無関係に「保存が止まっている」ことを表す。/cloud の見比べ画面へは
+  // ダイアログの「見比べる」= dismiss を経由して来るため、dismiss で null になる
+  // pendingShrink を見ていると遷移先が素通しになる(保留中なのに「同期は正常です」)。
+  const [blockedShrinkState, setBlockedShrinkState] = useState<PendingShrink | null>(null)
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   // handleSave から同期的に読む最新のクラウド内容。state を handleSave の deps に
@@ -124,8 +128,10 @@ const [isSaving, setIsSaving] = useState(false)
 
   // pending の変更を全インスタンスへ伝播させる
   useEffect(() => {
-    const sync = () =>
+    const sync = () => {
       setPendingShrinkState(isShrinkDialogDismissed ? null : pendingShrink)
+      setBlockedShrinkState(pendingShrink)
+    }
     sync()
     window.addEventListener(SHRINK_GUARD_EVENT, sync)
     return () => window.removeEventListener(SHRINK_GUARD_EVENT, sync)
@@ -517,6 +523,7 @@ const [isSaving, setIsSaving] = useState(false)
     hasConflict,
     isDivergent,
     pendingShrink: pendingShrinkState,
+    blockedShrink: blockedShrinkState,
     resolveShrinkByRestore,
     resolveShrinkByForce,
     dismissShrinkDialog,
