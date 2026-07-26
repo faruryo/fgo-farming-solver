@@ -24,5 +24,5 @@
 
 - [x] 4.1 `pnpm exec vitest --run hooks/ lib/cloud-sync/ components/cloud/`
 - [x] 4.2 type-check
-- [ ] 4.3 ブラウザ実機確認: `localhost:3000` でモッククラウドを使い、縮小保存を起こしてダイアログの3ボタンをそれぞれ検証する(`127.0.0.1` は `allowedDevOrigins` 外でハイドレーションしない)
+- [x] 4.3 ブラウザ実機確認: `localhost:3000` でモッククラウドを使い、縮小保存を起こしてダイアログの3ボタンをそれぞれ検証する(`127.0.0.1` は `allowedDevOrigins` 外でハイドレーションしない)
 - [x] 4.4 `openspec validate cloud-shrink-guard`
