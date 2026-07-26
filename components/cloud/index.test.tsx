@@ -29,7 +29,7 @@ vi.mock('../../hooks/use-cloud-sync', () => ({
 
 import Cloud from './index'
 
-const stats = (): Stats => ({
+const stats = (overrides: Partial<Stats> = {}): Stats => ({
   ownedCount: 3,
   skillTotal: 12,
   appendTotal: 0,
@@ -37,6 +37,7 @@ const stats = (): Stats => ({
   silver: 3,
   gold: 2,
   fragments: 0,
+  ...overrides,
 })
 
 const pending = (overrides: Partial<PendingShrink> = {}): PendingShrink => ({
@@ -116,6 +117,79 @@ describe('Cloud page (shrink guard pending state)', () => {
 
     expect(screen.getByText('読み取れません')).toBeInTheDocument()
     expect(screen.getByText('サーヴァント 0 / 所持素材の種類 0')).toBeInTheDocument()
+  })
+
+  // ダイアログと同じ 2 つの数字を並べるだけでは「見比べる」で情報が増えない。
+  // /cloud では getStats 由来の 3 指標(サーヴァント数・スキル合計・素材レア度別)を出す。
+  it('shows the richer local/cloud comparison table, not just the dialog counts', () => {
+    useCloudSync.mockReturnValue(
+      syncState({
+        ...blocked(),
+        localStats: stats({ ownedCount: 3, skillTotal: 12, gold: 2, silver: 3, bronze: 5 }),
+        cloudStats: stats({ ownedCount: 461, skillTotal: 900, gold: 40, silver: 50, bronze: 60 }),
+      }),
+    )
+    render(<Cloud />)
+
+    expect(screen.getByText('Servants')).toBeInTheDocument()
+    expect(screen.getByText('Skill Lv')).toBeInTheDocument()
+    expect(screen.getByText('Items (G/S/B)')).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+    expect(screen.getByText('900')).toBeInTheDocument()
+    expect(screen.getByText('2/3/5')).toBeInTheDocument()
+    expect(screen.getByText('40/50/60')).toBeInTheDocument()
+  })
+
+  // いつ・どの端末から保存されたクラウドデータなのかは、復元するかの判断に直結する。
+  it('shows when the cloud copy was saved and from which device', () => {
+    useCloudSync.mockReturnValue(
+      syncState({
+        ...blocked(),
+        cloudData: {
+          storage: { material: '{}' },
+          metadata: { updatedAt: '2026-07-01T00:00:00.000Z', deviceId: 'device-abc' },
+        },
+      }),
+    )
+    render(<Cloud />)
+
+    expect(screen.getByText('クラウドの最終保存')).toBeInTheDocument()
+    // 生の ISO ではなく JST の読みやすい表記(既存 formatDate の流儀)。
+    expect(screen.getByText('7月1日 09:00')).toBeInTheDocument()
+    expect(screen.queryByText('2026-07-01T00:00:00.000Z')).not.toBeInTheDocument()
+    expect(screen.getByText('保存した端末')).toBeInTheDocument()
+    expect(screen.getByText('device-abc')).toBeInTheDocument()
+  })
+
+  it('lists the names of the missing entries, not only how many', () => {
+    useCloudSync.mockReturnValue(
+      syncState(blocked({ missingKeys: ['todoState', 'quests'] })),
+    )
+    render(<Cloud />)
+
+    expect(screen.getByText('todoState, quests')).toBeInTheDocument()
+  })
+
+  // クラウドを読めていないのに CLOUD 列の数字を出すと矛盾するので、表ごと出さない。
+  it('hides the comparison table when the cloud side could not be measured', () => {
+    useCloudSync.mockReturnValue(syncState(blocked({ cloud: null })))
+    render(<Cloud />)
+
+    expect(screen.getByText('読み取れません')).toBeInTheDocument()
+    expect(screen.queryByText('Servants')).not.toBeInTheDocument()
+    expect(screen.queryByText('Skill Lv')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the payload counts when stats are unavailable', () => {
+    useCloudSync.mockReturnValue(
+      syncState({ ...blocked(), localStats: null, cloudStats: null }),
+    )
+    render(<Cloud />)
+
+    expect(screen.queryByText('Skill Lv')).not.toBeInTheDocument()
+    expect(screen.getByText('サーヴァント 0 / 所持素材の種類 0')).toBeInTheDocument()
+    expect(screen.getByText('サーヴァント 461 / 所持素材の種類 104')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'このまま保存する' })).toBeInTheDocument()
   })
 
   it('resolves the block by restoring from the cloud', async () => {

@@ -49,6 +49,8 @@
     "shrink-guard-compare": "Compare",
     "shrink-guard-force": "Save anyway",
     "shrink-guard-unknown": "Cannot be read",
+    "shrink-guard-cloud-saved-at": "Cloud last saved",
+    "shrink-guard-cloud-device": "Saved from device",
     "shrink-guard-blocked-title": "Save is on hold",
     "shrink-guard-blocked-description": "A save that would shrink your cloud data is being held. Auto-save stays paused until this is resolved. Compare the counts below and choose whether to load from the cloud or save anyway.",
     "TODO自動生成・通知設定": "TODO Auto-Generation & Notifications",

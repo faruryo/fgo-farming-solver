@@ -12,6 +12,7 @@ import { getStats } from './parts/stats-logic'
 import { ComparisonView } from './parts/comparison-view'
 import { LocalSection } from './parts/local-section'
 import { useCloudSync, KEYS, CloudData } from '../../hooks/use-cloud-sync'
+import { formatDate } from '../../lib/format-date'
 import type { PayloadScale } from '../../lib/cloud-sync/shrink-guard'
 
 const Cloud = () => {
@@ -20,6 +21,7 @@ const Cloud = () => {
     session,
     cloudData,
     localStats,
+    cloudStats,
     isSaving,
     saveStatus,
     isLoading,
@@ -49,6 +51,17 @@ const Cloud = () => {
     scale == null
       ? t('shrink-guard-unknown', '読み取れません')
       : `${t('shrink-guard-servants', 'サーヴァント')} ${scale.servants} / ${t('shrink-guard-possessions', '所持素材の種類')} ${scale.possessions}`
+
+  // クラウドのデータが「いつ・どの端末から」保存されたものかは、復元するかどうかの
+  // 判断に直結する(端末間で保存が往復していた事故は、この 2 つで特定できた)。
+  // 生の ISO は読みづらいので、既存の formatDate(JST 表記)に合わせる。
+  const cloudSavedAt = (() => {
+    const raw = cloudData?.metadata?.updatedAt
+    const time = raw ? new Date(raw).getTime() : NaN
+    // updatedAt を持たない古いデータには epoch(0) が入るため、日時として出さない。
+    if (!Number.isFinite(time) || time <= 0) return null
+    return formatDate(raw)
+  })()
 
   const [isDiffOpen, setIsDiffOpen] = useState(false)
   const onDiffOpen = () => setIsDiffOpen(true)
@@ -233,6 +246,18 @@ const Cloud = () => {
                 <div className="flex flex-col gap-6 w-full">
                   {isShrinkBlocked ? (
                     <div className="flex flex-col gap-4 w-full">
+                      {/* ダイアログより判断材料を増やす場所。ガードの「判定」は items
+                          カタログに依存しない measurePayload の件数で行う(items 未ロード
+                          時に両側 0 になって素通りするのを防ぐため)が、ここは判定に一切
+                          影響しない「表示」なので、getStats 由来のより細かい数字
+                          (スキル合計・素材のレア度別合計)を出してよい。localStats /
+                          cloudStats が取れないときは下の件数カードだけにフォールバックする。
+                          ガードがクラウドを読めなかった(blockedShrink.cloud == null)ときも
+                          「読み取れません」と数字が並んで矛盾するので出さない。 */}
+                      {localStats != null && cloudStats != null && blockedShrink.cloud != null && (
+                        <ComparisonView localStats={localStats} cloudStats={cloudStats} show={true} />
+                      )}
+
                       {/* 止めた保存とクラウドの現況をその場で見比べられるようにする。
                           ComparisonView は localStorage 由来の Stats 専用で、止めた
                           ペイロードの件数(PayloadScale)も cloud=null も表せないため、
@@ -250,13 +275,37 @@ const Cloud = () => {
                           </div>
                           <div style={{ color: 'var(--text)' }}>{summarizeScale(blockedShrink.cloud)}</div>
                         </div>
-                        {blockedShrink.missingKeys.length > 0 && (
-                          <div className="col-span-2 rounded-xl p-3" style={{ border: '1px solid var(--border)', color: 'var(--text2)' }}>
-                            {t('shrink-guard-missing-keys', '保存内容から消えている項目')}{' '}
-                            {blockedShrink.missingKeys.length}
-                          </div>
-                        )}
                       </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)' }}>
+                          <div className="mb-1 font-medium" style={{ color: 'var(--text2)' }}>
+                            {t('shrink-guard-cloud-saved-at', 'クラウドの最終保存')}
+                          </div>
+                          <div style={{ color: 'var(--text)' }}>
+                            {cloudSavedAt ?? t('shrink-guard-unknown', '読み取れません')}
+                          </div>
+                        </div>
+                        <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)' }}>
+                          <div className="mb-1 font-medium" style={{ color: 'var(--text2)' }}>
+                            {t('shrink-guard-cloud-device', '保存した端末')}
+                          </div>
+                          <div className="break-all" style={{ color: 'var(--text)' }}>
+                            {cloudData?.metadata?.deviceId || t('shrink-guard-unknown', '読み取れません')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {blockedShrink.missingKeys.length > 0 && (
+                        <div className="rounded-xl p-3 text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                          {t('shrink-guard-missing-keys', '保存内容から消えている項目')}{' '}
+                          {blockedShrink.missingKeys.length}
+                          {/* /cloud は場所に余裕があるので、件数だけでなくキー名まで出す。 */}
+                          <div className="mt-1 break-all" style={{ color: 'var(--text)' }}>
+                            {blockedShrink.missingKeys.join(', ')}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex flex-col sm:flex-row gap-3 w-full">
                         <Button
                           className="flex-1 h-11 text-sm"

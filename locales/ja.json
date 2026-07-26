@@ -37,6 +37,8 @@
     "shrink-guard-compare": "見比べる",
     "shrink-guard-force": "このまま保存する",
     "shrink-guard-unknown": "読み取れません",
+    "shrink-guard-cloud-saved-at": "クラウドの最終保存",
+    "shrink-guard-cloud-device": "保存した端末",
     "shrink-guard-blocked-title": "保存を中断しています",
     "shrink-guard-blocked-description": "クラウドのデータが大きく減る保存を止めています。解決するまで自動保存は止まったままです。下の件数を見比べて、クラウドから読み込むか、このまま保存するかを選んでください。",
     "TODO自動生成・通知設定": "TODO自動生成・通知設定",
