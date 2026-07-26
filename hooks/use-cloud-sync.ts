@@ -19,6 +19,13 @@ import {
   normalizeLocalMetadata,
   shouldRefetchOnResume,
 } from '../lib/cloud-sync/decision'
+import {
+  MISSING_KEYS_THRESHOLD,
+  PayloadScale,
+  findMissingKeys,
+  isDestructiveShrink,
+  measurePayload,
+} from '../lib/cloud-sync/shrink-guard'
 
 export type { LocalMetadata } from '../lib/cloud-sync/decision'
 
@@ -61,6 +68,39 @@ export type CloudData = {
 let isApplyingCloudData = false
 let lastCloudFetchAt: number | null = null
 
+// 縮小ガードで止めた保存。ダイアログの提示と autosave の抑止に使う。
+export type PendingShrink = {
+  // 保存しようとした規模
+  next: PayloadScale
+  // クラウドの現況。クラウド側が読めなかった場合は null(件数を出せない)
+  cloud: PayloadScale | null
+  // クラウドにあって保存内容に無いキー
+  missingKeys: string[]
+  // 止めた保存が持っていた force(コンフリクトのバイパス)。「このまま保存する」は
+  // これをそのまま再現する。false 固定にすると /cloud の強制上書き経由の解決が
+  // handleSave 冒頭のコンフリクト中断で黙って何もしないまま終わる。
+  force: boolean
+}
+
+// pending もモジュールスコープ。フックは nav・/cloud など複数箇所からマウント
+// されるため、インスタンス state では他インスタンスの autosave を止められない。
+let pendingShrink: PendingShrink | null = null
+// ダイアログを閉じただけの状態。pending は残し、次の編集で出し直す。
+let isShrinkDialogDismissed = false
+
+export const SHRINK_GUARD_EVENT = 'fgo-shrink-guard-update'
+
+const notifyShrinkChange = () => {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(SHRINK_GUARD_EVENT))
+}
+
+const setPendingShrink = (next: PendingShrink | null) => {
+  pendingShrink = next
+  isShrinkDialogDismissed = false
+  notifyShrinkChange()
+}
+
 export const useCloudSync = () => {
   const { data: session } = useSession()
   const { i18n } = useTranslation('common')
@@ -74,8 +114,22 @@ const [isSaving, setIsSaving] = useState(false)
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
   const [hasConflict, setHasConflict] = useState(false)
   const [isDivergent, setIsDivergent] = useState(false)
+  const [pendingShrinkState, setPendingShrinkState] = useState<PendingShrink | null>(null)
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // handleSave から同期的に読む最新のクラウド内容。state を handleSave の deps に
+  // 入れると、変更リスナーの effect が張り直されて cleanup が武装済みの autosave
+  // タイマーを取り消してしまう(再スケジュールされない)ため ref で持つ。
+  const cloudDataRef = useRef<CloudData | null>(null)
+
+  // pending の変更を全インスタンスへ伝播させる
+  useEffect(() => {
+    const sync = () =>
+      setPendingShrinkState(isShrinkDialogDismissed ? null : pendingShrink)
+    sync()
+    window.addEventListener(SHRINK_GUARD_EVENT, sync)
+    return () => window.removeEventListener(SHRINK_GUARD_EVENT, sync)
+  }, [])
 
   // Local metadata tracking
   const getLocalMetadata = useCallback((): LocalMetadata => {
@@ -169,7 +223,10 @@ const [isSaving, setIsSaving] = useState(false)
     return action
   }, [autoSyncEnabled, applyData, getLocalMetadata])
 
-  const fetchCloudData = useCallback(async () => {
+  // 取得した内容を返す。setCloudData は同じレンダーの `cloudData` を更新しないため、
+  // 縮小ガードのように「今取った値」で判定したい呼び出し側が戻り値で受け取れるように
+  // する(既存の呼び出し側は戻り値を無視するので影響しない)。
+  const fetchCloudData = useCallback(async (): Promise<CloudData | null> => {
     // Recorded synchronously at entry so a same-tick burst (multiple hook
     // instances reacting to one resume) merges into a single GET.
     lastCloudFetchAt = Date.now()
@@ -178,11 +235,13 @@ const [isSaving, setIsSaving] = useState(false)
         const mock = localStorage.getItem(MOCK_CLOUD_KEY)
         if (mock) {
           const parsed = JSON.parse(mock) as unknown as CloudData
+          cloudDataRef.current = parsed
           setCloudData(parsed)
           checkConflict(parsed)
+          return parsed
         }
       }
-      return
+      return null
     }
 
     try {
@@ -198,12 +257,15 @@ const [isSaving, setIsSaving] = useState(false)
             metadata: { updatedAt: new Date(0).toISOString(), deviceId: 'unknown' }
           }
         }
+        cloudDataRef.current = parsed
         setCloudData(parsed)
         checkConflict(parsed)
+        return parsed
       }
     } catch (e) {
       console.error('Failed to fetch cloud data', e)
     }
+    return null
   }, [session, checkConflict])
 
   useEffect(() => {
@@ -243,7 +305,13 @@ const [isSaving, setIsSaving] = useState(false)
     }
   }, [refetchIfStale])
 
-  const handleSave = useCallback(async (force = false) => {
+  // force はコンフリクトのバイパス(/cloud の「強制上書き」)。縮小ガードの解除は
+  // options.allowShrink で別に受ける。同じフラグで兼ねると、クラウドを潰す当の
+  // ボタンだけがガードを素通りする。
+  const handleSave = useCallback(async (
+    force = false,
+    options?: { allowShrink?: boolean },
+  ) => {
     if (hasConflict && autoSyncEnabled && !force) {
       console.warn('Auto-save aborted due to cloud conflict')
       return
@@ -265,6 +333,49 @@ const [isSaving, setIsSaving] = useState(false)
           dataObj.todoSettings = JSON.stringify(todoSettings)
         } catch (e) {
           console.error('Failed to strip pushEnabled from todoSettings before cloud save', e)
+        }
+      }
+
+      // 縮小ガード。実際に送る dataObj とクラウドの現況を突き合わせ、一発でごっそり
+      // 消える保存だけを止める。
+      if (options?.allowShrink !== true) {
+        // cloud が空でも GET は {} を返して非 null になるので、null は「クラウドが
+        // 空」ではなく「状態が不明」。比較できないから通す、にすると通信が不安定な
+        // 端末＝事故と同じ条件でだけガードが無効になる。
+        // 未ログイン(開発用モック)は fetchCloudData がモック未作成のとき cloudData を
+        // 作らない。最初のモック保存を作れるよう、その場合だけ判定を省く。モックが
+        // できて以降は本番と同じ経路を通るので、実機でガードを検証できる。
+        const cloud = cloudDataRef.current ?? (session != null ? await fetchCloudData() : null)
+        if (cloud == null) {
+          if (session != null) {
+            console.warn('Cloud save aborted: cloud state is unknown')
+            setSaveStatus('failed')
+            return
+          }
+        } else {
+          const nextScale = measurePayload(dataObj)
+          if (nextScale == null) {
+            // 送ろうとしている内容が読めない。何を上書きするのか分からないまま
+            // 保存はしない。
+            console.warn('Cloud save aborted: payload could not be measured')
+            setSaveStatus('failed')
+            return
+          }
+          // クラウド側が読めない場合は件数の比較を諦め、キー欠落だけで判定する。
+          // ここで中止すると、既に壊れているクラウドを理由に正常なローカルの保存が
+          // 永久に止まり、ユーザーに脱出手段が無くなる。守る対象が読めない以上、
+          // 件数で守れるものはもう無い。
+          const cloudScale = measurePayload(cloud.storage)
+          const missingKeys = findMissingKeys(dataObj, cloud.storage, KEYS)
+          const shrunk =
+            cloudScale == null
+              ? missingKeys.length >= MISSING_KEYS_THRESHOLD
+              : isDestructiveShrink(nextScale, cloudScale, missingKeys)
+          if (shrunk) {
+            console.warn('Cloud save blocked by shrink guard', { nextScale, cloudScale, missingKeys })
+            setPendingShrink({ next: nextScale, cloud: cloudScale, missingKeys, force })
+            return
+          }
         }
       }
 
@@ -303,6 +414,30 @@ const [isSaving, setIsSaving] = useState(false)
     }
   }, [session, fetchCloudData, hasConflict, autoSyncEnabled, getLocalMetadata])
 
+  // クラウドの内容をこの端末へ引き下ろす。ローカルが clean になり、以後の判定は
+  // 自然に通る。解除は無条件に行う: ref が無いときに解除を飛ばすと、リロードする
+  // まで autosave が止まったままになる。
+  const resolveShrinkByRestore = useCallback(() => {
+    const cloud = cloudDataRef.current
+    setPendingShrink(null)
+    if (cloud) applyData(cloud.storage, cloud.metadata)
+  }, [applyData])
+
+  // 止めた保存をそのまま通す。force は止めた時の値を再現する(0 固定にすると、
+  // コンフリクト中の強制上書き経由では handleSave 冒頭で弾かれて何も起きない)。
+  const resolveShrinkByForce = useCallback(async () => {
+    const pending = pendingShrink
+    setPendingShrink(null)
+    await handleSave(pending?.force ?? false, { allowShrink: true })
+  }, [handleSave])
+
+  // ダイアログを隠すだけ。pending は残るので autosave は止まったまま、次の編集で
+  // 出し直す。
+  const dismissShrinkDialog = useCallback(() => {
+    isShrinkDialogDismissed = true
+    notifyShrinkChange()
+  }, [])
+
   // Track local modifications. Only same-window events: native cross-tab
   // 'storage' events are NOT local modifications — the writing tab maintains
   // the (tab-shared) metadata and schedules its own auto-save, and reacting
@@ -329,6 +464,16 @@ const [isSaving, setIsSaving] = useState(false)
 
       const newMeta = markDirty(getLocalMetadata(), new Date().toISOString())
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newMeta))
+
+      // 縮小が未解決の間は debounce を再武装しない。解決するまで同じ保存を
+      // 繰り返し試みても意味がなく、ダイアログを閉じたまま編集が続くだけになる。
+      if (pendingShrink !== null) {
+        if (isShrinkDialogDismissed) {
+          isShrinkDialogDismissed = false
+          notifyShrinkChange()
+        }
+        return
+      }
 
       if (autoSyncEnabled) {
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
@@ -371,6 +516,10 @@ const [isSaving, setIsSaving] = useState(false)
     toggleAutoSync,
     hasConflict,
     isDivergent,
+    pendingShrink: pendingShrinkState,
+    resolveShrinkByRestore,
+    resolveShrinkByForce,
+    dismissShrinkDialog,
     items
   }
 }
