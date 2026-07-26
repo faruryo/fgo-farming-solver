@@ -10,6 +10,8 @@ PR #18 はこの連鎖の入口 —「空データを作らせない」側 — �
 
 - 保存直前のペイロードとクラウドの現行値を比較し、極端な縮小を検出する純関数 `lib/cloud-sync/shrink-guard.ts` を新設する。指標は有効サーヴァント件数・所持アイテム種類数・同期対象キーの欠落件数の3つ。
 - 検出時はオートセーブ・手動保存とも中断し、`components/cloud/shrink-guard-dialog.tsx` で「クラウドから復元 / 見比べる / このまま保存する」を選ばせる。既定は復元。
+- 「見比べる」の遷移先である `/cloud` が保留状態を認識するようにする。従来は `hasConflict` のときしか比較・操作系を描画せず、保存がブロックされている最中に「クラウドとの同期は正常です」と表示していた。
+- `/cloud` では、減る素材の内訳（素材名つき・減少量順）と同期キーごとの項目数を出す（`lib/cloud-sync/storage-diff.ts` + `components/cloud/parts/shrink-diff.tsx`）。件数の要約だけでは 461→0 の中身が分からず、復元するかの判断ができない。
 - 比較の基準値(クラウドの現行値)が取得できない場合は保存を中止する(素通りさせない)。
 - `handleSave` に `allowShrink` オプションを追加する。既存の `force` 引数(コンフリクトのバイパス)とは**分ける**。`/cloud` の「強制上書き」は `force: true` を渡すため、同じフラグを読むとこのガードを素通りしてしまう。
 
@@ -30,8 +32,11 @@ PR #18 はこの連鎖の入口 —「空データを作らせない」側 — �
 ## Impact
 
 - `lib/cloud-sync/shrink-guard.ts`(新規) / `lib/cloud-sync/shrink-guard.test.ts`(新規)
+- `lib/cloud-sync/storage-diff.ts`(新規) / 同 test(新規)
 - `components/cloud/shrink-guard-dialog.tsx`(新規) / 同 test(新規)
+- `components/cloud/parts/shrink-diff.tsx`(新規) / 同 test(新規)
 - `hooks/use-cloud-sync.ts`(`handleSave` へのガード組み込み、pending 状態の公開)
+- `components/cloud/index.tsx`(保留状態の表示と解決手段) / `components/cloud/index.test.tsx`(新規)
 - `components/cloud/sync-engine.tsx`(ダイアログの常駐)
 - `locales/`(ダイアログ文言)
 - `openspec/specs/sync/spec.md`
