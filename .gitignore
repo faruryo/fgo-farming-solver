@@ -53,6 +53,13 @@ build.log
 # AI Agent folders
 .claude/
 .codex/
-.agents/
 .agent/
 .antigravitycli/
+
+# .agents/ は追跡対象。rules/ が Claude Code・Copilot・Antigravity 共通のルール実体で、
+# .claude/rules と .github/instructions がここへのシンボリックリンクになっている。
+# (一時 .agents/ ごと ignore されていたが、追跡済みファイルには効かず気付かれなかった。
+#  新規ルールを追加したときだけ黙って漏れる状態だったので解除した)
+# プラグイン由来の skill は各自の環境に入るためリポジトリには含めない。
+.agents/skills/openspec-*/
+.agents/skills/shadcn/
