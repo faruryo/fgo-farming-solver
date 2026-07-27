@@ -203,11 +203,9 @@ const Cloud = () => {
                 </div>
               ) : hasConflict ? (
                 <div className="flex flex-col gap-2 p-4 rounded-xl" style={{ background: 'rgba(255,0,0,0.05)' }}>
-                  <p className="text-sm font-bold" style={{ color: 'var(--red)' }}>Cloud contains newer data.</p>
+                  <p className="text-sm font-bold" style={{ color: 'var(--red)' }}>{t('cloud-conflict-title', 'クラウドに新しいデータがあります')}</p>
                   <p className="text-xs" style={{ color: 'var(--text2)' }}>
-                    Your local data is older than the data stored in the cloud (possibly from another device).
-                    Auto-save is suspended to prevent overwriting newer progress.
-                    Please &quot;Load&quot; from cloud to synchronize.
+                    {t('cloud-conflict-description', 'この端末のデータは、クラウドに保存されているデータより古い状態です（他の端末で更新された可能性があります）。新しいデータを上書きしないよう、自動保存を停止しています。「読み込み」でクラウドのデータを取り込んでください。')}
                   </p>
                 </div>
               ) : (
@@ -247,7 +245,7 @@ const Cloud = () => {
                 <div className="flex flex-col items-center gap-3 py-4">
                   <Loader2 className="animate-spin h-4 w-4" style={{ color: 'var(--gold)' }} />
                   <p className="text-xs" style={{ color: 'var(--text2)' }}>
-                    {isLoading ? t('読み込み中...') : 'Checking sync status...'}
+                    {isLoading ? t('読み込み中...') : t('checking-sync-status', '同期状態を確認しています...')}
                   </p>
                 </div>
               ) : session == null && !(process.env.NODE_ENV === 'development' && cloudData) ? (
@@ -370,7 +368,7 @@ const Cloud = () => {
                         disabled={isSaving || saveStatus === true}
                       >
                         {isSaving && <Loader2 className="animate-spin h-3 w-3 mr-1" />}
-                        クラウドを強制上書き
+                        {t('cloud-force-overwrite', 'クラウドを強制上書き')}
                       </Button>
                     </div>
                   ) : (
@@ -382,7 +380,7 @@ const Cloud = () => {
                               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                               <polyline points="22 4 12 14.01 9 11.01" />
                             </svg>
-                            <p className="font-bold" style={{ fontSize: '14px', color: 'var(--gold)' }}>クラウドとの同期は正常です</p>
+                            <p className="font-bold" style={{ fontSize: '14px', color: 'var(--gold)' }}>{t('cloud-sync-healthy', 'クラウドとの同期は正常です')}</p>
                           </>
                         ) : (
                           <>
@@ -391,7 +389,7 @@ const Cloud = () => {
                               <line x1="12" y1="8" x2="12" y2="12" />
                               <line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
-                            <p style={{ fontSize: '14px', color: 'var(--text2)' }}>自動同期が停止しています</p>
+                            <p style={{ fontSize: '14px', color: 'var(--text2)' }}>{t('cloud-auto-sync-stopped', '自動同期が停止しています')}</p>
                           </>
                         )}
                       </div>
@@ -422,14 +420,14 @@ const Cloud = () => {
           >
             <DialogHeader>
               <DialogTitle style={{ color: 'var(--gold)' }}>
-                {modalMode === 'load' ? t('data-comparison') : 'クラウド上書きの確認'}
+                {modalMode === 'load' ? t('data-comparison') : t('cloud-overwrite-confirm-title', 'クラウド上書きの確認')}
               </DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-6">
               <p className="text-sm" style={{ color: 'var(--text2)' }}>
                 {modalMode === 'load'
                   ? t('cloud-load-confirm-message')
-                  : 'クラウドにある新しいデータを、現在のローカルデータで強制的に上書きします。よろしいですか？'}
+                  : t('cloud-overwrite-confirm-message', 'クラウドにある新しいデータを、現在のローカルデータで強制的に上書きします。よろしいですか？')}
               </p>
               <ComparisonView
                 localStats={localStats!}

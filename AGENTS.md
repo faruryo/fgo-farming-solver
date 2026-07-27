@@ -35,6 +35,7 @@
 - `wrangler.toml` uses `nodejs_compat` and `global_fetch_strictly_public`.
 - **D1 Local Dev Fallback**: `/api/progress` API は、ローカル開発環境（`next dev`）でDB接続がない状態（ログイン後）で動作してもクラッシュせず、自動的に時間決定的なモック（`mocks/progress.json`）へフォールバックする例外保護が組み込まれています。
 - **Unified Cache**: 高速化のため、`lib/data-source.ts` において Cloudflare Context (`env.MASTER_DATA`) がグローバルモジュールレベルでキャッシュされています。
+- **i18n**: 画面に出る文字列は必ず `t('kebab-key', '日本語フォールバック')` で書く（日本語のベタ書きも違反）。詳細は `.agents/rules/ui-conventions.instructions.md`。
 - Refer to domain-specific rules for implementation details.
 
 ## OpenSpec Workflow

@@ -10,9 +10,30 @@ applyTo: "app/**/*.tsx,components/**/*.tsx"
 - Use Next.js App Router patterns.
 - Use **shadcn/ui + Tailwind CSS** for all UI components. Components live in `@/components/ui/`.
 - Prefer `div` + Tailwind utility classes for layout (no external layout libraries).
-- Maintain i18n support by using translation keys in `locales/`.
+- Maintain i18n support by using translation keys in `locales/`（詳細は下記「i18n」）。
 - Ensure components are responsive using Tailwind breakpoint prefixes (`sm:`, `md:`, `lg:`).
 - Avoid hydration errors by ensuring proper DOM nesting.
+
+## i18n（ユーザーに見える文字列は必ず `t()` を通す）
+
+- **BLOCKER**: 画面に出る文字列を JSX へ直接書かないこと。**日本語のベタ書きも違反**。日本語で書いておけば安全に見えるが、英語UIでそのまま日本語が出る。実際に `components/cloud/index.tsx` では英語ベタ書きと日本語ベタ書きが同一ファイル内に同居し、どちらの言語でも表示が壊れていた。
+- 書き方は **`t('kebab-key', '日本語フォールバック')`**。第2引数の日本語フォールバックは必須。
+
+```tsx
+// 正しい
+<p>{t('cloud-sync-healthy', 'クラウドとの同期は正常です')}</p>
+
+// 誤り（日本語ベタ書き。英語UIで日本語が出る）
+<p>クラウドとの同期は正常です</p>
+
+// 誤り（英語ベタ書き。日本語UIで英語が出る）
+<p>Cloud sync is up to date</p>
+```
+
+- 追加したキーは **`locales/ja.json` と `locales/en.json` の両方**に入れること。片方だけだと欠けた側でキー名かもう片方の言語が露出する。
+- 第2引数のフォールバックは省略できない。テストは `t: (key, fallback) => fallback ?? key` でモックしており、フォールバックが無いと**画面に生キーが出た状態でテストが通ってしまう**。
+- 例外は意図的なデザイン英語ラベルのみ（`DATA MANAGEMENT`、`Cloud Sync` などの見出し）。翻訳対象と紛らわしいので、迷ったら `t()` を通す。
+- **WARNING**: 既存キーの命名は kebab-case キーと日本語文字列キーが混在している。新規追加は kebab-case に寄せること。
 
 ## UI動作確認（ブラウザ実機検証を毎回行う）
 
