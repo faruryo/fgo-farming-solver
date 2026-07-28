@@ -1,0 +1,17 @@
+{
+  "minTokens": 70,
+  "minLines": 8,
+  "mode": "strict",
+  "format": ["javascript", "jsx", "typescript", "tsx"],
+  "ignorePattern": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/.open-next/**",
+    "**/public/**",
+    "**/reports/**",
+    "**/e2e/__snapshots__/**"
+  ],
+  "reporters": ["console", "json", "sarif"],
+  "output": "reports/jscpd",
+  "blame": false
+}

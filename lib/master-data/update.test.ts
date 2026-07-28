@@ -5,6 +5,9 @@ vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
 }))
 
+const fetchInputUrl = (input: string | URL | Request): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
 describe('normalizeItemName', () => {
   it('maps standard abbreviations correctly', () => {
     expect(normalizeItemName('証')).toBe('英雄の証')
@@ -83,7 +86,7 @@ describe('fetchDashboardMeta', () => {
 
     // events は本番同様 opts 経由で渡す(prefetch されたアクティブイベント)。
     const result = await fetchDashboardMeta(undefined, {
-      events: [makeEvent(1, 'https://example.com/banner.png')] as any,
+      events: [makeEvent(1, 'https://example.com/banner.png')],
     })
 
     expect(result.gachas).toHaveLength(2)
@@ -616,7 +619,7 @@ describe('fetchActiveEvents', () => {
 
     const events = await fetchActiveEvents(NOW)
 
-    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    const urls = vi.mocked(fetch).mock.calls.map(c => fetchInputUrl(c[0]))
     expect(urls.some(u => u.includes('nice_event.json'))).toBe(false)
     expect(urls[0]).toContain('basic_event.json')
     // Only the single active, non-permanent, already-started event is detailed.
@@ -699,7 +702,7 @@ describe('fetchAndTransformData niceWarCache', () => {
 
     expect(cache.get).toHaveBeenCalledOnce()
     expect(cache.put).not.toHaveBeenCalled() // CI ジョブが更新主体。worker は再キャッシュしない
-    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    const urls = vi.mocked(fetch).mock.calls.map(c => fetchInputUrl(c[0]))
     expect(urls.some(u => u.includes('nice_war.json'))).toBe(false)
   })
 
@@ -738,8 +741,8 @@ describe('fetchAndTransformData niceWarCache', () => {
       aaQuests: [{ id: 94150501, name: 'Q1', spotName: 'S', afterClear: 'open', warLongName: 'War' }],
     })
     // Conditional header omitted on a cold cache (no prior etag).
-    const warCall = vi.mocked(fetch).mock.calls.find(c => String(c[0]).includes('nice_war.json'))
-    expect((warCall?.[1] as RequestInit | undefined)?.headers).toBeUndefined()
+    const warCall = vi.mocked(fetch).mock.calls.find(c => fetchInputUrl(c[0]).includes('nice_war.json'))
+    expect((warCall?.[1])?.headers).toBeUndefined()
   })
 
   // 空配列キャッシュ(壊れた値)は cold と同じ扱いで full fetch フォールバックに入ること。
@@ -761,7 +764,7 @@ describe('fetchAndTransformData niceWarCache', () => {
 
     await fetchAndTransformData({ niceWarCache: cache })
 
-    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    const urls = vi.mocked(fetch).mock.calls.map(c => fetchInputUrl(c[0]))
     expect(urls.some(u => u.includes('nice_war.json'))).toBe(true)
   })
 })

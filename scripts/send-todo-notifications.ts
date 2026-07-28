@@ -188,7 +188,7 @@ const fetchUserTodoData = (userId: string): UserTodoData => {
   const raw = kvGetRemote(CLOUD_SAVE_NAMESPACE_ID, `cloud:${userId}`)
   if (raw === null) return { settings: DEFAULT_SETTINGS, tasks: [] }
 
-  let storage: Record<string, string> = {}
+  let storage: Record<string, string>
   try {
     storage = (JSON.parse(raw) as CloudSaveEnvelope).storage ?? {}
   } catch (e) {
@@ -196,13 +196,16 @@ const fetchUserTodoData = (userId: string): UserTodoData => {
     return { settings: DEFAULT_SETTINGS, tasks: [] }
   }
 
-  let settings: TodoSettings = DEFAULT_SETTINGS
+  let settings: TodoSettings
   if (typeof storage.todoSettings === 'string') {
     try {
       settings = { ...DEFAULT_SETTINGS, ...(JSON.parse(storage.todoSettings) as Partial<TodoSettings>) }
     } catch (e) {
       console.warn(`cloud:${userId} todoSettings malformed; using defaults:`, e)
+      settings = DEFAULT_SETTINGS
     }
+  } else {
+    settings = DEFAULT_SETTINGS
   }
 
   let tasks: TodoTask[] = []

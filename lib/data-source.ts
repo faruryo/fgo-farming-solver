@@ -37,7 +37,7 @@ export async function kvGet(key: string): Promise<string | null> {
     try {
       // Use dynamic import directly. Most modern bundlers handle this fine.
       const { getCloudflareContext } = await import("@opennextjs/cloudflare")
-      const context = await getCloudflareContext()
+      const context = getCloudflareContext()
       cachedEnv = (context.env || context) as CloudflareEnv
       
       if (cachedEnv && cachedEnv.MASTER_DATA) {

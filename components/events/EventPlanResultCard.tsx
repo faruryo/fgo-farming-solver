@@ -198,7 +198,6 @@ export const EventPlanResultCard: React.FC<Props> = ({
                   style={{ background: 'var(--panel)', color: 'var(--text2)' }}
                 >
                   {icon && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={icon} alt={name} className="w-4 h-4 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   )}
                   <span className="text-[10px] opacity-60">{name || `#${itemId}`}</span>
@@ -258,7 +257,6 @@ export const EventPlanResultCard: React.FC<Props> = ({
                     style={{ background: 'var(--panel)', color: 'var(--text2)' }}
                   >
                     {icon && (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={icon} alt={name} className="w-4 h-4 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     )}
                     <span className="text-[10px] opacity-60">{name || `#${a.shopItem.itemId}`}</span>

@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react'
 
 export const useLocalStorage = <T>(

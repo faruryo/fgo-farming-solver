@@ -62,7 +62,7 @@ const seedUser = (userId: string) => {
 
 const main = () => {
   const args = process.argv.slice(2)
-  let targetUsers: string[] = []
+  let targetUsers: string[]
 
   if (args.length > 0) {
     targetUsers = [args[0]]

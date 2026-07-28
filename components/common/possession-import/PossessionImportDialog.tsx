@@ -132,7 +132,7 @@ export const PossessionImportDialog: React.FC<{
       const n = parsePossessionInput(raw)
       if (n !== undefined) updates[c.atlasId] = n
     }
-    onConfirm(updates as Record<string, number>)
+    onConfirm(updates)
     handleClose(false)
   }
 
@@ -285,7 +285,6 @@ export const PossessionImportDialog: React.FC<{
                       {c.needsReview && expandedCrop[c.atlasId] && (
                         <div className="basis-full flex flex-wrap gap-2 pl-8 pb-2">
                           {c.sources.map((s, i) => (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               key={i}
                               src={s.cropDataUrl}

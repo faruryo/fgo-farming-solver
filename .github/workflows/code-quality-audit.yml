@@ -1,0 +1,80 @@
+name: Code quality reports
+
+# Report-only by design:
+# - jscpd and Knip report the full repository inventory, not just the PR delta.
+# - Knip can have false positives for framework and dynamically-invoked entries.
+# Blocking on the first inventory would encourage blanket ignore rules. Promote a
+# detector to a required gate only after its backlog is drained and its signal is proven.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly at an off-peak minute (Monday 18:23 UTC / Tuesday 03:23 JST).
+    - cron: '23 18 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  structural-audit:
+    name: Duplication and dead-code inventory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Scan duplication with jscpd
+        continue-on-error: true
+        run: pnpm run audit:duplicates
+
+      - name: Prepare Knip report directory
+        if: always()
+        run: mkdir -p reports/knip
+
+      - name: Scan unused code with Knip
+        if: always()
+        continue-on-error: true
+        run: >-
+          pnpm exec knip
+          --config knip.json
+          --reporter json
+          --no-exit-code
+          > reports/knip/knip-report.json
+
+      - name: Upload jscpd SARIF to code scanning
+        if: >-
+          always() &&
+          hashFiles('reports/jscpd/jscpd-report.sarif') != '' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@adfda868f108ac4222129de456ea554034a27db7 # v4
+        with:
+          sarif_file: reports/jscpd/jscpd-report.sarif
+          category: jscpd
+
+      - name: Upload structural audit reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: code-quality-reports
+          path: reports/
+          retention-days: 14
+          if-no-files-found: warn

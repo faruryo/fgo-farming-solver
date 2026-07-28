@@ -1,0 +1,2260 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "file": "app/[page]/page.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "app/[page]/page.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/api/progress/dev-mock.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "app/api/progress/route.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 1
+    },
+    {
+      "file": "app/api/progress/route.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/api/progress/route.ts",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "app/api/progress/snapshot/route.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/api/solve/route.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/api/solve/route.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/api/solve/route.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "app/api/solve/route.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "app/api/spot-icon/route.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 2
+    },
+    {
+      "file": "app/events/[id]/page.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/farming/history/page.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 3
+    },
+    {
+      "file": "app/farming/history/page.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/farming/history/page.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "app/farming/manual/page.tsx",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "app/farming/page.tsx",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "app/farming/results/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 4
+    },
+    {
+      "file": "app/farming/results/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 4
+    },
+    {
+      "file": "app/farming/results/[id]/page.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/items/[id]/page.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/layout.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/material/[className]/page.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/page.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "app/providers.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 1
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 2
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 4
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "app/quests/[id]/page.tsx",
+      "rule": "sonarjs/no-nested-template-literals",
+      "count": 1
+    },
+    {
+      "file": "app/servants/[id]/page.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/divergence-dialog.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/index.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 2
+    },
+    {
+      "file": "components/cloud/index.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 2
+    },
+    {
+      "file": "components/cloud/index.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/index.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/index.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/index.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 6
+    },
+    {
+      "file": "components/cloud/parts/local-section.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/parts/shrink-diff.test.tsx",
+      "rule": "security/detect-non-literal-regexp",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/parts/shrink-diff.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/cloud/parts/shrink-diff.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 2
+    },
+    {
+      "file": "components/cloud/shrink-guard-dialog.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/common/checkbox-tree.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/common/checkbox-tree.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 6
+    },
+    {
+      "file": "components/common/checkbox-tree.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 5
+    },
+    {
+      "file": "components/common/cloud-indicator.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/common/cloud-indicator.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/common/cloud-indicator.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/common/cloud-indicator.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 3
+    },
+    {
+      "file": "components/common/doc.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/common/doc.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "components/common/error-boundary.tsx",
+      "rule": "sonarjs/function-return-type",
+      "count": 1
+    },
+    {
+      "file": "components/common/footer.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/common/link.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/common/link.tsx",
+      "rule": "sonarjs/no-redundant-optional",
+      "count": 1
+    },
+    {
+      "file": "components/common/nav.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "components/common/nav.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "components/common/possession-import/PossessionImportDialog.test.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 3
+    },
+    {
+      "file": "components/common/possession-import/PossessionImportDialog.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "components/common/possession-import/PossessionImportDialog.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "components/common/possession-import/PossessionImportDialog.tsx",
+      "rule": "sonarjs/different-types-comparison",
+      "count": 1
+    },
+    {
+      "file": "components/common/StockTargetSettings.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/common/StockTargetSettings.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 5
+    },
+    {
+      "file": "components/common/StockTargetSettings.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "components/common/title.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/CampaignDetailDialog.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/CampaignDetailDialog.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 2
+    },
+    {
+      "file": "components/dashboard/CampaignSection.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "components/dashboard/EventSection.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "components/dashboard/EventSection.tsx",
+      "rule": "sonarjs/jsx-no-leaked-render",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/FarmingWizard.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/GachaSection.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/NearGoalSection.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/NearGoalSection.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "components/dashboard/NearGoalSection.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "components/dashboard/NearGoalSection.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/NearGoalSection.tsx",
+      "rule": "sonarjs/no-misleading-array-reverse",
+      "count": 2
+    },
+    {
+      "file": "components/dashboard/ProgressSection.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "sonarjs/no-misleading-array-reverse",
+      "count": 1
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 5
+    },
+    {
+      "file": "components/dashboard/RecommendedQuest.tsx",
+      "rule": "sonarjs/no-nested-functions",
+      "count": 3
+    },
+    {
+      "file": "components/events/EventListClient.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventListClient.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventPlannerClient.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventPlannerClient.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventPlannerClient.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 2
+    },
+    {
+      "file": "components/events/EventPlannerClient.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventPlannerClient.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 2
+    },
+    {
+      "file": "components/events/EventPlanResultCard.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventPlanResultCard.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/events/EventPlanResultCard.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 2
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 4
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 2
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 3
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 3
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 8
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "components/farming/FarmingHistoryChart.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "components/farming/index.tsx",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 1
+    },
+    {
+      "file": "components/farming/index.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/farming/index.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "components/farming/index.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 2
+    },
+    {
+      "file": "components/farming/item-category-fieldset.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 1
+    },
+    {
+      "file": "components/farming/item-fieldset.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 1
+    },
+    {
+      "file": "components/farming/item-input.tsx",
+      "rule": "react-hooks/immutability",
+      "count": 1
+    },
+    {
+      "file": "components/farming/item-input.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "components/farming/item-input.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 1
+    },
+    {
+      "file": "components/farming/progress-report-content.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/farming/progress-report-content.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/farming/ProgressReportPanel.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "components/farming/quest-item-table.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "components/farming/quest-table.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/farming/quest-table.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 5
+    },
+    {
+      "file": "components/farming/result.tsx",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 8
+    },
+    {
+      "file": "components/farming/result.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 6
+    },
+    {
+      "file": "components/farming/result.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 13
+    },
+    {
+      "file": "components/farming/result.tsx",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 3
+    },
+    {
+      "file": "components/farming/result.tsx",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 5
+    },
+    {
+      "file": "components/farming/result.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/items/drop-table.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/items/drop-table.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/items/item.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/items/item.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "components/material/index.test.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 4
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "complexity",
+      "count": 2
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 4
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 15
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/material/index.tsx",
+      "rule": "sonarjs/no-nested-functions",
+      "count": 3
+    },
+    {
+      "file": "components/material/material-page-select.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/material/material-page-select.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 2
+    },
+    {
+      "file": "components/material/material-pagination.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/material/material-selection-advisor.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "components/material/material-selection-advisor.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "components/material/material-selection-advisor.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "components/material/material-selection-advisor.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/material/material-selection-advisor.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 5
+    },
+    {
+      "file": "components/material/material-selection-advisor.tsx",
+      "rule": "sonarjs/no-nested-template-literals",
+      "count": 2
+    },
+    {
+      "file": "components/material/material.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/material/material.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/material/range-slider-with-input.tsx",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 1
+    },
+    {
+      "file": "components/material/range-slider-with-input.tsx",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 1
+    },
+    {
+      "file": "components/material/result-accordion.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 3
+    },
+    {
+      "file": "components/material/result-table.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/material/result-table.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 3
+    },
+    {
+      "file": "components/material/result.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/material/result.tsx",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "components/material/result.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 2
+    },
+    {
+      "file": "components/material/result.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/material/result.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 5
+    },
+    {
+      "file": "components/material/servant-card.tsx",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "components/material/servant-card.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/material/servant-card.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 7
+    },
+    {
+      "file": "components/material/servant-card.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/material/servant-card.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 2
+    },
+    {
+      "file": "components/material/servant-card.tsx",
+      "rule": "sonarjs/no-nested-template-literals",
+      "count": 3
+    },
+    {
+      "file": "components/material/servant-level-select.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "components/material/servant-level-select.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 2
+    },
+    {
+      "file": "components/material/target-category-select.tsx",
+      "rule": "sonarjs/no-selector-parameter",
+      "count": 1
+    },
+    {
+      "file": "components/material/target-level-select.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "components/material/target-level-select.tsx",
+      "rule": "sonarjs/deprecation",
+      "count": 3
+    },
+    {
+      "file": "components/material/target-level-select.tsx",
+      "rule": "sonarjs/no-nested-functions",
+      "count": 1
+    },
+    {
+      "file": "components/material/tracking-toast.test.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/quests/PossessionModal.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/quests/PossessionModal.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/quests/QuestEfficiencyCard.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/quests/QuestEfficiencyList.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/quests/QuestEfficiencyList.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/servants/index.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/servants/servant.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/todo/index.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/todo/index.tsx",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "components/todo/TodoSettingsPanel.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "components/todo/TodoSettingsPanel.tsx",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "components/todo/TodoSettingsPanel.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "components/todo/TodoSettingsPanel.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "components/todo/TodoSettingsPanel.tsx",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "components/todo/TodoSettingsPanel.tsx",
+      "rule": "sonarjs/todo-tag",
+      "count": 3
+    },
+    {
+      "file": "components/ui/accordion.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 4
+    },
+    {
+      "file": "components/ui/alert-dialog.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 4
+    },
+    {
+      "file": "components/ui/checkbox.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "components/ui/dialog.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 7
+    },
+    {
+      "file": "components/ui/dropdown-menu.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 7
+    },
+    {
+      "file": "components/ui/popover.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 3
+    },
+    {
+      "file": "components/ui/radio-group.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 2
+    },
+    {
+      "file": "components/ui/select.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 5
+    },
+    {
+      "file": "components/ui/separator.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "components/ui/sheet.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 7
+    },
+    {
+      "file": "components/ui/slider.tsx",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "components/ui/slider.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 1
+    },
+    {
+      "file": "components/ui/tabs.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 3
+    },
+    {
+      "file": "components/ui/tooltip.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 3
+    },
+    {
+      "file": "hooks/create-chaldea-state.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-active-campaigns.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-chaldea-state-merger.test.ts",
+      "rule": "security/detect-object-injection",
+      "count": 9
+    },
+    {
+      "file": "hooks/use-chaldea-state-merger.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-chaldea-state-merger.ts",
+      "rule": "security/detect-object-injection",
+      "count": 7
+    },
+    {
+      "file": "hooks/use-checkbox-tree.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "hooks/use-checkbox-tree.ts",
+      "rule": "sonarjs/deprecation",
+      "count": 3
+    },
+    {
+      "file": "hooks/use-checkbox-tree.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-checkbox-tree.ts",
+      "rule": "sonarjs/no-redundant-boolean",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-checked-from-chaldea-state.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-checked-from-chaldea-state.ts",
+      "rule": "sonarjs/no-redundant-boolean",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.test.tsx",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-cloud-sync.test.tsx",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.test.tsx",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.test.tsx",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "sonarjs/pseudo-random",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-dashboard-result.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-dashboard-sort-mode.ts",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-drops.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-farming-result.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "hooks/use-local-storage.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-local-storage.ts",
+      "rule": "react-hooks/refs",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-local-storage.ts",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-pod-free-quests.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-pod-free-quests.ts",
+      "rule": "sonarjs/reduce-initial-value",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-progress-report.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-progress-report.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-progress-report.ts",
+      "rule": "react-hooks/exhaustive-deps",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-progress-report.ts",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-progress-report.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-quest-tree.ts",
+      "rule": "sonarjs/no-nested-functions",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 3
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 4
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 2
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 9
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "react-hooks/set-state-in-effect",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-quest-wave.ts",
+      "rule": "sonarjs/no-nested-functions",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-todo-tasks.test.tsx",
+      "rule": "sonarjs/no-identical-functions",
+      "count": 1
+    },
+    {
+      "file": "lib/cache.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 6
+    },
+    {
+      "file": "lib/cache.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 13
+    },
+    {
+      "file": "lib/cache.ts",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 17
+    },
+    {
+      "file": "lib/cache.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 19
+    },
+    {
+      "file": "lib/cache.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "lib/campaign-detail.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/campaign-grouping.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 1
+    },
+    {
+      "file": "lib/class-names.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "lib/cloud-sync/shrink-guard.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 10
+    },
+    {
+      "file": "lib/cloud-sync/shrink-guard.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 1
+    },
+    {
+      "file": "lib/cloud-sync/shrink-guard.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 2
+    },
+    {
+      "file": "lib/cloud-sync/shrink-guard.test.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/cloud-sync/shrink-guard.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "lib/cloud-sync/storage-diff.ts",
+      "rule": "security/detect-object-injection",
+      "count": 6
+    },
+    {
+      "file": "lib/data-source.test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 1
+    },
+    {
+      "file": "lib/data-source.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 1
+    },
+    {
+      "file": "lib/data-source.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 2
+    },
+    {
+      "file": "lib/data-source.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 1
+    },
+    {
+      "file": "lib/data-source.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 7
+    },
+    {
+      "file": "lib/data-source.ts",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 5
+    },
+    {
+      "file": "lib/data-source.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 5
+    },
+    {
+      "file": "lib/diff-materials.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 11
+    },
+    {
+      "file": "lib/diff-materials.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "lib/event-plan.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 10
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "complexity",
+      "count": 2
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "max-depth",
+      "count": 3
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 3
+    },
+    {
+      "file": "lib/event-plan.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "lib/format-date.test.ts",
+      "rule": "sonarjs/no-undefined-argument",
+      "count": 1
+    },
+    {
+      "file": "lib/get-area.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/get-area.ts",
+      "rule": "sonarjs/single-character-alternation",
+      "count": 1
+    },
+    {
+      "file": "lib/get-class-icon-url.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/get-events.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "lib/get-hash.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/get-items.ts",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "lib/get-local-quests.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/get-local-quests.ts",
+      "rule": "sonarjs/super-linear-regex",
+      "count": 1
+    },
+    {
+      "file": "lib/get-materials.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/get-md.ts",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 1
+    },
+    {
+      "file": "lib/get-nice-servants.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/get-result.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/get-servants.ts",
+      "rule": "sonarjs/no-misleading-array-reverse",
+      "count": 1
+    },
+    {
+      "file": "lib/item-rarity.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/regression.test.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/regression.test.ts",
+      "rule": "sonarjs/prefer-specific-assertions",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/regression.test.ts",
+      "rule": "sonarjs/use-type-alias",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/stable-ids.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/stable-ids.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/stable-ids.test.ts",
+      "rule": "sonarjs/no-undefined-argument",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/stable-ids.ts",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/stable-ids.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/stable-ids.ts",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "lib/master-data/stable-ids.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/stable-ids.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 11
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 17
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 8
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 3
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "sonarjs/no-floating-point-equality",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "sonarjs/no-misleading-array-reverse",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/update.test.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 6
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 6
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 3
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 11
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "max-lines-per-function",
+      "count": 2
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "security/detect-object-injection",
+      "count": 15
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 5
+    },
+    {
+      "file": "lib/master-data/update.ts",
+      "rule": "sonarjs/publicly-writable-directories",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/validation.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/wave-count.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/master-data/wave-count.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/master-profile/max-ap.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "lib/master-profile/max-ap.ts",
+      "rule": "sonarjs/void-use",
+      "count": 1
+    },
+    {
+      "file": "lib/material-selection-advisor.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 6
+    },
+    {
+      "file": "lib/material-selection-advisor.ts",
+      "rule": "max-params",
+      "count": 1
+    },
+    {
+      "file": "lib/material-selection-advisor.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "lib/material-selection-advisor.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/analyze-screenshot.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/possession-import/detect-cards.test.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/detect-cards.test.ts",
+      "rule": "security/detect-object-injection",
+      "count": 5
+    },
+    {
+      "file": "lib/possession-import/detect-cards.test.ts",
+      "rule": "sonarjs/no-identical-functions",
+      "count": 2
+    },
+    {
+      "file": "lib/possession-import/detect-cards.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 2
+    },
+    {
+      "file": "lib/possession-import/detect-cards.ts",
+      "rule": "security/detect-object-injection",
+      "count": 7
+    },
+    {
+      "file": "lib/possession-import/fuzzy-match.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 3
+    },
+    {
+      "file": "lib/possession-import/fuzzy-match.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 3
+    },
+    {
+      "file": "lib/possession-import/fuzzy-match.ts",
+      "rule": "security/detect-object-injection",
+      "count": 5
+    },
+    {
+      "file": "lib/possession-import/merge-candidates.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/ocr-engine.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/ocr-engine.ts",
+      "rule": "sonarjs/void-use",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/parse-quantity.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/parse-quantity.ts",
+      "rule": "sonarjs/concise-regex",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/parse-quantity.ts",
+      "rule": "sonarjs/prefer-regexp-exec",
+      "count": 1
+    },
+    {
+      "file": "lib/possession-import/parse-quantity.ts",
+      "rule": "sonarjs/reduce-initial-value",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/diff.test.ts",
+      "rule": "sonarjs/parameterized-tests",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/diff.ts",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "lib/progress/diff.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/finalize-baseline.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/growth.test.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/progress/growth.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/lap-value.persona.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 28
+    },
+    {
+      "file": "lib/progress/lap-value.persona.test.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/lap-value.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 8
+    },
+    {
+      "file": "lib/progress/lap-value.test.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 3
+    },
+    {
+      "file": "lib/progress/lap-value.ts",
+      "rule": "security/detect-object-injection",
+      "count": 5
+    },
+    {
+      "file": "lib/progress/lap-value.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/mashu-messages.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/mashu-messages.ts",
+      "rule": "sonarjs/pseudo-random",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/rarity-ap-sample.ts",
+      "rule": "security/detect-object-injection",
+      "count": 6
+    },
+    {
+      "file": "lib/progress/rarity-ap-table.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/rarity-ap-table.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/rarity-ap-table.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "lib/progress/rarity-ap-table.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 2
+    },
+    {
+      "file": "lib/progress/select-baseline.ts",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "lib/progress/snapshot-client.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/summary.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/summary.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "lib/progress/throughput.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "lib/progress/tier.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/quest-efficiency.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 10
+    },
+    {
+      "file": "lib/quest-efficiency.test.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/quest-efficiency.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/quest-efficiency.ts",
+      "rule": "complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/quest-efficiency.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "lib/quest-efficiency.ts",
+      "rule": "security/detect-object-injection",
+      "count": 8
+    },
+    {
+      "file": "lib/quest-efficiency.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "lib/quest-efficiency.ts",
+      "rule": "sonarjs/use-type-alias",
+      "count": 1
+    },
+    {
+      "file": "lib/solver.perf.test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 7
+    },
+    {
+      "file": "lib/solver.perf.test.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 6
+    },
+    {
+      "file": "lib/solver.perf.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 11
+    },
+    {
+      "file": "lib/solver.perf.test.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 5
+    },
+    {
+      "file": "lib/solver.perf.test.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/solver.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 2
+    },
+    {
+      "file": "lib/solver.test.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/solver.test.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 2
+    },
+    {
+      "file": "lib/solver.test.ts",
+      "rule": "sonarjs/pseudo-random",
+      "count": 1
+    },
+    {
+      "file": "lib/solver.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "lib/solver.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/sum-materials.ts",
+      "rule": "max-nested-callbacks",
+      "count": 1
+    },
+    {
+      "file": "lib/sum-materials.ts",
+      "rule": "security/detect-object-injection",
+      "count": 3
+    },
+    {
+      "file": "lib/sum-materials.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "lib/sum-materials.ts",
+      "rule": "sonarjs/no-nested-functions",
+      "count": 1
+    },
+    {
+      "file": "lib/todo/auto-generate.test.ts",
+      "rule": "sonarjs/no-alphabetical-sort",
+      "count": 2
+    },
+    {
+      "file": "lib/todo/auto-generate.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "lib/todo/period.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "lib/todo/push.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "lib/tracking-toast.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 2
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 3
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 1
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 1
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 2
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 3
+    },
+    {
+      "file": "scripts/bench-steady-state.ts",
+      "rule": "sonarjs/publicly-writable-directories",
+      "count": 2
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 2
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 2
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "@typescript-eslint/no-unsafe-argument",
+      "count": 3
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 1
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 1
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 3
+    },
+    {
+      "file": "scripts/bench-updater.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "scripts/check-lint-ratchet.mjs",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 3
+    },
+    {
+      "file": "scripts/kv-rest.ts",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 2
+    },
+    {
+      "file": "scripts/kv-rest.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "scripts/populate-rewards.ts",
+      "rule": "security/detect-object-injection",
+      "count": 5
+    },
+    {
+      "file": "scripts/populate-rewards.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 2
+    },
+    {
+      "file": "scripts/refresh-event-data.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "scripts/refresh-event-data.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "scripts/refresh-event-data.ts",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 2
+    },
+    {
+      "file": "scripts/refresh-event-data.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "scripts/refresh-event-data.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 2
+    },
+    {
+      "file": "scripts/refresh-nice-war-cache.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 1
+    },
+    {
+      "file": "scripts/refresh-nice-war-cache.ts",
+      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
+      "count": 1
+    },
+    {
+      "file": "scripts/refresh-nice-war-cache.ts",
+      "rule": "security/detect-non-literal-fs-filename",
+      "count": 1
+    },
+    {
+      "file": "scripts/run-rarity-updater.ts",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
+      "file": "scripts/run-rarity-updater.ts",
+      "rule": "sonarjs/publicly-writable-directories",
+      "count": 1
+    },
+    {
+      "file": "scripts/run-updater.ts",
+      "rule": "max-lines-per-function",
+      "count": 1
+    },
+    {
+      "file": "scripts/run-updater.ts",
+      "rule": "security/detect-object-injection",
+      "count": 2
+    },
+    {
+      "file": "scripts/run-updater.ts",
+      "rule": "sonarjs/publicly-writable-directories",
+      "count": 2
+    },
+    {
+      "file": "scripts/seed-d1-progress.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "count": 2
+    },
+    {
+      "file": "scripts/seed-d1-progress.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 2
+    },
+    {
+      "file": "scripts/seed-d1-progress.ts",
+      "rule": "@typescript-eslint/no-unsafe-call",
+      "count": 2
+    },
+    {
+      "file": "scripts/seed-d1-progress.ts",
+      "rule": "@typescript-eslint/no-unsafe-member-access",
+      "count": 5
+    },
+    {
+      "file": "scripts/send-todo-notifications.dedup.test.ts",
+      "rule": "@typescript-eslint/no-non-null-assertion",
+      "count": 1
+    },
+    {
+      "file": "scripts/send-todo-notifications.dedup.test.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 3
+    },
+    {
+      "file": "scripts/send-todo-notifications.ts",
+      "rule": "sonarjs/cognitive-complexity",
+      "count": 1
+    },
+    {
+      "file": "scripts/send-todo-notifications.ts",
+      "rule": "sonarjs/no-nested-conditional",
+      "count": 1
+    },
+    {
+      "file": "scripts/send-todo-notifications.ts",
+      "rule": "sonarjs/no-os-command-from-path",
+      "count": 1
+    },
+    {
+      "file": "scripts/send-todo-notifications.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 5
+    },
+    {
+      "file": "scripts/send-todo-notifications.window.test.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "scripts/update-data.ts",
+      "rule": "@typescript-eslint/no-unsafe-assignment",
+      "count": 2
+    },
+    {
+      "file": "types/todo.ts",
+      "rule": "sonarjs/todo-tag",
+      "count": 2
+    },
+    {
+      "file": "utils/group-by.ts",
+      "rule": "security/detect-object-injection",
+      "count": 4
+    },
+    {
+      "file": "utils/group-by.ts",
+      "rule": "sonarjs/no-nested-assignment",
+      "count": 1
+    }
+  ]
+}

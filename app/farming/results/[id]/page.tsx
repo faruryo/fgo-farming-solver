@@ -1,8 +1,7 @@
-/* eslint-disable */
 import { getResult } from '../../../../lib/get-result'
 import { getLocalQuests } from '../../../../lib/get-local-quests'
 import { getLocalItems } from '../../../../lib/get-local-items'
-import { Page } from '../../../../components/farming/result'
+import { Page, type PageProps } from '../../../../components/farming/result'
 import { notFound } from 'next/navigation'
 import { DBError } from '../../../../lib/dynamodb'
 import { isBothResult } from '../../../../interfaces/api'
@@ -14,6 +13,8 @@ export default async function ResultPage({
 }) {
   const { id } = await params
   const locale = 'ja'
+
+  let pageProps: PageProps
 
   try {
     const raw = await getResult(id)
@@ -40,31 +41,29 @@ export default async function ResultPage({
         stockLapResult = { ...raw.siblingResult.lap, items: sLapItems as any, quests: sLapQuests as any }
       }
 
-      return (
-        <Page
-          apResult={{ ...raw.ap, items: apItems as any, quests: apQuests as any }}
-          lapResult={{ ...raw.lap, items: lapItems as any, quests: lapQuests as any }}
-          createdAt={raw.createdAt}
-          stockApResult={stockApResult}
-          stockLapResult={stockLapResult}
-        />
-      )
+      pageProps = {
+        apResult: { ...raw.ap, items: apItems, quests: apQuests },
+        lapResult: { ...raw.lap, items: lapItems, quests: lapQuests },
+        createdAt: raw.createdAt,
+        stockApResult,
+        stockLapResult,
+      }
+    } else {
+      // 後方互換: 旧形式の単一 Result
+      const { items, quests, ...result } = raw
+      const [localItems, localQuests] = await Promise.all([
+        getLocalItems(items, locale),
+        getLocalQuests(quests, locale),
+      ])
+      pageProps = {
+        legacyResult: { ...result, items: localItems, quests: localQuests },
+        createdAt: raw.createdAt,
+      }
     }
-
-    // 後方互換: 旧形式の単一 Result
-    const { items, quests, ...result } = raw
-    const [localItems, localQuests] = await Promise.all([
-      getLocalItems(items, locale),
-      getLocalQuests(quests, locale),
-    ])
-    return (
-      <Page
-        legacyResult={{ ...result, items: localItems as any, quests: localQuests as any }}
-        createdAt={raw.createdAt}
-      />
-    )
   } catch (e) {
     if (!(e instanceof DBError)) console.error(e)
     return notFound()
   }
+
+  return <Page {...pageProps} />
 }

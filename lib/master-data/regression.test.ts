@@ -6,6 +6,9 @@ vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
 }))
 
+const fetchInputUrl = (input: string | URL | Request): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
 describe('update.ts Regression Tests', () => {
   const originalProcess = process
 
@@ -22,7 +25,7 @@ describe('update.ts Regression Tests', () => {
     vi.stubGlobal('process', { versions: {} })
 
     vi.mocked(fetch).mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = url.toString()
+      const urlStr = fetchInputUrl(url)
       if (urlStr.endsWith('nice_item.json')) return { ok: true, json: () => Promise.resolve([]) } as Response
       if (urlStr.includes('spreadsheets')) return { ok: true, text: () => Promise.resolve('h\nh\n,,AP,データ数\n') } as Response
       if (urlStr.endsWith('nice_war.json')) {
@@ -39,7 +42,7 @@ describe('update.ts Regression Tests', () => {
 
     await fetchAndTransformData()
 
-    const fetchCalls = vi.mocked(fetch).mock.calls.map(c => c[0].toString())
+    const fetchCalls = vi.mocked(fetch).mock.calls.map(c => fetchInputUrl(c[0]))
     expect(fetchCalls.some(url => url.endsWith('nice_war.json'))).toBe(true)
   })
 
@@ -58,7 +61,7 @@ describe('update.ts Regression Tests', () => {
     }]
 
     vi.mocked(fetch).mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = url.toString()
+      const urlStr = fetchInputUrl(url)
       if (urlStr.endsWith('nice_item.json')) return { ok: true, json: () => Promise.resolve(mockItems) } as Response
       if (urlStr.includes('spreadsheets')) return { ok: true, text: () => Promise.resolve(mockCSV) } as Response
       if (urlStr.endsWith('nice_war.json')) return { ok: true, json: () => Promise.resolve(mockWar) } as Response
@@ -68,7 +71,7 @@ describe('update.ts Regression Tests', () => {
     await fetchAndTransformData()
 
     const questDetailFetches = vi.mocked(fetch).mock.calls
-      .map(c => c[0].toString())
+      .map(c => fetchInputUrl(c[0]))
       .filter(url => url.includes('/quest/'))
 
     expect(questDetailFetches.length).toBe(0)
@@ -83,7 +86,7 @@ describe('update.ts Regression Tests', () => {
     }]
 
     vi.mocked(fetch).mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = url.toString()
+      const urlStr = fetchInputUrl(url)
       if (urlStr.endsWith('nice_item.json')) return { ok: true, json: () => Promise.resolve(mockItems) } as Response
       if (urlStr.includes('spreadsheets')) return { ok: true, text: () => Promise.resolve(mockCSV) } as Response
       if (urlStr.endsWith('nice_war.json')) return { ok: true, json: () => Promise.resolve(mockWar) } as Response
@@ -104,7 +107,7 @@ describe('update.ts Regression Tests', () => {
     const mockWar = [{ longName: 'OtherArea', spots: [{ quests: [{ id: 1111, name: '別のクエスト' }] }] }]
 
     vi.mocked(fetch).mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = url.toString()
+      const urlStr = fetchInputUrl(url)
       if (urlStr.endsWith('nice_item.json')) return { ok: true, json: () => Promise.resolve(mockItems) } as Response
       if (urlStr.includes('spreadsheets')) return { ok: true, text: () => Promise.resolve(mockCSV) } as Response
       if (urlStr.endsWith('nice_war.json')) return { ok: true, json: () => Promise.resolve(mockWar) } as Response

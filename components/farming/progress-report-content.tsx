@@ -220,7 +220,6 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
                         className="u-face-frame shrink-0"
                         style={{ width: 28, height: 28 }}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={servantFaceUrl(s.servantId)}
                           alt={s.servantName ?? s.servantId}
