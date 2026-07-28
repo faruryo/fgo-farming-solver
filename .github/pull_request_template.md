@@ -20,7 +20,7 @@
 - [ ] `pnpm run lint:ratchet`
 - [ ] `pnpm run type-check`
 - [ ] 対象テスト
-- [ ] `openspec validate --strict --json`
+- [ ] 製品/runtime挙動を変更した場合は該当OpenSpecをvalidateした、または非該当と記載
 - [ ] UI変更は実画面またはビジュアル回帰を確認
 
 ## AI review resolution

@@ -43,10 +43,12 @@
 - Refer to domain-specific rules for implementation details.
 
 ## OpenSpec Workflow
-All implementation work MUST be done through OpenSpec to keep specs in sync with code.
+Product or runtime behavior changes MUST be done through OpenSpec to keep specs in sync with code.
 
-- **Large changes** (new features, refactors): use `openspec new change <name>` → see `openspec-propose` skill for details.
-- **Small changes** (bug fixes, tweaks): edit `openspec/specs/<capability>/spec.md` directly, then run `openspec validate --specs`.
+Repository-only maintenance that does not change product/runtime behavior—such as CI, lint, developer tooling, agent instructions, documentation, or PR templates—does not require an OpenSpec change. If a change mixes maintenance with product behavior, apply OpenSpec to the product/runtime portion.
+
+- **Large product changes** (new features, behavior-changing refactors): use `openspec new change <name>` → see `openspec-propose` skill for details.
+- **Small product changes** (bug fixes, behavior tweaks): edit `openspec/specs/<capability>/spec.md` directly, then run `openspec validate --specs`.
 
 ## Code Review Rules
 
@@ -55,3 +57,4 @@ All implementation work MUST be done through OpenSpec to keep specs in sync with
 - 未公開FGOデータや、再利用許諾を確認していない第三者データを公開レスポンスへ追加する変更をBLOCKERとする。公開時点・ライセンス・出典の境界を確認する。
 - UI文言が `t('kebab-key', '日本語フォールバック')` を通らない変更を指摘し、日英localeキーとテストmockを同時に確認する。
 - 重い定期処理をCloudflare cron Workerへ戻す変更をBLOCKERとする。安全経路はGitHub Actionsの定期workflowである。
+- OpenSpec不足を指摘するのは製品/runtime挙動の変更時に限る。CI、lint、開発ツール、agent規約、文書、PR templateだけの変更は対象外とする。

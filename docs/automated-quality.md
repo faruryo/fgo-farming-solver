@@ -10,9 +10,11 @@
 | Warning ratchet | `pnpm run lint:ratchet`              | 既存負債をファイル・ルール単位で固定し、増加を拒否          |
 | TypeScript      | `pnpm run type-check`                | `strict` 型検査                                             |
 | Tests           | `pnpm test --run` / `pnpm test:perf` | 振る舞い・回帰・性能境界                                    |
-| OpenSpec        | `openspec validate --strict --json`  | 仕様と実装作業の同期                                        |
+| OpenSpec        | 該当change/specのvalidate            | 製品/runtime挙動を変更する場合だけ仕様と実装を同期          |
 
 `eslint.config.mjs` の例外はファイル別allowlistに理由付きで置く。ソース内の `eslint-disable`、`@ts-ignore`、`@ts-expect-error` は使わない。
+
+CI、lint、開発ツール、agent規約、文書、PR templateだけを変更し、製品/runtime挙動を変えない場合はOpenSpec changeを作らない。両者を含む変更では、製品/runtime側だけをOpenSpecへ反映する。
 
 ## Ratchet policy
 
