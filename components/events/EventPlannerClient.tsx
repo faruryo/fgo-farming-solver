@@ -121,7 +121,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
       .then(setMaterialsForServants)
       .catch(console.error)
       .finally(() => setMaterialsLoading(false))
-  }, [hasRoster, enabledServantIds.join(',')])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasRoster, enabledServantIds.join(',')])
 
   // ── Derived: effective drop override ─────────────────────────────────────────
   const hasAtlasDrops = event.farmingNodes.some(n => n.drops.length > 0)
@@ -394,7 +394,6 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                       <div key={id} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1 min-w-0">
                           {icon && (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={icon} alt={name} className="w-5 h-5 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                           )}
                           <span className="text-xs truncate" style={{ color: 'var(--text2)' }}>
@@ -432,7 +431,6 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 </p>
                 <div className="flex items-center gap-2">
                   {event.currency.icon && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={event.currency.icon}
                       alt={event.currency.name}

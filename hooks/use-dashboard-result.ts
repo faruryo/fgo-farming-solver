@@ -49,6 +49,5 @@ export const useDashboardResult = (
     // (in addition to drops / recentResult changes). They are derived from
     // drops.campaigns + the bucketed nowSec, so listing them keeps the
     // memo's invalidation explicit even though it's transitively covered.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recentResult, drops, digest, activeCampaigns.length, nowSec])
 }

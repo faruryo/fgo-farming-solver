@@ -133,7 +133,6 @@ export const QuestEfficiencyList: React.FC = () => {
       .filter(r => r.quest)
       // 冠位研鑽戦の VI以下 は既定で隠す(showLowKanni で表示)。
       .filter(r => showLowKanni || !isLowKanni(r.quest.area, r.quest.name))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drops, isLoading, possession, goals, activeCampaigns, shortageOnly, includeSkillStones, includePieces, resolvedStockBuffer, stockEnabled, denominator, includeQp, includeBond, includeExp, showLowKanni])
 
   const filtered = useMemo(() => {

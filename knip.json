@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/*.{ts,mjs}",
+    "e2e/**/*.ts",
+    "vitest.config.ts",
+    "vitest.perf.config.ts",
+    "vitest.setup.ts",
+    "playwright.config.ts",
+    "open-next.config.ts",
+    "postcss.config.mjs"
+  ],
+  "project": [
+    "**/*.{ts,tsx,mjs}",
+    "!node_modules/**",
+    "!.next/**",
+    "!.open-next/**",
+    "!reports/**"
+  ],
+  "ignore": ["types/**/*.d.ts"]
+}

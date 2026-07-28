@@ -20,7 +20,6 @@ export const useQuestTree = (
 ): { ids: string[]; tree: Node[] } =>
   useMemo(() => {
     // 30日窓の NEW 判定には現在時刻が必要。日単位の判定なので再レンダー間の揺らぎは表示に影響しない。
-    // eslint-disable-next-line react-hooks/purity
     const now = Date.now()
     const ids: string[] = []
     const tree = Object.entries(groupBy(quests, ({ id }) => id[0])).map(

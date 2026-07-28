@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from 'react'
 
+interface SpotIconResponse {
+  imageUrl: string | null
+}
+
+const readJson = async <T>(response: Response): Promise<T> => {
+  const value: unknown = await response.json()
+  return value as T
+}
+
 export function useSpotIcons(quests: Array<{ id: string; aaQuestId?: number } | null | undefined>) {
   const [icons, setIcons] = useState<Record<string, string>>({})
 
@@ -13,10 +22,10 @@ export function useSpotIcons(quests: Array<{ id: string; aaQuestId?: number } | 
     )
     if (!targets.length) return
 
-    Promise.allSettled(
+    void Promise.allSettled(
       targets.map(q =>
         fetch(`/api/spot-icon?aaQuestId=${q.aaQuestId}`)
-          .then(r => r.json() as Promise<{ imageUrl: string | null }>)
+          .then(r => readJson<SpotIconResponse>(r))
           .then(({ imageUrl }) => ({ id: q.id, imageUrl }))
       )
     ).then(results => {
@@ -28,7 +37,6 @@ export function useSpotIcons(quests: Array<{ id: string; aaQuestId?: number } | 
       }
       setIcons(map)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
   return icons

@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { origin, region, staticOrigin } from '../../constants/atlasacademy'
 import { Item as AtlasItem } from '../../interfaces/atlas-academy'
 import { assignItemId, assignQuestIds, questKey, registryFromPrevious } from './stable-ids'
@@ -23,15 +22,12 @@ export type {
 
 import type {
   Item,
-  Enemy,
-  Wave,
   Quest,
   DropRate,
   Campaign,
   CampaignCalcType,
   MasterData,
   DashboardEvent,
-  DashboardGacha,
   RecentServant,
   DashboardMeta,
   PodFreePeriod,
@@ -185,6 +181,11 @@ interface BasicEvent {
   finishedAt: number
 }
 
+const readJson = async <T>(response: Response): Promise<T> => {
+  const value: unknown = await response.json()
+  return value as T
+}
+
 /**
  * 開催中(アクティブ)のイベントのみを取得する。
  *
@@ -204,7 +205,7 @@ interface BasicEvent {
 export async function fetchActiveEvents(nowSec?: number): Promise<AtlasEvent[]> {
   const now = nowSec ?? Math.floor(Date.now() / 1000)
   const res = await fetch(`${origin}/export/${region}/basic_event.json`)
-  const basic = (await res.json()) as BasicEvent[]
+  const basic = await readJson<BasicEvent[]>(res)
   const activeIds = basic
     .filter(
       e =>
@@ -229,7 +230,7 @@ export async function fetchActiveEvents(nowSec?: number): Promise<AtlasEvent[]> 
           console.warn(`fetchActiveEvents: per-event fetch failed for ${id} (status ${r.status})`)
           return null
         }
-        return (await r.json()) as AtlasEvent
+        return readJson<AtlasEvent>(r)
       } catch (e) {
         console.warn(`fetchActiveEvents: per-event fetch error for ${id}:`, e)
         return null
@@ -869,7 +870,7 @@ export interface BasicServantEntry {
 
 export async function fetchBasicServants(): Promise<BasicServantEntry[]> {
   const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
-  return (await res.json()) as BasicServantEntry[]
+  return readJson<BasicServantEntry[]>(res)
 }
 
 export async function fetchDashboardMeta(

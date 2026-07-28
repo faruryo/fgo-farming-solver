@@ -1,4 +1,3 @@
-/* eslint-disable */
 'use client'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -233,9 +232,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
         // Persist a full-state progress snapshot (incl. material) for this run.
         // Fire-and-forget so it never blocks navigation to the result page.
         void saveProgressSnapshot()
-        await router.push(url)
+        router.push(url)
       } else {
-        await router.push('/500')
+        router.push('/500')
       }
     },
     [checkedQuests, itemCounts, router, setIsLoading, stockItemsParam]
