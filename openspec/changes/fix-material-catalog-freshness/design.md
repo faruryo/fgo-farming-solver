@@ -72,7 +72,7 @@ validation は少なくとも次を検査する。
 - 期待する ascension / skill / append material shape
 - 全 material item ID が items に存在する参照整合性
 - ID・数量・QP の有限性と非負制約
-- 既存正常値に対する不自然な件数減少
+- 既存正常値に対する servant 数、素材 entry 数、投影 item 数の不自然な件数減少（いずれも 20% 超）
 - UTF-8 serialized size が 5 MiB 以下であること
 
 候補が不正なら `put` せず、既存値を保持して `failed = true` とする。他 phase は継続してよいが、workflow 全体は非 0 で終了させる。既存 validation のように「上書き拒否を warning だけ出して成功扱い」にしない。
