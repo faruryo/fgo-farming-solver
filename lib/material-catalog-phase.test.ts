@@ -58,6 +58,20 @@ describe('runMaterialCatalogPhase', () => {
     expect(put).not.toHaveBeenCalled()
   })
 
+  it('keeps last-known-good when Atlas omits a required material table', async () => {
+    const incompleteMaterials = makeMaterials()
+    Reflect.deleteProperty(incompleteMaterials, 'appendSkillMaterials')
+    const incompleteServant = { ...servant, ...incompleteMaterials }
+    const put = vi.fn().mockResolvedValue(undefined)
+    const fetchSource = vi.fn()
+      .mockResolvedValueOnce(Response.json([incompleteServant], { headers: { etag: 'servant-v2' } }))
+      .mockResolvedValueOnce(Response.json(items, { headers: { etag: 'item-v1' } }))
+
+    await expect(run({ put, fetchSource })).resolves.toEqual({ failed: true })
+
+    expect(put).not.toHaveBeenCalled()
+  })
+
   it('reports failure when the one-key KV write fails', async () => {
     const put = vi.fn().mockRejectedValue(new Error('KV unavailable'))
     const fetchSource = vi.fn()

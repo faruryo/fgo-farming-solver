@@ -1,4 +1,4 @@
-import type { ClassName, Item, NiceServant } from '../interfaces/atlas-academy'
+import type { ClassName, Item, MaterialsKey, NiceServant } from '../interfaces/atlas-academy'
 import type { MaterialsForServants } from './get-materials'
 
 export const MATERIAL_CATALOG_KEY = 'material_catalog_v1'
@@ -82,21 +82,70 @@ export const materialCatalogItemIds = (materials: MaterialsForServants): Set<num
 const isFiniteNonNegative = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
 
+const REQUIRED_MATERIAL_TABLES: MaterialsKey[] = [
+  'ascensionMaterials',
+  'skillMaterials',
+  'appendSkillMaterials',
+]
+
+const isMaterialLevelKey = (value: string): boolean => /^(0|[1-9]\d*)$/.test(value)
+
+const materialEntryError = (material: unknown, itemIds: Set<number>): string | null => {
+  if (!material || typeof material !== 'object' || !('item' in material) || !('amount' in material)) {
+    return 'invalid material item'
+  }
+  const { item, amount } = material
+  if (!item || typeof item !== 'object' || !('id' in item) || typeof item.id !== 'number') {
+    return 'invalid material item'
+  }
+  if (!itemIds.has(item.id)) return `unknown material item ${item.id}`
+  return isFiniteNonNegative(amount) ? null : 'invalid material amount'
+}
+
+const materialLevelError = (
+  levelKey: string,
+  level: unknown,
+  tableKey: MaterialsKey,
+  servantId: number,
+  itemIds: Set<number>
+): string | null => {
+  if (!isMaterialLevelKey(levelKey)) return `invalid material level ${tableKey}.${levelKey} for servant ${servantId}`
+  if (!level || typeof level !== 'object' || Array.isArray(level) || !('qp' in level) || !('items' in level) || !Array.isArray(level.items)) {
+    return `invalid material level ${tableKey}.${levelKey} for servant ${servantId}`
+  }
+  if (!isFiniteNonNegative(level.qp)) return 'invalid qp'
+  for (const material of level.items) {
+    const error = materialEntryError(material, itemIds)
+    if (error) return error
+  }
+  return null
+}
+
+const materialTableError = (
+  table: unknown,
+  tableKey: MaterialsKey,
+  servantId: number,
+  itemIds: Set<number>
+): string | null => {
+  if (!table) return `missing material table ${tableKey} for servant ${servantId}`
+  if (typeof table !== 'object' || Array.isArray(table)) return `invalid material table ${tableKey} for servant ${servantId}`
+  const levels = Object.entries(table)
+  if (!levels.length) return `empty material table ${tableKey} for servant ${servantId}`
+  for (const [levelKey, level] of levels) {
+    const error = materialLevelError(levelKey, level, tableKey, servantId, itemIds)
+    if (error) return error
+  }
+  return null
+}
+
 const validateMaterials = (catalog: MaterialCatalogV1, itemIds: Set<number>): string | null => {
   for (const servant of catalog.servants) {
     const records = catalog.materials[servant.id]
     if (!records) return `missing materials for servant ${servant.id}`
-    const invalid = Object.values(records)
-      .flatMap(levels => Object.values(levels))
-      .flatMap(level => [
-        isFiniteNonNegative(level.qp) ? null : 'invalid qp',
-        ...level.items.map(({ item, amount }) => {
-          if (!itemIds.has(item.id)) return `unknown material item ${item.id}`
-          return isFiniteNonNegative(amount) ? null : 'invalid material amount'
-        }),
-      ])
-      .find((reason): reason is string => reason !== null)
-    if (invalid) return invalid
+    for (const key of REQUIRED_MATERIAL_TABLES) {
+      const error = materialTableError(Object.getOwnPropertyDescriptor(records, key)?.value, key, servant.id, itemIds)
+      if (error) return error
+    }
   }
   return null
 }
@@ -118,15 +167,11 @@ export const validateMaterialCatalog = (
   return { ok: true }
 }
 
-export const isMaterialClassName = (value: string): value is ClassName =>
-  [
-    'saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker',
-    'shielder', 'ruler', 'avenger', 'alterEgo', 'moonCancer', 'foreigner',
-    'pretender', 'beast', 'beastEresh', 'unBeastOlgaMarie',
-  ].includes(value)
-
 export const MATERIAL_CLASS_NAMES: ClassName[] = [
   'saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker',
   'shielder', 'ruler', 'avenger', 'alterEgo', 'moonCancer', 'foreigner',
   'pretender', 'beast', 'beastEresh', 'unBeastOlgaMarie',
 ]
+
+export const isMaterialClassName = (value: string): value is ClassName =>
+  MATERIAL_CLASS_NAMES.includes(value as ClassName)

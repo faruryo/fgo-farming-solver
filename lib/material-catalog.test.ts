@@ -26,6 +26,31 @@ describe('Material Catalog', () => {
     expect(validateMaterialCatalog(catalog)).toEqual({ ok: false, reason: 'unknown material item 999' })
   })
 
+  it('rejects catalogs with missing or empty material tables', () => {
+    const missingTable = createCatalog()
+    Reflect.deleteProperty(missingTable.materials[1], 'appendSkillMaterials')
+    expect(validateMaterialCatalog(missingTable)).toEqual({
+      ok: false,
+      reason: 'missing material table appendSkillMaterials for servant 1',
+    })
+
+    const emptyTable = createCatalog()
+    emptyTable.materials[1].skillMaterials = {}
+    expect(validateMaterialCatalog(emptyTable)).toEqual({
+      ok: false,
+      reason: 'empty material table skillMaterials for servant 1',
+    })
+
+    const malformedLevel = createCatalog()
+    malformedLevel.materials[1].skillMaterials = {
+      invalid: malformedLevel.materials[1].skillMaterials['1'],
+    }
+    expect(validateMaterialCatalog(malformedLevel)).toEqual({
+      ok: false,
+      reason: 'invalid material level skillMaterials.invalid for servant 1',
+    })
+  })
+
   it('rejects a degrading catalog instead of replacing last-known-good', () => {
     const prior = createCatalog()
     const candidate = { ...createCatalog(), servants: [] }
