@@ -55,6 +55,8 @@ Material Catalog の更新処理は GitHub Actions の定期更新経路で実�
 
 素材テーブルは、`ascensionMaterials` の `0..3`、`skillMaterials` と `appendSkillMaterials` の `1..9` をすべて含み、範囲外の level を含んではならない (SHALL NOT)。ストーリー進行で通常の再臨素材を消費しない Mash (`id: 800100`) の空の `ascensionMaterials` は例外として許可する。
 
+各通常 level の `items` は空であってはならず (SHALL NOT)、各素材の `amount` と各 level の `qp` は有限の正値でなければならない (SHALL)。既存の正常なカタログに対して素材数量または QP 合計が 20% 超減少する候補を受理してはならない (SHALL NOT)。
+
 #### Scenario: 空または大幅欠損した入力を拒否する
 
 - **WHEN** サーヴァント・素材・投影アイテムのいずれかが空、または既存の正常値に対して servant 数、素材 entry 数、投影 item 数のいずれかが 20% 超減少した候補カタログが生成されたとき

@@ -33,6 +33,30 @@ const createCatalog = (
     updatedAt: 1,
   })
 
+const forEachMaterialLevel = (
+  catalog: ReturnType<typeof createCatalog>,
+  visit: (level: { items: { item: { id: number }; amount: number }[]; qp: number }) => void,
+) => {
+  for (const table of Object.values(catalog.materials[1])) {
+    for (const level of Object.values(table)) visit(level)
+  }
+}
+
+const doubleMaterialEntries = (catalog: ReturnType<typeof createCatalog>) =>
+  forEachMaterialLevel(catalog, level => {
+    level.items.push(...level.items.map(entry => ({ ...entry, item: { ...entry.item } })))
+  })
+
+const setMaterialAmounts = (catalog: ReturnType<typeof createCatalog>, amount: number) =>
+  forEachMaterialLevel(catalog, level => {
+    for (const entry of level.items) entry.amount = amount
+  })
+
+const setQp = (catalog: ReturnType<typeof createCatalog>, qp: number) =>
+  forEachMaterialLevel(catalog, level => {
+    level.qp = qp
+  })
+
 describe('Material Catalog', () => {
   it('projects a servant face and omits unused Atlas assets', () => {
     const catalog = createCatalog(
@@ -61,6 +85,29 @@ describe('Material Catalog', () => {
     expect(validateMaterialCatalog(catalog)).toEqual({
       ok: false,
       reason: 'unknown material item 999',
+    })
+  })
+
+  it('rejects zero material quantities and QP', () => {
+    const zeroAmount = createCatalog()
+    zeroAmount.materials[1].ascensionMaterials['0'].items[0].amount = 0
+    expect(validateMaterialCatalog(zeroAmount)).toEqual({
+      ok: false,
+      reason: 'invalid material amount',
+    })
+
+    const zeroQp = createCatalog()
+    zeroQp.materials[1].ascensionMaterials['0'].qp = 0
+    expect(validateMaterialCatalog(zeroQp)).toEqual({
+      ok: false,
+      reason: 'invalid qp',
+    })
+
+    const emptyItems = createCatalog()
+    emptyItems.materials[1].skillMaterials['1'].items = []
+    expect(validateMaterialCatalog(emptyItems)).toEqual({
+      ok: false,
+      reason: 'empty material level skillMaterials.1 for servant 1',
     })
   })
 
@@ -157,12 +204,11 @@ describe('Material Catalog', () => {
 
   it('rejects candidates whose material entries or projected items shrink unexpectedly', () => {
     const prior = createCatalog()
+    const entryPrior = createCatalog()
+    doubleMaterialEntries(entryPrior)
 
-    const missingMaterialEntries = createCatalog()
-    for (const table of Object.values(missingMaterialEntries.materials[1])) {
-      for (const level of Object.values(table)) level.items = []
-    }
-    expect(validateMaterialCatalog(missingMaterialEntries, prior)).toEqual({
+    const fewerMaterialEntries = createCatalog()
+    expect(validateMaterialCatalog(fewerMaterialEntries, entryPrior)).toEqual({
       ok: false,
       reason: 'material entry count dropped unexpectedly',
     })
@@ -177,6 +223,20 @@ describe('Material Catalog', () => {
     expect(validateMaterialCatalog(missingProjectedItems, prior)).toEqual({
       ok: false,
       reason: 'projected item count dropped unexpectedly',
+    })
+
+    const smallerMaterialQuantities = createCatalog()
+    setMaterialAmounts(smallerMaterialQuantities, 1)
+    expect(validateMaterialCatalog(smallerMaterialQuantities, prior)).toEqual({
+      ok: false,
+      reason: 'material quantity dropped unexpectedly',
+    })
+
+    const smallerQp = createCatalog()
+    setQp(smallerQp, 1)
+    expect(validateMaterialCatalog(smallerQp, prior)).toEqual({
+      ok: false,
+      reason: 'QP total dropped unexpectedly',
     })
   })
 

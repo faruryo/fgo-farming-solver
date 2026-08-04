@@ -71,7 +71,7 @@ validation は少なくとも次を検査する。
 - servant ID と materials key の対応
 - `ascension` の `0..3`、`skill` / `append` の `1..9` をすべて含み、範囲外を含まない material shape（ストーリー再臨の Mash `800100` は空の `ascension` を例外として許可）
 - 全 material item ID が items に存在する参照整合性
-- ID・数量・QP の有限性と非負制約
+- ID・数量・QP の有限性と正値制約、通常 level の非空素材配列、および既存正常値に対する素材数量・QP合計の不自然な減少
 - 既存正常値に対する servant 数、素材 entry 数、投影 item 数の不自然な件数減少（いずれも 20% 超）
 - UTF-8 serialized size が 5 MiB 以下であること
 

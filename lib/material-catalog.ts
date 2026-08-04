@@ -120,6 +120,9 @@ export const materialCatalogItemIds = (
 const isFiniteNonNegative = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
 
+const isFinitePositive = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+
 const isPositiveInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value > 0
 
@@ -211,7 +214,7 @@ const materialEntryError = (
     return 'invalid material item'
   }
   if (!itemIds.has(item.id)) return `unknown material item ${item.id}`
-  return isFiniteNonNegative(amount) ? null : 'invalid material amount'
+  return isFinitePositive(amount) ? null : 'invalid material amount'
 }
 
 const materialLevelError = (
@@ -233,7 +236,10 @@ const materialLevelError = (
   ) {
     return `invalid material level ${tableKey}.${levelKey} for servant ${servantId}`
   }
-  if (!isFiniteNonNegative(level.qp)) return 'invalid qp'
+  if (!isFinitePositive(level.qp)) return 'invalid qp'
+  if (!level.items.length) {
+    return `empty material level ${tableKey}.${levelKey} for servant ${servantId}`
+  }
   for (const material of level.items) {
     const error = materialEntryError(material, itemIds)
     if (error) return error
@@ -323,8 +329,51 @@ const materialEntryCount = (catalog: MaterialCatalogV1): number =>
     )
   }, 0)
 
+const materialQuantityTotals = (
+  catalog: MaterialCatalogV1,
+): { amount: number; qp: number } =>
+  catalog.servants.reduce(
+    (totals, servant) => {
+      const records = catalog.materials[servant.id]
+      for (const key of REQUIRED_MATERIAL_TABLES) {
+        const table = Object.getOwnPropertyDescriptor(records, key)
+          ?.value as ReducedMaterials
+        for (const level of Object.values(table)) {
+          totals.qp += level.qp
+          for (const material of level.items) totals.amount += material.amount
+        }
+      }
+      return totals
+    },
+    { amount: 0, qp: 0 },
+  )
+
 const hasUnexpectedCountDrop = (candidate: number, previous: number): boolean =>
   candidate < previous * 0.8
+
+const previousCatalogError = (
+  catalog: MaterialCatalogV1,
+  previous: MaterialCatalogV1,
+): string | null => {
+  if (hasUnexpectedCountDrop(catalog.servants.length, previous.servants.length)) {
+    return 'servant count dropped unexpectedly'
+  }
+  if (hasUnexpectedCountDrop(materialEntryCount(catalog), materialEntryCount(previous))) {
+    return 'material entry count dropped unexpectedly'
+  }
+  if (hasUnexpectedCountDrop(catalog.items.length, previous.items.length)) {
+    return 'projected item count dropped unexpectedly'
+  }
+  const candidateTotals = materialQuantityTotals(catalog)
+  const previousTotals = materialQuantityTotals(previous)
+  if (hasUnexpectedCountDrop(candidateTotals.amount, previousTotals.amount)) {
+    return 'material quantity dropped unexpectedly'
+  }
+  if (hasUnexpectedCountDrop(candidateTotals.qp, previousTotals.qp)) {
+    return 'QP total dropped unexpectedly'
+  }
+  return null
+}
 
 export const validateMaterialCatalog = (
   catalog: MaterialCatalogV1,
@@ -350,27 +399,8 @@ export const validateMaterialCatalog = (
   const itemIds = new Set(catalog.items.map((item) => item.id))
   const materialError = validateMaterials(catalog, itemIds)
   if (materialError) return { ok: false, reason: materialError }
-  if (
-    previous &&
-    hasUnexpectedCountDrop(catalog.servants.length, previous.servants.length)
-  ) {
-    return { ok: false, reason: 'servant count dropped unexpectedly' }
-  }
-  if (
-    previous &&
-    hasUnexpectedCountDrop(
-      materialEntryCount(catalog),
-      materialEntryCount(previous),
-    )
-  ) {
-    return { ok: false, reason: 'material entry count dropped unexpectedly' }
-  }
-  if (
-    previous &&
-    hasUnexpectedCountDrop(catalog.items.length, previous.items.length)
-  ) {
-    return { ok: false, reason: 'projected item count dropped unexpectedly' }
-  }
+  const shrinkError = previous && previousCatalogError(catalog, previous)
+  if (shrinkError) return { ok: false, reason: shrinkError }
   if (
     new TextEncoder().encode(JSON.stringify(catalog)).byteLength >
     MATERIAL_CATALOG_MAX_BYTES

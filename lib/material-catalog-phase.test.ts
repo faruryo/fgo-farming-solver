@@ -92,7 +92,7 @@ describe('runMaterialCatalogPhase', () => {
       () => ({ ...servant, ...makeMaterials(), name: '' }),
     ],
     [
-      'unexpectedly few material entries',
+      'an empty material level',
       () => {
         const missingEntries = makeMaterials()
         for (const table of Object.values(missingEntries)) {
@@ -107,6 +107,14 @@ describe('runMaterialCatalogPhase', () => {
         const incompleteMaterials = makeCompleteMaterials()
         Reflect.deleteProperty(incompleteMaterials.appendSkillMaterials, '9')
         return { ...servant, ...incompleteMaterials }
+      },
+    ],
+    [
+      'a zero material quantity',
+      () => {
+        const invalidMaterials = makeCompleteMaterials()
+        invalidMaterials.skillMaterials['1'].items[0].amount = 0
+        return { ...servant, ...invalidMaterials }
       },
     ],
   ])(
