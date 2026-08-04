@@ -69,6 +69,11 @@ const itemSection = (
   )
 }
 
+const materialItemsAreKnown = (materials: MaterialsForServants, items: MaterialCatalogV1['items']): boolean => {
+  const knownItemIds = new Set(items.map(item => item.id))
+  return [...materialCatalogItemIds(materials)].every(itemId => knownItemIds.has(itemId))
+}
+
 export const updateMaterialCatalog = async ({
   previous,
   fetchSource,
@@ -82,14 +87,20 @@ export const updateMaterialCatalog = async ({
   itemUrl: string
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
-  const [servantsResponse, itemsResponse] = await Promise.all([
+  const [servantsResponse, initialItemsResponse] = await Promise.all([
     fetchSource(servantUrl, previous?.sources.niceServant ?? {}),
     fetchSource(itemUrl, previous?.sources.niceItem ?? {}),
   ])
-  if (servantsResponse.status === 304 && itemsResponse.status === 304) {
+  if (servantsResponse.status === 304 && initialItemsResponse.status === 304) {
     return { catalog: existingOrThrow(previous), changed: false, reason: 'both sources not modified' }
   }
   const { servants, materials } = servantSection(servantsResponse, previous)
+  const itemsResponse =
+    servantsResponse.status === 200 &&
+    initialItemsResponse.status === 304 &&
+    !materialItemsAreKnown(materials, existingOrThrow(previous).items)
+      ? await fetchSource(itemUrl, {})
+      : initialItemsResponse
   const items = itemSection(itemsResponse, previous, materials)
   const candidate = buildMaterialCatalog({
     servants,

@@ -62,6 +62,8 @@ type MaterialCatalogV1 = {
 
 updater は既存カタログの source validators を読み、`If-None-Match` / `If-Modified-Since` を送る。両方 304 なら parse も KV write もしない。一方だけ 200 の場合は、変更側だけ再生成し、304 側は既存の検証済み section を再利用する。取得元の validator だけが変わり蒸留結果が同じ場合も書き込まない。`updatedAt` は semantic content が変わって正常な新カタログを書いた時だけ更新する。
 
+ただし、`nice_servant.json` が更新され、`nice_item.json` が 304 の場合は、既存 catalog の `items` が旧素材参照に限定された projection であるため、新規参照を含まないことがある。新しい素材 ID が既存 item 集合で充足できない場合だけ `nice_item.json` を条件なしで 1 回再取得し、完全な item source から再投影する。通常の 304 更新は 2 リクエストのまま維持する。
+
 validation は少なくとも次を検査する。
 
 - schema version と必須 collection の存在
@@ -101,7 +103,7 @@ loading・error・retry の表示文言は既存 i18n 規約どおり `t('kebab-
 
 ### 6. local development fallback は明示的に分離する
 
-KV binding が無い `next dev` では、既存の filesystem cache 付き Atlas loader から同じ catalog builder を呼べるようにする。本番判定は依存注入した environment/binding の有無で行い、本番 KV 欠落時にローカル mockやAtlasへ倒れる分岐を設けない。テストは外部 network を使わず、固定 response と in-memory storage を注入する。
+KV binding が無い `next dev` では、既存の filesystem cache 付き Atlas loader から同じ catalog builder を呼べるようにする。Miniflare が空の local KV binding を提供する場合もあるため、明示的なローカル環境では key 未seed または KV 読み取り失敗時に同じ loader へフォールバックする。本番 KV 欠落時にローカル mockやAtlasへ倒れる分岐は設けない。テストは外部 network を使わず、固定 response と in-memory storage を注入する。
 
 ## Risks / Trade-offs
 

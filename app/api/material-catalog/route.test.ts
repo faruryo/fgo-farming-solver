@@ -28,4 +28,29 @@ describe('materialCatalogResponse', () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ schemaVersion: 1 })
   })
+
+  it('falls back to the local loader when a development KV binding has no catalog', async () => {
+    const get = vi.fn().mockResolvedValue(null)
+    const loadLocal = vi.fn().mockResolvedValue({ schemaVersion: 1 })
+
+    const response = await materialCatalogResponse({ kv: { get }, isLocal: true, loadLocal })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ schemaVersion: 1 })
+    expect(get).toHaveBeenCalledOnce()
+  })
+
+  it('returns no-store 503 when the catalog has not been seeded', async () => {
+    const response = await materialCatalogResponse({ kv: { get: vi.fn().mockResolvedValue(null) }, isLocal: false })
+
+    expect(response.status).toBe(503)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+  })
+
+  it('returns no-store 503 when the KV read fails', async () => {
+    const response = await materialCatalogResponse({ kv: { get: vi.fn().mockRejectedValue(new Error('KV unavailable')) }, isLocal: false })
+
+    expect(response.status).toBe(503)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+  })
 })

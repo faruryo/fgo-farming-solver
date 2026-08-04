@@ -22,12 +22,13 @@ export const materialCatalogResponse = async ({
   if (kv) {
     try {
       const stream = await kv.get(MATERIAL_CATALOG_KEY, { type: 'stream', cacheTtl: 300 })
-      if (!stream) return unavailable()
-      return new Response(stream, {
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
-      })
+      if (stream) {
+        return new Response(stream, {
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
+        })
+      }
     } catch {
-      return unavailable()
+      // A local Miniflare binding can exist before the catalog is seeded.
     }
   }
   if (!isLocal) return unavailable()

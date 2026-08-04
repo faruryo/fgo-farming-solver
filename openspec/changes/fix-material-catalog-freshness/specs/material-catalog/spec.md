@@ -26,8 +26,13 @@ Material Catalog の更新処理は GitHub Actions の定期更新経路で実�
 
 #### Scenario: 一方の入力だけが更新された場合は正常部分を再利用する
 - **WHEN** 一方の取得元が `200 OK`、もう一方が `304 Not Modified` を返したとき
-- **THEN** updater は変更された取得元だけを parse・蒸留し、未変更側は既存の検証済みカタログから再利用して完全な候補カタログを構築する。
+- **THEN** updater は変更された取得元だけを parse・蒸留し、未変更側は、参照整合性を保てる場合に限り既存の検証済みカタログから再利用して完全な候補カタログを構築する。
 - **THEN** 完全な候補カタログ全体の検証が成功した場合に限り、単一 KV 値を更新する。
+
+#### Scenario: サーヴァント更新で不足するアイテム定義を補完する
+- **WHEN** `nice_servant.json` が `200 OK`、`nice_item.json` が `304 Not Modified` を返し、新しい素材参照が保存済み catalog の item 集合に存在しないとき
+- **THEN** updater は `nice_item.json` を条件なしで 1 回だけ再取得し、新しい素材参照を含む item 集合から候補カタログを再構築する。
+- **THEN** 再取得が失敗する、または参照整合性を満たせない場合、updater は既存の `material_catalog_v1` を変更せず workflow を失敗として終了する。
 
 #### Scenario: 蒸留結果が同一なら書き込まない
 - **WHEN** 取得元の検証子は変化したが、時刻・検証子を除く蒸留済みデータが既存カタログと同一だったとき
@@ -70,6 +75,11 @@ Material Catalog の更新処理は GitHub Actions の定期更新経路で実�
 - **WHEN** Cloudflare KV binding が存在しない明示的なローカル開発環境で API を呼び出したとき
 - **THEN** 開発用経路は既存のファイルキャッシュ付き Atlas 取得から同じ `schemaVersion: 1` のカタログを生成してよい。
 - **THEN** この開発用経路は本番環境では到達不能でなければならない。
+
+#### Scenario: 未seedのローカル KV binding から復旧する
+- **WHEN** 明示的なローカル開発環境で KV binding は存在するが `material_catalog_v1` が未seed、または KV 読み取りが失敗したとき
+- **THEN** API は開発用の既存取得経路へフォールバックしてよい。
+- **THEN** 本番環境の KV 欠落または読み取り失敗は、引き続き `503` / `no-store` を返し、開発用経路へ到達してはならない。
 
 ### Requirement: 後方互換なカタログスキーマ移行
 Material Catalog の互換性を壊す変更では、新しいバージョン付き KV キーを使用し、利用側を切り替える前に新キーへ正常な本番データを投入しなければならない (SHALL)。既存バージョンの値を同時に破壊してはならない (SHALL NOT)。
