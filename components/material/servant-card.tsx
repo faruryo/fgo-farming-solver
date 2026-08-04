@@ -3,14 +3,14 @@
 import { memo, useCallback, useRef, useState } from 'react'
 import Image from 'next/image'
 import NextLink from 'next/link'
-import { NiceServant } from '../../interfaces/atlas-academy'
 import { ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'
+import { MaterialCatalogServant } from '../../lib/material-catalog'
 import { getClassInfo } from '../../constants/classes'
 import { ServantStars } from '../common/ServantStars'
 
 type Props = {
-  servant: NiceServant
+  servant: MaterialCatalogServant
   state: ServantState
   globalState: ServantState
   setState: (update: (prev: ServantState) => ServantState) => void
@@ -196,7 +196,7 @@ const ServantCardComponent = ({
     applyStart(key, idx, cur, next)
   }
 
-  const face = servant.extraAssets.faces.ascension?.[1] || Object.values(servant.extraAssets.faces.ascension || {})[0]
+  const face = servant.face
 
   return (
     <div id={`svt-${servant.id}`} className={`c-servant-card${state.disabled ? ' unowned' : ''}${tierClass ? ` ${tierClass}` : ''}`}>

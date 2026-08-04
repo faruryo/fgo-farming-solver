@@ -6,8 +6,9 @@ import { getClassNode } from '../../hooks/use-servant-tree'
 import { useChecked } from '../../hooks/use-checked-from-chaldea-state'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { getClassName } from '../../lib/class-names'
-import { NiceServant, ClassName } from '../../interfaces/atlas-academy'
+import { ClassName } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
+import { MaterialCatalogServant } from '../../lib/material-catalog'
 import { Link } from '../common/link'
 import { Head } from '../common/head'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/breadcrumb'
 
 export type MaterialProps = {
-  servants: NiceServant[]
+  servants: MaterialCatalogServant[]
   materials: MaterialsForServants
   className: string
   locale?: string
@@ -50,7 +51,7 @@ export const Material = ({
       ),
     [chaldeaState, currentClassServants]
   )
-  const localClassName = getClassName(className as ClassName, locale)
+  const localClassName = getClassName(className, locale)
   const { t } = useTranslation('material')
 
   const tree = useMemo(

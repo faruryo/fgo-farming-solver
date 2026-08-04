@@ -4,9 +4,10 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { ServantCard } from './servant-card'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'
-import { makeServant } from './test-fixtures'
+import { makeMaterialCatalogServant } from './test-fixtures'
+import type { MaterialCatalogServant } from '../../lib/material-catalog'
 
-const servant = makeServant()
+const servant = makeMaterialCatalogServant()
 
 const ownedState = (): ServantState => ({
   ...createServantState(),
@@ -21,13 +22,14 @@ const renderCard = (
   opts: {
     onWillStartChange?: WillStartChangeFn
     onStartChange?: StartChangeFn
+    servant?: MaterialCatalogServant
   } = {}
 ) => {
   const setState = vi.fn()
   const globalState = createServantState()
   render(
     <ServantCard
-      servant={servant}
+      servant={opts.servant ?? servant}
       state={state}
       globalState={globalState}
       setState={(update) => setState(update(state))}
@@ -37,6 +39,16 @@ const renderCard = (
   )
   return { setState }
 }
+
+describe('ServantCard - catalog DTO', () => {
+  it('uses the projected representative face without requiring full Atlas extraAssets', () => {
+    renderCard(ownedState(), {
+      servant: makeMaterialCatalogServant({ face: 'https://example.test/mash.png' }),
+    })
+
+    expect(screen.getByAltText('サーヴァントA')).toHaveAttribute('src', expect.stringContaining('mash.png'))
+  })
+})
 
 describe('ServantCard - ascension pips', () => {
   it('clicking an unlit pip sets ascension start to that pip index and notifies onStartChange with (prev, next)', () => {

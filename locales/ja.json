@@ -130,7 +130,11 @@
   "items": {
     "title": "{{name}}のドロップ"
   },
-  "material": {},
+  "material": {
+    "catalog-loading": "素材データを読み込んでいます…",
+    "catalog-load-error": "素材データを読み込めません。",
+    "catalog-retry": "再試行"
+  },
   "servants": {
     "title": "{{name}}の強化素材"
   },

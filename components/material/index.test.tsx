@@ -14,7 +14,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Index } from './index'
-import { makeServant, makeItem, makeMaterials } from './test-fixtures'
+import { makeMaterialCatalogServant, makeItem, makeMaterials } from './test-fixtures'
 import type { ShowBlockedToastParams, ShowTrackingToastParams } from '../../lib/tracking-toast'
 
 vi.mock('next/navigation', () => ({
@@ -29,7 +29,7 @@ vi.mock('../../lib/tracking-toast', () => ({
   showBlockedToast: (p: ShowBlockedToastParams) => showBlockedToast(p),
 }))
 
-const servant = makeServant({ id: 1, collectionNo: 1, name: 'サーヴァントA' })
+const servant = makeMaterialCatalogServant({ id: 1, collectionNo: 1, name: 'サーヴァントA' })
 const items = [
   makeItem({ id: 100, name: '灯火の焔' }),
   makeItem({ id: 200, name: '蛮神の心臓' }),

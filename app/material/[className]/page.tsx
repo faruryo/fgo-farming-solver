@@ -1,8 +1,6 @@
-import { getNiceServants } from '../../../lib/get-nice-servants'
-import { getMaterialsForServants } from '../../../lib/get-materials'
-import { Material } from '../../../components/material/material'
-
-export const revalidate = 1800
+import { notFound } from 'next/navigation'
+import { MaterialCatalogLoader } from '../../../components/material/catalog-loader'
+import { isMaterialClassName, MATERIAL_CLASS_NAMES } from '../../../lib/material-catalog'
 
 export default async function MaterialClassPage({
   params,
@@ -10,20 +8,9 @@ export default async function MaterialClassPage({
   params: Promise<{ className: string }>
 }) {
   const { className } = await params
-  const locale = 'ja'
-  const [servants, materials] = await Promise.all([
-    getNiceServants(locale),
-    getMaterialsForServants(),
-  ])
-
-  return (
-    <Material
-      servants={servants}
-      materials={materials}
-      className={className}
-      locale={locale}
-    />
-  )
+  if (!isMaterialClassName(className)) notFound()
+  return <MaterialCatalogLoader className={className} />
 }
 
-export const dynamicParams = true
+export const dynamicParams = false
+export const generateStaticParams = () => MATERIAL_CLASS_NAMES.map(className => ({ className }))

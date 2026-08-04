@@ -24,6 +24,8 @@ import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'
 import { kvGet, kvPut, dryRunLocalFiles } from './kv-rest'
+import { getUrl } from '../lib/get-url'
+import { runMaterialCatalogPhase } from '../lib/material-catalog-phase'
 
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
@@ -80,10 +82,20 @@ async function main() {
   }
 
   const previous = await readPreviousMasterData()
+  let failed = false
+
+  // material_catalog_v1: 巨大な Atlas JSON の parse は CI で済ませ、Worker には
+  // 検証済みの軽量スナップショットだけを配信させる。
+  const materialCatalog = await runMaterialCatalogPhase({
+    get: kvGet,
+    put: kvPut,
+    servantUrl: getUrl('nice_servant', 'ja'),
+    itemUrl: getUrl('nice_item', 'ja'),
+  })
+  failed ||= materialCatalog.failed
 
   // drops (all_drops_json)
   let dropsData: MasterData | null = null
-  let failed = false
   try {
     console.log('Fetching and transforming master data (drops)...')
     // CI には Workers の subrequest 上限が無いが、Atlas への礼儀として waveCount の

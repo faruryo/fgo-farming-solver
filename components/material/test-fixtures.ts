@@ -2,6 +2,7 @@
 // Not a *.test.ts(x) file itself, so vitest does not pick it up as a suite.
 import { NiceServant, Item } from '../../interfaces/atlas-academy'
 import { ReducedMaterialsRecord } from '../../lib/get-materials'
+import { MaterialCatalogServant } from '../../lib/material-catalog'
 
 export const makeServant = (overrides: Partial<NiceServant> = {}): NiceServant => ({
   id: 1,
@@ -19,6 +20,18 @@ export const makeServant = (overrides: Partial<NiceServant> = {}): NiceServant =
   ascensionMaterials: {},
   skillMaterials: {},
   appendSkillMaterials: {},
+  ...overrides,
+})
+
+export const makeMaterialCatalogServant = (
+  overrides: Partial<MaterialCatalogServant> = {}
+): MaterialCatalogServant => ({
+  id: 1,
+  collectionNo: 1,
+  name: 'サーヴァントA',
+  className: 'saber',
+  rarity: 5,
+  face: null,
   ...overrides,
 })
 
