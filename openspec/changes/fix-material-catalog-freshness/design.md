@@ -108,7 +108,7 @@ KV binding が無い `next dev` では、既存の filesystem cache 付き Atlas
 ## Risks / Trade-offs
 
 - [初回表示で catalog fetch の 1 round trip が増える] → 静的シェルと明確な loading UIを先に表示し、約 1 MB の raw payloadをブラウザキャッシュする。実装後に実機で LCP・操作可能時間を測定する。
-- [KV / browser cache により更新反映が nominal cron より遅れる] → `updatedAt` を payload に保持し、KV `cacheTtl` と browser `max-age` を 5 分に制限する。「30分以内」を厳密保証とは扱わず、scheduler 遅延と最大数分の伝播を監視する。
+- [KV / browser cache により更新反映が nominal cron より遅れる] → `updatedAt` を payload に保持し、KV `cacheTtl` と browser `max-age` をそれぞれ 5 分に制限する。両キャッシュが直列に効く最悪時は約 10 分となるため、「30分以内」を厳密保証とは扱わず、scheduler 遅延と伝播を監視する。
 - [consumer deploy 前に v1 key が無いと 503 になる] → versioned key を feature branch の手動 updater 実行で先に seed・検証してから consumer を mergeする。
 - [Atlas schema change で builder が失敗する] → strict validation と last-known-good 保護で利用者への破損配信を防ぎ、workflow を赤にして検知する。
 - [client parse・480件前後の描画コストは残る] → Worker CPU から利用者端末へ移す判断であり、payload projection と browser cache で抑える。必要になった場合の virtualization は別変更とする。

@@ -28,7 +28,7 @@ export type MaterialCatalogV1 = {
 
 export const materialCatalogFace = (servant: NiceServant): string | null => {
   const faces = servant.extraAssets?.faces
-  return faces?.ascension?.['0'] ?? Object.values(faces?.ascension ?? {})[0] ?? null
+  return faces?.ascension?.['1'] ?? faces?.ascension?.['0'] ?? Object.values(faces?.ascension ?? {})[0] ?? null
 }
 
 export const buildMaterialCatalog = ({

@@ -9,7 +9,7 @@ vi.mock('../../../components/material/catalog-loader', () => ({
   MaterialCatalogLoader: () => null,
 }))
 
-import MaterialClassPage, { dynamicParams, generateStaticParams } from './page'
+import MaterialClassPage, { dynamicParams, generateMetadata, generateStaticParams } from './page'
 
 describe('MaterialClassPage', () => {
   it('statically includes canonical material classes and loads a known class', async () => {
@@ -23,5 +23,10 @@ describe('MaterialClassPage', () => {
     await expect(MaterialClassPage({ params: Promise.resolve({ className: 'zzzz' }) }))
       .rejects.toThrow('not found')
     expect(notFound).toHaveBeenCalledOnce()
+  })
+
+  it('generates the class page title without loading the catalog', async () => {
+    await expect(generateMetadata({ params: Promise.resolve({ className: 'saber' }) }))
+      .resolves.toEqual({ title: 'セイバー | 育成素材計算機' })
   })
 })

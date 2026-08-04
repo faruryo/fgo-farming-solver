@@ -13,7 +13,13 @@ const createCatalog = () =>
 
 describe('Material Catalog', () => {
   it('projects a servant face and omits unused Atlas assets', () => {
-    const catalog = createCatalog()
+    const catalog = buildMaterialCatalog({
+      servants: [makeServant({ id: 1, extraAssets: { faces: { ascension: { '0': 'first.png', '1': 'face.png' } }, charaGraph: {} } })],
+      materials: { 1: makeMaterials() },
+      items: [makeItem({ id: 100 }), makeItem({ id: 200 }), makeItem({ id: 300 }), makeItem({ id: 400 }), makeItem({ id: 500 })],
+      sources: { niceServant: { etag: 'servant' }, niceItem: { lastModified: 'today' } },
+      updatedAt: 1,
+    })
     expect(catalog.servants[0]).toEqual({
       id: 1, name: 'サーヴァントA', className: 'saber', collectionNo: 1, rarity: 5, face: 'face.png',
     })

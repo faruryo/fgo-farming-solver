@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { MaterialCatalogV1 } from '../../lib/material-catalog'
 import { Index } from './index'
@@ -25,17 +25,25 @@ const isCatalog = (value: unknown): value is MaterialCatalogV1 => {
 export function MaterialCatalogLoader({ className }: Readonly<{ className?: string }>) {
   const [catalog, setCatalog] = useState<MaterialCatalogV1 | null>(null)
   const [failed, setFailed] = useState(false)
+  const requestId = useRef(0)
   const { t } = useTranslation('material')
   const load = useCallback(() => {
+    const currentRequestId = ++requestId.current
     setFailed(false)
     fetch('/api/material-catalog').then(async response => {
       if (!response.ok) throw new Error('catalog request failed')
       const value: unknown = await response.json()
       if (!isCatalog(value)) throw new Error('invalid catalog')
+      if (currentRequestId !== requestId.current) return
       setCatalog(value)
-    }).catch(() => setFailed(true))
+    }).catch(() => {
+      if (currentRequestId === requestId.current) setFailed(true)
+    })
   }, [])
-  useEffect(() => { void Promise.resolve().then(load) }, [load])
+  useEffect(() => {
+    void Promise.resolve().then(load)
+    return () => { requestId.current += 1 }
+  }, [load])
   if (failed) return <div><p>{t('catalog-load-error', '素材データを読み込めません。')}</p><button type="button" onClick={load}>{t('catalog-retry', '再試行')}</button></div>
   if (!catalog) return <p>{t('catalog-loading', '素材データを読み込んでいます…')}</p>
   const props = { servants: catalog.servants, materials: catalog.materials, locale: 'ja' }
