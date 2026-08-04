@@ -32,6 +32,24 @@ describe('Material Catalog', () => {
     expect(validateMaterialCatalog(catalog)).toEqual({ ok: false, reason: 'unknown material item 999' })
   })
 
+  it('rejects catalogs with invalid display fields', () => {
+    const blankServantName = createCatalog()
+    blankServantName.servants[0].name = ''
+    expect(validateMaterialCatalog(blankServantName)).toEqual({ ok: false, reason: 'invalid servant display fields' })
+
+    const invalidClassName = createCatalog()
+    Reflect.set(invalidClassName.servants[0], 'className', 'unknown')
+    expect(validateMaterialCatalog(invalidClassName)).toEqual({ ok: false, reason: 'invalid servant display fields' })
+
+    const invalidFace = createCatalog()
+    Reflect.set(invalidFace.servants[0], 'face', 1)
+    expect(validateMaterialCatalog(invalidFace)).toEqual({ ok: false, reason: 'invalid servant display fields' })
+
+    const blankItemIcon = createCatalog()
+    blankItemIcon.items[0].icon = ''
+    expect(validateMaterialCatalog(blankItemIcon)).toEqual({ ok: false, reason: 'invalid item display fields' })
+  })
+
   it('rejects catalogs with missing or empty material tables', () => {
     const missingTable = createCatalog()
     Reflect.deleteProperty(missingTable.materials[1], 'appendSkillMaterials')

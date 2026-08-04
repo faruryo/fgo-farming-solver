@@ -14,6 +14,15 @@ export type MaterialCatalogServant = Pick<
 
 export type MaterialCatalogItem = Pick<Item, 'id' | 'name' | 'icon'>
 
+export const MATERIAL_CLASS_NAMES: ClassName[] = [
+  'saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker',
+  'shielder', 'ruler', 'avenger', 'alterEgo', 'moonCancer', 'foreigner',
+  'pretender', 'beast', 'beastEresh', 'unBeastOlgaMarie',
+]
+
+export const isMaterialClassName = (value: string): value is ClassName =>
+  MATERIAL_CLASS_NAMES.includes(value as ClassName)
+
 export type MaterialCatalogV1 = {
   schemaVersion: typeof MATERIAL_CATALOG_SCHEMA_VERSION
   updatedAt: number
@@ -81,6 +90,43 @@ export const materialCatalogItemIds = (materials: MaterialsForServants): Set<num
 
 const isFiniteNonNegative = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
+
+const isPositiveInteger = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0
+
+const isDisplayString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value)
+
+const servantDisplayError = (servant: unknown): string | null => {
+  if (!isRecord(servant)) return 'invalid servant display fields'
+  if (!isPositiveInteger(servant.id) || !isDisplayString(servant.name)) return 'invalid servant display fields'
+  if (typeof servant.className !== 'string' || !isMaterialClassName(servant.className)) return 'invalid servant display fields'
+  if (!isPositiveInteger(servant.collectionNo) || !isFiniteNonNegative(servant.rarity)) return 'invalid servant display fields'
+  return servant.face === null || isDisplayString(servant.face) ? null : 'invalid servant display fields'
+}
+
+const itemDisplayError = (item: unknown): string | null => {
+  if (!isRecord(item)) return 'invalid item display fields'
+  if (!isPositiveInteger(item.id) || !isDisplayString(item.name) || !isDisplayString(item.icon)) {
+    return 'invalid item display fields'
+  }
+  return null
+}
+
+const displayFieldsError = (catalog: MaterialCatalogV1): string | null => {
+  for (const servant of catalog.servants) {
+    const error = servantDisplayError(servant)
+    if (error) return error
+  }
+  for (const item of catalog.items) {
+    const error = itemDisplayError(item)
+    if (error) return error
+  }
+  return null
+}
 
 const REQUIRED_MATERIAL_TABLES: MaterialsKey[] = [
   'ascensionMaterials',
@@ -157,6 +203,8 @@ export const validateMaterialCatalog = (
   if (catalog.schemaVersion !== MATERIAL_CATALOG_SCHEMA_VERSION) return { ok: false, reason: 'unsupported schema version' }
   if (!catalog.servants.length || !catalog.items.length) return { ok: false, reason: 'servants or items is empty' }
   if (!isFiniteNonNegative(catalog.updatedAt)) return { ok: false, reason: 'updatedAt is invalid' }
+  const displayError = displayFieldsError(catalog)
+  if (displayError) return { ok: false, reason: displayError }
   if (new Set(catalog.servants.map(servant => servant.id)).size !== catalog.servants.length) return { ok: false, reason: 'duplicate servant id' }
   if (new Set(catalog.items.map(item => item.id)).size !== catalog.items.length) return { ok: false, reason: 'duplicate item id' }
   if (previous && catalog.servants.length < previous.servants.length * 0.8) return { ok: false, reason: 'servant count dropped unexpectedly' }
@@ -166,12 +214,3 @@ export const validateMaterialCatalog = (
   if (new TextEncoder().encode(JSON.stringify(catalog)).byteLength > MATERIAL_CATALOG_MAX_BYTES) return { ok: false, reason: 'catalog exceeds size limit' }
   return { ok: true }
 }
-
-export const MATERIAL_CLASS_NAMES: ClassName[] = [
-  'saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker',
-  'shielder', 'ruler', 'avenger', 'alterEgo', 'moonCancer', 'foreigner',
-  'pretender', 'beast', 'beastEresh', 'unBeastOlgaMarie',
-]
-
-export const isMaterialClassName = (value: string): value is ClassName =>
-  MATERIAL_CLASS_NAMES.includes(value as ClassName)

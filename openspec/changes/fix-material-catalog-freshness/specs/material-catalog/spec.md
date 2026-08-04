@@ -41,6 +41,8 @@ Material Catalog の更新処理は GitHub Actions の定期更新経路で実�
 ### Requirement: 検証失敗時の last-known-good 保護
 システムは Material Catalog を KV へ書き込む前に、必須配列、スキーマバージョン、ID 一意性、サーヴァントと素材の対応、素材からアイテムへの参照整合性、数値の有限性、出力サイズを検証しなければならない (SHALL)。取得・変換・検証のいずれかが失敗した場合、既存の正常な KV 値を変更せず、更新 workflow を失敗として終了しなければならない (SHALL)。
 
+サーヴァントの `id`、`name`、`className`、`collectionNo`、`rarity`、`face` と、アイテムの `id`、`name`、`icon` は、consumer が描画できる値として検証しなければならない (SHALL)。
+
 #### Scenario: 空または大幅欠損した入力を拒否する
 - **WHEN** サーヴァント・素材・アイテムのいずれかが空、または既存の正常値に対して不自然に大きく減少した候補カタログが生成されたとき
 - **THEN** updater は候補を拒否し、既存の `material_catalog_v1` を保持する。
@@ -49,6 +51,10 @@ Material Catalog の更新処理は GitHub Actions の定期更新経路で実�
 #### Scenario: 未定義アイテム参照を拒否する
 - **WHEN** いずれかのサーヴァント素材が `items` に存在しないアイテム ID を参照しているとき
 - **THEN** updater は KV への書き込みを行わず、既存カタログを保持する。
+
+#### Scenario: 表示用フィールドの欠損を拒否する
+- **WHEN** サーヴァントまたはアイテムの必須表示フィールドが欠落、空、または不正な型・値である候補カタログが生成されたとき
+- **THEN** updater は KV への書き込みを行わず、既存の `material_catalog_v1` を保持する。
 
 #### Scenario: アプリ内サイズ上限を超える出力を拒否する
 - **WHEN** UTF-8 で直列化した候補カタログが 5 MiB を超えるとき
