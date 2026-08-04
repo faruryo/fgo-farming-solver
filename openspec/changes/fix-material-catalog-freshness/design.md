@@ -69,7 +69,7 @@ validation は少なくとも次を検査する。
 - schema version と必須 collection の存在
 - servant / item ID の一意性
 - servant ID と materials key の対応
-- 期待する ascension / skill / append material shape
+- `ascension` の `0..3`、`skill` / `append` の `1..9` をすべて含み、範囲外を含まない material shape（ストーリー再臨の Mash `800100` は空の `ascension` を例外として許可）
 - 全 material item ID が items に存在する参照整合性
 - ID・数量・QP の有限性と非負制約
 - 既存正常値に対する servant 数、素材 entry 数、投影 item 数の不自然な件数減少（いずれも 20% 超）

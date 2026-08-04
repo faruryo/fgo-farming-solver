@@ -178,6 +178,14 @@ const REQUIRED_MATERIAL_TABLES: MaterialsKey[] = [
   'appendSkillMaterials',
 ]
 
+const EXPECTED_MATERIAL_LEVELS: Record<MaterialsKey, string[]> = {
+  ascensionMaterials: ['0', '1', '2', '3'],
+  skillMaterials: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  appendSkillMaterials: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+}
+
+const MASH_SERVANT_ID = 800100
+
 const isMaterialLevelKey = (value: string): boolean =>
   /^(0|[1-9]\d*)$/.test(value)
 
@@ -244,6 +252,9 @@ const materialTableError = (
   if (typeof table !== 'object' || Array.isArray(table))
     return `invalid material table ${tableKey} for servant ${servantId}`
   const levels = Object.entries(table)
+  if (!levels.length && tableKey === 'ascensionMaterials' && servantId === MASH_SERVANT_ID) {
+    return null
+  }
   if (!levels.length)
     return `empty material table ${tableKey} for servant ${servantId}`
   for (const [levelKey, level] of levels) {
@@ -255,6 +266,20 @@ const materialTableError = (
       itemIds,
     )
     if (error) return error
+  }
+  const expectedLevelKeys = Object.getOwnPropertyDescriptor(
+    EXPECTED_MATERIAL_LEVELS,
+    tableKey,
+  )?.value as string[]
+  for (const levelKey of expectedLevelKeys) {
+    if (!Object.hasOwn(table, levelKey)) {
+      return `missing material level ${tableKey}.${levelKey} for servant ${servantId}`
+    }
+  }
+  for (const [levelKey] of levels) {
+    if (!expectedLevelKeys.includes(levelKey)) {
+      return `unexpected material level ${tableKey}.${levelKey} for servant ${servantId}`
+    }
   }
   return null
 }

@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { conditionalRequestHeaders, updateMaterialCatalog } from './material-catalog-updater'
 import { buildMaterialCatalog, type SourceValidator } from './material-catalog'
-import { makeItem, makeMaterials, makeServant } from '../components/material/test-fixtures'
+import { makeCompleteMaterials, makeItem, makeServant } from '../components/material/test-fixtures'
 
 const servant = makeServant({ id: 1, extraAssets: { faces: { ascension: { '0': 'face.png' } }, charaGraph: {} } })
 const items = [100, 200, 300, 400, 500].map(id => makeItem({ id, type: id === 100 ? 'qp' : 'skillLvUp' }))
 const previous = buildMaterialCatalog({
-  servants: [servant], materials: { 1: makeMaterials() }, items,
+  servants: [servant], materials: { 1: makeCompleteMaterials() }, items,
   sources: { niceServant: { etag: 'servant-v1' }, niceItem: { etag: 'item-v1' } }, updatedAt: 1,
 })
 
@@ -38,7 +38,7 @@ describe('updateMaterialCatalog', () => {
   })
 
   it('retains ascension items referenced by material records', async () => {
-    const servantWithMaterials = { ...servant, ...makeMaterials() }
+    const servantWithMaterials = { ...servant, ...makeCompleteMaterials() }
     const fetchSource = vi.fn()
       .mockResolvedValueOnce({ status: 200, value: [servantWithMaterials], validator: {} })
       .mockResolvedValueOnce({ status: 200, value: [{ ...items[0], type: 'ascension' }, ...items.slice(1)], validator: {} })
@@ -47,7 +47,7 @@ describe('updateMaterialCatalog', () => {
   })
 
   it('refreshes items when servants change so new material references can be resolved', async () => {
-    const nextMaterials = makeMaterials()
+    const nextMaterials = makeCompleteMaterials()
     nextMaterials.skillMaterials['1'] = {
       ...nextMaterials.skillMaterials['1'],
       items: [{ item: makeItem({ id: 999, type: 'ascension' }), amount: 1 }],

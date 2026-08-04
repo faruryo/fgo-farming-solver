@@ -5,8 +5,8 @@ import {
   validateMaterialCatalog,
 } from './material-catalog'
 import {
+  makeCompleteMaterials,
   makeItem,
-  makeMaterials,
   makeServant,
 } from '../components/material/test-fixtures'
 
@@ -18,7 +18,7 @@ const createCatalog = (
 ) =>
   buildMaterialCatalog({
     servants: [servant],
-    materials: { 1: makeMaterials() },
+    materials: Object.fromEntries([[servant.id, makeCompleteMaterials()]]),
     items: [
       makeItem({ id: 100 }),
       makeItem({ id: 200 }),
@@ -116,6 +116,36 @@ describe('Material Catalog', () => {
     expect(validateMaterialCatalog(malformedLevel)).toEqual({
       ok: false,
       reason: 'invalid material level skillMaterials.invalid for servant 1',
+    })
+
+    const missingRequiredLevel = createCatalog()
+    Reflect.deleteProperty(missingRequiredLevel.materials[1].skillMaterials, '2')
+    expect(validateMaterialCatalog(missingRequiredLevel)).toEqual({
+      ok: false,
+      reason: 'missing material level skillMaterials.2 for servant 1',
+    })
+
+    const unexpectedLevel = createCatalog()
+    unexpectedLevel.materials[1].appendSkillMaterials['10'] =
+      unexpectedLevel.materials[1].appendSkillMaterials['9']
+    expect(validateMaterialCatalog(unexpectedLevel)).toEqual({
+      ok: false,
+      reason: 'unexpected material level appendSkillMaterials.10 for servant 1',
+    })
+  })
+
+  it('allows Mash alone to omit ascension materials', () => {
+    const mash = createCatalog(makeServant({ id: 800100 }))
+    mash.materials[800100].ascensionMaterials = {}
+    expect(validateMaterialCatalog(mash)).toEqual({ ok: true })
+
+    const incompleteMash = createCatalog(makeServant({ id: 800100 }))
+    incompleteMash.materials[800100].ascensionMaterials = {
+      '0': incompleteMash.materials[800100].ascensionMaterials['0'],
+    }
+    expect(validateMaterialCatalog(incompleteMash)).toEqual({
+      ok: false,
+      reason: 'missing material level ascensionMaterials.1 for servant 800100',
     })
   })
 

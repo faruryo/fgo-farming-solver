@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  makeCompleteMaterials,
   makeItem,
   makeMaterials,
   makeServant,
@@ -11,13 +12,13 @@ const servant = makeServant({
   id: 1,
   extraAssets: { faces: { ascension: { '0': 'face.png' } }, charaGraph: {} },
 })
-const servantWithMaterials = { ...servant, ...makeMaterials() }
+const servantWithMaterials = { ...servant, ...makeCompleteMaterials() }
 const items = [100, 200, 300, 400, 500].map((id) =>
   makeItem({ id, type: id === 100 ? 'qp' : 'skillLvUp' }),
 )
 const previous = buildMaterialCatalog({
   servants: [servant],
-  materials: { 1: makeMaterials() },
+  materials: { 1: makeCompleteMaterials() },
   items,
   sources: {
     niceServant: { etag: 'servant-v1' },
@@ -98,6 +99,14 @@ describe('runMaterialCatalogPhase', () => {
           for (const level of Object.values(table)) level.items = []
         }
         return { ...servant, ...missingEntries }
+      },
+    ],
+    [
+      'a required material level',
+      () => {
+        const incompleteMaterials = makeCompleteMaterials()
+        Reflect.deleteProperty(incompleteMaterials.appendSkillMaterials, '9')
+        return { ...servant, ...incompleteMaterials }
       },
     ],
   ])(
