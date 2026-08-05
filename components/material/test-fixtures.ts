@@ -52,7 +52,7 @@ export const makeItem = (overrides: Partial<Item> = {}): Item => ({
  * A small but non-trivial material table:
  * - ascension: step 0 needs 4x item 100 + 1x item 200 (+ QP); step 1 needs 8x item 100 (+ QP)
  * - skill: step 1 needs 5x item 400 (+ QP)
- * - appendSkill: step 0 needs 3x item 500 (+ QP)
+ * - appendSkill: step 1 needs 3x item 500 (+ QP)
  */
 export const makeMaterials = (): ReducedMaterialsRecord => ({
   ascensionMaterials: {
@@ -66,8 +66,8 @@ export const makeMaterials = (): ReducedMaterialsRecord => ({
     '2': { items: [{ item: { id: 400 }, amount: 5 }], qp: 40000 },
   },
   appendSkillMaterials: {
-    '0': { items: [{ item: { id: 500 }, amount: 3 }], qp: 10000 },
-    '1': { items: [{ item: { id: 500 }, amount: 5 }], qp: 20000 },
+    '1': { items: [{ item: { id: 500 }, amount: 3 }], qp: 10000 },
+    '2': { items: [{ item: { id: 500 }, amount: 5 }], qp: 20000 },
   },
 })
 

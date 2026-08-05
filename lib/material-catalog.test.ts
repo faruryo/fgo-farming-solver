@@ -179,6 +179,14 @@ describe('Material Catalog', () => {
       ok: false,
       reason: 'unexpected material level appendSkillMaterials.10 for servant 1',
     })
+
+    const unexpectedAppendUnlockLevel = createCatalog()
+    unexpectedAppendUnlockLevel.materials[1].appendSkillMaterials['0'] =
+      unexpectedAppendUnlockLevel.materials[1].appendSkillMaterials['1']
+    expect(validateMaterialCatalog(unexpectedAppendUnlockLevel)).toEqual({
+      ok: false,
+      reason: 'unexpected material level appendSkillMaterials.0 for servant 1',
+    })
   })
 
   it('allows Mash alone to omit ascension materials', () => {

@@ -176,7 +176,10 @@ Chaldea state はブラウザの localStorage（キー `material`）に保存さ
 - **THEN** `skillMaterials['4']` の素材が `possession` から減算される。
 - **GIVEN** 育成記録モードが ON、サーヴァントAのアペンド2 `start` が 0
 - **WHEN** ユーザーがアペンド2チップをクリックして `start` を 1 にしたとき
-- **THEN** `appendSkillMaterials['0']` の素材が `possession` から減算される。
+- **THEN** 通常素材とQPの `possession` は変更されない。アペンドの解放に必要なサーヴァントコインは本データモデルの対象外である。
+- **GIVEN** 育成記録モードが ON、サーヴァントAのアペンド2 `start` が 1
+- **WHEN** ユーザーがアペンド2チップをクリックして `start` を 2 にしたとき
+- **THEN** `appendSkillMaterials['1']` の素材とQPが `possession` から減算される。
 
 #### Scenario: モード OFF 時は所持数を変更しない
 - **GIVEN** 育成記録モードが OFF

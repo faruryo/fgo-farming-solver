@@ -29,8 +29,8 @@ const mat: ReducedMaterialsRecord = {
     '2': { items: [{ item: { id: 400 }, amount: 5 }], qp: 40000 },
   },
   appendSkillMaterials: {
-    '0': { items: [{ item: { id: 500 }, amount: 3 }], qp: 10000 },
     '1': { items: [{ item: { id: 500 }, amount: 5 }], qp: 20000 },
+    '2': { items: [{ item: { id: 500 }, amount: 8 }], qp: 30000 },
   },
 }
 
@@ -84,11 +84,15 @@ describe('diffMaterialsForStartChange', () => {
     expect(map['1']).toBe(60000)
   })
 
-  it('uses appendSkillMaterials for appendSkill target', () => {
+  it('does not consume ordinary materials to unlock an append skill', () => {
+    expect(diffMaterialsForStartChange(mat, 'appendSkill', 0, 1)).toBeNull()
+  })
+
+  it('uses appendSkillMaterials level 1 after an append skill is unlocked', () => {
     const delta = diffMaterialsForStartChange(mat, 'appendSkill', 0, 2)
     expect(delta).not.toBeNull()
     const map = Object.fromEntries(delta!.items.map((i) => [i.itemId, i.amount]))
-    expect(map['500']).toBe(8)
-    expect(map['1']).toBe(30000)
+    expect(map['500']).toBe(5)
+    expect(map['1']).toBe(20000)
   })
 })
