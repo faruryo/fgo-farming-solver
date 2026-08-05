@@ -1,7 +1,8 @@
 // Shared fixture factories for components/material/*.test.tsx.
 // Not a *.test.ts(x) file itself, so vitest does not pick it up as a suite.
 import { NiceServant, Item } from '../../interfaces/atlas-academy'
-import { ReducedMaterialsRecord } from '../../lib/get-materials'
+import { ReducedMaterials, ReducedMaterialsRecord } from '../../lib/get-materials'
+import { MaterialCatalogServant } from '../../lib/material-catalog'
 
 export const makeServant = (overrides: Partial<NiceServant> = {}): NiceServant => ({
   id: 1,
@@ -22,6 +23,18 @@ export const makeServant = (overrides: Partial<NiceServant> = {}): NiceServant =
   ...overrides,
 })
 
+export const makeMaterialCatalogServant = (
+  overrides: Partial<MaterialCatalogServant> = {}
+): MaterialCatalogServant => ({
+  id: 1,
+  collectionNo: 1,
+  name: 'サーヴァントA',
+  className: 'saber',
+  rarity: 5,
+  face: null,
+  ...overrides,
+})
+
 export const makeItem = (overrides: Partial<Item> = {}): Item => ({
   id: 100,
   name: '灯火の焔',
@@ -39,7 +52,7 @@ export const makeItem = (overrides: Partial<Item> = {}): Item => ({
  * A small but non-trivial material table:
  * - ascension: step 0 needs 4x item 100 + 1x item 200 (+ QP); step 1 needs 8x item 100 (+ QP)
  * - skill: step 1 needs 5x item 400 (+ QP)
- * - appendSkill: step 0 needs 3x item 500 (+ QP)
+ * - appendSkill: step 1 needs 3x item 500 (+ QP)
  */
 export const makeMaterials = (): ReducedMaterialsRecord => ({
   ascensionMaterials: {
@@ -53,7 +66,33 @@ export const makeMaterials = (): ReducedMaterialsRecord => ({
     '2': { items: [{ item: { id: 400 }, amount: 5 }], qp: 40000 },
   },
   appendSkillMaterials: {
-    '0': { items: [{ item: { id: 500 }, amount: 3 }], qp: 10000 },
-    '1': { items: [{ item: { id: 500 }, amount: 5 }], qp: 20000 },
+    '1': { items: [{ item: { id: 500 }, amount: 3 }], qp: 10000 },
+    '2': { items: [{ item: { id: 500 }, amount: 5 }], qp: 20000 },
   },
 })
+
+const CATALOG_MATERIAL_LEVELS: Record<keyof ReducedMaterialsRecord, string[]> = {
+  ascensionMaterials: ['0', '1', '2', '3'],
+  skillMaterials: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  appendSkillMaterials: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+}
+
+const completeMaterialTable = (table: ReducedMaterials, levelKeys: string[]): ReducedMaterials => {
+  const template = Object.values(table)[0]
+  return Object.fromEntries(levelKeys.map(levelKey => [
+    levelKey,
+    {
+      items: template.items.map(({ item, amount }) => ({ item: { ...item }, amount })),
+      qp: template.qp,
+    },
+  ]))
+}
+
+export const makeCompleteMaterials = (): ReducedMaterialsRecord => {
+  const materials = makeMaterials()
+  return {
+    ascensionMaterials: completeMaterialTable(materials.ascensionMaterials, CATALOG_MATERIAL_LEVELS.ascensionMaterials),
+    skillMaterials: completeMaterialTable(materials.skillMaterials, CATALOG_MATERIAL_LEVELS.skillMaterials),
+    appendSkillMaterials: completeMaterialTable(materials.appendSkillMaterials, CATALOG_MATERIAL_LEVELS.appendSkillMaterials),
+  }
+}

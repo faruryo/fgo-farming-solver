@@ -189,6 +189,9 @@
     "ドロップ": "Drops"
   },
   "material": {
+    "catalog-loading": "Loading material data…",
+    "catalog-load-error": "Material data could not be loaded.",
+    "catalog-retry": "Retry",
     "サーヴァント": "Servant",
     "アイテム": "Item",
     "育成素材計算機": "Material Calculator",

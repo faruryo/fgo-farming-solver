@@ -102,6 +102,34 @@ describe('mergeChaldeaState appendSkill padding', () => {
   })
 })
 
+describe('mergeChaldeaState catalog ID changes', () => {
+  it('adds a newly cataloged servant while preserving current and no-longer-cataloged IDs', () => {
+    const initialState = createChaldeaState(['current', 'new'])
+    const storedCurrent = {
+      ...initialState.current,
+      disabled: false,
+      targets: {
+        ...initialState.current.targets,
+        ascension: { disabled: false, ranges: [{ start: 3, end: 4 }] },
+      },
+    }
+    const stale = {
+      ...initialState.current,
+      disabled: false,
+      targets: {
+        ...initialState.current.targets,
+        skill: { disabled: false, ranges: [{ start: 8, end: 10 }] },
+      },
+    }
+
+    const merged = mergeChaldeaState(initialState, { current: storedCurrent, stale })
+
+    expect(merged.current).toEqual(storedCurrent)
+    expect(merged.new).toEqual(initialState.new)
+    expect(merged.stale).toEqual(stale)
+  })
+})
+
 describe('mergeChaldeaState "all" template start/end split', () => {
   it('does not leak "all" template start into unowned servants without individual data', () => {
     const initialState = createChaldeaState(['1', '2'])

@@ -4,7 +4,9 @@ import { Node } from '../components/common/checkbox-tree'
 import { groupBy } from '../utils/group-by'
 import { getClassName } from '../lib/class-names'
 
-export const useServantTree = (servants: Servant[], locale = 'ja'): Node[] =>
+type TreeServant = Pick<Servant, 'id' | 'name' | 'className'>
+
+export const useServantTree = (servants: TreeServant[], locale = 'ja'): Node[] =>
   useMemo(() => {
     return [
       {
@@ -21,7 +23,7 @@ export const useServantTree = (servants: Servant[], locale = 'ja'): Node[] =>
 
 export const getClassNode = (
   className: string,
-  servants: Servant[],
+  servants: TreeServant[],
   locale = 'ja'
 ): Node => ({
   label: getClassName(className, locale),

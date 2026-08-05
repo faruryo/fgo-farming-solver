@@ -62,15 +62,17 @@ type MaterialCatalogV1 = {
 
 updater は既存カタログの source validators を読み、`If-None-Match` / `If-Modified-Since` を送る。両方 304 なら parse も KV write もしない。一方だけ 200 の場合は、変更側だけ再生成し、304 側は既存の検証済み section を再利用する。取得元の validator だけが変わり蒸留結果が同じ場合も書き込まない。`updatedAt` は semantic content が変わって正常な新カタログを書いた時だけ更新する。
 
+ただし、`nice_servant.json` が更新され、`nice_item.json` が 304 の場合は、既存 catalog の `items` が旧素材参照に限定された projection であるため、新規参照を含まないことがある。新しい素材 ID が既存 item 集合で充足できない場合だけ `nice_item.json` を条件なしで 1 回再取得し、完全な item source から再投影する。通常の 304 更新は 2 リクエストのまま維持する。
+
 validation は少なくとも次を検査する。
 
 - schema version と必須 collection の存在
 - servant / item ID の一意性
 - servant ID と materials key の対応
-- 期待する ascension / skill / append material shape
+- `ascension` の `0..3`、`skill` / `append` の `1..9` をすべて含み、範囲外を含まない material shape（ストーリー再臨の Mash `800100` は空の `ascension` を例外として許可）
 - 全 material item ID が items に存在する参照整合性
-- ID・数量・QP の有限性と非負制約
-- 既存正常値に対する不自然な件数減少
+- ID・数量・QP の有限性と正値制約、通常 level の非空素材配列、および既存正常値に対する素材数量・QP合計の不自然な減少
+- 既存正常値に対する servant 数、素材 entry 数、投影 item 数の不自然な件数減少（いずれも 20% 超）
 - UTF-8 serialized size が 5 MiB 以下であること
 
 候補が不正なら `put` せず、既存値を保持して `failed = true` とする。他 phase は継続してよいが、workflow 全体は非 0 で終了させる。既存 validation のように「上書き拒否を warning だけ出して成功扱い」にしない。
@@ -101,12 +103,12 @@ loading・error・retry の表示文言は既存 i18n 規約どおり `t('kebab-
 
 ### 6. local development fallback は明示的に分離する
 
-KV binding が無い `next dev` では、既存の filesystem cache 付き Atlas loader から同じ catalog builder を呼べるようにする。本番判定は依存注入した environment/binding の有無で行い、本番 KV 欠落時にローカル mockやAtlasへ倒れる分岐を設けない。テストは外部 network を使わず、固定 response と in-memory storage を注入する。
+KV binding が無い `next dev` では、既存の filesystem cache 付き Atlas loader から同じ catalog builder を呼べるようにする。Miniflare が空の local KV binding を提供する場合もあるため、明示的なローカル環境では key 未seed または KV 読み取り失敗時に同じ loader へフォールバックする。本番 KV 欠落時にローカル mockやAtlasへ倒れる分岐は設けない。テストは外部 network を使わず、固定 response と in-memory storage を注入する。
 
 ## Risks / Trade-offs
 
 - [初回表示で catalog fetch の 1 round trip が増える] → 静的シェルと明確な loading UIを先に表示し、約 1 MB の raw payloadをブラウザキャッシュする。実装後に実機で LCP・操作可能時間を測定する。
-- [KV / browser cache により更新反映が nominal cron より遅れる] → `updatedAt` を payload に保持し、KV `cacheTtl` と browser `max-age` を 5 分に制限する。「30分以内」を厳密保証とは扱わず、scheduler 遅延と最大数分の伝播を監視する。
+- [KV / browser cache により更新反映が nominal cron より遅れる] → `updatedAt` を payload に保持し、KV `cacheTtl` と browser `max-age` をそれぞれ 5 分に制限する。両キャッシュが直列に効く最悪時は約 10 分となるため、「30分以内」を厳密保証とは扱わず、scheduler 遅延と伝播を監視する。
 - [consumer deploy 前に v1 key が無いと 503 になる] → versioned key を feature branch の手動 updater 実行で先に seed・検証してから consumer を mergeする。
 - [Atlas schema change で builder が失敗する] → strict validation と last-known-good 保護で利用者への破損配信を防ぎ、workflow を赤にして検知する。
 - [client parse・480件前後の描画コストは残る] → Worker CPU から利用者端末へ移す判断であり、payload projection と browser cache で抑える。必要になった場合の virtualization は別変更とする。

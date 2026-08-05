@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { NiceServant, Item, TargetKey } from '../../interfaces/atlas-academy'
+import { TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
+import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-catalog'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
@@ -12,16 +13,15 @@ import { diffMaterialsForStartChange } from '../../lib/diff-materials'
 import { showTrackingToast, showBlockedToast } from '../../lib/tracking-toast'
 import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
-import { ClassName } from '../../interfaces/atlas-academy'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { ServantCard } from './servant-card'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export type MaterialIndexProps = {
-  servants: NiceServant[]
+  servants: MaterialCatalogServant[]
   materials: MaterialsForServants
-  items: Item[]
+  items: MaterialCatalogItem[]
   locale?: string
 }
 
@@ -77,13 +77,13 @@ export const Index = ({
   }, [possession, hasPossessionInput])
 
   const itemsById = useMemo(() => {
-    const map: Record<string, Item> = {}
+    const map: Record<string, MaterialCatalogItem> = {}
     items.forEach(it => { map[it.id.toString()] = it })
     return map
   }, [items])
 
   const servantsById = useMemo(() => {
-    const map: Record<string, NiceServant> = {}
+    const map: Record<string, MaterialCatalogServant> = {}
     servants.forEach(s => { map[s.id.toString()] = s })
     return map
   }, [servants])
@@ -543,7 +543,7 @@ export const Index = ({
         <div className="c-filter-bar">
           <div className="c-filter-group" style={{ flexWrap: 'wrap', gap: 8 }}>
             {CLASS_LIST.map(cls => {
-              const iconUrl = cls.id !== 'all' ? getClassIconUrl(cls.id as ClassName, 5) : ''
+              const iconUrl = cls.id !== 'all' ? getClassIconUrl(cls.id, 5) : ''
               const isActive = selClass === cls.id
               return (
                 <button

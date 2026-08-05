@@ -17,7 +17,9 @@ export type MaterialsForServants = {
   [servantId: string]: ReducedMaterialsRecord
 }
 
-const reduceServant = (servant: MaterialsRecord): ReducedMaterialsRecord =>
+const asMaterialsRecord = (value: unknown): MaterialsRecord => value as MaterialsRecord
+
+export const reduceServantMaterials = (servant: MaterialsRecord): ReducedMaterialsRecord =>
   fromEntries(
     entries(servant)
       .filter(([key]) => key.endsWith('Materials'))
@@ -42,7 +44,7 @@ export const getMaterialsForServants =
   async (): Promise<MaterialsForServants> => {
     const servants = await getNiceServants(undefined, true)
     return Object.fromEntries(
-      servants.map((servant) => [servant.id, reduceServant(servant)])
+      servants.map((servant) => [servant.id, reduceServantMaterials(servant)])
     )
   }
 
@@ -66,8 +68,8 @@ export const getMaterialsForServantIds = async (
         try {
           const res = await fetch(`${origin}/nice/${region}/servant/${id}`)
           if (!res.ok) return null
-          const servant = (await res.json()) as MaterialsRecord & { id: number }
-          return [id.toString(), reduceServant(servant)] as const
+          const servant = asMaterialsRecord(await res.json())
+          return [id.toString(), reduceServantMaterials(servant)] as const
         } catch {
           return null
         }

@@ -41,7 +41,7 @@ export type ShowTrackingToastParams = {
   idx: number
   prevStart: number
   newStart: number
-  itemsById: Record<string, Item>
+  itemsById: Record<string, Pick<Item, 'name' | 'icon'>>
 }
 
 export const showTrackingToast = (params: ShowTrackingToastParams) => {
