@@ -2,7 +2,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-vi.mock('./index', () => ({ Index: () => <div>index-mounted</div> }))
+// Index に渡された props を捕捉する。'keeps the latest successful retry...' テストで
+// 「古いレスポンスが新しいレスポンスを上書きしていないか」を確認するために使う。
+const { indexProps } = vi.hoisted(() => ({ indexProps: { current: null as { servants: { name: string }[] } | null } }))
+vi.mock('./index', () => ({
+  Index: (props: { servants: { name: string }[] }) => {
+    indexProps.current = props
+    return <div>index-mounted</div>
+  },
+}))
 vi.mock('./material', () => ({ Material: () => <div>material-mounted</div> }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }) }))
 
@@ -28,7 +36,7 @@ const deferred = <T,>() => {
 }
 
 describe('MaterialCatalogLoader', () => {
-  beforeEach(() => { localStorage.clear(); vi.unstubAllGlobals() })
+  beforeEach(() => { localStorage.clear(); vi.unstubAllGlobals(); indexProps.current = null })
 
   it('does not mount stateful Material UI while catalog loading fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 503 })))
@@ -80,6 +88,38 @@ describe('MaterialCatalogLoader', () => {
       await Promise.resolve()
     })
     expect(screen.queryByText('素材データを読み込めません。')).not.toBeInTheDocument()
+  })
+
+  it('keeps the latest successful retry when an earlier successful retry settles later', async () => {
+    const staleCatalog = { ...catalog, servants: [{ ...catalog.servants[0], name: 'Stale' }] }
+    const freshCatalog = { ...catalog, servants: [{ ...catalog.servants[0], name: 'Fresh' }] }
+    const firstRetry = deferred<Response>()
+    const secondRetry = deferred<Response>()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response('', { status: 503 }))
+      .mockReturnValueOnce(firstRetry.promise)
+      .mockReturnValueOnce(secondRetry.promise)
+    vi.stubGlobal('fetch', fetchMock)
+    render(<MaterialCatalogLoader />)
+    await screen.findByText('素材データを読み込めません。')
+
+    const retry = screen.getByRole('button', { name: '再試行' })
+    act(() => {
+      retry.click()
+      retry.click()
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    await act(async () => {
+      secondRetry.resolve(Response.json(freshCatalog))
+      await Promise.resolve()
+    })
+    await screen.findByText('index-mounted')
+    await act(async () => {
+      firstRetry.resolve(Response.json(staleCatalog))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(indexProps.current?.servants[0].name).toBe('Fresh')
   })
 
   it('rejects a truncated catalog before mounting stateful Material UI', async () => {

@@ -190,3 +190,54 @@ iPhone などのスマートフォン表示において、「周回数を求め�
   - 素材計算画面（サーヴァント選択）からダイレクトに「周回数を求める」へ移動できるショートカットボタンを設ける。
   - または `/material/result` と `/farming` の画面構成や連携ステップを見直し、余分なクッションページを意識させないスムーズな画面フローへリファクタリングする。
 
+
+---
+
+## Material Catalog 移行後、loading 中のページに title / metadata が無い
+
+**重要度: 中（クローラと共有プレビューにのみ影響。利用者の体験とデータは無傷）**
+
+### 症状
+
+`/material` と `/material/[className]` は静的シェルを返し、catalog を client fetch してから
+`Index` / `Material` を mount する。mount 前の HTML は
+`<p>素材データを読み込んでいます…</p>` だけで、`<title>` も description も無い。
+旧実装は SSR で `components/common/head.tsx` を含む `Material` を返していたため、
+クローラと SNS の共有カードにはクラス名入りの metadata が出ていた。
+
+### 原因
+
+`app/material/[className]/page.tsx` が `MaterialCatalogLoader` だけを返し、
+metadata を出していた `Head` が catalog 取得後にしか描画されない。
+`openspec/changes/fix-material-catalog-freshness/design.md` の Risks は
+payload と round trip には触れているが、metadata の欠落は挙げていない。
+
+### 検討方向
+
+クラス名は URL から確定するので、catalog を待たずに解決できる。
+`page.tsx` 側に `generateMetadata` を置く（`generateStaticParams` と同じ
+`MATERIAL_CLASS_NAMES` を使う）だけで、loading 中も含めて metadata が出る。
+client 側の `Head` と二重に出ないよう、どちらが正になるかは実装時に確認する。
+
+---
+
+## Material Catalog の更新伝播が設計値の2倍になりうる
+
+**重要度: 低（最大で数分の鮮度差。データの正しさには影響しない）**
+
+### 症状
+
+`design.md` は「KV `cacheTtl` と browser `max-age` を5分に制限する」と書いているが、
+実際の2つは直列に効くため、最悪で約10分の伝播遅れになる。
+
+- `app/api/material-catalog/route.ts`: `MASTER_DATA.get(..., { cacheTtl: 300 })`
+- 同: 応答ヘッダ `Cache-Control: public, max-age=300`
+
+加えて `public` なので Cloudflare の共有キャッシュにも載る。
+
+### 検討方向
+
+「30分以内の反映」を運用の期待値として維持するなら合算で5分に収める
+（例: `cacheTtl` か `max-age` の一方を60秒にする）。
+逆に10分を許容するなら design.md の記述を実態に合わせて直す。
+どちらが正しいかは、Free plan の KV 読み取り回数と鮮度のどちらを優先するかの判断。
