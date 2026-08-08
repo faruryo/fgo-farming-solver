@@ -164,7 +164,25 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     }
   })
 
-  it('resets a disabled servant\'s polluted start (already flushed to localStorage) back to the default', () => {
+  // Historical note: a previous version of mergeChaldeaState force-corrected
+  // every disabled servant's `start` back to createServantState()'s floor
+  // values (ascension 0 / skill 1 / appendSkill 0) on every merge. That was
+  // introduced by commit 46bde1a2 to stop the "all" template merge from
+  // leaking start: 1 into unowned servants -- but buildTargetsFromAllTemplate
+  // (above) already fixes that leak on its own, by construction, for the
+  // "all" merge path only. The disabled-servant correction pass was strictly
+  // broader: it ran on *every* disabled servant on *every* merge, including
+  // ones that never went through "all" at all -- e.g. a servant that was
+  // owned, had its start manually edited, and was later marked unowned. Since
+  // every reader of `start` (lib/sum-materials.ts, components/material/index.tsx,
+  // lib/progress/growth.ts, lib/progress/diff.ts,
+  // components/dashboard/ProgressSection.tsx) guards on `disabled`, and the
+  // UI never renders `start` outside the owned block (servant-card.tsx), that
+  // correction pass destroyed data nobody could see or read, with no
+  // compensating benefit -- and did so irreversibly, since every localStorage
+  // read / `ls-sync` resync re-ran the merge. See
+  // openspec/changes/fix-material-unowned-start-reset/design.md.
+  it('preserves a disabled servant\'s start (already flushed to localStorage) across a merge', () => {
     const initialState = createChaldeaState(['1'])
     const stored: ChaldeaState = {
       '1': {
@@ -196,15 +214,27 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     const merged = mergeChaldeaState(initialState, stored)
     const targets = merged['1'].targets
 
-    // start is force-corrected to the real default, regardless of the stored
-    // (polluted) value.
-    expect(targets.ascension.ranges[0].start).toBe(0)
-    expect(targets.skill.ranges.every((r) => r.start === 1)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.start === 0)).toBe(true)
-    // end is untouched by the correction pass.
+    // start is preserved exactly as stored -- it must NOT be forced back to
+    // createServantState()'s floor values just because the servant is
+    // disabled.
+    expect(targets.ascension.ranges[0].start).toBe(3)
+    expect(targets.skill.ranges.every((r) => r.start === 7)).toBe(true)
+    expect(targets.appendSkill.ranges.every((r) => r.start === 1)).toBe(true)
+    // end was, and remains, untouched.
     expect(targets.ascension.ranges[0].end).toBe(4)
     expect(targets.skill.ranges.every((r) => r.end === 10)).toBe(true)
     expect(targets.appendSkill.ranges.every((r) => r.end === 10)).toBe(true)
+
+    // Close the full round trip: switching back to owned and re-merging
+    // still shows the pre-disable start, exactly as it was before the
+    // servant was ever marked unowned.
+    const reOwned = mergeChaldeaState(initialState, {
+      '1': { disabled: false, targets: merged['1'].targets },
+    })
+    const reOwnedTargets = reOwned['1'].targets
+    expect(reOwnedTargets.ascension.ranges[0].start).toBe(3)
+    expect(reOwnedTargets.skill.ranges.every((r) => r.start === 7)).toBe(true)
+    expect(reOwnedTargets.appendSkill.ranges.every((r) => r.start === 1)).toBe(true)
   })
 
   it('does not reset an owned servant\'s manually-edited start', () => {
@@ -261,12 +291,14 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     }
   })
 
-  it('resets start when a previously-owned, edited servant becomes disabled (individual toggle or ms-servants-io bulk-clear)', () => {
-    // Both the individual "mark as unowned" toggle and ms-servants-io.tsx's
-    // bulk-clear-import path produce the same shape on the next merge: the
-    // servant's prior `targets` (including an edited `start`) are preserved
-    // verbatim, but `disabled` flips to true. This single test covers both
-    // call sites since mergeChaldeaState can't distinguish them.
+  it('preserves start when a previously-owned, edited servant becomes disabled (individual toggle)', () => {
+    // Note: the "or ms-servants-io bulk-clear" call site this test used to
+    // reference no longer exists in the codebase -- the only place that
+    // writes `disabled: true` today is createServantState()'s own default
+    // generation (see design.md). The individual "mark as unowned" toggle
+    // produces the shape below on the next merge: the servant's prior
+    // `targets` (including an edited `start`) are preserved verbatim, but
+    // `disabled` flips to true.
     const initialState = createChaldeaState(['1'])
     const stored: ChaldeaState = {
       '1': {
@@ -298,12 +330,12 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     const merged = mergeChaldeaState(initialState, stored)
     const targets = merged['1'].targets
 
-    // start resets to the correct default despite having been an edited,
-    // owned value moments before.
-    expect(targets.ascension.ranges[0].start).toBe(0)
-    expect(targets.skill.ranges.every((r) => r.start === 1)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.start === 0)).toBe(true)
-    // end (and other data) from the prior owned state is preserved.
+    // start is preserved exactly as it was moments before, while the servant
+    // was still owned -- toggling `disabled` alone must not touch it.
+    expect(targets.ascension.ranges[0].start).toBe(4)
+    expect(targets.skill.ranges.every((r) => r.start === 10)).toBe(true)
+    expect(targets.appendSkill.ranges.every((r) => r.start === 10)).toBe(true)
+    // end (and other data) from the prior owned state is preserved, as before.
     expect(targets.ascension.ranges[0].end).toBe(4)
     expect(targets.skill.ranges.every((r) => r.end === 10)).toBe(true)
     expect(targets.appendSkill.ranges.every((r) => r.end === 10)).toBe(true)
