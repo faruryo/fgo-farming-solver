@@ -10,7 +10,6 @@ import { ClassName } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { MaterialCatalogServant } from '../../lib/material-catalog'
 import { Link } from '../common/link'
-import { Head } from '../common/head'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { CalcButton } from './material-calc-button'
@@ -67,7 +66,6 @@ export const Material = ({
 
   return (
     <div className="flex flex-col gap-8">
-      <Head title={`${localClassName} | 育成素材計算機`} />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
