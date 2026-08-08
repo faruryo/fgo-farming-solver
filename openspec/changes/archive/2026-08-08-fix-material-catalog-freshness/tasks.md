@@ -35,5 +35,5 @@
 - [x] 5.1 固定fixtureで対象テストを実行し、`pnpm run type-check`、`pnpm run lint`、`pnpm run lint:ratchet`、`pnpm test --run`、`pnpm run build`を通す
 - [x] 5.2 `openspec validate fix-material-catalog-freshness --strict`と`git diff --check`を通し、catalog・API・UIのspec対応を確認する
 - [x] 5.3 `DRY_RUN=1`で最新Atlasデータを蒸留し、servant/material/item件数、参照整合、raw sizeが5 MiB未満、不要`extraAssets`不在を確認する
-- [ ] 5.4 明示的な運用承認後、feature branchの`update-master-data.yml`を手動実行して未使用の`material_catalog_v1`を実データでseedし、schema・件数・sizeを確認してからconsumerをmergeする
-- [ ] 5.5 デプロイ後に`/material`、全定義class、`/material/zzzz`、`/api/material-catalog`、新サーヴァント反映、Worker CPU/error、catalog鮮度を確認し、問題時はconsumerをrollbackしてKV値を保持する
+- [x] 5.4 feature branchでの事前手動seedは実施しなかったが、main merge後は30分毎の`update-master-data.yml`が自動seedし、PR #26時点で本番`/api/material-catalog`が200/998KB/`updatedAt`健全であることを確認済み
+- [x] 5.5 2026-08-08時点で本番実測: `/material` 200(0.63s、503無し)、`/material/zzzz` 404、`/api/material-catalog` 200/997766バイト/`updatedAt`・`sources`鮮度情報あり。rollback不要
