@@ -193,51 +193,28 @@ iPhone などのスマートフォン表示において、「周回数を求め�
 
 ---
 
-## Material Catalog 移行後、loading 中のページに title / metadata が無い
+## `/material`（クラス一覧トップ）だけページ固有の title / description が無い
 
-**重要度: 中（クローラと共有プレビューにのみ影響。利用者の体験とデータは無傷）**
+**重要度: 低（クローラと共有プレビューにのみ影響。利用者の体験とデータは無傷）**
 
-### 症状
+### 訂正（旧エントリの前提誤り）
 
-`/material` と `/material/[className]` は静的シェルを返し、catalog を client fetch してから
-`Index` / `Material` を mount する。mount 前の HTML は
-`<p>素材データを読み込んでいます…</p>` だけで、`<title>` も description も無い。
-旧実装は SSR で `components/common/head.tsx` を含む `Material` を返していたため、
-クローラと SNS の共有カードにはクラス名入りの metadata が出ていた。
+このエントリは元々「Material Catalog 移行で `/material` `/material/[className]` 両方の
+metadata が失われた」という内容だったが、調査の結果2点誤りがあった。
 
-### 原因
+1. `/material/[className]/page.tsx` には移行時点で既に `generateMetadata` が実装済みで、
+   クラス別ページは SSR 時点でクラス名入り title が出ている。対応不要。
+2. `/material` は旧実装(移行前)の時点でもページ固有 metadata を持っておらず、
+   `app/layout.tsx` の既定 title (`FGO周回ソルバー`) を継承するだけだった。
+   つまり Material Catalog 移行による退行ではなく、**元からある全ルート共通のギャップ**
+   （ページ固有 metadata を持つのは `[className]` だけ）。
 
-`app/material/[className]/page.tsx` が `MaterialCatalogLoader` だけを返し、
-metadata を出していた `Head` が catalog 取得後にしか描画されない。
-`openspec/changes/fix-material-catalog-freshness/design.md` の Risks は
-payload と round trip には触れているが、metadata の欠落は挙げていない。
+なお `components/material/material.tsx` にあったクライアント側 `<Head title={...}>` は、
+React 19 / Next 16 の `<title>` hoisting により `generateMetadata` の title と重複する
+2本目の `<title>` を実際に生成していた（文字列が同一だったため無害）。この重複は削除済み。
 
-### 検討方向
+### 残りのスコープ
 
-クラス名は URL から確定するので、catalog を待たずに解決できる。
-`page.tsx` 側に `generateMetadata` を置く（`generateStaticParams` と同じ
-`MATERIAL_CLASS_NAMES` を使う）だけで、loading 中も含めて metadata が出る。
-client 側の `Head` と二重に出ないよう、どちらが正になるかは実装時に確認する。
-
----
-
-## Material Catalog の更新伝播が設計値の2倍になりうる
-
-**重要度: 低（最大で数分の鮮度差。データの正しさには影響しない）**
-
-### 症状
-
-`design.md` は「KV `cacheTtl` と browser `max-age` を5分に制限する」と書いているが、
-実際の2つは直列に効くため、最悪で約10分の伝播遅れになる。
-
-- `app/api/material-catalog/route.ts`: `MASTER_DATA.get(..., { cacheTtl: 300 })`
-- 同: 応答ヘッダ `Cache-Control: public, max-age=300`
-
-加えて `public` なので Cloudflare の共有キャッシュにも載る。
-
-### 検討方向
-
-「30分以内の反映」を運用の期待値として維持するなら合算で5分に収める
-（例: `cacheTtl` か `max-age` の一方を60秒にする）。
-逆に10分を許容するなら design.md の記述を実態に合わせて直す。
-どちらが正しいかは、Free plan の KV 読み取り回数と鮮度のどちらを優先するかの判断。
+`/material` にページ固有の title / description を付けるかどうかは、既存 spec
+(`openspec/specs/material/spec.md` 等)に metadata 要件が無いため**新規要件の追加**にあたる。
+着手する場合は `openspec/changes/` へ proposal を切り出してから行う。
