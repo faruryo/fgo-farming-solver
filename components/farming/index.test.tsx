@@ -10,6 +10,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Localized } from '../../lib/get-local-items'
 import type { Item, Quest } from '../../interfaces/fgodrop'
+import {
+  solveCallUrl,
+  stubFetch,
+  submitButton,
+} from '../../lib/farming/solve-request-test-utils'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -41,17 +46,6 @@ const quests: Quest[] = [
   { id: '1A01', section: '1章', area: 'エリアA', name: 'クエスト1', ap: 10 },
 ]
 
-const submitButton = () =>
-  screen.findByRole('button', { name: /周回数を求める/ })
-
-const solveCallUrl = (fetchMock: ReturnType<typeof vi.fn>): URL => {
-  const call = fetchMock.mock.calls.find(
-    ([url]) => typeof url === 'string' && url.startsWith('/api/solve')
-  )
-  if (!call) throw new Error('no /api/solve call recorded')
-  return new URL(call[0] as string, 'http://localhost')
-}
-
 beforeEach(() => {
   localStorage.clear()
   push.mockClear()
@@ -61,14 +55,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-const stubFetch = () => {
-  const fetchMock = vi.fn().mockResolvedValue({
-    json: () => Promise.resolve({ id: 'solve-1' }),
-  })
-  vi.stubGlobal('fetch', fetchMock)
-  return fetchMock
-}
 
 describe('/farming direct access (5.4 regression)', () => {
   it('disables submit and shows the item-count alert when no counts are entered', async () => {

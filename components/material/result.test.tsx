@@ -10,6 +10,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { EnrichedItem } from '../../lib/get-items'
 import type { Quest } from '../../interfaces/fgodrop'
+import {
+  solveCallUrl,
+  stubFetch,
+  submitButton,
+} from '../../lib/farming/solve-request-test-utils'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -79,17 +84,6 @@ const allQuestIds = quests.map((q) => q.id)
 const setLocalStorage = (key: string, value: unknown) =>
   localStorage.setItem(key, JSON.stringify(value))
 
-const submitButton = () =>
-  screen.findByRole('button', { name: /周回数を求める/ })
-
-const solveCallUrl = (fetchMock: ReturnType<typeof vi.fn>): URL => {
-  const call = fetchMock.mock.calls.find(
-    ([url]) => typeof url === 'string' && url.startsWith('/api/solve')
-  )
-  if (!call) throw new Error('no /api/solve call recorded')
-  return new URL(call[0] as string, 'http://localhost')
-}
-
 beforeEach(() => {
   localStorage.clear()
   push.mockClear()
@@ -98,14 +92,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-const stubFetch = () => {
-  const fetchMock = vi.fn().mockResolvedValue({
-    json: () => Promise.resolve({ id: 'solve-1' }),
-  })
-  vi.stubGlobal('fetch', fetchMock)
-  return fetchMock
-}
 
 describe('goSolver — goal A/B transport (5.1)', () => {
   it('stockEnabled ON, A and B differ: sends both items and itemsStock', async () => {
