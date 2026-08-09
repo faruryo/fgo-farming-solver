@@ -9,11 +9,12 @@
 - [ ] 2.2 `useQuestTree`/`useChecked`/`useCheckboxTree`と2.1の共有フックを`/material/result`側で呼び出し、`CheckboxTree`を表示するセクションを追加する(既定は折りたたみ、全選択済み)。
 - [ ] 2.3 `/farming`側も2.1の共有フックを使うようリファクタリングし、ロジックの二重実装を避ける。
 - [ ] 2.4 旧`quests`キーのみ存在し`excludedQuests`が未設定の状態で`/material/result`を先に開いた場合に、移行が正しく行われ`/farming`側の状態と一致することを確認する回帰テストを追加する。
+- [ ] 2.5 クエスト選択セクションの見出し等、新設するUI文字列はハードコードせず`t('kebab-key', '日本語フォールバック')`で実装し、`locales/ja.json`・`locales/en.json`の両方にキーを追加する(AGENTS.md記載のi18n規約、BLOCKER)。`/farming`と同一の文言(セクション見出し等)は既存キーの再利用を検討し、namespaceが異なり直接参照できない場合は新規kebab-caseキーを追加する。
 
 ## 3. 直接送信ロジックの実装
 
 - [ ] 3.1 `/farming`の`handleSubmit`(バリデーション → `/api/solve`呼び出し → `localStorage['farming/results']`書き込み+`ls-sync`発火 → `saveProgressSnapshot()` → `router.push`)を`/material/result`の送信ボタン用に移植する。入力形式が異なる(`itemCounts` vs `amounts`/`possession`)ためフロー全体は共有フック化しないが、バリデーション条件の判定関数と副作用(`farming/results`書き込み+`ls-sync`+`saveProgressSnapshot`+遷移)の呼び出し部分は共通関数として切り出し、`/farming`・`/material/result`の両方から呼ぶ(重複実装にしない)。
-- [ ] 3.2 バリデーション: 目標Aまたは目標Bのいずれかに1件以上(目標Aのみで判定しない。stock-only素材だけの場合、目標Aは0件でも目標Bは非0件になりうるため)、周回対象クエスト最低1件、の2ガードを追加する。
+- [ ] 3.2 バリデーション: 目標Aまたは目標Bのいずれかに1件以上(目標Aのみで判定しない。stock-only素材だけの場合、目標Aは0件でも目標Bは非0件になりうるため)、周回対象クエスト最低1件、の2ガードを追加する。表示メッセージは2.5と同様に`t()`経由とし、`/farming`の既存バリデーションメッセージ(`集めたいアイテムの数を最低1つ入力してください。`等)と文言をなるべく揃える。
 - [ ] 3.3 `goSolver`を、`router.push('/farming?...')`から直接`/api/solve`を呼ぶ形に書き換える。
 - [ ] 3.4 ローディング状態(送信中スピナー)を追加する。
 
