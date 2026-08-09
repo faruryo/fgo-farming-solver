@@ -195,3 +195,25 @@ describe('goSolver — boundary cases (5.3)', () => {
     ).toBeInTheDocument()
   })
 })
+
+describe('goSolver — recovers from a failed submission', () => {
+  it('clears the loading state after fetch rejects, so the user can retry', async () => {
+    setLocalStorage('efficiency/stockEnabled', false)
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<Result items={items} quests={quests} />)
+    const button = await submitButton()
+    await userEvent.click(button)
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+    // Without the fix, the button stays disabled forever (isLoading never
+    // resets) and the user cannot retry without reloading the page.
+    await waitFor(() => expect(button).not.toBeDisabled())
+
+    errorSpy.mockRestore()
+  })
+})

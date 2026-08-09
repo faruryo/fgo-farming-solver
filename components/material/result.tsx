@@ -334,7 +334,16 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
       quests: checkedQuests.join(','),
       fields: 'id',
     })
-    await submitSolve(params, router)
+    try {
+      await submitSolve(params, router)
+    } catch (e) {
+      // submitSolve が reject するのは fetch 自体の失敗時のみ(不正レスポンスは
+      // 内部で /500 へ遷移する)。ここで拾わないとローディング表示が固まったまま
+      // 再送信できなくなるため、ローディング解除だけは確実に行う。
+      console.error('[material/result] solve submission failed:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [needsItemTarget, needsQuestSelection, queryItemsA, queryItemsB, checkedQuests, router])
 
   const displayedItems =
