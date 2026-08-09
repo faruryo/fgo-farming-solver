@@ -4,7 +4,7 @@
 
 `/farming`がこの経路で提供している要素を洗い出すと:
 - 個数入力欄(`ItemFieldset`): goSolverが計算した値がそのまま表示されるだけで、この経路では実質編集されない(ユーザー確認済み)。
-- 周回対象クエスト選択(`CheckboxTree`): `localStorage['excludedQuests']`(グローバル、素材データと無関係)を読み書きするだけの汎用コンポーネント。`/material/result`との依存関係はない。
+- 周回対象クエスト選択(`CheckboxTree`): `localStorage['excludedQuests']`(グローバル、素材データと無関係)を軸にした汎用コンポーネント。ただし単純な読み書きではなく、旧`quests`キーからの一方向移行とデュアルライト(後述)を伴う。`/material/result`との素材データ上の依存関係はない。
 - バリデーション: 「アイテム最低1件」「クエスト最低1件」の2つのAlertガード。
 - 送信副作用: `/api/solve`呼び出し、`localStorage['farming/results']`書き込み+`ls-sync`イベント、`saveProgressSnapshot()`、結果ページへの遷移。
 
@@ -34,6 +34,16 @@
 `/farming`の`handleSubmit`(バリデーション → `/api/solve`呼び出し → `farming/results`書き込み・`ls-sync`・`saveProgressSnapshot` → 遷移)をそのまま`/material/result`の送信ボタンに移植する。
 
 - 代替案: 共通コンポーネント/フックとして完全に共有する(`useFarmingSubmit`のようなフック抽出)。→ 採用寄りだが、`/farming`側は`itemCounts`(フォーム入力)から、`/material/result`側は`amounts`/`possession`から、それぞれ異なる形で`items`パラメータを組み立てるため、フックの引数設計に時間がかかる。tasksでは移植を基本としつつ、共通化できる部分(バリデーション条件、副作用の一連の処理)は関数化する方針にとどめる。
+
+### クエスト選択の永続化ロジック(移行・デュアルライト)は共有フックへ切り出す
+`localStorage['excludedQuests']`は単純な読み書きだけで完結しない。`components/farming/index.tsx`(95-155行目)には「旧`quests`キーからの一方向移行」「`excludedQuests`→チェック済みリストへの反転アダプタ」「`quests`キーへの同期用デュアルライト+`ls-sync`発火」が埋め込まれており、後者は`openspec/specs/sync/spec.md`の「除外クエストリストの永続化と同期」要件がSHALLで要求するクラウド同期・スナップショット互換契約である。`/material/result`が`excludedQuests`を素朴に読み書きするだけだと、この移行・デュアルライトが行われず、旧`quests`のみ復元されたユーザーが`/material/result`を先に開いた場合に選択状態を無視して全選択扱いになる、または`/farming`側の同期契約が満たされない。このロジックを共有フック(`useExcludedQuests`)へ切り出し、`/farming`・`/material/result`の両方から使う。
+
+- 代替案: `/material/result`側は独自に`excludedQuests`を読み書きし、移行・デュアルライトは`/farming`側にだけ残す。→ 却下。`/material/result`から一度も`/farming`を経由せず操作した場合に旧`quests`キーが更新されず、クラウド同期・スナップショットの既存契約(sync spec)を満たせない。
+
+### アイテム数バリデーションは目標Aだけで判定しない
+`/farming`の既存バリデーション(「集めたいアイテムの数を最低1つ入力してください」)は`itemCounts`(目標Aに相当)の空チェックのみで行っている。しかし`solver`specの「stock-only素材も目標Bに含まれる」要件により、全素材が「必要数≤所持<必要数+buffer」(目標Aは0件だが目標Bは非0件)の場合が存在しうる。目標Aのみでバリデーションすると、ストック補充だけを目的とした正当な計算がブロックされる。`/material/result`側の新しいバリデーションは「目標Aまたは目標Bのいずれかに1件以上」で判定する。
+
+- 代替案: 既存の`/farming`のバリデーションロジックをそのまま流用する。→ 却下。上記の境界ケースを塞いでしまう、既存の潜在バグを新しい実装にも引き継ぐことになる。
 
 ### `/farming`の`itemsStock`関連コードは削除する(フォールバックを残さない)
 `stockItemsParam` state、`searchParams.get('itemsStock')`の読み取り、送信時の条件分岐(`components/farming/index.tsx:158-160,204-205,217-222`)を削除する。`/farming`への直接アクセスではこれらが一度もセットされないため、削除しても直接アクセス経路の挙動に影響しない。

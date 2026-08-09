@@ -183,7 +183,7 @@ iPhone などのスマートフォン表示において、「周回数を求め�
 
 ### 対応方針
 
-`/farming` がgoSolver経由フローで実質提供している価値は周回対象クエスト選択（`CheckboxTree`、`localStorage['excludedQuests']` のみで完結する汎用コンポーネント）だけと判明。個数編集はこの経路では実質行われていない。
+`/farming` がgoSolver経由フローで実質提供している価値は周回対象クエスト選択（`CheckboxTree`、`localStorage['excludedQuests']` を軸にした汎用コンポーネント。旧`quests`キーからの移行・デュアルライトも伴う）だけと判明。個数編集はこの経路では実質行われていない。
 
 `openspec/changes/material-result-direct-solve/`（提案中）で、**`/material/result` から `/farming` を経由せず直接 `/api/solve` へ送信する**導線を作る。クエスト選択UIを `/material/result` に移設し、goSolverはURL経由での `/farming` 遷移をやめる。これにより「目標Aは永続・目標Bは揮発」という非対称な中間状態自体が発生しなくなり、対症療法のフォールバックではなく経路の消滅によって不具合が解消される。`/farming` への直接アクセス(手入力)は従来通り残るが、この経路では `itemsStock` はそもそも一度も発生しない。
 
