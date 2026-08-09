@@ -42,6 +42,7 @@ const intentionalHookDependencyAllowlist = [
   'components/farming/index.tsx', // Legacy state adapters are not referentially stable; dependencies are intentionally narrowed.
   'components/quests/QuestEfficiencyList.tsx', // Derived option primitives explicitly define the calculation boundary.
   'hooks/use-dashboard-result.ts', // Transitive campaign inputs are listed as stable primitive invalidators.
+  'hooks/use-excluded-quests.ts', // Legacy migration effect must run exactly once regardless of questIds identity.
   'hooks/use-local-storage.ts', // Storage subscriptions intentionally initialize only for the selected key.
   'hooks/use-spot-icons.ts', // The normalized quest ID key is the deliberate request invalidation boundary.
 ]
