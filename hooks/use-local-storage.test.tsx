@@ -46,17 +46,11 @@ describe('useLocalStorage + mergeChaldeaState integration (material state)', () 
     localStorage.clear()
   })
 
-  // Regression: a unit-level call to mergeChaldeaState can't reproduce the
-  // actual reported bug, because the bug only manifests through
-  // useLocalStorage's full loop: the persist effect writes to localStorage
-  // and fires `ls-sync`, and the `ls-sync` listener (used by every consumer
-  // of this hook, including other components/tabs) re-reads localStorage,
-  // re-applies `onGet` (mergeChaldeaState), and calls setState again -- which
-  // re-triggers the persist effect. With the old resetDisabledServantStarts
-  // correction pass, this loop was destructive: it forced a disabled
-  // servant's `start` down to the floor value, persisted that, and
-  // broadcast it via `ls-sync` on every resync -- including to other
-  // devices via cloud sync. This test exercises that full loop end-to-end.
+  // Only the full persist -> ls-sync -> onGet -> persist loop reproduces the
+  // bug; a direct mergeChaldeaState call skips it.
+  const readMaterial = () =>
+    JSON.parse(localStorage.getItem('material') ?? '{}') as ChaldeaState
+
   it('does not clobber a disabled servant\'s start via the persist -> ls-sync -> onGet -> persist loop', async () => {
     const initialState = createChaldeaState(['1'])
     const editedTargets: ServantState['targets'] = {
@@ -105,23 +99,20 @@ describe('useLocalStorage + mergeChaldeaState integration (material state)', () 
 
     // The persist effect writes the new (disabled) state to localStorage.
     await waitFor(() => {
-      const stored = JSON.parse(localStorage.getItem('material')!) as ChaldeaState
-      expect(stored['1'].disabled).toBe(true)
+      expect(readMaterial()['1'].disabled).toBe(true)
     })
 
-    // Simulate the resync this persist just fired being handled (by this
-    // hook instance or another component's instance of the same hook):
-    // re-read localStorage, re-run onGet, and persist again.
+    // Simulate another hook instance (other component/tab) handling the
+    // resync this persist just fired: re-read, re-run onGet, persist again.
     act(() => {
       window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'material' } }))
     })
 
     await waitFor(() => {
-      const stored = JSON.parse(localStorage.getItem('material')!) as ChaldeaState
-      expect(stored['1'].targets.ascension.ranges[0].start).toBe(3)
+      expect(readMaterial()['1'].targets.ascension.ranges[0].start).toBe(3)
     })
 
-    const finalStored = JSON.parse(localStorage.getItem('material')!) as ChaldeaState
+    const finalStored = readMaterial()
     expect(finalStored['1'].targets.skill.ranges.every((r) => r.start === 7)).toBe(true)
     expect(finalStored['1'].targets.appendSkill.ranges.every((r) => r.start === 1)).toBe(true)
   })

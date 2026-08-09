@@ -164,24 +164,8 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     }
   })
 
-  // Historical note: a previous version of mergeChaldeaState force-corrected
-  // every disabled servant's `start` back to createServantState()'s floor
-  // values (ascension 0 / skill 1 / appendSkill 0) on every merge. That was
-  // introduced by commit 46bde1a2 to stop the "all" template merge from
-  // leaking start: 1 into unowned servants -- but buildTargetsFromAllTemplate
-  // (above) already fixes that leak on its own, by construction, for the
-  // "all" merge path only. The disabled-servant correction pass was strictly
-  // broader: it ran on *every* disabled servant on *every* merge, including
-  // ones that never went through "all" at all -- e.g. a servant that was
-  // owned, had its start manually edited, and was later marked unowned. Since
-  // every reader of `start` (lib/sum-materials.ts, components/material/index.tsx,
-  // lib/progress/growth.ts, lib/progress/diff.ts,
-  // components/dashboard/ProgressSection.tsx) guards on `disabled`, and the
-  // UI never renders `start` outside the owned block (servant-card.tsx), that
-  // correction pass destroyed data nobody could see or read, with no
-  // compensating benefit -- and did so irreversibly, since every localStorage
-  // read / `ls-sync` resync re-ran the merge. See
-  // openspec/changes/fix-material-unowned-start-reset/design.md.
+  // 46bde1a2 force-reset every disabled servant's `start` to floor on each
+  // merge, destroying real progress. See design.md for why nothing needs it.
   it('preserves a disabled servant\'s start (already flushed to localStorage) across a merge', () => {
     const initialState = createChaldeaState(['1'])
     const stored: ChaldeaState = {
@@ -214,20 +198,15 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     const merged = mergeChaldeaState(initialState, stored)
     const targets = merged['1'].targets
 
-    // start is preserved exactly as stored -- it must NOT be forced back to
-    // createServantState()'s floor values just because the servant is
-    // disabled.
+    // start is not forced back to floor values just because disabled.
     expect(targets.ascension.ranges[0].start).toBe(3)
     expect(targets.skill.ranges.every((r) => r.start === 7)).toBe(true)
     expect(targets.appendSkill.ranges.every((r) => r.start === 1)).toBe(true)
-    // end was, and remains, untouched.
     expect(targets.ascension.ranges[0].end).toBe(4)
     expect(targets.skill.ranges.every((r) => r.end === 10)).toBe(true)
     expect(targets.appendSkill.ranges.every((r) => r.end === 10)).toBe(true)
 
-    // Close the full round trip: switching back to owned and re-merging
-    // still shows the pre-disable start, exactly as it was before the
-    // servant was ever marked unowned.
+    // Round trip: re-owning still shows the pre-disable start.
     const reOwned = mergeChaldeaState(initialState, {
       '1': { disabled: false, targets: merged['1'].targets },
     })
@@ -289,56 +268,6 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     for (const id of ['1', '2']) {
       expect(merged[id]).toEqual(initialState[id])
     }
-  })
-
-  it('preserves start when a previously-owned, edited servant becomes disabled (individual toggle)', () => {
-    // Note: the "or ms-servants-io bulk-clear" call site this test used to
-    // reference no longer exists in the codebase -- the only place that
-    // writes `disabled: true` today is createServantState()'s own default
-    // generation (see design.md). The individual "mark as unowned" toggle
-    // produces the shape below on the next merge: the servant's prior
-    // `targets` (including an edited `start`) are preserved verbatim, but
-    // `disabled` flips to true.
-    const initialState = createChaldeaState(['1'])
-    const stored: ChaldeaState = {
-      '1': {
-        disabled: true,
-        targets: {
-          ascension: { disabled: false, ranges: [{ start: 4, end: 4 }] },
-          skill: {
-            disabled: false,
-            ranges: [
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-            ],
-          },
-          appendSkill: {
-            disabled: false,
-            ranges: [
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-            ],
-          },
-        },
-      },
-    }
-
-    const merged = mergeChaldeaState(initialState, stored)
-    const targets = merged['1'].targets
-
-    // start is preserved exactly as it was moments before, while the servant
-    // was still owned -- toggling `disabled` alone must not touch it.
-    expect(targets.ascension.ranges[0].start).toBe(4)
-    expect(targets.skill.ranges.every((r) => r.start === 10)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.start === 10)).toBe(true)
-    // end (and other data) from the prior owned state is preserved, as before.
-    expect(targets.ascension.ranges[0].end).toBe(4)
-    expect(targets.skill.ranges.every((r) => r.end === 10)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.end === 10)).toBe(true)
   })
 
   it('does not throw and leaves stale IDs (removed from master data) untouched', () => {

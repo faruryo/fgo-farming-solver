@@ -8,7 +8,8 @@
 ## 2. spec 同期と検証
 
 - [x] 2.1 `openspec validate fix-material-unowned-start-reset --strict` を通す
-- [x] 2.2 `pnpm run type-check`、`pnpm run lint`、`pnpm test --run` を実行する
+- [x] 2.2 `pnpm run type-check`、`pnpm run lint`、`pnpm run lint:ratchet`、`pnpm test --run` を実行する
+- [x] 2.3 CI失敗（`lint:ratchet`: `use-local-storage.test.tsx` の新規 `no-non-null-assertion` 3件、jscpd alert #32: `use-chaldea-state-merger.test.ts` 内の重複テストブロック）を修正する。非nullアサーションは `readMaterial()` ヘルパーへ集約、重複テストは往復保持テストと完全に同じ内容だったため削除（カバレッジ低下なし）
 
 ## 3. 実機確認
 
