@@ -103,15 +103,15 @@
 
 ### Requirement: 周回目標取り込みの余剰ストック追従
 
-システムは育成計算機から周回ソルバーへ不足分を取り込む導線(`goSolver` → `/farming`)において、**目標A(必要分) `items=<max(0, 必要数 − 所持)>` と、`stockEnabled=ON` のとき目標B(ストック込み) `itemsStock=<effectiveDeficiency>` の双方を URL で渡す** SHALL。目標A・Bは 必要数・所持の双方を持つ `goSolver` で算出し、`/farming` はこれを受け取って `/api/solve` へ転送 SHALL(`/farming` 側では再導出しない)。`buffer(item)`・`stockBuffer`・レアリティ判定はクエスト効率と同一の値・関数を共有 SHALL。`stockEnabled=OFF`、または目標Bが目標Aと一致するときは `itemsStock` を渡さず目標Aのみで計算する。2目標で計算・保存した目標B行には `stockIncluded=true` を付与する。
+システムは育成計算機の結果画面(`/material/result`)から周回ソルバーへ不足分を取り込む導線において、**目標A(必要分) `max(0, 必要数 − 所持)` と、`stockEnabled=ON` のとき目標B(ストック込み) `effectiveDeficiency` の双方を算出し、`/farming` を経由せず `/api/solve` へ直接送信する** SHALL。目標A・Bは 必要数・所持の双方を持つ `/material/result` 側(`goSolver`)で算出 SHALL。`buffer(item)`・`stockBuffer`・レアリティ判定はクエスト効率と同一の値・関数を共有 SHALL。`stockEnabled=OFF`、または目標Bが目標Aと一致するときは目標Bを送信せず目標Aのみで計算する。2目標で計算・保存した目標B行には `stockIncluded=true` を付与する。直接送信には、`/material/result` 上で選択された周回対象クエスト(`material`capabilityの「育成計算機結果画面での周回対象クエスト選択」要件)も含める SHALL。
 
-#### Scenario: 取り込みは目標Aと目標Bを渡す
-- **WHEN** `stockEnabled=ON` で周回ソルバーへ遷移し、目標Bが目標Aと異なるとき
-- **THEN** `items=`(目標A=`max(0, 必要数 − 所持)`)と `itemsStock=`(目標B=`effectiveDeficiency`)の双方が `/farming` 経由で `/api/solve` に渡される。
+#### Scenario: 取り込みは目標Aと目標Bを直接送信する
+- **WHEN** `stockEnabled=ON` で`/material/result`から周回ソルバーへ送信し、目標Bが目標Aと異なるとき
+- **THEN** 目標A(`max(0, 必要数 − 所持)`)と目標B(`effectiveDeficiency`)の双方が`/farming`を経由せず`/api/solve`へ直接渡される。
 
-#### Scenario: stockEnabled=OFF は目標Aのみを渡す
-- **WHEN** `stockEnabled=OFF` で周回ソルバーへ遷移するとき
-- **THEN** `items=`(目標A)のみが渡され、`itemsStock` は付与されない。
+#### Scenario: stockEnabled=OFF は目標Aのみを送信する
+- **WHEN** `stockEnabled=OFF` で`/material/result`から周回ソルバーへ送信するとき
+- **THEN** 目標Aのみが送信され、目標Bは送信されない。
 
 #### Scenario: クエスト効率の重み判定と一致
 - **WHEN** 同じ `stockBuffer`・所持数・育成必要数で目標Bを導出する
@@ -120,6 +120,20 @@
 #### Scenario: ストック込み計算のフラグ付与
 - **WHEN** `stockEnabled=ON` で2目標計算して保存する
 - **THEN** 目標B行の計算パラメータに `stockIncluded=true` が記録される。
+
+#### Scenario: 送信には選択中の周回対象クエストが含まれる
+- **WHEN** `/material/result`で一部のクエストを除外した状態で送信するとき
+- **THEN** `/api/solve`への送信には除外後の周回対象クエストが含まれ、除外したクエストは計算対象から外れる。
+
+#### Scenario: 目標Aが0件でも目標Bが1件以上あれば送信できる
+- **WHEN** すべての素材が「必要数 ≤ 所持 < 必要数+buffer(item)」(stock-only、目標Aは0件だが目標Bは1件以上)であるとき
+- **THEN** 送信は目標Aの件数だけでブロックされず、目標Bが1件以上あれば送信できる。
+- **THEN** このとき目標Bを唯一の `items` として単独送信する(`itemsStock` は付けず2目標バッチにしない)。目標Aが空のまま2目標バッチ送信すると、`/api/solve` が目標A行(0件・0AP)を着地先(`id`)として返してしまうため。
+- **THEN** この単独送信経路では `stockIncluded=true` は付与されない(付与は2目標バッチ保存時のみの契約であり、本changeはこの契約を変更しない)。結果画面の「ストック込み」バッジはこのケースでは表示されない。
+
+#### Scenario: /farmingへの直接アクセスは影響を受けない
+- **WHEN** ユーザーが`/material/result`を経由せず`/farming`を直接開き、個数を手入力して送信するとき
+- **THEN** 従来どおり`/farming`のフォームから`/api/solve`が呼ばれ、挙動に変化はない。この経路では目標B(ストック込み)は発生しない。
 
 ### Requirement: 2目標(必要分/ストック込み)の同時計算
 

@@ -553,11 +553,6 @@
     },
     {
       "file": "components/farming/index.tsx",
-      "rule": "react-hooks/set-state-in-effect",
-      "count": 1
-    },
-    {
-      "file": "components/farming/index.tsx",
       "rule": "sonarjs/deprecation",
       "count": 2
     },

@@ -4,14 +4,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ImageUp } from 'lucide-react'
+import { AlertCircle, ImageUp, Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useStockTarget } from '../../hooks/use-stock-target'
+import { useQuestTree } from '../../hooks/use-quest-tree'
+import { useExcludedQuests } from '../../hooks/use-excluded-quests'
+import { useChecked } from '../../hooks/use-checked-from-quest-state'
+import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { parsePossessionInput } from '../../lib/possession-count'
 import { EnrichedItem } from '../../lib/get-items'
+import { Quest } from '../../interfaces/fgodrop'
 import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 import { buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
+import { hasSelectedQuests, hasSubmittableItems, submitSolve } from '../../lib/farming/submit-solve'
+import { CheckboxTree } from '../common/checkbox-tree'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Accordion,
   AccordionContent,
@@ -30,6 +39,7 @@ import { MaterialSelectionAdvisor } from './material-selection-advisor'
 
 export type MaterialResultProps = {
   items: EnrichedItem[]
+  quests: Quest[]
   locale?: string
 }
 
@@ -155,7 +165,8 @@ const MatCard = ({
   )
 }
 
-export const Result = ({ items = [] }: MaterialResultProps) => {
+export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
+  const { t } = useTranslation('material')
   const router = useRouter()
   const searchParams = useSearchParams()
   const query = Object.fromEntries(searchParams?.entries() ?? [])
@@ -245,47 +256,95 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
     [items]
   )
 
-  const goSolver = useCallback(() => {
-    // 目標A: max(0, 必要数 − 所持)。stock-only 素材(充足済みだが buffer 分が不足)は含まれない。
+  // 周回対象クエスト選択(/farming と同じ組み合わせ)。goSolver への配線は別タスク。
+  const { tree: questTree } = useQuestTree(quests)
+  const questIds = useMemo(() => quests.map(({ id }) => id), [quests])
+  const [checkedQuests, setCheckedQuests] = useExcludedQuests(questIds)
+  const [selectedQuests, setSelectedQuests] = useChecked(
+    questIds,
+    checkedQuests,
+    setCheckedQuests
+  )
+  const {
+    checked: checkedQuestTree,
+    onCheck: onCheckQuest,
+    expanded: expandedQuests,
+    onExpand: onExpandQuests,
+  } = useCheckboxTree(questTree, selectedQuests, setSelectedQuests)
+
+  // 周回対象は育成関連素材(amounts に含まれる)に限定。育成不要な素材は表示・所持追跡のみで、
+  // Goal B のストックを「全素材」に広げない(全素材ストック=AP膨張を防ぐ)。
+  const solverItems = useMemo(
+    () => trackedItems.filter(item => item.id.toString() in amounts),
+    [trackedItems, amounts]
+  )
+
+  // 目標A: max(0, 必要数 − 所持)。stock-only 素材(充足済みだが buffer 分が不足)は含まれない。
+  const queryItemsA = useMemo(() => {
     const plainDeficiency = (item: EnrichedItem): number =>
       Math.max(
         0,
         (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0),
       )
-
-    // 周回対象は育成関連素材(amounts に含まれる)に限定。育成不要な素材は表示・所持追跡のみで、
-    // Goal B のストックを「全素材」に広げない(全素材ストック=AP膨張を防ぐ)。
-    const solverItems = trackedItems.filter(item => item.id.toString() in amounts)
-
-    const queryItemsA = solverItems
+    return solverItems
       .filter(item => plainDeficiency(item) > 0 && toApiItemId(item, items))
       .map(item => `${toApiItemId(item, items)}:${plainDeficiency(item)}`)
       .join(',')
+  }, [solverItems, amounts, possession, items])
 
-    // 目標B: effectiveDeficiency = max(0, 必要数+buffer(item)−所持)。
-    // stock-only 素材(A=0 だが B>0)も含む。goSolver 側で算出して URL 搬送する(D2訂正)。
-    let stockParam = ''
-    if (stockEnabled) {
-      const effDef = (item: EnrichedItem): number =>
-        effectiveDeficiency(
-          toStockItemLike(item),
-          amounts[item.id.toString()] ?? 0,
-          possession[item.id.toString()] ?? 0,
-          resolvedStockBuffer,
-          true,
-        )
-      const queryItemsB = solverItems
-        .filter(item => effDef(item) > 0 && toApiItemId(item, items))
-        .map(item => `${toApiItemId(item, items)}:${effDef(item)}`)
-        .join(',')
-      // B と A が完全一致(全素材 buffer=0)のときは送らない。
-      if (queryItemsB && queryItemsB !== queryItemsA) {
-        stockParam = `&itemsStock=${queryItemsB}`
-      }
+  // 目標B: effectiveDeficiency = max(0, 必要数+buffer(item)−所持)。
+  // stock-only 素材(A=0 だが B>0)も含む。stockEnabled=OFF のときは常に空文字。
+  const queryItemsB = useMemo(() => {
+    if (!stockEnabled) return ''
+    const effDef = (item: EnrichedItem): number =>
+      effectiveDeficiency(
+        toStockItemLike(item),
+        amounts[item.id.toString()] ?? 0,
+        possession[item.id.toString()] ?? 0,
+        resolvedStockBuffer,
+        true,
+      )
+    return solverItems
+      .filter(item => effDef(item) > 0 && toApiItemId(item, items))
+      .map(item => `${toApiItemId(item, items)}:${effDef(item)}`)
+      .join(',')
+  }, [solverItems, stockEnabled, amounts, possession, resolvedStockBuffer, items])
+
+  const [isLoading, setIsLoading] = useState(false)
+
+  const needsItemTarget = !hasSubmittableItems(queryItemsA) && !hasSubmittableItems(queryItemsB)
+  const needsQuestSelection = !hasSelectedQuests(checkedQuests)
+
+  const goSolver = useCallback(async () => {
+    if (needsItemTarget || needsQuestSelection) return
+
+    // 目標Aが0件(stock-only)のときは目標Bを唯一の items として単独送信する
+    // (itemsStock は付けず2目標バッチにしない。design.md 参照)。
+    const itemsParam = hasSubmittableItems(queryItemsA) ? queryItemsA : queryItemsB
+    // B と A が完全一致(全素材 buffer=0)のときは itemsStock を送らない。
+    const includeStock =
+      hasSubmittableItems(queryItemsA) &&
+      hasSubmittableItems(queryItemsB) &&
+      queryItemsB !== queryItemsA
+
+    setIsLoading(true)
+    const params = new URLSearchParams({
+      items: itemsParam,
+      ...(includeStock ? { itemsStock: queryItemsB } : {}),
+      quests: checkedQuests.join(','),
+      fields: 'id',
+    })
+    try {
+      await submitSolve(params, router)
+    } catch (e) {
+      // submitSolve が reject するのは fetch 自体の失敗時のみ(不正レスポンスは
+      // 内部で /500 へ遷移する)。ここで拾わないとローディング表示が固まったまま
+      // 再送信できなくなるため、ローディング解除だけは確実に行う。
+      console.error('[material/result] solve submission failed:', e)
+    } finally {
+      setIsLoading(false)
     }
-
-    router.push(`/farming?items=${queryItemsA}${stockParam}`)
-  }, [trackedItems, router, amounts, possession, items, stockEnabled, resolvedStockBuffer])
+  }, [needsItemTarget, needsQuestSelection, queryItemsA, queryItemsB, checkedQuests, router])
 
   const displayedItems =
     filterMode === 'short'
@@ -338,6 +397,12 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
   if (!mounted) return null
 
   return (
+    <>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      )}
     <div className="c-page">
       <div className="c-page-inner">
         <div className="c-page-header">
@@ -483,6 +548,44 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             </AccordionItem>
           </Accordion>
         </div>
+
+        <div id="quest-selection" className="c-mat-section">
+          <Accordion multiple={false} defaultValue={[]}>
+            <AccordionItem value="quest-selection" style={{ border: 'none' }}>
+              <AccordionTrigger className="c-mat-section-title" style={{ color: 'var(--gold)' }}>
+                {t('quest-selection-heading', '周回対象に含めるクエスト')}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="c-card w-full p-5">
+                  <CheckboxTree
+                    tree={questTree}
+                    checked={checkedQuestTree}
+                    onCheck={onCheckQuest}
+                    expanded={expandedQuests}
+                    onExpand={onExpandQuests}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+
+        {needsItemTarget && (
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertDescription>
+              {t('submit-need-item-target', '集めたいアイテムの数を最低1つ入力してください。')}
+            </AlertDescription>
+          </Alert>
+        )}
+        {needsQuestSelection && (
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertDescription>
+              {t('submit-need-quest-selection', '周回対象に含めるクエストを最低1つ選択してください。')}
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       <div className="c-farming-footer">
@@ -496,11 +599,16 @@ export const Result = ({ items = [] }: MaterialResultProps) => {
             <div className="c-summary-label">充足種類</div>
           </div>
         </div>
-        <button className="c-farming-btn" onClick={goSolver}>
+        <button
+          className="c-farming-btn"
+          onClick={() => void goSolver()}
+          disabled={isLoading || needsItemTarget || needsQuestSelection}
+        >
           <span className="c-farming-btn-en">SOLVE FARMING ROUTE</span>
           <span className="c-farming-btn-jp">周回数を求める</span>
         </button>
       </div>
     </div>
+    </>
   )
 }

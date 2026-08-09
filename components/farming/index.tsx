@@ -4,23 +4,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { useChecked } from '../../hooks/use-checked-from-quest-state'
+import { useExcludedQuests } from '../../hooks/use-excluded-quests'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useQuestTree } from '../../hooks/use-quest-tree'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
-import { saveProgressSnapshot } from '../../lib/progress/snapshot-client'
+import { hasSelectedQuests, hasSubmittableItems, submitSolve } from '../../lib/farming/submit-solve'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { ItemFieldset } from './item-fieldset'
@@ -75,9 +68,6 @@ const hasItems = (arg: unknown): arg is { items: unknown } =>
 const isInputState = (arg: unknown): arg is QueryInputState =>
   hasItems(arg) && typeof arg.items == 'string'
 
-const hasId = (arg: unknown): arg is { id: unknown } =>
-  typeof arg == 'object' && arg != null && 'id' in arg
-
 export const Index = ({ items, quests }: FarmingIndexProps) => {
   useEffect(migrateLocalInput, [])
   const { t } = useTranslation('farming')
@@ -92,72 +82,12 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     initialItemCounts
   )
 
-  // 旧 'quests'(チェック済みリスト) → 'excludedQuests'(除外リスト) への一方向移行。
-  // 除外リスト方式により、マスターデータに追加された新クエストは既定でチェックONになる。
-  // 'excludedQuests' 既存時はスキップ（クラウド復元で旧 'quests' が後から書かれても
-  // 上書きしない）。useLocalStorage('excludedQuests') より先に宣言し、その読み出し
-  // effect より前に移行が完了するようにする（effect は宣言順に実行される）。
-  useEffect(() => {
-    if (localStorage.getItem('excludedQuests') != null) return
-    const json = localStorage.getItem('quests')
-    if (json == null) return
-    try {
-      const checked = JSON.parse(json) as unknown
-      if (!Array.isArray(checked)) return
-      const checkedSet = new Set(checked as string[])
-      const excluded = questIds.filter((id) => !checkedSet.has(id))
-      localStorage.setItem('excludedQuests', JSON.stringify(excluded))
-    } catch (e) {
-      console.error(e)
-    }
-  }, [])
-
-  const [excludedQuests, setExcludedQuests] = useLocalStorage<string[]>(
-    'excludedQuests',
-    []
-  )
-
-  // checked semantics（チェック済みリスト + setter）への反転アダプタ。
-  // useChecked / useCheckboxTree / URL クエリ反映 / solve 送信は従来どおり
-  // チェック済みリストで動き、永続化だけが除外リストになる。
-  const checkedQuests = useMemo(() => {
-    const excludedSet = new Set(excludedQuests)
-    return questIds.filter((id) => !excludedSet.has(id))
-  }, [questIds, excludedQuests])
-  const setCheckedQuests = useCallback<Dispatch<SetStateAction<string[]>>>(
-    (action) => {
-      setExcludedQuests((prevExcluded) => {
-        const excludedSet = new Set(prevExcluded)
-        const prevChecked = questIds.filter((id) => !excludedSet.has(id))
-        const nextChecked =
-          typeof action === 'function' ? action(prevChecked) : action
-        const checkedSet = new Set(nextChecked)
-        return questIds.filter((id) => !checkedSet.has(id))
-      })
-    },
-    [questIds, setExcludedQuests]
-  )
-
-  // legacy 'quests' キーへのデュアルライト（状態スナップショット / クラウド同期の
-  // 既存契約維持）。初回 flush は excludedQuests が localStorage から読まれる前の
-  // 「全チェック」状態なので skip する（保存済みの 'quests' を破壊しない）。
-  const dualWriteStarted = useRef(false)
-  useEffect(() => {
-    if (!dualWriteStarted.current) {
-      dualWriteStarted.current = true
-      return
-    }
-    const json = JSON.stringify(checkedQuests)
-    if (localStorage.getItem('quests') !== json) {
-      localStorage.setItem('quests', json)
-      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'quests' } }))
-    }
-  }, [checkedQuests])
+  // 周回対象クエスト選択の永続化（旧 'quests' → 'excludedQuests' 移行 /
+  // checked semantics への反転アダプタ / legacy 'quests' へのデュアルライト）
+  // は共有フックへ抽出済み。
+  const [checkedQuests, setCheckedQuests] = useExcludedQuests(questIds)
   const router = useRouter()
   const searchParams = useSearchParams()
-  // goSolver が URL 経由で渡した目標B(itemsStock=)を保持する。
-  // /farming の submit でそのまま /api/solve へ転送する(再導出しない)。
-  const [stockItemsParam, setStockItemsParam] = useState<string | null>(null)
   const [isConfirming_, setIsConfirming_] = useState(false)
   const setIsConfirming = { on: () => setIsConfirming_(true), off: () => setIsConfirming_(false) }
   const isConfirming = isConfirming_
@@ -200,9 +130,6 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
           )
         }
       })
-      // goSolver が計算した目標B(effectiveDeficiency)を state に保持して submit で転送する。
-      const itemsStockRaw = searchParams.get('itemsStock')
-      setStockItemsParam(itemsStockRaw || null)
       router.replace('/farming')
     }
     // 取り込みは isInputState ガード＋直後の router.replace('/farming') で初回のみ実行。
@@ -214,30 +141,10 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       event.preventDefault()
       setIsLoading.on()
       const query = inputToQuery({ itemCounts, checkedQuests })
-      // goSolver が算出した目標B(itemsStock)をそのまま /api/solve へ転送する(D2)。
-      // B==A の最終判定はサーバ側(itemMapsEqual)が行う。
-      const params = new URLSearchParams({
-        ...query,
-        fields: 'id',
-        ...(stockItemsParam ? { itemsStock: stockItemsParam } : {}),
-      })
-      const url = `/api/solve?${params.toString()}`
-      const result = await fetch(url).then((res) => res.json() as unknown)
-      if (hasId(result) && typeof result.id == 'string') {
-        const url = `/farming/results/${result.id}`
-        localStorage.setItem('farming/results', url)
-        // Notify change tracking (dirty metadata / auto-save) — direct
-        // setItem is invisible to the cloud-sync modification listener.
-        window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'farming/results' } }))
-        // Persist a full-state progress snapshot (incl. material) for this run.
-        // Fire-and-forget so it never blocks navigation to the result page.
-        void saveProgressSnapshot()
-        router.push(url)
-      } else {
-        router.push('/500')
-      }
+      const params = new URLSearchParams({ ...query, fields: 'id' })
+      await submitSolve(params, router)
     },
-    [checkedQuests, itemCounts, router, setIsLoading, stockItemsParam]
+    [checkedQuests, itemCounts, router, setIsLoading]
   )
 
   const onReset = useCallback(() => {
@@ -252,6 +159,8 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     },
     [setItemCounts]
   )
+
+  const itemsQuery = inputToQuery({ itemCounts, checkedQuests }).items
 
   const itemGroups = Object.entries(
     groupBy(items, ({ largeCategory }) => largeCategory)
@@ -284,7 +193,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
               inputItems={itemCounts}
               handleChange={handleItemChange}
             />
-            {Object.values(itemCounts).every((count) => count == '') && (
+            {!hasSubmittableItems(itemsQuery) && (
               <Alert variant="destructive">
                 <AlertCircle />
                 <AlertDescription>
@@ -306,7 +215,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                 />
               </div>
             </fieldset>
-            {checkedQuests.length == 0 && (
+            {!hasSelectedQuests(checkedQuests) && (
               <Alert variant="destructive">
                 <AlertCircle />
                 <AlertDescription>
@@ -321,8 +230,8 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   type="submit"
                   disabled={
                     isLoading ||
-                    Object.values(itemCounts).every((count) => count == '') ||
-                    checkedQuests.length == 0
+                    !hasSubmittableItems(itemsQuery) ||
+                    !hasSelectedQuests(checkedQuests)
                   }
                   className="c-farming-btn"
                 >
