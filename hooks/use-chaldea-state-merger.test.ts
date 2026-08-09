@@ -164,7 +164,9 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     }
   })
 
-  it('resets a disabled servant\'s polluted start (already flushed to localStorage) back to the default', () => {
+  // 46bde1a2 force-reset every disabled servant's `start` to floor on each
+  // merge, destroying real progress. See design.md for why nothing needs it.
+  it('preserves a disabled servant\'s start (already flushed to localStorage) across a merge', () => {
     const initialState = createChaldeaState(['1'])
     const stored: ChaldeaState = {
       '1': {
@@ -196,15 +198,22 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     const merged = mergeChaldeaState(initialState, stored)
     const targets = merged['1'].targets
 
-    // start is force-corrected to the real default, regardless of the stored
-    // (polluted) value.
-    expect(targets.ascension.ranges[0].start).toBe(0)
-    expect(targets.skill.ranges.every((r) => r.start === 1)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.start === 0)).toBe(true)
-    // end is untouched by the correction pass.
+    // start is not forced back to floor values just because disabled.
+    expect(targets.ascension.ranges[0].start).toBe(3)
+    expect(targets.skill.ranges.every((r) => r.start === 7)).toBe(true)
+    expect(targets.appendSkill.ranges.every((r) => r.start === 1)).toBe(true)
     expect(targets.ascension.ranges[0].end).toBe(4)
     expect(targets.skill.ranges.every((r) => r.end === 10)).toBe(true)
     expect(targets.appendSkill.ranges.every((r) => r.end === 10)).toBe(true)
+
+    // Round trip: re-owning still shows the pre-disable start.
+    const reOwned = mergeChaldeaState(initialState, {
+      '1': { disabled: false, targets: merged['1'].targets },
+    })
+    const reOwnedTargets = reOwned['1'].targets
+    expect(reOwnedTargets.ascension.ranges[0].start).toBe(3)
+    expect(reOwnedTargets.skill.ranges.every((r) => r.start === 7)).toBe(true)
+    expect(reOwnedTargets.appendSkill.ranges.every((r) => r.start === 1)).toBe(true)
   })
 
   it('does not reset an owned servant\'s manually-edited start', () => {
@@ -259,54 +268,6 @@ describe('mergeChaldeaState "all" template start/end split', () => {
     for (const id of ['1', '2']) {
       expect(merged[id]).toEqual(initialState[id])
     }
-  })
-
-  it('resets start when a previously-owned, edited servant becomes disabled (individual toggle or ms-servants-io bulk-clear)', () => {
-    // Both the individual "mark as unowned" toggle and ms-servants-io.tsx's
-    // bulk-clear-import path produce the same shape on the next merge: the
-    // servant's prior `targets` (including an edited `start`) are preserved
-    // verbatim, but `disabled` flips to true. This single test covers both
-    // call sites since mergeChaldeaState can't distinguish them.
-    const initialState = createChaldeaState(['1'])
-    const stored: ChaldeaState = {
-      '1': {
-        disabled: true,
-        targets: {
-          ascension: { disabled: false, ranges: [{ start: 4, end: 4 }] },
-          skill: {
-            disabled: false,
-            ranges: [
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-            ],
-          },
-          appendSkill: {
-            disabled: false,
-            ranges: [
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-              { start: 10, end: 10 },
-            ],
-          },
-        },
-      },
-    }
-
-    const merged = mergeChaldeaState(initialState, stored)
-    const targets = merged['1'].targets
-
-    // start resets to the correct default despite having been an edited,
-    // owned value moments before.
-    expect(targets.ascension.ranges[0].start).toBe(0)
-    expect(targets.skill.ranges.every((r) => r.start === 1)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.start === 0)).toBe(true)
-    // end (and other data) from the prior owned state is preserved.
-    expect(targets.ascension.ranges[0].end).toBe(4)
-    expect(targets.skill.ranges.every((r) => r.end === 10)).toBe(true)
-    expect(targets.appendSkill.ranges.every((r) => r.end === 10)).toBe(true)
   })
 
   it('does not throw and leaves stale IDs (removed from master data) untouched', () => {

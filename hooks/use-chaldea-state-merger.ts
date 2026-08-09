@@ -66,47 +66,6 @@ const padAppendSkillRanges = (merged: ChaldeaState): ChaldeaState =>
     })
   )
 
-// Unowned (disabled) servants have no UI to edit their current value, so any
-// stored `start` is either a stale "all" template leak or otherwise not
-// user-intended. Unconditionally correct it back to the real default on every
-// merge. `end` is left untouched. `all` itself and IDs no longer present in
-// the current master data (initialState) are skipped.
-const resetDisabledServantStarts = (
-  merged: ChaldeaState,
-  initialState: ChaldeaState
-): ChaldeaState =>
-  Object.fromEntries(
-    Object.entries(merged).map(([id, servant]) => {
-      if (id === 'all' || !servant.disabled) return [id, servant]
-
-      const defaults = initialState[id]
-      if (!defaults || !servant.targets) return [id, servant]
-
-      return [
-        id,
-        {
-          ...servant,
-          targets: Object.fromEntries(
-            TARGET_KEYS.map((target) => {
-              const servantTarget = servant.targets[target]
-              const defaultTarget = defaults.targets[target]
-              return [
-                target,
-                {
-                  ...servantTarget,
-                  ranges: servantTarget.ranges.map((range, i) => ({
-                    ...range,
-                    start: defaultTarget.ranges[i]?.start ?? range.start,
-                  })),
-                },
-              ]
-            })
-          ) as ServantState['targets'],
-        },
-      ]
-    })
-  )
-
 export const mergeChaldeaState = (
   initialState: ChaldeaState,
   state: ChaldeaState
@@ -127,8 +86,7 @@ export const mergeChaldeaState = (
       }
     : { ...initialState, ...state }
 
-  const padded = padAppendSkillRanges(merged as ChaldeaState)
-  return resetDisabledServantStarts(padded, initialState)
+  return padAppendSkillRanges(merged)
 }
 
 export const useChaldeaStateMarger = (initialState: ChaldeaState) =>
