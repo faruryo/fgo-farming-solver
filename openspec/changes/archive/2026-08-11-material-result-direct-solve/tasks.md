@@ -21,7 +21,7 @@
 ## 4. /farmingの到達不能コード削除
 
 - [x] 4.1 `components/farming/index.tsx`の`stockItemsParam` state、`itemsStockRaw`読み取り(204-205行目)、送信時の条件分岐(217-222行目)を削除する。
-- [ ] 4.2 `openspec/specs/solver/spec.md`・`openspec/specs/material/spec.md`をこのchangeの内容で更新(apply時に自動反映)。
+- [x] 4.2 `openspec/specs/solver/spec.md`・`openspec/specs/material/spec.md`をこのchangeの内容で更新(apply時に自動反映)。
 
 ## 5. テスト
 
