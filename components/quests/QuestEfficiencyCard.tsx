@@ -108,9 +108,9 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
             style={{ color: 'var(--text3)' }}
           >
             <span className="w-7 flex-shrink-0" />
-            <span className="flex-1 min-w-0">{t('内訳:素材')}</span>
-            <span>{t('内訳:重み')}</span>
-            <span className="w-12 text-right">{t('内訳:寄与度')}</span>
+            <span className="flex-1 min-w-0">{t('breakdown-material', '素材')}</span>
+            <span>{t('breakdown-weight', '重み')}</span>
+            <span className="w-12 text-right">{t('breakdown-contribution', '寄与度')}</span>
           </div>
           <div className="flex flex-col gap-2">
             {eff.contributions.map(c => {
