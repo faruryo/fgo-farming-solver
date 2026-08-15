@@ -332,10 +332,14 @@ export const QuestEfficiencyList: React.FC = () => {
         </Popover>
 
         <Tooltip>
-          <TooltipTrigger className="flex-shrink-0 cursor-default" style={{ color: 'var(--text3)' }}>
-            <Info size={14} />
+          <TooltipTrigger
+            className="flex items-center gap-1 flex-shrink-0 cursor-help text-[11px] font-semibold px-2 py-1 rounded-full"
+            style={{ color: 'var(--text2)', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}
+          >
+            <Info size={12} />
+            {t('効率ポイント')}
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[240px] text-left leading-relaxed">
+          <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
             {t('効率ポイントとは')}
           </TooltipContent>
         </Tooltip>
