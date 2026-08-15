@@ -64,3 +64,7 @@ build.log
 # プラグイン由来の skill は各自の環境に入るためリポジトリには含めない。
 .agents/skills/openspec-*/
 .agents/skills/shadcn/
+.openspec-target
+.agents/.openspec-target
+.agents/skills/.openspec-target
+
