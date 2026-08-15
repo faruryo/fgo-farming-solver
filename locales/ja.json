@@ -136,7 +136,9 @@
     "catalog-retry": "再試行",
     "quest-selection-heading": "周回対象に含めるクエスト",
     "submit-need-item-target": "集めたいアイテムの数を最低1つ入力してください。",
-    "submit-need-quest-selection": "周回対象に含めるクエストを最低1つ選択してください。"
+    "submit-need-quest-selection": "周回対象に含めるクエストを最低1つ選択してください。",
+    "owned-card-gesture-hint": "タップ:+1 ／ 右クリック・長押し:-1",
+    "tracking-mode-tooltip": "ON 時、現在値を変更すると所持数を自動で増減します。"
   },
   "servants": {
     "title": "{{name}}の強化素材"

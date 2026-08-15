@@ -21,6 +21,8 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }) }))
+
 const showTrackingToast = vi.fn<(p: ShowTrackingToastParams) => void>()
 const showBlockedToast = vi.fn<(p: ShowBlockedToastParams) => void>()
 
@@ -258,5 +260,25 @@ describe('Index - tracking-mode suggestion banner', () => {
     setLocalStorage('posession', { '100': 3 })
     render(<Index servants={[servant]} materials={materials} items={items} />)
     expect(screen.queryByText(bannerText)).not.toBeInTheDocument()
+  })
+})
+
+describe('Index - permanent gesture hint', () => {
+  const hintText = 'タップ:+1 ／ 右クリック・長押し:-1'
+
+  it('shows the hint above the grid when the filtered servant list is non-empty', () => {
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    expect(screen.getByText(hintText)).toBeInTheDocument()
+  })
+
+  it('hides the hint in the empty-filter state', async () => {
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+
+    // レアリティ1でフィルタするとservant(デフォルトのレアリティは5)が除外され0件になる
+    await user.click(screen.getByRole('button', { name: '★' }))
+
+    expect(screen.getByText('条件に一致するサーヴァントはいません')).toBeInTheDocument()
+    expect(screen.queryByText(hintText)).not.toBeInTheDocument()
   })
 })

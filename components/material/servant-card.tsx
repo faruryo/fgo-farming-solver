@@ -102,6 +102,13 @@ const ServantCardComponent = ({
     [setState]
   )
 
+  const decrementTarget = (target: TargetKey, cur: number) => {
+    if (target === 'ascension') return cur - 1
+    const min = TARGET_MIN[target]
+    const max = TARGET_MAX[target]
+    return cur <= min ? max : cur - 1
+  }
+
   const applyStart = useCallback(
     (target: TargetKey, idx: number, prev: number, next: number) => {
       const min = TARGET_MIN[target]
@@ -139,7 +146,7 @@ const ServantCardComponent = ({
     setPressedKey(key)
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true
-      applyStart(target, idx, cur, cur - 1)
+      applyStart(target, idx, cur, decrementTarget(target, cur))
     }, LONG_PRESS_MS)
   }
 
@@ -158,7 +165,7 @@ const ServantCardComponent = ({
     clearLongPress()
     setPressedKey(null)
     longPressFired.current = true
-    applyStart(target, idx, cur, cur - 1)
+    applyStart(target, idx, cur, decrementTarget(target, cur))
   }
 
   // ピップは点灯クリックの -1 と長押しが重複するため長押し対象外。ただし

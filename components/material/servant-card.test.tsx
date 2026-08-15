@@ -212,7 +212,7 @@ describe('ServantCard - long press / right click decrement', () => {
     expect(onStartChange).toHaveBeenCalledWith('skill', 1, 5, 4)
   })
 
-  it('does not decrement skill below its minimum (1)', () => {
+  it('wraps skill start from its minimum (1) to its maximum (10) via right-click', () => {
     const onStartChange = vi.fn()
     const state = ownedState()
     state.targets.skill.ranges[0] = { start: 1, end: 10 }
@@ -221,7 +221,45 @@ describe('ServantCard - long press / right click decrement', () => {
     const skillChips = document.querySelectorAll('.c-sum-card.sk')
     fireEvent.contextMenu(skillChips[0])
 
-    expect(onStartChange).not.toHaveBeenCalled()
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('wraps skill start from its minimum (1) to its maximum (10) via long press', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[0] = { start: 1, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[0])
+    vi.advanceTimersByTime(500)
+
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('wraps appendSkill start from its minimum (0) to its maximum (10) via right-click', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.appendSkill.ranges[0] = { start: 0, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const appendChips = document.querySelectorAll('.c-sum-card.ap')
+    fireEvent.contextMenu(appendChips[0])
+
+    expect(onStartChange).toHaveBeenCalledWith('appendSkill', 0, 0, 10)
+  })
+
+  it('wraps appendSkill start from its minimum (0) to its maximum (10) via long press', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.appendSkill.ranges[0] = { start: 0, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const appendChips = document.querySelectorAll('.c-sum-card.ap')
+    fireEvent.pointerDown(appendChips[0])
+    vi.advanceTimersByTime(500)
+
+    expect(onStartChange).toHaveBeenCalledWith('appendSkill', 0, 0, 10)
   })
 })
 
