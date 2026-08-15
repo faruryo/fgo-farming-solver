@@ -164,6 +164,11 @@ const ServantCardComponent = ({
     e.preventDefault()
     clearLongPress()
     setPressedKey(null)
+    if (longPressFired.current) {
+      // タッチデバイスで長押し確定後に合成される contextmenu を無視し、二重減算を防ぐ
+      longPressFired.current = false
+      return
+    }
     longPressFired.current = true
     applyStart(target, idx, cur, decrementTarget(target, cur))
   }

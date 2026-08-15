@@ -261,6 +261,37 @@ describe('ServantCard - long press / right click decrement', () => {
 
     expect(onStartChange).toHaveBeenCalledWith('appendSkill', 0, 0, 10)
   })
+
+  it('ignores a synthesized contextmenu that follows a completed long press (no double decrement)', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[0] = { start: 1, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[0])
+    vi.advanceTimersByTime(500)
+    fireEvent.contextMenu(skillChips[0])
+
+    expect(onStartChange).toHaveBeenCalledTimes(1)
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('still decrements on a standalone right-click after the synthesized-contextmenu flag was consumed', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[1] = { start: 5, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[1])
+    vi.advanceTimersByTime(500)
+    fireEvent.contextMenu(skillChips[1]) // synthesized follow-up, ignored
+    fireEvent.contextMenu(skillChips[1]) // genuine subsequent right-click, should still work
+
+    expect(onStartChange).toHaveBeenCalledTimes(2)
+    expect(onStartChange).toHaveBeenNthCalledWith(2, 'skill', 1, 5, 4)
+  })
 })
 
 describe('ServantCard - owned toggle', () => {
