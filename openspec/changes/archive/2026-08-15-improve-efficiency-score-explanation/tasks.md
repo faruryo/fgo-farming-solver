@@ -1,7 +1,7 @@
 ## 1. 文言の見直し・共通化
 
-- [x] 1.1 `locales/ja.json` / `locales/en.json` の `効率ポイントとは` を平易な言い回しに書き直す(算出ロジックは変えず、表現のみ見直す)
-- [x] 1.2 内訳の列見出し用 i18n キー(素材/重み/寄与度に相当するもの)を `ja.json` / `en.json` 両方に追加する
+- [x] 1.1 `locales/ja.json` / `locales/en.json` の `効率ポイントとは` を平易な言い回しに書き直す(算出ロジックは変えず、表現のみ見直す)。※レビュー指摘対応で後にキー自体を `efficiency-score-explanation`(フォールバック付きkebab-case)へリネーム
+- [x] 1.2 内訳の列見出し用 i18n キー(素材/重み/寄与度に相当するもの)を `ja.json` / `en.json` 両方に追加する。※レビュー指摘対応で `breakdown-material` / `breakdown-weight` / `breakdown-contribution`(フォールバック付きkebab-case)へ確定
 
 ## 2. 一覧ページの説明導線
 

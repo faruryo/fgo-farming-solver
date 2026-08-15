@@ -27,3 +27,7 @@
 
 - [文言を書き換えると、既にツールチップに慣れているユーザーには表記が変わって見える] → 意味を変えず平易化のみに留め、内容の正確性は既存の算出ロジック説明を維持する。
 - [詳細ページに新規ツールチップを追加すると `QuestEfficiencyCard.tsx` のレイアウトが崩れる可能性] → 一覧ページの `Info` アイコン+`Tooltip` の既存パターンをそのまま流用し、見出し行の右側に配置することでレイアウト崩れを避ける。
+
+## Postscript(PRレビュー後の実装確定)
+
+「文言の共通化」で維持するとした `効率ポイントとは` キー、および見出しラベルに使っていた `効率ポイント` キーは、レビュー指摘(AGENTS.md のi18n規約: `t('kebab-key', 'フォールバック')` 必須)を受けて `efficiency-score` / `efficiency-score-explanation` へリネームした(旧キーは削除)。内訳列見出しも `重み`/`寄与度` ではなく `breakdown-weight`/`breakdown-contribution` 等のkebab-caseキーで実装した。最終的なキー名は `locales/ja.json` / `locales/en.json` の `quests` namespace を参照。
