@@ -75,14 +75,18 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
           <div className="flex items-center gap-2">
             <FaBolt style={{ color: 'var(--gold)' }} />
             <h3 className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>
-              {t('効率ポイント')}
+              {t('efficiency-score', '効率ポイント')}
             </h3>
             <Tooltip>
-              <TooltipTrigger className="flex-shrink-0 cursor-help" style={{ color: 'var(--text3)' }}>
+              <TooltipTrigger
+                className="flex-shrink-0 cursor-help"
+                style={{ color: 'var(--text3)' }}
+                aria-label={t('efficiency-score-help', '効率ポイントの説明')}
+              >
                 <Info size={14} />
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
-                {t('効率ポイントとは')}
+                {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
               </TooltipContent>
             </Tooltip>
             {stockEnabled && (

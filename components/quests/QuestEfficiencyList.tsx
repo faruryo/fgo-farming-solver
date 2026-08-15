@@ -326,7 +326,7 @@ export const QuestEfficiencyList: React.FC = () => {
             </div>
 
             <p className="text-[10px] leading-relaxed pt-1" style={{ color: 'var(--text3)' }}>
-              {t('効率ポイントとは')}
+              {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
             </p>
           </PopoverContent>
         </Popover>
@@ -337,10 +337,10 @@ export const QuestEfficiencyList: React.FC = () => {
             style={{ color: 'var(--text2)', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}
           >
             <Info size={12} />
-            {t('効率ポイント')}
+            {t('efficiency-score', '効率ポイント')}
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
-            {t('効率ポイントとは')}
+            {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
           </TooltipContent>
         </Tooltip>
 
@@ -421,7 +421,7 @@ export const QuestEfficiencyList: React.FC = () => {
                   )}
                   <div className="text-right">
                     <p className="text-[9px]" style={{ color: 'var(--text3)' }}>
-                      {t('効率ポイント')}
+                      {t('efficiency-score', '効率ポイント')}
                     </p>
                     <p className="text-[15px] font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
                       {r.score.toFixed(2)}
