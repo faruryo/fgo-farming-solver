@@ -3,6 +3,8 @@
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaBolt } from 'react-icons/fa'
+import { Info } from 'lucide-react'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
@@ -73,8 +75,20 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
           <div className="flex items-center gap-2">
             <FaBolt style={{ color: 'var(--gold)' }} />
             <h3 className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>
-              {t('効率ポイント')}
+              {t('efficiency-score', '効率ポイント')}
             </h3>
+            <Tooltip>
+              <TooltipTrigger
+                className="flex-shrink-0 cursor-help"
+                style={{ color: 'var(--text3)' }}
+                aria-label={t('efficiency-score-help', '効率ポイントの説明')}
+              >
+                <Info size={14} />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
+                {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
+              </TooltipContent>
+            </Tooltip>
             {stockEnabled && (
               <span
                 className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
@@ -93,6 +107,15 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
           <p className="text-xs mb-2" style={{ color: 'var(--text3)' }}>
             {t('効率内訳')}
           </p>
+          <div
+            className="flex items-center gap-3 px-2 mb-1 text-[10px] font-semibold tracking-wide"
+            style={{ color: 'var(--text3)' }}
+          >
+            <span className="w-7 flex-shrink-0" />
+            <span className="flex-1 min-w-0">{t('breakdown-material', '素材')}</span>
+            <span>{t('breakdown-weight', '重み')}</span>
+            <span className="w-12 text-right">{t('breakdown-contribution', '寄与度')}</span>
+          </div>
           <div className="flex flex-col gap-2">
             {eff.contributions.map(c => {
               const reward = c.itemId.startsWith(REWARD_ITEM_PREFIX)
