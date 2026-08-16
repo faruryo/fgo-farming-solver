@@ -16,14 +16,12 @@ import { useDrops } from '../../hooks/use-drops'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
 import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { useQuestEfficiencyOptions } from '../../hooks/use-quest-efficiency-options'
 import { computeEffectiveAp } from '../../lib/solver'
 import {
   computeQuestEfficiency,
-  EfficiencyDenominator,
   mergeGoals,
 } from '../../lib/quest-efficiency'
-import { useStockTarget } from '../../hooks/use-stock-target'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import { PossessionModal } from './PossessionModal'
 
@@ -60,6 +58,35 @@ const CheckLabel: React.FC<{
 
 const filterRowLabelClass = 'text-[10px] font-semibold tracking-wide w-16 flex-shrink-0'
 
+const IncludeExcludeToggle: React.FC<{
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  t: (key: string) => string
+}> = ({ label, checked, onChange, t }) => (
+  <div className="flex items-center gap-2">
+    <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
+      {label}
+    </span>
+    <ToggleGroup
+      value={[checked ? 'incl' : 'excl']}
+      onValueChange={(values: string[]) => {
+        if (values[0]) onChange(values[0] === 'incl')
+      }}
+      size="sm"
+      spacing={0}
+      className={toggleGroupClass}
+    >
+      <ToggleGroupItem value="incl" className={toggleItemClass}>
+        {t('含む')}
+      </ToggleGroupItem>
+      <ToggleGroupItem value="excl" className={toggleItemClass}>
+        {t('除く')}
+      </ToggleGroupItem>
+    </ToggleGroup>
+  </div>
+)
+
 export const QuestEfficiencyList: React.FC = () => {
   const { t } = useTranslation('quests')
   const drops = useDrops()
@@ -68,31 +95,29 @@ export const QuestEfficiencyList: React.FC = () => {
   const { data: dashboardMeta } = useDashboardMeta()
   const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
 
-  // 所持数・必要数は育成計算機と同じ Atlas ID 空間で持つ。
-  const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
-  const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
-  const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
-  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
-  const [shortageOnly, setShortageOnly] = useLocalStorage<boolean>(
-    'quests/efficiency/shortageOnly',
-    true,
-  )
-  const [includeSkillStones, setIncludeSkillStones] = useLocalStorage<boolean>(
-    'quests/efficiency/includeSkillStones',
-    true,
-  )
-  const [includePieces, setIncludePieces] = useLocalStorage<boolean>(
-    'quests/efficiency/includePieces',
-    true,
-  )
-  const [denominator, setDenominator] = useLocalStorage<EfficiencyDenominator>(
-    'quests/efficiency/denominator',
-    'ap',
-  )
-  const [includeQp, setIncludeQp] = useLocalStorage<boolean>('quests/efficiency/includeQp', false)
-  const [includeBond, setIncludeBond] = useLocalStorage<boolean>('quests/efficiency/includeBond', false)
-  const [includeExp, setIncludeExp] = useLocalStorage<boolean>('quests/efficiency/includeExp', false)
-  const [showLowKanni, setShowLowKanni] = useLocalStorage<boolean>('quests/efficiency/showLowKanni', false)
+  const {
+    possession,
+    materialResult,
+    itemsRaw,
+    stockEnabled,
+    resolvedStockBuffer,
+    shortageOnly,
+    setShortageOnly,
+    includeSkillStones,
+    setIncludeSkillStones,
+    includePieces,
+    setIncludePieces,
+    denominator,
+    setDenominator,
+    includeQp,
+    setIncludeQp,
+    includeBond,
+    setIncludeBond,
+    includeExp,
+    setIncludeExp,
+    showLowKanni,
+    setShowLowKanni,
+  } = useQuestEfficiencyOptions()
 
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -257,49 +282,19 @@ export const QuestEfficiencyList: React.FC = () => {
               </ToggleGroup>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
-                {t('スキル石')}
-              </span>
-              <ToggleGroup
-                value={[includeSkillStones ? 'incl' : 'excl']}
-                onValueChange={(values: string[]) => {
-                  if (values[0]) setIncludeSkillStones(values[0] === 'incl')
-                }}
-                size="sm"
-                spacing={0}
-                className={toggleGroupClass}
-              >
-                <ToggleGroupItem value="incl" className={toggleItemClass}>
-                  {t('含む')}
-                </ToggleGroupItem>
-                <ToggleGroupItem value="excl" className={toggleItemClass}>
-                  {t('除く')}
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+            <IncludeExcludeToggle
+              label={t('スキル石')}
+              checked={includeSkillStones}
+              onChange={setIncludeSkillStones}
+              t={t}
+            />
 
-            <div className="flex items-center gap-2">
-              <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>
-                {t('モニュピ')}
-              </span>
-              <ToggleGroup
-                value={[includePieces ? 'incl' : 'excl']}
-                onValueChange={(values: string[]) => {
-                  if (values[0]) setIncludePieces(values[0] === 'incl')
-                }}
-                size="sm"
-                spacing={0}
-                className={toggleGroupClass}
-              >
-                <ToggleGroupItem value="incl" className={toggleItemClass}>
-                  {t('含む')}
-                </ToggleGroupItem>
-                <ToggleGroupItem value="excl" className={toggleItemClass}>
-                  {t('除く')}
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+            <IncludeExcludeToggle
+              label={t('モニュピ')}
+              checked={includePieces}
+              onChange={setIncludePieces}
+              t={t}
+            />
 
             <div className="flex items-center gap-3">
               <span className={filterRowLabelClass} style={{ color: 'var(--text3)' }}>

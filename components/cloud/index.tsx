@@ -12,7 +12,8 @@ import { getStats } from './parts/stats-logic'
 import { ComparisonView } from './parts/comparison-view'
 import { ShrinkDiff } from './parts/shrink-diff'
 import { LocalSection } from './parts/local-section'
-import { useCloudSync, KEYS, CloudData } from '../../hooks/use-cloud-sync'
+import { useCloudSync, KEYS, CloudData, MOCK_CLOUD_KEY } from '../../hooks/use-cloud-sync'
+import { normalizeCloudResponse } from '../../lib/cloud-sync/parse'
 import { formatDate } from '../../lib/format-date'
 import type { PayloadScale } from '../../lib/cloud-sync/shrink-guard'
 
@@ -89,21 +90,11 @@ const Cloud = () => {
 
       if (session != null) {
         const res = await fetch(`/api/cloud`, { credentials: 'include' })
-         
-        const rawData = (await res.json()) as { storage?: Record<string, string>; metadata?: { updatedAt: string; deviceId: string } }
-        let parsed: CloudData
-        if (rawData.metadata && rawData.storage) {
-          parsed = rawData as CloudData
-        } else {
-          parsed = {
-            storage: rawData as Record<string, string>,
-            metadata: { updatedAt: new Date(0).toISOString(), deviceId: 'unknown' }
-          }
-        }
-        data = parsed
+        const rawData = await res.json()
+        data = normalizeCloudResponse(rawData)
       } else if (process.env.NODE_ENV === 'development') {
-        const mock = localStorage.getItem('fgo_mock_cloud_data')
-        if (mock) data = JSON.parse(mock) as unknown as CloudData
+        const mock = localStorage.getItem(MOCK_CLOUD_KEY)
+        if (mock) data = JSON.parse(mock)
       }
 
       if (!data || Object.keys(data.storage).length === 0) return

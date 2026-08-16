@@ -4,21 +4,6 @@ import { assignItemId, assignQuestIds, questKey, registryFromPrevious } from './
 import type { PreviousMasterData } from './stable-ids'
 import { populateWaveCounts } from './wave-count'
 
-export type {
-  Item,
-  Enemy,
-  Wave,
-  Quest,
-  DropRate,
-  Campaign,
-  CampaignCalcType,
-  MasterData,
-  DashboardEvent,
-  DashboardGacha,
-  RecentServant,
-  DashboardMeta,
-  PodFreePeriod,
-} from './types'
 
 import type {
   Item,

@@ -13,27 +13,14 @@ export type PossessionDelta = {
   delta: number
 }
 
+import { parseRecord } from './parse'
+
 // キー 1 つぶんの内訳。size は「数えられなかった」= null と「0 件」を区別する。
 export type KeyDelta = {
   key: string
   localSize: number | null
   cloudSize: number | null
   status: 'missing' | 'shrunk' | 'grown' | 'same' | 'unknown'
-}
-
-// パース失敗のみ null。キーが無い・空文字・JSON の null は「空の記録」として {}
-// に倒す（shrink-guard.ts の parseRecord と同じ規則）。
-const parseRecord = (
-  raw: string | null | undefined,
-): Record<string, unknown> | null => {
-  if (!raw) return {}
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (parsed === null || typeof parsed !== 'object') return {}
-    return parsed as Record<string, unknown>
-  } catch {
-    return null
-  }
 }
 
 // 所持数は数値のみ有効。null・文字列・NaN は「持っていない」= 0 として扱う。

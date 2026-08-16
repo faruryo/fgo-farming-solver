@@ -26,8 +26,10 @@ import {
   isDestructiveShrink,
   measurePayload,
 } from '../lib/cloud-sync/shrink-guard'
+import { normalizeCloudResponse, type CloudData } from '../lib/cloud-sync/parse'
 
 export type { LocalMetadata } from '../lib/cloud-sync/decision'
+export type { CloudData } from '../lib/cloud-sync/parse'
 
 export const KEYS = [
   'material',
@@ -54,11 +56,6 @@ export const KEYS = [
 export const MOCK_CLOUD_KEY = 'fgo_mock_cloud_data'
 export const AUTO_SYNC_KEY = 'fgo_auto_sync_enabled'
 export const LOCAL_METADATA_KEY = 'fgo_sync_metadata'
-
-export type CloudData = {
-  storage: Record<string, string>
-  metadata: CloudMetadata
-}
 
 // Module-scoped (not per-instance refs) because the hook is mounted by
 // several components (nav, cloud-indicator, /cloud) while the events it
@@ -253,16 +250,8 @@ const [isSaving, setIsSaving] = useState(false)
     try {
       const res = await fetch(`/api/cloud`, { credentials: 'include' })
       if (res.status === 200) {
-        const rawData: Record<string, unknown> = await res.json()
-        let parsed: CloudData
-        if (rawData.metadata && rawData.storage) {
-          parsed = rawData as unknown as CloudData
-        } else {
-          parsed = {
-            storage: rawData as unknown as Record<string, string>,
-            metadata: { updatedAt: new Date(0).toISOString(), deviceId: 'unknown' }
-          }
-        }
+        const rawData = await res.json()
+        const parsed: CloudData = normalizeCloudResponse(rawData)
         cloudDataRef.current = parsed
         setCloudData(parsed)
         checkConflict(parsed)
