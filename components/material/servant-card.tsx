@@ -102,17 +102,20 @@ const ServantCardComponent = ({
     [setState]
   )
 
+  const getTargetBounds = (target: TargetKey) => ({
+    min: TARGET_MIN[target],
+    max: TARGET_MAX[target],
+  })
+
   const decrementTarget = (target: TargetKey, cur: number) => {
     if (target === 'ascension') return cur - 1
-    const min = TARGET_MIN[target]
-    const max = TARGET_MAX[target]
+    const { min, max } = getTargetBounds(target)
     return cur <= min ? max : cur - 1
   }
 
   const applyStart = useCallback(
     (target: TargetKey, idx: number, prev: number, next: number) => {
-      const min = TARGET_MIN[target]
-      const max = TARGET_MAX[target]
+      const { min, max } = getTargetBounds(target)
       const clamped = Math.max(min, Math.min(max, next))
       if (clamped === prev) return
       if (onWillStartChange && !onWillStartChange(target, idx, prev, clamped)) return
