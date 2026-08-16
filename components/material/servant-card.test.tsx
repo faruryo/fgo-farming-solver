@@ -212,7 +212,7 @@ describe('ServantCard - long press / right click decrement', () => {
     expect(onStartChange).toHaveBeenCalledWith('skill', 1, 5, 4)
   })
 
-  it('does not decrement skill below its minimum (1)', () => {
+  it('wraps skill start from its minimum (1) to its maximum (10) via right-click', () => {
     const onStartChange = vi.fn()
     const state = ownedState()
     state.targets.skill.ranges[0] = { start: 1, end: 10 }
@@ -221,7 +221,94 @@ describe('ServantCard - long press / right click decrement', () => {
     const skillChips = document.querySelectorAll('.c-sum-card.sk')
     fireEvent.contextMenu(skillChips[0])
 
-    expect(onStartChange).not.toHaveBeenCalled()
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('wraps skill start from its minimum (1) to its maximum (10) via long press', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[0] = { start: 1, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[0])
+    vi.advanceTimersByTime(500)
+
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('wraps appendSkill start from its minimum (0) to its maximum (10) via right-click', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.appendSkill.ranges[0] = { start: 0, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const appendChips = document.querySelectorAll('.c-sum-card.ap')
+    fireEvent.contextMenu(appendChips[0])
+
+    expect(onStartChange).toHaveBeenCalledWith('appendSkill', 0, 0, 10)
+  })
+
+  it('wraps appendSkill start from its minimum (0) to its maximum (10) via long press', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.appendSkill.ranges[0] = { start: 0, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const appendChips = document.querySelectorAll('.c-sum-card.ap')
+    fireEvent.pointerDown(appendChips[0])
+    vi.advanceTimersByTime(500)
+
+    expect(onStartChange).toHaveBeenCalledWith('appendSkill', 0, 0, 10)
+  })
+
+  it('ignores a synthesized contextmenu that follows a completed long press (no double decrement)', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[0] = { start: 1, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[0])
+    vi.advanceTimersByTime(500)
+    fireEvent.contextMenu(skillChips[0])
+
+    expect(onStartChange).toHaveBeenCalledTimes(1)
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('ignores a synthesized click that follows the synthesized contextmenu after a completed long press', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[0] = { start: 1, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[0])
+    vi.advanceTimersByTime(500) // long press wraps 1 -> 10
+    fireEvent.contextMenu(skillChips[0]) // synthesized contextmenu, ignored
+    fireEvent.click(skillChips[0]) // synthesized click, must also be ignored
+
+    expect(onStartChange).toHaveBeenCalledTimes(1)
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('still decrements on a genuine right-click once a new gesture resets the flag', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[1] = { start: 5, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[1])
+    vi.advanceTimersByTime(500)
+    fireEvent.contextMenu(skillChips[1]) // synthesized follow-up, ignored
+
+    fireEvent.pointerDown(skillChips[1]) // new genuine gesture resets longPressFired
+    fireEvent.contextMenu(skillChips[1]) // genuine right-click, should still work
+
+    expect(onStartChange).toHaveBeenCalledTimes(2)
+    expect(onStartChange).toHaveBeenNthCalledWith(2, 'skill', 1, 5, 4)
   })
 })
 

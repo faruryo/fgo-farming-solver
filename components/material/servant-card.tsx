@@ -102,10 +102,20 @@ const ServantCardComponent = ({
     [setState]
   )
 
+  const getTargetBounds = (target: TargetKey) => ({
+    min: TARGET_MIN[target],
+    max: TARGET_MAX[target],
+  })
+
+  const decrementTarget = (target: TargetKey, cur: number) => {
+    if (target === 'ascension') return cur - 1
+    const { min, max } = getTargetBounds(target)
+    return cur <= min ? max : cur - 1
+  }
+
   const applyStart = useCallback(
     (target: TargetKey, idx: number, prev: number, next: number) => {
-      const min = TARGET_MIN[target]
-      const max = TARGET_MAX[target]
+      const { min, max } = getTargetBounds(target)
       const clamped = Math.max(min, Math.min(max, next))
       if (clamped === prev) return
       if (onWillStartChange && !onWillStartChange(target, idx, prev, clamped)) return
@@ -139,7 +149,7 @@ const ServantCardComponent = ({
     setPressedKey(key)
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true
-      applyStart(target, idx, cur, cur - 1)
+      applyStart(target, idx, cur, decrementTarget(target, cur))
     }, LONG_PRESS_MS)
   }
 
@@ -157,8 +167,14 @@ const ServantCardComponent = ({
     e.preventDefault()
     clearLongPress()
     setPressedKey(null)
+    if (longPressFired.current) {
+      // タッチデバイスで長押し確定後に合成される contextmenu を無視する。フラグは
+      // false にせず、後続で合成されうる click も handleChipClick 側の同フラグで
+      // 無視できるようにする（次の本物のジェスチャーの pointerdown でリセットされる）。
+      return
+    }
     longPressFired.current = true
-    applyStart(target, idx, cur, cur - 1)
+    applyStart(target, idx, cur, decrementTarget(target, cur))
   }
 
   // ピップは点灯クリックの -1 と長押しが重複するため長押し対象外。ただし

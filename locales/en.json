@@ -195,6 +195,8 @@
     "quest-selection-heading": "Quests to include",
     "submit-need-item-target": "Input at least 1 number of items.",
     "submit-need-quest-selection": "Select at least 1 quest.",
+    "owned-card-gesture-hint": "Tap: +1 / Right-click or long-press: -1",
+    "tracking-mode-tooltip": "When ON, changing the current value automatically adjusts your item stock.",
     "サーヴァント": "Servant",
     "アイテム": "Item",
     "育成素材計算機": "Material Calculator",

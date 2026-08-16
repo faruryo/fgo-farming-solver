@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-catalog'
@@ -36,6 +37,7 @@ export const Index = ({
   items = [],
 }: MaterialIndexProps) => {
   const router = useRouter()
+  const { t } = useTranslation('material')
   const ids = useMemo(() => servants.map(s => s.id.toString()), [servants])
   const [chaldeaState, setChaldeaState] = useChaldeaState(ids)
 
@@ -474,8 +476,7 @@ export const Index = ({
                   </TooltipTrigger>
                   <TooltipContent>
                     <div style={{ maxWidth: 240, fontSize: 11, lineHeight: 1.5 }}>
-                      タップ:+1 ／ 長押し:-1<br />
-                      ON 時、現在値を変更すると所持数を自動で増減します。
+                      {t('tracking-mode-tooltip', 'ON 時、現在値を変更すると所持数を自動で増減します。')}
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -616,19 +617,22 @@ export const Index = ({
             <div className="c-empty-msg">条件に一致するサーヴァントはいません</div>
           </div>
         ) : (
-          <div className="c-servant-grid">
-            {sorted.map(s => (
-              <ServantCard
-                key={s.id}
-                servant={s}
-                state={chaldeaState[s.id] ?? DEFAULT_SERVANT_STATE}
-                globalState={globalState}
-                setState={handleSetServantState(s.id.toString())}
-                onWillStartChange={handleWillStartChange(s.id.toString())}
-                onStartChange={handleOnStartChange(s.id.toString())}
-              />
-            ))}
-          </div>
+          <>
+            <div className="c-servant-hint">{t('owned-card-gesture-hint', 'タップ:+1 ／ 右クリック・長押し:-1')}</div>
+            <div className="c-servant-grid">
+              {sorted.map(s => (
+                <ServantCard
+                  key={s.id}
+                  servant={s}
+                  state={chaldeaState[s.id] ?? DEFAULT_SERVANT_STATE}
+                  globalState={globalState}
+                  setState={handleSetServantState(s.id.toString())}
+                  onWillStartChange={handleWillStartChange(s.id.toString())}
+                  onStartChange={handleOnStartChange(s.id.toString())}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
