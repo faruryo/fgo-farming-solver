@@ -277,7 +277,23 @@ describe('ServantCard - long press / right click decrement', () => {
     expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
   })
 
-  it('still decrements on a standalone right-click after the synthesized-contextmenu flag was consumed', () => {
+  it('ignores a synthesized click that follows the synthesized contextmenu after a completed long press', () => {
+    const onStartChange = vi.fn()
+    const state = ownedState()
+    state.targets.skill.ranges[0] = { start: 1, end: 10 }
+    renderCard(state, { onStartChange })
+
+    const skillChips = document.querySelectorAll('.c-sum-card.sk')
+    fireEvent.pointerDown(skillChips[0])
+    vi.advanceTimersByTime(500) // long press wraps 1 -> 10
+    fireEvent.contextMenu(skillChips[0]) // synthesized contextmenu, ignored
+    fireEvent.click(skillChips[0]) // synthesized click, must also be ignored
+
+    expect(onStartChange).toHaveBeenCalledTimes(1)
+    expect(onStartChange).toHaveBeenCalledWith('skill', 0, 1, 10)
+  })
+
+  it('still decrements on a genuine right-click once a new gesture resets the flag', () => {
     const onStartChange = vi.fn()
     const state = ownedState()
     state.targets.skill.ranges[1] = { start: 5, end: 10 }
@@ -287,7 +303,9 @@ describe('ServantCard - long press / right click decrement', () => {
     fireEvent.pointerDown(skillChips[1])
     vi.advanceTimersByTime(500)
     fireEvent.contextMenu(skillChips[1]) // synthesized follow-up, ignored
-    fireEvent.contextMenu(skillChips[1]) // genuine subsequent right-click, should still work
+
+    fireEvent.pointerDown(skillChips[1]) // new genuine gesture resets longPressFired
+    fireEvent.contextMenu(skillChips[1]) // genuine right-click, should still work
 
     expect(onStartChange).toHaveBeenCalledTimes(2)
     expect(onStartChange).toHaveBeenNthCalledWith(2, 'skill', 1, 5, 4)

@@ -168,8 +168,9 @@ const ServantCardComponent = ({
     clearLongPress()
     setPressedKey(null)
     if (longPressFired.current) {
-      // タッチデバイスで長押し確定後に合成される contextmenu を無視し、二重減算を防ぐ
-      longPressFired.current = false
+      // タッチデバイスで長押し確定後に合成される contextmenu を無視する。フラグは
+      // false にせず、後続で合成されうる click も handleChipClick 側の同フラグで
+      // 無視できるようにする（次の本物のジェスチャーの pointerdown でリセットされる）。
       return
     }
     longPressFired.current = true
