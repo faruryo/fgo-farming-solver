@@ -466,13 +466,11 @@ export const computeShortfall = (
     for (const [targetKey, targetState] of Object.entries(servantState.targets) as [string, { disabled: boolean; ranges: { start: number; end: number }[] }][]) {
       if (targetState.disabled) continue
 
-      const materialKey = targetKey === 'appendSkill'
-        ? 'appendSkillMaterials'
+      const materials = targetKey === 'appendSkill'
+        ? servantMaterials.appendSkillMaterials
         : targetKey === 'skill'
-        ? 'skillMaterials'
-        : 'ascensionMaterials'
-
-      const materials = servantMaterials[materialKey]
+        ? servantMaterials.skillMaterials
+        : servantMaterials.ascensionMaterials
       if (!materials) continue
 
       for (const range of targetState.ranges) {

@@ -94,7 +94,7 @@ const Cloud = () => {
         data = normalizeCloudResponse(rawData)
       } else if (process.env.NODE_ENV === 'development') {
         const mock = localStorage.getItem(MOCK_CLOUD_KEY)
-        if (mock) data = JSON.parse(mock)
+        if (mock) data = normalizeCloudResponse(JSON.parse(mock))
       }
 
       if (!data || Object.keys(data.storage).length === 0) return
