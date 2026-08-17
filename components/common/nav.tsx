@@ -155,7 +155,11 @@ const NavHeader = () => {
         </div>
 
         {session?.user ? (
-          <span className="text-xs truncate max-w-[72px]" style={{ color: TEXT_MID }}>
+          <span
+            className="text-xs truncate max-w-[72px]"
+            style={{ color: TEXT_MID }}
+            title={session.user.email ?? undefined}
+          >
             {session.user.name}
           </span>
         ) : (
