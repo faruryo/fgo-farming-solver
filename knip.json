@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
+    "app/**/{page,layout,template,error,loading,not-found,route,global-error}.{ts,tsx}",
     "scripts/*.{ts,mjs}",
     "e2e/**/*.ts",
     "vitest.config.ts",
@@ -8,6 +9,7 @@
     "vitest.setup.ts",
     "playwright.config.ts",
     "open-next.config.ts",
+    "next.config.mjs",
     "postcss.config.mjs"
   ],
   "project": [

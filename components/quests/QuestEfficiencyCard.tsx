@@ -8,14 +8,12 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { useQuestEfficiencyOptions } from '../../hooks/use-quest-efficiency-options'
 import {
   computeSingleQuestEfficiency,
-  EfficiencyDenominator,
   mergeGoals,
   REWARD_ITEM_PREFIX,
 } from '../../lib/quest-efficiency'
-import { useStockTarget } from '../../hooks/use-stock-target'
 
 const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
 
@@ -29,23 +27,20 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
   const { items: dropItems, isLoading } = drops
   const { activeCampaigns } = useActiveCampaigns(drops.campaigns)
 
-  const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
-  const [materialResult] = useLocalStorage<Record<string, number>>('material/result', {})
-  const [itemsRaw] = useLocalStorage<Record<string, string | number | undefined>>('items', {})
-  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
-  const [shortageOnly] = useLocalStorage<boolean>('quests/efficiency/shortageOnly', true)
-  const [includeSkillStones] = useLocalStorage<boolean>(
-    'quests/efficiency/includeSkillStones',
-    true,
-  )
-  const [includePieces] = useLocalStorage<boolean>('quests/efficiency/includePieces', true)
-  const [denominator] = useLocalStorage<EfficiencyDenominator>(
-    'quests/efficiency/denominator',
-    'ap',
-  )
-  const [includeQp] = useLocalStorage<boolean>('quests/efficiency/includeQp', false)
-  const [includeBond] = useLocalStorage<boolean>('quests/efficiency/includeBond', false)
-  const [includeExp] = useLocalStorage<boolean>('quests/efficiency/includeExp', false)
+  const {
+    possession,
+    materialResult,
+    itemsRaw,
+    stockEnabled,
+    resolvedStockBuffer,
+    shortageOnly,
+    includeSkillStones,
+    includePieces,
+    denominator,
+    includeQp,
+    includeBond,
+    includeExp,
+  } = useQuestEfficiencyOptions()
 
   const eff = useMemo(() => {
     if (isLoading || !drops.quests?.length) return null

@@ -1,17 +1,6 @@
 import type { Drops } from '../get-drops'
 import { effectiveRequired, type StockBuffer } from '../quest-efficiency'
-
-// 「周回換算」の中核。LP再ソルブ(compute-reduction.ts)を廃し、素材ごとの
-// 独立単価(1個あたり推定周回数/AP)で前進・労力・AP相当を合算する(design.md D1/D3)。
-//
-//   単価_i(周回) = 1 / (選択クエスト内の最高drop_rate_i)  ※無ければ全クエスト中の最高率
-//   単価_i(AP)   = 選択クエスト内の最小 AP/drop_rate_i     ※無ければ全クエスト中の最小値
-//
-// 単価を選択クエスト内で解くことで、クエスト解放状況の差(=進捗度)を吸収する。
-// 選択クエストにドロップが無い素材は全クエスト率にフォールバックし、0扱いにしない。
-
-// QP(atlasId '1')は所持が桁違いで周回換算を破綻させるため除外する(throughput.ts と同じ集合)。
-const EXCLUDED_ATLAS_IDS = new Set<string>(['1'])
+import { EXCLUDED_ATLAS_IDS } from './constants'
 
 type CountMap = Record<string, number | string | undefined>
 

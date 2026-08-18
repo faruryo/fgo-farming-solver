@@ -371,61 +371,28 @@ export type ReverseCalcResult = {
   residualDemand: Map<number, number>
 }
 
-export const reverseCalcBoxes = (
+/**
+ * 指定したボックス数におけるボックス確定報酬＋交換所配分後の残余需要を評価する。
+ */
+export const evaluateBoxes = (
   event: EventPlannerEvent,
+  boxCount: number,
+  ownedCurrency: number,
   itemDemand: Map<number, number>,
-  ownedCurrency = 0,
-): ReverseCalcResult => {
-  const maxBoxes = event.lotteries.length
+): Omit<ReverseCalcResult, 'minBoxes'> => {
+  const boxLayer = calcBoxLayer(event, boxCount, ownedCurrency)
 
-  // 最小箱数を線形探索（ロト箱は最大でも 10〜20 程度なので O(N)で十分）
-  for (let n = 0; n <= maxBoxes; n++) {
-    const boxLayer = calcBoxLayer(event, n, ownedCurrency)
-
-    // 交換所配分: itemDemand から ボックス確定報酬で充当済みの分を引いた残りを交換所に
-    const residualAfterBoxes = new Map<number, number>()
-    for (const [atlasId, qty] of itemDemand) {
-      const fromBoxes = boxLayer.confirmedMaterials.get(atlasId) ?? 0
-      const remaining = Math.max(0, qty - fromBoxes)
-      if (remaining > 0) residualAfterBoxes.set(atlasId, remaining)
-    }
-
-    const shopAllocation = allocateShop(event.shop, residualAfterBoxes)
-
-    // 交換所配分後の残余需要
-    const residualDemand = new Map<number, number>()
-    for (const [atlasId, qty] of residualAfterBoxes) {
-      const shopItem = event.shop.find((s) => s.itemId === atlasId)
-      const fromShop = shopAllocation.allocations.find(
-        (a) => a.shopItem.itemId === atlasId,
-      )?.totalQty ?? 0
-      const remaining = Math.max(0, qty - fromShop)
-      if (remaining > 0) residualDemand.set(atlasId, remaining)
-      // 溢れ（limitNum 超過）が出た場合も residualDemand に含まれている
-      if (shopItem && fromShop < qty) {
-        residualDemand.set(atlasId, remaining)
-      }
-    }
-
-    // このボックス数で全需要が（ボックス + 交換所で）充足できるか判定
-    const allSatisfied = Array.from(itemDemand.keys()).every((atlasId) => {
-      return (residualDemand.get(atlasId) ?? 0) === 0
-    })
-
-    if (allSatisfied) {
-      return { minBoxes: n, boxLayer, shopAllocation, residualDemand }
-    }
-  }
-
-  // 最大箱数でも満たせない場合は最大箱数を返す
-  const boxLayer = calcBoxLayer(event, maxBoxes, ownedCurrency)
+  // 交換所配分: itemDemand から ボックス確定報酬で充当済みの分を引いた残りを交換所に
   const residualAfterBoxes = new Map<number, number>()
   for (const [atlasId, qty] of itemDemand) {
     const fromBoxes = boxLayer.confirmedMaterials.get(atlasId) ?? 0
     const remaining = Math.max(0, qty - fromBoxes)
     if (remaining > 0) residualAfterBoxes.set(atlasId, remaining)
   }
+
   const shopAllocation = allocateShop(event.shop, residualAfterBoxes)
+
+  // 交換所配分後の残余需要
   const residualDemand = new Map<number, number>()
   for (const [atlasId, qty] of residualAfterBoxes) {
     const fromShop = shopAllocation.allocations.find(
@@ -435,7 +402,35 @@ export const reverseCalcBoxes = (
     if (remaining > 0) residualDemand.set(atlasId, remaining)
   }
 
-  return { minBoxes: maxBoxes, boxLayer, shopAllocation, residualDemand }
+  return { boxLayer, shopAllocation, residualDemand }
+}
+
+export const reverseCalcBoxes = (
+  event: EventPlannerEvent,
+  itemDemand: Map<number, number>,
+  ownedCurrency = 0,
+): ReverseCalcResult => {
+  const maxBoxes = event.lotteries.length
+
+  // 最小箱数を線形探索（ロト箱は最大でも 10〜20 程度なので O(N)で十分）
+  for (let n = 0; n <= maxBoxes; n++) {
+    const evaluation = evaluateBoxes(event, n, ownedCurrency, itemDemand)
+
+    // このボックス数で全需要が（ボックス + 交換所で）充足できるか判定
+    const allSatisfied = Array.from(itemDemand.keys()).every((atlasId) => {
+      return (evaluation.residualDemand.get(atlasId) ?? 0) === 0
+    })
+
+    if (allSatisfied) {
+      return { minBoxes: n, ...evaluation }
+    }
+  }
+
+  // 最大箱数でも満たせない場合は最大箱数を返す
+  return {
+    minBoxes: maxBoxes,
+    ...evaluateBoxes(event, maxBoxes, ownedCurrency, itemDemand),
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -471,13 +466,11 @@ export const computeShortfall = (
     for (const [targetKey, targetState] of Object.entries(servantState.targets) as [string, { disabled: boolean; ranges: { start: number; end: number }[] }][]) {
       if (targetState.disabled) continue
 
-      const materialKey = targetKey === 'appendSkill'
-        ? 'appendSkillMaterials'
+      const materials = targetKey === 'appendSkill'
+        ? servantMaterials.appendSkillMaterials
         : targetKey === 'skill'
-        ? 'skillMaterials'
-        : 'ascensionMaterials'
-
-      const materials = servantMaterials[materialKey as keyof typeof servantMaterials]
+        ? servantMaterials.skillMaterials
+        : servantMaterials.ascensionMaterials
       if (!materials) continue
 
       for (const range of targetState.ranges) {

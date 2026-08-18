@@ -2,72 +2,7 @@
 
 まだ change 化していない課題を置く場所。着手するときは `openspec/changes/` へ proposal を切り出す。
 
----
 
-## 現在値の減算が下限で止まる（上限へラップしてほしい）
-
-**重要度: 中（機能不足。データ破壊は無い）**
-
-### 要望
-
-右クリック / 長押しで現在値を減らしていったとき、下限に達したら**上限へラップ**してほしい。
-スキルなら 1 → 10、アペンドなら 0 → 10。目標値近くまで一気に戻せるので入力が楽になる。
-
-### 現状
-
-`components/material/servant-card.tsx`
-
-- 加算（タップ / 左クリック）: `handleChipClick` (184-197) は
-  `const next = cur >= max ? min : cur + 1` で **上限に達すると下限へラップする**
-- 減算（右クリック / 長押し）: `handleContextMenu` (151-162) と `handlePointerDown` (131-144) が
-  どちらも `applyStart(target, idx, cur, cur - 1)` を呼ぶだけ。
-  `applyStart` (105-116) は `Math.max(min, Math.min(max, next))` でクランプし、
-  さらに `if (clamped === prev) return` で弾くため、**下限では何も起きない**
-
-つまり加算だけが循環していて減算が循環しない、非対称な状態。要望は対称にすること。
-
-### 論点
-
-- 霊基再臨（min 0 / max 4）も同様に 0 → 4 とするか。加算側は既にラップしているので
-  揃えるのが自然だが、再臨はピップUIで `handlePipClick` (171-182) が別ロジックを持つ
-  （点灯中のピップを押すと -1）。ここの整合も併せて決める必要がある
-- ラップは誤操作時の巻き戻しが大きい。`onWillStartChange` を通るので育成記録モードON時は
-  所持数の自動増減も一緒に大きく動く点に注意
-
----
-
-## 右クリック / 長押しで操作できることが案内されていない
-
-**重要度: 中（発見可能性。知らないと減算操作に到達できない）**
-
-### 問題
-
-現在値の減算は右クリックまたは長押しでしか行えないが、それを知る手段がほぼ無い。
-
-唯一の案内は `components/material/index.tsx:475-480` のツールチップ本文:
-
-```
-タップ:+1 ／ 長押し:-1
-ON 時、現在値を変更すると所持数を自動で増減します。
-```
-
-これが届きにくい理由が4つ重なっている:
-
-1. **別機能のヘルプに同居している** — このツールチップは「育成記録モード」スイッチ横の
-   `?` ボタン (458-474) に付いており、操作方法の案内だと気づけない
-2. **hover 前提のツールチップ** — タッチ端末では開きにくい。`cursor: 'help'` も
-   マウス想定のまま
-3. **右クリックに言及が無い** — 「長押し」しか書かれていない
-4. **条件付き描画の中にある** — `showGlobal && (` (410) で囲まれた全体設定パネル内なので、
-   パネルが閉じていると存在しない
-
-### 検討方向（未確定）
-
-案内の置き場所そのものを設計し直す必要がある。初回のみのコーチマーク、カード上の常設ヒント、
-空状態でのガイド、などが候補。「どこに書くか」より「操作を知らなくても減算に到達できるか」を
-先に決めたい（例: 明示的な - ボタンを置けば案内自体が不要になる）。
-
-上の「下限で止まる」課題と同じ操作系の話なので、着手するなら一緒に設計するのが良い。
 
 ---
 
@@ -227,6 +162,109 @@ FGOではメインイベント、ボックスイベント、各種復刻イベ�
 
 5. **ダッシュボード TodoWidget のレイアウトアニメーション**:
    - チェック直後にカードが即時消失するのではなく、バウンド＆線引き演出を見せてから、`AnimatePresence` でカードの高さが縮んで滑らかに消えるレイアウト遷移を実装。
+
+---
+
+## リファクタリング候補（2026-08-16 設計検討）
+
+Opus subagent 3体（master-data / material-ui / cloud-and-domain）による調査結果。各項目に **behavior-preserving**（振る舞い保存・openspec不要）/ **behavior-touching**（振る舞いに触れる・`openspec new change` 必須、AGENTS.md準拠）のラベルを付けている。優先順位はユーザーに見える不整合 → churn×サイズ → 安さの順。
+
+### 1. 実効不足（effectiveDeficiency）の定義が2画面で食い違いうる
+
+**ラベル: behavior-touching（openspec 必須） / 工数 M / 優先度 最高**
+
+`components/material/result.tsx` の `stockDeficiencies`/`queryItemsB`（225, 300行）は `toStockItemLike(item)` を使い、drops データの有無に関わらず常にストックバッファを乗せる。一方 `components/material/material-selection-advisor.tsx` の `deficiencyFor`（135-145行）は `dropItemByAtlasId.get(id)` がヒットしない素材で `effectiveDeficiency` を呼ばずバッファ無しの `Math.max(0, required - owned)` にフォールバックする（139-142行、コードで確認済み）。
+
+**確認できたこと**: コード上の分岐差異は確実に存在する。**未確認なこと**: `amounts`/`possession` にはあるが `drops.items` に無い（またはatlasId欠落の）素材が実データで実在するか。存在すれば「素材計算結果」と「配布アドバイザー」で同じ素材の不足数が異なって見える実バグになる。着手前にまず実データでこのケースが起きるか確認すること。
+
+対応案: `useEffectiveDeficiency` のような共有フックに集約し、drops に無い素材の扱い（バッファを乗せるか、明示的に除外表示するか）を1箇所で決める。
+
+### 2. `EXCLUDED_ATLAS_IDS`（QPを進捗指標から除外）が2箇所に別実体で存在
+
+**ラベル: behavior-preserving / 工数 S / 優先度 高**
+
+`lib/progress/lap-value.ts:14` と `lib/progress/throughput.ts:9` に `new Set(['1'])` が別々に定義されている（lap-value 側のコメントが「throughput.ts と同じ集合」と自認）。同じ進捗レポート画面に `forwardLaps` と `itemsFarmed` が並ぶため、片方だけ除外IDを追加すると画面内で数字が食い違う。`lib/progress/` 内の共有定数に一本化する。
+
+### 3. `lib/master-data/update.ts`（1085行・過去6ヶ月45コミット、リポジトリ最大かつ最高頻度）の5分割
+
+**ラベル: behavior-preserving（4番目のみ要判断） / 工数 M〜L / 優先度 高（churn最大）**
+
+diffハンクを関数単位で分類した結果、`fetchAndTransformData` のみ変更28件・`fetchDashboardMeta` のみ変更9件・両方3件で、変更理由の異なる2責務が同居していることが裏付けられた（既存 `update.test.ts` の describe 境界もこれに一致）。
+
+分割案:
+1. `lib/master-data/dashboard.ts` — `fetchDashboardMeta` 関連
+2. `lib/master-data/atlas-events.ts` — `AtlasEvent`型・`fetchActiveEvents`・`eventDropItems`・`fetchBasicServants`
+3. `lib/master-data/nice-war-source.ts` — 取得元決定（fs→KVキャッシュ→全量fetch）・`NiceWarCache`
+4. `lib/master-data/item-naming.ts` — `NAME_OVERRIDES`・`normalizeItemName`・`getCategory`
+5. `lib/master-data/quest-selection.ts` — Top5/Top100相対効率の純粋フィルタ
+
+実装時の必須事項:
+- **バレル再エクスポートを作らない**。消費者は6スクリプト+2テストのみで、機械的なimport修正の方が恒久shimより安価。
+- `update.ts:7-21` の `export type {...} from './types'` ブロックは**確認済みの死にコード**（全消費者が `./types` から直接import。`grep`で裏取り済み）。削除可（XS、単独で先に着手してよい）。
+- `:189-204`（nice_event 40MB撤廃）・`:243-254`（weak ETag）・`:324-329`（KV無条件採用の理由）・`:457-462`（O(N×M)排除）・`:560-563`（rarity fingerprintにaddedAtを入れるな）の**荷重コメントは解決済み障害の再発防止根拠なので、コードと一緒に必ず移送する**。レビュー必須項目にすること。
+- `aaQuestId→短縮ID` マップ構築が2箇所（:633-638, :989-994）で異なる入力から重複している。**同じ入力のまま**関数抽出するなら behavior-preserving、**入力を統一する**なら behavior-touching（pod-free期間の対象クエスト集合が変わる）。
+
+推奨順序: 死にコード削除 → 分割案3・4（小さい） → 分割案1・2 → 荷重コメント整理。stable-ids.ts との結合は既に十分疎（呼び出し4箇所のみ）で分離作業は不要と判断。
+
+### 4. cloud-sync クラスタの重複2件（安全に統合可能）
+
+**ラベル: behavior-preserving / 工数 S ずつ / 優先度 中**
+
+- `hooks/use-cloud-sync.ts:258-265` と `components/cloud/index.tsx:95-102` に、クラウド応答の旧形式正規化ロジック（`metadata`/`storage`の有無判定→epochラップ）が二重実装されている。`normalizeCloudResponse()` に切り出す。`components/cloud/index.tsx:105` の `MOCK_CLOUD_KEY` ハードコード文字列もこの時点でhookのexportに寄せる。
+- `lib/cloud-sync/shrink-guard.ts:30-41` と `lib/cloud-sync/storage-diff.ts:26-37` の `parseRecord` が重複（jscpd検出済み）。統合理由は行数ではなく安全性 — パース規則がずれると「ガードは発火したのに差分が何も表示されない」画面になりうる。`measureSize` は別物なので `parseRecord` のみ共通化する。
+
+**触ってはいけないもの**: `handleLoad`（確認ダイアログへ溜める設計）を `fetchCloudData`（`checkConflict` 経由で未確認のままauto-apply しうる）に寄せる変更。AGENTS.mdのBLOCKER（クラウド同期の無確認上書き）に該当する。
+
+### 5. `lib/event-plan.ts` の内部重複（383-398行 / 421-436行）
+
+**ラベル: behavior-preserving / 工数 S/M / 優先度 中**
+
+`residualAfterBoxes → allocateShop → residualDemand` の3段が探索ループ内と打ち切り後で二重化。差分である `if (shopItem && fromShop < qty) residualDemand.set(...)` は**デッドブランチと確認済み**（直前で `remaining = Math.max(0, qty - fromShop)` を計算しているため、`fromShop < qty` なら常に `remaining > 0` となり、直前行の `if (remaining > 0) residualDemand.set(...)` と完全に同じ条件・同じ代入を二重に行っている）。1回のボックス数評価を行う純関数 `evaluateBoxCount(event, n, ownedCurrency, itemDemand)` を抽出し、ループ内（383-418行）と打ち切り後（421-438行）を1行に集約する。
+
+### 6. `components/material/index.tsx` / `result.tsx` の育成記録台帳・ソルバー送信の分離
+
+**ラベル: behavior-preserving / 工数 S ずつ / 優先度 中**
+
+- `index.tsx` は①フィルタ/ソート②目標一括ブロードキャスト③育成記録モードの所持数台帳（126-217行）④hash駆動スクロール⑤ページchromeの5責務が同居。台帳部分（`checkStartChange`/`applyStartChange`/`possessionRef`/`trackingMode`）を `hooks/use-tracking-ledger.ts` に切り出す（JSXゼロなのに現状Indexをマウントしないとテストできない）。
+- `result.tsx` のソルバー送信用クエリ構築（259-347行、目標A/B分岐）を `lib/farming/build-solve-params.ts` に切り出す。
+
+**分割しないほうがよいもの**: `servant-card.tsx`。`longPressFired` を pointerdown/contextmenu/click で共有する規約はタッチ端末の合成イベントバグ対策であり、336行のテストが固定している。分けると規約が2ファイルに割れて壊れやすくなるだけ。
+
+### 7. cloud-sync の「多重マウントされる singleton」構造（大掛かり・保留推奨）
+
+**ラベル: behavior-touching / 工数 M / 優先度 低（単独で企画すること）**
+
+`use-cloud-sync.ts` は `sync-engine.tsx`（常駐headless）・`nav.tsx`（2箇所）・`cloud-indicator.tsx`・`/cloud`ページから同時にマウントされ、`isApplyingCloudData`等がモジュールスコープの`let`でsingletonを偽装している。責務軸で分割するとモジュール変数の所有者がN倍に増えて悪化するため、分割するなら「常駐する`CloudSyncEngine`にstore/providerを1つ置き、他は購読側にする」インスタンス軸の再設計が必要。現在は全インスタンスが個別に`fetchCloudData()`を撃っておりGET回数と自動適用タイミングが変わるため、単独の`openspec new change`として企画すべきで、上記6項目とは同じPRに混ぜない。
+
+### 8. ダッシュボード/farming クラスタが集計churnで最も高い（個別ファイルは大きくない）
+
+**ラベル: 調査のみ・設計は次回 / 優先度 情報共有**
+
+単体では大きくないが、過去6ヶ月の変更頻度を積み上げるとリポジトリ最高: `app/page.tsx`(16) / `RecommendedQuest.tsx`(20) / `progress-report-content.tsx`(20) / `farming/index.tsx`(20) / `NearGoalSection.tsx`(16) / `ProgressSection.tsx`(13) / `GachaSection.tsx`(11) / `EventSection.tsx`(11)。BACKLOG内の「所持アイテム数入力をダッシュボードから利用したい」「/farming モバイルUI崩れ」がこのクラスタに集中する。今回は深掘りしていないため、この2件に着手するタイミングで構造調査を改めて行うのが妥当。
+
+### 9. `QuestEfficiencyList.tsx` / `QuestEfficiencyCard.tsx` の localStorage state 9個の完全重複
+
+**ラベル: behavior-preserving / 工数 S / 優先度 中**
+
+`components/quests/QuestEfficiencyList.tsx`(72-94行付近)と `components/quests/QuestEfficiencyCard.tsx`(30-47行付近)で、`possession`/`materialResult`/`itemsRaw`/`shortageOnly`/`includeSkillStones`/`includePieces`/`denominator`/`includeQp`/`includeBond`/`includeExp` の9個の `useLocalStorage` 呼び出し(キー文字列・デフォルト値含む)が一言一句同一で存在する(Card側はsetter無しの読み取り専用)。新しいフィルターの追加・デフォルト値変更時に一覧と詳細でキー名やデフォルト値がずれるリスクがある。`hooks/use-quest-efficiency-options.ts` に集約する。
+
+### 10. localStorage キー文字列のハードコード散在(`'posession'` 等)
+
+**ラベル: behavior-preserving / 工数 S〜M / 優先度 低〜中**
+
+`'posession'`(歴史的タイポ)というリテラル文字列が `hooks/use-cloud-sync.ts` の `KEYS` 配列定義とは独立に12ファイル・14箇所で直接ハードコードされている(`QuestEfficiencyList.tsx`, `QuestEfficiencyCard.tsx`, `PossessionModal.tsx`, `NearGoalSection.tsx`, `components/cloud/parts/stats-logic.ts`, `components/material/index.tsx`, `components/material/result.tsx`, `hooks/use-progress-report.ts`, `lib/cloud-sync/storage-diff.ts`, `lib/cloud-sync/shrink-guard.ts`, `lib/progress/diff.ts` ほど。件数はgrep確認済み)。クラウド同期対象キー(`use-cloud-sync.ts` の `KEYS`)と実利用キーが型で結びついていないため、新機能追加時に同期対象への追加漏れが起きうる。`lib/constants/storage-keys.ts` 等でキー名定数化し、`KEYS` 側もそこから参照する形にする。工数が膨らみやすいので着手は他の小粒項目より後でよい。
+
+### 11. `QuestEfficiencyList.tsx` のinclude/excludeトグルUIのコピペ重複
+
+**ラベル: behavior-preserving / 工数 XS / 優先度 低**
+
+同ファイル260-302行付近で「スキル石」「モニュピ」の含む/除くトグル(ラベル+`ToggleGroup`+2つの`ToggleGroupItem`)が構造・propsともほぼ同一のブロックとして2回書かれている(コード確認済み)。`IncludeExcludeToggle`のような小さなインラインコンポーネントに切り出してJSXをスリム化できる。優先度は低いが着手コストも最小。
+
+### 付record: 死にコード・ツール設定の別件（このセクションの対象外・削除はユーザー判断）
+
+- `knip.json` の `entry` に Next.js App Router のエントリ（`app/layout.tsx`/`page.tsx`等）が含まれておらず、`app/layout.tsx→layout.tsx→header.tsx→Nav`のような到達チェーンが追えていない。`components/common/nav.tsx`（直近6ヶ月17コミットの現役ファイル）が誤って「未使用」判定されるなど、`pnpm run audit:dead-code` のレポート全体の信頼性が下がっている。App Routerのエントリglobを追加するのが妥当（ツール設定のみ、挙動変更なし）。
+- 一方 `components/common/footer.tsx` と `components/common/logo.tsx` は、App Router移行コミット(`04bc5a6`)以降どこからも参照されておらず、**本物の死にコード**と確認済み（grep裏取り済み）。削除可。
+- BACKLOG.md 冒頭の「現在値の減算が下限で止まる」「右クリック/長押しで操作できることが案内されていない」の2件は、`5ab0bd1`（PR #34）と `openspec/changes/decrement-wrap-hint/`（tasks.md全項目`[x]`）で実装済みだったため、2026-08-16 にエントリ削除および change の archive を完了。
 
 
 

@@ -183,11 +183,6 @@
     },
     {
       "file": "components/cloud/index.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 2
-    },
-    {
-      "file": "components/cloud/index.tsx",
       "rule": "complexity",
       "count": 1
     },
@@ -279,11 +274,6 @@
     {
       "file": "components/common/error-boundary.tsx",
       "rule": "sonarjs/function-return-type",
-      "count": 1
-    },
-    {
-      "file": "components/common/footer.tsx",
-      "rule": "max-lines-per-function",
       "count": 1
     },
     {
@@ -1078,6 +1068,11 @@
     },
     {
       "file": "hooks/use-cloud-sync.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
       "rule": "max-lines-per-function",
       "count": 2
     },
@@ -1104,6 +1099,11 @@
     {
       "file": "hooks/use-cloud-sync.ts",
       "rule": "sonarjs/todo-tag",
+      "count": 1
+    },
+    {
+      "file": "hooks/use-cloud-sync.ts",
+      "rule": "sonarjs/unused-import",
       "count": 1
     },
     {
@@ -1343,11 +1343,6 @@
     },
     {
       "file": "lib/event-plan.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "lib/event-plan.ts",
       "rule": "complexity",
       "count": 2
     },
@@ -1369,7 +1364,7 @@
     {
       "file": "lib/event-plan.ts",
       "rule": "sonarjs/cognitive-complexity",
-      "count": 3
+      "count": 2
     },
     {
       "file": "lib/event-plan.ts",

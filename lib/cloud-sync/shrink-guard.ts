@@ -19,26 +19,13 @@ export const SHRINK_RATIO = 0.5
 // 経路が実在するため、2件以上でのみ発火させる。
 export const MISSING_KEYS_THRESHOLD = 2
 
+import { parseRecord } from './parse'
+
 type ServantNode = {
   disabled?: boolean
 }
 
 type StorageLike = Record<string, string | null | undefined>
-
-// パース失敗のみ null。キーが無い・空文字・JSON の null は「空の記録」として
-// {} に倒す。測定不能(null)は保存を中止させるため、失敗の定義は広げない。
-const parseRecord = (
-  raw: string | null | undefined,
-): Record<string, unknown> | null => {
-  if (!raw) return {}
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (parsed === null || typeof parsed !== 'object') return {}
-    return parsed as Record<string, unknown>
-  } catch {
-    return null
-  }
-}
 
 // 保存内容の規模を件数で測る。0(空)と null(測定不能)の区別がガードの成立条件
 // なので、パース失敗を 0 に潰してはいけない。
