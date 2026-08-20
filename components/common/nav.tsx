@@ -155,13 +155,22 @@ const NavHeader = () => {
         </div>
 
         {session?.user ? (
-          <span
-            className="text-xs truncate max-w-[72px]"
-            style={{ color: TEXT_MID }}
-            title={session.user.email ?? undefined}
-          >
-            {session.user.name}
-          </span>
+          <div className="flex flex-col min-w-0 max-w-[100px]">
+            <span
+              className="text-xs truncate leading-tight"
+              style={{ color: TEXT_MID }}
+            >
+              {session.user.name}
+            </span>
+            {session.user.email && (
+              <span
+                className="text-[10px] truncate leading-tight"
+                style={{ color: TEXT_DIM }}
+              >
+                {session.user.email}
+              </span>
+            )}
+          </div>
         ) : (
           <SheetClose
             render={<NextLink href="/cloud" />}
