@@ -6,15 +6,26 @@ import { useCloudSync } from './use-cloud-sync'
 import { useLocalStorage } from './use-local-storage'
 import { INITIAL_SYNC_TIMESTAMP } from '../lib/cloud-sync/decision'
 
-const mocks = vi.hoisted(() => ({
-  getItems: vi.fn(async () => []),
-  session: { data: { user: { name: 'Test Master' } } } as {
-    data: { user: { name: string } } | null
-  },
-  router: { refresh: vi.fn() },
-  i18n: { language: 'ja' },
-  t: (key: string, fallback?: string) => fallback ?? key,
-}))
+type Mocks = {
+  getItems: ReturnType<typeof vi.fn>
+  session: { data: { user: { name: string } } | null }
+  router: { refresh: ReturnType<typeof vi.fn> }
+  i18n: { language: string }
+  t: (key: string, fallback?: string) => string
+}
+
+// Explicit return type (not an `as` assertion) so `session` stays widened to
+// `| null` for the sign-out tests below -- `as` here gets stripped by
+// eslint --fix's no-unnecessary-type-assertion as "redundant."
+const mocks = vi.hoisted(
+  (): Mocks => ({
+    getItems: vi.fn(async () => []),
+    session: { data: { user: { name: 'Test Master' } } },
+    router: { refresh: vi.fn() },
+    i18n: { language: 'ja' },
+    t: (key: string, fallback?: string) => fallback ?? key,
+  })
+)
 
 vi.mock('next-auth/react', () => ({
   useSession: () => mocks.session,
@@ -199,6 +210,31 @@ describe('useCloudSync first-device restore', () => {
     await waitFor(() => {
       expect(result.current.hasConflict).toBe(true)
     })
+    expect(localStorage.getItem('material')).toBe(localMaterial)
+  })
+
+  // 事故の再現 (#36): 自分の端末が保存した「新しい」クラウドが、実は自分の別の
+  // 未同期編集を含んでいない(別タブの保存や、autosaveのデバウンス中に走った
+  // クラウド復元など)。deviceId が一致するというだけで無条件に auto-apply する
+  // と、この未同期編集を黙って消してしまう。
+  it('keeps a real unsynced local edit from a same-device cloud save and reports a conflict', async () => {
+    const localMaterial = JSON.stringify({ all: { source: 'local-edit' } })
+    localStorage.setItem('material', localMaterial)
+    localStorage.setItem(
+      'fgo_sync_metadata',
+      JSON.stringify({
+        updatedAt: '2026-07-24T23:00:00.000Z', // dirty edit, before the cloud's newer save
+        lastSyncedAt: '2026-07-24T22:00:00.000Z', // a real prior sync, not "never synced"
+        deviceId: 'desktop-device', // same device that wrote the newer cloud save
+      }),
+    )
+
+    const { result } = renderHook(() => useCloudSync())
+
+    await waitFor(() => {
+      expect(result.current.hasConflict).toBe(true)
+    })
+    expect(result.current.isDivergent).toBe(false)
     expect(localStorage.getItem('material')).toBe(localMaterial)
   })
 })

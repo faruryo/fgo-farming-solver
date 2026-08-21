@@ -56,14 +56,17 @@ describe('decideSyncAction', () => {
       ).toBe('conflict')
     })
 
-    it('dirty local + same device → auto-apply (own newer save wins)', () => {
+    it('dirty local + same device → conflict (a newer save from this device is not guaranteed to contain this edit)', () => {
+      // e.g. another tab on the same device saved independently, or a
+      // cloud-restore raced a not-yet-autosaved edit (see #36). Same
+      // deviceId does not mean "already has whatever I have."
       const dirty = localMeta({ updatedAt: at(500) })
       expect(
         decideSyncAction(dirty, {
           updatedAt: at(CLOCK_SKEW_MS + 501),
           deviceId: 'device-a',
         })
-      ).toBe('auto-apply')
+      ).toBe('conflict')
     })
 
     it('never-synced local starts clean and auto-applies cloud data on first login', () => {
