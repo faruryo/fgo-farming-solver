@@ -6,13 +6,26 @@ import { useCloudSync } from './use-cloud-sync'
 import { useLocalStorage } from './use-local-storage'
 import { INITIAL_SYNC_TIMESTAMP } from '../lib/cloud-sync/decision'
 
-const mocks = vi.hoisted(() => ({
-  getItems: vi.fn(async () => []),
-  session: { data: { user: { name: 'Test Master' } } },
-  router: { refresh: vi.fn() },
-  i18n: { language: 'ja' },
-  t: (key: string, fallback?: string) => fallback ?? key,
-}))
+type Mocks = {
+  getItems: ReturnType<typeof vi.fn>
+  session: { data: { user: { name: string } } | null }
+  router: { refresh: ReturnType<typeof vi.fn> }
+  i18n: { language: string }
+  t: (key: string, fallback?: string) => string
+}
+
+// Explicit return type (not an `as` assertion) so `session` stays widened to
+// `| null` for the sign-out tests below -- `as` here gets stripped by
+// eslint --fix's no-unnecessary-type-assertion as "redundant."
+const mocks = vi.hoisted(
+  (): Mocks => ({
+    getItems: vi.fn(async () => []),
+    session: { data: { user: { name: 'Test Master' } } },
+    router: { refresh: vi.fn() },
+    i18n: { language: 'ja' },
+    t: (key: string, fallback?: string) => fallback ?? key,
+  })
+)
 
 vi.mock('next-auth/react', () => ({
   useSession: () => mocks.session,
