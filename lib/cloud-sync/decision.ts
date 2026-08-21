@@ -52,8 +52,16 @@ export const hasNeverSynced = (metadata: LocalMetadata): boolean =>
   (metadata.lastSyncedAt ?? INITIAL_SYNC_TIMESTAMP) === INITIAL_SYNC_TIMESTAMP
 
 // Decision core of checkConflict: cloud must be newer beyond the skew
-// allowance; a dirty local combined with another device's cloud write is a
-// conflict, anything else is safe to apply automatically.
+// allowance; a dirty local is a conflict regardless of which device wrote
+// the cloud data, anything else is safe to apply automatically.
+//
+// Same-device dirty used to be exempted from conflict ("own newer save
+// wins"), on the assumption that a newer cloud save from this device's own
+// deviceId always already contains whatever the dirty local edit has. That
+// assumption breaks for two independent, unsynced edits on the same device
+// (e.g. two tabs, or a cloud-restore racing a not-yet-autosaved edit): the
+// newer save can be from a different, unrelated edit, and auto-applying it
+// silently discards the dirty one. deviceId is intentionally unused here now.
 export const decideSyncAction = (
   local: LocalMetadata,
   cloud: CloudMetadata,
@@ -71,8 +79,7 @@ export const decideSyncAction = (
   const isCloudNewer = cloudDate > localDate + CLOCK_SKEW_MS
   if (!isCloudNewer) return 'none'
 
-  const isConflict = isLocalDirty && cloud.deviceId !== local.deviceId
-  return isConflict ? 'conflict' : 'auto-apply'
+  return isLocalDirty ? 'conflict' : 'auto-apply'
 }
 
 export const shouldRefetchOnResume = (
