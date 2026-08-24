@@ -7,8 +7,10 @@ name: Update rarity AP tables
 on:
   workflow_dispatch:
 
+# update-master-data.yml と同じ concurrency group を共有し、
+# 定期更新と手動 rarity 更新が同時に走る KV 書き込み競合 (interleave) を防ぐ。
 concurrency:
-  group: update-rarity-tables
+  group: update-master-data
   cancel-in-progress: false
 
 jobs:

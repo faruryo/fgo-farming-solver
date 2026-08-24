@@ -159,6 +159,10 @@ FGO周回ソルバーが必要とする最新のアイテム情報、クエス�
 - **THEN** `rarity_ap_tables_fp` は更新されず、次回 cron または手動実行が同じ入力で再試行する。
 - **THEN** 個別の更新エンドポイントや別経路は設けない。
 
+#### Scenario: 定期実行と手動実行の排他直列化
+- **WHEN** 定期 master 更新ワークフロー実行中に手動 rarity 更新ワークフローが発火されたとき
+- **THEN** 両ワークフローは共有の concurrency group（`update-master-data`）により直列化され、rarity テーブルおよび指紋の KV 書き込み競合（interleave）を防ぐ。
+
 ### Requirement: ストーム・ポッド消費なし期間の抽出
 システムは、Atlas Academy `nice_event.json` から「ストーム・ポッド消費なし期間」を抽出し、`dashboard_meta` に同梱して配信しなければならない (SHALL)。
 
