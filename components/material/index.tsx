@@ -12,6 +12,7 @@ import { createServantState, ServantState } from '../../hooks/create-chaldea-sta
 import { sumMaterials } from '../../lib/sum-materials'
 import { diffMaterialsForStartChange } from '../../lib/diff-materials'
 import { showTrackingToast, showBlockedToast } from '../../lib/tracking-toast'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
@@ -52,15 +53,15 @@ export const Index = ({
 
   // Tracking mode + possession sharing
   const [trackingMode, setTrackingMode] = useLocalStorage<boolean>(
-    'material/tracking-mode',
+    STORAGE_KEYS.TRACKING_MODE,
     false
   )
   const [trackingDismissed, setTrackingDismissed] = useLocalStorage<boolean>(
-    'material/tracking-suggest-dismissed',
+    STORAGE_KEYS.TRACKING_SUGGEST_DISMISSED,
     false
   )
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
-    'posession',
+    STORAGE_KEYS.POSSESSION,
     {}
   )
 
@@ -346,10 +347,12 @@ export const Index = ({
 
   const handleCalc = () => {
     const result = sumMaterials(chaldeaState, materials)
-    localStorage.setItem('material/result', JSON.stringify(result))
+    localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify(result))
     // Notify change tracking (dirty metadata / auto-save) — direct setItem
     // is invisible to the cloud-sync modification listener otherwise.
-    window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'material/result' } }))
+    window.dispatchEvent(
+      new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.MATERIAL_RESULT } })
+    )
     router.push('/material/result')
   }
 

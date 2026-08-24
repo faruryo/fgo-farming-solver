@@ -3,9 +3,10 @@ import { useLocalStorage } from './use-local-storage'
 import { useDashboardMeta } from './use-dashboard-meta'
 import { generateAutoTasks, mergeAutoTasks } from '../lib/todo/auto-generate'
 import { DEFAULT_TODO_SETTINGS } from '../lib/todo/settings'
+import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 import type { TodoTask, TodoSettings } from '../types/todo'
 
-const TODO_STATE_KEY = 'todoState'
+const TODO_STATE_KEY = STORAGE_KEYS.TODO_STATE
 
 const readStoredTasks = (): TodoTask[] => {
   try {
@@ -24,7 +25,10 @@ const readStoredTasks = (): TodoTask[] => {
  */
 export const useTodoTasks = () => {
   const [todoState, setTodoState] = useLocalStorage<TodoTask[]>(TODO_STATE_KEY, [])
-  const [settings, setSettings] = useLocalStorage<TodoSettings>('todoSettings', DEFAULT_TODO_SETTINGS)
+  const [settings, setSettings] = useLocalStorage<TodoSettings>(
+    STORAGE_KEYS.TODO_SETTINGS,
+    DEFAULT_TODO_SETTINGS
+  )
   const { data } = useDashboardMeta()
 
   useEffect(() => {

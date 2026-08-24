@@ -27,35 +27,16 @@ import {
   measurePayload,
 } from '../lib/cloud-sync/shrink-guard'
 import { normalizeCloudResponse, type CloudData } from '../lib/cloud-sync/parse'
+import { STORAGE_KEYS, CLOUD_SYNC_KEYS, isCloudSyncKey } from '../lib/constants/storage-keys'
 
 export type { LocalMetadata } from '../lib/cloud-sync/decision'
 export type { CloudData } from '../lib/cloud-sync/parse'
 
-export const KEYS = [
-  'material',
-  'material/result',
-  'posession',
-  'input',
-  'objective',
-  'items',
-  'quests',
-  'excludedQuests',
-  'halfDailyAp',
-  'dropMergeMethod',
-  'farming/results',
-  'dropRateKey',
-  'dropRateStyle',
-  'efficiency/surplusThreshold',
-  'efficiency/stockEnabled',
-  'efficiency/stockBuffer',
-  'masterLevel',
-  'todoState',
-  'todoSettings',
-]
+export const KEYS = CLOUD_SYNC_KEYS
 
-export const MOCK_CLOUD_KEY = 'fgo_mock_cloud_data'
-export const AUTO_SYNC_KEY = 'fgo_auto_sync_enabled'
-export const LOCAL_METADATA_KEY = 'fgo_sync_metadata'
+export const MOCK_CLOUD_KEY = STORAGE_KEYS.MOCK_CLOUD
+export const AUTO_SYNC_KEY = STORAGE_KEYS.AUTO_SYNC
+export const LOCAL_METADATA_KEY = STORAGE_KEYS.LOCAL_METADATA
 
 // Module-scoped (not per-instance refs) because the hook is mounted by
 // several components (nav, cloud-indicator, /cloud) while the events it
@@ -452,7 +433,7 @@ const [isSaving, setIsSaving] = useState(false)
       // all (the bulk 'localStorageUpdated' dispatched by local backup import,
       // which can touch many keys at once) conservatively still mark dirty since
       // we can't tell which keys changed from the event alone.
-      if (detailKey !== undefined && !KEYS.includes(detailKey)) return
+      if (detailKey !== undefined && !isCloudSyncKey(detailKey)) return
       // Skip updates triggered by applyData (any instance) to keep
       // updatedAt === lastSyncedAt (clean state)
       if (isApplyingCloudData) return

@@ -1,4 +1,5 @@
 import type { ChaldeaState, ServantState } from '../../hooks/create-chaldea-state'
+import { STORAGE_KEYS } from '../constants/storage-keys'
 
 // Loose shape of a snapshot's parsed payload. We do not enforce a tight schema
 // because /api/cloud writes a CloudData wrapper and /api/solve writes a partial
@@ -43,12 +44,12 @@ const pickStorageField = (snapshot: unknown, key: string): unknown => {
 }
 
 export const extractChaldeaState = (snapshot: unknown): ChaldeaState | null =>
-  parseJsonField<ChaldeaState>(pickStorageField(snapshot, 'material'))
+  parseJsonField<ChaldeaState>(pickStorageField(snapshot, STORAGE_KEYS.MATERIAL))
 
 export const extractItemCounts = (
   snapshot: unknown
 ): Record<string, string | number> | null => {
-  const raw = pickStorageField(snapshot, 'items')
+  const raw = pickStorageField(snapshot, STORAGE_KEYS.ITEMS)
   if (typeof raw === 'string') {
     const trimmed = raw.trim()
     if (trimmed && !trimmed.startsWith('{') && trimmed.includes(':')) {
@@ -68,7 +69,7 @@ export const extractItemCounts = (
 }
 
 export const extractCheckedQuests = (snapshot: unknown): string[] | null => {
-  const raw = pickStorageField(snapshot, 'quests')
+  const raw = pickStorageField(snapshot, STORAGE_KEYS.QUESTS)
   if (typeof raw === 'string') {
     // Two formats: JSON array (cloud) or comma-separated (solve snapshot).
     try {
@@ -103,7 +104,7 @@ export const extractPosession = (
   snapshot: unknown
 ): Record<string, number> | null => {
   const parsed = parseJsonField<Record<string, string | number | undefined>>(
-    pickStorageField(snapshot, 'posession')
+    pickStorageField(snapshot, STORAGE_KEYS.POSSESSION)
   )
   if (!parsed) return null
   const res: Record<string, number> = {}

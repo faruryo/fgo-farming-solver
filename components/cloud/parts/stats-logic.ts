@@ -1,4 +1,5 @@
 import { EnrichedItem } from '../../../lib/get-items'
+import { STORAGE_KEYS } from '../../../lib/constants/storage-keys'
 
 export interface Stats {
   ownedCount: number
@@ -24,8 +25,8 @@ interface ServantNode {
 
 export const getStats = (storage: Record<string, string | null>, items: EnrichedItem[]): Stats | null => {
   try {
-    const materialRaw = storage['material']
-    const possessionRaw = storage['posession']
+    const materialRaw = storage[STORAGE_KEYS.MATERIAL]
+    const possessionRaw = storage[STORAGE_KEYS.POSSESSION]
     
     const material = (materialRaw ? JSON.parse(materialRaw) : {}) as Record<string, ServantNode>
     const possession = (possessionRaw ? JSON.parse(possessionRaw) : {}) as Record<string, number | null>

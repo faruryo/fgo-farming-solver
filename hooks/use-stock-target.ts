@@ -6,6 +6,7 @@ import {
   StockBuffer,
   SurplusThreshold,
 } from '../lib/quest-efficiency'
+import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 /**
  * 余剰ストック目標(`stockEnabled` + カテゴリ群×レアの `stockBuffer`)を localStorage から
@@ -16,14 +17,17 @@ import {
  * (D3)。キー名・デフォルト・移行ルールの変更が1箇所で済む。
  */
 export const useStockTarget = () => {
-  const [stockEnabled, setStockEnabled] = useLocalStorage<boolean>('efficiency/stockEnabled', false)
+  const [stockEnabled, setStockEnabled] = useLocalStorage<boolean>(
+    STORAGE_KEYS.STOCK_ENABLED,
+    false
+  )
   const [rawStockBuffer, setRawStockBuffer] = useLocalStorage<Partial<StockBuffer>>(
-    'efficiency/stockBuffer',
+    STORAGE_KEYS.STOCK_BUFFER,
     {},
   )
   // 旧キー。新規には書き込まないが、ストック目標未設定ユーザーの移行元として読み続ける。
   const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
-    'efficiency/surplusThreshold',
+    STORAGE_KEYS.SURPLUS_THRESHOLD,
     DEFAULT_SURPLUS_THRESHOLD,
   )
   const stockBuffer = useMemo(

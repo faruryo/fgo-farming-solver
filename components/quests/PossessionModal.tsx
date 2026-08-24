@@ -17,6 +17,7 @@ import { StockTargetSettings } from '../common/StockTargetSettings'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { PossessionImportDialog } from '../common/possession-import/PossessionImportDialog'
 import { parsePossessionInput } from '../../lib/possession-count'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 type ItemLike = {
   id: string
@@ -40,7 +41,7 @@ export const PossessionModal: React.FC<{
 }> = ({ items, open, onOpenChange }) => {
   const { t } = useTranslation('quests')
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
-    'posession',
+    STORAGE_KEYS.POSSESSION,
     {},
   )
   const [importOpen, setImportOpen] = useState(false)

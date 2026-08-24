@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Item as FgoItem, Quest as FgoQuest, DropRate as DropRateRow } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
@@ -29,7 +30,7 @@ export type ItemProps = {
 
 export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
   const [dropRateStyle, setDropRateStyle] = useLocalStorage<DropRateStyle>(
-    'dropRateStyle',
+    STORAGE_KEYS.DROP_RATE_STYLE,
     'ap'
   )
   const { t } = useTranslation('items')

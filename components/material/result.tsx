@@ -19,6 +19,7 @@ import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 import { buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
 import { hasSelectedQuests, hasSubmittableItems, submitSolve } from '../../lib/farming/submit-solve'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -173,7 +174,10 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   const initialAmounts = Object.fromEntries(
     Object.entries(query).map(([k, v]) => [k, parseInt(typeof v === 'string' ? v : '0') || 0])
   )
-  const [amounts] = useLocalStorage<Record<string, number>>('material/result', initialAmounts)
+  const [amounts] = useLocalStorage<Record<string, number>>(
+    STORAGE_KEYS.MATERIAL_RESULT,
+    initialAmounts
+  )
 
   const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
 
@@ -187,7 +191,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   )
 
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
-    'posession',
+    STORAGE_KEYS.POSSESSION,
     Object.fromEntries(trackedItems.map(item => [item.id.toString(), 0]))
   )
 

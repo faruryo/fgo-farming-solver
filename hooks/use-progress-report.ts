@@ -15,6 +15,7 @@ import {
   type WindowLapValues,
 } from '../lib/progress/select-baseline'
 import { resolveStockBuffer, type PartialStockBuffer, type SurplusThreshold } from '../lib/quest-efficiency'
+import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 const readJson = <T,>(key: string): T | null => {
   if (typeof window === 'undefined') return null
@@ -28,9 +29,9 @@ const readJson = <T,>(key: string): T | null => {
 }
 
 const buildCurrentState = (totalAp: number | null) => ({
-  chaldea: readJson<ChaldeaState>('material'),
-  itemCounts: readJson<Record<string, string | number>>('items'),
-  checkedQuests: readJson<string[]>('quests'),
+  chaldea: readJson<ChaldeaState>(STORAGE_KEYS.MATERIAL),
+  itemCounts: readJson<Record<string, string | number>>(STORAGE_KEYS.ITEMS),
+  checkedQuests: readJson<string[]>(STORAGE_KEYS.QUESTS),
   totalAp,
 })
 
@@ -64,7 +65,7 @@ export const useProgressReport = (
           signal,
         })
         if (!res.ok) throw new Error(`status ${res.status}`)
-        setData((await res.json()) as ProgressResponse)
+        setData((await res.json()))
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') return
         setError(e instanceof Error ? e.message : 'unknown')
@@ -96,25 +97,28 @@ export const useProgressReport = (
   // useMemo は data/drops のみを依存配列にしているため、localStorage の値そのものが
   // (data/drops を変えずに)更新された場合は再計算されない。ここで生文字列を読んで
   // 依存配列に含め、値が変わった際の再レンダリングで確実に再計算させる。
-  const rawPosession = typeof window !== 'undefined' ? localStorage.getItem('posession') : null
-  const rawTargets = typeof window !== 'undefined' ? localStorage.getItem('material/result') : null
-  const rawQuests = typeof window !== 'undefined' ? localStorage.getItem('quests') : null
+  const rawPosession =
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.POSSESSION) : null
+  const rawTargets =
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.MATERIAL_RESULT) : null
+  const rawQuests =
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.QUESTS) : null
   const rawStockEnabled =
-    typeof window !== 'undefined' ? localStorage.getItem('efficiency/stockEnabled') : null
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.STOCK_ENABLED) : null
   const rawStockBuffer =
-    typeof window !== 'undefined' ? localStorage.getItem('efficiency/stockBuffer') : null
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.STOCK_BUFFER) : null
   const rawSurplusThreshold =
-    typeof window !== 'undefined' ? localStorage.getItem('efficiency/surplusThreshold') : null
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.SURPLUS_THRESHOLD) : null
 
   const current = useMemo<PeriodSummary | null>(() => {
     if (!data) return null
 
-    const posession = readJson<Record<string, number>>('posession') ?? {}
-    const targets = readJson<Record<string, number>>('material/result') ?? {}
-    const selectedQuestIds = readJson<string[]>('quests') ?? []
-    const stockEnabled = readJson<boolean>('efficiency/stockEnabled') ?? false
-    const rawStockBuffer = readJson<PartialStockBuffer>('efficiency/stockBuffer')
-    const legacySurplusThreshold = readJson<SurplusThreshold>('efficiency/surplusThreshold')
+    const posession = readJson<Record<string, number>>(STORAGE_KEYS.POSSESSION) ?? {}
+    const targets = readJson<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT) ?? {}
+    const selectedQuestIds = readJson<string[]>(STORAGE_KEYS.QUESTS) ?? []
+    const stockEnabled = readJson<boolean>(STORAGE_KEYS.STOCK_ENABLED) ?? false
+    const rawStockBuffer = readJson<PartialStockBuffer>(STORAGE_KEYS.STOCK_BUFFER)
+    const legacySurplusThreshold = readJson<SurplusThreshold>(STORAGE_KEYS.SURPLUS_THRESHOLD)
     const stockBuffer = resolveStockBuffer(rawStockBuffer, legacySurplusThreshold)
 
     // 各窓(d30/d60/d90)ごとに前進周回・AP相当・労力周回を算出する。drops が無ければ

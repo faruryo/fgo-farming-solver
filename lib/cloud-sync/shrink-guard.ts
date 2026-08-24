@@ -20,6 +20,7 @@ export const SHRINK_RATIO = 0.5
 export const MISSING_KEYS_THRESHOLD = 2
 
 import { parseRecord } from './parse'
+import { STORAGE_KEYS } from '../constants/storage-keys'
 
 type ServantNode = {
   disabled?: boolean
@@ -30,8 +31,8 @@ type StorageLike = Record<string, string | null | undefined>
 // 保存内容の規模を件数で測る。0(空)と null(測定不能)の区別がガードの成立条件
 // なので、パース失敗を 0 に潰してはいけない。
 export const measurePayload = (storage: StorageLike): PayloadScale | null => {
-  const material = parseRecord(storage['material'])
-  const possession = parseRecord(storage['posession'])
+  const material = parseRecord(storage[STORAGE_KEYS.MATERIAL])
+  const possession = parseRecord(storage[STORAGE_KEYS.POSSESSION])
   if (material === null || possession === null) return null
 
   // stats-logic.ts の getStats と同じ除外条件。`disabled` 未定義は有効。
