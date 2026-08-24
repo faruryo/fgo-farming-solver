@@ -107,10 +107,10 @@ FGO周回ソルバーが必要とする最新のアイテム情報、クエス�
 - **THEN** `campaigns` フィールドを参照しない既存クライアントは従来どおり動作する。
 
 ### Requirement: campaigns の cron 周期と整合
-システムは、`campaigns` の鮮度をマスターデータ更新の cron 周期と一致させなければならない (SHALL)。
+システムは、`campaigns` の鮮度をマスターデータ更新の cron 周期（2時間ごと）と一致させなければならない (SHALL)。
 
-#### Scenario: 毎時更新時のキャンペーン更新
-- **WHEN** マスターデータ更新 cron が走るとき
+#### Scenario: 2時間周期の定期更新時のキャンペーン更新
+- **WHEN** マスターデータ更新 cron（2時間ごと）が走るとき
 - **THEN** `campaigns` フィールドも同じパス内で再生成され、KV に保存される。
 
 ### Requirement: nice_war の条件付き GET による再 parse 回避
@@ -135,25 +135,33 @@ FGO周回ソルバーが必要とする最新のアイテム情報、クエス�
 - **THEN** 23MB を 1 度だけ parse して compact マッピング (`id/name/spotName/afterClear/warLongName`) を構築する。
 - **THEN** 正規化済み (strong) ETag と `Last-Modified` を検証子としてキャッシュに保存し、次回の 304 成立に備える。
 
-### Requirement: rarity AP テーブルの指紋ベース再計算ゲート
-システムは、rarity AP テーブル専用 worker (`fgo-rarity-updater`) において、入力 drops が rarity AP に影響する形で変化したときのみ再計算を行わなければならない (SHALL)。これにより毎時の cron 実行で最大 50 回の LP ソルブが無条件に走って `exceededCpu` を頻発させる状態を避ける。
+### Requirement: rarity AP テーブルの指紋ベース再計算ゲートと master 更新との統合実行
+システムは、rarity AP テーブル更新処理（`scripts/run-rarity-updater.ts`）において、入力 drops が rarity AP に影響する形で変化したときのみ再計算を行わなければならない (SHALL)。また、マスターデータ更新ワークフローにおいて master 更新に続けて rarity 更新を実行し、master 側の後続フェーズ（dashboard/servants）が部分失敗した場合でも永続化された `all_drops_json` に基づき rarity テーブルを追従・整合させなければならない (SHALL)。
 
 #### Scenario: 入力が実質不変なら再計算をスキップ
-- **WHEN** rarity worker が `all_drops_json` を読み、`quests`(id/ap)と `drop_rates`(quest_id/item_id/drop_rate)から算出した指紋が前回保存値 (`rarity_ap_tables_fp`) と一致し、かつ既存の `rarity_ap_tables` が存在するとき
-- **THEN** worker は `buildRarityApTables` を呼ばずにスキップし、KV を変更しない。
+- **WHEN** rarity 更新処理が `all_drops_json` を読み、`quests`(id/ap)と `drop_rates`(quest_id/item_id/drop_rate)から算出した指紋が前回保存値 (`rarity_ap_tables_fp`) と一致し、かつ既存の `rarity_ap_tables` が存在するとき
+- **THEN** 更新処理は `buildRarityApTables` を呼ばずにスキップし、KV を変更しない。
 
 #### Scenario: AP に効く入力が変化したら再計算
 - **WHEN** `quests.ap`(AP キャンペーン反映を含む)または `drop_rates`、あるいはクエスト件数が前回から変化し、指紋が一致しないとき
-- **THEN** worker は `buildRarityApTables` を実行して `rarity_ap_tables` を更新し、その後に新しい指紋を `rarity_ap_tables_fp` へ保存する。
+- **THEN** 更新処理は `buildRarityApTables` を実行して `rarity_ap_tables` を更新し、その後に新しい指紋を `rarity_ap_tables_fp` へ保存する。
 
 #### Scenario: AP に効かない揺れでは再計算しない
 - **WHEN** `waveCount` のインクリメンタル埋めや配列順の変化のみで `all_drops_json` が書き換わったとき
 - **THEN** 指紋は変化せず、再計算はスキップされる。
 
+#### Scenario: master 更新の部分失敗時にも rarity を追従
+- **WHEN** master 更新処理において `all_drops_json` の保存後に dashboard または servants の更新が失敗して master step が exit 1 となったとき
+- **THEN** 後続の rarity 更新ステップはスキップされずに実行され、新しく保存された `all_drops_json` を読み込んで rarity テーブルを更新・整合させる。
+
 #### Scenario: 再計算失敗時は指紋を据え置く
-- **WHEN** `buildRarityApTables` が例外を投げた、または `exceededCpu` で中断したとき
-- **THEN** `rarity_ap_tables_fp` は更新されず、次回 cron が同じ入力で再試行する。
+- **WHEN** `buildRarityApTables` が例外を投げたとき
+- **THEN** `rarity_ap_tables_fp` は更新されず、次回 cron または手動実行が同じ入力で再試行する。
 - **THEN** 個別の更新エンドポイントや別経路は設けない。
+
+#### Scenario: 定期実行と手動実行の排他直列化
+- **WHEN** 定期 master 更新ワークフロー実行中に手動 rarity 更新ワークフローが発火されたとき
+- **THEN** 両ワークフローは共有の concurrency group（`update-master-data`）により直列化され、rarity テーブルおよび指紋の KV 書き込み競合（interleave）を防ぐ。
 
 ### Requirement: ストーム・ポッド消費なし期間の抽出
 システムは、Atlas Academy `nice_event.json` から「ストーム・ポッド消費なし期間」を抽出し、`dashboard_meta` に同梱して配信しなければならない (SHALL)。
