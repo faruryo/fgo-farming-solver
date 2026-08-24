@@ -63,7 +63,7 @@ pnpm exec wrangler kv namespace create "MASTER_DATA"
 
 マスターデータ(`all_drops_json` / `dashboard_meta` / `servants_list`)および rarity AP テーブル(`rarity_ap_tables`)の更新は GitHub Actions の定期ワークフローが行います（旧 fgo-data-updater cron worker は廃止済み。Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため、worker では実行しない）:
 
-- `.github/workflows/update-master-data.yml` — 2時間ごと。`scripts/run-updater.ts` および `scripts/run-rarity-updater.ts` を順次実行し Cloudflare REST API で KV を一括更新
+- `.github/workflows/update-master-data.yml` — 2時間ごと。`scripts/run-updater.ts` および `scripts/run-rarity-updater.ts` を順次実行し Cloudflare REST API で KV を同一jobで順次更新
 - `.github/workflows/update-rarity-tables.yml` — 単体手動再計算用（定期実行は update-master-data.yml 内で統合実行）
 - `.github/workflows/refresh-nice-war.yml` — 12時間ごと(JST 18:43, 06:43)。nice_war(23MB)の compact マッピングを KV (`nice_war_aaquests`) へ
 - `.github/workflows/send-todo-notifications.yml` — 毎時。TODO 期限リマインダの Web Push 配信
