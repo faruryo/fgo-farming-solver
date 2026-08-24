@@ -1,15 +1,16 @@
 name: Update master data
 
-# 旧 fgo-data-updater worker(30分ごとの cron)の移管先。
+# 旧 fgo-data-updater worker の移管先。
 # Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため
 # (実測: 改善後でも定常 ~120ms → 時折 exceededCpu)、CPU 無制限の CI で実行する。
-# 処理本体: scripts/run-updater.ts(drops / dashboard_meta / servants_list を KV へ)。
-# 注: GitHub の schedule は混雑帯(:00/:15/:30/:45)で大幅に間引かれる(実測:
-# */30 指定で 8 時間に 1 回しか発火しなかった)。混雑を避けた半端な分を指定すること。
+# 処理本体: scripts/run-updater.ts (drops / dashboard_meta / servants_list)
+# および scripts/run-rarity-updater.ts (rarity_ap_tables)。
+# 注: GitHub の schedule は混雑帯(:00/:15/:30/:45)で大幅に間引かれるため、混雑を避けた半端な分(:08)を指定。
+# FGO 更新コアタイム (18:00 JST = 09:00 UTC) を含む 2 時間間隔 (UTC 奇数時) で実行。
 
 on:
   schedule:
-    - cron: '8,38 * * * *'
+    - cron: '8 1-23/2 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -18,7 +19,7 @@ concurrency:
 
 jobs:
   update:
-    name: Update master data KV
+    name: Update master data and rarity tables KV
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -38,6 +39,12 @@ jobs:
 
       - name: Run master data update
         run: pnpm exec tsx scripts/run-updater.ts
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Run rarity AP tables update
+        run: pnpm exec tsx scripts/run-rarity-updater.ts
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

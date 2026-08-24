@@ -3,11 +3,11 @@ name: Refresh nice_war KV cache
 # fgo-data-updater(Workers 無料プラン)で 23MB の nice_war を parse すると
 # exceededCpu がほぼ確実なため、CPU 無制限の CI 側で compact 化して KV を更新する。
 # worker は KV(nice_war_aaquests)を読むだけ(lib/master-data/update.ts 参照)。
-# Atlas の war 更新は週数回程度なので 6 時間ごとで十分。
+# Atlas の war 更新は週数回程度なので 12 時間ごと(JST 18:43, 06:43)で十分。
 
 on:
   schedule:
-    - cron: '43 1,7,13,19 * * *'
+    - cron: '43 9,21 * * *'
   workflow_dispatch:
 
 jobs:

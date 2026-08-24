@@ -5,10 +5,10 @@ name: Code quality reports
 # - Knip can have false positives for framework and dynamically-invoked entries.
 # Blocking on the first inventory would encourage blanket ignore rules. Promote a
 # detector to a required gate only after its backlog is drained and its signal is proven.
+#
+# PR 時に全量監査されるため、マージ後の main push 重複実行は行わず PR と週次 cron で担保する。
 on:
   pull_request:
-  push:
-    branches: [main]
   schedule:
     # Weekly at an off-peak minute (Monday 18:23 UTC / Tuesday 03:23 JST).
     - cron: '23 18 * * 1'

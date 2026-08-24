@@ -61,11 +61,12 @@ pnpm exec wrangler kv namespace create "MASTER_DATA"
 
 #### 2. マスターデータの自動更新（GitHub Actions）
 
-マスターデータ(`all_drops_json` / `dashboard_meta` / `servants_list`)の更新は GitHub Actions の定期ワークフローが行います（旧 fgo-data-updater cron worker は廃止済み。Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため、worker では実行しない）:
+マスターデータ(`all_drops_json` / `dashboard_meta` / `servants_list`)および rarity AP テーブル(`rarity_ap_tables`)の更新は GitHub Actions の定期ワークフローが行います（旧 fgo-data-updater cron worker は廃止済み。Workers 無料プランは公称 CPU 10ms 超の invocation を確率的に kill するため、worker では実行しない）:
 
-- `.github/workflows/update-master-data.yml` — 30分ごと。`scripts/run-updater.ts` を実行し Cloudflare REST API で KV を更新
-- `.github/workflows/update-rarity-tables.yml` — 毎時 :15。`scripts/run-rarity-updater.ts`(指紋ゲートつき LP ソルブ)で `rarity_ap_tables` を更新
-- `.github/workflows/refresh-nice-war.yml` — 6時間ごと。nice_war(23MB)の compact マッピングを KV (`nice_war_aaquests`) へ
+- `.github/workflows/update-master-data.yml` — 2時間ごと。`scripts/run-updater.ts` および `scripts/run-rarity-updater.ts` を順次実行し Cloudflare REST API で KV を一括更新
+- `.github/workflows/update-rarity-tables.yml` — 単体手動再計算用（定期実行は update-master-data.yml 内で統合実行）
+- `.github/workflows/refresh-nice-war.yml` — 12時間ごと(JST 18:43, 06:43)。nice_war(23MB)の compact マッピングを KV (`nice_war_aaquests`) へ
+- `.github/workflows/send-todo-notifications.yml` — 毎時。TODO 期限リマインダの Web Push 配信
 
 前提: リポジトリ secrets の `CLOUDFLARE_API_TOKEN` に **Workers KV Storage:Edit** 権限が必要です。Atlas が空応答を返したり fetch が落ちた場合は、KV 保護層（validation）が働いて既存の正常データを温存します。
 

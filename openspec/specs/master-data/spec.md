@@ -109,7 +109,7 @@ FGO周回ソルバーが必要とする最新のアイテム情報、クエス�
 ### Requirement: campaigns の cron 周期と整合
 システムは、`campaigns` の鮮度をマスターデータ更新の cron 周期と一致させなければならない (SHALL)。
 
-#### Scenario: 毎時更新時のキャンペーン更新
+#### Scenario: 定期更新時のキャンペーン更新
 - **WHEN** マスターデータ更新 cron が走るとき
 - **THEN** `campaigns` フィールドも同じパス内で再生成され、KV に保存される。
 
@@ -136,15 +136,15 @@ FGO周回ソルバーが必要とする最新のアイテム情報、クエス�
 - **THEN** 正規化済み (strong) ETag と `Last-Modified` を検証子としてキャッシュに保存し、次回の 304 成立に備える。
 
 ### Requirement: rarity AP テーブルの指紋ベース再計算ゲート
-システムは、rarity AP テーブル専用 worker (`fgo-rarity-updater`) において、入力 drops が rarity AP に影響する形で変化したときのみ再計算を行わなければならない (SHALL)。これにより毎時の cron 実行で最大 50 回の LP ソルブが無条件に走って `exceededCpu` を頻発させる状態を避ける。
+システムは、rarity AP テーブル更新処理（`scripts/run-rarity-updater.ts`）において、入力 drops が rarity AP に影響する形で変化したときのみ再計算を行わなければならない (SHALL)。これにより不要な LP ソルブの無条件実行を避ける。
 
 #### Scenario: 入力が実質不変なら再計算をスキップ
-- **WHEN** rarity worker が `all_drops_json` を読み、`quests`(id/ap)と `drop_rates`(quest_id/item_id/drop_rate)から算出した指紋が前回保存値 (`rarity_ap_tables_fp`) と一致し、かつ既存の `rarity_ap_tables` が存在するとき
-- **THEN** worker は `buildRarityApTables` を呼ばずにスキップし、KV を変更しない。
+- **WHEN** rarity 更新処理が `all_drops_json` を読み、`quests`(id/ap)と `drop_rates`(quest_id/item_id/drop_rate)から算出した指紋が前回保存値 (`rarity_ap_tables_fp`) と一致し、かつ既存の `rarity_ap_tables` が存在するとき
+- **THEN** 更新処理は `buildRarityApTables` を呼ばずにスキップし、KV を変更しない。
 
 #### Scenario: AP に効く入力が変化したら再計算
 - **WHEN** `quests.ap`(AP キャンペーン反映を含む)または `drop_rates`、あるいはクエスト件数が前回から変化し、指紋が一致しないとき
-- **THEN** worker は `buildRarityApTables` を実行して `rarity_ap_tables` を更新し、その後に新しい指紋を `rarity_ap_tables_fp` へ保存する。
+- **THEN** 更新処理は `buildRarityApTables` を実行して `rarity_ap_tables` を更新し、その後に新しい指紋を `rarity_ap_tables_fp` へ保存する。
 
 #### Scenario: AP に効かない揺れでは再計算しない
 - **WHEN** `waveCount` のインクリメンタル埋めや配列順の変化のみで `all_drops_json` が書き換わったとき
