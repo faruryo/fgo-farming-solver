@@ -21,12 +21,13 @@ import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { isBothResult, Quest } from '../../interfaces/api'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import { getRecommendedQuestPriorityLaps } from '../../lib/recommended-quest-priority'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
-const SORT_MODE_STORAGE_KEY = 'dashboard.recommendedQuest.sortMode'
+const SORT_MODE_STORAGE_KEY = STORAGE_KEYS.DASHBOARD_RECOMMENDED_QUEST_SORT_MODE
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
-  const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
+  const [chaldea] = useLocalStorage<ChaldeaState>(STORAGE_KEYS.MATERIAL, {})
   const drops = useDrops()
   const { items, quests, drop_rates, isLoading: dropsLoading } = drops
   const { result: recentResult, loading: resultLoading } = useRecentResult()

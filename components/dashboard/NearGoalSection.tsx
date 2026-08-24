@@ -18,8 +18,9 @@ import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { computeEffectiveAp } from '../../lib/solver'
 import { isBothResult } from '../../interfaces/api'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
-const SORT_MODE_STORAGE_KEY = 'dashboard.nearGoal.sortMode'
+const SORT_MODE_STORAGE_KEY = STORAGE_KEYS.DASHBOARD_NEAR_GOAL_SORT_MODE
 
 type NearGoalSortMode = 'efficiency' | 'laps'
 
@@ -49,7 +50,10 @@ export const NearGoalSection: React.FC = () => {
   const { activeCampaigns, nowSec } = useActiveCampaigns(drops.campaigns)
   const { data: dashboardMeta } = useDashboardMeta()
   const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
-  const [possession] = useLocalStorage<Record<string, number | undefined>>('posession', {})
+  const [possession] = useLocalStorage<Record<string, number | undefined>>(
+    STORAGE_KEYS.POSSESSION,
+    {}
+  )
 
   const nearGoalEntries = useMemo(() => {
     if (!displayResult || !dropItems?.length) return []

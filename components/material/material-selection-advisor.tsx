@@ -16,6 +16,7 @@ import {
 import { buildNeedByApiItemId, effectiveDeficiency } from '../../lib/quest-efficiency'
 import { useStockTarget } from '../../hooks/use-stock-target'
 import { ServantPraise } from '../farming/ServantPraise'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -41,7 +42,7 @@ type AdvisorConfig = {
   mode: DenominatorMode
 }
 
-const STORAGE_KEY = 'material/selection-advisor-config'
+const STORAGE_KEY = STORAGE_KEYS.MATERIAL_SELECTION_ADVISOR
 const DEFAULT_CONFIG: AdvisorConfig = { candidateIds: [], total: 0, mode: 'ap' }
 
 const unit = (mode: DenominatorMode) => (mode === 'ap' ? 'AP' : '周回')

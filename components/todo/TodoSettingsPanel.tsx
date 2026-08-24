@@ -10,9 +10,11 @@ import { DEFAULT_TODO_SETTINGS } from '../../lib/todo/settings'
 import { urlBase64ToUint8Array, isPushSupported, isIosFamily, PushSubscribeError } from '../../lib/todo/push'
 import type { TodoSettings } from '../../types/todo'
 
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+
 // プッシュ通知 ON/OFF の端末ローカル専用キー。todoSettings(クラウド同期対象)からは
 // 分離済み(openspec/changes/push-settings-isolation design.md Decisions #1)。
-const PUSH_ENABLED_KEY = 'fgo_push_enabled'
+const PUSH_ENABLED_KEY = STORAGE_KEYS.PUSH_ENABLED
 
 const ROWS: { key: keyof TodoSettings; labelKey: string }[] = [
   { key: 'autoDaily', labelKey: 'デイリーミッションの自動追加' },
@@ -37,7 +39,7 @@ const subscribeToPush = async (): Promise<void> => {
     navigator.serviceWorker.ready,
   ])
   if (!keyRes.ok) throw new PushSubscribeError('server-error', 'Failed to fetch VAPID public key')
-  const { publicKey } = (await keyRes.json()) as { publicKey: string }
+  const { publicKey } = (await keyRes.json())
 
   let subscription: PushSubscription
   try {
@@ -94,7 +96,7 @@ const migratePushEnabled = async (): Promise<void> => {
 
   let legacyEnabled = false
   try {
-    const raw = localStorage.getItem('todoSettings')
+    const raw = localStorage.getItem(STORAGE_KEYS.TODO_SETTINGS)
     if (raw) legacyEnabled = (JSON.parse(raw) as { pushEnabled?: boolean }).pushEnabled === true
   } catch (e) {
     console.error('Failed to parse legacy todoSettings during pushEnabled migration', e)
@@ -128,7 +130,10 @@ const migratePushEnabled = async (): Promise<void> => {
 export const TodoSettingsPanel: React.FC = () => {
   const { t } = useTranslation('common')
   const { data: session } = useSession()
-  const [settings, setSettings] = useLocalStorage<TodoSettings>('todoSettings', DEFAULT_TODO_SETTINGS)
+  const [settings, setSettings] = useLocalStorage<TodoSettings>(
+    STORAGE_KEYS.TODO_SETTINGS,
+    DEFAULT_TODO_SETTINGS
+  )
   const [pushEnabled, setPushEnabled] = useLocalStorage<boolean>(PUSH_ENABLED_KEY, false)
   const [pushBusy, setPushBusy] = useState(false)
   // 判定中(null)はトグルを disabled にし、SSR/ハイドレーション不一致を避けるためマウント後に評価する

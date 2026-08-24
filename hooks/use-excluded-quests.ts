@@ -7,6 +7,7 @@ import {
   useRef,
 } from 'react'
 import { useLocalStorage } from './use-local-storage'
+import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 /**
  * 周回対象クエスト選択の永続化ロジック。
@@ -32,22 +33,22 @@ export const useExcludedQuests = (
   // 上書きしない）。useLocalStorage('excludedQuests') より先に宣言し、その読み出し
   // effect より前に移行が完了するようにする（effect は宣言順に実行される）。
   useEffect(() => {
-    if (localStorage.getItem('excludedQuests') != null) return
-    const json = localStorage.getItem('quests')
+    if (localStorage.getItem(STORAGE_KEYS.EXCLUDED_QUESTS) != null) return
+    const json = localStorage.getItem(STORAGE_KEYS.QUESTS)
     if (json == null) return
     try {
       const checked = JSON.parse(json) as unknown
       if (!Array.isArray(checked)) return
       const checkedSet = new Set(checked as string[])
       const excluded = questIds.filter((id) => !checkedSet.has(id))
-      localStorage.setItem('excludedQuests', JSON.stringify(excluded))
+      localStorage.setItem(STORAGE_KEYS.EXCLUDED_QUESTS, JSON.stringify(excluded))
     } catch (e) {
       console.error(e)
     }
   }, [])
 
   const [excludedQuests, setExcludedQuests] = useLocalStorage<string[]>(
-    'excludedQuests',
+    STORAGE_KEYS.EXCLUDED_QUESTS,
     []
   )
 
@@ -82,10 +83,10 @@ export const useExcludedQuests = (
       return
     }
     const json = JSON.stringify(checkedQuests)
-    if (localStorage.getItem('quests') !== json) {
-      localStorage.setItem('quests', json)
+    if (localStorage.getItem(STORAGE_KEYS.QUESTS) !== json) {
+      localStorage.setItem(STORAGE_KEYS.QUESTS, json)
       window.dispatchEvent(
-        new CustomEvent('ls-sync', { detail: { key: 'quests' } })
+        new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.QUESTS } })
       )
     }
   }, [checkedQuests])

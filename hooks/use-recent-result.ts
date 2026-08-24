@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Result, BothResult } from '../interfaces/api'
+import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 export function useRecentResult() {
   const [result, setResult] = useState<Result | BothResult | null>(null)
@@ -11,7 +12,7 @@ export function useRecentResult() {
       try {
         let id = ''
         // Try getting from localStorage
-        const url = localStorage.getItem('farming/results')
+        const url = localStorage.getItem(STORAGE_KEYS.FARMING_RESULTS)
         if (url && url.startsWith('/farming/results/')) {
           id = url.split('/farming/results/')[1]
         }

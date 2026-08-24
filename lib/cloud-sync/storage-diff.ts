@@ -14,6 +14,7 @@ export type PossessionDelta = {
 }
 
 import { parseRecord } from './parse'
+import { STORAGE_KEYS } from '../constants/storage-keys'
 
 // キー 1 つぶんの内訳。size は「数えられなかった」= null と「0 件」を区別する。
 export type KeyDelta = {
@@ -34,8 +35,8 @@ export const diffPossessions = (
   next: StorageLike,
   cloud: StorageLike,
 ): PossessionDelta[] | null => {
-  const nextMap = parseRecord(next['posession'])
-  const cloudMap = parseRecord(cloud['posession'])
+  const nextMap = parseRecord(next[STORAGE_KEYS.POSSESSION])
+  const cloudMap = parseRecord(cloud[STORAGE_KEYS.POSSESSION])
   if (nextMap === null || cloudMap === null) return null
 
   // クラウドにしか無い素材（丸ごと消えるもの）こそ主役なので、両側の id を合わせる。

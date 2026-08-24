@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { CHART_COLORS } from '../../constants/chart-colors'
 import { useLocalStorage } from '../../hooks/use-local-storage'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
 import NextLink from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -14,7 +15,7 @@ import { ProgressReportPanel } from '../farming/ProgressReportPanel'
 
 export const ProgressSection: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common'])
-  const [chaldea] = useLocalStorage<ChaldeaState>('material', {})
+  const [chaldea] = useLocalStorage<ChaldeaState>(STORAGE_KEYS.MATERIAL, {})
   const [isMounted, setIsMounted] = React.useState(false)
   const drops = useDrops()
   // 現在 total_ap はパネル表示に必須ではない(減少はクライアント再ソルブで算出)ため null。

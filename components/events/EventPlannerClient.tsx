@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { useLocalStorage } from '../../hooks/use-local-storage'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import {
   calcBoxLayer,
   allocateShop,
@@ -31,7 +32,7 @@ import { MAX_MASTER_LEVEL } from '../../lib/master-profile/max-ap'
 import { computeApBudget } from '../../lib/ap-budget'
 
 /** 所持黄金の果実数の localStorage キー（端末ローカル: KEYS 非登録）。 */
-const GOLDEN_FRUIT_KEY = 'events/goldenFruit'
+const GOLDEN_FRUIT_KEY = STORAGE_KEYS.EVENTS_GOLDEN_FRUIT
 
 interface Props {
   event: EventPlannerEvent
@@ -62,8 +63,11 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const { t } = useTranslation('events')
 
   // ── Roster (read-only) ───────────────────────────────────────────────────────
-  const [chaldeaState] = useLocalStorage<ChaldeaState>('material', {})
-  const [possessionRaw] = useLocalStorage<Record<string, string | number>>('items', {})
+  const [chaldeaState] = useLocalStorage<ChaldeaState>(STORAGE_KEYS.MATERIAL, {})
+  const [possessionRaw] = useLocalStorage<Record<string, string | number>>(
+    STORAGE_KEYS.ITEMS,
+    {}
+  )
 
   // Normalize possession to Record<string, number>
   const possession = useMemo<Record<string, number>>(() => {

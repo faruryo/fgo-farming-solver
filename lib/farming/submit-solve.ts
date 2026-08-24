@@ -1,4 +1,5 @@
 import { saveProgressSnapshot } from '../progress/snapshot-client'
+import { STORAGE_KEYS } from '../constants/storage-keys'
 
 /**
  * `items=`(または `itemsStock=`)クエリが送信可能な内容を持つか。
@@ -28,11 +29,11 @@ export const submitSolve = async (
   const result = await fetch(url).then((res) => res.json() as unknown)
   if (hasId(result) && typeof result.id == 'string') {
     const resultUrl = `/farming/results/${result.id}`
-    localStorage.setItem('farming/results', resultUrl)
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULTS, resultUrl)
     // Notify change tracking (dirty metadata / auto-save) — direct
     // setItem is invisible to the cloud-sync modification listener.
     window.dispatchEvent(
-      new CustomEvent('ls-sync', { detail: { key: 'farming/results' } })
+      new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.FARMING_RESULTS } })
     )
     // Persist a full-state progress snapshot (incl. material) for this run.
     // Fire-and-forget so it never blocks navigation to the result page.

@@ -6,9 +6,10 @@ import {
   MAX_MASTER_LEVEL,
   maxApForLevel,
 } from '../lib/master-profile/max-ap'
+import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 /** masterLevel の localStorage キー。use-cloud-sync の KEYS に登録され自動同期される。 */
-export const MASTER_LEVEL_KEY = 'masterLevel'
+export const MASTER_LEVEL_KEY = STORAGE_KEYS.MASTER_LEVEL
 
 /**
  * マスターレベルを保持し、最大AP を導出する横断プロフィールフック。

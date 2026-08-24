@@ -14,6 +14,7 @@ import { useQuestTree } from '../../hooks/use-quest-tree'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { hasSelectedQuests, hasSubmittableItems, submitSolve } from '../../lib/farming/submit-solve'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { ItemFieldset } from './item-fieldset'
@@ -50,7 +51,7 @@ const inputToQuery = ({ itemCounts, checkedQuests }: InputState) => ({
 })
 
 const migrateLocalInput = () => {
-  const json = localStorage.getItem('input')
+  const json = localStorage.getItem(STORAGE_KEYS.INPUT)
   if (json == null || json == 'undefined') {
     return
   }
@@ -60,7 +61,7 @@ const migrateLocalInput = () => {
       localStorage.setItem(key, JSON.stringify(value))
     )
   }
-  localStorage.removeItem('input')
+  localStorage.removeItem(STORAGE_KEYS.INPUT)
 }
 const hasItems = (arg: unknown): arg is { items: unknown } =>
   typeof arg == 'object' && arg != null && 'items' in arg
@@ -78,7 +79,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     [items]
   )
   const [itemCounts, setItemCounts] = useLocalStorage(
-    'items',
+    STORAGE_KEYS.ITEMS,
     initialItemCounts
   )
 
