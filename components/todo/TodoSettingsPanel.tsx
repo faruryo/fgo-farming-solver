@@ -39,7 +39,7 @@ const subscribeToPush = async (): Promise<void> => {
     navigator.serviceWorker.ready,
   ])
   if (!keyRes.ok) throw new PushSubscribeError('server-error', 'Failed to fetch VAPID public key')
-  const { publicKey } = (await keyRes.json())
+  const { publicKey } = (await keyRes.json()) as { publicKey: string }
 
   let subscription: PushSubscription
   try {

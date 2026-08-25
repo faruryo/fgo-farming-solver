@@ -669,12 +669,12 @@
     {
       "file": "components/material/index.tsx",
       "rule": "react-hooks/set-state-in-effect",
-      "count": 4
+      "count": 3
     },
     {
       "file": "components/material/index.tsx",
       "rule": "security/detect-object-injection",
-      "count": 15
+      "count": 5
     },
     {
       "file": "components/material/index.tsx",
@@ -1053,11 +1053,6 @@
     },
     {
       "file": "hooks/use-cloud-sync.test.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "hooks/use-cloud-sync.test.tsx",
       "rule": "@typescript-eslint/no-unsafe-assignment",
       "count": 1
     },
@@ -1149,11 +1144,6 @@
     {
       "file": "hooks/use-pod-free-quests.ts",
       "rule": "sonarjs/reduce-initial-value",
-      "count": 1
-    },
-    {
-      "file": "hooks/use-progress-report.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
       "count": 1
     },
     {

@@ -15,10 +15,10 @@ import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { parsePossessionInput } from '../../lib/possession-count'
 import { EnrichedItem } from '../../lib/get-items'
 import { Quest } from '../../interfaces/fgodrop'
-import { toApiItemId } from '../../lib/to-api-item-id'
 import { groupBy } from '../../utils/group-by'
 import { buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
-import { hasSelectedQuests, hasSubmittableItems, submitSolve } from '../../lib/farming/submit-solve'
+import { submitSolve } from '../../lib/farming/submit-solve'
+import { buildSolveParams, toStockItemLike } from '../../lib/farming/build-solve-params'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -55,14 +55,6 @@ const EXCLUDED_ITEM_IDS = new Set([7998]) // 聖杯の雫
 
 const bgColor = (bg: string) =>
   bg === 'bronze' ? '#b06030' : bg === 'silver' ? '#6878a8' : '#9a7224'
-
-// getItems が付与済みの category/largeCategory を、buffer
-// (lib/item-rarity.ts ベース)が読む ItemLike 形にそのまま渡す。
-const toStockItemLike = (item: EnrichedItem): { id: string; category: string; largeCategory: string } => ({
-  id: item.id.toString(),
-  category: item.category,
-  largeCategory: item.largeCategory,
-})
 
 type MatCardProps = {
   item: EnrichedItem
@@ -283,63 +275,40 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     [trackedItems, amounts]
   )
 
-  // 目標A: max(0, 必要数 − 所持)。stock-only 素材(充足済みだが buffer 分が不足)は含まれない。
-  const queryItemsA = useMemo(() => {
-    const plainDeficiency = (item: EnrichedItem): number =>
-      Math.max(
-        0,
-        (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0),
-      )
-    return solverItems
-      .filter(item => plainDeficiency(item) > 0 && toApiItemId(item, items))
-      .map(item => `${toApiItemId(item, items)}:${plainDeficiency(item)}`)
-      .join(',')
-  }, [solverItems, amounts, possession, items])
-
-  // 目標B: effectiveDeficiency = max(0, 必要数+buffer(item)−所持)。
-  // stock-only 素材(A=0 だが B>0)も含む。stockEnabled=OFF のときは常に空文字。
-  const queryItemsB = useMemo(() => {
-    if (!stockEnabled) return ''
-    const effDef = (item: EnrichedItem): number =>
-      effectiveDeficiency(
-        toStockItemLike(item),
-        amounts[item.id.toString()] ?? 0,
-        possession[item.id.toString()] ?? 0,
+  const {
+    needsItemTarget,
+    needsQuestSelection,
+    params: solveParams,
+  } = useMemo(
+    () =>
+      buildSolveParams({
+        solverItems,
+        amounts,
+        possession,
+        stockEnabled,
         resolvedStockBuffer,
-        true,
-      )
-    return solverItems
-      .filter(item => effDef(item) > 0 && toApiItemId(item, items))
-      .map(item => `${toApiItemId(item, items)}:${effDef(item)}`)
-      .join(',')
-  }, [solverItems, stockEnabled, amounts, possession, resolvedStockBuffer, items])
+        items,
+        checkedQuests,
+      }),
+    [
+      solverItems,
+      amounts,
+      possession,
+      stockEnabled,
+      resolvedStockBuffer,
+      items,
+      checkedQuests,
+    ]
+  )
 
   const [isLoading, setIsLoading] = useState(false)
 
-  const needsItemTarget = !hasSubmittableItems(queryItemsA) && !hasSubmittableItems(queryItemsB)
-  const needsQuestSelection = !hasSelectedQuests(checkedQuests)
-
   const goSolver = useCallback(async () => {
-    if (needsItemTarget || needsQuestSelection) return
-
-    // 目標Aが0件(stock-only)のときは目標Bを唯一の items として単独送信する
-    // (itemsStock は付けず2目標バッチにしない。design.md 参照)。
-    const itemsParam = hasSubmittableItems(queryItemsA) ? queryItemsA : queryItemsB
-    // B と A が完全一致(全素材 buffer=0)のときは itemsStock を送らない。
-    const includeStock =
-      hasSubmittableItems(queryItemsA) &&
-      hasSubmittableItems(queryItemsB) &&
-      queryItemsB !== queryItemsA
+    if (!solveParams) return
 
     setIsLoading(true)
-    const params = new URLSearchParams({
-      items: itemsParam,
-      ...(includeStock ? { itemsStock: queryItemsB } : {}),
-      quests: checkedQuests.join(','),
-      fields: 'id',
-    })
     try {
-      await submitSolve(params, router)
+      await submitSolve(solveParams, router)
     } catch (e) {
       // submitSolve が reject するのは fetch 自体の失敗時のみ(不正レスポンスは
       // 内部で /500 へ遷移する)。ここで拾わないとローディング表示が固まったまま
@@ -348,7 +317,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     } finally {
       setIsLoading(false)
     }
-  }, [needsItemTarget, needsQuestSelection, queryItemsA, queryItemsB, checkedQuests, router])
+  }, [solveParams, router])
 
   const displayedItems =
     filterMode === 'short'
