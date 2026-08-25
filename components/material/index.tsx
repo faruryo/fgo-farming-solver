@@ -7,11 +7,9 @@ import { TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-catalog'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
-import { useLocalStorage } from '../../hooks/use-local-storage'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { sumMaterials } from '../../lib/sum-materials'
-import { diffMaterialsForStartChange } from '../../lib/diff-materials'
-import { showTrackingToast, showBlockedToast } from '../../lib/tracking-toast'
+import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
@@ -28,9 +26,6 @@ export type MaterialIndexProps = {
 }
 
 const DEFAULT_SERVANT_STATE = createServantState()
-
-const hasNonZeroPossession = (p: Record<string, number | undefined>): boolean =>
-  Object.values(p).some(v => typeof v === 'number' && v > 0)
 
 export const Index = ({
   servants = [],
@@ -51,34 +46,6 @@ export const Index = ({
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  // Tracking mode + possession sharing
-  const [trackingMode, setTrackingMode] = useLocalStorage<boolean>(
-    STORAGE_KEYS.TRACKING_MODE,
-    false
-  )
-  const [trackingDismissed, setTrackingDismissed] = useLocalStorage<boolean>(
-    STORAGE_KEYS.TRACKING_SUGGEST_DISMISSED,
-    false
-  )
-  const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
-    STORAGE_KEYS.POSSESSION,
-    {}
-  )
-
-  // Keep a ref so applyStartChange always sees the latest possession synchronously
-  const possessionRef = useRef(possession)
-  useEffect(() => {
-    possessionRef.current = possession
-  }, [possession])
-
-  // Detect whether possession has ever been non-zero (drives suggestion banner)
-  const [hasPossessionInput, setHasPossessionInput] = useState(false)
-  useEffect(() => {
-    if (!hasPossessionInput && hasNonZeroPossession(possession)) {
-      setHasPossessionInput(true)
-    }
-  }, [possession, hasPossessionInput])
-
   const itemsById = useMemo(() => {
     const map: Record<string, MaterialCatalogItem> = {}
     items.forEach(it => { map[it.id.toString()] = it })
@@ -90,6 +57,16 @@ export const Index = ({
     servants.forEach(s => { map[s.id.toString()] = s })
     return map
   }, [servants])
+
+  const {
+    trackingMode,
+    setTrackingMode,
+    trackingDismissed,
+    setTrackingDismissed,
+    hasPossessionInput,
+    checkStartChange,
+    applyStartChange,
+  } = useTrackingLedger({ materials, servantsById, itemsById })
 
   const [currentHash, setCurrentHash] = useState('')
   const processedHash = useRef('')
@@ -123,99 +100,6 @@ export const Index = ({
       )
     )
   }, [setChaldeaState])
-
-  // Pre-check: returns false and shows blocked toast when tracking mode ON and items insufficient.
-  const checkStartChange = useCallback(
-    (
-      servantId: string,
-      target: TargetKey,
-      idx: number,
-      prevStart: number,
-      newStart: number
-    ): boolean => {
-      if (!trackingMode) return true
-      if (servantId === 'all') return true
-      if (newStart <= prevStart) return true  // returns are always allowed
-
-      const servantMats = materials[servantId]
-      if (!servantMats) return true
-
-      const delta = diffMaterialsForStartChange(servantMats, target, prevStart, newStart)
-      if (!delta || delta.direction !== 'consume') return true
-
-      const poss = possessionRef.current
-      const shortageItems = delta.items
-        .filter(({ itemId, amount }) => (poss[itemId] ?? 0) < amount)
-        .map(({ itemId, amount }) => ({
-          itemId,
-          owned: poss[itemId] ?? 0,
-          required: amount,
-          name: itemsById[itemId]?.name ?? itemId,
-          icon: itemsById[itemId]?.icon,
-        }))
-
-      if (shortageItems.length === 0) return true
-
-      const servant = servantsById[servantId]
-      showBlockedToast({
-        servantName: servant?.name ?? servantId,
-        target,
-        idx,
-        prevStart,
-        newStart,
-        shortageItems,
-        onSetPossession: (newValues) =>
-          setPossession((prev) => ({ ...prev, ...newValues })),
-      })
-      return false
-    },
-    [trackingMode, materials, servantsById, itemsById, setPossession]
-  )
-
-  // Apply possession after a confirmed (unblocked) start change.
-  const applyStartChange = useCallback(
-    (
-      servantId: string,
-      target: TargetKey,
-      idx: number,
-      prevStart: number,
-      newStart: number
-    ) => {
-      if (!trackingMode) return
-      if (servantId === 'all') return
-      if (prevStart === newStart) return
-
-      const servantMats = materials[servantId]
-      if (!servantMats) return
-
-      const delta = diffMaterialsForStartChange(servantMats, target, prevStart, newStart)
-      if (!delta) return
-
-      setPossession(prev => {
-        const next: Record<string, number | undefined> = { ...prev }
-        delta.items.forEach(({ itemId, amount }) => {
-          const cur = next[itemId] ?? 0
-          next[itemId] = delta.direction === 'consume' ? cur - amount : cur + amount
-        })
-        return next
-      })
-
-      const servant = servantsById[servantId]
-      if (!servant) return
-
-      showTrackingToast({
-        servantId,
-        servantName: servant.name,
-        servantMaterials: servantMats,
-        target,
-        idx,
-        prevStart,
-        newStart,
-        itemsById,
-      })
-    },
-    [trackingMode, materials, setPossession, servantsById, itemsById]
-  )
 
   const { ownedCount, doneCount } = useMemo(() => {
     let owned = 0, done = 0
