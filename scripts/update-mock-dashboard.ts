@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { fetchDashboardMeta } from '../lib/master-data/update'
+import { fetchDashboardMeta } from '../lib/master-data/dashboard'
 
 const outPath = resolve(process.cwd(), 'mocks/dashboard.json')
 

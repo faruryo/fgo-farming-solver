@@ -4,7 +4,8 @@ import path from 'path'
 async function main() {
   console.log('Updating master data...')
   try {
-    const { fetchAndTransformData, fetchDashboardMeta } = await import('../lib/master-data/update')
+    const { fetchAndTransformData } = await import('../lib/master-data/update')
+    const { fetchDashboardMeta } = await import('../lib/master-data/dashboard')
 
     // 既存 mocks/all.json を previous として渡し、コミット済みモックの短縮IDを
     // ピン留めする（再生成でIDがずれて保存済みクエスト選択が壊れるのを防ぐ）。

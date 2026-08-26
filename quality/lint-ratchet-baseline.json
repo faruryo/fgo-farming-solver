@@ -1524,32 +1524,12 @@
     {
       "file": "lib/master-data/update.ts",
       "rule": "@typescript-eslint/no-explicit-any",
-      "count": 6
-    },
-    {
-      "file": "lib/master-data/update.ts",
-      "rule": "@typescript-eslint/no-non-null-assertion",
-      "count": 2
+      "count": 1
     },
     {
       "file": "lib/master-data/update.ts",
       "rule": "@typescript-eslint/no-unsafe-argument",
-      "count": 2
-    },
-    {
-      "file": "lib/master-data/update.ts",
-      "rule": "@typescript-eslint/no-unsafe-assignment",
-      "count": 6
-    },
-    {
-      "file": "lib/master-data/update.ts",
-      "rule": "@typescript-eslint/no-unsafe-call",
-      "count": 3
-    },
-    {
-      "file": "lib/master-data/update.ts",
-      "rule": "@typescript-eslint/no-unsafe-member-access",
-      "count": 11
+      "count": 1
     },
     {
       "file": "lib/master-data/update.ts",
@@ -1559,22 +1539,17 @@
     {
       "file": "lib/master-data/update.ts",
       "rule": "max-lines-per-function",
-      "count": 2
+      "count": 1
     },
     {
       "file": "lib/master-data/update.ts",
       "rule": "security/detect-object-injection",
-      "count": 15
+      "count": 6
     },
     {
       "file": "lib/master-data/update.ts",
       "rule": "sonarjs/cognitive-complexity",
-      "count": 5
-    },
-    {
-      "file": "lib/master-data/update.ts",
-      "rule": "sonarjs/publicly-writable-directories",
-      "count": 1
+      "count": 2
     },
     {
       "file": "lib/master-data/validation.ts",
@@ -2090,11 +2065,6 @@
       "file": "scripts/refresh-event-data.ts",
       "rule": "sonarjs/cognitive-complexity",
       "count": 2
-    },
-    {
-      "file": "scripts/refresh-nice-war-cache.ts",
-      "rule": "@typescript-eslint/no-explicit-any",
-      "count": 1
     },
     {
       "file": "scripts/refresh-nice-war-cache.ts",

@@ -13,13 +13,14 @@
  * /tmp/adj2.json(all_drops_json)・/tmp/nwaa.json(nice_war_aaquests)が
  * あればそれを使う。
  */
+import { fetchAndTransformData } from '../lib/master-data/update'
+import { fetchDashboardMeta } from '../lib/master-data/dashboard'
 import {
-  fetchAndTransformData,
-  fetchDashboardMeta,
   fetchActiveEvents,
   fetchBasicServants,
-} from '../lib/master-data/update'
-import type { NiceWarCache, BasicServantEntry } from '../lib/master-data/update'
+  type BasicServantEntry,
+} from '../lib/master-data/atlas-events'
+import type { NiceWarCache } from '../lib/master-data/nice-war-source'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'

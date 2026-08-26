@@ -14,7 +14,7 @@
 import { writeFileSync } from 'node:fs'
 
 import { origin, region } from '../constants/atlasacademy'
-import { compactNiceWarQuests, normalizeEtag } from '../lib/master-data/update'
+import { compactNiceWarQuests, normalizeEtag, type AtlasRawWar } from '../lib/master-data/nice-war-source'
 
 async function main() {
   const outPath = process.argv[2] ?? './nice_war_aaquests.json'
@@ -23,7 +23,7 @@ async function main() {
   const res = await fetch(`${origin}/export/${region}/nice_war.json`)
   if (!res.ok) throw new Error(`nice_war fetch failed: ${res.status}`)
 
-  const wars = (await res.json()) as any[]
+  const wars = (await res.json())
   const aaQuests = compactNiceWarQuests(wars)
   if (aaQuests.length < 10000) {
     // 既知の規模(15,000+ 件)から大きく欠けるペイロードで KV を壊さないためのガード

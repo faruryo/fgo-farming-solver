@@ -33,7 +33,9 @@ import { performance } from 'node:perf_hooks'
 
 import { origin, region } from '../constants/atlasacademy'
 import { buildRarityApTables } from '../lib/progress/rarity-ap-table'
-import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
+import { fetchAndTransformData } from '../lib/master-data/update'
+import { fetchDashboardMeta } from '../lib/master-data/dashboard'
+import { fetchActiveEvents } from '../lib/master-data/atlas-events'
 import type { MasterData } from '../lib/master-data/types'
 import { validateDashboardMeta, validateMasterData } from '../lib/master-data/validation'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'
@@ -147,7 +149,7 @@ async function main() {
     const v = validateMasterData(d)
     if (v.ok) await MASTER_DATA.put(MASTER_DATA_KEY, JSON.stringify(d))
     else console.warn(`  (degraded payload: ${v.reason})`)
-    return d as MasterData
+    return d
   })
 
   // B. updateDashboardMeta
@@ -169,13 +171,7 @@ async function main() {
   // D. updateServantsList
   await measure('D. updateServantsList (basic_servant fetch)', 'updater', async () => {
     const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
-    const all = (await res.json()) as Array<{
-      id: number
-      name: string
-      rarity: number
-      type: string
-      collectionNo: number
-    }>
+    const all = (await res.json())
     const filtered = all
       .filter((s) => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0)
       .map((s) => ({ id: s.id, name: s.name, rarity: s.rarity }))
