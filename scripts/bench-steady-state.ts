@@ -80,7 +80,7 @@ async function main() {
   await measure('B. fetchDashboardMeta', () => fetchDashboardMeta(drops.quests, { events }))
   await measure('D. servants_list (basic_servant 再parse)', async () => {
     const res = await fetch('https://api.atlasacademy.io/export/JP/basic_servant.json')
-    const all = (await res.json())
+    const all: BasicServantEntry[] = await res.json()
     return all.filter(s => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0).map(s => ({ id: s.id, name: s.name, rarity: s.rarity }))
   })
 
