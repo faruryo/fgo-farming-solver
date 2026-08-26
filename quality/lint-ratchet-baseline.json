@@ -1948,11 +1948,6 @@
     },
     {
       "file": "scripts/bench-steady-state.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "scripts/bench-steady-state.ts",
       "rule": "@typescript-eslint/no-unsafe-argument",
       "count": 3
     },
@@ -1985,11 +1980,6 @@
       "file": "scripts/bench-updater.ts",
       "rule": "@typescript-eslint/no-explicit-any",
       "count": 2
-    },
-    {
-      "file": "scripts/bench-updater.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
     },
     {
       "file": "scripts/bench-updater.ts",
@@ -2065,11 +2055,6 @@
       "file": "scripts/refresh-event-data.ts",
       "rule": "sonarjs/cognitive-complexity",
       "count": 2
-    },
-    {
-      "file": "scripts/refresh-nice-war-cache.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
     },
     {
       "file": "scripts/refresh-nice-war-cache.ts",

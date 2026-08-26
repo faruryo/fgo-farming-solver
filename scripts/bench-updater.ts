@@ -171,7 +171,7 @@ async function main() {
   // D. updateServantsList
   await measure('D. updateServantsList (basic_servant fetch)', 'updater', async () => {
     const res = await fetch(`${origin}/export/${region}/basic_servant.json`)
-    const all = (await res.json())
+    const all: BasicServantEntry[] = await res.json()
     const filtered = all
       .filter((s) => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0)
       .map((s) => ({ id: s.id, name: s.name, rarity: s.rarity }))
