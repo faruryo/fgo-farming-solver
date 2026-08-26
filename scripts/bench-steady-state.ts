@@ -12,7 +12,7 @@ import path from 'node:path'
 
 import { fetchAndTransformData } from '../lib/master-data/update'
 import { fetchDashboardMeta } from '../lib/master-data/dashboard'
-import { fetchActiveEvents } from '../lib/master-data/atlas-events'
+import { fetchActiveEvents, type BasicServantEntry } from '../lib/master-data/atlas-events'
 import type { MasterData } from '../lib/master-data/types'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'
 

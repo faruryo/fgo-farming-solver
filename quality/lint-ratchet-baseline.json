@@ -1989,7 +1989,7 @@
     {
       "file": "scripts/bench-updater.ts",
       "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 2
+      "count": 1
     },
     {
       "file": "scripts/bench-updater.ts",
