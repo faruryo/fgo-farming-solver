@@ -181,54 +181,33 @@ Opus subagent 3体（master-data / material-ui / cloud-and-domain）による調
 
 ### 2. `EXCLUDED_ATLAS_IDS`（QPを進捗指標から除外）が2箇所に別実体で存在
 
-**ラベル: behavior-preserving / 工数 S / 優先度 高**
+**【完了】** `lib/progress/constants.ts` に `EXCLUDED_ATLAS_IDS` として一本化完了。
 
-`lib/progress/lap-value.ts:14` と `lib/progress/throughput.ts:9` に `new Set(['1'])` が別々に定義されている（lap-value 側のコメントが「throughput.ts と同じ集合」と自認）。同じ進捗レポート画面に `forwardLaps` と `itemsFarmed` が並ぶため、片方だけ除外IDを追加すると画面内で数字が食い違う。`lib/progress/` 内の共有定数に一本化する。
+### 3. `lib/master-data/update.ts` の5分割
 
-### 3. `lib/master-data/update.ts`（1085行・過去6ヶ月45コミット、リポジトリ最大かつ最高頻度）の5分割
-
-**ラベル: behavior-preserving（4番目のみ要判断） / 工数 M〜L / 優先度 高（churn最大）**
-
-diffハンクを関数単位で分類した結果、`fetchAndTransformData` のみ変更28件・`fetchDashboardMeta` のみ変更9件・両方3件で、変更理由の異なる2責務が同居していることが裏付けられた（既存 `update.test.ts` の describe 境界もこれに一致）。
-
-分割案:
-1. `lib/master-data/dashboard.ts` — `fetchDashboardMeta` 関連
-2. `lib/master-data/atlas-events.ts` — `AtlasEvent`型・`fetchActiveEvents`・`eventDropItems`・`fetchBasicServants`
-3. `lib/master-data/nice-war-source.ts` — 取得元決定（fs→KVキャッシュ→全量fetch）・`NiceWarCache`
-4. `lib/master-data/item-naming.ts` — `NAME_OVERRIDES`・`normalizeItemName`・`getCategory`
-5. `lib/master-data/quest-selection.ts` — Top5/Top100相対効率の純粋フィルタ
-
-実装時の必須事項:
-- **バレル再エクスポートを作らない**。消費者は6スクリプト+2テストのみで、機械的なimport修正の方が恒久shimより安価。
-- `update.ts:7-21` の `export type {...} from './types'` ブロックは**確認済みの死にコード**（全消費者が `./types` から直接import。`grep`で裏取り済み）。削除可（XS、単独で先に着手してよい）。
-- `:189-204`（nice_event 40MB撤廃）・`:243-254`（weak ETag）・`:324-329`（KV無条件採用の理由）・`:457-462`（O(N×M)排除）・`:560-563`（rarity fingerprintにaddedAtを入れるな）の**荷重コメントは解決済み障害の再発防止根拠なので、コードと一緒に必ず移送する**。レビュー必須項目にすること。
-- `aaQuestId→短縮ID` マップ構築が2箇所（:633-638, :989-994）で異なる入力から重複している。**同じ入力のまま**関数抽出するなら behavior-preserving、**入力を統一する**なら behavior-touching（pod-free期間の対象クエスト集合が変わる）。
-
-推奨順序: 死にコード削除 → 分割案3・4（小さい） → 分割案1・2 → 荷重コメント整理。stable-ids.ts との結合は既に十分疎（呼び出し4箇所のみ）で分離作業は不要と判断。
+**【完了 (PR #43)】**
+1. `lib/master-data/item-naming.ts` — `NAME_OVERRIDES`・`normalizeItemName`・`getCategory`
+2. `lib/master-data/nice-war-source.ts` — 取得元決定（fs→KVキャッシュ→全量fetch）・`NiceWarCache`
+3. `lib/master-data/atlas-events.ts` — `AtlasEvent`型・`fetchActiveEvents`・`eventDropItems`・`fetchBasicServants`・`extractApCampaigns`・`extractPodFreePeriods`
+4. `lib/master-data/quest-selection.ts` — Top5/Top100相対効率フィルタ
+5. `lib/master-data/dashboard.ts` — `fetchDashboardMeta` 関連
+6. `lib/master-data/update.ts` — `fetchAndTransformData` オーケストレーター
 
 ### 4. cloud-sync クラスタの重複2件（安全に統合可能）
 
-**ラベル: behavior-preserving / 工数 S ずつ / 優先度 中**
-
-- `hooks/use-cloud-sync.ts:258-265` と `components/cloud/index.tsx:95-102` に、クラウド応答の旧形式正規化ロジック（`metadata`/`storage`の有無判定→epochラップ）が二重実装されている。`normalizeCloudResponse()` に切り出す。`components/cloud/index.tsx:105` の `MOCK_CLOUD_KEY` ハードコード文字列もこの時点でhookのexportに寄せる。
-- `lib/cloud-sync/shrink-guard.ts:30-41` と `lib/cloud-sync/storage-diff.ts:26-37` の `parseRecord` が重複（jscpd検出済み）。統合理由は行数ではなく安全性 — パース規則がずれると「ガードは発火したのに差分が何も表示されない」画面になりうる。`measureSize` は別物なので `parseRecord` のみ共通化する。
-
-**触ってはいけないもの**: `handleLoad`（確認ダイアログへ溜める設計）を `fetchCloudData`（`checkConflict` 経由で未確認のままauto-apply しうる）に寄せる変更。AGENTS.mdのBLOCKER（クラウド同期の無確認上書き）に該当する。
+**【完了】**
+- `normalizeCloudResponse()` 切り出し完了。
+- `lib/cloud-sync/parse.ts` の `parseRecord` 共通化完了。
 
 ### 5. `lib/event-plan.ts` の内部重複（383-398行 / 421-436行）
 
-**ラベル: behavior-preserving / 工数 S/M / 優先度 中**
-
-`residualAfterBoxes → allocateShop → residualDemand` の3段が探索ループ内と打ち切り後で二重化。差分である `if (shopItem && fromShop < qty) residualDemand.set(...)` は**デッドブランチと確認済み**（直前で `remaining = Math.max(0, qty - fromShop)` を計算しているため、`fromShop < qty` なら常に `remaining > 0` となり、直前行の `if (remaining > 0) residualDemand.set(...)` と完全に同じ条件・同じ代入を二重に行っている）。1回のボックス数評価を行う純関数 `evaluateBoxCount(event, n, ownedCurrency, itemDemand)` を抽出し、ループ内（383-418行）と打ち切り後（421-438行）を1行に集約する。
+**【完了】** `evaluateBoxes` / `reverseCalcBoxes` 純関数への集約完了。
 
 ### 6. `components/material/index.tsx` / `result.tsx` の育成記録台帳・ソルバー送信の分離
 
-**ラベル: behavior-preserving / 工数 S ずつ / 優先度 中**
-
-- `index.tsx` は①フィルタ/ソート②目標一括ブロードキャスト③育成記録モードの所持数台帳（126-217行）④hash駆動スクロール⑤ページchromeの5責務が同居。台帳部分（`checkStartChange`/`applyStartChange`/`possessionRef`/`trackingMode`）を `hooks/use-tracking-ledger.ts` に切り出す（JSXゼロなのに現状Indexをマウントしないとテストできない）。
-- `result.tsx` のソルバー送信用クエリ構築（259-347行、目標A/B分岐）を `lib/farming/build-solve-params.ts` に切り出す。
-
-**分割しないほうがよいもの**: `servant-card.tsx`。`longPressFired` を pointerdown/contextmenu/click で共有する規約はタッチ端末の合成イベントバグ対策であり、336行のテストが固定している。分けると規約が2ファイルに割れて壊れやすくなるだけ。
+**【完了 (PR #42)】**
+- `hooks/use-tracking-ledger.ts`（台帳管理・所持数更新・不足トースト通知・QP返却処理）抽出完了。
+- `lib/farming/build-solve-params.ts`（ソルバー送信用クエリ構築）抽出完了。
 
 ### 7. cloud-sync の「多重マウントされる singleton」構造（大掛かり・保留推奨）
 
@@ -244,21 +223,15 @@ diffハンクを関数単位で分類した結果、`fetchAndTransformData` の�
 
 ### 9. `QuestEfficiencyList.tsx` / `QuestEfficiencyCard.tsx` の localStorage state 9個の完全重複
 
-**ラベル: behavior-preserving / 工数 S / 優先度 中**
-
-`components/quests/QuestEfficiencyList.tsx`(72-94行付近)と `components/quests/QuestEfficiencyCard.tsx`(30-47行付近)で、`possession`/`materialResult`/`itemsRaw`/`shortageOnly`/`includeSkillStones`/`includePieces`/`denominator`/`includeQp`/`includeBond`/`includeExp` の9個の `useLocalStorage` 呼び出し(キー文字列・デフォルト値含む)が一言一句同一で存在する(Card側はsetter無しの読み取り専用)。新しいフィルターの追加・デフォルト値変更時に一覧と詳細でキー名やデフォルト値がずれるリスクがある。`hooks/use-quest-efficiency-options.ts` に集約する。
+**【完了】** `hooks/use-quest-efficiency-options.ts` に集約完了。
 
 ### 10. localStorage キー文字列のハードコード散在(`'posession'` 等)
 
-**ラベル: behavior-preserving / 工数 S〜M / 優先度 低〜中**
-
-`'posession'`(歴史的タイポ)というリテラル文字列が `hooks/use-cloud-sync.ts` の `KEYS` 配列定義とは独立に12ファイル・14箇所で直接ハードコードされている(`QuestEfficiencyList.tsx`, `QuestEfficiencyCard.tsx`, `PossessionModal.tsx`, `NearGoalSection.tsx`, `components/cloud/parts/stats-logic.ts`, `components/material/index.tsx`, `components/material/result.tsx`, `hooks/use-progress-report.ts`, `lib/cloud-sync/storage-diff.ts`, `lib/cloud-sync/shrink-guard.ts`, `lib/progress/diff.ts` ほど。件数はgrep確認済み)。クラウド同期対象キー(`use-cloud-sync.ts` の `KEYS`)と実利用キーが型で結びついていないため、新機能追加時に同期対象への追加漏れが起きうる。`lib/constants/storage-keys.ts` 等でキー名定数化し、`KEYS` 側もそこから参照する形にする。工数が膨らみやすいので着手は他の小粒項目より後でよい。
+**【完了 (PR #39)】** `lib/constants/storage-keys.ts`（`STORAGE_KEYS` 定数）に集約完了。
 
 ### 11. `QuestEfficiencyList.tsx` のinclude/excludeトグルUIのコピペ重複
 
-**ラベル: behavior-preserving / 工数 XS / 優先度 低**
-
-同ファイル260-302行付近で「スキル石」「モニュピ」の含む/除くトグル(ラベル+`ToggleGroup`+2つの`ToggleGroupItem`)が構造・propsともほぼ同一のブロックとして2回書かれている(コード確認済み)。`IncludeExcludeToggle`のような小さなインラインコンポーネントに切り出してJSXをスリム化できる。優先度は低いが着手コストも最小。
+**【完了】** `IncludeExcludeToggle` コンポーネントに集約完了。
 
 ### 付record: 死にコード・ツール設定の別件（このセクションの対象外・削除はユーザー判断）
 
