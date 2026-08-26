@@ -10,7 +10,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { fetchAndTransformData, fetchDashboardMeta, fetchActiveEvents } from '../lib/master-data/update'
+import { fetchAndTransformData } from '../lib/master-data/update'
+import { fetchDashboardMeta } from '../lib/master-data/dashboard'
+import { fetchActiveEvents } from '../lib/master-data/atlas-events'
 import type { MasterData } from '../lib/master-data/types'
 import { waveCountSeedFrom } from '../lib/master-data/wave-count'
 
@@ -78,7 +80,7 @@ async function main() {
   await measure('B. fetchDashboardMeta', () => fetchDashboardMeta(drops.quests, { events }))
   await measure('D. servants_list (basic_servant 再parse)', async () => {
     const res = await fetch('https://api.atlasacademy.io/export/JP/basic_servant.json')
-    const all = (await res.json()) as Array<{ id: number; name: string; rarity: number; type: string; collectionNo: number }>
+    const all = (await res.json())
     return all.filter(s => (s.type === 'normal' || s.type === 'heroine') && s.collectionNo > 0).map(s => ({ id: s.id, name: s.name, rarity: s.rarity }))
   })
 

@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { normalizeItemName, fetchAndTransformData, fetchDashboardMeta, extractApCampaigns, extractPodFreePeriods, fetchActiveEvents, eventDropItems, normalizeEtag, compactNiceWarQuests } from './update'
+import { normalizeItemName } from './item-naming'
+import { compactNiceWarQuests, normalizeEtag } from './nice-war-source'
+import {
+  fetchActiveEvents,
+  eventDropItems,
+  extractApCampaigns,
+  extractPodFreePeriods,
+} from './atlas-events'
+import { fetchDashboardMeta } from './dashboard'
+import { fetchAndTransformData } from './update'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
