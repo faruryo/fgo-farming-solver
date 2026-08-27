@@ -14,6 +14,7 @@ import {
   DenominatorMode,
 } from '../../lib/material-selection-advisor'
 import { buildNeedByApiItemId, effectiveDeficiency } from '../../lib/quest-efficiency'
+import { toStockItemLike } from '../../lib/farming/build-solve-params'
 import { useStockTarget } from '../../hooks/use-stock-target'
 import { ServantPraise } from '../farming/ServantPraise'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -131,18 +132,24 @@ export const MaterialSelectionAdvisor = ({
     return m
   }, [drops.items])
 
-  // 実効不足(ストック目標 ON なら区分別バッファ上乗せ)。drops に無いアイテムは素の不足。
-  // 候補・追加リストの両方で同じ定義を使う(D3)。
+  // 実効不足(ストック目標 ON なら区分別バッファ上乗せ)。
+  // itemsById(カタログ)または dropItemByAtlasId からカテゴリ情報を参照して統一計算(D3)。
   const deficiencyFor = useCallback(
     (id: string): number => {
       const required = amounts[id] ?? 0
       const owned = possession[id] ?? 0
-      const dropItem = dropItemByAtlasId.get(id)
-      return dropItem
-        ? effectiveDeficiency(dropItem, required, owned, resolvedStockBuffer, stockEnabled)
+      const itemLike = itemsById.get(id) ?? dropItemByAtlasId.get(id)
+      return itemLike
+        ? effectiveDeficiency(
+            toStockItemLike(itemLike),
+            required,
+            owned,
+            resolvedStockBuffer,
+            stockEnabled
+          )
         : Math.max(0, required - owned)
     },
-    [amounts, possession, dropItemByAtlasId, resolvedStockBuffer, stockEnabled],
+    [amounts, possession, itemsById, dropItemByAtlasId, resolvedStockBuffer, stockEnabled],
   )
 
   // 全クエストID(LP の許可クエスト)。最適周回プランの基準にユーザーの全不足を回す。

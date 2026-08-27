@@ -123,13 +123,8 @@ Opus subagent 3体（master-data / material-ui / cloud-and-domain）による調
 
 ### 1. 実効不足（effectiveDeficiency）の定義が2画面で食い違いうる
 
-**ラベル: behavior-touching（openspec 必須） / 工数 M / 優先度 最高**
-
-`components/material/result.tsx` の `stockDeficiencies`/`queryItemsB`（225, 300行）は `toStockItemLike(item)` を使い、drops データの有無に関わらず常にストックバッファを乗せる。一方 `components/material/material-selection-advisor.tsx` の `deficiencyFor`（135-145行）は `dropItemByAtlasId.get(id)` がヒットしない素材で `effectiveDeficiency` を呼ばずバッファ無しの `Math.max(0, required - owned)` にフォールバックする（139-142行、コードで確認済み）。
-
-**確認できたこと**: コード上の分岐差異は確実に存在する。**未確認なこと**: `amounts`/`possession` にはあるが `drops.items` に無い（またはatlasId欠落の）素材が実データで実在するか。存在すれば「素材計算結果」と「配布アドバイザー」で同じ素材の不足数が異なって見える実バグになる。着手前にまず実データでこのケースが起きるか確認すること。
-
-対応案: `useEffectiveDeficiency` のような共有フックに集約し、drops に無い素材の扱い（バッファを乗せるか、明示的に除外表示するか）を1箇所で決める。
+**【完了】**
+`lib/farming/build-solve-params.ts` の `toStockItemLike` を柔軟なアイテム形状に対応させ、`components/material/material-selection-advisor.tsx` の `deficiencyFor` においてカタログの `itemsById` および `dropItemByAtlasId` を参照して `effectiveDeficiency` 呼び出しを統一。`result.tsx`（素材計算結果）と `material-selection-advisor.tsx`（配布アドバイザー）でストックバッファ適用ロジックの不整合を解消。
 
 ### 2. `EXCLUDED_ATLAS_IDS`（QPを進捗指標から除外）が2箇所に別実体で存在
 
