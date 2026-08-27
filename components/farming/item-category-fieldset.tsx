@@ -13,15 +13,15 @@ export const ItemCategoryFieldset = ({
   handleChange: React.FormEventHandler
 }) => {
   return (
-    <fieldset>
-      <div className="flex flex-col gap-3">
+    <fieldset className="w-full">
+      <div className="flex flex-col gap-2.5">
         <legend
-          className="w-full text-xs font-semibold tracking-widest pb-2 border-b"
+          className="w-full text-xs font-semibold tracking-widest pb-1.5 border-b"
           style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}
         >
           {category}
         </legend>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col gap-1">
           {items.map(({ id, name, icon }) => (
             <ItemInput
               key={id}

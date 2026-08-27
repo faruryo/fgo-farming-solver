@@ -8,20 +8,9 @@
 
 ## 周回数計算画面（/farming）の上部UIがモバイル（iPhone）で崩れる・見づらい
 
-**重要度: 中（UI/UX・レスポンシブ表示）**
-
-### 症状 / 問題
-
-iPhone などのスマートフォン表示において、「周回数を求める」画面（`/farming`）の上部エリア（「集めたいアイテムの数」のアコーディオンや各種ボタン・コントロール類）のレイアウトが崩れたり、詰まって不細工に表示される。
-
-### 現状と影響箇所
-
-`components/farming/index.tsx` や `components/farming/item-fieldset.tsx` 付近。
-アコーディオンヘッダー、ボタン類の flex/grid 配置やマージン・パディングが画面幅（375px〜430px程度）で最適化しきれていない。
-
-### 検討方向
-
-- iPhone 各端末サイズ（SE / 14 / 15 / Pro Max 等）における上部コントロール部（アコーディオン、ボタン、アラート等）のレイアウト・余白・フォントサイズ・ボタンの並び順を調整し、タッチしやすいレスポンシブデザインに最適化する。
+**【完了】**
+`components/farming/item-input.tsx`（アイコン・素材名・入力欄の等幅フレックス横並び左寄せ）、`item-category-fieldset.tsx`、`item-fieldset.tsx`（レスポンシブグリッド `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`）を最適化。
+また `app/globals.css` の `.c-farming-footer` に `env(safe-area-inset-bottom)` およびモバイル（幅640px以下）のボタンスタイルを適用し、画面下部の固定フッターと入力要素の被りを解消。
 
 ---
 

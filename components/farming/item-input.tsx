@@ -18,24 +18,29 @@ export const ItemInput = ({
 }) => {
   if (!(id in inputValues)) inputValues[id] = ''
   return (
-    <div id={`item-${id}`}>
-      <div className="flex items-center justify-end gap-3">
-        {icon && (
-          <Image
-            src={getItemIconUrl(icon)}
-            alt={name}
-            width={28}
-            height={28}
-            style={{ objectFit: 'contain' }}
-          />
-        )}
-        <label
-          htmlFor={`item-input-${id}`}
-          className="text-right cursor-pointer"
-          style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text2)', margin: 0 }}
-        >
-          {name}
-        </label>
+    <div id={`item-${id}`} className="w-full">
+      <div className="flex items-center justify-between gap-2.5 w-full py-1">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {icon ? (
+            <Image
+              src={getItemIconUrl(icon)}
+              alt={name}
+              width={28}
+              height={28}
+              className="flex-shrink-0"
+              style={{ objectFit: 'contain' }}
+            />
+          ) : (
+            <div className="w-7 h-7 flex-shrink-0" />
+          )}
+          <label
+            htmlFor={`item-input-${id}`}
+            className="truncate cursor-pointer text-left font-medium text-xs sm:text-sm text-[color:var(--text2)]"
+            title={name}
+          >
+            {name}
+          </label>
+        </div>
         <Input
           id={`item-input-${id}`}
           type="number"
@@ -45,7 +50,7 @@ export const ItemInput = ({
           min={0}
           step={1}
           onChange={handleChange}
-          className="w-20"
+          className="w-20 flex-shrink-0 text-right h-8 text-sm"
         />
       </div>
     </div>

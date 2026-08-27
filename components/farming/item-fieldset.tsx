@@ -32,10 +32,12 @@ export const ItemFieldset = ({
         defaultValue={itemGroups.length > 0 ? [itemGroups[0][0]] : undefined}
       >
         {itemGroups.map(([largeCategory, itemGroup]) => (
-          <AccordionItem key={largeCategory} value={largeCategory}>
-            <AccordionTrigger>{largeCategory}</AccordionTrigger>
+          <AccordionItem key={largeCategory} value={largeCategory} className="border-b border-border/40 py-1">
+            <AccordionTrigger className="text-base font-semibold py-3 hover:no-underline text-foreground">
+              {largeCategory}
+            </AccordionTrigger>
             <AccordionContent>
-              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2 pb-4">
                 {itemGroup.map(([category, items]) => (
                   <ItemCategoryFieldset
                     key={category}
