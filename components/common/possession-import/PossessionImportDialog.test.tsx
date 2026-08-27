@@ -5,13 +5,16 @@ import userEvent from '@testing-library/user-event'
 import { PossessionImportDialog } from './PossessionImportDialog'
 import type { CardCandidate } from '../../../lib/possession-import/types'
 
-// t は翻訳キー（このリポジトリでは日本語文字列そのもの）をそのまま返す identity にする。
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, fallback?: string, options?: { count?: number }) => {
+      const base = fallback ?? key
+      if (options?.count != null) return base.replaceAll('{{count}}', String(options.count))
+      return base
+    },
+  }),
 }))
 
-// OCR 本体は重く DOM/Canvas 依存なのでモックし、レビュー段階へ渡す候補を制御する。
-// merge-candidates は純粋関数なので実物をそのまま通す。
 vi.mock('../../../lib/possession-import/analyze-screenshot', () => ({
   analyzeScreenshot: vi.fn(),
 }))
@@ -31,7 +34,10 @@ const card = (atlasId: number, name: string, quantity: number | null): CardCandi
 const items = [
   { id: '101', name: 'アイテムA', atlasId: 101 },
   { id: '202', name: 'アイテムB', atlasId: 202 },
+  { id: '303', name: 'アイテムC', atlasId: 303 },
 ]
+
+const rowOf = (name: string) => screen.getByText(name).closest('[data-review-row]') as HTMLElement
 
 /** ダイアログを開き、画像1枚を投稿→解析して review 段階まで進める。 */
 const reachReview = async (
@@ -53,11 +59,9 @@ const reachReview = async (
     />
   )
 
-  // Dialog は document.body へポータルされるため container ではなく document から探す
   const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
   await user.upload(fileInput, new File(['x'], 'shot.png', { type: 'image/png' }))
   await user.click(screen.getByRole('button', { name: '解析する' }))
-  // analyzing → review へ遷移するのを待つ
   await screen.findByRole('button', { name: '反映する' })
 
   return { user, onConfirm, onOpenChange }
@@ -72,7 +76,6 @@ describe('PossessionImportDialog レビューUI', () => {
       card(202, 'アイテムB', 10),
     ])
 
-    // 現在値（101 は possession=3、202 は未所持=0）が表示される
     expect(screen.getByText('アイテムA')).toBeInTheDocument()
     expect(screen.getByText('アイテムB')).toBeInTheDocument()
 
@@ -88,7 +91,7 @@ describe('PossessionImportDialog レビューUI', () => {
       card(202, 'アイテムB', 10),
     ])
 
-    const [inputA] = screen.getAllByRole('spinbutton') as HTMLInputElement[]
+    const inputA = within(rowOf('アイテムA')).getByRole('spinbutton')
     await user.clear(inputA)
     await user.type(inputA, '7.9')
 
@@ -103,7 +106,7 @@ describe('PossessionImportDialog レビューUI', () => {
       card(202, 'アイテムB', 10),
     ])
 
-    const [inputA] = screen.getAllByRole('spinbutton') as HTMLInputElement[]
+    const inputA = within(rowOf('アイテムA')).getByRole('spinbutton')
     await user.clear(inputA)
 
     await user.click(screen.getByRole('button', { name: '反映する' }))
@@ -117,9 +120,7 @@ describe('PossessionImportDialog レビューUI', () => {
       card(202, 'アイテムB', 10),
     ])
 
-    // 行の並びは候補順（101, 202）。202 のチェックを外す
-    const checkboxes = screen.getAllByRole('checkbox')
-    await user.click(checkboxes[1])
+    await user.click(within(rowOf('アイテムB')).getByRole('checkbox'))
 
     await user.click(screen.getByRole('button', { name: '反映する' }))
 
@@ -138,17 +139,15 @@ describe('PossessionImportDialog レビューUI', () => {
   })
 
   it('矛盾候補: 数量欄が空で、手動入力するまで確定対象に含まれない', async () => {
-    // 同一 atlasId で異なる数量 → mergeCandidates が hasConflict=true, proposedQuantity=null にする
     const { user, onConfirm } = await reachReview([
       card(101, 'アイテムA', 5),
       card(101, 'アイテムA', 8),
     ])
 
     expect(screen.getByText('矛盾あり')).toBeInTheDocument()
-    const [input] = screen.getAllByRole('spinbutton') as HTMLInputElement[]
+    const input = within(rowOf('アイテムA')).getByRole('spinbutton')
     expect(input.value).toBe('')
 
-    // 未入力のまま確定 → 何も更新されない
     await user.click(screen.getByRole('button', { name: '反映する' }))
     expect(onConfirm).toHaveBeenCalledWith({})
   })
@@ -161,15 +160,69 @@ describe('PossessionImportDialog レビューUI', () => {
   })
 
   it('要確認候補のみ、元画像クロップをオンデマンド表示できる', async () => {
-    // 見切れカード（clipped=true）→ needsReview=true
     const clipped: CardCandidate = { ...card(101, 'アイテムA', 5), clipped: true }
     const { user } = await reachReview([clipped])
 
-    const row = screen.getByText('アイテムA').closest('div') as HTMLElement
-    // 既定ではクロップ画像は出ていない
-    expect(within(row.parentElement as HTMLElement).queryByRole('img', { name: 'アイテムA' })).toBeNull()
+    const row = rowOf('アイテムA')
+    expect(within(row).queryByRole('img', { name: 'アイテムA' })).toBeNull()
 
     await user.click(screen.getByRole('button', { name: '元画像を確認' }))
     expect(screen.getByRole('img', { name: 'アイテムA' })).toBeInTheDocument()
+  })
+
+  it('増加・減少・変更なしを見分け、変更なしは初期折りたたみ、フィルタで隠せる', async () => {
+    const { user } = await reachReview(
+      [card(101, 'アイテムA', 5), card(202, 'アイテムB', 0), card(303, 'アイテムC', 1)],
+      { possession: { '101': 3, '202': 0, '303': 8 } }
+    )
+
+    expect(rowOf('アイテムA')).toHaveAttribute('data-review-section', 'increase')
+    expect(within(rowOf('アイテムA')).getByTestId('import-review-sign-badge')).toHaveTextContent('+2')
+    expect(rowOf('アイテムC')).toHaveAttribute('data-review-section', 'decrease')
+    expect(within(rowOf('アイテムC')).getByTestId('import-review-sign-badge')).toHaveTextContent('-7')
+
+    expect(screen.queryByText('アイテムB')).not.toBeInTheDocument()
+    expect(screen.getByTestId('import-review-count-unchanged')).toHaveTextContent('変更なし 1')
+    expect(screen.getByRole('button', { name: /変更なし/ })).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(screen.getByRole('button', { name: '変更あり' }))
+    expect(screen.queryByRole('button', { name: /変更なし/ })).not.toBeInTheDocument()
+    expect(screen.getByText('アイテムA')).toBeInTheDocument()
+    expect(screen.getByText('アイテムC')).toBeInTheDocument()
+  })
+
+  it('値の編集で分類が移る', async () => {
+    const { user } = await reachReview([card(101, 'アイテムA', 5)])
+
+    expect(rowOf('アイテムA')).toHaveAttribute('data-review-section', 'increase')
+    const inputA = within(rowOf('アイテムA')).getByRole('spinbutton')
+    await user.clear(inputA)
+    await user.type(inputA, '3')
+
+    expect(rowOf('アイテムA')).toHaveAttribute('data-review-section', 'unchanged')
+    expect(within(rowOf('アイテムA')).queryByTestId('import-review-sign-badge')).toBeNull()
+  })
+
+  it('折りたたみ中でも除外していない変更なし行は確定対象', async () => {
+    const { user, onConfirm } = await reachReview(
+      [card(101, 'アイテムA', 5), card(202, 'アイテムB', 0)],
+      { possession: { '101': 3, '202': 0 } }
+    )
+
+    expect(screen.queryByText('アイテムB')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '反映する' }))
+    expect(onConfirm).toHaveBeenCalledWith({ '101': 5, '202': 0 })
+  })
+
+  it('変更ありフィルタ中でも除外していない変更なし行は確定対象', async () => {
+    const { user, onConfirm } = await reachReview(
+      [card(101, 'アイテムA', 5), card(202, 'アイテムB', 0)],
+      { possession: { '101': 3, '202': 0 } }
+    )
+
+    await user.click(screen.getByRole('button', { name: '変更あり' }))
+    expect(screen.queryByText('アイテムB')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '反映する' }))
+    expect(onConfirm).toHaveBeenCalledWith({ '101': 5, '202': 0 })
   })
 })

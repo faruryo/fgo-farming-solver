@@ -78,4 +78,15 @@ describe('mergeCandidates', () => {
     expect(result[0].needsReview).toBe(true)
     expect(result[0].proposedQuantity).toBeNull()
   })
+
+  it('returns merged candidates in Atlas ID order, not review-priority order', () => {
+    const candidates = [
+      card({ atlasId: 2, quantity: 10 }),
+      card({ atlasId: 1, quantity: null }),
+    ]
+    const result = mergeCandidates(candidates, {}, nameById)
+    expect(result.map((c) => c.atlasId)).toEqual([1, 2])
+    expect(result[0].needsReview).toBe(true)
+    expect(result[1].needsReview).toBe(false)
+  })
 })
