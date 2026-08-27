@@ -2,7 +2,8 @@
 
 import React, { useMemo } from 'react'
 import NextLink from 'next/link'
-import { Info } from 'lucide-react'
+import { Info, ImageUp } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ItemIdentity } from '../common/ItemIdentity'
@@ -36,7 +37,12 @@ const EFFICIENCY_POOL_SIZE = 20
 // focused on what the user is actually close to finishing.
 const NEEDED_ITEMS_WINDOW = 10
 
-export const NearGoalSection: React.FC = () => {
+export type NearGoalSectionProps = {
+  onOpenPossession?: () => void
+}
+
+export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossession }) => {
+  const { t } = useTranslation(['dashboard'])
   const drops = useDrops()
   const { items: dropItems, quests: dropQuests, isLoading: dropsLoading } = drops
   const { result: recentResult, loading: resultLoading } = useRecentResult()
@@ -223,6 +229,17 @@ export const NearGoalSection: React.FC = () => {
             最短
           </ToggleGroupItem>
         </ToggleGroup>
+        {onOpenPossession && (
+          <button
+            type="button"
+            onClick={onOpenPossession}
+            className="ml-auto text-[11px] font-semibold text-[color:var(--text3)] hover:text-[color:var(--gold)] transition-colors flex items-center gap-1 flex-shrink-0 cursor-pointer"
+            title={t('dashboard:edit-possession', '所持数を編集')}
+          >
+            <ImageUp size={12} />
+            <span>{t('dashboard:edit-possession', '所持数を編集')}</span>
+          </button>
+        )}
         <div className="u-section-header-line" />
       </div>
       <div className="flex flex-col gap-3">
