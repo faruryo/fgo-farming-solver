@@ -1,8 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Package } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useDashboardMeta } from '../hooks/use-dashboard-meta'
+import { useDrops } from '../hooks/use-drops'
+import { PossessionModal } from '../components/common/PossessionModal'
 import { EventSection } from '../components/dashboard/EventSection'
 import { CampaignSection } from '../components/dashboard/CampaignSection'
 import { GachaSection } from '../components/dashboard/GachaSection'
@@ -32,6 +36,8 @@ const item = {
 export default function HomePage() {
   const { t } = useTranslation(['dashboard'])
   const { data: dashboardMeta, isLoading } = useDashboardMeta()
+  const { items: dropItems, isLoading: dropsLoading } = useDrops()
+  const [possessionModalOpen, setPossessionModalOpen] = useState(false)
 
   return (
     <div className="c-page">
@@ -84,6 +90,30 @@ export default function HomePage() {
                 >
                   周回ソルバー →
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setPossessionModalOpen(true)}
+                  disabled={dropsLoading}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    background: 'var(--panel2)',
+                    color: 'var(--text1)',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    border: '1px solid var(--border)',
+                    cursor: dropsLoading ? 'not-allowed' : 'pointer',
+                    opacity: dropsLoading ? 0.6 : 1,
+                    letterSpacing: '0.02em',
+                  }}
+                  title={t('possession-inventory', '所持アイテム')}
+                >
+                  <Package className="w-3.5 h-3.5" style={{ color: 'var(--gold)' }} />
+                  {t('possession-inventory', '所持アイテム')}
+                </button>
                 <div
                   className="flex gap-3 ml-1 pl-2"
                   style={{ borderLeft: '1px solid var(--border)' }}
@@ -126,7 +156,7 @@ export default function HomePage() {
 
                 {/* Near Goal + Recommended Quest */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  <NearGoalSection />
+                  <NearGoalSection onOpenPossession={() => setPossessionModalOpen(true)} />
                   <RecommendedQuest />
                 </div>
 
@@ -154,6 +184,12 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      <PossessionModal
+        items={dropItems}
+        open={possessionModalOpen}
+        onOpenChange={setPossessionModalOpen}
+      />
     </div>
   )
 }

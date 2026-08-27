@@ -852,12 +852,7 @@
       "count": 1
     },
     {
-      "file": "components/quests/PossessionModal.tsx",
-      "rule": "max-lines-per-function",
-      "count": 1
-    },
-    {
-      "file": "components/quests/PossessionModal.tsx",
+      "file": "components/common/PossessionModal.tsx",
       "rule": "security/detect-object-injection",
       "count": 1
     },
