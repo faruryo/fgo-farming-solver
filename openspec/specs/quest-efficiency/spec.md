@@ -181,7 +181,7 @@ TBD - created by archiving change quest-efficiency-points. Update Purpose after 
 
 ### Requirement: クエスト一覧/検索ページ
 
-システムは `/quests` にクエスト一覧/検索ページを提供 SHALL。各クエストのエリア・名前・AP(effectiveAP と元 AP)・効率ポイントを表示し、名前/エリアでの検索、効率ポイント降順ソート、「石含む/除く」「不足のみ/全部」トグルを提供 SHALL。ストームポッド消費クエストとポッド無料中クエストにはバッジを表示 SHALL。効率ポイントの意味を説明する導線をメイン行に常設し、説明文はクエスト詳細ページと共通のものを用いる SHALL。
+システムは `/quests` にクエスト一覧/検索ページを提供 SHALL。各クエストのエリア・名前・AP(effectiveAP と元 AP)・効率ポイントを表示し、名前/エリアでの検索、効率ポイント降順ソート、「石含む/除く」「不足のみ/全部」トグルを提供 SHALL。ストームポッド消費クエストとポッド無料中クエストにはバッジを表示 SHALL。効率ポイントの意味を説明する導線と、余剰ストックを目標に含めるか切り替える「ストック込み」トグルボタンをメイン行に常設し、説明文はクエスト詳細ページと共通のものを用いる SHALL。
 
 #### Scenario: 効率ポイント順の表示
 - **WHEN** ユーザーが一覧ページを開く
@@ -194,6 +194,10 @@ TBD - created by archiving change quest-efficiency-points. Update Purpose after 
 #### Scenario: トグルでスコア再計算
 - **WHEN** ユーザーが「石含む/除く」または「不足のみ/全部」を切り替える
 - **THEN** 効率ポイントとランキングが即座に再計算される
+
+#### Scenario: ストック込みトグルでスコア再計算
+- **WHEN** ユーザーが一覧ページの「ストック込み」トグルボタンを切り替える
+- **THEN** `stockEnabled` が更新され、効率ポイントとランキングが即座にストック込み（目標+バッファ）基準で再計算される
 
 #### Scenario: ストームポッド無料判定
 - **WHEN** 今ストームポッド無料期間中のポッド消費クエスト(例: 冠位研鑽戦)が存在する
@@ -226,7 +230,7 @@ TBD - created by archiving change quest-efficiency-points. Update Purpose after 
 
 ### Requirement: クエスト詳細の効率ポイント表示
 
-システムは `/quests/[id]` 詳細に当該クエストの効率ポイントと素材別 contribution(relativeEff × 重み)の内訳を表示 SHALL。効率ポイントの見出しには説明ツールチップを付け、一覧ページと同じ説明文を参照する SHALL。内訳リストには各列(素材・重み・寄与度)が何を表すかを示す見出しを表示 SHALL。
+システムは `/quests/[id]` 詳細に当該クエストの効率ポイントと素材別 contribution(relativeEff × 重み)の内訳を表示 SHALL。効率ポイントの見出しには説明ツールチップを付け、一覧ページと同じ説明文を参照する SHALL。見出し横には「ストック込み」トグルボタンを配置し、詳細画面のままでもストック込み目標のON/OFFを切り替えられる SHALL。内訳リストには各列(素材・重み・寄与度)が何を表すかを示す見出しを表示 SHALL。
 
 #### Scenario: 内訳表示
 - **WHEN** ユーザーがクエスト詳細を開く
@@ -235,6 +239,10 @@ TBD - created by archiving change quest-efficiency-points. Update Purpose after 
 #### Scenario: 詳細ページの説明ツールチップ
 - **WHEN** ユーザーがクエスト詳細ページの「効率ポイント」見出し横にある説明アイコンを操作する(ホバー/タップ)
 - **THEN** 一覧ページと同じ説明文言のツールチップが表示される
+
+#### Scenario: 詳細ページのストック込みトグル
+- **WHEN** ユーザーがクエスト詳細ページの「ストック込み」トグルボタンを操作する
+- **THEN** `stockEnabled` が更新され、当該クエストの効率ポイントおよび内訳の重みが即座に再計算される
 
 #### Scenario: 内訳の列見出し
 - **WHEN** ユーザーがクエスト詳細ページで効率ポイントの内訳リストを見る
@@ -266,10 +274,10 @@ TBD - created by archiving change quest-efficiency-points. Update Purpose after 
 
 ### Requirement: 余剰ストックを目標に含めるグローバル設定(stockEnabled)
 
-システムは「余剰ストックを目標に含める」グローバルトグル `stockEnabled`(boolean, 既定 OFF, クラウド同期, ストレージキー `efficiency/stockEnabled`)を提供 SHALL。トグルは所持数モーダル内の「ストック目標設定」専用セクションに、カテゴリ群×レアの `stockBuffer` 編集とまとめて1つだけ置き、画面ごとの個別トグルは設けない SHALL。`stockEnabled=ON` のとき、farming 方向の各機能(クエスト効率の重み、周回ソルバー取り込み、配布アドバイザー)が一括して実効目標 `育成必要数 + buffer(item)`(`buffer(item) = stockBuffer[group(item)][rarity(item)]`)を参照する。実効必要数・実効不足は共有の純関数で算出し、各機能が同一定義を用いる SHALL。育成達成が近い上級者向けのオプトインであり、既定では一般ユーザーの挙動・保存値を変えない。
+システムは「余剰ストックを目標に含める」グローバルトグル `stockEnabled`(boolean, 既定 OFF, クラウド同期, ストレージキー `efficiency/stockEnabled`)を提供 SHALL。トグルは所持数モーダル内の「ストック目標設定」専用セクションに加えて、クエスト一覧やクエスト詳細の「ストック込み」トグルボタンからも直接切り替えられる SHALL。`stockEnabled=ON` のとき、farming 方向の各機能(クエスト効率の重み、周回ソルバー取り込み、配布アドバイザー)が一括して実効目標 `育成必要数 + buffer(item)`(`buffer(item) = stockBuffer[group(item)][rarity(item)]`)を参照する。実効必要数・実効不足は共有の純関数で算出し、各機能が同一定義を用いる SHALL。育成達成が近い上級者向けのオプトインであり、既定では一般ユーザーの挙動・保存値を変えない。
 
 #### Scenario: グローバルトグルの一括反映
-- **WHEN** ユーザーが所持数モーダルで `stockEnabled` を ON にする
+- **WHEN** ユーザーが所持数モーダルや「ストック込み」トグルボタンで `stockEnabled` を ON にする
 - **THEN** クエスト効率ランキング・周回ソルバー取り込み・配布アドバイザーが、いずれもストック込み実効目標で再計算される
 
 #### Scenario: 既定はOFFで従来挙動

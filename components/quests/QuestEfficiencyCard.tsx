@@ -14,6 +14,7 @@ import {
   mergeGoals,
   REWARD_ITEM_PREFIX,
 } from '../../lib/quest-efficiency'
+import { StockIncludedToggle } from './StockIncludedToggle'
 
 const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
 
@@ -84,14 +85,7 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
                 {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
               </TooltipContent>
             </Tooltip>
-            {stockEnabled && (
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ background: 'var(--accent)', color: 'var(--gold)', border: '1px solid var(--gold-dim)' }}
-              >
-                {t('ストック込み')}
-              </span>
-            )}
+            <StockIncludedToggle />
           </div>
           <span className="text-2xl font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
             {eff.score.toFixed(2)}

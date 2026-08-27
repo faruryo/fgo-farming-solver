@@ -24,6 +24,7 @@ import {
 } from '../../lib/quest-efficiency'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import { PossessionModal } from './PossessionModal'
+import { StockIncludedToggle } from './StockIncludedToggle'
 
 const toggleItemClass =
   'h-7 px-3 rounded-none! text-[10px] font-semibold tracking-wide text-[color:var(--text3)] transition-colors hover:text-[color:var(--gold)] hover:bg-[color:var(--accent)] data-[pressed]:bg-[color:var(--gold)] data-[pressed]:text-white aria-pressed:bg-[color:var(--gold)] aria-pressed:text-white'
@@ -339,14 +340,7 @@ export const QuestEfficiencyList: React.FC = () => {
           </TooltipContent>
         </Tooltip>
 
-        {stockEnabled && (
-          <span
-            className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-            style={{ background: 'var(--accent)', color: 'var(--gold)', border: '1px solid var(--gold-dim)' }}
-          >
-            {t('ストック込み')}
-          </span>
-        )}
+        <StockIncludedToggle />
 
         <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
           {t('所持数を入力')}
