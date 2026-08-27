@@ -46,6 +46,19 @@ describe('build-solve-params', () => {
         largeCategory: '強化素材',
       })
     })
+
+    it('handles partial objects with string ids and default empty strings', () => {
+      expect(toStockItemLike({ id: '500', category: '銀素材' })).toEqual({
+        id: '500',
+        category: '銀素材',
+        largeCategory: '',
+      })
+      expect(toStockItemLike({ id: 600 })).toEqual({
+        id: '600',
+        category: '',
+        largeCategory: '',
+      })
+    })
   })
 
   describe('buildQueryItemsA', () => {

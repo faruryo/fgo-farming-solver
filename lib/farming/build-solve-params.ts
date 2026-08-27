@@ -4,11 +4,11 @@ import { effectiveDeficiency, StockBuffer } from '../quest-efficiency'
 import { hasSelectedQuests, hasSubmittableItems } from './submit-solve'
 
 export const toStockItemLike = (
-  item: EnrichedItem
+  item: { id: string | number; category?: string; largeCategory?: string }
 ): { id: string; category: string; largeCategory: string } => ({
   id: item.id.toString(),
-  category: item.category,
-  largeCategory: item.largeCategory,
+  category: item.category ?? '',
+  largeCategory: item.largeCategory ?? '',
 })
 
 export const buildQueryItemsA = (
