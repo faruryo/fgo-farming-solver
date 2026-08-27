@@ -6,6 +6,7 @@ import { Info, Search, SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { EfficiencyDenominatorToggle } from './EfficiencyDenominatorToggle'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -22,6 +23,11 @@ import {
   computeQuestEfficiency,
   mergeGoals,
 } from '../../lib/quest-efficiency'
+import {
+  efficiencyScoreColorVar,
+  efficiencyScoreLabelFallback,
+  efficiencyScoreLabelKey,
+} from '../../lib/quest-efficiency-display'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import { PossessionModal } from './PossessionModal'
 
@@ -206,6 +212,12 @@ export const QuestEfficiencyList: React.FC = () => {
     (includeExp ? 1 : 0) +
     (showLowKanni ? 1 : 0)
 
+  const scoreLabel = t(
+    efficiencyScoreLabelKey(denominator),
+    efficiencyScoreLabelFallback(denominator),
+  )
+  const scoreColor = efficiencyScoreColorVar(denominator)
+
   return (
     <div className="flex flex-col gap-4">
       {/* コントロール行 */}
@@ -226,24 +238,7 @@ export const QuestEfficiencyList: React.FC = () => {
         </div>
 
         {/* 分母(AP効率/周回効率)はメイン行に常設 */}
-        <ToggleGroup
-          value={[denominator]}
-          onValueChange={(values: string[]) => {
-            const v = values[0]
-            if (v === 'ap' || v === 'turn') setDenominator(v)
-          }}
-          size="sm"
-          spacing={0}
-          aria-label={t('効率の分母')}
-          className={toggleGroupClass}
-        >
-          <ToggleGroupItem value="ap" className={toggleItemClass}>
-            {t('AP効率')}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="turn" className={toggleItemClass}>
-            {t('周回効率')}
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <EfficiencyDenominatorToggle value={denominator} onChange={setDenominator} />
 
         {/* フィルター(ポップオーバー) */}
         <Popover>
@@ -329,10 +324,10 @@ export const QuestEfficiencyList: React.FC = () => {
         <Tooltip>
           <TooltipTrigger
             className="flex items-center gap-1 flex-shrink-0 cursor-help text-[11px] font-semibold px-2 py-1 rounded-full"
-            style={{ color: 'var(--text2)', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}
+            style={{ color: scoreColor, background: 'var(--bg2)', border: `1px solid ${scoreColor}` }}
           >
             <Info size={12} />
-            {t('efficiency-score', '効率ポイント')}
+            {scoreLabel}
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
             {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
@@ -415,10 +410,10 @@ export const QuestEfficiencyList: React.FC = () => {
                     </span>
                   )}
                   <div className="text-right">
-                    <p className="text-[9px]" style={{ color: 'var(--text3)' }}>
-                      {t('efficiency-score', '効率ポイント')}
+                    <p className="text-[9px]" style={{ color: scoreColor }}>
+                      {scoreLabel}
                     </p>
-                    <p className="text-[15px] font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
+                    <p className="text-[15px] font-bold tabular-nums" style={{ color: scoreColor }}>
                       {r.score.toFixed(2)}
                     </p>
                   </div>

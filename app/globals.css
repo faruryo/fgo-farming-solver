@@ -25,6 +25,8 @@
   --gold2:    #c09030;
   --gold-dim: rgba(154,114,36,0.4);
   --steel:    #4a6888;
+  --efficiency-ap: var(--gold);
+  --efficiency-turn: var(--steel);
   --steel2:   #2a4868;
   --text:     #14203a;
   --text2:    #46607e;
