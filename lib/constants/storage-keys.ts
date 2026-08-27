@@ -37,6 +37,7 @@ export const STORAGE_KEYS = {
   MATERIAL_SELECTION_ADVISOR: 'material/selection-advisor-config',
   DASHBOARD_NEAR_GOAL_SORT_MODE: 'dashboard.nearGoal.sortMode',
   DASHBOARD_RECOMMENDED_QUEST_SORT_MODE: 'dashboard.recommendedQuest.sortMode',
+  DASHBOARD_HIDE_COMPLETED_EVENTS: 'dashboard.eventSection.hideCompleted',
   EVENTS_GOLDEN_FRUIT: 'events/goldenFruit',
 
   // Quest efficiency filters
