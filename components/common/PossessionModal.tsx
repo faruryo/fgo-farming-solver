@@ -87,6 +87,18 @@ const PossessionCategorySection: React.FC<{
   </div>
 )
 
+const PossessionModalHeader: React.FC = () => {
+  const { t } = useTranslation('quests')
+  return (
+    <DialogHeader>
+      <DialogTitle>{t('所持数を登録', '所持数を登録')}</DialogTitle>
+      <DialogDescription>
+        {t('所持数モーダル説明', '各素材の所持数を入れると、不足している素材を優先して効率を計算します。未入力の素材は所持0として扱われます。')}
+      </DialogDescription>
+    </DialogHeader>
+  )
+}
+
 /**
  * 所持数(`posession`)とストック目標を編集するモーダル。
  * `useLocalStorage` の `ls-sync` で一覧側・ダッシュボード側へ即時反映される。
@@ -120,18 +132,18 @@ export const PossessionModal: React.FC<{
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto gap-5">
-        <DialogHeader>
-          <DialogTitle>{t('所持数を登録', '所持数を登録')}</DialogTitle>
-          <DialogDescription>{t('所持数モーダル説明', '各素材の所持数を入れると、不足している素材を優先して効率を計算します。未入力の素材は所持0として扱われます。')}</DialogDescription>
-        </DialogHeader>
-
-        <Button variant="outline" size="sm" className="self-start" onClick={() => setImportOpen(true)}>
+        <PossessionModalHeader />
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start"
+          disabled={items.length === 0}
+          onClick={() => setImportOpen(true)}
+        >
           <ImageUp className="mr-1.5 h-4 w-4" />
           {t('スクリーンショットから取り込む', 'スクリーンショットから取り込む')}
         </Button>
-
         <StockTargetSettings />
-
         <div className="flex flex-col gap-4">
           {grouped.map(([category, list]) => (
             <PossessionCategorySection
@@ -144,7 +156,6 @@ export const PossessionModal: React.FC<{
           ))}
         </div>
       </DialogContent>
-
       <PossessionImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}

@@ -36,7 +36,7 @@ const item = {
 export default function HomePage() {
   const { t } = useTranslation(['dashboard'])
   const { data: dashboardMeta, isLoading } = useDashboardMeta()
-  const { items: dropItems } = useDrops()
+  const { items: dropItems, isLoading: dropsLoading } = useDrops()
   const [possessionModalOpen, setPossessionModalOpen] = useState(false)
 
   return (
@@ -93,6 +93,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setPossessionModalOpen(true)}
+                  disabled={dropsLoading}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -104,12 +105,14 @@ export default function HomePage() {
                     fontSize: '13px',
                     fontWeight: 600,
                     border: '1px solid var(--border)',
-                    cursor: 'pointer',
+                    cursor: dropsLoading ? 'not-allowed' : 'pointer',
+                    opacity: dropsLoading ? 0.6 : 1,
                     letterSpacing: '0.02em',
                   }}
+                  title={t('possession-inventory', '所持アイテム')}
                 >
                   <Package className="w-3.5 h-3.5" style={{ color: 'var(--gold)' }} />
-                  {t('所持アイテム', '所持アイテム')}
+                  {t('possession-inventory', '所持アイテム')}
                 </button>
                 <div
                   className="flex gap-3 ml-1 pl-2"

@@ -234,10 +234,10 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
             type="button"
             onClick={onOpenPossession}
             className="ml-auto text-[11px] font-semibold text-[color:var(--text3)] hover:text-[color:var(--gold)] transition-colors flex items-center gap-1 flex-shrink-0 cursor-pointer"
-            title={t('dashboard:所持数を編集', '所持数を編集')}
+            title={t('dashboard:edit-possession', '所持数を編集')}
           >
             <ImageUp size={12} />
-            <span>{t('dashboard:所持数を編集', '所持数を編集')}</span>
+            <span>{t('dashboard:edit-possession', '所持数を編集')}</span>
           </button>
         )}
         <div className="u-section-header-line" />
