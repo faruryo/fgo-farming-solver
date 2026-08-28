@@ -203,7 +203,7 @@ describe('PossessionImportDialog レビューUI', () => {
     expect(within(rowOf('アイテムA')).queryByTestId('import-review-sign-badge')).toBeNull()
   })
 
-  it('高信頼行でも数量を空にすると要確認になり、元画像確認が出る', async () => {
+  it('高信頼行の数量を空にすると要確認セクションへ移るが、元画像確認は出さない', async () => {
     const { user } = await reachReview([card(101, 'アイテムA', 5)])
 
     const row = rowOf('アイテムA')
@@ -215,11 +215,8 @@ describe('PossessionImportDialog レビューUI', () => {
 
     const reclassified = rowOf('アイテムA')
     expect(reclassified).toHaveAttribute('data-review-section', 'needs-review')
-    expect(within(reclassified).getByText('要確認')).toBeInTheDocument()
-    expect(within(reclassified).getByRole('button', { name: '元画像を確認' })).toBeInTheDocument()
-
-    await user.click(within(reclassified).getByRole('button', { name: '元画像を確認' }))
-    expect(within(reclassified).getByRole('img', { name: 'アイテムA' })).toBeInTheDocument()
+    expect(within(reclassified).queryByText('要確認')).toBeNull()
+    expect(within(reclassified).queryByRole('button', { name: '元画像を確認' })).toBeNull()
   })
 
   it('折りたたみ中でも除外していない変更なし行は確定対象', async () => {
