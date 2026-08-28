@@ -18,10 +18,10 @@
 
 ## Decisions
 
-### 1. フリクエ周回とクラフトの同時最適化（MILP）
+### 1. フリクエ周回とクラフトの同時最適化（MILP）と厳密な辞書式順序
 
-各素材の1個あたり限界価値（固定シャドウプライス）を線形結合する近似では、共通ドロップを持つ複数素材の同時削減効果を正確に捉えきれない場合があります。
-そこで、**フリクエ周回ソルバーとクラフト選択を1つの混合整数線形計画法（MILP）モデルに統合**し、真の残余周回コストを直接最小化します。
+各素材の1個あたり限界価値（固定シャドウプライス）を線形結合する近似や固定ペナルティ係数では、共通ドロップの相互作用や大規模インベントリ時の最適解の歪みを防げません。
+そこで、**フリクエ周回ソルバーとクラフト選択を1つの混合整数線形計画法（MILP）モデルに統合し、余剰使い切りと残余食材最小化も完全な辞書式順序（Lexicographic multi-stage）** で解きます。
 
 - **Stage 1: 不足素材に対するフリクエ周回コスト最小化 (MILP)**
   - **決定変数**:
@@ -38,18 +38,23 @@
   - ※「食材を使い切る」が OFF の場合は、この Stage 1 の最適解で終了します（ついでドロップ素材の不要な作成や食材消費は一切発生しません）。
 
 - **Stage 2: 余剰食材の使い切り（「食材を使い切る」ON時のみ実行）**
-  - Stage 1 で確定した不足枠作成数 $x^*_{j,\text{deficit}}$ を固定し、残った食材 $\text{remaining}_k = \text{owned}_k - \sum_j \text{cost}_{j,k} x^*_{j,\text{deficit}}$ を用いて余剰枠の作成数を最大化します。
-  - **決定変数**:
-    - $x_{j,\text{surplus}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の余剰枠作成数、整数変数）
-    - $\text{leftover}_k \ge 0$ （残余食材数）
-  - **制約条件**:
-    - $\sum_j \text{cost}_{j,k} \cdot x_{j,\text{surplus}} + \text{leftover}_k = \text{remaining}_k \quad (\forall k)$
-  - **目的関数 (最大化)**:
-    - $\text{Maximize: } \sum_j (V_{\text{base},j} \cdot x_{j,\text{surplus}}) - 0.00001 \cdot \sum_k \text{leftover}_k$
-    - ここで $V_{\text{base},j}$ は通常フリクエ最効率の単体AP/周回価値。同点時は残余食材数の最小化が働きます。
+  - Stage 1 で確定した不足枠作成数 $x^*_{j,\text{deficit}}$ を固定し、残った食材 $\text{remaining}_k = \text{owned}_k - \sum_j \text{cost}_{j,k} x^*_{j,\text{deficit}}$ を用いて、余剰素材価値の最大化と残余食材の最小化を**2段階の辞書式最適化**で解きます。
+  
+  - **Stage 2a: 余剰素材単体価値の最大化 (ILP)**
+    - **決定変数**: $x_{j,\text{surplus}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の余剰枠作成数、整数変数）
+    - **制約条件**: $\sum_j \text{cost}_{j,k} \cdot x_{j,\text{surplus}} \le \text{remaining}_k \quad (\forall k)$
+    - **目的関数 (最大化)**: $\text{Maximize: } \sum_j (V_{\text{base},j} \cdot x_{j,\text{surplus}})$
+    - ここで $V_{\text{base},j}$ は通常フリクエ最効率の単体AP/周回価値。最適目的関数値を $V^*_{\text{surplus}}$ とします。
+  
+  - **Stage 2b: 残余食材の最小化タイブレーク (ILP)**
+    - **決定変数**: $x_{j,\text{surplus}} \in \mathbb{Z}_{\ge 0}$, $\text{leftover}_k \ge 0$
+    - **制約条件**:
+      - $\sum_j (V_{\text{base},j} \cdot x_{j,\text{surplus}}) \ge V^*_{\text{surplus}}$ （最適余剰価値を厳格に保証）
+      - $\sum_j \text{cost}_{j,k} \cdot x_{j,\text{surplus}} + \text{leftover}_k = \text{remaining}_k \quad (\forall k)$
+    - **目的関数 (最小化)**: $\text{Minimize: } \sum_k \text{leftover}_k$
 
 - **計算パフォーマンス**:
-  - クエスト変数約100個、クラフト整数変数12個、制約約100本の小規模な MILP であり、`javascript-lp-solver` によりブラウザ上で **10〜50ms** 程度で高速に解が得られます。
+  - クエスト変数約100個・クラフト整数変数12個のMILP（Stage 1）および整数変数12個のILP（Stage 2a, 2b）であり、すべて解いても合計 **10〜30ms** 程度で高速に完了します。
 
 ### 2. モジュール構成と責務分離
 
