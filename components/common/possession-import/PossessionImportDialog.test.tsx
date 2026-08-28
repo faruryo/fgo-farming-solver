@@ -146,7 +146,7 @@ describe('PossessionImportDialog レビューUI', () => {
 
     expect(screen.getByText('矛盾あり')).toBeInTheDocument()
     const input = within(rowOf('アイテムA')).getByRole('spinbutton')
-    expect(input.value).toBe('')
+    expect(input).toHaveDisplayValue('')
 
     await user.click(screen.getByRole('button', { name: '反映する' }))
     expect(onConfirm).toHaveBeenCalledWith({})
