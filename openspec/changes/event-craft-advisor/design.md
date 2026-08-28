@@ -24,18 +24,28 @@
 そこで、**フリクエ周回ソルバーとクラフト選択を1つの混合整数線形計画法（MILP）モデルに統合し、余剰使い切りと残余食材最小化も完全な辞書式順序（Lexicographic multi-stage）** で解きます。
 
 - **Stage 1: 不足素材に対するフリクエ周回コスト最小化 (MILP)**
-  - **決定変数**:
-    - $y_q \ge 0$ （各許可クエスト $q$ の周回数、連続変数）
-    - $x_{j,\text{deficit}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の不足枠作成数、整数変数）
-  - **制約条件**:
-    - 素材必要数充足: $\sum_{q} (\text{drop}_{q,i} \cdot y_q) + \sum_{j \text{ gives } i} x_{j,\text{deficit}} \ge \text{fullNeed}_i \quad (\forall i)$
-    - 食材所持上限: $\sum_j (\text{cost}_{j,k} \cdot x_{j,\text{deficit}}) \le \text{owned}_k \quad (k \in \{\text{seafood}, \text{meat}, \text{vegetable}\})$
-    - 不足数上限: $x_{j,\text{deficit}} \le \text{deficiency}_j \quad (\forall j)$
-  - **目的関数 (最小化)**:
-    - $\text{Minimize: } \sum_q (\text{cost}_q \cdot y_q)$
-    - （周回数節約優先: $\text{cost}_q = 1$、AP節約優先: $\text{cost}_q = \text{ap}_q$）
-  - クラフト前のベースライン最適コストを $C_{\text{base}}$、本MILPで得られた最適コストを $C^*_{\text{opt}}$ とすると、真の総削減量は $C_{\text{base}} - C^*_{\text{opt}}$ となります。
-  - ※「食材を使い切る」が OFF の場合は、この Stage 1 の最適解で終了します（ついでドロップ素材の不要な作成や食材消費は一切発生しません）。
+  - **Stage 1a: 最小周回コストの算出**
+    - **決定変数**:
+      - $y_q \ge 0$ （各許可クエスト $q$ の周回数、連続変数）
+      - $x_{j,\text{deficit}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の不足枠作成数、整数変数）
+    - **制約条件**:
+      - 素材必要数充足: $\sum_{q} (\text{drop}_{q,i} \cdot y_q) + \sum_{j \text{ gives } i} x_{j,\text{deficit}} \ge \text{fullNeed}_i \quad (\forall i)$
+      - 食材所持上限: $\sum_j (\text{cost}_{j,k} \cdot x_{j,\text{deficit}}) \le \text{owned}_k \quad (k \in \{\text{seafood}, \text{meat}, \text{vegetable}\})$
+      - 不足数上限: $x_{j,\text{deficit}} \le \text{deficiency}_j \quad (\forall j)$
+    - **目的関数 (最小化)**:
+      - $\text{Minimize: } \sum_q (\text{cost}_q \cdot y_q)$
+      - （周回数節約優先: $\text{cost}_q = 1$、AP節約優先: $\text{cost}_q = \text{ap}_q$）
+    - クラフト前のベースライン最適コストを $C_{\text{base}}$、本最適解の目的関数値を $C^*_{\text{opt}}$ とします。
+  
+  - **Stage 1b: 最小周回コストを維持した消費食材の最小化タイブレーク**
+    - 他素材集めのついでに揃う素材など、クラフトしても周回コストが変わらないゼロ効果クラフトによる食材浪費を完全に防ぐため、最小周回コスト制約のもとで総消費食材数を最小化します。
+    - **制約条件**:
+      - $\sum_q (\text{cost}_q \cdot y_q) \le C^*_{\text{opt}}$ （最小周回コストを厳格に維持）
+      - 素材必要数充足・食材所持上限・不足数上限は Stage 1a と同一
+    - **目的関数 (最小化)**:
+      - $\text{Minimize: } \sum_j \left( \sum_k \text{cost}_{j,k} \right) \cdot x_{j,\text{deficit}}$
+    - 得られた解を不足枠の最適作成数 $x^*_{j,\text{deficit}}$ とします。真の総削減量は $C_{\text{base}} - C^*_{\text{opt}}$ となります。
+    - ※「食材を使い切る」が OFF の場合は、この Stage 1 の最適解で終了します。
 
 - **Stage 2: 余剰食材の使い切り（「食材を使い切る」ON時のみ実行）**
   - Stage 1 で確定した不足枠作成数 $x^*_{j,\text{deficit}}$ を固定し、残った食材 $\text{remaining}_k = \text{owned}_k - \sum_j \text{cost}_{j,k} x^*_{j,\text{deficit}}$ を用いて、余剰素材価値の最大化と残余食材の最小化を**2段階の辞書式最適化**で解きます。
@@ -54,7 +64,7 @@
     - **目的関数 (最小化)**: $\text{Minimize: } \sum_k \text{leftover}_k$
 
 - **計算パフォーマンス**:
-  - クエスト変数約100個・クラフト整数変数12個のMILP（Stage 1）および整数変数12個のILP（Stage 2a, 2b）であり、すべて解いても合計 **10〜30ms** 程度で高速に完了します。
+  - 各ステージは変数12〜100個程度の小規模なMILP/ILPであり、すべて解いてもブラウザ上で合計 **15〜40ms** 程度で高速に完了します。
 
 ### 2. モジュール構成と責務分離
 
@@ -76,4 +86,4 @@
 ## Risks / Trade-offs
 
 - **[計算パフォーマンス]** MILP（混合整数線形計画法）を使用するが、整数変数は12個のみで分枝限定法（Branch and Bound）の探索空間が非常に小さいため、入力から数十ミリ秒以内に瞬時に解が求まり、UIをブロックしません。
-- **[ついでドロップ素材の厳密な扱い]** フリクエ周回全体を直接目的関数としているため、「他素材のついでに自然に集まる素材」に対して料理を作成しても周回コストが下がらない場合は自動的に $x_{j,\text{deficit}} = 0$ となり、真に周回を減らせる料理だけが選ばれます。
+- **[ついでドロップ素材の厳密な扱い]** フリクエ周回全体を直接目的関数とし、かつ Stage 1b で消費食材を最小化するため、「他素材のついでに自然に集まる素材」に対して料理を作成しても周回コストが下がらない場合は自動的に作成数0となり、真に周回を減らせる料理だけが選ばれます。
