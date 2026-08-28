@@ -57,6 +57,46 @@ const SECTION_LABEL_KEY: Record<ReviewSection, { key: string; fallback: string }
   unchanged: { key: 'import-review-section-unchanged', fallback: '変更なし' },
 }
 
+const ReviewRowSurface: React.FC<{
+  section: ReviewSection
+  changeClass: ReviewRow['changeClass']
+  atlasId: number
+  children: React.ReactNode
+}> = ({ section, changeClass, atlasId, children }) => (
+  <div
+    data-review-row
+    data-review-section={section}
+    data-change-class={changeClass}
+    data-atlas-id={atlasId}
+    className={cn(
+      'relative flex flex-wrap items-center gap-2 py-2 pl-3',
+      section === 'increase' && 'bg-teal-600/10 dark:bg-teal-400/15',
+      section === 'decrease' && 'bg-orange-500/10 dark:bg-orange-400/15',
+      section === 'unchanged' && 'opacity-60'
+    )}
+    style={
+      section === 'needs-review'
+        ? { background: 'var(--warning-bg, rgba(234,179,8,0.08))' }
+        : undefined
+    }
+  >
+    {section === 'increase' && (
+      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-teal-600" />
+    )}
+    {section === 'decrease' && (
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(to bottom, rgb(249 115 22) 0 4px, transparent 4px 8px)',
+        }}
+      />
+    )}
+    {children}
+  </div>
+)
+
 const ReviewCandidateRow: React.FC<{
   row: ReviewRow
   candidate: MergedCandidate
@@ -83,36 +123,7 @@ const ReviewCandidateRow: React.FC<{
   const absDelta = Math.abs(row.delta ?? 0)
 
   return (
-    <div
-      data-review-row
-      data-review-section={row.section}
-      data-change-class={row.changeClass}
-      data-atlas-id={row.atlasId}
-      className={cn(
-        'relative flex flex-wrap items-center gap-2 py-2 pl-3',
-        row.section === 'increase' && 'bg-teal-600/10 dark:bg-teal-400/15',
-        row.section === 'decrease' && 'bg-orange-500/10 dark:bg-orange-400/15',
-        row.section === 'unchanged' && 'opacity-60'
-      )}
-      style={
-        row.section === 'needs-review'
-          ? { background: 'var(--warning-bg, rgba(234,179,8,0.08))' }
-          : undefined
-      }
-    >
-      {row.section === 'increase' && (
-        <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-teal-600" />
-      )}
-      {row.section === 'decrease' && (
-        <span
-          aria-hidden
-          className="absolute inset-y-0 left-0 w-[3px]"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(to bottom, rgb(249 115 22) 0 4px, transparent 4px 8px)',
-          }}
-        />
-      )}
+    <ReviewRowSurface section={row.section} changeClass={row.changeClass} atlasId={row.atlasId}>
       <Checkbox checked={!isExcluded} onCheckedChange={(checked) => onToggleExcluded(!!checked)} />
       <ItemIdentity icon={item?.icon} name={row.name} size={26} />
       <span className="flex-1 text-xs truncate" title={row.name} style={{ color: 'var(--text1)' }}>
@@ -183,7 +194,7 @@ const ReviewCandidateRow: React.FC<{
           ))}
         </div>
       )}
-    </div>
+    </ReviewRowSurface>
   )
 }
 
