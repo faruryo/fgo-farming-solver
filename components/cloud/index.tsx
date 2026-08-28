@@ -67,7 +67,7 @@ const Cloud = () => {
 
   // クラウドのデータが「いつ・どの端末から」保存されたものかは、復元するかどうかの
   // 判断に直結する(端末間で保存が往復していた事故は、この 2 つで特定できた)。
-  // 生の ISO は読みづらいので、既存の formatDate(JST 表記)に合わせる。
+  // 生の ISO は読みづらいので、formatDate(ローカル日時表記)に合わせる。
   const cloudSavedAt = (() => {
     const raw = cloudData?.metadata?.updatedAt
     const time = raw ? new Date(raw).getTime() : NaN
