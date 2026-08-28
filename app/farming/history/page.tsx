@@ -12,6 +12,7 @@ import {
   StockFilter,
   isStock,
 } from '../../../components/farming/FarmingHistoryChart'
+import { formatDate, parseUtcDate } from '../../../lib/format-date'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,7 +151,7 @@ export default function HistoryPage() {
 
   // バッチペアは1エントリで通常(A)とストック込み(B)の両方を持つため、ペアが1件でもあれば
   // 両種別が存在する扱い。defaultFilter は最新エントリ基準(単独ストック行のみ stock 既定)。
-  const { bothExist, defaultFilter } = useMemo(() => {
+  const { bothExist, defaultFilter } = useMemo<{ bothExist: boolean; defaultFilter: StockFilter }>(() => {
     let hasNormal = false
     let hasStock = false
     let mostRecent: GroupedHistoryItem | null = null
@@ -158,11 +159,13 @@ export default function HistoryPage() {
       if (h.stockSibling) { hasNormal = true; hasStock = true }
       else if (isStock(h)) hasStock = true
       else hasNormal = true
-      if (!mostRecent || new Date(h.created_at) > new Date(mostRecent.created_at)) mostRecent = h
+      const itemTime = parseUtcDate(h.created_at)?.getTime() ?? 0
+      const recentTime = mostRecent ? (parseUtcDate(mostRecent.created_at)?.getTime() ?? 0) : 0
+      if (!mostRecent || itemTime > recentTime) mostRecent = h
     }
     return {
       bothExist: hasNormal && hasStock,
-      defaultFilter: (mostRecent && !mostRecent.stockSibling && isStock(mostRecent) ? 'stock' : 'normal') as StockFilter,
+      defaultFilter: mostRecent && !mostRecent.stockSibling && isStock(mostRecent) ? 'stock' : 'normal',
     }
   }, [groupedHistory])
   const stockFilter = stockOverride ?? defaultFilter
@@ -269,7 +272,7 @@ export default function HistoryPage() {
                 {groupedHistory.map(item => (
                   <TableRow key={item.id}>
                     <TableCell className="text-sm py-3 px-4" style={{ color: 'var(--text)' }}>
-                      {new Date(item.created_at).toLocaleString()}
+                      {formatDate(item.created_at)}
                     </TableCell>
                     <TableCell className="py-3 px-4">
                       <div className="flex items-center gap-1.5">

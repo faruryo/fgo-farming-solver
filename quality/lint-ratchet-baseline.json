@@ -73,11 +73,6 @@
     },
     {
       "file": "app/farming/history/page.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "app/farming/history/page.tsx",
       "rule": "max-lines-per-function",
       "count": 2
     },
@@ -317,6 +312,11 @@
       "count": 1
     },
     {
+      "file": "components/common/PossessionModal.tsx",
+      "rule": "security/detect-object-injection",
+      "count": 1
+    },
+    {
       "file": "components/common/StockTargetSettings.tsx",
       "rule": "max-lines-per-function",
       "count": 1
@@ -484,17 +484,12 @@
     {
       "file": "components/farming/FarmingHistoryChart.tsx",
       "rule": "@typescript-eslint/no-explicit-any",
-      "count": 4
-    },
-    {
-      "file": "components/farming/FarmingHistoryChart.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
+      "count": 3
     },
     {
       "file": "components/farming/FarmingHistoryChart.tsx",
       "rule": "@typescript-eslint/no-unsafe-argument",
-      "count": 2
+      "count": 1
     },
     {
       "file": "components/farming/FarmingHistoryChart.tsx",
@@ -604,27 +599,12 @@
     {
       "file": "components/farming/result.tsx",
       "rule": "@typescript-eslint/no-explicit-any",
-      "count": 8
-    },
-    {
-      "file": "components/farming/result.tsx",
-      "rule": "@typescript-eslint/no-non-null-assertion",
-      "count": 6
-    },
-    {
-      "file": "components/farming/result.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 13
-    },
-    {
-      "file": "components/farming/result.tsx",
-      "rule": "@typescript-eslint/no-unsafe-argument",
-      "count": 3
+      "count": 1
     },
     {
       "file": "components/farming/result.tsx",
       "rule": "@typescript-eslint/no-unsafe-assignment",
-      "count": 5
+      "count": 1
     },
     {
       "file": "components/farming/result.tsx",
@@ -849,11 +829,6 @@
     {
       "file": "components/material/tracking-toast.test.tsx",
       "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "components/common/PossessionModal.tsx",
-      "rule": "security/detect-object-injection",
       "count": 1
     },
     {
@@ -1354,11 +1329,6 @@
     {
       "file": "lib/event-plan.ts",
       "rule": "sonarjs/no-nested-conditional",
-      "count": 1
-    },
-    {
-      "file": "lib/format-date.test.ts",
-      "rule": "sonarjs/no-undefined-argument",
       "count": 1
     },
     {

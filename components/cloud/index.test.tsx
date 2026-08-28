@@ -28,6 +28,7 @@ vi.mock('../../hooks/use-cloud-sync', () => ({
 }))
 
 import Cloud from './index'
+import { formatDate } from '../../lib/format-date'
 
 const stats = (overrides: Partial<Stats> = {}): Stats => ({
   ownedCount: 3,
@@ -154,8 +155,8 @@ describe('Cloud page (shrink guard pending state)', () => {
     render(<Cloud />)
 
     expect(screen.getByText('クラウドの最終保存')).toBeInTheDocument()
-    // 生の ISO ではなく JST の読みやすい表記(既存 formatDate の流儀)。
-    expect(screen.getByText('7月1日 09:00')).toBeInTheDocument()
+    // 生の ISO ではなくローカル日時の読みやすい表記(formatDate の流儀)。
+    expect(screen.getByText(formatDate('2026-07-01T00:00:00.000Z'))).toBeInTheDocument()
     expect(screen.queryByText('2026-07-01T00:00:00.000Z')).not.toBeInTheDocument()
     expect(screen.getByText('保存した端末')).toBeInTheDocument()
     expect(screen.getByText('device-abc')).toBeInTheDocument()

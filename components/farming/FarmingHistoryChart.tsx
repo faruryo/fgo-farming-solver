@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { FaCalendarAlt } from 'react-icons/fa'
+import { parseUtcDate } from '../../lib/format-date'
 
 export interface HistoryItem {
   id: string
@@ -57,7 +58,9 @@ export const deriveStockMeta = (history: HistoryItem[]): { bothExist: boolean; d
   for (const h of history) {
     if (isStock(h)) hasStock = true
     else hasNormal = true
-    if (!mostRecent || new Date(h.created_at) > new Date(mostRecent.created_at)) mostRecent = h
+    const hTime = parseUtcDate(h.created_at)?.getTime() ?? 0
+    const recentTime = mostRecent ? (parseUtcDate(mostRecent.created_at)?.getTime() ?? 0) : 0
+    if (!mostRecent || hTime > recentTime) mostRecent = h
   }
   return {
     bothExist: hasStock && hasNormal,
@@ -81,7 +84,7 @@ const PERIOD_OPTIONS: { label: string; value: PeriodRange }[] = [
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const timestamp = Number(label);
-    const dateStr = isNaN(timestamp) ? label : new Date(timestamp).toLocaleString('ja-JP', {
+    const dateStr = isNaN(timestamp) ? label : new Date(timestamp).toLocaleString(undefined, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -171,24 +174,26 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
     else startTime.setFullYear(2015); // Fallback to "all"
 
     const filtered = scoped
-      .filter(h => new Date(h.created_at) >= startTime && h.total_ap > 0)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .map(h => ({ h, time: parseUtcDate(h.created_at)?.getTime() ?? 0 }))
+      .filter(({ h, time }) => time >= startTime.getTime() && h.total_ap > 0)
+      .sort((a, b) => a.time - b.time);
 
     if (filtered.length === 0) return { chartData: [], predictionDate: null, xDomain: ['auto', 'auto'] as ['auto', 'auto'] };
 
     const dataKey = CHART_CONFIG[chartTab].dataKey;
-    const baseData = filtered.map(h => ({
-      timestamp: new Date(h.created_at).getTime(),
+    const baseData = filtered.map(({ h, time }) => ({
+      timestamp: time,
       [dataKey]: chartTab === 'ap' ? Math.round(h.total_ap) : Math.round(h.total_lap),
     }));
 
     // Prediction logic - Use ALL available history (same stock type) for more stable regression
     const allValidHistory = scoped
-      .filter(h => h.total_ap > 0)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .map(h => ({ h, time: parseUtcDate(h.created_at)?.getTime() ?? 0 }))
+      .filter(({ h, time }) => time > 0 && h.total_ap > 0)
+      .sort((a, b) => a.time - b.time);
     
-    const regressionData = allValidHistory.map(h => ({ 
-      x: new Date(h.created_at).getTime(), 
+    const regressionData = allValidHistory.map(({ time, h }) => ({ 
+      x: time, 
       y: chartTab === 'ap' ? Math.round(h.total_ap) : Math.round(h.total_lap) 
     }));
     
@@ -213,7 +218,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
       finalChartData.push({
         timestamp: displayEnd,
         [`${dataKey}予測`]: Math.max(0, reg.slope * displayEnd + reg.intercept),
-      } as any);
+      });
     }
 
     const startX = period === 'all' ? baseData[0].timestamp : startTime.getTime();
@@ -314,7 +319,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
                 <div className="flex items-center gap-1" style={{ color: 'var(--gold-dim)' }}>
                   <FaCalendarAlt size={10} />
                   <span className="text-[10px] font-bold">
-                    予想: {predictionDate.toLocaleDateString('ja-JP')}
+                    予想: {predictionDate.toLocaleDateString(undefined)}
                   </span>
                 </div>
               </TooltipTrigger>
@@ -337,7 +342,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
                 dataKey="timestamp"
                 type="number"
                 domain={xDomain}
-                tickFormatter={(val) => new Date(val).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 tick={{ fill: 'var(--text3)', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
