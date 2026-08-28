@@ -23,13 +23,16 @@
 各素材の1個あたり限界価値（固定シャドウプライス）を線形結合する近似や固定ペナルティ係数では、共通ドロップの相互作用や大規模インベントリ時の最適解の歪みを防げません。
 そこで、**フリクエ周回ソルバーとクラフト選択を1つの混合整数線形計画法（MILP）モデルに統合し、余剰使い切りと残余食材最小化も完全な辞書式順序（Lexicographic multi-stage）** で解きます。
 
+- **対象アイテムのフィルタリング (Infeasible 回避)**:
+  - `continuousOptimalCost`（`lib/material-selection-advisor.ts`）と同様に、許可クエストに恒常ドロップが存在するアイテム、またはクラフトレシピの獲得対象アイテムのみを制約対象 $i \in \text{farmableOrCraftableItems}$ とします。QPやドロップのないアイテムは制約から除外し、モデルが Infeasible になることを防ぎます。
+
 - **Stage 1: 不足素材に対するフリクエ周回コスト最小化 (MILP)**
   - **Stage 1a: 最小周回コストの算出**
     - **決定変数**:
       - $y_q \ge 0$ （各許可クエスト $q$ の周回数、連続変数）
       - $x_{j,\text{deficit}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の不足枠作成数、整数変数）
     - **制約条件**:
-      - 素材必要数充足: $\sum_{q} (\text{drop}_{q,i} \cdot y_q) + \sum_{j \text{ gives } i} x_{j,\text{deficit}} \ge \text{fullNeed}_i \quad (\forall i)$
+      - 素材必要数充足: $\sum_{q} (\text{drop}_{q,i} \cdot y_q) + \sum_{j \text{ gives } i} x_{j,\text{deficit}} \ge \text{fullNeed}_i \quad (\forall i \in \text{farmableOrCraftableItems})$
       - 食材所持上限: $\sum_j (\text{cost}_{j,k} \cdot x_{j,\text{deficit}}) \le \text{owned}_k \quad (k \in \{\text{seafood}, \text{meat}, \text{vegetable}\})$
       - 不足数上限: $x_{j,\text{deficit}} \le \text{deficiency}_j \quad (\forall j)$
     - **目的関数 (最小化)**:
