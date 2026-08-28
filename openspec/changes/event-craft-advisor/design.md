@@ -17,29 +17,41 @@
 
 ## Decisions
 
-### 1. ILP（整数線形計画法）の定式化と2段階価値付け
+### 1. 2段階 ILP（整数線形計画法）による厳密最適化
 
-各料理 $j$ の作成回数を整数変数 $x_j \ge 0$ とします。
-不足素材の優先と余剰食材の使い切りを両立させるため、作成数を「不足枠内 $x_{j,\text{deficit}}$」と「不足超過・余剰枠 $x_{j,\text{surplus}}$」の2つの変数に分割します。
+固定係数による単一目的関数ではなく、**2段階の辞書式多目的最適化（2-stage ILP）** を採用します。これにより、食材が大量にある場合でも余剰枠が不足枠の最適解を歪めることがなく、また「ついでドロップ（シャドウプライス=0）」素材が余剰食材削減目的で誤って不足枠に選ばれることを完全に防ぎます。
 
-- **制約条件**:
-  - $x_j = x_{j,\text{deficit}} + x_{j,\text{surplus}}$
-  - $x_{j,\text{deficit}} \le \text{deficiency}_j$ （不足数上限）
-  - $\sum_j (\text{cost}_{j,\text{seafood}} \cdot x_j) + \text{leftover}_{\text{seafood}} = \text{owned}_{\text{seafood}}$
-  - $\sum_j (\text{cost}_{j,\text{meat}} \cdot x_j) + \text{leftover}_{\text{meat}} = \text{owned}_{\text{meat}}$
-  - $\sum_j (\text{cost}_{j,\text{vegetable}} \cdot x_j) + \text{leftover}_{\text{vegetable}} = \text{owned}_{\text{vegetable}}$
-- **目的関数 (最大化)**:
-  - $\text{Maximize: } \sum_j (V_{\text{shadow},j} \cdot x_{j,\text{deficit}} + W_{\text{surplus}} \cdot V_{\text{base},j} \cdot x_{j,\text{surplus}}) - W_{\text{leftover}} \cdot (\text{leftover}_{\text{seafood}} + \text{leftover}_{\text{meat}} + \text{leftover}_{\text{vegetable}})$
-  - ここで $V_{\text{shadow},j}$ は `priceCandidates` で求めた限界削減量（周回ソルバーのシャドウプライス）、$V_{\text{base},j}$ は通常フリクエ最効率の単体AP/周回価値。
-  - 重み係数 $W_{\text{surplus}} = 0.001$（不足枠の優先を絶対に阻害しない）、$W_{\text{leftover}} = 0.00001$（同点時の食材余剰最小化タイブレーク）。
-  - 「食材を使い切る」がOFFの場合は $x_{j,\text{surplus}} = 0$ と制約します。
+- **Stage 1: 不足枠の削減価値最大化**
+  - **変数**: $x_{j,\text{deficit}} \ge 0$ （各料理 $j$ の不足枠作成数、整数）
+  - **制約条件**:
+    - $x_{j,\text{deficit}} \le \text{deficiency}_j$ （$V_{\text{shadow},j} > 0$ の素材のみ許可、$V_{\text{shadow},j} \le 0$ の素材は $x_{j,\text{deficit}} = 0$ に固定）
+    - $\sum_j \text{cost}_{j,k} \cdot x_{j,\text{deficit}} \le \text{owned}_k$ （各食材 $k \in \{\text{seafood}, \text{meat}, \text{vegetable}\}$）
+  - **目的関数 (最大化)**:
+    - $\text{Maximize: } \sum_j V_{\text{shadow},j} \cdot x_{j,\text{deficit}}$
+  - 最適値を $Z^*_{\text{deficit}}$ とします。
+  - ※「食材を使い切る」オプションが OFF の場合は、Stage 1 の最適解で終了します。
+
+- **Stage 2: 余剰食材の使い切り（「食材を使い切る」ON時のみ実行）**
+  - Stage 1 で求めた不足削減価値 $Z^*_{\text{deficit}}$ を維持したまま、残余食材で単体効率の高い料理を作成し、余剰食材を最小化します。
+  - **変数**: $x_{j,\text{deficit}} \ge 0$, $x_{j,\text{surplus}} \ge 0$ （整数）
+  - **制約条件**:
+    - $\sum_j V_{\text{shadow},j} \cdot x_{j,\text{deficit}} \ge Z^*_{\text{deficit}}$ （不足削減価値の完全保証）
+    - $x_{j,\text{deficit}} \le \text{deficiency}_j$ （$V_{\text{shadow},j} > 0$ のみ）
+    - $\sum_j \text{cost}_{j,k} \cdot (x_{j,\text{deficit}} + x_{j,\text{surplus}}) + \text{leftover}_k = \text{owned}_k$
+  - **目的関数 (最大化)**:
+    - $\text{Maximize: } \sum_j V_{\text{base},j} \cdot x_{j,\text{surplus}} - 0.00001 \cdot (\text{leftover}_{\text{seafood}} + \text{leftover}_{\text{meat}} + \text{leftover}_{\text{vegetable}})$
+    - ここで $V_{\text{base},j}$ は通常フリクエ最効率の単体AP/周回価値。同点時は残余食材数の最小化が働きます。
+
+- **計算パフォーマンス**:
+  - 各ステージの変数は 12〜24 個、制約は 4〜16 本程度です。
+  - 2回解いてもブラウザ上で合計 5ms 未満で完了するため、UIのレスポンスを損なうことなく、数学的に厳密な優先順位が保証されます。
 
 ### 2. モジュール構成と責務分離
 
 - `data/event-craft-recipes.ts`:
   - 水着2026「料理作成」の12品目（ゴーヤーチャンプルー、マース煮、目玉ぜんざい等）の消費食材、獲得素材、レアリティ等の静的マスタ定義。
 - `lib/event-craft-advisor.ts`:
-  - `solveEventCraftAllocation`: ILPモデルを構築し、`javascript-lp-solver` で厳密解を計算する純粋関数。
+  - `solveEventCraftAllocation`: 2-stage ILP モデルを構築し、`javascript-lp-solver` で厳密解を計算する純粋関数。
   - `generateCraftAdvice`: 計算結果と削減効果からマシュのセリフ文章を生成する純粋関数。
 - `components/material/event-craft-advisor.tsx`:
   - 食材入力フィールド（海鮮・肉・野菜）、設定トグル、結果一覧カード、残余食材インジケータ。
@@ -53,5 +65,5 @@
 
 ## Risks / Trade-offs
 
-- **[計算パフォーマンス]** 整数線形計画法（ILP）は一般にNP困難だが、今回は変数12個・制約3〜15本程度の超小規模な問題であるため、ブラウザ上で1ミリ秒未満で解が求まり、入力時のラグは一切発生しない。
-- **[ついでドロップ素材の扱い]** フリクエ周回でついでに揃う素材（シャドウプライス=0）は不足枠では作成されないが、「使い切る」ON時は余剰食材で作成されうる（無駄なく使い切る観点と整合）。
+- **[計算パフォーマンス]** 整数線形計画法（ILP）は一般にNP困難だが、今回は変数12〜24個・制約4〜16本程度の超小規模な問題であるため、2段階で解いてもブラウザ上で数ミリ秒で解が求まり、入力時のラグは一切発生しない。
+- **[ついでドロップ素材の扱い]** フリクエ周回でついでに揃う素材（シャドウプライス=0）は Stage 1 の不足枠では作成されないが、「使い切る」ON時は余剰食材で作成されうる（無駄なく使い切る観点と整合）。
