@@ -79,6 +79,7 @@ const ReviewCandidateRow: React.FC<{
   onToggleCrop,
 }) => {
   const { t } = useTranslation('quests')
+  const isNeedsReview = row.section === 'needs-review'
   const showSign = row.changeClass === 'increase' || row.changeClass === 'decrease'
   const absDelta = Math.abs(row.delta ?? 0)
 
@@ -143,7 +144,7 @@ const ReviewCandidateRow: React.FC<{
           {t('矛盾あり')}
         </span>
       )}
-      {candidate.needsReview && !candidate.hasConflict && (
+      {isNeedsReview && !candidate.hasConflict && (
         <span
           className="text-[10px] px-1.5 py-0.5 rounded"
           style={{ color: '#d97706', background: 'rgba(217,119,6,0.12)' }}
@@ -165,12 +166,12 @@ const ReviewCandidateRow: React.FC<{
         value={editedValue}
         onChange={(e) => onEdit(e.target.value)}
       />
-      {candidate.needsReview && (
+      {isNeedsReview && (
         <Button variant="ghost" size="sm" onClick={onToggleCrop}>
           {t('元画像を確認')}
         </Button>
       )}
-      {candidate.needsReview && cropOpen && (
+      {isNeedsReview && cropOpen && (
         <div className="basis-full flex flex-wrap gap-2 pl-8 pb-2">
           {candidate.sources.map((s, i) => (
             <img
