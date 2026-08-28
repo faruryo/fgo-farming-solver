@@ -6,6 +6,7 @@ import {
   toReviewRow,
   sortReviewRows,
   matchesReviewFilter,
+  isReviewRowVisible,
   countBySection,
   groupReviewRows,
   type ReviewRowSource,
@@ -133,6 +134,13 @@ describe('matchesReviewFilter / groupReviewRows / countBySection', () => {
     expect(matchesReviewFilter('needs-review', 'changed')).toBe(true)
     expect(matchesReviewFilter('increase', 'needs-review')).toBe(false)
     expect(matchesReviewFilter('needs-review', 'needs-review')).toBe(true)
+  })
+
+  it('keeps the row being edited even when the filter would hide its new section', () => {
+    expect(isReviewRowVisible('increase', 'needs-review', 101, 101)).toBe(true)
+    expect(isReviewRowVisible('increase', 'needs-review', 101, 202)).toBe(false)
+    expect(isReviewRowVisible('increase', 'needs-review', 101, null)).toBe(false)
+    expect(isReviewRowVisible('unchanged', 'changed', 101, 101)).toBe(true)
   })
 
   it('groups visible sections in display order', () => {

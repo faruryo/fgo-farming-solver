@@ -23,7 +23,7 @@ import { MergedCandidate } from '../../../lib/possession-import/types'
 import { parsePossessionInput } from '../../../lib/possession-count'
 import {
   countBySection,
-  matchesReviewFilter,
+  isReviewRowVisible,
   reviewSection,
   sortReviewRows,
   toReviewRow,
@@ -50,11 +50,40 @@ const parsedProposedFromRaw = (raw: string | undefined): number | null => {
   return parsed === undefined ? null : parsed
 }
 
-const SECTION_LABEL_KEY: Record<ReviewSection, { key: string; fallback: string }> = {
-  'needs-review': { key: 'import-review-section-needs-review', fallback: '要確認' },
-  increase: { key: 'import-review-section-increase', fallback: '増加' },
-  decrease: { key: 'import-review-section-decrease', fallback: '減少' },
-  unchanged: { key: 'import-review-section-unchanged', fallback: '変更なし' },
+const ReviewSectionHeader: React.FC<{
+  section: ReviewSection
+  unchangedCount: number
+  unchangedExpanded: boolean
+  onToggleUnchanged: () => void
+}> = ({ section, unchangedCount, unchangedExpanded, onToggleUnchanged }) => {
+  const { t } = useTranslation('quests')
+  if (section === 'unchanged') {
+    return (
+      <button
+        type="button"
+        className="flex items-center gap-1 text-xs font-semibold mt-3 mb-1 first:mt-0"
+        style={{ color: 'var(--text2)' }}
+        onClick={onToggleUnchanged}
+        aria-expanded={unchangedExpanded}
+        data-testid={`import-review-section-${section}`}
+      >
+        {unchangedExpanded ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
+        {t('import-review-section-unchanged', '変更なし')} ({unchangedCount})
+      </button>
+    )
+  }
+  let heading = t('import-review-section-decrease', '減少')
+  if (section === 'needs-review') heading = t('import-review-section-needs-review', '要確認')
+  else if (section === 'increase') heading = t('import-review-section-increase', '増加')
+  return (
+    <h3
+      className="text-xs font-semibold mt-3 mb-1 first:mt-0"
+      style={{ color: 'var(--text2)' }}
+      data-testid={`import-review-section-${section}`}
+    >
+      {heading}
+    </h3>
+  )
 }
 
 const ReviewRowSurface: React.FC<{
@@ -107,6 +136,8 @@ const ReviewCandidateRow: React.FC<{
   onToggleExcluded: (checked: boolean) => void
   onEdit: (raw: string) => void
   onToggleCrop: () => void
+  onFocusInput: () => void
+  onBlurInput: () => void
 }> = ({
   row,
   candidate,
@@ -117,6 +148,8 @@ const ReviewCandidateRow: React.FC<{
   onToggleExcluded,
   onEdit,
   onToggleCrop,
+  onFocusInput,
+  onBlurInput,
 }) => {
   const { t } = useTranslation('quests')
   const showSign = row.changeClass === 'increase' || row.changeClass === 'decrease'
@@ -175,6 +208,8 @@ const ReviewCandidateRow: React.FC<{
         placeholder="-"
         value={editedValue}
         onChange={(e) => onEdit(e.target.value)}
+        onFocus={onFocusInput}
+        onBlur={onBlurInput}
       />
       {candidate.needsReview && (
         <Button variant="ghost" size="sm" onClick={onToggleCrop}>
@@ -217,6 +252,7 @@ export const PossessionImportDialog: React.FC<{
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<ReviewFilter>('all')
   const [unchangedExpanded, setUnchangedExpanded] = useState(false)
+  const [editingAtlasId, setEditingAtlasId] = useState<number | null>(null)
 
   const itemsByAtlasId = useMemo(() => {
     const map = new Map<number, ItemLike>()
@@ -246,6 +282,7 @@ export const PossessionImportDialog: React.FC<{
     setError(null)
     setFilter('all')
     setUnchangedExpanded(false)
+    setEditingAtlasId(null)
   }
 
   const handleClose = (next: boolean) => {
@@ -327,8 +364,11 @@ export const PossessionImportDialog: React.FC<{
 
   const sectionCounts = useMemo(() => countBySection(reviewRows), [reviewRows])
   const visibleRows = useMemo(
-    () => reviewRows.filter((row) => matchesReviewFilter(row.section, filter)),
-    [reviewRows, filter]
+    () =>
+      reviewRows.filter((row) =>
+        isReviewRowVisible(row.section, filter, row.atlasId, editingAtlasId)
+      ),
+    [reviewRows, filter, editingAtlasId]
   )
   const candidateById = useMemo(() => {
     const map = new Map<number, MergedCandidate>()
@@ -490,37 +530,19 @@ export const PossessionImportDialog: React.FC<{
                   {visibleRows.map((row, index) => {
                     const prev = visibleRows[index - 1]
                     const showHeader = row.section !== prev?.section
-                    const hideUnchangedRow = row.section === 'unchanged' && !unchangedExpanded
-                    const label = SECTION_LABEL_KEY[row.section]
+                    const hideUnchangedRow =
+                      row.section === 'unchanged' && !unchangedExpanded && row.atlasId !== editingAtlasId
                     const c = candidateById.get(row.atlasId)
                     return (
                       <React.Fragment key={row.atlasId}>
-                        {showHeader &&
-                          (row.section === 'unchanged' ? (
-                            <button
-                              type="button"
-                              className="flex items-center gap-1 text-xs font-semibold mt-3 mb-1 first:mt-0"
-                              style={{ color: 'var(--text2)' }}
-                              onClick={() => setUnchangedExpanded((open) => !open)}
-                              aria-expanded={unchangedExpanded}
-                              data-testid={`import-review-section-${row.section}`}
-                            >
-                              {unchangedExpanded ? (
-                                <ChevronDown size={14} aria-hidden />
-                              ) : (
-                                <ChevronRight size={14} aria-hidden />
-                              )}
-                              {t(label.key, label.fallback)} ({sectionCounts.unchanged})
-                            </button>
-                          ) : (
-                            <h3
-                              className="text-xs font-semibold mt-3 mb-1 first:mt-0"
-                              style={{ color: 'var(--text2)' }}
-                              data-testid={`import-review-section-${row.section}`}
-                            >
-                              {t(label.key, label.fallback)}
-                            </h3>
-                          ))}
+                        {showHeader && (
+                          <ReviewSectionHeader
+                            section={row.section}
+                            unchangedCount={sectionCounts.unchanged}
+                            unchangedExpanded={unchangedExpanded}
+                            onToggleUnchanged={() => setUnchangedExpanded((open) => !open)}
+                          />
+                        )}
                         {!hideUnchangedRow && c && (
                           <ReviewCandidateRow
                             row={row}
@@ -538,6 +560,10 @@ export const PossessionImportDialog: React.FC<{
                                 ...prev,
                                 [row.atlasId]: !prev[row.atlasId],
                               }))
+                            }
+                            onFocusInput={() => setEditingAtlasId(row.atlasId)}
+                            onBlurInput={() =>
+                              setEditingAtlasId((id) => (id === row.atlasId ? null : id))
                             }
                           />
                         )}

@@ -219,6 +219,21 @@ describe('PossessionImportDialog レビューUI', () => {
     expect(within(reclassified).queryByRole('button', { name: '元画像を確認' })).toBeNull()
   })
 
+  it('要確認フィルタ中は、入力中の行が分類変更しても消えない', async () => {
+    const { user } = await reachReview([card(101, 'アイテムA', 5)])
+
+    await user.clear(within(rowOf('アイテムA')).getByRole('spinbutton'))
+    await user.click(screen.getByRole('button', { name: '要確認' }))
+    expect(rowOf('アイテムA')).toHaveAttribute('data-review-section', 'needs-review')
+
+    await user.type(within(rowOf('アイテムA')).getByRole('spinbutton'), '1')
+    expect(screen.getByText('アイテムA')).toBeInTheDocument()
+    expect(rowOf('アイテムA')).toHaveAttribute('data-review-section', 'decrease')
+
+    await user.keyboard('{Tab}')
+    expect(screen.queryByText('アイテムA')).not.toBeInTheDocument()
+  })
+
   it('折りたたみ中でも除外していない変更なし行は確定対象', async () => {
     const { user, onConfirm } = await reachReview(
       [card(101, 'アイテムA', 5), card(202, 'アイテムB', 0)],

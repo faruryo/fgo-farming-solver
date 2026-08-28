@@ -83,6 +83,13 @@ export const matchesReviewFilter = (
   return section === 'needs-review'
 }
 
+export const isReviewRowVisible = (
+  section: ReviewSection,
+  filter: ReviewFilter,
+  atlasId: number,
+  editingAtlasId: number | null
+): boolean => matchesReviewFilter(section, filter) || atlasId === editingAtlasId
+
 export const countBySection = (rows: ReviewRow[]): Record<ReviewSection, number> => {
   const counts: Record<ReviewSection, number> = {
     'needs-review': 0,
