@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFarmingResult } from '../../hooks/use-farming-result'
 import { Link } from '../common/link'
@@ -14,6 +14,15 @@ import { Badge } from '@/components/ui/badge'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Result } from '../../interfaces/api'
 import { formatDate } from '../../lib/format-date'
+
+const emptySubscribe = () => () => {}
+const useIsMounted = () => {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  )
+}
 
 type LocalResult = Omit<Result, 'items' | 'quests'> & {
   items: (Item & { count: number })[]
@@ -47,9 +56,9 @@ const ResultPanel = ({
   const { t } = useTranslation(['farming', 'common'])
   const yen = Math.round(result.total_ap / 144 / 168 * 10000)
   const text = useFarmingResult(
-    result.items as any,
-    result.params.items as any,
-    result.quests as any,
+    result.items,
+    result.params.items,
+    result.quests,
     result.total_lap,
     result.total_ap,
     yen
@@ -81,7 +90,7 @@ const ResultPanel = ({
           {t('クエスト周回数')}
         </div>
         <div className="flex items-center justify-center">
-          <QuestTable items={result.items as any} quests={result.quests as any} dropRates={result.drop_rates as any} />
+          <QuestTable items={result.items} quests={result.quests} dropRates={result.drop_rates} />
         </div>
       </div>
 
@@ -93,7 +102,7 @@ const ResultPanel = ({
         <div className="c-settings-section-label mb-4 flex">
           {t('アイテム獲得数')}
         </div>
-        <ResultAccordion items={result.items as any} params={result.params as any} />
+        <ResultAccordion items={result.items as any} params={result.params} />
       </div>
     </div>
   )
@@ -150,7 +159,8 @@ const ApLapTabs = ({ ap, lap, apYenVal, lapYenVal, hideStockBadge }: ApLapTabsPr
 
 export const Page = ({ apResult, lapResult, legacyResult, createdAt, stockApResult, stockLapResult }: PageProps) => {
   const { t } = useTranslation(['farming', 'common'])
-  const formattedDate = formatDate(createdAt)
+  const isMounted = useIsMounted()
+  const formattedDate = isMounted ? formatDate(createdAt) : ''
 
   if (legacyResult) {
     return (
@@ -194,8 +204,8 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt, stockApResu
     )
   }
 
-  const apYen = Math.round(apResult!.total_ap / 144 / 168 * 10000)
-  const lapYen = Math.round(lapResult!.total_ap / 144 / 168 * 10000)
+  const apYen = Math.round(apResult.total_ap / 144 / 168 * 10000)
+  const lapYen = Math.round(lapResult.total_ap / 144 / 168 * 10000)
   const stockApYen = stockApResult ? Math.round(stockApResult.total_ap / 144 / 168 * 10000) : 0
   const stockLapYen = stockLapResult ? Math.round(stockLapResult.total_ap / 144 / 168 * 10000) : 0
 
@@ -225,14 +235,14 @@ export const Page = ({ apResult, lapResult, legacyResult, createdAt, stockApResu
               <TabsTrigger value="stock">+ストック</TabsTrigger>
             </TabsList>
             <TabsContent value="required">
-              <ApLapTabs ap={apResult!} lap={lapResult!} apYenVal={apYen} lapYenVal={lapYen} hideStockBadge />
+              <ApLapTabs ap={apResult} lap={lapResult} apYenVal={apYen} lapYenVal={lapYen} hideStockBadge />
             </TabsContent>
             <TabsContent value="stock">
               <ApLapTabs ap={stockApResult} lap={stockLapResult} apYenVal={stockApYen} lapYenVal={stockLapYen} hideStockBadge />
             </TabsContent>
           </Tabs>
         ) : (
-          <ApLapTabs ap={apResult!} lap={lapResult!} apYenVal={apYen} lapYenVal={lapYen} />
+          <ApLapTabs ap={apResult} lap={lapResult} apYenVal={apYen} lapYenVal={lapYen} />
         )}
 
         <div className="mt-12">
