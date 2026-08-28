@@ -171,7 +171,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     initialAmounts
   )
 
-  const { stockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
+  const { stockEnabled, setStockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
 
   // 表示・計算対象のアイテム。stock ON 時はバッファ込みの所持トラッキングのため
   // 全アイテムを対象にする(育成必要数=0 でも buffer 目標があるため)。
@@ -414,15 +414,16 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
               >
                 {stockEnabled ? '不足' : '不足のみ'}
               </button>
-              {stockEnabled && (
-                <button
-                  type="button"
-                  className={`c-seg-btn stock${filterMode === 'stock' ? ' active' : ''}`}
-                  onClick={() => setFilterMode('stock')}
-                >
-                  ストック不足
-                </button>
-              )}
+              <button
+                type="button"
+                className={`c-seg-btn stock${filterMode === 'stock' ? ' active' : ''}`}
+                onClick={() => {
+                  setFilterMode('stock')
+                  if (!stockEnabled) setStockEnabled(true)
+                }}
+              >
+                ストック不足
+              </button>
             </div>
             <button
               type="button"
