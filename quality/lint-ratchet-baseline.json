@@ -73,11 +73,6 @@
     },
     {
       "file": "app/farming/history/page.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "app/farming/history/page.tsx",
       "rule": "max-lines-per-function",
       "count": 2
     },

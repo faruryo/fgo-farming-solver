@@ -151,7 +151,7 @@ export default function HistoryPage() {
 
   // バッチペアは1エントリで通常(A)とストック込み(B)の両方を持つため、ペアが1件でもあれば
   // 両種別が存在する扱い。defaultFilter は最新エントリ基準(単独ストック行のみ stock 既定)。
-  const { bothExist, defaultFilter } = useMemo(() => {
+  const { bothExist, defaultFilter } = useMemo<{ bothExist: boolean; defaultFilter: StockFilter }>(() => {
     let hasNormal = false
     let hasStock = false
     let mostRecent: GroupedHistoryItem | null = null
@@ -165,7 +165,7 @@ export default function HistoryPage() {
     }
     return {
       bothExist: hasNormal && hasStock,
-      defaultFilter: (mostRecent && !mostRecent.stockSibling && isStock(mostRecent) ? 'stock' : 'normal'),
+      defaultFilter: mostRecent && !mostRecent.stockSibling && isStock(mostRecent) ? 'stock' : 'normal',
     }
   }, [groupedHistory])
   const stockFilter = stockOverride ?? defaultFilter
