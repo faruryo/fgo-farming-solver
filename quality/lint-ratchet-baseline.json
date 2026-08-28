@@ -489,17 +489,12 @@
     {
       "file": "components/farming/FarmingHistoryChart.tsx",
       "rule": "@typescript-eslint/no-explicit-any",
-      "count": 4
-    },
-    {
-      "file": "components/farming/FarmingHistoryChart.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
+      "count": 3
     },
     {
       "file": "components/farming/FarmingHistoryChart.tsx",
       "rule": "@typescript-eslint/no-unsafe-argument",
-      "count": 2
+      "count": 1
     },
     {
       "file": "components/farming/FarmingHistoryChart.tsx",
