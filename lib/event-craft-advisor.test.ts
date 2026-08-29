@@ -36,6 +36,16 @@ const buildTestDrops = (
   campaigns: [],
 })
 
+const buildTwoItemSharedDrops = (): Drops =>
+  buildTestDrops(
+    [makeItem('item-a', 101), makeItem('item-b', 102)],
+    [makeQuest('Q1', 20)],
+    [
+      { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+      { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1.0 },
+    ],
+  )
+
 // テスト用レシピ定義
 const sampleRecipes: EventCraftRecipe[] = [
   {
@@ -271,14 +281,7 @@ describe('solveEventCraftAllocation', () => {
 
   it('同一クエストから複数素材がドロップする場合も最終配分に基づく貢献削減量を正しく算出する', () => {
     // Q1 drops both item-a and item-b at rate 1.0, AP 20
-    const d = buildTestDrops(
-      [makeItem('item-a', 101), makeItem('item-b', 102)],
-      [makeQuest('Q1', 20)],
-      [
-        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
-        { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1.0 },
-      ],
-    )
+    const d = buildTwoItemSharedDrops()
     // Needs 1 of item-a and 1 of item-b. Both crafted together saves 20 AP.
     const owned: IngredientCounts = { seafood: 40, meat: 20, vegetable: 60 }
     const res = solveEventCraftAllocation(
@@ -336,14 +339,7 @@ describe('generateCraftAdvice', () => {
     // Q1 drops item-a (1.0) and item-b (1.0), AP 20
     // User needs 10 of item-a, but only 0 of item-b.
     // However, if user has ingredients for recipe-b (which produces item-b), crafting item-b saves 0 runs because Q1 is already run 10 times for item-a and drops 10 item-b as byproduct.
-    const d = buildTestDrops(
-      [makeItem('item-a', 101), makeItem('item-b', 102)],
-      [makeQuest('Q1', 20)],
-      [
-        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
-        { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1.0 },
-      ],
-    )
+    const d = buildTwoItemSharedDrops()
     const owned: IngredientCounts = { seafood: 40, meat: 0, vegetable: 20 } // enough for recipe-b
     const res = solveEventCraftAllocation(
       d,
