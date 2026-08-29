@@ -27,7 +27,8 @@
 - **アイテムとレシピの定義**:
   - 各料理 $j$ の消費食材数を $\text{cost}_{j,k}$ （$k \in \{\text{seafood}, \text{meat}, \text{vegetable}\}$）とする。
   - 各料理 $j$ の作成により得られる素材 $i$ の個数を $\text{yield}_{j,i}$ とする（水着2026では1料理あたり1個の特定素材）。
-  - 各素材 $i$ の不足数を $\text{deficiency}_i = \max(0, \text{fullNeed}_i - \text{owned}_i)$ とする。
+  - 各素材 $i$ の不足数を $\text{deficiency}_i = \text{fullNeed}_i$ とする（`fullNeed` は既存アドバイザーと同じく、すでに所持数を引いた実効不足）。
+  - 所持数 $\text{owned}_k$ はイベント食材（海鮮・肉・野菜）の所持数のみを指す。
 
 - **対象アイテムのフィルタリング (Infeasible 回避)**:
   - `continuousOptimalCost`（`lib/material-selection-advisor.ts`）と同様に、許可クエストに恒常ドロップが存在するアイテム、またはクラフトレシピの獲得対象アイテムのみを制約対象 $i \in \text{farmableOrCraftableItems}$ とします。QPやドロップのないアイテムは制約から除外し、モデルが Infeasible になることを防ぎます。
