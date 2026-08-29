@@ -390,6 +390,51 @@ describe('generateCraftAdvice', () => {
     expect(advice).toContain('余った食材で「料理A（素材A）」を作成し')
   })
 
+  it('1回あたりの周回削減効率（unitSaved）が高い料理を最優先として案内する', () => {
+    // Q1 drops item-a (AP 20, rate 1.0 -> 20 AP/item)
+    // Q2 drops item-b (AP 40, rate 1.0 -> 40 AP/item)
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 40)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
+      ],
+    )
+    // Recipe A saves 20 AP each. Recipe B saves 40 AP each.
+    // User needs 3 of item-a and 1 of item-b.
+    // Recipe A total deficit saved = 60 AP. Recipe B total deficit saved = 40 AP.
+    // However, Recipe B is more efficient per craft (40 AP vs 20 AP), so advice should name Recipe B.
+    const owned: IngredientCounts = { seafood: 40, meat: 60, vegetable: 140 }
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 3, 'item-b': 1 },
+      owned,
+      'ap',
+      ['Q1', 'Q2'],
+      { exhaustIngredients: false, recipes: sampleRecipes },
+    )
+    const advice = generateCraftAdvice(res, owned, 'ap', false)
+    expect(advice).toContain('最優先は「料理B（素材B）」です')
+  })
+
+  it('dropsオブジェクトが更新された場合はキャッシュを共有せず最新のドロップデータで再計算する', () => {
+    const d1 = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
+    const d2 = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 10)], // AP changed from 20 to 10
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
+    const val1 = computeSingleItemBaseValues(d1, ['Q1'], 'ap', { recipes: sampleRecipes })
+    const val2 = computeSingleItemBaseValues(d2, ['Q1'], 'ap', { recipes: sampleRecipes })
+    expect(val1.get('recipe-a')).toBe(20)
+    expect(val2.get('recipe-a')).toBe(10)
+  })
+
   it('カスタム翻訳関数を渡した場合は翻訳されたアドバイスを返す', () => {
     const d = buildTestDrops([], [], [])
     const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }

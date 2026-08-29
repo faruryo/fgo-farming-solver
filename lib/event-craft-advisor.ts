@@ -56,7 +56,7 @@ type SolverContext = {
   itemsWithDropData: Set<string>
 }
 
-const baseValuesCache = new Map<string, Map<string, number>>()
+const baseValuesCache = new WeakMap<Drops, Map<string, Map<string, number>>>()
 
 export type SingleItemBaseValuesOptions = {
   recipes?: readonly EventCraftRecipe[]
@@ -74,8 +74,18 @@ export const computeSingleItemBaseValues = (
     .slice()
     .sort((a, b) => a.localeCompare(b))
     .join(',')
-  const cacheKey = `${mode}:${questKey}:${recipes.map((r) => r.id).join(',')}`
-  const cached = baseValuesCache.get(cacheKey)
+  const recipeKey = recipes
+    .map((r) => `${r.id}:${r.yieldCount}:${r.targetItem.shortId}`)
+    .join(',')
+  const cacheKey = `${mode}:${questKey}:${recipeKey}`
+
+  let dropsCache = baseValuesCache.get(drops)
+  if (!dropsCache) {
+    dropsCache = new Map()
+    baseValuesCache.set(drops, dropsCache)
+  }
+
+  const cached = dropsCache.get(cacheKey)
   if (cached) return cached
 
   const dropDataSet =
@@ -101,7 +111,7 @@ export const computeSingleItemBaseValues = (
       values.set(recipe.id, 0)
     }
   }
-  baseValuesCache.set(cacheKey, values)
+  dropsCache.set(cacheKey, values)
   return values
 }
 
@@ -638,27 +648,39 @@ export const solveEventCraftAllocation = (
   }
 }
 
+const compareDeficitAllocation = (
+  a: CraftAllocationItem,
+  b: CraftAllocationItem,
+) => {
+  if (a.unitSaved !== b.unitSaved) return a.unitSaved - b.unitSaved
+  if (a.deficitSaved !== b.deficitSaved) return a.deficitSaved - b.deficitSaved
+  return a.deficitCount - b.deficitCount
+}
+
+const compareSurplusAllocation = (
+  a: CraftAllocationItem,
+  b: CraftAllocationItem,
+) => {
+  const unitSurplusA = a.surplusCount > 0 ? a.surplusValue / a.surplusCount : 0
+  const unitSurplusB = b.surplusCount > 0 ? b.surplusValue / b.surplusCount : 0
+  if (unitSurplusA !== unitSurplusB) return unitSurplusA - unitSurplusB
+  if (a.surplusValue !== b.surplusValue) return a.surplusValue - b.surplusValue
+  return a.surplusCount - b.surplusCount
+}
+
 const findTopAllocation = (allocations: CraftAllocationItem[]) => {
   const deficitTop = allocations
     .filter((a) => a.deficitCount > 0)
     .reduce<CraftAllocationItem | null>(
       (best, a) =>
-        best == null ||
-        a.deficitSaved > best.deficitSaved ||
-        (a.deficitSaved === best.deficitSaved && a.deficitCount > best.deficitCount)
-          ? a
-          : best,
+        best == null || compareDeficitAllocation(a, best) > 0 ? a : best,
       null,
     )
   const surplusTop = allocations
     .filter((a) => a.surplusCount > 0)
     .reduce<CraftAllocationItem | null>(
       (best, a) =>
-        best == null ||
-        a.surplusValue > best.surplusValue ||
-        (a.surplusValue === best.surplusValue && a.surplusCount > best.surplusCount)
-          ? a
-          : best,
+        best == null || compareSurplusAllocation(a, best) > 0 ? a : best,
       null,
     )
   const top = deficitTop ?? surplusTop
