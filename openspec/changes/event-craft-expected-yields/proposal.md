@@ -22,6 +22,7 @@ AppMedia: https://appmedia.jp/fategrandorder/76010486 （お茶）、https://app
 - 主産物の「不足数までしか作れない」上限は、ついで素材の充足を阻害するため外す。無駄な皿は従来どおり Stage 1b の食材最小化で抑える。
 - 余剰使い切り（Stage 2）の単体価値も、主産物1個ではなく期待獲得バスケットで評価する。
 - UI は主産物名に加え、同レアの期待獲得が配分に効いていることが分かる表示にする（過剰な確率表の常時展開はしない）。
+- おすすめ皿数の横（または直下）に、その配分を実行したときの育成素材ごとの期待獲得個数の合計を出す。QP・種火は収集数に含めない。
 
 ## Capabilities
 
@@ -37,5 +38,5 @@ AppMedia: https://appmedia.jp/fategrandorder/76010486 （お茶）、https://app
 
 - `data/event-craft-recipes.ts`: 主産物以外の同レア素材への期待 yield を表現できる形に拡張する。
 - `lib/event-craft-advisor.ts` とテスト: Stage 1/2 の係数、キャップ、`unitSaved` 帰属。
-- `components/material/event-craft-advisor.tsx` と locale: 獲得内訳の短い表示。
+- `components/material/event-craft-advisor.tsx` と locale: 1皿内訳と、配分全体の期待収集数。
 - フリクエ側の期待値 LP は変更しない。料理側も同じ期待値主義に揃える（外れで実残が増えるリスクは仕様として受け入れる）。
