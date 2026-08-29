@@ -37,6 +37,7 @@ export type EventCraftSolverResult = {
 export type EventCraftSolverOptions = {
   exhaustIngredients?: boolean
   recipes?: readonly EventCraftRecipe[]
+  singleItemBaseValues?: Map<string, number>
 }
 
 const EPSILON = 1e-6
@@ -55,20 +56,40 @@ type SolverContext = {
   itemsWithDropData: Set<string>
 }
 
-const computeSingleItemBaseValues = (
+const baseValuesCache = new Map<string, Map<string, number>>()
+
+export type SingleItemBaseValuesOptions = {
+  recipes?: readonly EventCraftRecipe[]
+  itemsWithDropData?: Set<string>
+}
+
+export const computeSingleItemBaseValues = (
   drops: Drops,
   questIds: string[],
   mode: DenominatorMode,
-  recipes: readonly EventCraftRecipe[],
-  itemsWithDropData: Set<string>,
+  options?: SingleItemBaseValuesOptions,
 ): Map<string, number> => {
+  const recipes = options?.recipes ?? EVENT_CRAFT_RECIPES_2026
+  const questKey = questIds
+    .slice()
+    .sort((a, b) => a.localeCompare(b))
+    .join(',')
+  const cacheKey = `${mode}:${questKey}:${recipes.map((r) => r.id).join(',')}`
+  const cached = baseValuesCache.get(cacheKey)
+  if (cached) return cached
+
+  const dropDataSet =
+    options?.itemsWithDropData ??
+    new Set(drops.drop_rates.map((dr) => dr.item_id))
   const values = new Map<string, number>()
   for (const recipe of recipes) {
     const shortId = recipe.targetItem.shortId
-    if (itemsWithDropData.has(shortId)) {
+    if (dropDataSet.has(shortId)) {
+      const needMap: Record<string, number> = {}
+      Reflect.set(needMap, shortId, 1)
       const singleCost = continuousOptimalCost(
         drops,
-        { [shortId]: 1 },
+        needMap,
         questIds,
         mode,
       )
@@ -80,6 +101,7 @@ const computeSingleItemBaseValues = (
       values.set(recipe.id, 0)
     }
   }
+  baseValuesCache.set(cacheKey, values)
   return values
 }
 
@@ -471,14 +493,20 @@ const buildAllocations = (
   }
 }
 
+type ContextBuilderOptions = {
+  mode: DenominatorMode
+  questIds: string[]
+  recipes: readonly EventCraftRecipe[]
+  providedBaseValues?: Map<string, number>
+}
+
 const createSolverContext = (
   drops: Drops,
   fullNeed: Record<string, number>,
   ownedIngredients: IngredientCounts,
-  mode: DenominatorMode,
-  questIds: string[],
-  recipes: readonly EventCraftRecipe[],
+  options: ContextBuilderOptions,
 ): { ctx: SolverContext; singleItemBaseValues: Map<string, number> } => {
+  const { mode, questIds, recipes, providedBaseValues } = options
   const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
   const allowedQuests = new Set(questIds)
   const baselineCost = continuousOptimalCost(drops, fullNeed, questIds, mode)
@@ -496,13 +524,12 @@ const createSolverContext = (
     itemsWithDropData,
   }
 
-  const singleItemBaseValues = computeSingleItemBaseValues(
-    drops,
-    questIds,
-    mode,
-    recipes,
-    itemsWithDropData,
-  )
+  const singleItemBaseValues =
+    providedBaseValues ??
+    computeSingleItemBaseValues(drops, questIds, mode, {
+      recipes,
+      itemsWithDropData,
+    })
 
   return { ctx, singleItemBaseValues }
 }
@@ -572,14 +599,21 @@ export const solveEventCraftAllocation = (
     typeof optionsOrExhaust === 'object' && optionsOrExhaust.recipes
       ? optionsOrExhaust.recipes
       : EVENT_CRAFT_RECIPES_2026
+  const providedBaseValues =
+    typeof optionsOrExhaust === 'object'
+      ? optionsOrExhaust.singleItemBaseValues
+      : undefined
 
   const { ctx, singleItemBaseValues } = createSolverContext(
     drops,
     fullNeed,
     ownedIngredients,
-    mode,
-    questIds,
-    recipes,
+    {
+      mode,
+      questIds,
+      recipes,
+      providedBaseValues,
+    },
   )
 
   const { allocated, optimalCost } = executeSolveStages(

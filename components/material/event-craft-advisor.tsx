@@ -12,6 +12,7 @@ import { DenominatorMode } from '../../lib/material-selection-advisor'
 import {
   solveEventCraftAllocation,
   generateCraftAdvice,
+  computeSingleItemBaseValues,
   CraftAllocationItem,
 } from '../../lib/event-craft-advisor'
 import {
@@ -421,6 +422,12 @@ const useEventCraftCalculation = (
   const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
 
+  const singleItemBaseValues = useMemo(() => {
+    return computeSingleItemBaseValues(drops, questIds, mode, {
+      recipes: EVENT_CRAFT_RECIPES_2026,
+    })
+  }, [drops, questIds, mode])
+
   const result = useMemo(() => {
     return solveEventCraftAllocation(
       drops,
@@ -431,6 +438,7 @@ const useEventCraftCalculation = (
       {
         exhaustIngredients: config.exhaustIngredients,
         recipes: EVENT_CRAFT_RECIPES_2026,
+        singleItemBaseValues,
       },
     )
   }, [
@@ -440,6 +448,7 @@ const useEventCraftCalculation = (
     mode,
     questIds,
     config.exhaustIngredients,
+    singleItemBaseValues,
   ])
 
   const advice = useMemo(() => {

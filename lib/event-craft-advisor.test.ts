@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   solveEventCraftAllocation,
   generateCraftAdvice,
+  computeSingleItemBaseValues,
 } from './event-craft-advisor'
 import { EventCraftRecipe, IngredientCounts } from '../data/event-craft-recipes'
 import { Drops } from './get-drops'
@@ -300,6 +301,22 @@ describe('solveEventCraftAllocation', () => {
     // Under joint plan, without A (still needing A) cost is 20, so A contributes 20 AP saved
     expect(allocA?.deficitSaved).toBe(20)
     expect(allocB?.deficitSaved).toBe(20)
+  })
+
+  it('事前計算された singleItemBaseValues を渡して余剰最適化を実行できる', () => {
+    const d = buildTwoItemSharedDrops()
+    const baseValues = computeSingleItemBaseValues(d, ['Q1'], 'ap', { recipes: sampleRecipes })
+    expect(baseValues.get('recipe-a')).toBe(20)
+    expect(baseValues.get('recipe-b')).toBe(20)
+
+    const owned: IngredientCounts = { seafood: 40, meat: 0, vegetable: 20 }
+    const res = solveEventCraftAllocation(d, {}, owned, 'ap', ['Q1'], {
+      exhaustIngredients: true,
+      recipes: sampleRecipes,
+      singleItemBaseValues: baseValues,
+    })
+    expect(res.totalSurplusCrafted).toBe(1)
+    expect(res.totalSurplusValue).toBe(20)
   })
 })
 
