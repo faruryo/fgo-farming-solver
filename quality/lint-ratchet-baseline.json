@@ -292,11 +292,6 @@
       "count": 1
     },
     {
-      "file": "components/common/possession-import/PossessionImportDialog.test.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 3
-    },
-    {
       "file": "components/common/possession-import/PossessionImportDialog.tsx",
       "rule": "max-lines-per-function",
       "count": 2

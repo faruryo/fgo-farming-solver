@@ -25,6 +25,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
 
+import { useTranslation } from 'react-i18next'
+import { EventCraftAdvisor } from './event-craft-advisor'
+
+export type AdvisorTab = 'ticket' | 'summer-2026'
+
 export type MaterialSelectionAdvisorProps = {
   /** 全選択可能アイテム(Atlas Academy)。 */
   items: Item[]
@@ -97,6 +102,11 @@ export const MaterialSelectionAdvisor = ({
   amounts,
   possession,
 }: MaterialSelectionAdvisorProps) => {
+  const { t } = useTranslation('material')
+  const [activeTab, setActiveTab] = useLocalStorage<AdvisorTab>(
+    STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
+    'ticket',
+  )
   const [config, setConfig] = useLocalStorage<AdvisorConfig>(STORAGE_KEY, DEFAULT_CONFIG)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -187,10 +197,10 @@ export const MaterialSelectionAdvisor = ({
     [setConfig],
   )
   const setTotal = useCallback(
-    (raw: number) =>
+    (total: number) =>
       setConfig(prev => ({
         ...prev,
-        total: Math.max(0, Math.floor(Number.isFinite(raw) ? raw : 0)),
+        total: Math.max(0, Math.floor(Number.isFinite(total) ? total : 0)),
       })),
     [setConfig],
   )
@@ -308,40 +318,86 @@ export const MaterialSelectionAdvisor = ({
 
   return (
     <TooltipProvider>
-    <div className="flex flex-col gap-4">
-      {/* モード切替・総数入力 */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm">
-          <span style={{ color: config.mode === 'ap' ? 'var(--gold)' : 'var(--text3)', fontWeight: 600 }}>
-            AP節約優先
-          </span>
-          <Switch
-            checked={config.mode === 'turn'}
-            onCheckedChange={c => setMode(c ? 'turn' : 'ap')}
-            aria-label="最適化モード切り替え"
-          />
-          <span style={{ color: config.mode === 'turn' ? 'var(--gold)' : 'var(--text3)', fontWeight: 600 }}>
-            周回数節約優先
-          </span>
-          {stockEnabled && (
-            <span style={{ color: 'var(--gold)', fontWeight: 600, fontSize: 11 }}>
-              ストック込みで評価中
-            </span>
-          )}
+      <div className="flex flex-col gap-4">
+        {/* タブ切り替え */}
+        <div
+          className="c-seg self-start"
+          role="tablist"
+          aria-label={t('アドバイザー切り替え', 'アドバイザー切り替え')}
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'ticket'}
+            className={`c-seg-btn ${activeTab === 'ticket' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ticket')}
+          >
+            {t('advisor-tab-ticket', '毎月の交換券・配布')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'summer-2026'}
+            className={`c-seg-btn ${activeTab === 'summer-2026' ? 'active' : ''}`}
+            onClick={() => setActiveTab('summer-2026')}
+          >
+            {t('advisor-tab-summer-2026', '水着2026 料理作成')}
+          </button>
         </div>
-        <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text2)' }}>
-          獲得可能総数
-          <Input
-            type="number"
-            min={0}
-            inputMode="numeric"
-            className="w-24"
-            value={config.total === 0 ? '' : config.total}
-            placeholder="0"
-            onChange={e => setTotal(Number(e.target.value))}
+
+        {activeTab === 'summer-2026' ? (
+          <EventCraftAdvisor
+            items={items}
+            fullNeed={fullNeed}
+            mode={config.mode}
+            onModeChange={setMode}
+            stockEnabled={stockEnabled}
           />
-        </label>
-      </div>
+        ) : (
+          <>
+            {/* モード切替・総数入力 */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <span
+                  style={{
+                    color: config.mode === 'ap' ? 'var(--gold)' : 'var(--text3)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {t('event-craft-ap-mode', 'AP節約優先')}
+                </span>
+                <Switch
+                  checked={config.mode === 'turn'}
+                  onCheckedChange={c => setMode(c ? 'turn' : 'ap')}
+                  aria-label={t('最適化モード切り替え', '最適化モード切り替え')}
+                />
+                <span
+                  style={{
+                    color: config.mode === 'turn' ? 'var(--gold)' : 'var(--text3)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {t('event-craft-turn-mode', '周回数節約優先')}
+                </span>
+                {stockEnabled && (
+                  <span style={{ color: 'var(--gold)', fontWeight: 600, fontSize: 11 }}>
+                    {t('event-craft-stock-eval', 'ストック込みで評価中')}
+                  </span>
+                )}
+              </div>
+              <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text2)' }}>
+                獲得可能総数
+                <Input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  className="w-24"
+                  value={config.total === 0 ? '' : config.total}
+                  placeholder="0"
+                  onChange={e => setTotal(Number(e.target.value))}
+                />
+              </label>
+            </div>
 
       {/* マシュのアドバイス */}
       <ServantPraise message={advice} size={44} />
@@ -538,6 +594,8 @@ export const MaterialSelectionAdvisor = ({
           </span>
         )}
       </div>
+          </>
+        )}
     </div>
     </TooltipProvider>
   )

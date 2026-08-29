@@ -138,7 +138,26 @@
     "submit-need-item-target": "集めたいアイテムの数を最低1つ入力してください。",
     "submit-need-quest-selection": "周回対象に含めるクエストを最低1つ選択してください。",
     "owned-card-gesture-hint": "タップ:+1 ／ 右クリック・長押し:-1",
-    "tracking-mode-tooltip": "ON 時、現在値を変更すると所持数を自動で増減します。"
+    "tracking-mode-tooltip": "ON 時、現在値を変更すると所持数を自動で増減します。",
+    "advisor-tab-ticket": "毎月の交換券・配布",
+    "advisor-tab-summer-2026": "水着2026 料理作成",
+    "event-craft-ingredients-heading": "イベント食材所持数",
+    "event-craft-exhaust-label": "食材を使い切る",
+    "event-craft-exhaust-tooltip": "不足素材を満たした後も、余った食材で単体価値の高い料理を作成して食材の余剰を最小化します。",
+    "event-craft-rec-badge": "推奨 +{{count}}",
+    "event-craft-surplus-badge": "余剰 +{{count}}",
+    "event-craft-saved-ap": "−{{count}} AP",
+    "event-craft-saved-turn": "−{{count}} 周",
+    "event-craft-surplus-ap": "+{{count}} AP相当",
+    "event-craft-surplus-turn": "+{{count}} 周相当",
+    "event-craft-leftover-title": "残余食材",
+    "event-craft-total-saved": "合計 −{{amount}} {{unit}} 節約",
+    "event-craft-total-surplus": "余剰獲得 +{{amount}} {{unit}} 相当",
+    "event-craft-clear-inputs": "食材数をリセット",
+    "event-craft-costs-format": "{{seafood}}海鮮 / {{meat}}お肉 / {{vegetable}}野菜",
+    "event-craft-ap-mode": "AP節約優先",
+    "event-craft-turn-mode": "周回数節約優先",
+    "event-craft-stock-eval": "ストック込みで評価中"
   },
   "servants": {
     "title": "{{name}}の強化素材"
