@@ -66,8 +66,13 @@ const mockDrops: Drops = {
   campaigns: [],
 }
 
+let currentMockDrops: Drops & { isLoading?: boolean } = {
+  ...mockDrops,
+  isLoading: false,
+}
+
 vi.mock('../../hooks/use-drops', () => ({
-  useDrops: () => mockDrops,
+  useDrops: () => currentMockDrops,
 }))
 
 const mockItems: Item[] = [
@@ -98,6 +103,7 @@ const mockItems: Item[] = [
 describe('MaterialSelectionAdvisor Component', () => {
   beforeEach(() => {
     localStorage.clear()
+    currentMockDrops = { ...mockDrops, isLoading: false }
   })
 
   it('renders tab switcher and switches between ticket advisor and event craft advisor', async () => {
@@ -220,5 +226,65 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     expect(screen.getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
     expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
+  })
+
+  it('renders loading message when drop data is loading', () => {
+    localStorage.setItem(
+      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
+      JSON.stringify('summer-2026'),
+    )
+    currentMockDrops = { ...mockDrops, isLoading: true }
+
+    render(
+      <MaterialSelectionAdvisor
+        items={mockItems}
+        amounts={{ '6533': 1 }}
+        possession={{ '6533': 0 }}
+      />,
+    )
+
+    expect(screen.getByText('ドロップデータを読み込み中です、先輩...')).toBeInTheDocument()
+  })
+
+  it('renders unavailable message when quests are empty', () => {
+    localStorage.setItem(
+      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
+      JSON.stringify('summer-2026'),
+    )
+    currentMockDrops = { ...mockDrops, isLoading: false, quests: [] }
+
+    render(
+      <MaterialSelectionAdvisor
+        items={mockItems}
+        amounts={{ '6533': 1 }}
+        possession={{ '6533': 0 }}
+      />,
+    )
+
+    expect(screen.getByText(/ドロップデータを取得できませんでした/)).toBeInTheDocument()
+  })
+
+  it('renders deficit savings formatted with unit', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem(
+      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
+      JSON.stringify('summer-2026'),
+    )
+
+    render(
+      <MaterialSelectionAdvisor
+        items={mockItems}
+        amounts={{ '6533': 1 }}
+        possession={{ '6533': 0 }}
+      />,
+    )
+
+    const inputs = screen.getAllByRole('spinbutton')
+    await user.type(inputs[1], '20')
+    await user.type(inputs[2], '40')
+
+    await waitFor(() => {
+      expect(screen.getByText('−20 AP')).toBeInTheDocument()
+    })
   })
 })

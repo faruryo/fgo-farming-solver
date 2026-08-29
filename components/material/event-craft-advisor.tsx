@@ -14,6 +14,8 @@ import {
   generateCraftAdvice,
   computeSingleItemBaseValues,
   CraftAllocationItem,
+  EventCraftSolverResult,
+  AdviceTranslator,
 } from '../../lib/event-craft-advisor'
 import {
   EVENT_CRAFT_RECIPES_2026,
@@ -266,7 +268,10 @@ const CraftCardMeta = ({
       <div className="flex items-center gap-2 font-medium">
         {deficitSaved > 0 && (
           <span style={{ color: 'var(--green)' }}>
-            −{fmt(deficitSaved)} {unitLabel}
+            {t('event-craft-saved-equiv', '−{{amount}} {{unit}}', {
+              amount: fmt(deficitSaved),
+              unit: unitLabel,
+            })}
           </span>
         )}
         {surplusValue > 0 && (
@@ -413,65 +418,153 @@ const LeftoverFooter = ({
   )
 }
 
+const EMPTY_ALLOCATION_RESULT: EventCraftSolverResult = {
+  allocations: [],
+  totalCrafted: 0,
+  totalDeficitCrafted: 0,
+  totalSurplusCrafted: 0,
+  totalSaved: 0,
+  totalSurplusValue: 0,
+  spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+  leftoverIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+  baselineCost: 0,
+  optimalCost: 0,
+}
+
+const sortAllocations = (allocations: CraftAllocationItem[]) =>
+  [...allocations].sort((a, b) => {
+    if (a.totalCount > 0 && b.totalCount === 0) return -1
+    if (a.totalCount === 0 && b.totalCount > 0) return 1
+    return b.deficitSaved + b.surplusValue - (a.deficitSaved + a.surplusValue)
+  })
+
+type AdviceResolutionParams = {
+  isDataLoading: boolean
+  hasQuests: boolean
+  result: EventCraftSolverResult
+  config: EventCraftAdvisorConfig
+  mode: DenominatorMode
+  t: AdviceTranslator
+}
+
+const resolveAdviceMessage = (params: AdviceResolutionParams) => {
+  const { isDataLoading, hasQuests, result, config, mode, t } = params
+  if (isDataLoading) {
+    return t('event-craft-loading', 'ドロップデータを読み込み中です、先輩...')
+  }
+  if (!hasQuests) {
+    return t(
+      'event-craft-data-unavailable',
+      'ドロップデータを取得できませんでした、先輩。通信環境を確認するか、時間をおいて再度お試しください。',
+    )
+  }
+  return generateCraftAdvice(
+    result,
+    config.ingredients,
+    mode,
+    config.exhaustIngredients,
+    (k, d, o) => t(k, d, o),
+  )
+}
+
+type CalculationParams = {
+  drops: Drops & { isLoading?: boolean }
+  fullNeed: Record<string, number>
+  config: EventCraftAdvisorConfig
+  mode: DenominatorMode
+  questIds: string[]
+  singleItemBaseValues: Map<string, number>
+  isDataReady: boolean
+}
+
+const calculateEventCraftResult = (params: CalculationParams): EventCraftSolverResult => {
+  const {
+    drops,
+    fullNeed,
+    config,
+    mode,
+    questIds,
+    singleItemBaseValues,
+    isDataReady,
+  } = params
+  if (!isDataReady) {
+    return {
+      ...EMPTY_ALLOCATION_RESULT,
+      leftoverIngredients: { ...config.ingredients },
+    }
+  }
+  return solveEventCraftAllocation(
+    drops,
+    fullNeed,
+    config.ingredients,
+    mode,
+    questIds,
+    {
+      exhaustIngredients: config.exhaustIngredients,
+      recipes: EVENT_CRAFT_RECIPES_2026,
+      singleItemBaseValues,
+    },
+  )
+}
+
 const useEventCraftCalculation = (
-  drops: Drops,
+  drops: Drops & { isLoading?: boolean },
   fullNeed: Record<string, number>,
   config: EventCraftAdvisorConfig,
   mode: DenominatorMode,
 ) => {
   const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
+  const isDataReady = !drops.isLoading && questIds.length > 0
 
   const singleItemBaseValues = useMemo(() => {
+    if (!isDataReady) return new Map<string, number>()
     return computeSingleItemBaseValues(drops, questIds, mode, {
       recipes: EVENT_CRAFT_RECIPES_2026,
     })
-  }, [drops, questIds, mode])
+  }, [drops, questIds, mode, isDataReady])
 
-  const result = useMemo(() => {
-    return solveEventCraftAllocation(
+  const result = useMemo(
+    () =>
+      calculateEventCraftResult({
+        drops,
+        fullNeed,
+        config,
+        mode,
+        questIds,
+        singleItemBaseValues,
+        isDataReady,
+      }),
+    [
       drops,
       fullNeed,
-      config.ingredients,
+      config,
       mode,
       questIds,
-      {
-        exhaustIngredients: config.exhaustIngredients,
-        recipes: EVENT_CRAFT_RECIPES_2026,
-        singleItemBaseValues,
-      },
-    )
-  }, [
-    drops,
-    fullNeed,
-    config.ingredients,
-    mode,
-    questIds,
-    config.exhaustIngredients,
-    singleItemBaseValues,
-  ])
+      singleItemBaseValues,
+      isDataReady,
+    ],
+  )
 
-  const advice = useMemo(() => {
-    return generateCraftAdvice(
-      result,
-      config.ingredients,
-      mode,
-      config.exhaustIngredients,
-      (k, d, o) => t(k, d, o),
-    )
-  }, [result, config.ingredients, mode, config.exhaustIngredients, t])
+  const advice = useMemo(
+    () =>
+      resolveAdviceMessage({
+        isDataLoading: !!drops.isLoading,
+        hasQuests: questIds.length > 0,
+        result,
+        config,
+        mode,
+        t: (k, d, o) => t(k, d, o),
+      }),
+    [drops.isLoading, questIds.length, result, config, mode, t],
+  )
 
-  const sortedAllocations = useMemo(() => {
-    return [...result.allocations].sort((a, b) => {
-      if (a.totalCount > 0 && b.totalCount === 0) return -1
-      if (a.totalCount === 0 && b.totalCount > 0) return 1
-      const effA = a.deficitSaved + a.surplusValue
-      const effB = b.deficitSaved + b.surplusValue
-      return effB - effA
-    })
-  }, [result.allocations])
+  const sortedAllocations = useMemo(
+    () => (isDataReady ? sortAllocations(result.allocations) : []),
+    [result.allocations, isDataReady],
+  )
 
-  return { result, advice, sortedAllocations }
+  return { result, advice, sortedAllocations, isDataReady }
 }
 
 const useAdvisorState = () => {
@@ -554,12 +647,8 @@ export const EventCraftAdvisor = ({
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
   const { config, setIngredientCount, setExhaust, reset } = useAdvisorState()
-  const { result, advice, sortedAllocations } = useEventCraftCalculation(
-    drops,
-    fullNeed,
-    config,
-    mode,
-  )
+  const { result, advice, sortedAllocations, isDataReady } =
+    useEventCraftCalculation(drops, fullNeed, config, mode)
   const { t } = useTranslation('material')
   const unitLabel = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
 
@@ -582,20 +671,24 @@ export const EventCraftAdvisor = ({
           onChange={setIngredientCount}
         />
         <ServantPraise message={advice} size={44} />
-        <CraftCardList
-          allocations={sortedAllocations}
-          items={items}
-          dropItems={drops.items}
-          unitLabel={unitLabel}
-        />
-        <LeftoverFooter
-          leftover={result.leftoverIngredients}
-          hasInputs={Object.values(config.ingredients).some((v) => v > 0)}
-          totalSaved={result.totalSaved}
-          totalSurplusValue={result.totalSurplusValue}
-          unitLabel={unitLabel}
-          onReset={reset}
-        />
+        {isDataReady && (
+          <>
+            <CraftCardList
+              allocations={sortedAllocations}
+              items={items}
+              dropItems={drops.items}
+              unitLabel={unitLabel}
+            />
+            <LeftoverFooter
+              leftover={result.leftoverIngredients}
+              hasInputs={Object.values(config.ingredients).some((v) => v > 0)}
+              totalSaved={result.totalSaved}
+              totalSurplusValue={result.totalSurplusValue}
+              unitLabel={unitLabel}
+              onReset={reset}
+            />
+          </>
+        )}
       </div>
     </TooltipProvider>
   )
