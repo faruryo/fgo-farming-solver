@@ -156,25 +156,36 @@ const populateStage1Vars = (
   populateCraftVars(model, ints, ctx, isTieBreak)
 }
 
-const buildStage1aModel = (ctx: SolverContext): solver.Model => {
+const initStage1Model = (
+  ctx: SolverContext,
+  optimize: string,
+  costCap?: number,
+): { model: solver.Model; ints: Record<string, number> } => {
   const ints: Record<string, number> = {}
+  const constraints: solver.Model['constraints'] = {
+    seafood: { max: Math.max(0, ctx.ownedIngredients.seafood ?? 0) },
+    meat: { max: Math.max(0, ctx.ownedIngredients.meat ?? 0) },
+    vegetable: { max: Math.max(0, ctx.ownedIngredients.vegetable ?? 0) },
+  }
+  if (costCap != null) {
+    Reflect.set(constraints, 'totalCost', { max: costCap + EPSILON })
+  }
+  for (const [itemId, count] of ctx.farmableNeed.entries()) {
+    Reflect.set(constraints, `item_${itemId}`, { min: count })
+    Reflect.set(constraints, `cap_${itemId}`, { max: count })
+  }
   const model: solver.Model = {
-    optimize: 'totalCost',
+    optimize,
     opType: 'min',
-    constraints: {
-      seafood: { max: Math.max(0, ctx.ownedIngredients.seafood ?? 0) },
-      meat: { max: Math.max(0, ctx.ownedIngredients.meat ?? 0) },
-      vegetable: { max: Math.max(0, ctx.ownedIngredients.vegetable ?? 0) },
-    },
+    constraints,
     variables: {},
     ints,
   }
+  return { model, ints }
+}
 
-  for (const [itemId, count] of ctx.farmableNeed.entries()) {
-    Reflect.set(model.constraints, `item_${itemId}`, { min: count })
-    Reflect.set(model.constraints, `cap_${itemId}`, { max: count })
-  }
-
+const buildStage1aModel = (ctx: SolverContext): solver.Model => {
+  const { model, ints } = initStage1Model(ctx, 'totalCost')
   populateStage1Vars(model, ints, ctx, false)
   return model
 }
@@ -183,25 +194,7 @@ const buildStage1bModel = (
   ctx: SolverContext,
   optCost1a: number,
 ): solver.Model => {
-  const ints: Record<string, number> = {}
-  const model: solver.Model = {
-    optimize: 'totalIngredients',
-    opType: 'min',
-    constraints: {
-      seafood: { max: Math.max(0, ctx.ownedIngredients.seafood ?? 0) },
-      meat: { max: Math.max(0, ctx.ownedIngredients.meat ?? 0) },
-      vegetable: { max: Math.max(0, ctx.ownedIngredients.vegetable ?? 0) },
-      totalCost: { max: optCost1a + EPSILON },
-    },
-    variables: {},
-    ints,
-  }
-
-  for (const [itemId, count] of ctx.farmableNeed.entries()) {
-    Reflect.set(model.constraints, `item_${itemId}`, { min: count })
-    Reflect.set(model.constraints, `cap_${itemId}`, { max: count })
-  }
-
+  const { model, ints } = initStage1Model(ctx, 'totalIngredients', optCost1a)
   populateStage1Vars(model, ints, ctx, true)
   return model
 }

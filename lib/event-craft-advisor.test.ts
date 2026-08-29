@@ -8,7 +8,7 @@ import { Drops } from './get-drops'
 import { Localized } from './get-local-items'
 import { Item, Quest } from '../interfaces/fgodrop'
 
-const item = (id: string, atlasId?: number): Localized<Item> => ({
+const makeItem = (id: string, atlasId?: number): Localized<Item> => ({
   id,
   category: '銅素材',
   name: `item-${id}`,
@@ -17,7 +17,7 @@ const item = (id: string, atlasId?: number): Localized<Item> => ({
   atlasId,
 })
 
-const quest = (id: string, ap: number): Quest => ({
+const makeQuest = (id: string, ap: number): Quest => ({
   id,
   section: 'Daily',
   area: 'area',
@@ -25,12 +25,15 @@ const quest = (id: string, ap: number): Quest => ({
   ap,
 })
 
-const testDrops = (overrides: Partial<Drops> = {}): Drops => ({
-  items: [],
-  quests: [],
-  drop_rates: [],
+const buildTestDrops = (
+  items: Localized<Item>[],
+  quests: Quest[],
+  drop_rates: Drops['drop_rates'],
+): Drops => ({
+  items,
+  quests,
+  drop_rates,
   campaigns: [],
-  ...overrides,
 })
 
 // テスト用レシピ定義
@@ -89,14 +92,14 @@ describe('solveEventCraftAllocation', () => {
   it('不足素材に対して周回削減効果のある料理を最適に作成する (Stage 1)', () => {
     // Q1: item-a を 1.0/周 (AP 20)
     // Q2: item-b を 0.5/周 (AP 40)
-    const d = testDrops({
-      items: [item('item-a', 101), item('item-b', 102)],
-      quests: [quest('Q1', 20), quest('Q2', 40)],
-      drop_rates: [
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 40)],
+      [
         { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
         { quest_id: 'Q2', item_id: 'item-b', drop_rate: 0.5 },
       ],
-    })
+    )
 
     const fullNeed = { 'item-a': 2, 'item-b': 1 }
     // 食材: recipe-a を1回(meat 20, veg 40) + recipe-b を1回(seafood 40, veg 20) 作成可能
@@ -135,14 +138,14 @@ describe('solveEventCraftAllocation', () => {
     // Q1 は item-a と item-b を同時に 1.0/周 で落とす
     // need: item-a: 10, item-b: 2
     // item-b は item-a を集める間に余剰8個手に入るため、recipe-b を作っても周回数は減らない
-    const d = testDrops({
-      items: [item('item-a', 101), item('item-b', 102)],
-      quests: [quest('Q1', 20)],
-      drop_rates: [
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20)],
+      [
         { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
         { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1.0 },
       ],
-    })
+    )
 
     const fullNeed = { 'item-a': 10, 'item-b': 2 }
     const owned: IngredientCounts = { seafood: 100, meat: 100, vegetable: 100 }
@@ -158,11 +161,11 @@ describe('solveEventCraftAllocation', () => {
   })
 
   it('不足上限（deficiency cap）を超えて不足枠を作成しない', () => {
-    const d = testDrops({
-      items: [item('item-a', 101)],
-      quests: [quest('Q1', 20)],
-      drop_rates: [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
-    })
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
 
     const fullNeed = { 'item-a': 2 }
     // 大量の食材があっても不足数 2 を超えて不足枠を作成しない
@@ -204,14 +207,14 @@ describe('solveEventCraftAllocation', () => {
 
   it('不足が 0 でも「食材を使い切る」が ON なら単体価値最大で作成する (Stage 2)', () => {
     // Q1: item-a (AP 20), Q2: item-b (AP 40)
-    const d = testDrops({
-      items: [item('item-a', 101), item('item-b', 102)],
-      quests: [quest('Q1', 20), quest('Q2', 40)],
-      drop_rates: [
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 40)],
+      [
         { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
         { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
       ],
-    })
+    )
 
     const fullNeed = {}
     const owned: IngredientCounts = { seafood: 80, meat: 0, vegetable: 40 }
@@ -249,11 +252,11 @@ describe('solveEventCraftAllocation', () => {
   })
 
   it('ドロップデータのない素材は infeasible 回避のため除外される', () => {
-    const d = testDrops({
-      items: [item('item-a', 101)],
-      quests: [quest('Q1', 20)],
-      drop_rates: [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
-    })
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
 
     const fullNeed = { 'nodrop-item': 5 }
     const owned: IngredientCounts = { seafood: 50, meat: 50, vegetable: 50 }
@@ -269,7 +272,7 @@ describe('solveEventCraftAllocation', () => {
 
 describe('generateCraftAdvice', () => {
   it('食材が未入力の場合は入力を促すセリフを返す', () => {
-    const d = testDrops()
+    const d = buildTestDrops([], [], [])
     const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
     const res = solveEventCraftAllocation(d, {}, owned, 'ap', [])
     const advice = generateCraftAdvice(res, owned, 'ap', false)
@@ -277,11 +280,11 @@ describe('generateCraftAdvice', () => {
   })
 
   it('削減効果がある場合は最優先料理と削減量を案内する', () => {
-    const d = testDrops({
-      items: [item('item-a', 101)],
-      quests: [quest('Q1', 20)],
-      drop_rates: [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
-    })
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
     const owned: IngredientCounts = { seafood: 0, meat: 20, vegetable: 40 }
     const res = solveEventCraftAllocation(
       d,
