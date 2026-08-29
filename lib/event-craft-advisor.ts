@@ -677,7 +677,7 @@ const buildAdviceEffectText = (
     )
   }
 
-  const surplusList = result.allocations.filter((a) => a.surplusCount > 0 && a !== deficitTop)
+  const surplusList = result.allocations.filter((a) => a.surplusCount > 0)
   const surplusNote =
     result.totalSaved > 0 && surplusList.length > 0
       ? t(
@@ -720,6 +720,18 @@ export const generateCraftAdvice = (
       return t(
         'event-craft-advice-no-shortage',
         '現在、不足している対象素材がありません、先輩。食材を使い切りたい場合は「食材を使い切る」をONにしてください。',
+      )
+    }
+    const canCraftAny = result.allocations.some(
+      (a) =>
+        a.recipe.costs.seafood <= (ownedIngredients.seafood ?? 0) &&
+        a.recipe.costs.meat <= (ownedIngredients.meat ?? 0) &&
+        a.recipe.costs.vegetable <= (ownedIngredients.vegetable ?? 0),
+    )
+    if (canCraftAny && !exhaustIngredients) {
+      return t(
+        'event-craft-advice-no-saving',
+        '現在の周回計画では料理作成による周回削減効果がありません、先輩。食材を素材に変換したい場合は「食材を使い切る」をONにしてください。',
       )
     }
     return t(

@@ -332,6 +332,51 @@ describe('generateCraftAdvice', () => {
     expect(advice).toContain('AP を削減できます')
   })
 
+  it('食材はあるが作成による削減効果がない場合は削減効果なしのアドバイスを返す', () => {
+    // Q1 drops item-a (1.0) and item-b (1.0), AP 20
+    // User needs 10 of item-a, but only 0 of item-b.
+    // However, if user has ingredients for recipe-b (which produces item-b), crafting item-b saves 0 runs because Q1 is already run 10 times for item-a and drops 10 item-b as byproduct.
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1.0 },
+      ],
+    )
+    const owned: IngredientCounts = { seafood: 40, meat: 0, vegetable: 20 } // enough for recipe-b
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 10 },
+      owned,
+      'ap',
+      ['Q1'],
+      { exhaustIngredients: false, recipes: sampleRecipes },
+    )
+    const advice = generateCraftAdvice(res, owned, 'ap', false)
+    expect(advice).toContain('周回削減効果がありません')
+  })
+
+  it('同一レシピで不足分と余剰分の両方が作成される場合も余剰アドバイスに反映される', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
+    const owned: IngredientCounts = { seafood: 0, meat: 40, vegetable: 80 } // enough for 2 recipe-a
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 1 },
+      owned,
+      'ap',
+      ['Q1'],
+      { exhaustIngredients: true, recipes: sampleRecipes },
+    )
+    const advice = generateCraftAdvice(res, owned, 'ap', true)
+    expect(advice).toContain('最優先は「料理A（素材A）」です')
+    expect(advice).toContain('余った食材で「料理A（素材A）」を作成し')
+  })
+
   it('カスタム翻訳関数を渡した場合は翻訳されたアドバイスを返す', () => {
     const d = buildTestDrops([], [], [])
     const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }

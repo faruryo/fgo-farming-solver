@@ -232,6 +232,7 @@
     "event-craft-stock-eval": "Evaluating with stock buffer",
     "event-craft-advice-prompt": "Understood, Senpai. Please enter your event ingredient amounts (Seafood, Meat, Vegetables). I will calculate the most efficient cooking distribution based on your material needs and quest efficiency.",
     "event-craft-advice-no-shortage": "You currently have no shortage of the target materials, Senpai. If you want to use up your remaining ingredients, please turn on \"Exhaust Ingredients\".",
+    "event-craft-advice-no-saving": "Cooking dishes will not reduce your current farming plan, Senpai. If you want to convert ingredients into materials, please turn on \"Exhaust Ingredients\".",
     "event-craft-advice-cannot-craft": "It seems you do not have enough ingredients to craft any dishes yet, Senpai. Let's gather a few more from free quests.",
     "event-craft-advice-head": "The highest priority dish is \"{{name}}\", Senpai. Crafting {{count}} of this is the most efficient choice.",
     "event-craft-advice-saved": "With this plan, you will save approximately {{amount}} {{unit}} from free quest farming in total. {{tail}}",

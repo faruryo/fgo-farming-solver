@@ -174,6 +174,7 @@
     "event-craft-stock-eval": "ストック込みで評価中",
     "event-craft-advice-prompt": "指令を確認します、先輩。お持ちのイベント食材数（海鮮・お肉・野菜）を入力してください。育成不足素材とフリクエ効率から、最も効率的な料理作成配分を算出します。",
     "event-craft-advice-no-shortage": "現在、不足している対象素材がありません、先輩。食材を使い切りたい場合は「食材を使い切る」をONにしてください。",
+    "event-craft-advice-no-saving": "現在の周回計画では料理作成による周回削減効果がありません、先輩。食材を素材に変換したい場合は「食材を使い切る」をONにしてください。",
     "event-craft-advice-cannot-craft": "手持ちの食材数では料理を作成できないようです、先輩。もう少しフリクエで食材を集めてみましょう。",
     "event-craft-advice-head": "最優先は「{{name}}」です、先輩。これを {{count}} 個作成するのが最も効率的です。",
     "event-craft-advice-saved": "この配分により、フリクエ周回から合計 約 {{amount}} {{unit}} を削減できます。{{tail}}",
