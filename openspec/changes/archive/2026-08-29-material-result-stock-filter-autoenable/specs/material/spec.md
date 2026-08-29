@@ -2,7 +2,7 @@
 
 ### Requirement: ストック不足フィルタの常時表示と自動ON
 
-システムは `/material/result` の表示フィルタ(全て / 不足 / ストック不足)のうち「ストック不足」タブを、`stockEnabled` の値に関わらず常時表示 SHALL。`stockEnabled=OFF` の状態で「ストック不足」タブが選択されたとき、システムは `stockEnabled` を ON に切り替える SHALL。バッファ値(`stockBuffer`)は既存のカテゴリ×レア別デフォルト解決(`resolveStockBuffer`)をそのまま用い、この操作単独では追加の数値入力を要求しない SHALL。この自動ON操作は、育成必要数の保存値(`material/result`)および所持数(`possession`)を変更しない SHALL。
+システムは `/material/result` の表示フィルタ(全て / 不足 / ストック不足)のうち「ストック不足」タブを、ストック目標（`stockEnabled`）の値に関わらず常時表示 SHALL。ストック目標が OFF の状態で「ストック不足」タブが選択されたとき、システムはストック目標を ON に切り替える SHALL。バッファ値は既存のカテゴリ・レアリティ別の既定値をそのまま適用し、この操作単独では追加の数値入力を要求しない SHALL。この自動ON操作は、育成必要数の保存値(`material/result`)および所持数(`possession`)を変更しない SHALL。
 
 #### Scenario: stockEnabled=OFF でもタブが見える
 - **WHEN** `stockEnabled=OFF` の状態で `/material/result` を表示する
