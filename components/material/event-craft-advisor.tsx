@@ -20,8 +20,11 @@ import {
 import {
   EVENT_CRAFT_RECIPES_2026,
   EVENT_INGREDIENTS,
+  ExpectedCraftYieldEntry,
   IngredientCounts,
   IngredientType,
+  getRecipeYields,
+  sumExpectedCraftYields,
 } from '../../data/event-craft-recipes'
 import { ServantPraise } from '../farming/ServantPraise'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -313,6 +316,17 @@ const CraftCard = ({
     `material-${recipe.targetItem.shortId}`,
     catItem?.name ?? recipe.targetItem.name,
   )
+  const yields = getRecipeYields(recipe)
+  const featuredYield = yields[recipe.targetItem.shortId] ?? 0
+  const otherEntries = Object.entries(yields).filter(
+    ([id]) => id !== recipe.targetItem.shortId,
+  )
+  const rarityFallback =
+    recipe.targetItem.rarity === 'bronze'
+      ? '銅'
+      : recipe.targetItem.rarity === 'silver'
+        ? '銀'
+        : '金'
 
   return (
     <div
@@ -336,12 +350,51 @@ const CraftCard = ({
           </div>
           <CraftCardBadges item={item} />
         </div>
+        <p className="mt-0.5 text-xs" style={{ color: 'var(--text3)' }}>
+          {t(
+            'event-craft-per-dish-yields',
+            '期待: {{featured}} {{featuredAmount}} / 他{{rarity}} {{otherAmount}}×{{otherCount}}',
+            {
+              featured: materialName,
+              featuredAmount: featuredYield.toFixed(2),
+              rarity: t(`event-craft-rarity-${recipe.targetItem.rarity}`, rarityFallback),
+              otherAmount: (otherEntries[0]?.[1] ?? 0).toFixed(2),
+              otherCount: otherEntries.length,
+            },
+          )}
+        </p>
         <CraftCardMeta
           costs={recipe.costs}
           deficitSaved={item.deficitSaved}
           surplusValue={item.surplusValue}
           unitLabel={unitLabel}
         />
+      </div>
+    </div>
+  )
+}
+
+export const EventCraftExpectedYields = ({
+  entries,
+}: {
+  entries: ExpectedCraftYieldEntry[]
+}) => {
+  const { t } = useTranslation('material')
+  if (entries.length === 0) return null
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium" style={{ color: 'var(--text2)' }}>
+        {t('event-craft-expected-yields-heading', 'この配分での期待獲得')}
+      </span>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--text)' }}>
+        {entries.map((entry) => (
+          <span key={entry.shortId}>
+            {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
+              name: t(`material-${entry.shortId}`, entry.name),
+              amount: fmt(entry.amount),
+            })}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -673,6 +726,9 @@ export const EventCraftAdvisor = ({
         <ServantPraise message={advice} size={44} />
         {isDataReady && (
           <>
+            <EventCraftExpectedYields
+              entries={sumExpectedCraftYields(sortedAllocations)}
+            />
             <CraftCardList
               allocations={sortedAllocations}
               items={items}

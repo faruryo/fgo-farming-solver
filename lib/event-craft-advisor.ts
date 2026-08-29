@@ -8,6 +8,7 @@ import {
   EVENT_CRAFT_RECIPES_2026,
   EventCraftRecipe,
   IngredientCounts,
+  getRecipeYields,
 } from '../data/event-craft-recipes'
 
 export type CraftAllocationItem = {
@@ -75,7 +76,14 @@ export const computeSingleItemBaseValues = (
     .sort((a, b) => a.localeCompare(b))
     .join(',')
   const recipeKey = recipes
-    .map((r) => `${r.id}:${r.yieldCount}:${r.targetItem.shortId}`)
+    .map((r) => {
+      const yields = getRecipeYields(r, recipes)
+      const yieldKey = Object.keys(yields)
+        .sort((a, b) => a.localeCompare(b))
+        .map((id) => `${id}:${yields[id]}`)
+        .join('|')
+      return `${r.id}:{${yieldKey}}`
+    })
     .join(',')
   const cacheKey = `${mode}:${questKey}:${recipeKey}`
 
@@ -92,25 +100,27 @@ export const computeSingleItemBaseValues = (
   const dropDataSet =
     options?.itemsWithDropData ??
     new Set(drops.drop_rates.map((dr) => dr.item_id))
+  const isolatedCost = new Map<string, number>()
+  const costOf = (shortId: string): number => {
+    if (!dropDataSet.has(shortId)) return 0
+    const cachedIsolated = isolatedCost.get(shortId)
+    if (cachedIsolated != null) return cachedIsolated
+    const needMap: Record<string, number> = {}
+    Reflect.set(needMap, shortId, 1)
+    const singleCost = continuousOptimalCost(drops, needMap, questIds, mode)
+    const value = Number.isFinite(singleCost) ? singleCost : 0
+    isolatedCost.set(shortId, value)
+    return value
+  }
+
   const values = new Map<string, number>()
   for (const recipe of recipes) {
-    const shortId = recipe.targetItem.shortId
-    if (dropDataSet.has(shortId)) {
-      const needMap: Record<string, number> = {}
-      Reflect.set(needMap, shortId, 1)
-      const singleCost = continuousOptimalCost(
-        drops,
-        needMap,
-        questIds,
-        mode,
-      )
-      values.set(
-        recipe.id,
-        Number.isFinite(singleCost) ? singleCost * recipe.yieldCount : 0,
-      )
-    } else {
-      values.set(recipe.id, 0)
+    const yields = getRecipeYields(recipe, recipes)
+    let basket = 0
+    for (const [shortId, y] of Object.entries(yields)) {
+      if (y > 0) basket += costOf(shortId) * y
     }
+    values.set(recipe.id, basket)
   }
   dropsCache.set(cacheKey, values)
   return values
@@ -160,19 +170,23 @@ const populateCraftVars = (
   isTieBreak: boolean,
 ) => {
   for (const recipe of ctx.recipes) {
-    const shortId = recipe.targetItem.shortId
-    if ((ctx.farmableNeed.get(shortId) ?? 0) <= 0) continue
+    const yields = getRecipeYields(recipe, ctx.recipes)
+    const helpsDeficit = Object.entries(yields).some(
+      ([shortId, y]) => y > 0 && (ctx.farmableNeed.get(shortId) ?? 0) > 0,
+    )
+    if (!helpsDeficit) continue
     const varName = `craft_${recipe.id}`
     const totalIng =
       recipe.costs.seafood + recipe.costs.meat + recipe.costs.vegetable
     const craftVars: Record<string, number> = {
       totalCost: 0,
-      [`item_${shortId}`]: recipe.yieldCount,
-      [`cap_${shortId}`]: recipe.yieldCount,
       seafood: recipe.costs.seafood,
       meat: recipe.costs.meat,
       vegetable: recipe.costs.vegetable,
       ...(isTieBreak ? { totalIngredients: totalIng } : {}),
+    }
+    for (const [shortId, y] of Object.entries(yields)) {
+      if (y > 0) Reflect.set(craftVars, `item_${shortId}`, y)
     }
     Reflect.set(model.variables, varName, craftVars)
     Reflect.set(ints, varName, 1)
@@ -205,7 +219,6 @@ const initStage1Model = (
   }
   for (const [itemId, count] of ctx.farmableNeed.entries()) {
     Reflect.set(constraints, `item_${itemId}`, { min: count })
-    Reflect.set(constraints, `cap_${itemId}`, { max: count })
   }
   const model: solver.Model = {
     optimize,
@@ -390,40 +403,42 @@ const solveStage2 = (
   return surplusCounts
 }
 
+const subtractCraftYieldsFromNeed = (
+  fullNeed: Record<string, number>,
+  recipes: readonly EventCraftRecipe[],
+  counts: Map<string, number>,
+  excludeRecipeId?: string,
+): Record<string, number> => {
+  const next: Record<string, number> = { ...fullNeed }
+  for (const recipe of recipes) {
+    if (recipe.id === excludeRecipeId) continue
+    const count = counts.get(recipe.id) ?? 0
+    if (count <= 0) continue
+    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+      if (y <= 0) continue
+      const cur = (Reflect.get(next, shortId) as number | undefined) ?? 0
+      Reflect.set(next, shortId, Math.max(0, cur - count * y))
+    }
+  }
+  return next
+}
+
 const calculateAllocatedDeficitSavings = (
   ctx: SolverContext,
   deficitCounts: Map<string, number>,
   optimalCost: number,
 ): Map<string, { totalSaved: number; unitSaved: number }> => {
   const savings = new Map<string, { totalSaved: number; unitSaved: number }>()
-
-  const postCraftNeed: Record<string, number> = { ...ctx.fullNeed }
-  for (const recipe of ctx.recipes) {
-    const count = deficitCounts.get(recipe.id) ?? 0
-    if (count > 0) {
-      const shortId = recipe.targetItem.shortId
-      const cur = (Reflect.get(postCraftNeed, shortId) as number | undefined) ?? 0
-      Reflect.set(
-        postCraftNeed,
-        shortId,
-        Math.max(0, cur - count * recipe.yieldCount),
-      )
-    }
-  }
-
   const allowedQuestsList = Array.from(ctx.allowedQuests)
 
   for (const recipe of ctx.recipes) {
     const count = deficitCounts.get(recipe.id) ?? 0
     if (count > 0 && Number.isFinite(optimalCost)) {
-      const shortId = recipe.targetItem.shortId
-      const withoutRecipeNeed: Record<string, number> = { ...postCraftNeed }
-      const curNeed =
-        (Reflect.get(postCraftNeed, shortId) as number | undefined) ?? 0
-      Reflect.set(
-        withoutRecipeNeed,
-        shortId,
-        curNeed + count * recipe.yieldCount,
+      const withoutRecipeNeed = subtractCraftYieldsFromNeed(
+        ctx.fullNeed,
+        ctx.recipes,
+        deficitCounts,
+        recipe.id,
       )
       const costWithout = continuousOptimalCost(
         ctx.drops,
