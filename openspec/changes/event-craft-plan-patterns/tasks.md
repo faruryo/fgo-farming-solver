@@ -26,3 +26,4 @@
 
 - [ ] 5.1 対象テストと `pnpm run type-check` を通す
 - [ ] 5.2 `openspec validate event-craft-plan-patterns --strict` を通す
+- [ ] 5.3 `event-craft-expected-yields` が未アーカイブなら先に適用／アーカイブし、本changeを後にする（逆順禁止）

@@ -15,7 +15,7 @@
 
 - 金寄せ・手数最小・作らないカード・クエスト名の主表示。
 - 使い切りのAP/周回分割。
-- 期待値テーブル（0.40 / 残り均等）の新規定義。テーブルは `event-craft-expected-yields`。本変更の5本は適用時点の同一yieldを共有する。
+- 期待値テーブルファイルの新規追加（`event-craft-expected-yields` が先に入れる）。本changeは同じ係数を要件に保持し、後からアーカイブする。
 - 配布タブの分母スイッチ変更。
 - 周回LPの整数化。
 
@@ -79,6 +79,8 @@ IDs: `runs` | `ap` | `even-turn` | `even-ap` | `exhaust`。
 ## Migration Plan
 
 フロントのみ。ロールバックは revert。
+
+`event-craft-expected-yields` を先に main の spec へ入れ、本changeを後にアーカイブする。本changeの MODIFIED は期待値シナリオを含むため、後アーカイブでも 0.40/ついで/過産表示を消さない。逆順だとトグル文言が期待値の上に載るので禁止。
 
 ## Open Questions
 
