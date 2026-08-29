@@ -19,10 +19,10 @@
 
 ## Decisions
 
-### 1. フリクエ周回とクラフトの同時最適化（MILP）と厳密な辞書式順序
+### 1. フリクエ周回とクラフトの同時最適化（MILP）と多段階最適化
 
 各素材の1個あたり限界価値（固定シャドウプライス）を線形結合する近似や固定ペナルティ係数では、共通ドロップの相互作用や大規模インベントリ時の最適解の歪みを防げません。
-そこで、**フリクエ周回ソルバーとクラフト選択を1つの混合整数線形計画法（MILP）モデルに統合し、余剰使い切りと残余食材最小化も完全な辞書式順序（Lexicographic multi-stage）** で解きます。
+そこで、**フリクエ周回ソルバーとクラフト選択を1つの混合整数線形計画法（MILP）モデルに統合し、不足周回削減と余剰使い切りを多段階最適化（Multi-stage optimization）** で解きます。
 
 - **アイテムとレシピの定義**:
   - 各料理 $j$ の消費食材数を $\text{cost}_{j,k}$ （$k \in \{\text{seafood}, \text{meat}, \text{vegetable}\}$）とする。
@@ -31,7 +31,8 @@
   - 所持数 $\text{owned}_k$ はイベント食材（海鮮・肉・野菜）の所持数のみを指す。
 
 - **対象アイテムのフィルタリング (Infeasible 回避)**:
-  - `continuousOptimalCost`（`lib/material-selection-advisor.ts`）と同様に、許可クエストに恒常ドロップが存在するアイテム、またはクラフトレシピの獲得対象アイテムのみを制約対象 $i \in \text{farmableOrCraftableItems}$ とします。QPやドロップのないアイテムは制約から除外し、モデルが Infeasible になることを防ぎます。
+  - `continuousOptimalCost`（`lib/material-selection-advisor.ts`）と同様に、**許可クエストに正のドロップ率が存在するアイテム（`farmableItems`）のみ**を充足制約の対象とします。
+  - フリクエドロップデータのない非フリクエ素材（QPや特定イベント限定素材等）は、フリクエ周回削減効果を直接評価できないため充足制約から除外します（これにより食材不足時にモデルが Infeasible になるのを完全に防ぎます）。
 
 - **数値計算上の許容誤差 ($\varepsilon = 10^{-6}$)**:
   - 浮動小数点丸め誤差により後続ステージが Infeasible になるのを防ぐため、先行ステージの最適値制約には $\varepsilon = 10^{-6}$ のマージンを設けます。
@@ -42,7 +43,7 @@
       - $y_q \ge 0$ （各許可クエスト $q$ の周回数、連続変数）
       - $x_{j,\text{deficit}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の不足枠作成数、一般整数変数）
     - **制約条件**:
-      - 素材必要数充足: $\sum_{q} (\text{drop}_{q,i} \cdot y_q) + \sum_{j} (\text{yield}_{j,i} \cdot x_{j,\text{deficit}}) \ge \text{fullNeed}_i \quad (\forall i \in \text{farmableOrCraftableItems})$
+      - 素材必要数充足: $\sum_{q} (\text{drop}_{q,i} \cdot y_q) + \sum_{j} (\text{yield}_{j,i} \cdot x_{j,\text{deficit}}) \ge \text{fullNeed}_i \quad (\forall i \in \text{farmableItems})$
       - 食材所持上限: $\sum_j (\text{cost}_{j,k} \cdot x_{j,\text{deficit}}) \le \text{owned}_k \quad (\forall k)$
       - 生成物不足数上限: $\sum_j (\text{yield}_{j,i} \cdot x_{j,\text{deficit}}) \le \text{deficiency}_i \quad (\forall i)$
     - **目的関数 (最小化)**:
@@ -59,9 +60,10 @@
       - $\text{Minimize: } \sum_j \left( \sum_k \text{cost}_{j,k} \right) \cdot x_{j,\text{deficit}}$
     - 得られた解を不足枠の最適作成数 $x^*_{j,\text{deficit}}$ とします。真の総削減量は $C_{\text{base}} - C^*_{\text{opt}}$ となります。
     - ※「食材を使い切る」が OFF の場合は、この Stage 1 の最適解で終了します。
+    - ※ Stage 1b で同一の最小コスト・総食材消費量を持つ複数の食材配分が存在する場合、ソルバーから得られた解を任意に採用して Stage 2 に進みます（後述のトレードオフ参照）。
 
 - **Stage 2: 余剰食材の使い切り（「食材を使い切る」ON時のみ実行）**
-  - Stage 1 で確定した不足枠作成数 $x^*_{j,\text{deficit}}$ を固定し、残った食材 $\text{remaining}_k = \text{owned}_k - \sum_j \text{cost}_{j,k} x^*_{j,\text{deficit}}$ を用いて、余剰素材価値の最大化と残余食材の最小化を**2段階の辞書式最適化**で解きます。
+  - Stage 1 で確定した不足枠作成数 $x^*_{j,\text{deficit}}$ を固定し、残った食材 $\text{remaining}_k = \text{owned}_k - \sum_j \text{cost}_{j,k} x^*_{j,\text{deficit}}$ を用いて、余剰素材価値の最大化と残余食材の最小化を**2段階の最適化**で解きます。
   
   - **Stage 2a: 余剰素材単体価値の最大化 (ILP)**
     - **決定変数**: $x_{j,\text{surplus}} \in \mathbb{Z}_{\ge 0}$ （各料理 $j$ の余剰枠作成数、一般整数変数）
@@ -112,5 +114,8 @@ MILPによる統合最適化では複数素材の相互作用により個々の�
   - **緩和策**:
     - まずは非同期/同期実行で実測ベンチマークを実施。
     - メインスレッドのブロッキングや体感遅延が発生する場合は、Web Worker への計算オフロード、または分枝限定法のタイムアウト時に「シャドウプライスに基づく貪欲 ILP」へのフォールバックを導入します。
+- **[Stage 1b と Stage 2 のトレードオフ]**
+  - Stage 1b（消費食材最小化）において同一コスト・総消費量となる複数の食材配分がある場合、任意に1つを確定して Stage 2 に進むため、残余食材の組み合わせ次第では Stage 2 の余剰価値が理論最大値よりわずかに劣る可能性があります。
+  - Stage 1 と 2 を結合した超巨大MILPを解くアプローチは計算負荷を増大させるため、実用的な応答速度を最優先し、Stage 1（不足周回削減）を完全優先した上で Stage 2（余剰使い切り）を独立実行する軽量な多段階設計を採用します。
 - **[ついでドロップ素材の厳密な扱い]**
   - フリクエ周回全体を直接目的関数とし、かつ Stage 1b で消費食材を最小化するため、「他素材のついでに自然に集まる素材」に対して料理を作成しても周回コストが下がらない場合は自動的に作成数0となり、真に周回を減らせる料理だけが選ばれます。
