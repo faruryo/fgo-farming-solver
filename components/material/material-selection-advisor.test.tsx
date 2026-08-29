@@ -203,4 +203,22 @@ describe('MaterialSelectionAdvisor Component', () => {
       expect(screen.getByText('余剰 +1')).toBeInTheDocument()
     })
   })
+
+  it('renders target material names using translation keys in recipe cards', () => {
+    localStorage.setItem(
+      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
+      JSON.stringify('summer-2026'),
+    )
+
+    render(
+      <MaterialSelectionAdvisor
+        items={mockItems}
+        amounts={{ '6533': 1 }}
+        possession={{ '6533': 0 }}
+      />,
+    )
+
+    expect(screen.getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
+    expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
+  })
 })

@@ -192,7 +192,19 @@
     "recipe-hijah-soup": "鐘楼ヒージャー汁",
     "recipe-rafute": "城壁ラフテー",
     "recipe-curry": "底なし沼カレー",
-    "recipe-zenzai": "目玉ぜんざい"
+    "recipe-zenzai": "目玉ぜんざい",
+    "material-07": "宵哭きの鉄杭",
+    "material-04": "愚者の鎖",
+    "material-0d": "狂気の残滓",
+    "material-01": "凶骨",
+    "material-15": "無間の歯車",
+    "material-19": "大騎士勲章",
+    "material-16": "禁断の頁",
+    "material-12": "八連双晶",
+    "material-25": "血の涙石",
+    "material-29": "原初の産毛",
+    "material-2h": "鬼炎鬼灯",
+    "material-21": "蛮神の心臓"
   },
   "servants": {
     "title": "{{name}}の強化素材"

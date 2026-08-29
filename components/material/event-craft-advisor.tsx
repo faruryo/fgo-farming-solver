@@ -303,6 +303,10 @@ const CraftCard = ({
   const recipe = item.recipe
   const iconUrl = getItemIcon(catItem, dropItem)
   const isSelected = item.totalCount > 0
+  const materialName = t(
+    `material-${recipe.targetItem.shortId}`,
+    catItem?.name ?? recipe.targetItem.name,
+  )
 
   return (
     <div
@@ -313,7 +317,7 @@ const CraftCard = ({
         opacity: isSelected ? 1 : 0.75,
       }}
     >
-      <CraftCardImage iconUrl={iconUrl} name={recipe.targetItem.name} />
+      <CraftCardImage iconUrl={iconUrl} name={materialName} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -321,7 +325,7 @@ const CraftCard = ({
               {t(`recipe-${recipe.id}`, recipe.name)}
             </span>
             <span className="truncate text-xs" style={{ color: 'var(--text3)' }}>
-              ({recipe.targetItem.name})
+              ({materialName})
             </span>
           </div>
           <CraftCardBadges item={item} />
