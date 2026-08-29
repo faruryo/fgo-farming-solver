@@ -167,13 +167,12 @@ describe('MaterialSelectionAdvisor Component', () => {
     const meatInput = inputs[1]
     const vegInput = inputs[2]
 
-    await user.type(meatInput, '20')
-    await user.type(vegInput, '40')
+    await user.type(meatInput, '60')
+    await user.type(vegInput, '120')
 
     await waitFor(() => {
-      // Goya Champuru should show recommended +1
       expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
-      expect(screen.getByText('推奨 +1')).toBeInTheDocument()
+      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
       expect(
         screen.getByText(/最優先は「ゴーヤーチャンプルー」です/),
       ).toBeInTheDocument()
@@ -186,21 +185,18 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     // Enter enough ingredients for 2 Goya Champuru (meat: 40, veg: 80)
     const inputs = screen.getAllByRole('spinbutton')
-    await user.type(inputs[1], '40')
-    await user.type(inputs[2], '80')
+    await user.type(inputs[1], '80')
+    await user.type(inputs[2], '160')
 
     await waitFor(() => {
-      // With deficiency 1, without exhaust, it makes 1 deficit craft
-      expect(screen.getByText('推奨 +1')).toBeInTheDocument()
+      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
     })
 
-    // Toggle exhaust ingredients ON
     const exhaustSwitch = screen.getByRole('switch', { name: '食材を使い切る' })
     await user.click(exhaustSwitch)
 
     await waitFor(() => {
-      // Now it should show both 推奨 +1 and 余剰 +1
-      expect(screen.getByText('推奨 +1')).toBeInTheDocument()
+      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
       expect(screen.getByText('余剰 +1')).toBeInTheDocument()
     })
   })
@@ -231,8 +227,8 @@ describe('MaterialSelectionAdvisor Component', () => {
     renderSummer2026Advisor()
 
     const inputs = screen.getAllByRole('spinbutton')
-    await user.type(inputs[1], '20')
-    await user.type(inputs[2], '40')
+    await user.type(inputs[1], '60')
+    await user.type(inputs[2], '120')
 
     await waitFor(() => {
       expect(screen.getByText('−20 AP')).toBeInTheDocument()
