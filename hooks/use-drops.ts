@@ -16,12 +16,16 @@ export const fetchDrops = (): Promise<Drops> => {
       if (!response.ok) {
         throw new Error(`/api/drops returned ${response.status}`)
       }
-      const json = (await response.json())
+      const data: unknown = await response.json()
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('Invalid /api/drops response')
+      }
+      const dropsData = data as Partial<Drops>
       return {
-        items: json.items ?? [],
-        quests: json.quests ?? [],
-        drop_rates: json.drop_rates ?? [],
-        campaigns: json.campaigns ?? [],
+        items: dropsData.items ?? [],
+        quests: dropsData.quests ?? [],
+        drop_rates: dropsData.drop_rates ?? [],
+        campaigns: dropsData.campaigns ?? [],
       }
     })
     .catch((e) => {
