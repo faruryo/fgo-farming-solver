@@ -35,6 +35,13 @@ describe('event craft expected yields', () => {
     expect(Object.keys(yields)).toHaveLength(4)
   })
 
+  it('uses the recipe yieldCount for the featured material when callers pass custom recipes', () => {
+    const andagi = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'skull-andagi')!
+    const custom = { ...andagi, yieldCount: 1 }
+    const yields = getRecipeYields(custom, [custom])
+    expect(yields[custom.targetItem.shortId]).toBe(1)
+  })
+
   it('sums recommended dish counts without overwriting overlapping yields', () => {
     const andagi = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'skull-andagi')!
     const steak = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'steak')!

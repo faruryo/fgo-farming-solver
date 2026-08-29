@@ -58,7 +58,7 @@ export const getRecipeYields = (
   for (const peer of recipes) {
     if (peer.targetItem.rarity !== recipe.targetItem.rarity) continue
     yields[peer.targetItem.shortId] =
-      peer.id === recipe.id ? EVENT_CRAFT_FEATURED_YIELD : other
+      peer.id === recipe.id ? recipe.yieldCount : other
   }
   return yields
 }
