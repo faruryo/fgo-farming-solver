@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Drops } from '../lib/get-drops'
 
 // Module-level cache shared across components in the same session.
@@ -16,12 +16,16 @@ export const fetchDrops = (): Promise<Drops> => {
       if (!response.ok) {
         throw new Error(`/api/drops returned ${response.status}`)
       }
-      const json = (await response.json()) as Drops
+      const data: unknown = await response.json()
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('Invalid /api/drops response')
+      }
+      const dropsData = data as Partial<Drops>
       return {
-        items: json.items ?? [],
-        quests: json.quests ?? [],
-        drop_rates: json.drop_rates ?? [],
-        campaigns: json.campaigns ?? [],
+        items: dropsData.items ?? [],
+        quests: dropsData.quests ?? [],
+        drop_rates: dropsData.drop_rates ?? [],
+        campaigns: dropsData.campaigns ?? [],
       }
     })
     .catch((e) => {
@@ -60,5 +64,5 @@ export const useDrops = () => {
     }
   }, [])
 
-  return { ...data, isLoading }
+  return useMemo(() => ({ ...data, isLoading }), [data, isLoading])
 }

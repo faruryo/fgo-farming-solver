@@ -44,6 +44,8 @@ describe('storage-keys', () => {
     expect(STORAGE_KEYS.TRACKING_MODE).toBe('material/tracking-mode')
     expect(STORAGE_KEYS.TRACKING_SUGGEST_DISMISSED).toBe('material/tracking-suggest-dismissed')
     expect(STORAGE_KEYS.MATERIAL_SELECTION_ADVISOR).toBe('material/selection-advisor-config')
+    expect(STORAGE_KEYS.MATERIAL_ADVISOR_TAB).toBe('material/advisor-active-tab')
+    expect(STORAGE_KEYS.EVENT_CRAFT_ADVISOR).toBe('material/event-craft-advisor-config')
     expect(STORAGE_KEYS.DASHBOARD_NEAR_GOAL_SORT_MODE).toBe('dashboard.nearGoal.sortMode')
     expect(STORAGE_KEYS.DASHBOARD_RECOMMENDED_QUEST_SORT_MODE).toBe('dashboard.recommendedQuest.sortMode')
     expect(STORAGE_KEYS.EVENTS_GOLDEN_FRUIT).toBe('events/goldenFruit')

@@ -35,6 +35,8 @@ export const STORAGE_KEYS = {
   LOCAL_METADATA: 'fgo_sync_metadata',
   PUSH_ENABLED: 'fgo_push_enabled',
   MATERIAL_SELECTION_ADVISOR: 'material/selection-advisor-config',
+  MATERIAL_ADVISOR_TAB: 'material/advisor-active-tab',
+  EVENT_CRAFT_ADVISOR: 'material/event-craft-advisor-config',
   DASHBOARD_NEAR_GOAL_SORT_MODE: 'dashboard.nearGoal.sortMode',
   DASHBOARD_RECOMMENDED_QUEST_SORT_MODE: 'dashboard.recommendedQuest.sortMode',
   DASHBOARD_HIDE_COMPLETED_EVENTS: 'dashboard.eventSection.hideCompleted',
