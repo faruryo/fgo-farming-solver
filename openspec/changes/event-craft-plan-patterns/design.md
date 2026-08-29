@@ -1,6 +1,6 @@
 ## Context
 
-現行 Stage1 は `quest_*` と `craft_*` の同時最小化。Stage2 の使い切りは単独1個価値で、残余を周回LPにかけ直さない。UIは12品とトグル。提案の動機は proposal.md。grilling で満遍なくをAP/周回別計算、同一皿の畳み＋別名、選択永続、マシュは選択追従に更新。期待値yieldは別change。
+現行 Stage1 は `quest_*` と `craft_*` の同時最小化。Stage2 の使い切りは単独1個価値で、残余を周回LPにかけ直さない。UIは12品とトグル。提案の動機は proposal.md。grilling で満遍なくをAP/周回別計算、同一皿の畳み＋別名、選択永続、マシュは選択追従に更新。期待値テーブルは別changeだが、5本のyieldは分岐させない。
 
 ## Goals / Non-Goals
 
@@ -15,7 +15,7 @@
 
 - 金寄せ・手数最小・作らないカード・クエスト名の主表示。
 - 使い切りのAP/周回分割。
-- `event-craft-expected-yields`。
+- 期待値テーブル（0.40 / 残り均等）の新規定義。テーブルは `event-craft-expected-yields`。本変更の5本は適用時点の同一yieldを共有する。
 - 配布タブの分母スイッチ変更。
 - 周回LPの整数化。
 
@@ -31,11 +31,14 @@
 
 IDs: `runs` | `ap` | `even-turn` | `even-ap` | `exhaust`。
 
-- `runs` / `exhaust` は常に表示。
-- `ap`: 正の多重集合が `runs` と異なれば表示。同一なら `runs` に `aliases: ['ap']`。
-- `even-turn`: `runs` と異なれば表示。同一なら `runs` の aliases。
-- `even-ap`: 比較先は表示中の `ap`、なければ `runs`。同一なら比較先の aliases。
-- 多重集合の一致は正の `(recipeId, count)` のみ。
+表示順に積み、**すでに出しているカード全部**（`exhaust` 除く）と正の多重集合を比較する。一致したら最初の表示カードへ `aliases` を付けて出さない。
+
+- `runs` は常に表示。
+- `ap` → 表示済みと一致しなければ表示。
+- `even-turn` → 同様（`ap` が出ていて皿が同じなら `ap` へ吸収。`runs` だけとの比較に限定しない）。
+- `even-ap` → 同様（`even-turn` や `ap` とも比較）。
+- `exhaust` は常に表示。他へ畳まない。
+- 一致は正の `(recipeId, count)` のみ。
 - 代替: 満遍なくを1本の相対Chebyshev → grilling で不採用（APと周回を分ける）。
 
 ### 3. 満遍なく: 単位ごとの max burden
@@ -44,7 +47,7 @@ IDs: `runs` | `ap` | `even-turn` | `even-ap` | `exhaust`。
 - `even-turn`: 食材制約下で `max_i burdenTurn_i` を最小化。同点は消費食材最小。
 - `even-ap`: 同様に `max_i burdenAp_i`。
 - 正規化は不要（単位を混ぜない）。
-- 獲得は主産物 `yieldCount` のみ。
+- 1皿の獲得は `runs` / `ap` / `exhaust` と同じyieldマップ。`event-craft-expected-yields` 適用後は期待バスケットを使い、主産物だけに戻さない。
 - 代替: 生個数max → 銅バイアス。シャドウプライス → 周回案と同型。
 
 ### 4. 使い切り

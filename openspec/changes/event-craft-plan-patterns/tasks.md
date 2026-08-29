@@ -1,7 +1,8 @@
 ## 1. Solver API
 
 - [ ] 1.1 5パターン（runs / ap / even-turn / even-ap / exhaust）の皿ベクトルを返す純関数を `lib/event-craft-advisor.ts` に追加し、Stage1 turn/ap を runs/ap に再利用する
-- [ ] 1.2 正の多重集合の一致判定と、表示カード＋吸収 aliases を純関数化し、一致／不一致を `lib/event-craft-advisor.test.ts` で検証する
+- [ ] 1.2 正の多重集合を表示済みカード全体（exhaust除く）と比較する畳みを純関数化し、even-turn が ap と一致して runs と異なるケース、even-ap が even-turn と一致するケースを `lib/event-craft-advisor.test.ts` で検証する
+- [ ] 1.4 5本が同一の料理yieldマップ（期待値があればバスケット）を使い、even だけ主産物1個に戻らないことをテストする
 - [ ] 1.3 各パターンの `n'` を turn と ap の `continuousOptimalCost` で評価する（クエスト内訳は返さない）
 
 ## 2. 満遍なく
