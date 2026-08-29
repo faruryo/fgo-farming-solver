@@ -268,6 +268,36 @@ describe('solveEventCraftAllocation', () => {
     expect(Number.isFinite(res.optimalCost)).toBe(true)
     expect(res.totalCrafted).toBe(0)
   })
+
+  it('同一クエストから複数素材がドロップする場合も最終配分に基づく貢献削減量を正しく算出する', () => {
+    // Q1 drops both item-a and item-b at rate 1.0, AP 20
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1.0 },
+      ],
+    )
+    // Needs 1 of item-a and 1 of item-b. Both crafted together saves 20 AP.
+    const owned: IngredientCounts = { seafood: 40, meat: 20, vegetable: 60 }
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 1, 'item-b': 1 },
+      owned,
+      'ap',
+      ['Q1'],
+      { exhaustIngredients: false, recipes: sampleRecipes },
+    )
+    expect(res.totalSaved).toBe(20)
+    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
+    const allocB = res.allocations.find((a) => a.recipe.id === 'recipe-b')
+    expect(allocA?.deficitCount).toBe(1)
+    expect(allocB?.deficitCount).toBe(1)
+    // Under joint plan, without A (still needing A) cost is 20, so A contributes 20 AP saved
+    expect(allocA?.deficitSaved).toBe(20)
+    expect(allocB?.deficitSaved).toBe(20)
+  })
 })
 
 describe('generateCraftAdvice', () => {

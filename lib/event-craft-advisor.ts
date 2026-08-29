@@ -357,37 +357,65 @@ const solveStage2 = (
   return surplusCounts
 }
 
-const calculateUnitMarginalSavings = (
+const calculateAllocatedDeficitSavings = (
   ctx: SolverContext,
-): Map<string, number> => {
-  const unitMarginalSaved = new Map<string, number>()
+  deficitCounts: Map<string, number>,
+  optimalCost: number,
+): Map<string, { totalSaved: number; unitSaved: number }> => {
+  const savings = new Map<string, { totalSaved: number; unitSaved: number }>()
+
+  const postCraftNeed: Record<string, number> = { ...ctx.fullNeed }
   for (const recipe of ctx.recipes) {
-    const shortId = recipe.targetItem.shortId
-    const need = ctx.farmableNeed.get(shortId) ?? 0
-    if (need > 0 && Number.isFinite(ctx.baselineCost)) {
-      const reduced = { ...ctx.fullNeed, [shortId]: Math.max(0, need - 1) }
-      const reducedCost = continuousOptimalCost(
-        ctx.drops,
-        reduced,
-        Array.from(ctx.allowedQuests),
-        ctx.mode,
+    const count = deficitCounts.get(recipe.id) ?? 0
+    if (count > 0) {
+      const shortId = recipe.targetItem.shortId
+      const cur = (Reflect.get(postCraftNeed, shortId) as number | undefined) ?? 0
+      Reflect.set(
+        postCraftNeed,
+        shortId,
+        Math.max(0, cur - count * recipe.yieldCount),
       )
-      unitMarginalSaved.set(
-        recipe.id,
-        Math.max(0, ctx.baselineCost - reducedCost) * recipe.yieldCount,
-      )
-    } else {
-      unitMarginalSaved.set(recipe.id, 0)
     }
   }
-  return unitMarginalSaved
+
+  const allowedQuestsList = Array.from(ctx.allowedQuests)
+
+  for (const recipe of ctx.recipes) {
+    const count = deficitCounts.get(recipe.id) ?? 0
+    if (count > 0 && Number.isFinite(optimalCost)) {
+      const shortId = recipe.targetItem.shortId
+      const withoutRecipeNeed: Record<string, number> = { ...postCraftNeed }
+      const curNeed =
+        (Reflect.get(postCraftNeed, shortId) as number | undefined) ?? 0
+      Reflect.set(
+        withoutRecipeNeed,
+        shortId,
+        curNeed + count * recipe.yieldCount,
+      )
+      const costWithout = continuousOptimalCost(
+        ctx.drops,
+        withoutRecipeNeed,
+        allowedQuestsList,
+        ctx.mode,
+      )
+      const totalSaved = Math.max(0, costWithout - optimalCost)
+      savings.set(recipe.id, {
+        totalSaved,
+        unitSaved: totalSaved / count,
+      })
+    } else {
+      savings.set(recipe.id, { totalSaved: 0, unitSaved: 0 })
+    }
+  }
+
+  return savings
 }
 
 const buildAllocations = (
   recipes: readonly EventCraftRecipe[],
   deficitCounts: Map<string, number>,
   surplusCounts: Map<string, number>,
-  unitMarginalSaved: Map<string, number>,
+  allocatedSavings: Map<string, { totalSaved: number; unitSaved: number }>,
   singleItemBaseValues: Map<string, number>,
 ) => {
   const spentIngredients: IngredientCounts = {
@@ -403,8 +431,9 @@ const buildAllocations = (
     const deficitCount = deficitCounts.get(recipe.id) ?? 0
     const surplusCount = surplusCounts.get(recipe.id) ?? 0
     const totalCount = deficitCount + surplusCount
-    const unitSaved = unitMarginalSaved.get(recipe.id) ?? 0
-    const deficitSaved = unitSaved * deficitCount
+    const recipeSaving = allocatedSavings.get(recipe.id) ?? { totalSaved: 0, unitSaved: 0 }
+    const deficitSaved = recipeSaving.totalSaved
+    const unitSaved = recipeSaving.unitSaved
     const surplusValue =
       (singleItemBaseValues.get(recipe.id) ?? 0) * surplusCount
 
@@ -516,12 +545,12 @@ const executeSolveStages = (
   const { deficitCounts, optimalCost } = solveStage1(ctx)
   const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
   const surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
-  const unitMarginalSaved = calculateUnitMarginalSavings(ctx)
+  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, optimalCost)
   const allocated = buildAllocations(
     recipes,
     deficitCounts,
     surplusCounts,
-    unitMarginalSaved,
+    allocatedSavings,
     singleItemBaseValues,
   )
   return { allocated, optimalCost }
@@ -580,14 +609,22 @@ const findTopAllocation = (allocations: CraftAllocationItem[]) => {
     .filter((a) => a.deficitCount > 0)
     .reduce<CraftAllocationItem | null>(
       (best, a) =>
-        best == null || a.deficitSaved > best.deficitSaved ? a : best,
+        best == null ||
+        a.deficitSaved > best.deficitSaved ||
+        (a.deficitSaved === best.deficitSaved && a.deficitCount > best.deficitCount)
+          ? a
+          : best,
       null,
     )
   const surplusTop = allocations
     .filter((a) => a.surplusCount > 0)
     .reduce<CraftAllocationItem | null>(
       (best, a) =>
-        best == null || a.surplusValue > best.surplusValue ? a : best,
+        best == null ||
+        a.surplusValue > best.surplusValue ||
+        (a.surplusValue === best.surplusValue && a.surplusCount > best.surplusCount)
+          ? a
+          : best,
       null,
     )
   const top = deficitTop ?? surplusTop
