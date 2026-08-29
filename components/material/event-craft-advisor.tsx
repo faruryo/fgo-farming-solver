@@ -20,9 +20,11 @@ import {
 import {
   EVENT_CRAFT_RECIPES_2026,
   EVENT_INGREDIENTS,
+  EventCraftRecipe,
   ExpectedCraftYieldEntry,
   IngredientCounts,
   IngredientType,
+  RecipeMaterialRarity,
   getRecipeYields,
   sumExpectedCraftYields,
 } from '../../data/event-craft-recipes'
@@ -297,6 +299,46 @@ const CraftCardImage = ({ iconUrl, name }: { iconUrl: string | null; name: strin
     <div className="h-9 w-9 flex-shrink-0 rounded" style={{ background: 'var(--border)' }} />
   )
 
+const RARITY_FALLBACK: Record<RecipeMaterialRarity, string> = {
+  bronze: '銅',
+  silver: '銀',
+  gold: '金',
+}
+
+const PerDishYieldLine = ({
+  recipe,
+  materialName,
+}: {
+  recipe: EventCraftRecipe
+  materialName: string
+}) => {
+  const { t } = useTranslation('material')
+  const yields = getRecipeYields(recipe)
+  const featuredYield = yields[recipe.targetItem.shortId] ?? 0
+  const otherEntries = Object.entries(yields).filter(
+    ([id]) => id !== recipe.targetItem.shortId,
+  )
+  const rarityKey = recipe.targetItem.rarity
+  let rarityJa = RARITY_FALLBACK.bronze
+  if (rarityKey === 'silver') rarityJa = RARITY_FALLBACK.silver
+  if (rarityKey === 'gold') rarityJa = RARITY_FALLBACK.gold
+  return (
+    <p className="mt-0.5 text-xs" style={{ color: 'var(--text3)' }}>
+      {t(
+        'event-craft-per-dish-yields',
+        '期待: {{featured}} {{featuredAmount}} / 他{{rarity}} {{otherAmount}}×{{otherCount}}',
+        {
+          featured: materialName,
+          featuredAmount: featuredYield.toFixed(2),
+          rarity: t(`event-craft-rarity-${rarityKey}`, rarityJa),
+          otherAmount: (otherEntries[0]?.[1] ?? 0).toFixed(2),
+          otherCount: otherEntries.length,
+        },
+      )}
+    </p>
+  )
+}
+
 const CraftCard = ({
   item,
   catItem,
@@ -316,17 +358,6 @@ const CraftCard = ({
     `material-${recipe.targetItem.shortId}`,
     catItem?.name ?? recipe.targetItem.name,
   )
-  const yields = getRecipeYields(recipe)
-  const featuredYield = yields[recipe.targetItem.shortId] ?? 0
-  const otherEntries = Object.entries(yields).filter(
-    ([id]) => id !== recipe.targetItem.shortId,
-  )
-  const rarityFallback =
-    recipe.targetItem.rarity === 'bronze'
-      ? '銅'
-      : recipe.targetItem.rarity === 'silver'
-        ? '銀'
-        : '金'
 
   return (
     <div
@@ -350,19 +381,7 @@ const CraftCard = ({
           </div>
           <CraftCardBadges item={item} />
         </div>
-        <p className="mt-0.5 text-xs" style={{ color: 'var(--text3)' }}>
-          {t(
-            'event-craft-per-dish-yields',
-            '期待: {{featured}} {{featuredAmount}} / 他{{rarity}} {{otherAmount}}×{{otherCount}}',
-            {
-              featured: materialName,
-              featuredAmount: featuredYield.toFixed(2),
-              rarity: t(`event-craft-rarity-${recipe.targetItem.rarity}`, rarityFallback),
-              otherAmount: (otherEntries[0]?.[1] ?? 0).toFixed(2),
-              otherCount: otherEntries.length,
-            },
-          )}
-        </p>
+        <PerDishYieldLine recipe={recipe} materialName={materialName} />
         <CraftCardMeta
           costs={recipe.costs}
           deficitSaved={item.deficitSaved}

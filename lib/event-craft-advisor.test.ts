@@ -492,7 +492,9 @@ describe('expected-yield solver behavior', () => {
     expect(allocA?.deficitCount).toBe(3)
     expect(allocA?.deficitSaved).toBeCloseTo(20)
     expect(allocA?.unitSaved).toBeCloseTo(20 / 3)
-    expect(allocA!.unitSaved * allocA!.deficitCount).toBeLessThanOrEqual(20 + 1e-6)
+    const unitSaved = allocA?.unitSaved ?? 0
+    const deficitCount = allocA?.deficitCount ?? 0
+    expect(unitSaved * deficitCount).toBeLessThanOrEqual(20 + 1e-6)
   })
 
   it('不足枠と余剰枠の皿数を足した期待獲得になる', () => {

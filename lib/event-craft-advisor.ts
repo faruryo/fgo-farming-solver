@@ -80,7 +80,7 @@ export const computeSingleItemBaseValues = (
       const yields = getRecipeYields(r, recipes)
       const yieldKey = Object.keys(yields)
         .sort((a, b) => a.localeCompare(b))
-        .map((id) => `${id}:${yields[id]}`)
+        .map((id) => `${id}:${Number(Reflect.get(yields, id) ?? 0)}`)
         .join('|')
       return `${r.id}:{${yieldKey}}`
     })

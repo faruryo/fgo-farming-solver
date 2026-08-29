@@ -44,8 +44,11 @@ export type EventCraftRecipe = {
   yields?: Record<string, number>
 }
 
-export const otherMaterialYield = (rarity: RecipeMaterialRarity): number =>
-  (1 - EVENT_CRAFT_FEATURED_YIELD) / (REWARD_SLOT_COUNT[rarity] - 1)
+export const otherMaterialYield = (rarity: RecipeMaterialRarity): number => {
+  const slots =
+    rarity === 'gold' ? REWARD_SLOT_COUNT.gold : REWARD_SLOT_COUNT.bronze
+  return (1 - EVENT_CRAFT_FEATURED_YIELD) / (slots - 1)
+}
 
 /** 1皿の育成素材 shortId → 期待個数。QP/種火枠は 0 のため含めない。 */
 export const getRecipeYields = (
@@ -57,8 +60,11 @@ export const getRecipeYields = (
   const yields: Record<string, number> = {}
   for (const peer of recipes) {
     if (peer.targetItem.rarity !== recipe.targetItem.rarity) continue
-    yields[peer.targetItem.shortId] =
-      peer.id === recipe.id ? recipe.yieldCount : other
+    Reflect.set(
+      yields,
+      peer.targetItem.shortId,
+      peer.id === recipe.id ? recipe.yieldCount : other,
+    )
   }
   return yields
 }

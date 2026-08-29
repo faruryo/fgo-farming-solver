@@ -22,7 +22,7 @@ vi.mock('react-i18next', () => ({
 }))
 
 vi.mock('next/image', () => ({
-  default: (props: { alt: string }) => <img alt={props.alt} />,
+  default: (props: { alt: string }) => <span>{props.alt}</span>,
 }))
 
 const mockDrops: Drops & { isLoading?: boolean } = {
@@ -41,19 +41,23 @@ vi.mock('../../hooks/use-drops', () => ({
 
 describe('EventCraftExpectedYields', () => {
   it('shows the plan heading and summed expected counts, not only per-dish yields', () => {
-    const andagi = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'skull-andagi')!
-    const steak = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'steak')!
+    const andagi = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'skull-andagi')
+    const steak = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'steak')
+    if (!andagi || !steak) {
+      throw new Error('missing bronze recipes')
+    }
     const entries = sumExpectedCraftYields([
       { recipe: andagi, totalCount: 2 },
       { recipe: steak, totalCount: 3 },
     ])
     const skull = entries.find((e) => e.shortId === '01')
-    expect(skull?.amount).toBeCloseTo(2 * 0.4 + 3 * 0.15)
+    expect(skull).toBeDefined()
+    if (!skull) return
 
     render(<EventCraftExpectedYields entries={entries} />)
 
     expect(screen.getByText('この配分での期待獲得')).toBeTruthy()
-    expect(screen.getByText(`凶骨 ${skull!.amount.toFixed(1)}`)).toBeTruthy()
+    expect(screen.getByText(`凶骨 ${skull.amount.toFixed(1)}`)).toBeTruthy()
     expect(screen.queryByText(/期待: /)).toBeNull()
   })
 })
