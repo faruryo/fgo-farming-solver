@@ -301,4 +301,13 @@ describe('generateCraftAdvice', () => {
     expect(advice).toContain('最優先は「料理A（素材A）」です')
     expect(advice).toContain('AP を削減できます')
   })
+
+  it('カスタム翻訳関数を渡した場合は翻訳されたアドバイスを返す', () => {
+    const d = buildTestDrops([], [], [])
+    const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
+    const res = solveEventCraftAllocation(d, {}, owned, 'ap', [])
+    const mockT = (key: string) => (key === 'event-craft-advice-prompt' ? 'English prompt message' : key)
+    const advice = generateCraftAdvice(res, owned, 'ap', false, mockT)
+    expect(advice).toBe('English prompt message')
+  })
 })

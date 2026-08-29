@@ -85,7 +85,7 @@ const AdvisorModeSwitch = ({
       <Switch
         checked={mode === 'turn'}
         onCheckedChange={(c) => onModeChange(c ? 'turn' : 'ap')}
-        aria-label={t('最適化モード切り替え', '最適化モード切り替え')}
+        aria-label={t('mode-switch', '最適化モード切り替え')}
       />
       <span
         style={{
@@ -127,7 +127,7 @@ const AdvisorExhaustSwitch = ({
           render={
             <button
               type="button"
-              aria-label={t('詳しい説明', '詳しい説明')}
+              aria-label={t('detail-desc', '詳しい説明')}
               className="inline-flex items-center justify-center rounded-full outline-none"
               style={{ color: 'var(--text3)' }}
             />
@@ -179,7 +179,7 @@ const IngredientInputs = ({
               className="truncate text-xs font-medium"
               style={{ color: 'var(--text)' }}
             >
-              {ing.name}
+              {t(`ingredient-${ing.id}`, ing.name)}
             </span>
             <Input
               type="number"
@@ -227,7 +227,7 @@ const CraftCardBadges = ({ item }: { item: CraftAllocationItem }) => {
       )}
       {item.totalCount === 0 && (
         <span className="text-xs" style={{ color: 'var(--text3)' }}>
-          {t('推奨 0', '推奨 0')}
+          {t('event-craft-rec-zero', '推奨 0')}
         </span>
       )}
     </div>
@@ -270,7 +270,10 @@ const CraftCardMeta = ({
         )}
         {surplusValue > 0 && (
           <span style={{ color: 'var(--blue, #3b82f6)' }}>
-            +{fmt(surplusValue)} {unitLabel}相当
+            {t('event-craft-surplus-equiv', '+{{amount}} {{unit}}相当', {
+              amount: fmt(surplusValue),
+              unit: unitLabel,
+            })}
           </span>
         )}
       </div>
@@ -296,6 +299,7 @@ const CraftCard = ({
   dropItem?: Drops['items'][number]
   unitLabel: string
 }) => {
+  const { t } = useTranslation('material')
   const recipe = item.recipe
   const iconUrl = getItemIcon(catItem, dropItem)
   const isSelected = item.totalCount > 0
@@ -314,7 +318,7 @@ const CraftCard = ({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-semibold" style={{ color: 'var(--text)' }}>
-              {recipe.name}
+              {t(`recipe-${recipe.id}`, recipe.name)}
             </span>
             <span className="truncate text-xs" style={{ color: 'var(--text3)' }}>
               ({recipe.targetItem.name})
@@ -341,9 +345,15 @@ const LeftoverList = ({ leftover }: { leftover: IngredientCounts }) => {
         {t('event-craft-leftover-title', '残余食材')}:
       </span>
       <div className="flex items-center gap-3 text-xs font-semibold">
-        <span style={{ color: 'var(--text)' }}>海鮮 {leftover.seafood}</span>
-        <span style={{ color: 'var(--text)' }}>お肉 {leftover.meat}</span>
-        <span style={{ color: 'var(--text)' }}>野菜 {leftover.vegetable}</span>
+        <span style={{ color: 'var(--text)' }}>
+          {t('ingredient-seafood-short', '海鮮')} {leftover.seafood}
+        </span>
+        <span style={{ color: 'var(--text)' }}>
+          {t('ingredient-meat-short', 'お肉')} {leftover.meat}
+        </span>
+        <span style={{ color: 'var(--text)' }}>
+          {t('ingredient-vegetable-short', '野菜')} {leftover.vegetable}
+        </span>
       </div>
     </div>
   )
@@ -404,6 +414,7 @@ const useEventCraftCalculation = (
   config: EventCraftAdvisorConfig,
   mode: DenominatorMode,
 ) => {
+  const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
 
   const result = useMemo(() => {
@@ -433,8 +444,9 @@ const useEventCraftCalculation = (
       config.ingredients,
       mode,
       config.exhaustIngredients,
+      (k, d, o) => t(k, d, o),
     )
-  }, [result, config.ingredients, mode, config.exhaustIngredients])
+  }, [result, config.ingredients, mode, config.exhaustIngredients, t])
 
   const sortedAllocations = useMemo(() => {
     return [...result.allocations].sort((a, b) => {
@@ -535,7 +547,8 @@ export const EventCraftAdvisor = ({
     config,
     mode,
   )
-  const unitLabel = mode === 'ap' ? 'AP' : '周'
+  const { t } = useTranslation('material')
+  const unitLabel = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
 
   return (
     <TooltipProvider>

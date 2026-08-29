@@ -598,30 +598,62 @@ const findTopAllocation = (allocations: CraftAllocationItem[]) => {
   return { top, topCount, deficitTop }
 }
 
+export type AdviceTranslator = (
+  key: string,
+  defaultValue: string,
+  options?: Record<string, unknown>,
+) => string
+
+const defaultAdviceTranslator: AdviceTranslator = (_key, defaultVal, options) => {
+  if (!options) return defaultVal
+  let res = defaultVal
+  for (const [k, v] of Object.entries(options)) {
+    res = res.replaceAll(`{{${k}}}`, String(v))
+  }
+  return res
+}
+
 const buildAdviceEffectText = (
   result: EventCraftSolverResult,
   mode: DenominatorMode,
   deficitTop: CraftAllocationItem | null,
+  t: AdviceTranslator,
 ): string => {
-  const u = mode === 'ap' ? 'AP' : '周回'
+  const u = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs-full', '周回')
   const modeTail =
     mode === 'ap'
-      ? 'りんごや石の温存に最適な配分です。'
-      : 'リアルの周回時間を最小化する配分です。'
+      ? t('event-craft-advice-ap-tail', 'りんごや石の温存に最適な配分です。')
+      : t('event-craft-advice-turn-tail', 'リアルの周回時間を最小化する配分です。')
 
   let effectText = ''
   if (result.totalSaved > 0) {
-    effectText = `この配分により、フリクエ周回から合計 約 ${fmt(result.totalSaved)} ${u} を削減できます。${modeTail}`
+    effectText = t(
+      'event-craft-advice-saved',
+      'この配分により、フリクエ周回から合計 約 {{amount}} {{unit}} を削減できます。{{tail}}',
+      { amount: fmt(result.totalSaved), unit: u, tail: modeTail },
+    )
   } else if (result.totalSurplusValue > 0) {
-    effectText = `余剰食材を使い切り、合計 約 +${fmt(result.totalSurplusValue)} ${u} 相当の素材を獲得できます。`
+    effectText = t(
+      'event-craft-advice-surplus-only',
+      '余剰食材を使い切り、合計 約 +{{amount}} {{unit}} 相当の素材を獲得できます。',
+      { amount: fmt(result.totalSurplusValue), unit: u },
+    )
   }
 
-  const surplusList = result.allocations.filter(
-    (a) => a.surplusCount > 0 && a !== deficitTop,
-  )
+  const surplusList = result.allocations.filter((a) => a.surplusCount > 0 && a !== deficitTop)
   const surplusNote =
     result.totalSaved > 0 && surplusList.length > 0
-      ? ` また余った食材で「${surplusList.map((a) => a.recipe.name).join('・')}」を作成し、+約 ${fmt(result.totalSurplusValue)} ${u} 相当の素材を追加獲得できます。`
+      ? t(
+          'event-craft-advice-surplus-note',
+          ' また余った食材で「{{dishes}}」を作成し、+約 {{amount}} {{unit}} 相当の素材を追加獲得できます。',
+          {
+            dishes: surplusList
+              .map((a) => t(`recipe-${a.recipe.id}`, a.recipe.name))
+              .join('・'),
+            amount: fmt(result.totalSurplusValue),
+            unit: u,
+          },
+        )
       : ''
 
   return `${effectText}${surplusNote}`.trim()
@@ -632,6 +664,7 @@ export const generateCraftAdvice = (
   ownedIngredients: IngredientCounts,
   mode: DenominatorMode,
   exhaustIngredients: boolean,
+  t: AdviceTranslator = defaultAdviceTranslator,
 ): string => {
   const totalOwned =
     (ownedIngredients.seafood ?? 0) +
@@ -639,21 +672,35 @@ export const generateCraftAdvice = (
     (ownedIngredients.vegetable ?? 0)
 
   if (totalOwned <= 0) {
-    return '指令を確認します、先輩。お持ちのイベント食材数（海鮮・お肉・野菜）を入力してください。育成不足素材とフリクエ効率から、最も効率的な料理作成配分を算出します。'
+    return t(
+      'event-craft-advice-prompt',
+      '指令を確認します、先輩。お持ちのイベント食材数（海鮮・お肉・野菜）を入力してください。育成不足素材とフリクエ効率から、最も効率的な料理作成配分を算出します。',
+    )
   }
 
   if (result.totalCrafted === 0) {
     if (result.baselineCost <= 0 && !exhaustIngredients) {
-      return '現在、不足している対象素材がありません、先輩。食材を使い切りたい場合は「食材を使い切る」をONにしてください。'
+      return t(
+        'event-craft-advice-no-shortage',
+        '現在、不足している対象素材がありません、先輩。食材を使い切りたい場合は「食材を使い切る」をONにしてください。',
+      )
     }
-    return '手持ちの食材数では料理を作成できないようです、先輩。もう少しフリクエで食材を集めてみましょう。'
+    return t(
+      'event-craft-advice-cannot-craft',
+      '手持ちの食材数では料理を作成できないようです、先輩。もう少しフリクエで食材を集めてみましょう。',
+    )
   }
 
   const { top, topCount, deficitTop } = findTopAllocation(result.allocations)
+  const topName = top ? t(`recipe-${top.recipe.id}`, top.recipe.name) : ''
   const head = top
-    ? `最優先は「${top.recipe.name}」です、先輩。これを ${topCount} 個作成するのが最も効率的です。`
+    ? t(
+        'event-craft-advice-head',
+        '最優先は「{{name}}」です、先輩。これを {{count}} 個作成するのが最も効率的です。',
+        { name: topName, count: topCount },
+      )
     : ''
 
-  const effect = buildAdviceEffectText(result, mode, deficitTop)
+  const effect = buildAdviceEffectText(result, mode, deficitTop, t)
   return `${head} ${effect}`.trim()
 }

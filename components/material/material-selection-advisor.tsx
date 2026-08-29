@@ -323,7 +323,7 @@ export const MaterialSelectionAdvisor = ({
         <div
           className="c-seg self-start"
           role="tablist"
-          aria-label={t('アドバイザー切り替え', 'アドバイザー切り替え')}
+          aria-label={t('advisor-tab-selector', 'アドバイザー切り替え')}
         >
           <button
             type="button"
@@ -369,7 +369,7 @@ export const MaterialSelectionAdvisor = ({
                 <Switch
                   checked={config.mode === 'turn'}
                   onCheckedChange={c => setMode(c ? 'turn' : 'ap')}
-                  aria-label={t('最適化モード切り替え', '最適化モード切り替え')}
+                  aria-label={t('mode-switch', '最適化モード切り替え')}
                 />
                 <span
                   style={{
