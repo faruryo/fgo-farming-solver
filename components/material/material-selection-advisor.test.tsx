@@ -100,6 +100,23 @@ const mockItems: Item[] = [
   },
 ]
 
+const renderSummer2026Advisor = (
+  amounts: Record<string, number> = { '6533': 1 },
+  possession: Record<string, number> = { '6533': 0 },
+) => {
+  localStorage.setItem(
+    STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
+    JSON.stringify('summer-2026'),
+  )
+  return render(
+    <MaterialSelectionAdvisor
+      items={mockItems}
+      amounts={amounts}
+      possession={possession}
+    />,
+  )
+}
+
 describe('MaterialSelectionAdvisor Component', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -139,18 +156,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
   it('calculates event craft allocation when ingredients are entered', async () => {
     const user = userEvent.setup()
-    localStorage.setItem(
-      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-      JSON.stringify('summer-2026'),
-    )
-
-    render(
-      <MaterialSelectionAdvisor
-        items={mockItems}
-        amounts={{ '6533': 5 }}
-        possession={{ '6533': 0 }}
-      />,
-    )
+    renderSummer2026Advisor({ '6533': 5 }, { '6533': 0 })
 
     // Initially 0 ingredients
     expect(screen.getByText(/お持ちのイベント食材数/)).toBeInTheDocument()
@@ -176,18 +182,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
   it('toggles exhaust ingredients and shows surplus badges', async () => {
     const user = userEvent.setup()
-    localStorage.setItem(
-      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-      JSON.stringify('summer-2026'),
-    )
-
-    render(
-      <MaterialSelectionAdvisor
-        items={mockItems}
-        amounts={{ '6533': 1 }}
-        possession={{ '6533': 0 }}
-      />,
-    )
+    renderSummer2026Advisor()
 
     // Enter enough ingredients for 2 Goya Champuru (meat: 40, veg: 80)
     const inputs = screen.getAllByRole('spinbutton')
@@ -211,73 +206,29 @@ describe('MaterialSelectionAdvisor Component', () => {
   })
 
   it('renders target material names using translation keys in recipe cards', () => {
-    localStorage.setItem(
-      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-      JSON.stringify('summer-2026'),
-    )
-
-    render(
-      <MaterialSelectionAdvisor
-        items={mockItems}
-        amounts={{ '6533': 1 }}
-        possession={{ '6533': 0 }}
-      />,
-    )
+    renderSummer2026Advisor()
 
     expect(screen.getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
     expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
   })
 
   it('renders loading message when drop data is loading', () => {
-    localStorage.setItem(
-      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-      JSON.stringify('summer-2026'),
-    )
     currentMockDrops = { ...mockDrops, isLoading: true }
-
-    render(
-      <MaterialSelectionAdvisor
-        items={mockItems}
-        amounts={{ '6533': 1 }}
-        possession={{ '6533': 0 }}
-      />,
-    )
+    renderSummer2026Advisor()
 
     expect(screen.getByText('ドロップデータを読み込み中です、先輩...')).toBeInTheDocument()
   })
 
   it('renders unavailable message when quests are empty', () => {
-    localStorage.setItem(
-      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-      JSON.stringify('summer-2026'),
-    )
     currentMockDrops = { ...mockDrops, isLoading: false, quests: [] }
-
-    render(
-      <MaterialSelectionAdvisor
-        items={mockItems}
-        amounts={{ '6533': 1 }}
-        possession={{ '6533': 0 }}
-      />,
-    )
+    renderSummer2026Advisor()
 
     expect(screen.getByText(/ドロップデータを取得できませんでした/)).toBeInTheDocument()
   })
 
   it('renders deficit savings formatted with unit', async () => {
     const user = userEvent.setup()
-    localStorage.setItem(
-      STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-      JSON.stringify('summer-2026'),
-    )
-
-    render(
-      <MaterialSelectionAdvisor
-        items={mockItems}
-        amounts={{ '6533': 1 }}
-        possession={{ '6533': 0 }}
-      />,
-    )
+    renderSummer2026Advisor()
 
     const inputs = screen.getAllByRole('spinbutton')
     await user.type(inputs[1], '20')
