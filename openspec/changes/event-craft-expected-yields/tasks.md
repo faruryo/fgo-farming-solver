@@ -7,9 +7,9 @@
 ## 2. ソルバー
 
 - [ ] 2.1 Stage 1 の craft 変数が全対象素材の期待 yield を `item_*` に足し、`cap_*` を外す
-- [ ] 2.2 Stage 2 の `V_base` を期待バスケット（孤立コスト×yield の和）にする
+- [ ] 2.2 Stage 2 の `V_base` を期待バスケット（孤立コスト×yield の和）にする。`computeSingleItemBaseValues` のキャッシュキーに期待 yield マップ（ソート済み）を含め、ついで係数だけ違う `recipes` を続けて渡しても古い値が使われないテストを追加する
 - [ ] 2.3 主産物不足 0・他同レア不足ありで料理が選ばれるケース、ついで込みで残余コストが下がるケースを `lib/event-craft-advisor.test.ts` に追加する
-- [ ] 2.4 `calculateAllocatedDeficitSavings` が料理の期待 yield マップ全体を need に戻す（主産物だけにしない）。回帰テストで、ついで素材だけが拘束のとき `unitSaved` / カード削減が 0 にならないことを確認する
+- [ ] 2.4 `calculateAllocatedDeficitSavings` の除外 need は `fullNeed` から当該以外のレシピ期待獲得を引いて作る（クランプ済み残に yield を足し戻さない）。ついで拘束の回帰に加え、小数 yield の過産（例: 不足1に 0.40×3 皿）で `unitSaved` が過大にならないことを確認する
 - [ ] 2.5 既存フィクスチャの `yieldCount: 1` 前提を期待値モデルに合わせて直す
 
 ## 3. UI

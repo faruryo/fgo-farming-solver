@@ -33,7 +33,7 @@
 
 ### 3. Stage 2 の `V_base` は期待バスケット
 
-`sum_i yield_{j,i} * isolatedCost(i)`。ドロップデータのない i は 0。主産物だけの旧 `yieldCount * isolatedCost(featured)` より、銀のついで3種を使い切りが正しく評価する。
+`sum_i yield_{j,i} * isolatedCost(i)`。ドロップデータのない i は 0。主産物だけの旧 `yieldCount * isolatedCost(featured)` より、銀のついで3種を使い切りが正しく評価する。`computeSingleItemBaseValues` のキャッシュキーは `id` / featured `shortId` / `yieldCount` だけでなく、期待 yield マップ（shortId ソート済み）を含める。テストの `recipes` 差し替えでついで係数だけ変えた連続呼び出しが古い `V_base` を使わないこと。
 
 ### 4. UI
 
@@ -41,17 +41,17 @@
 
 ### 5. テスト
 
-純関数で (a) 銅料理1皿が他銅3種にも 0.15 を足す (b) 主産物不足0でも他銅不足があれば作成されうる (c) 旧 `yieldCount=1` のフィクスチャを期待値係数に更新する (d) 1レシピ除外の削減帰属が期待 yield マップ全体を戻す。
+純関数で (a) 銅料理1皿が他銅3種にも 0.15 を足す (b) 主産物不足0でも他銅不足があれば作成されうる (c) 旧 `yieldCount=1` のフィクスチャを期待値係数に更新する (d) 1レシピ除外の削減帰属が `fullNeed` から他レシピを引いて再計算される (e) 過産時に帰属が元の不足を超えない。
 
 ### 6. カード削減 `unitSaved` は期待バスケット除外
 
-`calculateAllocatedDeficitSavings` は主産物 `shortId * yieldCount` だけを戻すと、ついで同レアの削減がカードとマシュ優先から落ちる。Stage 1 合計は正しくても帰属が壊れる。除外時は当該料理の期待 yield マップの全エントリを need に戻す。
+`calculateAllocatedDeficitSavings` は主産物だけを戻すとついで削減が落ちる。クランプ済み `postCraftNeed` に当該レシピの期待 yield を足し戻すのも不可。小数 yield と `cap_*` 撤去では整数皿が不足を超える過産が起き、need 1 に対し 0.40×3 皿だとクランプ後 0 に 1.20 を足して帰属が膨らむ。除外時の need は `fullNeed` から当該以外の全レシピの期待獲得を引いた値（下限 0）とする。
 
 ## Risks / Trade-offs
 
 - **[期待値と実運の差]** → フリクエと同じ期待値主義。UI で「期待値」と分かる文言にする。
 - **[javascript-lp-solver と小数 yield]** → 係数 0.4 / 0.15 / 0.12 は既存ドロップ率と同型。必要なら整数スケール（100倍）は実装時に判断。
-- **[帰属表示 `unitSaved`]** → 1レシピ除外の差分はついで込みの塊になる。need へ戻す係数は featured だけでなく期待 yield マップ全体とする。
+- **[帰属表示 `unitSaved`]** → 除外 need は `fullNeed` から他レシピを引く。クランプ後への足し戻しは過産で過大になる。
 
 ## Migration Plan
 
