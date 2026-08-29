@@ -1,7 +1,22 @@
 /**
  * FGO 水着2026「カルデア南海大決戦！ ～マジムンアイランドに謎の巨人の影を見た～」
  * 料理作成システム（ゲーム内公開イベント仕様）のマスタデータ定義。
+ *
+ * 1皿の期待獲得はゲーム内の報酬枠から導出する（第三者の生カウント表は転載しない）。
+ * 期待値高 1 枠 + 同レア残り + QP/種火。均等分割の丸めは copper/silver 他 0.15、金他 0.12。
+ * 検証の参照（リンクのみ）:
+ * https://appmedia.jp/fategrandorder/76010486 （お茶）
+ * https://appmedia.jp/fategrandorder/80305168 （水着2026）
  */
+
+export const EVENT_CRAFT_FEATURED_YIELD = 0.4
+
+/** 銅: 素材4+QP、銀: 素材4+種火、金: 素材4+種火+QP */
+const REWARD_SLOT_COUNT: Record<RecipeMaterialRarity, number> = {
+  bronze: 5,
+  silver: 5,
+  gold: 6,
+}
 
 export type IngredientType = 'seafood' | 'meat' | 'vegetable'
 
@@ -23,8 +38,74 @@ export type EventCraftRecipe = {
     name: string
     rarity: RecipeMaterialRarity
   }
-  /** 1回作成あたりの獲得個数（通常1個） */
+  /** 1回作成あたりの期待高素材の期待個数（他同レアは getRecipeYields） */
   yieldCount: number
+  /** テスト用。指定時は帯からの導出を上書きする */
+  yields?: Record<string, number>
+}
+
+export const otherMaterialYield = (rarity: RecipeMaterialRarity): number => {
+  const slots =
+    rarity === 'gold' ? REWARD_SLOT_COUNT.gold : REWARD_SLOT_COUNT.bronze
+  return (1 - EVENT_CRAFT_FEATURED_YIELD) / (slots - 1)
+}
+
+/** 1皿の育成素材 shortId → 期待個数。QP/種火枠は 0 のため含めない。 */
+export const getRecipeYields = (
+  recipe: EventCraftRecipe,
+  recipes: readonly EventCraftRecipe[] = EVENT_CRAFT_RECIPES_2026,
+): Record<string, number> => {
+  if (recipe.yields) return { ...recipe.yields }
+  const other = otherMaterialYield(recipe.targetItem.rarity)
+  const yields: Record<string, number> = {}
+  for (const peer of recipes) {
+    if (peer.targetItem.rarity !== recipe.targetItem.rarity) continue
+    Reflect.set(
+      yields,
+      peer.targetItem.shortId,
+      peer.id === recipe.id ? recipe.yieldCount : other,
+    )
+  }
+  return yields
+}
+
+export type ExpectedCraftYieldEntry = {
+  shortId: string
+  atlasId: number
+  name: string
+  amount: number
+}
+
+export const sumExpectedCraftYields = (
+  allocations: readonly { recipe: EventCraftRecipe; totalCount: number }[],
+  recipes: readonly EventCraftRecipe[] = EVENT_CRAFT_RECIPES_2026,
+): ExpectedCraftYieldEntry[] => {
+  const amounts = new Map<string, number>()
+  const meta = new Map<string, { atlasId: number; name: string }>()
+  for (const recipe of recipes) {
+    meta.set(recipe.targetItem.shortId, {
+      atlasId: recipe.targetItem.atlasId,
+      name: recipe.targetItem.name,
+    })
+  }
+  for (const { recipe, totalCount } of allocations) {
+    if (totalCount <= 0) continue
+    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+      if (y <= 0) continue
+      amounts.set(shortId, (amounts.get(shortId) ?? 0) + totalCount * y)
+    }
+  }
+  return [...amounts.entries()]
+    .filter(([, amount]) => amount > 0)
+    .map(([shortId, amount]) => {
+      const item = meta.get(shortId)
+      return {
+        shortId,
+        atlasId: item?.atlasId ?? 0,
+        name: item?.name ?? shortId,
+        amount,
+      }
+    })
 }
 
 export type IngredientMeta = {
@@ -54,7 +135,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '宵哭きの鉄杭',
       rarity: 'bronze',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'maasu-ni',
@@ -66,7 +147,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '愚者の鎖',
       rarity: 'bronze',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'steak',
@@ -78,7 +159,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '狂気の残滓',
       rarity: 'bronze',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'skull-andagi',
@@ -90,7 +171,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '凶骨',
       rarity: 'bronze',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
 
   // 銀素材系（合計消費食材: 75）
@@ -104,7 +185,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '無間の歯車',
       rarity: 'silver',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'potatoes',
@@ -116,7 +197,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '大騎士勲章',
       rarity: 'silver',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'tempura',
@@ -128,7 +209,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '禁断の頁',
       rarity: 'silver',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'taco-rice',
@@ -140,7 +221,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '八連双晶',
       rarity: 'silver',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
 
   // 金素材系（合計消費食材: 90）
@@ -154,7 +235,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '血の涙石',
       rarity: 'gold',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'rafute',
@@ -166,7 +247,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '原初の産毛',
       rarity: 'gold',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'curry',
@@ -178,7 +259,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '鬼炎鬼灯',
       rarity: 'gold',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
   {
     id: 'zenzai',
@@ -190,6 +271,6 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
       name: '蛮神の心臓',
       rarity: 'gold',
     },
-    yieldCount: 1,
+    yieldCount: EVENT_CRAFT_FEATURED_YIELD,
   },
 ] as const
