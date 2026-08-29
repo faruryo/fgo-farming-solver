@@ -51,8 +51,5 @@ export const mergeCandidates = (
     })
   }
 
-  return merged.sort((a, b) => {
-    if (a.needsReview !== b.needsReview) return a.needsReview ? -1 : 1
-    return 0
-  })
+  return merged.sort((a, b) => a.atlasId - b.atlasId)
 }
