@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Drops } from '../lib/get-drops'
 
 // Module-level cache shared across components in the same session.
@@ -16,7 +16,7 @@ export const fetchDrops = (): Promise<Drops> => {
       if (!response.ok) {
         throw new Error(`/api/drops returned ${response.status}`)
       }
-      const json = (await response.json()) as Drops
+      const json = (await response.json())
       return {
         items: json.items ?? [],
         quests: json.quests ?? [],
@@ -60,5 +60,5 @@ export const useDrops = () => {
     }
   }, [])
 
-  return { ...data, isLoading }
+  return useMemo(() => ({ ...data, isLoading }), [data, isLoading])
 }

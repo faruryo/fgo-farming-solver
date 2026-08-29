@@ -47,6 +47,16 @@ const buildTwoItemSharedDrops = (): Drops =>
     ],
   )
 
+const buildTwoQuestDrops = (): Drops =>
+  buildTestDrops(
+    [makeItem('item-a', 101), makeItem('item-b', 102)],
+    [makeQuest('Q1', 20), makeQuest('Q2', 40)],
+    [
+      { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+      { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
+    ],
+  )
+
 // テスト用レシピ定義
 const sampleRecipes: EventCraftRecipe[] = [
   {
@@ -218,14 +228,7 @@ describe('solveEventCraftAllocation', () => {
 
   it('不足が 0 でも「食材を使い切る」が ON なら単体価値最大で作成する (Stage 2)', () => {
     // Q1: item-a (AP 20), Q2: item-b (AP 40)
-    const d = buildTestDrops(
-      [makeItem('item-a', 101), makeItem('item-b', 102)],
-      [makeQuest('Q1', 20), makeQuest('Q2', 40)],
-      [
-        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
-        { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
-      ],
-    )
+    const d = buildTwoQuestDrops()
 
     const fullNeed = {}
     const owned: IngredientCounts = { seafood: 80, meat: 0, vegetable: 40 }
@@ -393,14 +396,7 @@ describe('generateCraftAdvice', () => {
   it('1回あたりの周回削減効率（unitSaved）が高い料理を最優先として案内する', () => {
     // Q1 drops item-a (AP 20, rate 1.0 -> 20 AP/item)
     // Q2 drops item-b (AP 40, rate 1.0 -> 40 AP/item)
-    const d = buildTestDrops(
-      [makeItem('item-a', 101), makeItem('item-b', 102)],
-      [makeQuest('Q1', 20), makeQuest('Q2', 40)],
-      [
-        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
-        { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
-      ],
-    )
+    const d = buildTwoQuestDrops()
     // Recipe A saves 20 AP each. Recipe B saves 40 AP each.
     // User needs 3 of item-a and 1 of item-b.
     // Recipe A total deficit saved = 60 AP. Recipe B total deficit saved = 40 AP.

@@ -56,7 +56,7 @@ type SolverContext = {
   itemsWithDropData: Set<string>
 }
 
-const baseValuesCache = new WeakMap<Drops, Map<string, Map<string, number>>>()
+const baseValuesCache = new WeakMap<object, Map<string, Map<string, number>>>()
 
 export type SingleItemBaseValuesOptions = {
   recipes?: readonly EventCraftRecipe[]
@@ -79,10 +79,11 @@ export const computeSingleItemBaseValues = (
     .join(',')
   const cacheKey = `${mode}:${questKey}:${recipeKey}`
 
-  let dropsCache = baseValuesCache.get(drops)
+  const cacheTarget = drops.drop_rates ?? drops
+  let dropsCache = baseValuesCache.get(cacheTarget)
   if (!dropsCache) {
     dropsCache = new Map()
-    baseValuesCache.set(drops, dropsCache)
+    baseValuesCache.set(cacheTarget, dropsCache)
   }
 
   const cached = dropsCache.get(cacheKey)
