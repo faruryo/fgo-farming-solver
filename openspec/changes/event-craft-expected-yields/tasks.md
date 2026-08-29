@@ -19,4 +19,4 @@
 
 ## 4. 検証
 
-- [ ] 4.1 `openspec validate --specs` と対象テスト、`pnpm run type-check` を通す
+- [ ] 4.1 `openspec validate event-craft-expected-yields --strict` と対象テスト、`pnpm run type-check` を通す（アーカイブ前は `validate --specs` だけでは pending delta を見ない）
