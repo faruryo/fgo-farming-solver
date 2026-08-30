@@ -72,7 +72,7 @@ IDs: `runs` | `ap` | `even-turn` | `even-ap` | `exhaust`。
 - `runs` / `even-turn`: 周回。
 - `ap` / `even-ap`: AP。
 - `exhaust`: 両方。
-- 各料理の不足/余剰の判定基準は、そのパターン自身の目的関数に合わせる。`runs`/`ap`/`exhaust` は `continuousOptimalCost`（合計周回/AP最小化LP）でゼロ判定するが、`even-turn`/`even-ap` は自分の目的関数である最大単独負担（層①のMILPと同じ `remaining_i * unitCost_i` の最大値）でゼロ判定する。`continuousOptimalCost` は他素材のクエスト同時ドロップ（ついで）を織り込めるため、満遍なくが最大負担を下げるために選んだ皿でも合計コストLP上は変化がないことがあり、合計コストでゼロ判定すると誤って余剰にしてしまう。表示する削減量の数値自体は他パターンと同じ `continuousOptimalCost` ベースのまま揃える（不足/余剰の**判定**だけ目的関数を変える）。
+- 各料理の不足/余剰の判定基準は、そのパターン自身の目的関数に合わせる。`runs`/`ap`/`exhaust` は `continuousOptimalCost`（合計周回/AP最小化LP）でゼロ判定するが、`even-turn`/`even-ap` は自分の目的関数である最大単独負担（層①のMILPと同じ `remaining_i * unitCost_i` の最大値）でゼロ判定する。`continuousOptimalCost` は他素材のクエスト同時ドロップ（ついで）を織り込めるため、満遍なくが最大負担を下げるために選んだ皿でも合計コストLP上は変化がないことがあり、合計コストでゼロ判定すると誤って余剰にしてしまう。表示する削減量の数値も `even-turn`/`even-ap` は単独負担のゼロ化前後差を使う（`continuousOptimalCost` ベースのままだと、合計コストLP上変化がない皿の削減量が0表示になり推奨理由を説明できないため）。`runs`/`ap`/`exhaust` は引き続き `continuousOptimalCost` ベース。
 
 ## Risks / Trade-offs
 
