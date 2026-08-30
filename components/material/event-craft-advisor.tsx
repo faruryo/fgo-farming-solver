@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input'
 export type EventCraftAdvisorProps = {
   items?: Item[]
   fullNeed: Record<string, number>
+  stockEnabled?: boolean
 }
 
 export type EventCraftAdvisorConfig = {
@@ -718,6 +719,7 @@ const useAdvisorState = () => {
 export const EventCraftAdvisor = ({
   items = [],
   fullNeed,
+  stockEnabled = false,
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
   const { config, setConfig, setIngredientCount, selectPattern, reset } = useAdvisorState()
@@ -729,6 +731,14 @@ export const EventCraftAdvisor = ({
 
   return (
     <div className="flex flex-col gap-4">
+      {stockEnabled && (
+        <span
+          className="self-start text-xs font-semibold"
+          style={{ color: 'var(--gold)' }}
+        >
+          {t('event-craft-stock-eval', 'ストック込みで評価中')}
+        </span>
+      )}
       <IngredientInputs
         ingredients={config.ingredients}
         onChange={setIngredientCount}

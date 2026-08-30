@@ -175,6 +175,20 @@ describe('EventCraftAdvisor pattern cards', () => {
     expect(screen.queryByText('recipe-recipe-b')).toBeNull()
   })
 
+  it('shows the stock-inclusive evaluation badge when stockEnabled is true', () => {
+    mockComputeEventCraftPlan.mockReturnValue(
+      makePlan([
+        makePattern('runs', 'turn', [makeAllocation(recipeA, 1)]),
+        makePattern('exhaust', 'both', [makeAllocation(recipeA, 1)]),
+      ]),
+    )
+    const { rerender } = render(<EventCraftAdvisor items={items} fullNeed={{}} />)
+    expect(screen.queryByText('ストック込みで評価中')).toBeNull()
+
+    rerender(<EventCraftAdvisor items={items} fullNeed={{}} stockEnabled />)
+    expect(screen.getByText('ストック込みで評価中')).toBeTruthy()
+  })
+
   it('always shows runs and exhaust cards', () => {
     mockComputeEventCraftPlan.mockReturnValue(
       makePlan([
