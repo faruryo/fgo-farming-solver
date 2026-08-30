@@ -792,16 +792,27 @@ const buildPatternResult = (
     savings.set(recipe.id, { totalSaved: 0, unitSaved: 0 })
     if (count <= 0) continue
 
-    const costWithout = evaluateResidualAtCount(
-      drops, fullNeed, recipes, workingCounts, recipe.id, 0, allowedQuestsList, classifyMode,
-    )
-    const totalSaved = Number.isFinite(referenceCost)
-      ? Math.max(0, costWithout - referenceCost)
-      : 0
-
-    const isUseful = burdenUnitCosts
-      ? evaluateBurdenAtCount(fullNeed, recipes, workingCounts, recipe.id, 0, burdenUnitCosts) > actualBurden + EPSILON
-      : totalSaved > EPSILON
+    // even-turn/even-ap は判定だけでなく表示する削減量も自分の目的(単独負担)基準にする。
+    // 合計コストLPベースの数値のままだと、合計コストLP上は変化がない(ついでで賄える)皿が
+    // 「推奨」バッジ付きなのに削減量0で表示され、推奨理由が説明できなくなる。
+    let isUseful: boolean
+    let displaySaved: number
+    if (burdenUnitCosts) {
+      const burdenWithout = evaluateBurdenAtCount(
+        fullNeed, recipes, workingCounts, recipe.id, 0, burdenUnitCosts,
+      )
+      isUseful = burdenWithout > actualBurden + EPSILON
+      displaySaved = Math.max(0, burdenWithout - actualBurden)
+    } else {
+      const costWithout = evaluateResidualAtCount(
+        drops, fullNeed, recipes, workingCounts, recipe.id, 0, allowedQuestsList, classifyMode,
+      )
+      const totalSaved = Number.isFinite(referenceCost)
+        ? Math.max(0, costWithout - referenceCost)
+        : 0
+      isUseful = totalSaved > EPSILON
+      displaySaved = totalSaved
+    }
 
     let deficitCount = 0
     if (isUseful) {
@@ -815,7 +826,7 @@ const buildPatternResult = (
 
     if (deficitCount > 0) {
       deficitCounts.set(recipe.id, deficitCount)
-      savings.set(recipe.id, { totalSaved, unitSaved: totalSaved / deficitCount })
+      savings.set(recipe.id, { totalSaved: displaySaved, unitSaved: displaySaved / deficitCount })
     }
     if (deficitCount < count) {
       surplusCounts.set(recipe.id, count - deficitCount)

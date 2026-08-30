@@ -290,6 +290,13 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
 
     expect(evenTurn.allocations.find((a) => a.recipe.id === 'recipe-bronze')?.totalCount).toBe(5)
     expect(evenTurn.allocations.find((a) => a.recipe.id === 'recipe-gold')?.totalCount).toBe(3)
+
+    // 表示される削減量も合計コストLPではなく満遍なく自身の目的(単独負担)基準になっている。
+    // 単独負担は max(残り銅18×1, 残り金0.8×20)=18。銅をゼロにすると20(=+2)、金をゼロにすると40(=+22)。
+    const bronzeAlloc = evenTurn.allocations.find((a) => a.recipe.id === 'recipe-bronze')!
+    const goldAlloc = evenTurn.allocations.find((a) => a.recipe.id === 'recipe-gold')!
+    expect(bronzeAlloc.deficitSaved).toBeCloseTo(2)
+    expect(goldAlloc.deficitSaved).toBeCloseTo(22)
   })
 
   it('周回案では0のついで枠でも単独負担の山としては残っていれば even-turn は作成し得る', () => {
