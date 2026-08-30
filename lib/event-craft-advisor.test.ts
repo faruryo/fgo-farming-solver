@@ -117,6 +117,27 @@ const findPattern = (
   id: string,
 ) => plan.patterns.find((p) => p.id === id)
 
+/** テスト専用: 見つからなければ例外にする(non-null assertion を使わないため)。 */
+const getPattern = (plan: ReturnType<typeof computeEventCraftPlan>, id: string) => {
+  const found = findPattern(plan, id)
+  if (!found) throw new Error(`pattern not found: ${id}`)
+  return found
+}
+
+/** テスト専用: 見つからなければ例外にする(non-null assertion を使わないため)。 */
+const getAlloc = (pattern: EventCraftPatternResult, recipeId: string) => {
+  const found = pattern.allocations.find((a) => a.recipe.id === recipeId)
+  if (!found) throw new Error(`allocation not found: ${recipeId}`)
+  return found
+}
+
+/** テスト専用: 見つからなければ例外にする(non-null assertion を使わないため)。 */
+const mustFind = <T,>(items: readonly T[], predicate: (item: T) => boolean, label: string): T => {
+  const found = items.find(predicate)
+  if (!found) throw new Error(`not found: ${label}`)
+  return found
+}
+
 /**
  * item-x: turnでは安い(rate1.0)がAPは高い(Qx ap=100)。item-y: turnは高い(rate0.1)がAPは安い(換算20/個)。
  * 手持ちは1皿分のみ。turn最小化とAP最小化で選ぶ皿が分かれる、runs/ap と even-turn/even-ap 双方のテストで使う。
@@ -164,7 +185,7 @@ describe('computeEventCraftPlan: runs / ap パターン', () => {
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1', 'Q2'], {
       recipes: sampleRecipes.slice(0, 2),
     })
-    const runs = findPattern(plan, 'runs')!
+    const runs = getPattern(plan, 'runs')
 
     expect(runs.totalCrafted).toBe(4)
     expect(runs.totalDeficitCrafted).toBe(4)
@@ -203,7 +224,7 @@ describe('computeEventCraftPlan: runs / ap パターン', () => {
         },
       ],
     })
-    const runs = findPattern(plan, 'runs')!
+    const runs = getPattern(plan, 'runs')
     const allocB = runs.allocations.find((a) => a.recipe.id === 'recipe-b')
     expect(allocB?.deficitCount).toBe(0)
   })
@@ -211,8 +232,8 @@ describe('computeEventCraftPlan: runs / ap パターン', () => {
   it('AP モードは AP を目的関数として最小化し、周回モードとは異なる皿を選び得る', () => {
     const { d, recipes, owned, fullNeed } = buildTurnApDivergingFixture()
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qx', 'Qy'], { recipes })
-    const runs = findPattern(plan, 'runs')!
-    const ap = findPattern(plan, 'ap')!
+    const runs = getPattern(plan, 'runs')
+    const ap = getPattern(plan, 'ap')
     expect(ap.metric).toBe('ap')
     // turn(周回)最小化は item-y (turn単価が高い) を優先、AP最小化は item-x (AP単価が高い) を優先し皿が分かれる。
     expect(runs.allocations.find((a) => a.recipe.id === 'recipe-y')?.totalCount).toBe(1)
@@ -248,7 +269,7 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
 
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1', 'Q2'], { recipes })
     const evenTurn = findPattern(plan, 'even-turn')
-    const target = evenTurn ?? findPattern(plan, 'runs')!
+    const target = evenTurn ?? getPattern(plan, 'runs')
     const allocA = target.allocations.find((a) => a.recipe.id === 'recipe-a')
     expect(allocA?.totalCount).toBeGreaterThan(0)
   })
@@ -281,8 +302,8 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
     const owned: IngredientCounts = { seafood: 160, meat: 0, vegetable: 0 }
 
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qbronze', 'Qgold'], { recipes })
-    const runs = findPattern(plan, 'runs')!
-    const evenTurn = findPattern(plan, 'even-turn')!
+    const runs = getPattern(plan, 'runs')
+    const evenTurn = getPattern(plan, 'even-turn')
     expect(evenTurn).toBeDefined()
 
     expect(runs.allocations.find((a) => a.recipe.id === 'recipe-bronze')?.totalCount).toBe(3)
@@ -293,8 +314,8 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
 
     // 表示される削減量も合計コストLPではなく満遍なく自身の目的(単独負担)基準になっている。
     // 単独負担は max(残り銅18×1, 残り金0.8×20)=18。銅をゼロにすると20(=+2)、金をゼロにすると40(=+22)。
-    const bronzeAlloc = evenTurn.allocations.find((a) => a.recipe.id === 'recipe-bronze')!
-    const goldAlloc = evenTurn.allocations.find((a) => a.recipe.id === 'recipe-gold')!
+    const bronzeAlloc = getAlloc(evenTurn, 'recipe-bronze')
+    const goldAlloc = getAlloc(evenTurn, 'recipe-gold')
     expect(bronzeAlloc.deficitSaved).toBeCloseTo(2)
     expect(goldAlloc.deficitSaved).toBeCloseTo(22)
   })
@@ -326,12 +347,11 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
     const owned: IngredientCounts = { seafood: 160, meat: 0, vegetable: 0 }
 
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qa', 'Qb'], { recipes })
-    const runsAlloc = findPattern(plan, 'runs')!.allocations.find((a) => a.recipe.id === 'recipe-a')
+    const runsAlloc = getPattern(plan, 'runs').allocations.find((a) => a.recipe.id === 'recipe-a')
     expect(runsAlloc?.totalCount).toBe(0)
 
-    const evenTurn = findPattern(plan, 'even-turn')
-    expect(evenTurn).toBeDefined()
-    const evenAAlloc = evenTurn!.allocations.find((a) => a.recipe.id === 'recipe-a')
+    const evenTurn = getPattern(plan, 'even-turn')
+    const evenAAlloc = evenTurn.allocations.find((a) => a.recipe.id === 'recipe-a')
     expect(evenAAlloc?.totalCount).toBeGreaterThanOrEqual(1)
   })
 
@@ -342,8 +362,8 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
     // このケースでは even-turn は runs と、even-ap は ap と同一配分になり畳まれる。
     expect(plan.absorbedInto['even-turn']).toBe('runs')
     expect(plan.absorbedInto['even-ap']).toBe('ap')
-    const runs = findPattern(plan, 'runs')!
-    const ap = findPattern(plan, 'ap')!
+    const runs = getPattern(plan, 'runs')
+    const ap = getPattern(plan, 'ap')
     expect(runs.allocations.find((a) => a.recipe.id === 'recipe-y')?.totalCount).toBe(1)
     expect(ap.allocations.find((a) => a.recipe.id === 'recipe-x')?.totalCount).toBe(1)
   })
@@ -354,7 +374,7 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
     const d = buildTwoQuestDrops()
     const owned: IngredientCounts = { seafood: 80, meat: 0, vegetable: 40 }
     const plan = computeEventCraftPlan(d, {}, owned, ['Q1', 'Q2'], { recipes: sampleRecipes })
-    const exhaust = findPattern(plan, 'exhaust')!
+    const exhaust = getPattern(plan, 'exhaust')
     expect(exhaust.totalCrafted).toBe(2)
     expect(exhaust.totalSurplusCrafted).toBe(2)
     expect(exhaust.totalSaved).toBe(0)
@@ -392,9 +412,9 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
     const plan = computeEventCraftPlan(d, { 'item-a': 1 }, owned, ['Q1'], {
       recipes: [recipeX, recipeY],
     })
-    const exhaust = findPattern(plan, 'exhaust')!
-    const allocX = exhaust.allocations.find((a) => a.recipe.id === 'recipe-x')!
-    const allocY = exhaust.allocations.find((a) => a.recipe.id === 'recipe-y')!
+    const exhaust = getPattern(plan, 'exhaust')
+    const allocX = getAlloc(exhaust, 'recipe-x')
+    const allocY = getAlloc(exhaust, 'recipe-y')
     expect(allocX.totalCount).toBe(2)
     expect(allocY.totalCount).toBe(2)
     // 合計の不足枠は両方0にはならず、どちらか一方に needed 分(2個)がまとまって帰属する。
@@ -414,8 +434,8 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
     const plan = computeEventCraftPlan(d, { 'item-a': 1 }, owned, ['Q1'], {
       recipes: sampleRecipes.slice(0, 1),
     })
-    const exhaust = findPattern(plan, 'exhaust')!
-    const alloc = exhaust.allocations.find((a) => a.recipe.id === 'recipe-a')!
+    const exhaust = getPattern(plan, 'exhaust')
+    const alloc = getAlloc(exhaust, 'recipe-a')
     expect(alloc.totalCount).toBe(4)
     expect(alloc.deficitCount).toBe(3)
     expect(alloc.surplusCount).toBe(1)
@@ -433,8 +453,8 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1'], {
       recipes: sampleRecipes.slice(0, 1),
     })
-    const runs = findPattern(plan, 'runs')!
-    const exhaust = findPattern(plan, 'exhaust')!
+    const runs = getPattern(plan, 'runs')
+    const exhaust = getPattern(plan, 'exhaust')
     expect(exhaust).toBeDefined()
     expect(runs.allocations[0].totalCount).toBe(exhaust.allocations[0].totalCount)
     // 両方表示されている(exhaust は畳まれていない)
@@ -453,7 +473,7 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1'], {
       recipes: sampleRecipes.slice(0, 1),
     })
-    const exhaust = findPattern(plan, 'exhaust')!
+    const exhaust = getPattern(plan, 'exhaust')
     expect(exhaust.leftoverIngredients.meat).toBe(0)
     expect(exhaust.leftoverIngredients.vegetable).toBe(0)
     expect(exhaust.residualTurnCost).toBeGreaterThanOrEqual(0)
@@ -492,7 +512,7 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1', 'Q2'], {
       recipes: [recipeA, recipeB],
     })
-    const exhaust = findPattern(plan, 'exhaust')!
+    const exhaust = getPattern(plan, 'exhaust')
     const allocB = exhaust.allocations.find((a) => a.recipe.id === 'recipe-b')
     expect(allocB?.totalCount).toBeGreaterThan(0)
     // B は Q2 の不足充足に効くため不足枠(deficit)として扱われ、余剰(surplus)にはならない
@@ -501,13 +521,21 @@ describe('computeEventCraftPlan: 食材を使い切る', () => {
   })
 })
 
+const PATTERN_METRIC_FOR_TEST: Record<EventCraftPatternResult['id'], EventCraftPatternResult['metric']> = {
+  runs: 'turn',
+  ap: 'ap',
+  'even-turn': 'turn',
+  'even-ap': 'ap',
+  exhaust: 'both',
+}
+
 describe('foldEventCraftPatterns', () => {
   const mkPattern = (
     id: EventCraftPatternResult['id'],
     dishes: { recipeId: string; count: number }[],
   ): EventCraftPatternResult => ({
     id,
-    metric: id === 'ap' || id === 'even-ap' ? 'ap' : id === 'exhaust' ? 'both' : 'turn',
+    metric: Reflect.get(PATTERN_METRIC_FOR_TEST, id),
     allocations: dishes.map(({ recipeId, count }) => ({
       recipe: sampleRecipes.find((r) => r.id === recipeId) ?? sampleRecipes[0],
       deficitCount: count,
@@ -542,7 +570,7 @@ describe('foldEventCraftPatterns', () => {
     const ids = result.patterns.map((p) => p.id)
     expect(ids).toEqual(['runs', 'ap', 'even-ap', 'exhaust'])
     expect(result.absorbedInto['even-turn']).toBe('ap')
-    const apPattern = result.patterns.find((p) => p.id === 'ap')!
+    const apPattern = mustFind(result.patterns, (p) => p.id === 'ap', 'ap')
     expect(apPattern.aliasOf).toEqual(['even-turn'])
   })
 
@@ -568,7 +596,7 @@ describe('foldEventCraftPatterns', () => {
 
     const result = foldEventCraftPatterns([runs, ap, evenTurn, evenAp, exhaust])
     expect(result.patterns.map((p) => p.id)).toEqual(['runs', 'exhaust'])
-    const runsPattern = result.patterns.find((p) => p.id === 'runs')!
+    const runsPattern = mustFind(result.patterns, (p) => p.id === 'runs', 'runs')
     expect(runsPattern.aliasOf).toEqual(['ap', 'even-turn', 'even-ap'])
   })
 
@@ -600,7 +628,7 @@ describe('computeEventCraftPlan: 期待値yieldは全パターン共通', () => 
       recipes: [recipeA, recipeB],
     })
     const evenTurn = findPattern(plan, 'even-turn')
-    const runs = findPattern(plan, 'runs')!
+    const runs = getPattern(plan, 'runs')
     const target = evenTurn ?? runs
     const allocA = target.allocations.find((a) => a.recipe.id === 'recipe-a')
     // 期待値バスケット(0.4)を使うなら 5/0.4=12.5→13皿。主産物1個だけなら5皿になってしまう。
@@ -613,7 +641,7 @@ describe('generateCraftAdvice', () => {
     const d = buildTestDrops([], [], [])
     const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
     const plan = computeEventCraftPlan(d, {}, owned, [])
-    const runs = findPattern(plan, 'runs')!
+    const runs = getPattern(plan, 'runs')
     const advice = generateCraftAdvice(runs, owned)
     expect(advice).toContain('お持ちのイベント食材数')
   })
@@ -691,7 +719,7 @@ describe('generateCraftAdvice', () => {
     const d = buildTestDrops([], [], [])
     const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
     const plan = computeEventCraftPlan(d, {}, owned, [])
-    const runs = findPattern(plan, 'runs')!
+    const runs = getPattern(plan, 'runs')
     const mockT = (key: string) => (key === 'event-craft-advice-prompt' ? 'English prompt message' : key)
     const advice = generateCraftAdvice(runs, owned, mockT)
     expect(advice).toBe('English prompt message')
@@ -741,7 +769,7 @@ describe('ドロップデータのない素材', () => {
     const plan = computeEventCraftPlan(d, { 'nodrop-item': 5 }, owned, ['Q1'], {
       recipes: sampleRecipes,
     })
-    const runs = findPattern(plan, 'runs')!
+    const runs = getPattern(plan, 'runs')
     expect(Number.isFinite(runs.residualTurnCost)).toBe(true)
     expect(runs.totalCrafted).toBe(0)
   })

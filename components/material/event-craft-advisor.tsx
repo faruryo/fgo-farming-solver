@@ -85,6 +85,9 @@ const PATTERN_NAME_KEYS: Record<EventCraftPatternId, [string, string]> = {
   exhaust: ['event-craft-pattern-exhaust', '食材を使い切る'],
 }
 
+const patternNameKeyOf = (id: EventCraftPatternId): [string, string] =>
+  Reflect.get(PATTERN_NAME_KEYS, id)
+
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 const getItemIcon = (
@@ -512,6 +515,38 @@ const PatternEvaluation = ({ pattern }: { pattern: EventCraftPlanPattern }) => {
   )
 }
 
+const PatternAliasNote = ({ aliasOf }: { aliasOf: EventCraftPatternId[] }) => {
+  const { t } = useTranslation('material')
+  if (aliasOf.length === 0) return null
+  return (
+    <span className="text-xs" style={{ color: 'var(--text3)' }}>
+      {t('event-craft-alias-label', '同じ: {{names}}', {
+        names: aliasOf.map((id) => t(...patternNameKeyOf(id))).join('・'),
+      })}
+    </span>
+  )
+}
+
+const PatternCardHeader = ({
+  patternName,
+  isSelected,
+  pattern,
+}: {
+  patternName: string
+  isSelected: boolean
+  pattern: EventCraftPlanPattern
+}) => (
+  <div className="flex flex-wrap items-center justify-between gap-2">
+    <span
+      className="text-sm font-bold"
+      style={{ color: isSelected ? 'var(--gold)' : 'var(--text)' }}
+    >
+      {patternName}
+    </span>
+    <PatternEvaluation pattern={pattern} />
+  </div>
+)
+
 const PatternCard = ({
   pattern,
   isSelected,
@@ -531,7 +566,7 @@ const PatternCard = ({
     [pattern.allocations],
   )
   const unitLabel = pattern.metric === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
-  const patternName = t(...PATTERN_NAME_KEYS[pattern.id])
+  const patternName = t(...patternNameKeyOf(pattern.id))
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -554,22 +589,8 @@ const PatternCard = ({
         border: isSelected ? '1px solid var(--gold)' : '1px solid var(--border)',
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span
-          className="text-sm font-bold"
-          style={{ color: isSelected ? 'var(--gold)' : 'var(--text)' }}
-        >
-          {patternName}
-        </span>
-        <PatternEvaluation pattern={pattern} />
-      </div>
-      {pattern.aliasOf.length > 0 && (
-        <span className="text-xs" style={{ color: 'var(--text3)' }}>
-          {t('event-craft-alias-label', '同じ: {{names}}', {
-            names: pattern.aliasOf.map((id) => t(...PATTERN_NAME_KEYS[id])).join('・'),
-          })}
-        </span>
-      )}
+      <PatternCardHeader patternName={patternName} isSelected={isSelected} pattern={pattern} />
+      <PatternAliasNote aliasOf={pattern.aliasOf} />
       {allocations.length > 0 && (
         <CraftCardList
           allocations={allocations}

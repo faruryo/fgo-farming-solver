@@ -244,7 +244,7 @@ describe('EventCraftAdvisor pattern cards', () => {
     fireEvent.click(apRadio)
     expect(apRadio.getAttribute('aria-checked')).toBe('true')
 
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}')
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}') as { planPattern?: string }
     expect(stored.planPattern).toBe('ap')
 
     unmount()
@@ -279,7 +279,7 @@ describe('EventCraftAdvisor pattern cards', () => {
 
     // 吸収先を選択として表示するだけでなく、localStorage にも書き戻す。書き戻さないと
     // even-turn が後で再び表示されるようになったとき、ユーザーの意図に反して静かに選択が戻ってしまう。
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}')
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}') as { planPattern?: string }
     expect(stored.planPattern).toBe('runs')
   })
 })

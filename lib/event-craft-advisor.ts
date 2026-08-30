@@ -697,46 +697,44 @@ const evaluateBurdenAtCount = (
   return evaluateBurden(fullNeed, recipes, capped, unitCosts)
 }
 
-/** workingCounts 上でこのレシピだけを k 個に差し替えたときの残余コスト。 */
+/** ゼロ化/段階判定に必要な材料をまとめたコンテキスト(引数個数を抑えるため)。 */
+type ZeroingContext = {
+  drops: Drops
+  fullNeed: Record<string, number>
+  recipes: readonly EventCraftRecipe[]
+  workingCounts: Map<string, number>
+  allowedQuestsList: string[]
+  mode: DenominatorMode
+}
+
+/** ctx.workingCounts 上でこのレシピだけを k 個に差し替えたときの残余コスト。 */
 const evaluateResidualAtCount = (
-  drops: Drops,
-  fullNeed: Record<string, number>,
-  recipes: readonly EventCraftRecipe[],
-  workingCounts: Map<string, number>,
+  ctx: ZeroingContext,
   recipeId: string,
   k: number,
-  allowedQuestsList: string[],
-  mode: DenominatorMode,
 ): number => {
-  const capped = new Map(workingCounts)
+  const capped = new Map(ctx.workingCounts)
   capped.set(recipeId, k)
-  const need = subtractCraftYieldsFromNeed(fullNeed, recipes, capped)
-  return continuousOptimalCost(drops, need, allowedQuestsList, mode)
+  const need = subtractCraftYieldsFromNeed(ctx.fullNeed, ctx.recipes, capped)
+  return continuousOptimalCost(ctx.drops, need, ctx.allowedQuestsList, ctx.mode)
 }
 
 /**
- * count 個のうち、referenceCost と同等の効果を得るのに必要な最小個数(=不足枠)を段階的に探す。
- * 残余コストは個数を増やすほど単調非増加なので、線形走査で最初に referenceCost に達した個数が
- * そのレシピの不足枠、残りは余剰枠になる（同一レシピ内の混在を分離できる）。
+ * count 個のうち、referenceCost と同等の効果を得るのに必要な最小個数(=不足枠)を求める。
+ * 残余コストは個数を増やすほど単調非増加なので、線形走査ではなく二分探索で
+ * 最小の充足個数を求める(所持数が多いときの毎回LP解決によるUI固まりを避ける)。
  */
 const findMinimalUsefulCount = (
-  drops: Drops,
-  fullNeed: Record<string, number>,
-  recipes: readonly EventCraftRecipe[],
-  workingCounts: Map<string, number>,
+  ctx: ZeroingContext,
   recipeId: string,
   count: number,
-  allowedQuestsList: string[],
-  mode: DenominatorMode,
   referenceCost: number,
 ): number => {
-  // 残余コストは個数を増やすほど単調非増加なので、線形走査ではなく二分探索で
-  // 最小の充足個数を求める(所持数が多いときの毎回LP解決によるUI固まりを避ける)。
   let lo = 0
   let hi = count
   while (lo < hi) {
     const mid = lo + Math.floor((hi - lo) / 2)
-    const cost = evaluateResidualAtCount(drops, fullNeed, recipes, workingCounts, recipeId, mid, allowedQuestsList, mode)
+    const cost = evaluateResidualAtCount(ctx, recipeId, mid)
     if (cost <= referenceCost + EPSILON) {
       hi = mid
     } else {
@@ -744,6 +742,81 @@ const findMinimalUsefulCount = (
     }
   }
   return lo
+}
+
+/** even-turn/even-ap は自分の目的関数(最大単独負担)で判定・表示する。continuousOptimalCost
+ * (合計コスト最小化LP)のままだと、周回セット全体では他素材のついでで賄える皿を誤って余剰にし、
+ * 表示削減量も0になって推奨理由を説明できない。他の3パターンは合計コストLPベースのまま。 */
+const evaluateRecipeUsefulness = (
+  recipeId: string,
+  zeroingCtx: ZeroingContext,
+  referenceCost: number,
+  burdenUnitCosts: Map<string, number> | undefined,
+  actualBurden: number,
+): { isUseful: boolean; displaySaved: number } => {
+  if (burdenUnitCosts) {
+    const burdenWithout = evaluateBurdenAtCount(
+      zeroingCtx.fullNeed, zeroingCtx.recipes, zeroingCtx.workingCounts, recipeId, 0, burdenUnitCosts,
+    )
+    return {
+      isUseful: burdenWithout > actualBurden + EPSILON,
+      displaySaved: Math.max(0, burdenWithout - actualBurden),
+    }
+  }
+  const costWithout = evaluateResidualAtCount(zeroingCtx, recipeId, 0)
+  const totalSaved = Number.isFinite(referenceCost) ? Math.max(0, costWithout - referenceCost) : 0
+  return { isUseful: totalSaved > EPSILON, displaySaved: totalSaved }
+}
+
+type ClassificationInputs = {
+  recipes: readonly EventCraftRecipe[]
+  counts: Map<string, number>
+  zeroingCtx: ZeroingContext
+  referenceCost: number
+  useMarginalSplit: boolean
+  burdenUnitCosts?: Map<string, number>
+  actualBurden: number
+}
+
+/**
+ * レシピを固定順で1つずつ判定し、判定済みレシピを確定個数(0 か deficitCount)に固定してから
+ * 次のレシピを評価する。独立に(他レシピを元の個数のまま)ゼロ化すると、同レアの代替レシピ同士で
+ * 「片方だけでも足りる」が両方に成立し、両方とも余剰扱いになってしまう(実際は両方消すと不足が復活する)。
+ */
+const classifyRecipeCounts = (inputs: ClassificationInputs) => {
+  const { recipes, counts, zeroingCtx, referenceCost, useMarginalSplit, burdenUnitCosts, actualBurden } = inputs
+  const deficitCounts = new Map<string, number>()
+  const surplusCounts = new Map<string, number>()
+  const savings = new Map<string, { totalSaved: number; unitSaved: number }>()
+  const workingCounts = zeroingCtx.workingCounts
+
+  for (const recipe of recipes) {
+    const count = counts.get(recipe.id) ?? 0
+    savings.set(recipe.id, { totalSaved: 0, unitSaved: 0 })
+    if (count <= 0) continue
+
+    const { isUseful, displaySaved } = evaluateRecipeUsefulness(
+      recipe.id, zeroingCtx, referenceCost, burdenUnitCosts, actualBurden,
+    )
+
+    let deficitCount = 0
+    if (isUseful) {
+      deficitCount = useMarginalSplit
+        ? findMinimalUsefulCount(zeroingCtx, recipe.id, count, referenceCost)
+        : count
+    }
+    workingCounts.set(recipe.id, deficitCount)
+
+    if (deficitCount > 0) {
+      deficitCounts.set(recipe.id, deficitCount)
+      savings.set(recipe.id, { totalSaved: displaySaved, unitSaved: displaySaved / deficitCount })
+    }
+    if (deficitCount < count) {
+      surplusCounts.set(recipe.id, count - deficitCount)
+    }
+  }
+
+  return { deficitCounts, surplusCounts, savings }
 }
 
 const buildPatternResult = (
@@ -775,63 +848,16 @@ const buildPatternResult = (
   // exhaust だけレシピ単位のゼロ化では「1個は不足充足に効くが残りは純粋な余剰」という
   // 混在を分離できない（他の4パターンは各々のtie-breakが無駄な皿を既に消すため混在しない）。
   const useMarginalSplit = id === 'exhaust'
-  // even-turn/even-ap は自分の目的関数(最大単独負担)で不足/余剰を判定する。continuousOptimalCost
-  // (合計コスト最小化LP)で判定すると、周回セット全体では他素材のついでで賄える皿を誤って余剰にする。
   const actualBurden = burdenUnitCosts ? evaluateBurden(fullNeed, recipes, counts, burdenUnitCosts) : 0
 
-  const deficitCounts = new Map<string, number>()
-  const surplusCounts = new Map<string, number>()
-  const savings = new Map<string, { totalSaved: number; unitSaved: number }>()
-  // 判定済みレシピは確定した個数(0 か deficitCount)に固定してから次のレシピを評価する。
-  // 独立に(他レシピを元の個数のまま)ゼロ化すると、同レアの代替レシピ同士で「片方だけでも足りる」が
-  // 両方に成立し、両方とも余剰扱いになってしまう(実際は両方消すと不足が復活する)。固定順の逐次帰属で防ぐ。
   const workingCounts = new Map(counts)
-
-  for (const recipe of recipes) {
-    const count = counts.get(recipe.id) ?? 0
-    savings.set(recipe.id, { totalSaved: 0, unitSaved: 0 })
-    if (count <= 0) continue
-
-    // even-turn/even-ap は判定だけでなく表示する削減量も自分の目的(単独負担)基準にする。
-    // 合計コストLPベースの数値のままだと、合計コストLP上は変化がない(ついでで賄える)皿が
-    // 「推奨」バッジ付きなのに削減量0で表示され、推奨理由が説明できなくなる。
-    let isUseful: boolean
-    let displaySaved: number
-    if (burdenUnitCosts) {
-      const burdenWithout = evaluateBurdenAtCount(
-        fullNeed, recipes, workingCounts, recipe.id, 0, burdenUnitCosts,
-      )
-      isUseful = burdenWithout > actualBurden + EPSILON
-      displaySaved = Math.max(0, burdenWithout - actualBurden)
-    } else {
-      const costWithout = evaluateResidualAtCount(
-        drops, fullNeed, recipes, workingCounts, recipe.id, 0, allowedQuestsList, classifyMode,
-      )
-      const totalSaved = Number.isFinite(referenceCost)
-        ? Math.max(0, costWithout - referenceCost)
-        : 0
-      isUseful = totalSaved > EPSILON
-      displaySaved = totalSaved
-    }
-
-    let deficitCount = 0
-    if (isUseful) {
-      deficitCount = useMarginalSplit
-        ? findMinimalUsefulCount(
-            drops, fullNeed, recipes, workingCounts, recipe.id, count, allowedQuestsList, classifyMode, referenceCost,
-          )
-        : count
-    }
-    workingCounts.set(recipe.id, deficitCount)
-
-    if (deficitCount > 0) {
-      deficitCounts.set(recipe.id, deficitCount)
-      savings.set(recipe.id, { totalSaved: displaySaved, unitSaved: displaySaved / deficitCount })
-    }
-    if (deficitCount < count) {
-      surplusCounts.set(recipe.id, count - deficitCount)
-    }
+  const zeroingCtx: ZeroingContext = {
+    drops, fullNeed, recipes, workingCounts, allowedQuestsList, mode: classifyMode,
   }
+
+  const { deficitCounts, surplusCounts, savings } = classifyRecipeCounts({
+    recipes, counts, zeroingCtx, referenceCost, useMarginalSplit, burdenUnitCosts, actualBurden,
+  })
 
   const built = buildAllocations(recipes, deficitCounts, surplusCounts, savings, singleValues)
   const baseline = classifyMode === 'turn' ? baselineTurn : baselineAp
@@ -854,14 +880,6 @@ const buildPatternResult = (
   }
 }
 
-const PATTERN_ORDER: readonly EventCraftPatternId[] = [
-  'runs',
-  'ap',
-  'even-turn',
-  'even-ap',
-  'exhaust',
-]
-
 /**
  * 表示済みカード（exhaust 除く）と正の (recipeId, count) 多重集合が一致するパターンを畳む。
  * runs / exhaust は常に表示。
@@ -873,7 +891,7 @@ export const foldEventCraftPatterns = (
     r.allocations
       .filter((a) => a.totalCount > 0)
       .map((a) => `${a.recipe.id}:${a.totalCount}`)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .join('|')
 
   const displayed: EventCraftPatternResult[] = []
@@ -913,7 +931,7 @@ export const resolveVisiblePatternId = (
   id: EventCraftPatternId,
 ): EventCraftPatternId => {
   if (plan.patterns.some((p) => p.id === id)) return id
-  return plan.absorbedInto[id] ?? 'runs'
+  return Reflect.get(plan.absorbedInto, id) ?? 'runs'
 }
 
 export const computeEventCraftPlan = (
@@ -984,10 +1002,8 @@ export const computeEventCraftPlan = (
     buildPatternResult('exhaust', 'both', 'turn', exhaustCounts, { ...bctxBase, singleValues: singleValuesTurn }),
   ]
 
-  // PATTERN_ORDER と一致させる（並び替えは不要だが将来の並び変更に備えて明示）
-  const ordered = PATTERN_ORDER.map((id) => all.find((p) => p.id === id)!)
-
-  return foldEventCraftPatterns(ordered)
+  // all は既に runs/ap/even-turn/even-ap/exhaust の表示順で構築済み。
+  return foldEventCraftPatterns(all)
 }
 
 export type AdviceTranslator = (
