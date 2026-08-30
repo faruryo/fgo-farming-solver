@@ -346,7 +346,13 @@ export const MaterialSelectionAdvisor = ({
         </div>
 
         {activeTab === 'summer-2026' ? (
-          <EventCraftAdvisor items={items} fullNeed={fullNeed} stockEnabled={stockEnabled} />
+          <EventCraftAdvisor
+            items={items}
+            fullNeed={fullNeed}
+            mode={config.mode}
+            onModeChange={setMode}
+            stockEnabled={stockEnabled}
+          />
         ) : (
           <>
             {/* モード切替・総数入力 */}
