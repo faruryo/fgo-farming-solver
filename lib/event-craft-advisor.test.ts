@@ -117,6 +117,36 @@ const findPattern = (
   id: string,
 ) => plan.patterns.find((p) => p.id === id)
 
+/**
+ * item-x: turnでは安い(rate1.0)がAPは高い(Qx ap=100)。item-y: turnは高い(rate0.1)がAPは安い(換算20/個)。
+ * 手持ちは1皿分のみ。turn最小化とAP最小化で選ぶ皿が分かれる、runs/ap と even-turn/even-ap 双方のテストで使う。
+ */
+const buildTurnApDivergingFixture = () => {
+  const d = buildTestDrops(
+    [makeItem('item-x', 101), makeItem('item-y', 102)],
+    [makeQuest('Qx', 100), makeQuest('Qy', 2)],
+    [
+      { quest_id: 'Qx', item_id: 'item-x', drop_rate: 1.0 },
+      { quest_id: 'Qy', item_id: 'item-y', drop_rate: 0.1 },
+    ],
+  )
+  const recipes: EventCraftRecipe[] = [
+    {
+      id: 'recipe-x', name: '料理X', costs: { seafood: 20, meat: 0, vegetable: 0 },
+      targetItem: { atlasId: 1, shortId: 'item-x', name: '素材X', rarity: 'bronze' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+    },
+    {
+      id: 'recipe-y', name: '料理Y', costs: { seafood: 20, meat: 0, vegetable: 0 },
+      targetItem: { atlasId: 2, shortId: 'item-y', name: '素材Y', rarity: 'gold' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+    },
+  ]
+  const owned: IngredientCounts = { seafood: 20, meat: 0, vegetable: 0 }
+  const fullNeed = { 'item-x': 2, 'item-y': 2 }
+  return { d, recipes, owned, fullNeed }
+}
+
 describe('computeEventCraftPlan: runs / ap パターン', () => {
   it('不足素材に対して周回削減効果のある料理を最適に作成する (runs)', () => {
     const d = buildTestDrops(
@@ -179,29 +209,8 @@ describe('computeEventCraftPlan: runs / ap パターン', () => {
   })
 
   it('AP モードは AP を目的関数として最小化し、周回モードとは異なる皿を選び得る', () => {
-    // item-x: turn では安い(rate1.0/AP100の周回)がAPは高い。item-y: turnは高い(rate0.1)がAPは安い(換算20/個)。
-    const d = buildTestDrops(
-      [makeItem('item-x', 101), makeItem('item-y', 102)],
-      [makeQuest('Qx', 100), makeQuest('Qy', 2)],
-      [
-        { quest_id: 'Qx', item_id: 'item-x', drop_rate: 1.0 },
-        { quest_id: 'Qy', item_id: 'item-y', drop_rate: 0.1 },
-      ],
-    )
-    const recipes: EventCraftRecipe[] = [
-      {
-        id: 'recipe-x', name: '料理X', costs: { seafood: 20, meat: 0, vegetable: 0 },
-        targetItem: { atlasId: 1, shortId: 'item-x', name: '素材X', rarity: 'bronze' },
-        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
-      },
-      {
-        id: 'recipe-y', name: '料理Y', costs: { seafood: 20, meat: 0, vegetable: 0 },
-        targetItem: { atlasId: 2, shortId: 'item-y', name: '素材Y', rarity: 'gold' },
-        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
-      },
-    ]
-    const owned: IngredientCounts = { seafood: 20, meat: 0, vegetable: 0 }
-    const plan = computeEventCraftPlan(d, { 'item-x': 2, 'item-y': 2 }, owned, ['Qx', 'Qy'], { recipes })
+    const { d, recipes, owned, fullNeed } = buildTurnApDivergingFixture()
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qx', 'Qy'], { recipes })
     const runs = findPattern(plan, 'runs')!
     const ap = findPattern(plan, 'ap')!
     expect(ap.metric).toBe('ap')
@@ -290,31 +299,8 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
   })
 
   it('even-turn と even-ap は単位が異なるため皿が分かれ得る', () => {
-    // item-x: turnは安い(rate1.0)がAPは高い(Qx ap=100)。item-y: turnは高い(rate0.1)がAPは安い(換算20/個)。
-    const d = buildTestDrops(
-      [makeItem('item-x', 101), makeItem('item-y', 102)],
-      [makeQuest('Qx', 100), makeQuest('Qy', 2)],
-      [
-        { quest_id: 'Qx', item_id: 'item-x', drop_rate: 1.0 },
-        { quest_id: 'Qy', item_id: 'item-y', drop_rate: 0.1 },
-      ],
-    )
-    const recipes: EventCraftRecipe[] = [
-      {
-        id: 'recipe-x', name: '料理X', costs: { seafood: 20, meat: 0, vegetable: 0 },
-        targetItem: { atlasId: 1, shortId: 'item-x', name: '素材X', rarity: 'bronze' },
-        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
-      },
-      {
-        id: 'recipe-y', name: '料理Y', costs: { seafood: 20, meat: 0, vegetable: 0 },
-        targetItem: { atlasId: 2, shortId: 'item-y', name: '素材Y', rarity: 'gold' },
-        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
-      },
-    ]
-    // 手持ちは1皿分のみ。even-turn は item-y(turn単価が高い)、even-ap は item-x(AP単価が高い)を選ぶはず。
-    const fullNeed = { 'item-x': 2, 'item-y': 2 }
-    const owned: IngredientCounts = { seafood: 20, meat: 0, vegetable: 0 }
-
+    // even-turn は item-y(turn単価が高い)、even-ap は item-x(AP単価が高い)を選ぶはず。
+    const { d, recipes, owned, fullNeed } = buildTurnApDivergingFixture()
     const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qx', 'Qy'], { recipes })
     // このケースでは even-turn は runs と、even-ap は ap と同一配分になり畳まれる。
     expect(plan.absorbedInto['even-turn']).toBe('runs')
