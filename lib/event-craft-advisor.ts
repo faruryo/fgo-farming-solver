@@ -861,6 +861,11 @@ const buildPatternResult = (
 
   const built = buildAllocations(recipes, deficitCounts, surplusCounts, savings, singleValues)
   const baseline = classifyMode === 'turn' ? baselineTurn : baselineAp
+  // even-turn/even-ap のカード合計も単独負担基準にする。合計コストLPの baseline-referenceCost
+  // のままだと、ついで枠で下がった単独負担の山がマシュのアドバイスに一切反映されない。
+  const totalSaved = burdenUnitCosts
+    ? Math.max(0, evaluateBurden(fullNeed, recipes, new Map(), burdenUnitCosts) - actualBurden)
+    : Math.max(0, baseline - referenceCost)
 
   return {
     id,
@@ -869,7 +874,7 @@ const buildPatternResult = (
     totalCrafted: built.totalDeficitCrafted + built.totalSurplusCrafted,
     totalDeficitCrafted: built.totalDeficitCrafted,
     totalSurplusCrafted: built.totalSurplusCrafted,
-    totalSaved: Math.max(0, baseline - referenceCost),
+    totalSaved,
     totalSurplusValue: built.totalSurplusValue,
     spentIngredients: built.spentIngredients,
     leftoverIngredients: calculateLeftovers(ownedIngredients, built.spentIngredients),
@@ -1070,18 +1075,29 @@ const buildAdviceEffectText = (
   t: AdviceTranslator,
 ): string => {
   const u = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs-full', '周回')
-  const modeTail =
-    mode === 'ap'
-      ? t('event-craft-advice-ap-tail', 'りんごや石の温存に最適な配分です。')
-      : t('event-craft-advice-turn-tail', 'リアルの周回時間を最小化する配分です。')
+  const isBalancing = result.id === 'even-turn' || result.id === 'even-ap'
+  let modeTail: string
+  if (isBalancing) {
+    modeTail = t('event-craft-advice-balance-tail', '特定の素材だけ大きく不足する事態を避けられる配分です。')
+  } else if (mode === 'ap') {
+    modeTail = t('event-craft-advice-ap-tail', 'りんごや石の温存に最適な配分です。')
+  } else {
+    modeTail = t('event-craft-advice-turn-tail', 'リアルの周回時間を最小化する配分です。')
+  }
 
   let effectText = ''
   if (result.totalSaved > 0) {
-    effectText = t(
-      'event-craft-advice-saved',
-      'この配分により、フリクエ周回から合計 約 {{amount}} {{unit}} を削減できます。{{tail}}',
-      { amount: fmt(result.totalSaved), unit: u, tail: modeTail },
-    )
+    effectText = isBalancing
+      ? t(
+          'event-craft-advice-balance-saved',
+          'この配分により、素材ごとの単独負担の山を約 {{amount}} {{unit}} 下げられます。{{tail}}',
+          { amount: fmt(result.totalSaved), unit: u, tail: modeTail },
+        )
+      : t(
+          'event-craft-advice-saved',
+          'この配分により、フリクエ周回から合計 約 {{amount}} {{unit}} を削減できます。{{tail}}',
+          { amount: fmt(result.totalSaved), unit: u, tail: modeTail },
+        )
   } else if (result.totalSurplusValue > 0) {
     effectText = t(
       'event-craft-advice-surplus-only',

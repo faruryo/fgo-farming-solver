@@ -252,6 +252,8 @@
     "event-craft-advice-cannot-craft": "It seems you do not have enough ingredients to craft any dishes yet, Senpai. Let's gather a few more from free quests.",
     "event-craft-advice-head": "The highest priority dish is \"{{name}}\", Senpai. Crafting {{count}} of this is the most efficient choice.",
     "event-craft-advice-saved": "With this plan, you will save approximately {{amount}} {{unit}} from free quest farming in total. {{tail}}",
+    "event-craft-advice-balance-saved": "This plan lowers the worst single-material burden by approximately {{amount}} {{unit}}. {{tail}}",
+    "event-craft-advice-balance-tail": "This plan avoids running badly short on any one material.",
     "event-craft-advice-surplus-only": "By exhausting your surplus ingredients, you can acquire materials worth approximately +{{amount}} {{unit}} eq.",
     "event-craft-advice-surplus-note": " Additionally, you can craft \"{{dishes}}\" with leftover ingredients to gain +approx. {{amount}} {{unit}} eq. worth of materials.",
     "event-craft-advice-ap-tail": "This plan is optimal for saving apples and Saint Quartz.",

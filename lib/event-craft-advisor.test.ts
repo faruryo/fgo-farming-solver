@@ -318,6 +318,13 @@ describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
     const goldAlloc = getAlloc(evenTurn, 'recipe-gold')
     expect(bronzeAlloc.deficitSaved).toBeCloseTo(2)
     expect(goldAlloc.deficitSaved).toBeCloseTo(22)
+
+    // カード合計(totalSaved)も単独負担基準になっている: 未クラフト時のmax(20,40)=40 から
+    // 実際の18まで下がった差=22。マシュのアドバイスも「単独負担の山」の文言・非ゼロの数値を使う。
+    expect(evenTurn.totalSaved).toBeCloseTo(22)
+    const advice = generateCraftAdvice(evenTurn, owned)
+    expect(advice).toContain('単独負担の山を約 22 周回 下げられます')
+    expect(advice).not.toContain('フリクエ周回から合計')
   })
 
   it('周回案では0のついで枠でも単独負担の山としては残っていれば even-turn は作成し得る', () => {

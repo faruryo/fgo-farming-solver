@@ -194,6 +194,8 @@
     "event-craft-advice-cannot-craft": "手持ちの食材数では料理を作成できないようです、先輩。もう少しフリクエで食材を集めてみましょう。",
     "event-craft-advice-head": "最優先は「{{name}}」です、先輩。これを {{count}} 個作成するのが最も効率的です。",
     "event-craft-advice-saved": "この配分により、フリクエ周回から合計 約 {{amount}} {{unit}} を削減できます。{{tail}}",
+    "event-craft-advice-balance-saved": "この配分により、素材ごとの単独負担の山を約 {{amount}} {{unit}} 下げられます。{{tail}}",
+    "event-craft-advice-balance-tail": "特定の素材だけ大きく不足する事態を避けられる配分です。",
     "event-craft-advice-surplus-only": "余剰食材を使い切り、合計 約 +{{amount}} {{unit}} 相当の素材を獲得できます。",
     "event-craft-advice-surplus-note": " また余った食材で「{{dishes}}」を作成し、+約 {{amount}} {{unit}} 相当の素材を追加獲得できます。",
     "event-craft-advice-ap-tail": "りんごや石の温存に最適な配分です。",
