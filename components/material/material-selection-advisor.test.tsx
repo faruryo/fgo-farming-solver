@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -171,49 +171,41 @@ describe('MaterialSelectionAdvisor Component', () => {
     await user.type(vegInput, '120')
 
     await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
-      expect(within(runsCard).getByText('推奨 +3')).toBeInTheDocument()
+      expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
+      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
       expect(
         screen.getByText(/最優先は「ゴーヤーチャンプルー」です/),
       ).toBeInTheDocument()
     })
   })
 
-  it('shows surplus badges on the exhaust pattern card', async () => {
+  it('toggles exhaust ingredients and shows surplus badges', async () => {
     const user = userEvent.setup()
-    // Only item '07' (鉄杭, Goya Champuru) is in deficit. Ingredients also allow crafting
-    // Maasu-ni (item '04', 愚者の鎖) once, but item '04' has zero need, so exhaust should
-    // classify that dish as pure surplus while Goya Champuru stays a deficit dish.
     renderSummer2026Advisor()
+
+    // Enter enough ingredients for 2 Goya Champuru (meat: 40, veg: 80)
     const inputs = screen.getAllByRole('spinbutton')
-    await user.type(inputs[0], '40') // seafood: enables 1x Maasu-ni (needs seafood 40 / veg 20)
-    await user.type(inputs[1], '60') // meat: caps Goya Champuru at 3 (needs meat 20 each)
-    await user.type(inputs[2], '200') // vegetable: plenty for both
+    await user.type(inputs[1], '80')
+    await user.type(inputs[2], '160')
 
     await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getByText('推奨 +3')).toBeInTheDocument()
+      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
+    })
 
-      const exhaustCard = screen.getByRole('radio', { name: '食材を使い切る' })
-      expect(within(exhaustCard).getByText('推奨 +3')).toBeInTheDocument()
-      expect(within(exhaustCard).getByText('余剰 +1')).toBeInTheDocument()
+    const exhaustSwitch = screen.getByRole('switch', { name: '食材を使い切る' })
+    await user.click(exhaustSwitch)
+
+    await waitFor(() => {
+      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
+      expect(screen.getByText('余剰 +1')).toBeInTheDocument()
     })
   })
 
-  it('renders target material names using translation keys in recipe cards', async () => {
-    const user = userEvent.setup()
+  it('renders target material names using translation keys in recipe cards', () => {
     renderSummer2026Advisor()
 
-    const inputs = screen.getAllByRole('spinbutton')
-    await user.type(inputs[1], '60')
-    await user.type(inputs[2], '120')
-
-    await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
-      expect(within(runsCard).getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
-    })
+    expect(screen.getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
+    expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
   })
 
   it('renders loading message when drop data is loading', () => {
@@ -230,7 +222,7 @@ describe('MaterialSelectionAdvisor Component', () => {
     expect(screen.getByText(/ドロップデータを取得できませんでした/)).toBeInTheDocument()
   })
 
-  it('renders deficit savings formatted with the pattern unit (周: runs card)', async () => {
+  it('renders deficit savings formatted with unit', async () => {
     const user = userEvent.setup()
     renderSummer2026Advisor()
 
@@ -239,8 +231,7 @@ describe('MaterialSelectionAdvisor Component', () => {
     await user.type(inputs[2], '120')
 
     await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getByText('−1 周')).toBeInTheDocument()
+      expect(screen.getByText('−20 AP')).toBeInTheDocument()
     })
   })
 })
