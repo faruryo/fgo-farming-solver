@@ -220,6 +220,7 @@
     "event-craft-pattern-group-label": "Optimization Pattern",
     "event-craft-alias-label": "Same as: {{names}}",
     "event-craft-residual-reference": "Residual ref: {{turn}} runs / {{ap}} AP",
+    "event-craft-residual-single": "Residual: {{amount}} {{unit}}",
     "event-craft-rec-badge": "Rec. +{{count}}",
     "event-craft-surplus-badge": "Surplus +{{count}}",
     "event-craft-rec-zero": "Rec. 0",

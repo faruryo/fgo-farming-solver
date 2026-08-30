@@ -489,15 +489,25 @@ const PatternEvaluation = ({ pattern }: { pattern: EventCraftPlanPattern }) => {
       </div>
     )
   }
-  if (pattern.totalSaved <= 0) return null
   const unit = pattern.metric === 'ap' ? t('unit-ap', 'AP') : t('unit-runs-full', '周回')
+  const residual = pattern.metric === 'ap' ? pattern.residualApCost : pattern.residualTurnCost
   return (
-    <span className="text-xs font-semibold" style={{ color: 'var(--green)' }}>
-      {t('event-craft-total-saved', '合計 −{{amount}} {{unit}} 節約', {
-        amount: fmt(pattern.totalSaved),
-        unit,
-      })}
-    </span>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <span style={{ color: 'var(--text2)' }}>
+        {t('event-craft-residual-single', '残余: {{amount}} {{unit}}', {
+          amount: fmt(residual),
+          unit,
+        })}
+      </span>
+      {pattern.totalSaved > 0 && (
+        <span className="font-semibold" style={{ color: 'var(--green)' }}>
+          {t('event-craft-total-saved', '合計 −{{amount}} {{unit}} 節約', {
+            amount: fmt(pattern.totalSaved),
+            unit,
+          })}
+        </span>
+      )}
+    </div>
   )
 }
 

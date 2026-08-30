@@ -162,6 +162,7 @@
     "event-craft-pattern-group-label": "最適化パターン",
     "event-craft-alias-label": "同じ: {{names}}",
     "event-craft-residual-reference": "残余参考: {{turn}} 周 / {{ap}} AP",
+    "event-craft-residual-single": "残余: {{amount}} {{unit}}",
     "event-craft-rec-badge": "推奨 +{{count}}",
     "event-craft-surplus-badge": "余剰 +{{count}}",
     "event-craft-rec-zero": "推奨 0",

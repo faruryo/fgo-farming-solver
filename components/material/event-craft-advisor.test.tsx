@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import {
   EventCraftAdvisor,
   EventCraftExpectedYields,
@@ -186,6 +186,20 @@ describe('EventCraftAdvisor pattern cards', () => {
 
     expect(screen.getByText('周回を減らす')).toBeTruthy()
     expect(screen.getByText('食材を使い切る')).toBeTruthy()
+  })
+
+  it('shows the residual cost on non-exhaust cards too, not just the savings amount', () => {
+    mockComputeEventCraftPlan.mockReturnValue(
+      makePlan([
+        makePattern('runs', 'turn', [makeAllocation(recipeA, 1)]),
+        makePattern('exhaust', 'both', [makeAllocation(recipeA, 1)]),
+      ]),
+    )
+    render(<EventCraftAdvisor items={items} fullNeed={{}} />)
+
+    const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
+    expect(within(runsCard).getByText('残余: 3 周回')).toBeTruthy()
+    expect(within(runsCard).getByText('合計 −10 周回 節約')).toBeTruthy()
   })
 
   it('shows a conditional card only when distinct, and lists its name as an alias on the fold target otherwise', () => {
