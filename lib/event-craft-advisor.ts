@@ -714,11 +714,20 @@ const findMinimalUsefulCount = (
   mode: DenominatorMode,
   referenceCost: number,
 ): number => {
-  for (let k = 0; k < count; k++) {
-    const cost = evaluateResidualAtCount(drops, fullNeed, recipes, workingCounts, recipeId, k, allowedQuestsList, mode)
-    if (cost <= referenceCost + EPSILON) return k
+  // 残余コストは個数を増やすほど単調非増加なので、線形走査ではなく二分探索で
+  // 最小の充足個数を求める(所持数が多いときの毎回LP解決によるUI固まりを避ける)。
+  let lo = 0
+  let hi = count
+  while (lo < hi) {
+    const mid = lo + Math.floor((hi - lo) / 2)
+    const cost = evaluateResidualAtCount(drops, fullNeed, recipes, workingCounts, recipeId, mid, allowedQuestsList, mode)
+    if (cost <= referenceCost + EPSILON) {
+      hi = mid
+    } else {
+      lo = mid + 1
+    }
   }
-  return count
+  return lo
 }
 
 const buildPatternResult = (
