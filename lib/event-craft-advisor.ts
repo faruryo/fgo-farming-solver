@@ -330,14 +330,28 @@ const solveStage1 = (ctx: SolverContext): Map<string, number> => {
 }
 
 /** 満遍なく（周回/AP）: 単位負担 remaining_i * unitCost_i の最大値を最小化する。 */
+/** レシピが実際に生産し得る素材だけを対象にする(ユーザーの無関係な不足に埋もれさせない)。 */
+const getRecipeYieldTargets = (
+  recipes: readonly EventCraftRecipe[],
+): Set<string> => {
+  const targets = new Set<string>()
+  for (const recipe of recipes) {
+    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+      if (y > 0) targets.add(shortId)
+    }
+  }
+  return targets
+}
+
 const populateEvenBurdenVars = (
   model: solver.Model,
   ints: Record<string, number>,
   ctx: SolverContext,
+  burdenNeed: Map<string, number>,
   unitCosts: Map<string, number>,
   isTieBreak: boolean,
 ) => {
-  for (const itemId of ctx.farmableNeed.keys()) {
+  for (const itemId of burdenNeed.keys()) {
     Reflect.set(model.variables, `remaining_${itemId}`, {
       [`remain_${itemId}`]: 1,
       [`cap_${itemId}`]: -(unitCosts.get(itemId) ?? 0),
@@ -345,7 +359,7 @@ const populateEvenBurdenVars = (
   }
 
   const burdenVar: Record<string, number> = { burdenObj: 1 }
-  for (const itemId of ctx.farmableNeed.keys()) {
+  for (const itemId of burdenNeed.keys()) {
     burdenVar[`cap_${itemId}`] = 1
   }
   Reflect.set(model.variables, 'burden', burdenVar)
@@ -353,7 +367,7 @@ const populateEvenBurdenVars = (
   for (const recipe of ctx.recipes) {
     const yields = getRecipeYields(recipe, ctx.recipes)
     const relevant = Object.entries(yields).some(
-      ([shortId, y]) => y > 0 && ctx.farmableNeed.has(shortId),
+      ([shortId, y]) => y > 0 && burdenNeed.has(shortId),
     )
     if (!relevant) continue
     const varName = `craft_${recipe.id}`
@@ -366,7 +380,7 @@ const populateEvenBurdenVars = (
       ...(isTieBreak ? { totalIngredients: totalIng } : {}),
     }
     for (const [shortId, y] of Object.entries(yields)) {
-      if (y > 0 && ctx.farmableNeed.has(shortId)) {
+      if (y > 0 && burdenNeed.has(shortId)) {
         Reflect.set(craftVars, `remain_${shortId}`, y)
       }
     }
@@ -377,6 +391,7 @@ const populateEvenBurdenVars = (
 
 const buildEvenBurdenModel = (
   ctx: SolverContext,
+  burdenNeed: Map<string, number>,
   unitCosts: Map<string, number>,
   isTieBreak: boolean,
   burdenCap?: number,
@@ -387,7 +402,7 @@ const buildEvenBurdenModel = (
     meat: { max: Math.max(0, ctx.ownedIngredients.meat ?? 0) },
     vegetable: { max: Math.max(0, ctx.ownedIngredients.vegetable ?? 0) },
   }
-  for (const [itemId, count] of ctx.farmableNeed.entries()) {
+  for (const [itemId, count] of burdenNeed.entries()) {
     Reflect.set(constraints, `remain_${itemId}`, { min: count })
     Reflect.set(constraints, `cap_${itemId}`, { min: 0 })
   }
@@ -401,27 +416,28 @@ const buildEvenBurdenModel = (
     variables: {},
     ints,
   }
-  populateEvenBurdenVars(model, ints, ctx, unitCosts, isTieBreak)
+  populateEvenBurdenVars(model, ints, ctx, burdenNeed, unitCosts, isTieBreak)
   return model
 }
 
 const solveEvenBurden = (
   ctx: SolverContext,
+  burdenNeed: Map<string, number>,
   unitCosts: Map<string, number>,
 ): Map<string, number> => {
   const zero = new Map(ctx.recipes.map((r) => [r.id, 0]))
-  if (ctx.farmableNeed.size === 0) return zero
+  if (burdenNeed.size === 0) return zero
   const hasIngredients = Object.values(ctx.ownedIngredients).some(
     (c) => (c ?? 0) > 0,
   )
   if (!hasIngredients) return zero
 
-  const modelA = buildEvenBurdenModel(ctx, unitCosts, false)
+  const modelA = buildEvenBurdenModel(ctx, burdenNeed, unitCosts, false)
   const resA = solver.Solve(modelA)
   if (!resA.feasible) return zero
   const burdenOpt = typeof resA.result === 'number' ? resA.result : 0
 
-  const modelB = buildEvenBurdenModel(ctx, unitCosts, true, burdenOpt)
+  const modelB = buildEvenBurdenModel(ctx, burdenNeed, unitCosts, true, burdenOpt)
   const resB = solver.Solve(modelB)
   const targetRes = resB.feasible ? resB : resA
   return readCraftCounts(ctx.recipes, targetRes)
@@ -900,6 +916,12 @@ export const computeEventCraftPlan = (
   const allowedQuestsList = questIds
   const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
   const farmableNeed = extractFarmableNeed(fullNeed, itemsWithDropData)
+  // 満遍なくの対象はレシピが実際に生産できる素材だけに絞る。fullNeed にはイベント無関係の
+  // 不足も含まれ得るため、絞らないと無関係な不足の単独負担がmaxを支配してしまう。
+  const recipeYieldTargets = getRecipeYieldTargets(recipes)
+  const burdenNeed = new Map(
+    [...farmableNeed].filter(([itemId]) => recipeYieldTargets.has(itemId)),
+  )
 
   const ctxTurn = createSolverContext(drops, fullNeed, ownedIngredients, {
     mode: 'turn', questIds, recipes,
@@ -919,13 +941,13 @@ export const computeEventCraftPlan = (
   const apCounts = solveStage1(ctxAp)
 
   const unitCostsTurn = computeSingleItemUnitCosts(
-    drops, questIds, 'turn', farmableNeed.keys(), itemsWithDropData,
+    drops, questIds, 'turn', burdenNeed.keys(), itemsWithDropData,
   )
   const unitCostsAp = computeSingleItemUnitCosts(
-    drops, questIds, 'ap', farmableNeed.keys(), itemsWithDropData,
+    drops, questIds, 'ap', burdenNeed.keys(), itemsWithDropData,
   )
-  const evenTurnCounts = solveEvenBurden(ctxTurn, unitCostsTurn)
-  const evenApCounts = solveEvenBurden(ctxAp, unitCostsAp)
+  const evenTurnCounts = solveEvenBurden(ctxTurn, burdenNeed, unitCostsTurn)
+  const evenApCounts = solveEvenBurden(ctxAp, burdenNeed, unitCostsAp)
 
   const exhaustCounts = solveExhaust(ctxTurn, recipes, ownedIngredients)
 

@@ -223,6 +223,36 @@ describe('computeEventCraftPlan: runs / ap パターン', () => {
 })
 
 describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
+  it('fullNeed に含まれるレシピ無関係の不足に単独負担のmaxを支配させない', () => {
+    // item-unrelated はどのレシピも生産できない、イベント無関係の不足(ユーザーの全体不足に含まれるだけ)。
+    // 単独周回コストが極端に重い(rate 0.001 -> 1000周/個 × 残り1000個 = 単独負担100万)。
+    // これを満遍なくの対象に含めると、絶対に下げられない巨大な負担がmaxを支配し、
+    // クラフト側のtie-break(食材最小化)が「どうせmaxは変わらないから作らない」を選んでしまう。
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-unrelated', 999)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q2', item_id: 'item-unrelated', drop_rate: 0.001 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-a', name: '料理A', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 1, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+    ]
+    const fullNeed = { 'item-a': 5, 'item-unrelated': 1000 }
+    const owned: IngredientCounts = { seafood: 100, meat: 0, vegetable: 0 }
+
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1', 'Q2'], { recipes })
+    const evenTurn = findPattern(plan, 'even-turn')
+    const target = evenTurn ?? findPattern(plan, 'runs')!
+    const allocA = target.allocations.find((a) => a.recipe.id === 'recipe-a')
+    expect(allocA?.totalCount).toBeGreaterThan(0)
+  })
+
   it('金の単独負担が高いと銅の個数より金料理が選ばれ、周回案とは異なる配分になる', () => {
     // 銅(item-bronze)は残り20個・単独1周/個。金(item-gold)は残り2個・単独20周/個(rate0.05)。
     // 消費食材を共有する8皿分の予算しかない。総削減(sum)最小化の runs は金を先に使い切ってから銅に回すが、
