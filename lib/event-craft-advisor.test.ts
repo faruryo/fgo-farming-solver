@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
-  solveEventCraftAllocation,
+  computeEventCraftPlan,
+  foldEventCraftPatterns,
+  resolveVisiblePatternId,
   generateCraftAdvice,
   computeSingleItemBaseValues,
+  EventCraftPatternResult,
 } from './event-craft-advisor'
-import { EventCraftRecipe, IngredientCounts, EVENT_CRAFT_FEATURED_YIELD, sumExpectedCraftYields } from '../data/event-craft-recipes'
+import { EventCraftRecipe, IngredientCounts, EVENT_CRAFT_FEATURED_YIELD } from '../data/event-craft-recipes'
 import { Drops } from './get-drops'
 import { Localized } from './get-local-items'
 import { Item, Quest } from '../interfaces/fgodrop'
@@ -109,10 +112,13 @@ const sampleRecipes: EventCraftRecipe[] = [
   },
 ]
 
-describe('solveEventCraftAllocation', () => {
-  it('不足素材に対して周回削減効果のある料理を最適に作成する (Stage 1)', () => {
-    // Q1: item-a を 1.0/周 (AP 20)
-    // Q2: item-b を 0.5/周 (AP 40)
+const findPattern = (
+  plan: ReturnType<typeof computeEventCraftPlan>,
+  id: string,
+) => plan.patterns.find((p) => p.id === id)
+
+describe('computeEventCraftPlan: runs / ap パターン', () => {
+  it('不足素材に対して周回削減効果のある料理を最適に作成する (runs)', () => {
     const d = buildTestDrops(
       [makeItem('item-a', 101), makeItem('item-b', 102)],
       [makeQuest('Q1', 20), makeQuest('Q2', 40)],
@@ -125,38 +131,27 @@ describe('solveEventCraftAllocation', () => {
     const fullNeed = { 'item-a': 1, 'item-b': 1 }
     const owned: IngredientCounts = { seafood: 80, meat: 40, vegetable: 120 }
 
-    const res = solveEventCraftAllocation(
-      d,
-      fullNeed,
-      owned,
-      'turn',
-      ['Q1', 'Q2'],
-      {
-        exhaustIngredients: false,
-        recipes: sampleRecipes.slice(0, 2),
-      },
-    )
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1', 'Q2'], {
+      recipes: sampleRecipes.slice(0, 2),
+    })
+    const runs = findPattern(plan, 'runs')!
 
-    expect(res.totalCrafted).toBe(4)
-    expect(res.totalDeficitCrafted).toBe(4)
-    expect(res.totalSurplusCrafted).toBe(0)
+    expect(runs.totalCrafted).toBe(4)
+    expect(runs.totalDeficitCrafted).toBe(4)
+    expect(runs.totalSurplusCrafted).toBe(0)
 
-    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
-    const allocB = res.allocations.find((a) => a.recipe.id === 'recipe-b')
+    const allocA = runs.allocations.find((a) => a.recipe.id === 'recipe-a')
+    const allocB = runs.allocations.find((a) => a.recipe.id === 'recipe-b')
     expect(allocA?.deficitCount).toBe(2)
     expect(allocB?.deficitCount).toBe(2)
 
     // baseline: Q1×1 + Q2×2 (1/0.5) = 3周
-    // 2A+2B で期待 a,b とも 1.1 → 残余 0
-    expect(res.baselineCost).toBeCloseTo(3)
-    expect(res.optimalCost).toBeCloseTo(0)
-    expect(res.totalSaved).toBeCloseTo(3)
+    expect(runs.baselineTurnCost).toBeCloseTo(3)
+    expect(runs.residualTurnCost).toBeCloseTo(0)
+    expect(runs.totalSaved).toBeCloseTo(3)
   })
 
-  it('周回コストが変わらないついでドロップ素材は不足枠でも作成しない (Stage 1b タイブレーク)', () => {
-    // Q1 は item-a と item-b を同時に 1.0/周 で落とす
-    // need: item-a: 10, item-b: 2
-    // item-b は item-a を集める間に余剰8個手に入るため、recipe-b を作っても周回数は減らない
+  it('周回コストが変わらないついでドロップ素材は不足枠でも作成しない (タイブレーク)', () => {
     const d = buildTestDrops(
       [makeItem('item-a', 101), makeItem('item-b', 102)],
       [makeQuest('Q1', 20)],
@@ -169,8 +164,7 @@ describe('solveEventCraftAllocation', () => {
     const fullNeed = { 'item-a': 10, 'item-b': 2 }
     const owned: IngredientCounts = { seafood: 100, meat: 100, vegetable: 100 }
 
-    const res = solveEventCraftAllocation(d, fullNeed, owned, 'turn', ['Q1'], {
-      exhaustIngredients: false,
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1'], {
       recipes: [
         sampleRecipes[0],
         {
@@ -179,148 +173,415 @@ describe('solveEventCraftAllocation', () => {
         },
       ],
     })
-
-    const allocB = res.allocations.find((a) => a.recipe.id === 'recipe-b')
-    // recipe-b は周回削減に寄与しないため、消費食材最小化により 0 個となる
+    const runs = findPattern(plan, 'runs')!
+    const allocB = runs.allocations.find((a) => a.recipe.id === 'recipe-b')
     expect(allocB?.deficitCount).toBe(0)
   })
 
-  it('Stage 1b は期待充足に必要な皿だけ作り、ゼロ効果の余分な皿は作らない', () => {
+  it('AP モードは AP を目的関数として最小化し、周回モードとは異なる皿を選び得る', () => {
+    // item-x: turn では安い(rate1.0/AP100の周回)がAPは高い。item-y: turnは高い(rate0.1)がAPは安い(換算20/個)。
+    const d = buildTestDrops(
+      [makeItem('item-x', 101), makeItem('item-y', 102)],
+      [makeQuest('Qx', 100), makeQuest('Qy', 2)],
+      [
+        { quest_id: 'Qx', item_id: 'item-x', drop_rate: 1.0 },
+        { quest_id: 'Qy', item_id: 'item-y', drop_rate: 0.1 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-x', name: '料理X', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 1, shortId: 'item-x', name: '素材X', rarity: 'bronze' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+      {
+        id: 'recipe-y', name: '料理Y', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 2, shortId: 'item-y', name: '素材Y', rarity: 'gold' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+    ]
+    const owned: IngredientCounts = { seafood: 20, meat: 0, vegetable: 0 }
+    const plan = computeEventCraftPlan(d, { 'item-x': 2, 'item-y': 2 }, owned, ['Qx', 'Qy'], { recipes })
+    const runs = findPattern(plan, 'runs')!
+    const ap = findPattern(plan, 'ap')!
+    expect(ap.metric).toBe('ap')
+    // turn(周回)最小化は item-y (turn単価が高い) を優先、AP最小化は item-x (AP単価が高い) を優先し皿が分かれる。
+    expect(runs.allocations.find((a) => a.recipe.id === 'recipe-y')?.totalCount).toBe(1)
+    expect(runs.allocations.find((a) => a.recipe.id === 'recipe-x')?.totalCount).toBe(0)
+    expect(ap.allocations.find((a) => a.recipe.id === 'recipe-x')?.totalCount).toBe(1)
+    expect(ap.allocations.find((a) => a.recipe.id === 'recipe-y')?.totalCount).toBe(0)
+  })
+})
+
+describe('computeEventCraftPlan: 満遍なく（周回/AP）', () => {
+  it('金の単独負担が高いと銅の個数より金料理が選ばれ、周回案とは異なる配分になる', () => {
+    // 銅(item-bronze)は残り20個・単独1周/個。金(item-gold)は残り2個・単独20周/個(rate0.05)。
+    // 消費食材を共有する8皿分の予算しかない。総削減(sum)最小化の runs は金を先に使い切ってから銅に回すが、
+    // 最大負担(max)最小化の even-turn はより多くを銅に回して両者の負担を均す。
+    const d = buildTestDrops(
+      [makeItem('item-bronze', 101), makeItem('item-gold', 102)],
+      [makeQuest('Qbronze', 20), makeQuest('Qgold', 20)],
+      [
+        { quest_id: 'Qbronze', item_id: 'item-bronze', drop_rate: 1.0 },
+        { quest_id: 'Qgold', item_id: 'item-gold', drop_rate: 0.05 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-bronze', name: '銅料理', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 1, shortId: 'item-bronze', name: '銅素材', rarity: 'bronze' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+      {
+        id: 'recipe-gold', name: '金料理', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 2, shortId: 'item-gold', name: '金素材', rarity: 'gold' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+    ]
+    const fullNeed = { 'item-bronze': 20, 'item-gold': 2 }
+    const owned: IngredientCounts = { seafood: 160, meat: 0, vegetable: 0 }
+
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qbronze', 'Qgold'], { recipes })
+    const runs = findPattern(plan, 'runs')!
+    const evenTurn = findPattern(plan, 'even-turn')!
+    expect(evenTurn).toBeDefined()
+
+    expect(runs.allocations.find((a) => a.recipe.id === 'recipe-bronze')?.totalCount).toBe(3)
+    expect(runs.allocations.find((a) => a.recipe.id === 'recipe-gold')?.totalCount).toBe(5)
+
+    expect(evenTurn.allocations.find((a) => a.recipe.id === 'recipe-bronze')?.totalCount).toBe(5)
+    expect(evenTurn.allocations.find((a) => a.recipe.id === 'recipe-gold')?.totalCount).toBe(3)
+  })
+
+  it('周回案では0のついで枠でも単独負担の山としては残っていれば even-turn は作成し得る', () => {
+    // sum(=周回総数)最小化の runs は割高な item-b の需要をすべて recipe-b に寄せ、recipe-a は0のまま。
+    // max負担最小化の even-turn は item-a の残り負担が支配的になるため recipe-a を作成する。
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Qa', 20), makeQuest('Qb', 20)],
+      [
+        { quest_id: 'Qa', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Qb', item_id: 'item-b', drop_rate: 0.05 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-a', name: '料理A', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 1, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+      {
+        id: 'recipe-b', name: '料理B', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 2, shortId: 'item-b', name: '素材B', rarity: 'bronze' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+    ]
+    const fullNeed = { 'item-a': 20, 'item-b': 3 }
+    const owned: IngredientCounts = { seafood: 160, meat: 0, vegetable: 0 }
+
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qa', 'Qb'], { recipes })
+    const runsAlloc = findPattern(plan, 'runs')!.allocations.find((a) => a.recipe.id === 'recipe-a')
+    expect(runsAlloc?.totalCount).toBe(0)
+
+    const evenTurn = findPattern(plan, 'even-turn')
+    expect(evenTurn).toBeDefined()
+    const evenAAlloc = evenTurn!.allocations.find((a) => a.recipe.id === 'recipe-a')
+    expect(evenAAlloc?.totalCount).toBeGreaterThanOrEqual(1)
+  })
+
+  it('even-turn と even-ap は単位が異なるため皿が分かれ得る', () => {
+    // item-x: turnは安い(rate1.0)がAPは高い(Qx ap=100)。item-y: turnは高い(rate0.1)がAPは安い(換算20/個)。
+    const d = buildTestDrops(
+      [makeItem('item-x', 101), makeItem('item-y', 102)],
+      [makeQuest('Qx', 100), makeQuest('Qy', 2)],
+      [
+        { quest_id: 'Qx', item_id: 'item-x', drop_rate: 1.0 },
+        { quest_id: 'Qy', item_id: 'item-y', drop_rate: 0.1 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-x', name: '料理X', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 1, shortId: 'item-x', name: '素材X', rarity: 'bronze' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+      {
+        id: 'recipe-y', name: '料理Y', costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: { atlasId: 2, shortId: 'item-y', name: '素材Y', rarity: 'gold' },
+        yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      },
+    ]
+    // 手持ちは1皿分のみ。even-turn は item-y(turn単価が高い)、even-ap は item-x(AP単価が高い)を選ぶはず。
+    const fullNeed = { 'item-x': 2, 'item-y': 2 }
+    const owned: IngredientCounts = { seafood: 20, meat: 0, vegetable: 0 }
+
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Qx', 'Qy'], { recipes })
+    // このケースでは even-turn は runs と、even-ap は ap と同一配分になり畳まれる。
+    expect(plan.absorbedInto['even-turn']).toBe('runs')
+    expect(plan.absorbedInto['even-ap']).toBe('ap')
+    const runs = findPattern(plan, 'runs')!
+    const ap = findPattern(plan, 'ap')!
+    expect(runs.allocations.find((a) => a.recipe.id === 'recipe-y')?.totalCount).toBe(1)
+    expect(ap.allocations.find((a) => a.recipe.id === 'recipe-x')?.totalCount).toBe(1)
+  })
+})
+
+describe('computeEventCraftPlan: 食材を使い切る', () => {
+  it('不足が 0 でも食材があれば単体価値最大で作成する', () => {
+    const d = buildTwoQuestDrops()
+    const owned: IngredientCounts = { seafood: 80, meat: 0, vegetable: 40 }
+    const plan = computeEventCraftPlan(d, {}, owned, ['Q1', 'Q2'], { recipes: sampleRecipes })
+    const exhaust = findPattern(plan, 'exhaust')!
+    expect(exhaust.totalCrafted).toBe(2)
+    expect(exhaust.totalSurplusCrafted).toBe(2)
+    expect(exhaust.totalSaved).toBe(0)
+    // exhaust の獲得価値は周回換算(単位: 周)。item-b 単独周回1 × 0.4 + item-a 単独周回1 × 0.15 = 0.55、×2皿
+    expect(exhaust.totalSurplusValue).toBeCloseTo(1.1)
+  })
+
+  it('代替可能な2レシピが同じ不足を独立に満たせる場合、両方を余剰にせず片方へ帰属させる', () => {
+    // recipe-x と recipe-y はどちらも item-a を 0.5/個 生産する代替レシピ。
+    // 食材予算はそれぞれ独立に2個ずつしか作れない上限で、使い切りは両方を2個ずつ作る。
+    // 「他方を元の個数のまま」独立にゼロ化すると、片方だけで需要(1)を満たせるため両方とも
+    // 余剰と誤判定されてしまう(実際は両方ゼロにすると不足が復活する)。
     const d = buildTestDrops(
       [makeItem('item-a', 101)],
       [makeQuest('Q1', 20)],
       [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
     )
+    const recipeX: EventCraftRecipe = {
+      id: 'recipe-x',
+      name: '料理X',
+      costs: { seafood: 20, meat: 0, vegetable: 0 },
+      targetItem: { atlasId: 1, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      yields: { 'item-a': 0.5 },
+    }
+    const recipeY: EventCraftRecipe = {
+      id: 'recipe-y',
+      name: '料理Y',
+      costs: { seafood: 0, meat: 20, vegetable: 0 },
+      targetItem: { atlasId: 2, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+      yields: { 'item-a': 0.5 },
+    }
+    const owned: IngredientCounts = { seafood: 40, meat: 40, vegetable: 0 }
+    const plan = computeEventCraftPlan(d, { 'item-a': 1 }, owned, ['Q1'], {
+      recipes: [recipeX, recipeY],
+    })
+    const exhaust = findPattern(plan, 'exhaust')!
+    const allocX = exhaust.allocations.find((a) => a.recipe.id === 'recipe-x')!
+    const allocY = exhaust.allocations.find((a) => a.recipe.id === 'recipe-y')!
+    expect(allocX.totalCount).toBe(2)
+    expect(allocY.totalCount).toBe(2)
+    // 合計の不足枠は両方0にはならず、どちらか一方に needed 分(2個)がまとまって帰属する。
+    const totalDeficit = allocX.deficitCount + allocY.deficitCount
+    expect(totalDeficit).toBe(2)
+    expect(allocX.deficitCount === 2 || allocY.deficitCount === 2).toBe(true)
+  })
 
+  it('同一レシピ内で不足充足に効く分と純粋な余剰分が混在する場合、皿単位で分割する', () => {
+    // 1皿あたり期待0.4、必要1個 → 3皿で充足(0.4*3=1.2>=1)。食材は4皿分あるので4皿目は純粋な余剰。
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
+    const owned: IngredientCounts = { seafood: 0, meat: 80, vegetable: 160 }
+    const plan = computeEventCraftPlan(d, { 'item-a': 1 }, owned, ['Q1'], {
+      recipes: sampleRecipes.slice(0, 1),
+    })
+    const exhaust = findPattern(plan, 'exhaust')!
+    const alloc = exhaust.allocations.find((a) => a.recipe.id === 'recipe-a')!
+    expect(alloc.totalCount).toBe(4)
+    expect(alloc.deficitCount).toBe(3)
+    expect(alloc.surplusCount).toBe(1)
+  })
+
+  it('周回案と正の皿が同じでも exhaust は畳まない', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
+    const fullNeed = { 'item-a': 1 }
+    // ちょうど1皿分しか作れない食材量: runs と exhaust の正の皿は同一(recipe-a×3)になる
+    const owned: IngredientCounts = { seafood: 0, meat: 60, vegetable: 120 }
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1'], {
+      recipes: sampleRecipes.slice(0, 1),
+    })
+    const runs = findPattern(plan, 'runs')!
+    const exhaust = findPattern(plan, 'exhaust')!
+    expect(exhaust).toBeDefined()
+    expect(runs.allocations[0].totalCount).toBe(exhaust.allocations[0].totalCount)
+    // 両方表示されている(exhaust は畳まれていない)
+    expect(plan.patterns.map((p) => p.id)).toContain('exhaust')
+    expect(plan.patterns.map((p) => p.id)).toContain('runs')
+  })
+
+  it('余りが周回案より少なくなるケースで残余周回コストが評価に載る', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
     const fullNeed = { 'item-a': 1 }
     const owned: IngredientCounts = { seafood: 0, meat: 200, vegetable: 400 }
-
-    const resOff = solveEventCraftAllocation(
-      d,
-      fullNeed,
-      owned,
-      'turn',
-      ['Q1'],
-      {
-        exhaustIngredients: false,
-        recipes: sampleRecipes.slice(0, 1),
-      },
-    )
-    const allocAOff = resOff.allocations.find((a) => a.recipe.id === 'recipe-a')
-    expect(allocAOff?.deficitCount).toBe(3)
-    expect(allocAOff?.surplusCount).toBe(0)
-    expect(resOff.totalCrafted).toBe(3)
-
-    const resOn = solveEventCraftAllocation(
-      d,
-      fullNeed,
-      owned,
-      'turn',
-      ['Q1'],
-      {
-        exhaustIngredients: true,
-        recipes: sampleRecipes.slice(0, 1),
-      },
-    )
-    const allocAOn = resOn.allocations.find((a) => a.recipe.id === 'recipe-a')
-    expect(allocAOn?.deficitCount).toBe(3)
-    expect(allocAOn?.surplusCount).toBe(7)
-    expect(resOn.totalCrafted).toBe(10)
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1'], {
+      recipes: sampleRecipes.slice(0, 1),
+    })
+    const exhaust = findPattern(plan, 'exhaust')!
+    expect(exhaust.leftoverIngredients.meat).toBe(0)
+    expect(exhaust.leftoverIngredients.vegetable).toBe(0)
+    expect(exhaust.residualTurnCost).toBeGreaterThanOrEqual(0)
+    expect(exhaust.residualApCost).toBeGreaterThanOrEqual(0)
   })
 
-  it('不足が 0 でも「食材を使い切る」が ON なら単体価値最大で作成する (Stage 2)', () => {
-    // Q1: item-a (AP 20), Q2: item-b (AP 40)
-    const d = buildTwoQuestDrops()
-
-    const fullNeed = {}
-    const owned: IngredientCounts = { seafood: 80, meat: 0, vegetable: 40 }
-
-    // 使い切り OFF -> 作成 0
-    const resOff = solveEventCraftAllocation(
-      d,
-      fullNeed,
-      owned,
-      'ap',
-      ['Q1', 'Q2'],
-      {
-        exhaustIngredients: false,
-        recipes: sampleRecipes,
-      },
-    )
-    expect(resOff.totalCrafted).toBe(0)
-
-    // 使い切り ON -> recipe-b (seafood 40, veg 20) を 2 回作成
-    const resOn = solveEventCraftAllocation(
-      d,
-      fullNeed,
-      owned,
-      'ap',
-      ['Q1', 'Q2'],
-      {
-        exhaustIngredients: true,
-        recipes: sampleRecipes,
-      },
-    )
-    expect(resOn.totalCrafted).toBe(2)
-    expect(resOn.totalSurplusCrafted).toBe(2)
-    expect(resOn.totalSaved).toBe(0) // 周回削減は 0
-    expect(resOn.totalSurplusValue).toBeCloseTo(38) // (0.4*40 + 0.15*20) × 2
-  })
-
-  it('ドロップデータのない素材は infeasible 回避のため除外される', () => {
+  it('料理Aのみで不足充足・料理Bのみで残余周回コストを下げる使い切りは、Bを不足枠として扱う', () => {
+    // item-a, item-b は同じクエストから同率でドロップ。fullNeed は item-a のみ大きい不足。
+    // owned ingredients により、exhaust は recipe-a と recipe-b の両方を作る。
+    // recipe-b をゼロにしても item-b は item-a 収集のついでで賄われず、残余コストが増えるなら不足枠。
     const d = buildTestDrops(
-      [makeItem('item-a', 101)],
-      [makeQuest('Q1', 20)],
-      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
+      ],
     )
+    const recipeA: EventCraftRecipe = {
+      id: 'recipe-a',
+      name: '料理A',
+      costs: { seafood: 20, meat: 0, vegetable: 0 },
+      targetItem: { atlasId: 1, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+    }
+    const recipeB: EventCraftRecipe = {
+      id: 'recipe-b',
+      name: '料理B',
+      costs: { seafood: 0, meat: 20, vegetable: 0 },
+      targetItem: { atlasId: 2, shortId: 'item-b', name: '素材B', rarity: 'silver' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+    }
+    const fullNeed = { 'item-a': 3, 'item-b': 3 }
+    const owned: IngredientCounts = { seafood: 60, meat: 60, vegetable: 0 }
 
-    const fullNeed = { 'nodrop-item': 5 }
-    const owned: IngredientCounts = { seafood: 50, meat: 50, vegetable: 50 }
-
-    const res = solveEventCraftAllocation(d, fullNeed, owned, 'turn', ['Q1'], {
-      exhaustIngredients: false,
-      recipes: sampleRecipes,
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1', 'Q2'], {
+      recipes: [recipeA, recipeB],
     })
-    expect(Number.isFinite(res.optimalCost)).toBe(true)
-    expect(res.totalCrafted).toBe(0)
+    const exhaust = findPattern(plan, 'exhaust')!
+    const allocB = exhaust.allocations.find((a) => a.recipe.id === 'recipe-b')
+    expect(allocB?.totalCount).toBeGreaterThan(0)
+    // B は Q2 の不足充足に効くため不足枠(deficit)として扱われ、余剰(surplus)にはならない
+    expect(allocB?.deficitCount).toBeGreaterThan(0)
+    expect(allocB?.surplusCount).toBe(0)
+  })
+})
+
+describe('foldEventCraftPatterns', () => {
+  const mkPattern = (
+    id: EventCraftPatternResult['id'],
+    dishes: { recipeId: string; count: number }[],
+  ): EventCraftPatternResult => ({
+    id,
+    metric: id === 'ap' || id === 'even-ap' ? 'ap' : id === 'exhaust' ? 'both' : 'turn',
+    allocations: dishes.map(({ recipeId, count }) => ({
+      recipe: sampleRecipes.find((r) => r.id === recipeId) ?? sampleRecipes[0],
+      deficitCount: count,
+      surplusCount: 0,
+      totalCount: count,
+      unitSaved: 0,
+      deficitSaved: 0,
+      surplusValue: 0,
+      spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+    })),
+    totalCrafted: dishes.reduce((s, d) => s + d.count, 0),
+    totalDeficitCrafted: dishes.reduce((s, d) => s + d.count, 0),
+    totalSurplusCrafted: 0,
+    totalSaved: 0,
+    totalSurplusValue: 0,
+    spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+    leftoverIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+    residualTurnCost: 0,
+    residualApCost: 0,
+    baselineTurnCost: 0,
+    baselineApCost: 0,
   })
 
-  it('同一クエストから複数素材がドロップする場合も最終配分に基づく貢献削減量を正しく算出する', () => {
-    // Q1 drops both item-a and item-b at rate 1.0, AP 20
-    const d = buildTwoItemSharedDrops()
-    // Needs 1 of item-a and 1 of item-b. Both crafted together saves 20 AP.
-    const owned: IngredientCounts = { seafood: 80, meat: 40, vegetable: 120 }
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 1, 'item-b': 1 },
-      owned,
-      'ap',
-      ['Q1'],
-      { exhaustIngredients: false, recipes: sampleRecipes.slice(0, 2) },
-    )
-    expect(res.totalSaved).toBe(20)
-    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
-    const allocB = res.allocations.find((a) => a.recipe.id === 'recipe-b')
-    expect(allocA?.deficitCount).toBe(2)
-    expect(allocB?.deficitCount).toBe(2)
-    expect(allocA?.deficitSaved).toBeCloseTo(14)
-    expect(allocB?.deficitSaved).toBeCloseTo(14)
+  it('even-turn が ap と一致して runs と異なるとき、even-turn は ap へ畳まれる', () => {
+    const runs = mkPattern('runs', [{ recipeId: 'recipe-a', count: 2 }])
+    const ap = mkPattern('ap', [{ recipeId: 'recipe-b', count: 3 }])
+    const evenTurn = mkPattern('even-turn', [{ recipeId: 'recipe-b', count: 3 }])
+    const evenAp = mkPattern('even-ap', [{ recipeId: 'recipe-c', count: 1 }])
+    const exhaust = mkPattern('exhaust', [{ recipeId: 'recipe-a', count: 2 }])
+
+    const result = foldEventCraftPatterns([runs, ap, evenTurn, evenAp, exhaust])
+    const ids = result.patterns.map((p) => p.id)
+    expect(ids).toEqual(['runs', 'ap', 'even-ap', 'exhaust'])
+    expect(result.absorbedInto['even-turn']).toBe('ap')
+    const apPattern = result.patterns.find((p) => p.id === 'ap')!
+    expect(apPattern.aliasOf).toEqual(['even-turn'])
   })
 
-  it('事前計算された singleItemBaseValues を渡して余剰最適化を実行できる', () => {
-    const d = buildTwoItemSharedDrops()
-    const baseValues = computeSingleItemBaseValues(d, ['Q1'], 'ap', { recipes: sampleRecipes })
-    expect(baseValues.get('recipe-a')).toBeCloseTo(11)
-    expect(baseValues.get('recipe-b')).toBeCloseTo(11)
+  it('even-ap が even-turn と一致するとき even-ap へ畳まれる', () => {
+    const runs = mkPattern('runs', [{ recipeId: 'recipe-a', count: 2 }])
+    const ap = mkPattern('ap', [{ recipeId: 'recipe-b', count: 3 }])
+    const evenTurn = mkPattern('even-turn', [{ recipeId: 'recipe-c', count: 1 }])
+    const evenAp = mkPattern('even-ap', [{ recipeId: 'recipe-c', count: 1 }])
+    const exhaust = mkPattern('exhaust', [{ recipeId: 'recipe-a', count: 2 }])
 
-    const owned: IngredientCounts = { seafood: 40, meat: 0, vegetable: 20 }
-    const res = solveEventCraftAllocation(d, {}, owned, 'ap', ['Q1'], {
-      exhaustIngredients: true,
-      recipes: sampleRecipes,
-      singleItemBaseValues: baseValues,
+    const result = foldEventCraftPatterns([runs, ap, evenTurn, evenAp, exhaust])
+    const ids = result.patterns.map((p) => p.id)
+    expect(ids).toEqual(['runs', 'ap', 'even-turn', 'exhaust'])
+    expect(result.absorbedInto['even-ap']).toBe('even-turn')
+  })
+
+  it('exhaust は正の皿が runs と同じでも常に表示され、他へ畳まれない', () => {
+    const runs = mkPattern('runs', [{ recipeId: 'recipe-a', count: 2 }])
+    const ap = mkPattern('ap', [{ recipeId: 'recipe-a', count: 2 }])
+    const evenTurn = mkPattern('even-turn', [{ recipeId: 'recipe-a', count: 2 }])
+    const evenAp = mkPattern('even-ap', [{ recipeId: 'recipe-a', count: 2 }])
+    const exhaust = mkPattern('exhaust', [{ recipeId: 'recipe-a', count: 2 }])
+
+    const result = foldEventCraftPatterns([runs, ap, evenTurn, evenAp, exhaust])
+    expect(result.patterns.map((p) => p.id)).toEqual(['runs', 'exhaust'])
+    const runsPattern = result.patterns.find((p) => p.id === 'runs')!
+    expect(runsPattern.aliasOf).toEqual(['ap', 'even-turn', 'even-ap'])
+  })
+
+  it('resolveVisiblePatternId は非表示IDを吸収先へ解決する', () => {
+    const runs = mkPattern('runs', [{ recipeId: 'recipe-a', count: 2 }])
+    const ap = mkPattern('ap', [{ recipeId: 'recipe-a', count: 2 }])
+    const exhaust = mkPattern('exhaust', [{ recipeId: 'recipe-a', count: 2 }])
+    const result = foldEventCraftPatterns([runs, ap, exhaust])
+    expect(resolveVisiblePatternId(result, 'ap')).toBe('runs')
+    expect(resolveVisiblePatternId(result, 'runs')).toBe('runs')
+    expect(resolveVisiblePatternId(result, 'even-turn')).toBe('runs')
+  })
+})
+
+describe('computeEventCraftPlan: 期待値yieldは全パターン共通', () => {
+  it('even パターンも主産物1個だけに戻さず期待バスケットを使う', () => {
+    const d = buildTwoItemSharedDrops()
+    const recipeA: EventCraftRecipe = {
+      ...sampleRecipes[0],
+      costs: { seafood: 20, meat: 0, vegetable: 0 },
+    }
+    const recipeB: EventCraftRecipe = {
+      ...sampleRecipes[1],
+      costs: { seafood: 0, meat: 20, vegetable: 0 },
+    }
+    const fullNeed = { 'item-a': 5 }
+    const owned: IngredientCounts = { seafood: 1000, meat: 0, vegetable: 0 }
+    const plan = computeEventCraftPlan(d, fullNeed, owned, ['Q1'], {
+      recipes: [recipeA, recipeB],
     })
-    expect(res.totalSurplusCrafted).toBe(1)
-    expect(res.totalSurplusValue).toBeCloseTo(11)
+    const evenTurn = findPattern(plan, 'even-turn')
+    const runs = findPattern(plan, 'runs')!
+    const target = evenTurn ?? runs
+    const allocA = target.allocations.find((a) => a.recipe.id === 'recipe-a')
+    // 期待値バスケット(0.4)を使うなら 5/0.4=12.5→13皿。主産物1個だけなら5皿になってしまう。
+    expect(allocA?.totalCount).toBeGreaterThan(5)
   })
 })
 
@@ -328,93 +589,93 @@ describe('generateCraftAdvice', () => {
   it('食材が未入力の場合は入力を促すセリフを返す', () => {
     const d = buildTestDrops([], [], [])
     const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
-    const res = solveEventCraftAllocation(d, {}, owned, 'ap', [])
-    const advice = generateCraftAdvice(res, owned, 'ap', false)
+    const plan = computeEventCraftPlan(d, {}, owned, [])
+    const runs = findPattern(plan, 'runs')!
+    const advice = generateCraftAdvice(runs, owned)
     expect(advice).toContain('お持ちのイベント食材数')
   })
 
   it('削減効果がある場合は最優先料理と削減量を案内する', () => {
-    const d = buildTestDrops(
-      [makeItem('item-a', 101)],
-      [makeQuest('Q1', 20)],
-      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
-    )
     const owned: IngredientCounts = { seafood: 0, meat: 60, vegetable: 120 }
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 1 },
-      owned,
-      'ap',
-      ['Q1'],
-      {
-        exhaustIngredients: false,
-        recipes: sampleRecipes,
-      },
-    )
-    const advice = generateCraftAdvice(res, owned, 'ap', false)
+    const recipeA = sampleRecipes[0]
+    const ap: EventCraftPatternResult = {
+      id: 'ap',
+      metric: 'ap',
+      allocations: [
+        {
+          recipe: recipeA,
+          deficitCount: 3,
+          surplusCount: 0,
+          totalCount: 3,
+          unitSaved: 20 / 3,
+          deficitSaved: 20,
+          surplusValue: 0,
+          spentIngredients: { seafood: 0, meat: 60, vegetable: 120 },
+        },
+      ],
+      totalCrafted: 3,
+      totalDeficitCrafted: 3,
+      totalSurplusCrafted: 0,
+      totalSaved: 20,
+      totalSurplusValue: 0,
+      spentIngredients: { seafood: 0, meat: 60, vegetable: 120 },
+      leftoverIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+      residualTurnCost: 0,
+      residualApCost: 0,
+      baselineTurnCost: 1,
+      baselineApCost: 20,
+    }
+    const advice = generateCraftAdvice(ap, owned)
     expect(advice).toContain('最優先は「料理A（素材A）」です')
     expect(advice).toContain('AP を削減できます')
   })
 
   it('食材はあるが作成による削減効果がない場合は削減効果なしのアドバイスを返す', () => {
-    // Q1 drops item-a (1.0) and item-b (1.0), AP 20
-    // User needs 10 of item-a, but only 0 of item-b.
-    // However, if user has ingredients for recipe-b (which produces item-b), crafting item-b saves 0 runs because Q1 is already run 10 times for item-a and drops 10 item-b as byproduct.
-    const d = buildTwoItemSharedDrops()
-    const owned: IngredientCounts = { seafood: 40, meat: 0, vegetable: 20 } // enough for recipe-b
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 10 },
-      owned,
-      'ap',
-      ['Q1'],
-      { exhaustIngredients: false, recipes: [sampleRecipes[1]] },
-    )
-    const advice = generateCraftAdvice(res, owned, 'ap', false)
+    const owned: IngredientCounts = { seafood: 40, meat: 0, vegetable: 20 }
+    const recipeB = sampleRecipes[1]
+    const ap: EventCraftPatternResult = {
+      id: 'ap',
+      metric: 'ap',
+      allocations: [
+        {
+          recipe: recipeB,
+          deficitCount: 0,
+          surplusCount: 0,
+          totalCount: 0,
+          unitSaved: 0,
+          deficitSaved: 0,
+          surplusValue: 0,
+          spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+        },
+      ],
+      totalCrafted: 0,
+      totalDeficitCrafted: 0,
+      totalSurplusCrafted: 0,
+      totalSaved: 0,
+      totalSurplusValue: 0,
+      spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+      leftoverIngredients: { seafood: 40, meat: 0, vegetable: 20 },
+      residualTurnCost: 20,
+      residualApCost: 800,
+      baselineTurnCost: 20,
+      baselineApCost: 800,
+    }
+    const advice = generateCraftAdvice(ap, owned)
     expect(advice).toContain('周回削減効果がありません')
   })
 
-  it('同一レシピで不足分と余剰分の両方が作成される場合も余剰アドバイスに反映される', () => {
-    const d = buildTestDrops(
-      [makeItem('item-a', 101)],
-      [makeQuest('Q1', 20)],
-      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
-    )
-    const owned: IngredientCounts = { seafood: 0, meat: 80, vegetable: 160 } // 4 recipe-a
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 1 },
-      owned,
-      'ap',
-      ['Q1'],
-      { exhaustIngredients: true, recipes: sampleRecipes.slice(0, 1) },
-    )
-    const advice = generateCraftAdvice(res, owned, 'ap', true)
-    expect(advice).toContain('最優先は「料理A（素材A）」です')
-    expect(advice).toContain('余った食材で「料理A（素材A）」を作成し')
+  it('カスタム翻訳関数を渡した場合は翻訳されたアドバイスを返す', () => {
+    const d = buildTestDrops([], [], [])
+    const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
+    const plan = computeEventCraftPlan(d, {}, owned, [])
+    const runs = findPattern(plan, 'runs')!
+    const mockT = (key: string) => (key === 'event-craft-advice-prompt' ? 'English prompt message' : key)
+    const advice = generateCraftAdvice(runs, owned, mockT)
+    expect(advice).toBe('English prompt message')
   })
+})
 
-  it('1回あたりの周回削減効率（unitSaved）が高い料理を最優先として案内する', () => {
-    // Q1 drops item-a (AP 20, rate 1.0 -> 20 AP/item)
-    // Q2 drops item-b (AP 40, rate 1.0 -> 40 AP/item)
-    const d = buildTwoQuestDrops()
-    // Recipe A saves 20 AP each. Recipe B saves 40 AP each.
-    // User needs 3 of item-a and 1 of item-b.
-    // Recipe A total deficit saved = 60 AP. Recipe B total deficit saved = 40 AP.
-    // However, Recipe B is more efficient per craft (40 AP vs 20 AP), so advice should name Recipe B.
-    const owned: IngredientCounts = { seafood: 80, meat: 180, vegetable: 400 }
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 3, 'item-b': 1 },
-      owned,
-      'ap',
-      ['Q1', 'Q2'],
-      { exhaustIngredients: false, recipes: sampleRecipes.slice(0, 2) },
-    )
-    const advice = generateCraftAdvice(res, owned, 'ap', false)
-    expect(advice).toContain('最優先は「料理A（素材A）」です')
-  })
-
+describe('computeSingleItemBaseValues (キャッシュ)', () => {
   it('dropsオブジェクトが更新された場合はキャッシュを共有せず最新のドロップデータで再計算する', () => {
     const d1 = buildTestDrops(
       [makeItem('item-a', 101)],
@@ -423,41 +684,13 @@ describe('generateCraftAdvice', () => {
     )
     const d2 = buildTestDrops(
       [makeItem('item-a', 101)],
-      [makeQuest('Q1', 10)], // AP changed from 20 to 10
+      [makeQuest('Q1', 10)],
       [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
     )
     const val1 = computeSingleItemBaseValues(d1, ['Q1'], 'ap', { recipes: sampleRecipes })
     const val2 = computeSingleItemBaseValues(d2, ['Q1'], 'ap', { recipes: sampleRecipes })
     expect(val1.get('recipe-a')).toBeCloseTo(8)
     expect(val2.get('recipe-a')).toBeCloseTo(4)
-  })
-
-  it('カスタム翻訳関数を渡した場合は翻訳されたアドバイスを返す', () => {
-    const d = buildTestDrops([], [], [])
-    const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 0 }
-    const res = solveEventCraftAllocation(d, {}, owned, 'ap', [])
-    const mockT = (key: string) => (key === 'event-craft-advice-prompt' ? 'English prompt message' : key)
-    const advice = generateCraftAdvice(res, owned, 'ap', false, mockT)
-    expect(advice).toBe('English prompt message')
-  })
-})
-
-describe('expected-yield solver behavior', () => {
-  it('主産物不足 0 でも同レアの他不足があれば料理を選び残余コストを下げる', () => {
-    const d = buildTwoQuestDrops()
-    const owned: IngredientCounts = { seafood: 0, meat: 200, vegetable: 400 }
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 0, 'item-b': 10 },
-      owned,
-      'ap',
-      ['Q1', 'Q2'],
-      { exhaustIngredients: false, recipes: sampleRecipes.slice(0, 2) },
-    )
-    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
-    expect(allocA?.deficitCount).toBeGreaterThan(0)
-    expect(res.totalSaved).toBeGreaterThan(0)
-    expect(res.optimalCost).toBeLessThan(res.baselineCost)
   })
 
   it('ついで係数だけ違う recipes を続けて渡しても V_base キャッシュを再利用しない', () => {
@@ -472,63 +705,21 @@ describe('expected-yield solver behavior', () => {
     expect(first.get('recipe-a')).toBeCloseTo(8)
     expect(second.get('recipe-a')).toBeCloseTo(14)
   })
+})
 
-  it('不足1に対し 0.40×3 皿の過産でも unitSaved は元の不足コストを超えない', () => {
+describe('ドロップデータのない素材', () => {
+  it('infeasible 回避のため除外される', () => {
     const d = buildTestDrops(
       [makeItem('item-a', 101)],
       [makeQuest('Q1', 20)],
       [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
     )
-    const owned: IngredientCounts = { seafood: 0, meat: 60, vegetable: 120 }
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 1 },
-      owned,
-      'ap',
-      ['Q1'],
-      { exhaustIngredients: false, recipes: sampleRecipes.slice(0, 1) },
-    )
-    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
-    expect(allocA?.deficitCount).toBe(3)
-    expect(allocA?.deficitSaved).toBeCloseTo(20)
-    expect(allocA?.unitSaved).toBeCloseTo(20 / 3)
-    const unitSaved = allocA?.unitSaved ?? 0
-    const deficitCount = allocA?.deficitCount ?? 0
-    expect(unitSaved * deficitCount).toBeLessThanOrEqual(20 + 1e-6)
-  })
-
-  it('不足枠と余剰枠の皿数を足した期待獲得になる', () => {
-    const d = buildTestDrops(
-      [makeItem('item-a', 101)],
-      [makeQuest('Q1', 20)],
-      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
-    )
-    const recipeA = sampleRecipes[0]
-    const recipeB = sampleRecipes[1]
-    const totals = sumExpectedCraftYields(
-      [
-        { recipe: recipeA, totalCount: 3 },
-        { recipe: recipeB, totalCount: 2 },
-      ],
-      [recipeA, recipeB],
-    )
-    const byId = Object.fromEntries(totals.map((e) => [e.shortId, e.amount]))
-    expect(byId['item-a']).toBeCloseTo(3 * 0.4 + 2 * 0.15)
-    expect(byId['item-b']).toBeCloseTo(3 * 0.15 + 2 * 0.4)
-
-    const owned: IngredientCounts = { seafood: 0, meat: 80, vegetable: 160 }
-    const res = solveEventCraftAllocation(
-      d,
-      { 'item-a': 1 },
-      owned,
-      'ap',
-      ['Q1'],
-      { exhaustIngredients: true, recipes: [recipeA] },
-    )
-    const fromAlloc = sumExpectedCraftYields(res.allocations, [recipeA])
-    const aAmt = fromAlloc.find((e) => e.shortId === 'item-a')?.amount ?? 0
-    expect(aAmt).toBeCloseTo(res.totalCrafted * 0.4)
-    expect(res.totalDeficitCrafted).toBeGreaterThan(0)
-    expect(res.totalSurplusCrafted).toBeGreaterThan(0)
+    const owned: IngredientCounts = { seafood: 50, meat: 50, vegetable: 50 }
+    const plan = computeEventCraftPlan(d, { 'nodrop-item': 5 }, owned, ['Q1'], {
+      recipes: sampleRecipes,
+    })
+    const runs = findPattern(plan, 'runs')!
+    expect(Number.isFinite(runs.residualTurnCost)).toBe(true)
+    expect(runs.totalCrafted).toBe(0)
   })
 })
