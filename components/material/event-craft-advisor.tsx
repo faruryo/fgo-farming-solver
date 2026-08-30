@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { KeyboardEvent, useCallback, useMemo } from 'react'
+import { Dispatch, KeyboardEvent, SetStateAction, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
@@ -642,6 +642,7 @@ const useEventCraftPlan = (
   drops: Drops & { isLoading?: boolean },
   fullNeed: Record<string, number>,
   config: EventCraftAdvisorConfig,
+  setConfig: Dispatch<SetStateAction<EventCraftAdvisorConfig>>,
 ) => {
   const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
@@ -654,6 +655,16 @@ const useEventCraftPlan = (
 
   const selectedPatternId = resolveVisiblePatternId(plan, config.planPattern)
   const selectedPattern = plan.patterns.find((p) => p.id === selectedPatternId)
+
+  // 保存中のパターンが畳まれて非表示のとき、吸収先を選択として永続化し直す。こうしないと
+  // localStorage には古い非表示IDが残り、後で条件が変わってそのIDが再び表示された際に
+  // ユーザーの意図しない選択へ静かに戻ってしまう。
+  useEffect(() => {
+    if (!isDataReady) return
+    if (selectedPatternId === config.planPattern) return
+    const resolvedAt = config.planPattern
+    setConfig((prev) => (prev.planPattern === resolvedAt ? { ...prev, planPattern: selectedPatternId } : prev))
+  }, [isDataReady, selectedPatternId, config.planPattern, setConfig])
 
   const advice = useMemo(
     () =>
@@ -701,7 +712,7 @@ const useAdvisorState = () => {
     [setConfig],
   )
 
-  return { config, setIngredientCount, selectPattern, reset }
+  return { config, setConfig, setIngredientCount, selectPattern, reset }
 }
 
 export const EventCraftAdvisor = ({
@@ -709,9 +720,9 @@ export const EventCraftAdvisor = ({
   fullNeed,
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
-  const { config, setIngredientCount, selectPattern, reset } = useAdvisorState()
+  const { config, setConfig, setIngredientCount, selectPattern, reset } = useAdvisorState()
   const { plan, selectedPatternId, selectedPattern, advice, isDataReady } =
-    useEventCraftPlan(drops, fullNeed, config)
+    useEventCraftPlan(drops, fullNeed, config, setConfig)
   const { t } = useTranslation('material')
   const unitLabel =
     selectedPattern?.metric === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')

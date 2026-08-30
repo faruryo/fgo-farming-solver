@@ -262,6 +262,11 @@ describe('EventCraftAdvisor pattern cards', () => {
     expect(screen.getByRole('radio', { name: /周回を減らす/ }).getAttribute('aria-checked')).toBe(
       'true',
     )
+
+    // 吸収先を選択として表示するだけでなく、localStorage にも書き戻す。書き戻さないと
+    // even-turn が後で再び表示されるようになったとき、ユーザーの意図に反して静かに選択が戻ってしまう。
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}')
+    expect(stored.planPattern).toBe('runs')
   })
 })
 
