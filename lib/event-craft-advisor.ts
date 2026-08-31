@@ -699,11 +699,8 @@ const executeSolveStages = (
     )
     deficitCounts = pruned.counts
     if (newlyBanned.length === 0) break
-    for (const r of newlyBanned) banned.add(r.id)
+    banned.add(newlyBanned[0].id)
   }
-  plan = evaluateDeficitPlan(
-    ctx, deficitCounts, recipes, ownedIngredients, exhaust, singleItemBaseValues,
-  )
   const allocated = buildAllocations(
     recipes,
     deficitCounts,

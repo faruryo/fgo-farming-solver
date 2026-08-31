@@ -626,4 +626,40 @@ describe('皿決めMILPを絞ったあとの残余評価', () => {
     expect(res.allocations.find((a) => a.recipe.id === 'recipe-a')?.deficitCount).toBe(0)
     expect(res.allocations.find((a) => a.recipe.id === 'recipe-b')?.deficitCount).toBe(1)
   })
+
+  it('leave-one-out削減が同時に0の皿は、片方だけ禁じて残りを再評価する', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-z', 199), makeItem('item-b', 102)],
+      [makeQuest('Qa', 20), makeQuest('Qb', 20)],
+      [
+        { quest_id: 'Qa', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Qa', item_id: 'item-z', drop_rate: 1 },
+        { quest_id: 'Qb', item_id: 'item-b', drop_rate: 1 },
+        { quest_id: 'Qb', item_id: 'item-z', drop_rate: 1 },
+      ],
+    )
+    const recipeA: EventCraftRecipe = {
+      ...sampleRecipes[0],
+      costs: { seafood: 0, meat: 10, vegetable: 0 },
+      yields: { 'item-a': 1 },
+    }
+    const recipeB: EventCraftRecipe = {
+      ...sampleRecipes[1],
+      costs: { seafood: 0, meat: 10, vegetable: 0 },
+      yields: { 'item-b': 1 },
+    }
+    const owned: IngredientCounts = { seafood: 0, meat: 20, vegetable: 0 }
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 1, 'item-z': 1, 'item-b': 1 },
+      owned,
+      'turn',
+      ['Qa', 'Qb'],
+      { exhaustIngredients: false, recipes: [recipeA, recipeB] },
+    )
+    expect(res.baselineCost).toBeCloseTo(2)
+    expect(res.optimalCost).toBeCloseTo(1)
+    expect(res.totalSaved).toBeCloseTo(1)
+    expect(res.totalDeficitCrafted).toBe(1)
+  })
 })
