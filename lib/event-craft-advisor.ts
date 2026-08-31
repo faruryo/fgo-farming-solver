@@ -638,6 +638,39 @@ const dropDeficitsThatDoNotReduceResidual = (
   return { counts, dropped }
 }
 
+const farmableNeedForRecipes = (
+  ctx: SolverContext,
+  recipes: readonly EventCraftRecipe[],
+): Map<string, number> => {
+  const targets = getRecipeYieldTargets(recipes)
+  return new Map(
+    [...extractFarmableNeed(ctx.fullNeed, ctx.itemsWithDropData)].filter(([itemId]) =>
+      targets.has(itemId),
+    ),
+  )
+}
+
+const evaluateDeficitPlan = (
+  ctx: SolverContext,
+  deficitCounts: Map<string, number>,
+  recipes: readonly EventCraftRecipe[],
+  ownedIngredients: IngredientCounts,
+  exhaust: boolean,
+  singleItemBaseValues: Map<string, number>,
+) => {
+  const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+  const surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
+  const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+  const residualCost = continuousOptimalCost(
+    ctx.drops,
+    remainingNeed,
+    Array.from(ctx.allowedQuests),
+    ctx.mode,
+  )
+  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  return { remaining, surplusCounts, residualCost, allocatedSavings }
+}
+
 const executeSolveStages = (
   ctx: SolverContext,
   ownedIngredients: IngredientCounts,
@@ -645,39 +678,40 @@ const executeSolveStages = (
   recipes: readonly EventCraftRecipe[],
   exhaust: boolean,
 ) => {
-  let { deficitCounts } = solveStage1(ctx)
-  let remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
-  let surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
-  let remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
-  let residualCost = continuousOptimalCost(
-    ctx.drops,
-    remainingNeed,
-    Array.from(ctx.allowedQuests),
-    ctx.mode,
-  )
-  let allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
-  const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, allocatedSavings)
-  if (pruned.dropped) {
-    deficitCounts = pruned.counts
-    remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
-    surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
-    remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
-    residualCost = continuousOptimalCost(
-      ctx.drops,
-      remainingNeed,
-      Array.from(ctx.allowedQuests),
-      ctx.mode,
+  const banned = new Set<string>()
+  let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
+  let plan
+  for (let i = 0; i < recipes.length + 1; i++) {
+    const active = recipes.filter((r) => !banned.has(r.id))
+    const stageCtx: SolverContext = {
+      ...ctx,
+      recipes: active,
+      farmableNeed: farmableNeedForRecipes(ctx, active),
+    }
+    const solved = solveStage1(stageCtx)
+    deficitCounts = new Map(recipes.map((r) => [r.id, solved.deficitCounts.get(r.id) ?? 0]))
+    plan = evaluateDeficitPlan(
+      ctx, deficitCounts, recipes, ownedIngredients, exhaust, singleItemBaseValues,
     )
-    allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+    const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, plan.allocatedSavings)
+    const newlyBanned = recipes.filter(
+      (r) => pruned.dropped && (pruned.counts.get(r.id) ?? 0) === 0 && (deficitCounts.get(r.id) ?? 0) > 0,
+    )
+    deficitCounts = pruned.counts
+    if (newlyBanned.length === 0) break
+    for (const r of newlyBanned) banned.add(r.id)
   }
+  plan = evaluateDeficitPlan(
+    ctx, deficitCounts, recipes, ownedIngredients, exhaust, singleItemBaseValues,
+  )
   const allocated = buildAllocations(
     recipes,
     deficitCounts,
-    surplusCounts,
-    allocatedSavings,
+    plan.surplusCounts,
+    plan.allocatedSavings,
     singleItemBaseValues,
   )
-  return { allocated, optimalCost: residualCost }
+  return { allocated, optimalCost: plan.residualCost }
 }
 
 export const solveEventCraftAllocation = (
