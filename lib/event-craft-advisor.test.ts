@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import fs from 'fs'
+import path from 'path'
 import {
   computeEventCraftPlan,
   foldEventCraftPatterns,
@@ -779,5 +781,186 @@ describe('ドロップデータのない素材', () => {
     const runs = getPattern(plan, 'runs')
     expect(Number.isFinite(runs.residualTurnCost)).toBe(true)
     expect(runs.totalCrafted).toBe(0)
+  })
+})
+
+describe('タイムアウト安全ガード', () => {
+  it('timeoutMs を超過した場合は即座に計算を打ち切って0皿のフォールバック結果を返す(runs/exhaust両方維持)', () => {
+    const d = buildTwoQuestDrops()
+    const owned: IngredientCounts = { seafood: 100, meat: 100, vegetable: 100 }
+    const plan = computeEventCraftPlan(d, { 'item-a': 5 }, owned, ['Q1', 'Q2'], {
+      recipes: sampleRecipes,
+      timeoutMs: -1, // 即座にタイムアウト
+    })
+    expect(plan.patterns.length).toBeGreaterThan(0)
+    const runs = getPattern(plan, 'runs')
+    const exhaust = getPattern(plan, 'exhaust')
+    expect(runs.totalCrafted).toBe(0)
+    expect(exhaust.totalCrafted).toBe(0)
+    expect(runs.residualTurnCost).toBe(runs.baselineTurnCost)
+  })
+
+  it('timeoutMs に NaN が渡された場合もデフォルト値で安全に正常計算される', () => {
+    const d = buildTwoQuestDrops()
+    const owned: IngredientCounts = { seafood: 100, meat: 100, vegetable: 100 }
+    const plan = computeEventCraftPlan(d, { 'item-a': 5 }, owned, ['Q1', 'Q2'], {
+      recipes: sampleRecipes,
+      timeoutMs: Number.NaN,
+    })
+    expect(plan.patterns.length).toBeGreaterThan(0)
+    const runs = getPattern(plan, 'runs')
+    expect(runs.totalCrafted).toBeGreaterThan(0)
+  })
+
+  it('計算途中で timeoutMs を超過した場合も部分的な余剰料理を返さず安全に0皿フォールバックする', () => {
+    const d = buildTwoQuestDrops()
+    const owned: IngredientCounts = { seafood: 100, meat: 100, vegetable: 100 }
+
+    const originalNow = Date.now
+    let callCount = 0
+    // 初回（startTime取得）は0、それ以降（solveやclassifyのループ中）は期限切れ(50ms)を返す
+    vi.spyOn(Date, 'now').mockImplementation(() => {
+      callCount++
+      return callCount === 1 ? 1000 : 1050
+    })
+
+    try {
+      const plan = computeEventCraftPlan(d, { 'item-a': 5 }, owned, ['Q1', 'Q2'], {
+        recipes: sampleRecipes,
+        timeoutMs: 10,
+      })
+      for (const pattern of plan.patterns) {
+        expect(pattern.totalCrafted).toBe(0)
+        expect(pattern.totalDeficitCrafted).toBe(0)
+        expect(pattern.totalSurplusCrafted).toBe(0)
+      }
+    } finally {
+      Date.now = originalNow
+      vi.restoreAllMocks()
+    }
+  })
+})
+
+describe('食材消費最大化(exhaust)の厳密性', () => {
+  it('レシピの組み合わせで食材消費を最大化する', () => {
+    const d = buildTwoQuestDrops()
+    // seafood=6, meat=2: 料理A(2,2,0)を1皿作ると残り4個で終了だが、料理B(3,1,0)なら2皿で8個全消費
+    const customRecipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-a',
+        name: '料理A',
+        costs: { seafood: 2, meat: 2, vegetable: 0 },
+        yieldCount: 1,
+        targetItem: { atlasId: 101, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+        yields: { 'item-a': 1 },
+      },
+      {
+        id: 'recipe-b',
+        name: '料理B',
+        costs: { seafood: 3, meat: 1, vegetable: 0 },
+        yieldCount: 1,
+        targetItem: { atlasId: 102, shortId: 'item-b', name: '素材B', rarity: 'bronze' },
+        yields: { 'item-b': 1 },
+      },
+    ]
+    const owned: IngredientCounts = { seafood: 6, meat: 2, vegetable: 0 }
+    const plan = computeEventCraftPlan(d, {}, owned, ['Q1', 'Q2'], {
+      recipes: customRecipes,
+    })
+    const exhaust = getPattern(plan, 'exhaust')
+    expect(exhaust.spentIngredients.seafood).toBe(6)
+    expect(exhaust.spentIngredients.meat).toBe(2)
+    const allocB = exhaust.allocations.find((a) => a.recipe.id === 'recipe-b')
+    expect(allocB?.totalCount).toBe(2)
+  })
+
+  it('ついでドロップがある場合、真に周回削減に寄与する皿数のみを不足枠とし残りを余剰枠とする', () => {
+    // Q1: item-a 1.0 (ap: 20)
+    // Q2: item-b 1.0, item-a 0.5 (ap: 20)
+    // Need: item-a: 10, item-b: 10
+    // item-b を 10 個集めるため Q2 を 10 周すると item-a も 5 個集まる。
+    // そのため料理A (yield: item-a 1個) を 10 皿作っても、不足削減に効くのは 5 皿分だけ。
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q2', item_id: 'item-b', drop_rate: 1.0 },
+        { quest_id: 'Q2', item_id: 'item-a', drop_rate: 0.5 },
+      ],
+    )
+    const customRecipes: EventCraftRecipe[] = [
+      {
+        id: 'recipe-a',
+        name: '料理A',
+        costs: { seafood: 1, meat: 0, vegetable: 0 },
+        yieldCount: 1,
+        targetItem: { atlasId: 101, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+        yields: { 'item-a': 1 },
+      },
+    ]
+    const owned: IngredientCounts = { seafood: 10, meat: 0, vegetable: 0 }
+    const plan = computeEventCraftPlan(d, { 'item-a': 10, 'item-b': 10 }, owned, ['Q1', 'Q2'], {
+      recipes: customRecipes,
+    })
+    const exhaust = getPattern(plan, 'exhaust')
+    const allocA = exhaust.allocations.find((a) => a.recipe.id === 'recipe-a')
+    expect(allocA?.totalCount).toBe(10)
+    expect(allocA?.deficitCount).toBe(5)
+    expect(allocA?.surplusCount).toBe(5)
+  })
+})
+
+describe('実データ規模での性能・計算時間保証', () => {
+  const rawDrops = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '..', 'mocks', 'all.json'), 'utf8'),
+  ) as Drops
+  const drops: Drops = {
+    items: rawDrops.items,
+    quests: rawDrops.quests,
+    drop_rates: rawDrops.drop_rates,
+    campaigns: rawDrops.campaigns ?? [],
+  }
+  const questIds = drops.quests.map((q) => q.id)
+  const uniqueItemIds = Array.from(new Set(drops.drop_rates.map((dr) => dr.item_id)))
+  const USER_STORY_NEED = 1000
+  const USER_STORY_INGREDIENTS: IngredientCounts = {
+    seafood: 100_000,
+    meat: 100_000,
+    vegetable: 100_000,
+  }
+
+  it('297クエスト規模の本番データで正しく全パターン計算できる', () => {
+    const fullNeed: Record<string, number> = {}
+    for (const id of uniqueItemIds) {
+      Reflect.set(fullNeed, id, USER_STORY_NEED)
+    }
+
+    const plan = computeEventCraftPlan(drops, fullNeed, USER_STORY_INGREDIENTS, questIds)
+    expect(plan.patterns.length).toBeGreaterThan(0)
+    const runs = getPattern(plan, 'runs')
+    const exhaust = getPattern(plan, 'exhaust')
+    expect(runs.totalCrafted).toBeGreaterThan(0)
+    expect(exhaust.totalCrafted).toBeGreaterThan(0)
+  })
+
+  it('カタログ全不足・品目1000・食材各10万でも10秒以内に全パターン計算を完了する', () => {
+    const fullNeed: Record<string, number> = {}
+    for (const id of uniqueItemIds) {
+      Reflect.set(fullNeed, id, USER_STORY_NEED)
+    }
+
+    computeEventCraftPlan(drops, fullNeed, USER_STORY_INGREDIENTS, questIds)
+
+    const times: number[] = []
+    for (let i = 0; i < 3; i++) {
+      const t0 = performance.now()
+      computeEventCraftPlan(drops, fullNeed, USER_STORY_INGREDIENTS, questIds)
+      times.push(performance.now() - t0)
+    }
+    times.sort((a, b) => a - b)
+    const medianElapsed = times[1]
+
+    expect(medianElapsed).toBeLessThan(10_000)
   })
 })

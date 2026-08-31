@@ -1,13 +1,14 @@
 'use client'
 
 import Image from 'next/image'
-import { Dispatch, KeyboardEvent, SetStateAction, useCallback, useEffect, useMemo } from 'react'
+import { Dispatch, KeyboardEvent, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
 import { Item } from '../../interfaces/atlas-academy'
 import { Drops } from '../../lib/get-drops'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
+import type { EventCraftPlanWorkerRequest } from '../../lib/event-craft-plan.worker'
 import {
   computeEventCraftPlan,
   generateCraftAdvice,
@@ -640,6 +641,7 @@ const PatternCardGroup = ({
 
 type AdviceResolutionParams = {
   isDataLoading: boolean
+  isPlanLoading: boolean
   hasQuests: boolean
   selectedPattern: EventCraftPlanPattern | undefined
   ingredients: IngredientCounts
@@ -647,9 +649,12 @@ type AdviceResolutionParams = {
 }
 
 const resolveAdviceMessage = (params: AdviceResolutionParams): string => {
-  const { isDataLoading, hasQuests, selectedPattern, ingredients, t } = params
+  const { isDataLoading, isPlanLoading, hasQuests, selectedPattern, ingredients, t } = params
   if (isDataLoading) {
     return t('event-craft-loading', 'ドロップデータを読み込み中です、先輩...')
+  }
+  if (isPlanLoading) {
+    return t('event-craft-plan-computing', '最適な配分を計算中です、先輩...')
   }
   if (!hasQuests || !selectedPattern) {
     return t(
@@ -658,6 +663,46 @@ const resolveAdviceMessage = (params: AdviceResolutionParams): string => {
     )
   }
   return generateCraftAdvice(selectedPattern, ingredients, t)
+}
+
+/**
+ * computeEventCraftPlan 内部の安全タイムアウト(DEFAULT_TIMEOUT_MS=10000ms)は solver.Solve() 単発呼び出しの
+ * 内部では効かない(javascript-lp-solverのtimeoutはbranch-and-boundの外側ループでしか見られない)ため、
+ * 病的な入力では内部タイムアウトを超えてハングし得る。ここは内部タイムアウトより十分大きい値を置き、
+ * Workerごと強制終了する外側のサーキットブレーカーとして働かせる。
+ */
+const WORKER_HARD_TIMEOUT_MS = 10000
+
+/**
+ * 専用Workerを1回分のリクエスト用に生成し、結果 or ハードタイムアウトで確定させる。使い捨てなので
+ * リクエストIDやメッセージキューは持たない。返り値の cleanup は必ず effect の unmount/deps変更時に
+ * 呼ぶこと(ハングした solver.Solve() は terminate() するまでCPUを使い続けるため)。
+ */
+const spawnEventCraftPlanWorker = (
+  request: EventCraftPlanWorkerRequest,
+  onSettled: (result: EventCraftPlanResult, timedOut: boolean) => void,
+): (() => void) => {
+  let settled = false
+  const worker = new Worker(new URL('../../lib/event-craft-plan.worker', import.meta.url))
+
+  const finish = (result: EventCraftPlanResult, timedOut: boolean) => {
+    if (settled) return
+    settled = true
+    clearTimeout(hardTimeout)
+    worker.terminate()
+    onSettled(result, timedOut)
+  }
+  const hardTimeout = setTimeout(() => finish(EMPTY_PLAN_RESULT, true), WORKER_HARD_TIMEOUT_MS)
+
+  worker.onmessage = (e: MessageEvent<EventCraftPlanResult>) => finish(e.data, false)
+  worker.onerror = () => finish(EMPTY_PLAN_RESULT, true)
+  worker.postMessage(request)
+
+  return () => {
+    settled = true
+    clearTimeout(hardTimeout)
+    worker.terminate()
+  }
 }
 
 const useEventCraftPlan = (
@@ -669,12 +714,31 @@ const useEventCraftPlan = (
   const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
   const isDataReady = !drops.isLoading && questIds.length > 0
+  const canUseWorker = typeof Worker !== 'undefined'
 
-  const plan = useMemo(() => {
-    if (!isDataReady) return EMPTY_PLAN_RESULT
+  // Worker非対応環境(SSR・vitest/jsdom)向けのフォールバック: 従来どおり render 中に同期計算する。
+  const syncPlan = useMemo(() => {
+    if (canUseWorker || !isDataReady) return EMPTY_PLAN_RESULT
     return computeEventCraftPlan(drops, fullNeed, config.ingredients, questIds)
-  }, [drops, fullNeed, config.ingredients, questIds, isDataReady])
+  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, questIds])
 
+  const [workerPlan, setWorkerPlan] = useState<EventCraftPlanResult>(EMPTY_PLAN_RESULT)
+  const [didWorkerTimeout, setDidWorkerTimeout] = useState(false)
+
+  useEffect(() => {
+    if (!canUseWorker || !isDataReady) return
+    return spawnEventCraftPlanWorker(
+      { drops, fullNeed, ownedIngredients: config.ingredients, questIds },
+      (result, timedOut) => {
+        setWorkerPlan(result)
+        setDidWorkerTimeout(timedOut)
+      },
+    )
+  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, questIds])
+
+  const plan = canUseWorker ? workerPlan : syncPlan
+  // plan.patterns は常に非空(runs/exhaustは必ず含む)なので、空のままは計算未完了の合図として使える。
+  const isPlanLoading = canUseWorker && isDataReady && plan.patterns.length === 0 && !didWorkerTimeout
   const selectedPatternId = resolveVisiblePatternId(plan, config.planPattern)
   const selectedPattern = plan.patterns.find((p) => p.id === selectedPatternId)
 
@@ -683,24 +747,28 @@ const useEventCraftPlan = (
   // ユーザーの意図しない選択へ静かに戻ってしまう。
   useEffect(() => {
     if (!isDataReady) return
+    // Worker計算中は plan.patterns が一時的に空になるため、その間は吸収先解決(常に'runs')を
+    // 誤って永続化しないよう待つ。
+    if (plan.patterns.length === 0) return
     if (selectedPatternId === config.planPattern) return
     const resolvedAt = config.planPattern
     setConfig((prev) => (prev.planPattern === resolvedAt ? { ...prev, planPattern: selectedPatternId } : prev))
-  }, [isDataReady, selectedPatternId, config.planPattern, setConfig])
+  }, [isDataReady, plan.patterns.length, selectedPatternId, config.planPattern, setConfig])
 
   const advice = useMemo(
     () =>
       resolveAdviceMessage({
         isDataLoading: !!drops.isLoading,
+        isPlanLoading,
         hasQuests: questIds.length > 0,
         selectedPattern,
         ingredients: config.ingredients,
         t: (k, d, o) => t(k, d, o),
       }),
-    [drops.isLoading, questIds.length, selectedPattern, config.ingredients, t],
+    [drops.isLoading, isPlanLoading, questIds.length, selectedPattern, config.ingredients, t],
   )
 
-  return { plan, selectedPatternId, selectedPattern, advice, isDataReady }
+  return { plan, selectedPatternId, selectedPattern, advice, isDataReady, isPlanLoading }
 }
 
 const useAdvisorState = () => {

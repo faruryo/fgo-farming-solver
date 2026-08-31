@@ -22,37 +22,57 @@ export type DenominatorMode = 'ap' | 'turn'
  * 連続解(切り上げ前)を返すため、1個単位の限界差分が整数丸めで消えない。
  * ドロップデータの無いアイテム(QP・ピース等)は制約から除外する(infeasible 回避)。
  */
+const populateContinuousVars = (
+  model: solver.Model,
+  drops: Drops,
+  allowedQuests: Set<string>,
+  targetItemIds: Set<string>,
+) => {
+  for (const q of drops.quests) {
+    if (!allowedQuests.has(q.id)) continue
+    Reflect.set(model.variables, q.id, { totalRuns: 1, totalAp: q.ap })
+  }
+  for (const dr of drops.drop_rates) {
+    if (dr.drop_rate <= 0 || !targetItemIds.has(dr.item_id)) continue
+    const qVar = Reflect.get(model.variables, dr.quest_id) as Record<string, number> | undefined
+    if (qVar) Reflect.set(qVar, dr.item_id, dr.drop_rate)
+  }
+}
+
 export const continuousOptimalCost = (
   drops: Drops,
   need: Record<string, number>,
   questIds: string[],
   mode: DenominatorMode,
+  options?: { timeoutMs?: number },
 ): number => {
+  if (options?.timeoutMs != null && options.timeoutMs <= 0) return 0
   if (!Object.values(need).some(v => v > 0)) return 0
 
   const itemsWithDropData = new Set(drops.drop_rates.map(dr => dr.item_id))
+  const constraints: solver.Model['constraints'] = {}
+  const targetItemIds = new Set<string>()
+
+  for (const [itemId, count] of Object.entries(need)) {
+    if (count > 0 && itemsWithDropData.has(itemId)) {
+      targetItemIds.add(itemId)
+      Reflect.set(constraints, itemId, { min: count })
+    }
+  }
+  if (targetItemIds.size === 0) return 0
+
   const model: solver.Model = {
     optimize: mode === 'turn' ? 'totalRuns' : 'totalAp',
     opType: 'min',
-    constraints: {},
+    constraints,
     variables: {},
     ints: {},
   }
-  for (const [itemId, count] of Object.entries(need)) {
-    if (count > 0 && itemsWithDropData.has(itemId)) model.constraints[itemId] = { min: count }
+  if (options?.timeoutMs != null) {
+    Reflect.set(model, 'timeout', Math.max(1, options.timeoutMs))
   }
-  if (Object.keys(model.constraints).length === 0) return 0
 
-  const allowed = new Set(questIds)
-  for (const q of drops.quests) {
-    if (!allowed.has(q.id)) continue
-    model.variables[q.id] = { totalRuns: 1, totalAp: q.ap }
-  }
-  for (const dr of drops.drop_rates) {
-    if (dr.drop_rate > 0 && model.constraints[dr.item_id] && model.variables[dr.quest_id]) {
-      model.variables[dr.quest_id][dr.item_id] = dr.drop_rate
-    }
-  }
+  populateContinuousVars(model, drops, new Set(questIds), targetItemIds)
 
   const res = solver.Solve(model)
   if (!res.feasible) return Infinity

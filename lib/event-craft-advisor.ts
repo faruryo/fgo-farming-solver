@@ -1,5 +1,6 @@
 import solver from 'javascript-lp-solver'
 import { Drops } from './get-drops'
+import { Quest } from '../interfaces/fgodrop'
 import {
   continuousOptimalCost,
   DenominatorMode,
@@ -54,9 +55,18 @@ export type EventCraftPlanResult = {
 
 export type EventCraftPlanOptions = {
   recipes?: readonly EventCraftRecipe[]
+  timeoutMs?: number
 }
 
 const EPSILON = 1e-6
+
+/**
+ * 前段の最適値をタイブレーク制約の上限/下限に使うとき、固定epsilonだと値が大きい場合
+ * (AP周回コストは万のオーダーになり得る)にソルバー内部の再計算との浮動小数点誤差で
+ * feasible領域が消え、branch-and-boundが解けないまま極端に遅くなる。値の大きさに応じた
+ * 相対許容を確保する。
+ */
+const boundaryTolerance = (value: number): number => Math.max(EPSILON, Math.abs(value) * 1e-6)
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
@@ -70,6 +80,7 @@ type SolverContext = {
   recipes: readonly EventCraftRecipe[]
   baselineCost: number
   itemsWithDropData: Set<string>
+  remainingTimeoutMs?: () => number
 }
 
 const baseValuesCache = new WeakMap<object, Map<string, Map<string, number>>>()
@@ -79,17 +90,32 @@ export type SingleItemBaseValuesOptions = {
   itemsWithDropData?: Set<string>
 }
 
-export const computeSingleItemBaseValues = (
+const findBestUnitCostForItem = (
+  itemId: string,
   drops: Drops,
-  questIds: string[],
+  allowedQuestSet: Set<string>,
+  questMap: Map<string, Quest>,
   mode: DenominatorMode,
-  options?: SingleItemBaseValuesOptions,
-): Map<string, number> => {
-  const recipes = options?.recipes ?? EVENT_CRAFT_RECIPES_2026
-  const questKey = questIds
-    .slice()
-    .sort((a, b) => a.localeCompare(b))
-    .join(',')
+): number => {
+  let best = Infinity
+  for (const dr of drops.drop_rates) {
+    if (dr.item_id !== itemId || dr.drop_rate <= 0) continue
+    if (!allowedQuestSet.has(dr.quest_id)) continue
+    const q = questMap.get(dr.quest_id)
+    if (!q) continue
+    const qCost = mode === 'turn' ? 1 : q.ap
+    const unit = qCost / dr.drop_rate
+    if (unit < best) best = unit
+  }
+  return Number.isFinite(best) ? best : 0
+}
+
+const buildBaseValuesCacheKey = (
+  mode: DenominatorMode,
+  questIds: string[],
+  recipes: readonly EventCraftRecipe[],
+): string => {
+  const questKey = questIds.slice().sort((a, b) => a.localeCompare(b)).join(',')
   const recipeKey = recipes
     .map((r) => {
       const yields = getRecipeYields(r, recipes)
@@ -100,7 +126,17 @@ export const computeSingleItemBaseValues = (
       return `${r.id}:{${yieldKey}}`
     })
     .join(',')
-  const cacheKey = `${mode}:${questKey}:${recipeKey}`
+  return `${mode}:${questKey}:${recipeKey}`
+}
+
+export const computeSingleItemBaseValues = (
+  drops: Drops,
+  questIds: string[],
+  mode: DenominatorMode,
+  options?: SingleItemBaseValuesOptions,
+): Map<string, number> => {
+  const recipes = options?.recipes ?? EVENT_CRAFT_RECIPES_2026
+  const cacheKey = buildBaseValuesCacheKey(mode, questIds, recipes)
 
   const cacheTarget = drops.drop_rates ?? drops
   let dropsCache = baseValuesCache.get(cacheTarget)
@@ -112,20 +148,20 @@ export const computeSingleItemBaseValues = (
   const cached = dropsCache.get(cacheKey)
   if (cached) return cached
 
+  const questMap = new Map(drops.quests.map((q) => [q.id, q]))
+  const allowedQuestSet = new Set(questIds)
   const dropDataSet =
     options?.itemsWithDropData ??
     new Set(drops.drop_rates.map((dr) => dr.item_id))
+
   const isolatedCost = new Map<string, number>()
   const costOf = (shortId: string): number => {
     if (!dropDataSet.has(shortId)) return 0
-    const cachedIsolated = isolatedCost.get(shortId)
-    if (cachedIsolated != null) return cachedIsolated
-    const needMap: Record<string, number> = {}
-    Reflect.set(needMap, shortId, 1)
-    const singleCost = continuousOptimalCost(drops, needMap, questIds, mode)
-    const value = Number.isFinite(singleCost) ? singleCost : 0
-    isolatedCost.set(shortId, value)
-    return value
+    const cachedCost = isolatedCost.get(shortId)
+    if (cachedCost != null) return cachedCost
+    const cost = findBestUnitCostForItem(shortId, drops, allowedQuestSet, questMap, mode)
+    isolatedCost.set(shortId, cost)
+    return cost
   }
 
   const values = new Map<string, number>()
@@ -149,16 +185,15 @@ const computeSingleItemUnitCosts = (
   itemIds: Iterable<string>,
   itemsWithDropData: Set<string>,
 ): Map<string, number> => {
+  const questMap = new Map(drops.quests.map((q) => [q.id, q]))
+  const allowedQuestSet = new Set(questIds)
   const costs = new Map<string, number>()
   for (const itemId of itemIds) {
     if (!itemsWithDropData.has(itemId)) {
       costs.set(itemId, 0)
       continue
     }
-    const needMap: Record<string, number> = {}
-    Reflect.set(needMap, itemId, 1)
-    const c = continuousOptimalCost(drops, needMap, questIds, mode)
-    costs.set(itemId, Number.isFinite(c) ? c : 0)
+    costs.set(itemId, findBestUnitCostForItem(itemId, drops, allowedQuestSet, questMap, mode))
   }
   return costs
 }
@@ -176,13 +211,34 @@ const extractFarmableNeed = (
   return farmable
 }
 
+/**
+ * fullNeed に無関係なクエストは目的関数を最小化する側では最適解で常に0になるため、
+ * モデルに含めても数学的には無意味。だが変数として存在するだけでソルバーのタブロー
+ * サイズが膨らみ、本番規模(300クエスト級)では退化ピボットで極端に遅くなることが
+ * あるため、farmableNeed のいずれかを実際にドロップするクエストだけに絞り込む。
+ */
+const findRelevantQuestIds = (
+  drops: Drops,
+  allowedQuests: Set<string>,
+  farmableNeed: Map<string, number>,
+): Set<string> => {
+  const relevant = new Set<string>()
+  for (const dr of drops.drop_rates) {
+    if (dr.drop_rate > 0 && farmableNeed.has(dr.item_id) && allowedQuests.has(dr.quest_id)) {
+      relevant.add(dr.quest_id)
+    }
+  }
+  return relevant
+}
+
 const populateQuestVars = (
   model: solver.Model,
   ctx: SolverContext,
   isTieBreak: boolean,
 ) => {
+  const relevantQuestIds = findRelevantQuestIds(ctx.drops, ctx.allowedQuests, ctx.farmableNeed)
   for (const q of ctx.drops.quests) {
-    if (!ctx.allowedQuests.has(q.id)) continue
+    if (!relevantQuestIds.has(q.id)) continue
     const qVars: Record<string, number> = {
       totalCost: ctx.mode === 'turn' ? 1 : q.ap,
     }
@@ -254,7 +310,7 @@ const initStage1Model = (
     vegetable: { max: Math.max(0, ctx.ownedIngredients.vegetable ?? 0) },
   }
   if (costCap != null) {
-    Reflect.set(constraints, 'totalCost', { max: costCap + EPSILON })
+    Reflect.set(constraints, 'totalCost', { max: costCap + boundaryTolerance(costCap) })
   }
   for (const [itemId, count] of ctx.farmableNeed.entries()) {
     Reflect.set(constraints, `item_${itemId}`, { min: count })
@@ -265,6 +321,9 @@ const initStage1Model = (
     constraints,
     variables: {},
     ints,
+  }
+  if (ctx.remainingTimeoutMs) {
+    Reflect.set(model, 'timeout', Math.max(1, ctx.remainingTimeoutMs()))
   }
   return { model, ints }
 }
@@ -298,6 +357,7 @@ const readCraftCounts = (
 
 const solveStage1 = (ctx: SolverContext): Map<string, number> => {
   const zero = new Map(ctx.recipes.map((r) => [r.id, 0]))
+  if (ctx.remainingTimeoutMs && ctx.remainingTimeoutMs() <= 0) return zero
 
   const hasDeficits = ctx.farmableNeed.size > 0
   const hasIngredients = Object.values(ctx.ownedIngredients).some(
@@ -322,6 +382,7 @@ const solveStage1 = (ctx: SolverContext): Map<string, number> => {
   if (optCost1a >= ctx.baselineCost - EPSILON) {
     return zero
   }
+  if (ctx.remainingTimeoutMs && ctx.remainingTimeoutMs() <= 0) return zero
 
   const model1b = buildStage1bModel(ctx, optCost1a)
   const res1b = solver.Solve(model1b)
@@ -407,7 +468,7 @@ const buildEvenBurdenModel = (
     Reflect.set(constraints, `cap_${itemId}`, { min: 0 })
   }
   if (burdenCap != null) {
-    Reflect.set(constraints, 'burdenObj', { max: burdenCap + EPSILON })
+    Reflect.set(constraints, 'burdenObj', { max: burdenCap + boundaryTolerance(burdenCap) })
   }
   const model: solver.Model = {
     optimize: isTieBreak ? 'totalIngredients' : 'burdenObj',
@@ -415,6 +476,9 @@ const buildEvenBurdenModel = (
     constraints,
     variables: {},
     ints,
+  }
+  if (ctx.remainingTimeoutMs) {
+    Reflect.set(model, 'timeout', Math.max(1, ctx.remainingTimeoutMs()))
   }
   populateEvenBurdenVars(model, ints, ctx, burdenNeed, unitCosts, isTieBreak)
   return model
@@ -427,6 +491,7 @@ const solveEvenBurden = (
 ): Map<string, number> => {
   const zero = new Map(ctx.recipes.map((r) => [r.id, 0]))
   if (burdenNeed.size === 0) return zero
+  if (ctx.remainingTimeoutMs && ctx.remainingTimeoutMs() <= 0) return zero
   const hasIngredients = Object.values(ctx.ownedIngredients).some(
     (c) => (c ?? 0) > 0,
   )
@@ -436,6 +501,7 @@ const solveEvenBurden = (
   const resA = solver.Solve(modelA)
   if (!resA.feasible) return zero
   const burdenOpt = typeof resA.result === 'number' ? resA.result : 0
+  if (ctx.remainingTimeoutMs && ctx.remainingTimeoutMs() <= 0) return zero
 
   const modelB = buildEvenBurdenModel(ctx, burdenNeed, unitCosts, true, burdenOpt)
   const resB = solver.Solve(modelB)
@@ -443,29 +509,31 @@ const solveEvenBurden = (
   return readCraftCounts(ctx.recipes, targetRes)
 }
 
-/** 食材を使い切る: (1) 消費食材合計の最大化 → (2) その制約下で周回コスト最小化。 */
 const buildExhaustPhaseAModel = (
   recipes: readonly EventCraftRecipe[],
-  ownedIngredients: IngredientCounts,
+  ingredients: IngredientCounts,
+  timeoutMs?: number,
 ): solver.Model => {
   const ints: Record<string, number> = {}
   const model: solver.Model = {
-    optimize: 'totalIngredientsSpent',
+    optimize: 'spent',
     opType: 'max',
     constraints: {
-      seafood: { max: Math.max(0, ownedIngredients.seafood ?? 0) },
-      meat: { max: Math.max(0, ownedIngredients.meat ?? 0) },
-      vegetable: { max: Math.max(0, ownedIngredients.vegetable ?? 0) },
+      seafood: { max: Math.max(0, ingredients.seafood ?? 0) },
+      meat: { max: Math.max(0, ingredients.meat ?? 0) },
+      vegetable: { max: Math.max(0, ingredients.vegetable ?? 0) },
     },
     variables: {},
     ints,
   }
+  if (timeoutMs != null) {
+    Reflect.set(model, 'timeout', Math.max(1, timeoutMs))
+  }
   for (const recipe of recipes) {
     const varName = `craft_${recipe.id}`
-    const totalIng =
-      recipe.costs.seafood + recipe.costs.meat + recipe.costs.vegetable
+    const spent = recipe.costs.seafood + recipe.costs.meat + recipe.costs.vegetable
     Reflect.set(model.variables, varName, {
-      totalIngredientsSpent: totalIng,
+      spent,
       seafood: recipe.costs.seafood,
       meat: recipe.costs.meat,
       vegetable: recipe.costs.vegetable,
@@ -492,36 +560,39 @@ const buildExhaustPhaseBModel = (
     craftVar.totalIngredientsSpent = totalIng
   }
   Reflect.set(model.constraints, 'totalIngredientsSpent', {
-    min: Math.max(0, maxSpend - EPSILON),
+    min: Math.max(0, maxSpend - boundaryTolerance(maxSpend)),
   })
   return model
 }
 
+/**
+ * 食材を使い切る: 2段階辞書式最適化
+ * Phase A: 食材消費量合計の最大化 (極小MILP)
+ * Phase B: 最大消費量制約 (totalIngredientsSpent >= optSpend) の下で、フリクエ周回コスト最小化
+ */
 const solveExhaust = (
   ctxTurn: SolverContext,
   recipes: readonly EventCraftRecipe[],
   ownedIngredients: IngredientCounts,
 ): Map<string, number> => {
   const zero = new Map(recipes.map((r) => [r.id, 0]))
-  const canCraftAny = recipes.some(
-    (r) =>
-      r.costs.seafood <= (ownedIngredients.seafood ?? 0) &&
-      r.costs.meat <= (ownedIngredients.meat ?? 0) &&
-      r.costs.vegetable <= (ownedIngredients.vegetable ?? 0),
-  )
-  if (!canCraftAny) return zero
+  if (ctxTurn.remainingTimeoutMs && ctxTurn.remainingTimeoutMs() <= 0) return zero
+  const s = Math.max(0, ownedIngredients.seafood ?? 0)
+  const m = Math.max(0, ownedIngredients.meat ?? 0)
+  const v = Math.max(0, ownedIngredients.vegetable ?? 0)
+  if (s <= 0 && m <= 0 && v <= 0) return zero
 
-  const modelA = buildExhaustPhaseAModel(recipes, ownedIngredients)
+  const timeoutMs = ctxTurn.remainingTimeoutMs?.()
+  const modelA = buildExhaustPhaseAModel(recipes, ownedIngredients, timeoutMs)
   const resA = solver.Solve(modelA)
-  const maxSpend =
-    resA.feasible && typeof resA.result === 'number' ? resA.result : 0
-  if (maxSpend <= EPSILON) return zero
+  if (!resA.feasible) return zero
+  const optSpend = typeof resA.result === 'number' ? resA.result : 0
+  if (optSpend <= EPSILON) return zero
+  if (ctxTurn.remainingTimeoutMs && ctxTurn.remainingTimeoutMs() <= 0) return zero
 
-  const modelB = buildExhaustPhaseBModel(ctxTurn, maxSpend)
+  const modelB = buildExhaustPhaseBModel(ctxTurn, optSpend)
   const resB = solver.Solve(modelB)
-  const targetRes = resB.feasible
-    ? (resB as unknown as Record<string, unknown>)
-    : (resA as unknown as Record<string, unknown>)
+  const targetRes = resB.feasible ? resB : resA
   return readCraftCounts(recipes, targetRes)
 }
 
@@ -546,15 +617,14 @@ const subtractCraftYieldsFromNeed = (
 }
 
 const evaluateResidualCost = (
-  drops: Drops,
-  fullNeed: Record<string, number>,
-  recipes: readonly EventCraftRecipe[],
+  bctx: Pick<PatternBuildContext, 'drops' | 'fullNeed' | 'recipes' | 'allowedQuestsList' | 'remainingTimeoutMs'>,
   counts: Map<string, number>,
-  allowedQuestsList: string[],
   mode: DenominatorMode,
 ): number => {
-  const remaining = subtractCraftYieldsFromNeed(fullNeed, recipes, counts)
-  return continuousOptimalCost(drops, remaining, allowedQuestsList, mode)
+  const remaining = subtractCraftYieldsFromNeed(bctx.fullNeed, bctx.recipes, counts)
+  return continuousOptimalCost(bctx.drops, remaining, bctx.allowedQuestsList, mode, {
+    timeoutMs: bctx.remainingTimeoutMs?.(),
+  })
 }
 
 const buildAllocations = (
@@ -610,20 +680,26 @@ const buildAllocations = (
 
   return {
     allocations,
-    spentIngredients,
     totalDeficitCrafted,
     totalSurplusCrafted,
     totalSurplusValue,
+    spentIngredients,
   }
 }
 
 const calculateLeftovers = (
-  owned: IngredientCounts,
-  spent: IngredientCounts,
+  ownedIngredients: IngredientCounts,
+  spentIngredients: IngredientCounts,
 ): IngredientCounts => ({
-  seafood: Math.max(0, (owned.seafood ?? 0) - spent.seafood),
-  meat: Math.max(0, (owned.meat ?? 0) - spent.meat),
-  vegetable: Math.max(0, (owned.vegetable ?? 0) - spent.vegetable),
+  seafood: Math.max(
+    0,
+    (ownedIngredients.seafood ?? 0) - spentIngredients.seafood,
+  ),
+  meat: Math.max(0, (ownedIngredients.meat ?? 0) - spentIngredients.meat),
+  vegetable: Math.max(
+    0,
+    (ownedIngredients.vegetable ?? 0) - spentIngredients.vegetable,
+  ),
 })
 
 const createSolverContext = (
@@ -634,13 +710,24 @@ const createSolverContext = (
     mode: DenominatorMode
     questIds: string[]
     recipes: readonly EventCraftRecipe[]
+    remainingTimeoutMs?: () => number
   },
 ): SolverContext => {
-  const { mode, questIds, recipes } = options
+  const { mode, questIds, recipes, remainingTimeoutMs } = options
   const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
   const allowedQuests = new Set(questIds)
-  const baselineCost = continuousOptimalCost(drops, fullNeed, questIds, mode)
-  const farmableNeed = extractFarmableNeed(fullNeed, itemsWithDropData)
+  const baselineCost = continuousOptimalCost(drops, fullNeed, questIds, mode, {
+    timeoutMs: remainingTimeoutMs?.(),
+  })
+  // 皿決めMILPにアカウント全体の不足を載せると javascript-lp-solver が simplex 内部でハングする
+  // (29〜40制約が崖。timeout は効かない)。料理が出せない素材は整数変数に効かないので除外し、
+  // 残余コストだけ fullNeed で評価する。
+  const recipeYieldTargets = getRecipeYieldTargets(recipes)
+  const farmableNeed = new Map(
+    [...extractFarmableNeed(fullNeed, itemsWithDropData)].filter(([itemId]) =>
+      recipeYieldTargets.has(itemId),
+    ),
+  )
 
   return {
     drops,
@@ -652,20 +739,8 @@ const createSolverContext = (
     recipes,
     baselineCost,
     itemsWithDropData,
+    remainingTimeoutMs,
   }
-}
-
-type PatternBuildContext = {
-  drops: Drops
-  fullNeed: Record<string, number>
-  recipes: readonly EventCraftRecipe[]
-  allowedQuestsList: string[]
-  ownedIngredients: IngredientCounts
-  singleValues: Map<string, number>
-  baselineTurn: number
-  baselineAp: number
-  /** even-turn/even-ap のみ: 素材ごとの単独負担単価。指定時はこの目的(最大負担)で不足/余剰を判定する。 */
-  burdenUnitCosts?: Map<string, number>
 }
 
 /** counts の下での最大単独負担(満遍なくパターン自身の目的関数の値)。 */
@@ -705,6 +780,9 @@ type ZeroingContext = {
   workingCounts: Map<string, number>
   allowedQuestsList: string[]
   mode: DenominatorMode
+  itemsWithDropData: Set<string>
+  isTimedOut?: () => boolean
+  remainingTimeoutMs?: () => number
 }
 
 /** ctx.workingCounts 上でこのレシピだけを k 個に差し替えたときの残余コスト。 */
@@ -716,32 +794,74 @@ const evaluateResidualAtCount = (
   const capped = new Map(ctx.workingCounts)
   capped.set(recipeId, k)
   const need = subtractCraftYieldsFromNeed(ctx.fullNeed, ctx.recipes, capped)
-  return continuousOptimalCost(ctx.drops, need, ctx.allowedQuestsList, ctx.mode)
+  return continuousOptimalCost(ctx.drops, need, ctx.allowedQuestsList, ctx.mode, {
+    timeoutMs: ctx.remainingTimeoutMs?.(),
+  })
 }
 
 /**
- * count 個のうち、referenceCost と同等の効果を得るのに必要な最小個数(=不足枠)を求める。
- * 残余コストは個数を増やすほど単調非増加なので、線形走査ではなく二分探索で
- * 最小の充足個数を求める(所持数が多いときの毎回LP解決によるUI固まりを避ける)。
+ * レシピの期待獲得が残余不足を減らすために必要な皿数の上限を直接算出する。
+ */
+const calculateDeficitCountDirect = (
+  recipe: EventCraftRecipe,
+  count: number,
+  recipes: readonly EventCraftRecipe[],
+  fullNeed: Record<string, number>,
+  workingCounts: Map<string, number>,
+  itemsWithDropData: Set<string>,
+): number => {
+  const capped = new Map(workingCounts)
+  capped.delete(recipe.id)
+  const remaining = subtractCraftYieldsFromNeed(fullNeed, recipes, capped)
+  const yields = getRecipeYields(recipe, recipes)
+
+  let neededDishes = 0
+  for (const [shortId, y] of Object.entries(yields)) {
+    if (y <= 0 || !itemsWithDropData.has(shortId)) continue
+    const rem = (Reflect.get(remaining, shortId) as number | undefined) ?? 0
+    if (rem > 0) {
+      const dishes = Math.ceil(rem / y)
+      if (dishes > neededDishes) {
+        neededDishes = dishes
+      }
+    }
+  }
+  return Math.max(0, Math.min(count, neededDishes))
+}
+
+/**
+ * ついでドロップを考慮し、残余周回コストが最小値に達する真の最小皿数を二分探索で求める。
+ * calculateDeficitCountDirect で探索上限を絞るため、高々数回のLP解決(約1ms)で厳密に完了する。
  */
 const findMinimalUsefulCount = (
   ctx: ZeroingContext,
-  recipeId: string,
+  recipe: EventCraftRecipe,
   count: number,
-  referenceCost: number,
+  targetCost: number,
 ): number => {
-  let lo = 0
-  let hi = count
-  while (lo < hi) {
-    const mid = lo + Math.floor((hi - lo) / 2)
-    const cost = evaluateResidualAtCount(ctx, recipeId, mid)
-    if (cost <= referenceCost + EPSILON) {
-      hi = mid
+  const directMax = calculateDeficitCountDirect(
+    recipe, count, ctx.recipes, ctx.fullNeed, ctx.workingCounts, ctx.itemsWithDropData,
+  )
+  if (directMax <= 0) return 0
+  if (ctx.isTimedOut?.()) return directMax
+
+  let low = 0
+  let high = directMax
+  let best = directMax
+
+  while (low <= high) {
+    if (ctx.isTimedOut?.()) break
+    const mid = Math.floor((low + high) / 2)
+    const cost = evaluateResidualAtCount(ctx, recipe.id, mid)
+    if (cost <= targetCost + EPSILON) {
+      best = mid
+      high = mid - 1
     } else {
-      lo = mid + 1
+      low = mid + 1
     }
   }
-  return lo
+
+  return best
 }
 
 /** even-turn/even-ap は自分の目的関数(最大単独負担)で判定・表示する。continuousOptimalCost
@@ -754,6 +874,9 @@ const evaluateRecipeUsefulness = (
   burdenUnitCosts: Map<string, number> | undefined,
   actualBurden: number,
 ): { isUseful: boolean; displaySaved: number } => {
+  if (zeroingCtx.isTimedOut?.()) {
+    return { isUseful: false, displaySaved: 0 }
+  }
   if (burdenUnitCosts) {
     const burdenWithout = evaluateBurdenAtCount(
       zeroingCtx.fullNeed, zeroingCtx.recipes, zeroingCtx.workingCounts, recipeId, 0, burdenUnitCosts,
@@ -778,34 +901,55 @@ type ClassificationInputs = {
   actualBurden: number
 }
 
+const classifySingleRecipe = (
+  recipe: EventCraftRecipe,
+  count: number,
+  inputs: ClassificationInputs,
+): { deficitCount: number; displaySaved: number } => {
+  const { zeroingCtx, referenceCost, useMarginalSplit, burdenUnitCosts, actualBurden } = inputs
+  if (zeroingCtx.isTimedOut?.()) {
+    return { deficitCount: 0, displaySaved: 0 }
+  }
+
+  const { isUseful, displaySaved } = evaluateRecipeUsefulness(
+    recipe.id, zeroingCtx, referenceCost, burdenUnitCosts, actualBurden,
+  )
+
+  let deficitCount = 0
+  if (isUseful) {
+    deficitCount = useMarginalSplit
+      ? findMinimalUsefulCount(zeroingCtx, recipe, count, referenceCost)
+      : count
+  }
+
+  return { deficitCount, displaySaved }
+}
+
 /**
  * レシピを固定順で1つずつ判定し、判定済みレシピを確定個数(0 か deficitCount)に固定してから
  * 次のレシピを評価する。独立に(他レシピを元の個数のまま)ゼロ化すると、同レアの代替レシピ同士で
  * 「片方だけでも足りる」が両方に成立し、両方とも余剰扱いになってしまう(実際は両方消すと不足が復活する)。
  */
 const classifyRecipeCounts = (inputs: ClassificationInputs) => {
-  const { recipes, counts, zeroingCtx, referenceCost, useMarginalSplit, burdenUnitCosts, actualBurden } = inputs
+  const { recipes, counts, zeroingCtx } = inputs
   const deficitCounts = new Map<string, number>()
   const surplusCounts = new Map<string, number>()
   const savings = new Map<string, { totalSaved: number; unitSaved: number }>()
-  const workingCounts = zeroingCtx.workingCounts
 
   for (const recipe of recipes) {
+    if (zeroingCtx.isTimedOut?.()) {
+      return {
+        deficitCounts: new Map<string, number>(),
+        surplusCounts: new Map<string, number>(),
+        savings: new Map<string, { totalSaved: number; unitSaved: number }>(),
+      }
+    }
     const count = counts.get(recipe.id) ?? 0
     savings.set(recipe.id, { totalSaved: 0, unitSaved: 0 })
     if (count <= 0) continue
 
-    const { isUseful, displaySaved } = evaluateRecipeUsefulness(
-      recipe.id, zeroingCtx, referenceCost, burdenUnitCosts, actualBurden,
-    )
-
-    let deficitCount = 0
-    if (isUseful) {
-      deficitCount = useMarginalSplit
-        ? findMinimalUsefulCount(zeroingCtx, recipe.id, count, referenceCost)
-        : count
-    }
-    workingCounts.set(recipe.id, deficitCount)
+    const { deficitCount, displaySaved } = classifySingleRecipe(recipe, count, inputs)
+    zeroingCtx.workingCounts.set(recipe.id, deficitCount)
 
     if (deficitCount > 0) {
       deficitCounts.set(recipe.id, deficitCount)
@@ -816,7 +960,84 @@ const classifyRecipeCounts = (inputs: ClassificationInputs) => {
     }
   }
 
+  if (zeroingCtx.isTimedOut?.()) {
+    return {
+      deficitCounts: new Map<string, number>(),
+      surplusCounts: new Map<string, number>(),
+      savings: new Map<string, { totalSaved: number; unitSaved: number }>(),
+    }
+  }
+
   return { deficitCounts, surplusCounts, savings }
+}
+
+type PatternBuildContext = {
+  drops: Drops
+  fullNeed: Record<string, number>
+  recipes: readonly EventCraftRecipe[]
+  allowedQuestsList: string[]
+  ownedIngredients: IngredientCounts
+  singleValues: Map<string, number>
+  baselineTurn: number
+  baselineAp: number
+  /** even-turn/even-ap のみ: 素材ごとの単独負担単価。指定時はこの目的(最大負担)で不足/余剰を判定する。 */
+  burdenUnitCosts?: Map<string, number>
+  residualCache?: Map<string, { turn: number; ap: number }>
+  itemsWithDropData: Set<string>
+  isTimedOut?: () => boolean
+  remainingTimeoutMs?: () => number
+}
+
+const getResidualCosts = (
+  bctx: PatternBuildContext,
+  counts: Map<string, number>,
+): { residualTurnCost: number; residualApCost: number } => {
+  const { baselineTurn, baselineAp, isTimedOut } = bctx
+  const hasAnyCraft = [...counts.values()].some((c) => c > 0)
+  if (!hasAnyCraft || isTimedOut?.()) {
+    return { residualTurnCost: baselineTurn, residualApCost: baselineAp }
+  }
+
+  const key = bctx.recipes
+    .map((r) => `${r.id}:${counts.get(r.id) ?? 0}`)
+    .filter((s) => !s.endsWith(':0'))
+    .join('|')
+
+  const cached = bctx.residualCache?.get(key)
+  if (cached) return { residualTurnCost: cached.turn, residualApCost: cached.ap }
+
+  const residualTurnCost = evaluateResidualCost(bctx, counts, 'turn')
+  const residualApCost = evaluateResidualCost(bctx, counts, 'ap')
+
+  const res = { turn: residualTurnCost, ap: residualApCost }
+  bctx.residualCache?.set(key, res)
+  return { residualTurnCost, residualApCost }
+}
+
+const buildEmptyPatternResult = (
+  id: EventCraftPatternId,
+  metric: EventCraftPatternMetric,
+  bctx: PatternBuildContext,
+): EventCraftPatternResult => {
+  const { recipes, singleValues, ownedIngredients, baselineTurn, baselineAp } = bctx
+  const zeroCounts = new Map(recipes.map((r) => [r.id, 0]))
+  const built = buildAllocations(recipes, zeroCounts, zeroCounts, new Map(), singleValues)
+  return {
+    id,
+    metric,
+    allocations: built.allocations,
+    totalCrafted: 0,
+    totalDeficitCrafted: 0,
+    totalSurplusCrafted: 0,
+    totalSaved: 0,
+    totalSurplusValue: 0,
+    spentIngredients: built.spentIngredients,
+    leftoverIngredients: calculateLeftovers(ownedIngredients, built.spentIngredients),
+    residualTurnCost: baselineTurn,
+    residualApCost: baselineAp,
+    baselineTurnCost: baselineTurn,
+    baselineApCost: baselineAp,
+  }
 }
 
 const buildPatternResult = (
@@ -826,6 +1047,10 @@ const buildPatternResult = (
   counts: Map<string, number>,
   bctx: PatternBuildContext,
 ): EventCraftPatternResult => {
+  if (bctx.isTimedOut?.()) {
+    return buildEmptyPatternResult(id, metric, bctx)
+  }
+
   const {
     drops,
     fullNeed,
@@ -836,33 +1061,30 @@ const buildPatternResult = (
     baselineTurn,
     baselineAp,
     burdenUnitCosts,
+    itemsWithDropData,
   } = bctx
 
-  const residualTurnCost = evaluateResidualCost(
-    drops, fullNeed, recipes, counts, allowedQuestsList, 'turn',
-  )
-  const residualApCost = evaluateResidualCost(
-    drops, fullNeed, recipes, counts, allowedQuestsList, 'ap',
-  )
+  const { residualTurnCost, residualApCost } = getResidualCosts(bctx, counts)
   const referenceCost = classifyMode === 'turn' ? residualTurnCost : residualApCost
-  // exhaust だけレシピ単位のゼロ化では「1個は不足充足に効くが残りは純粋な余剰」という
-  // 混在を分離できない（他の4パターンは各々のtie-breakが無駄な皿を既に消すため混在しない）。
   const useMarginalSplit = id === 'exhaust'
   const actualBurden = burdenUnitCosts ? evaluateBurden(fullNeed, recipes, counts, burdenUnitCosts) : 0
 
   const workingCounts = new Map(counts)
   const zeroingCtx: ZeroingContext = {
     drops, fullNeed, recipes, workingCounts, allowedQuestsList, mode: classifyMode,
+    itemsWithDropData, isTimedOut: bctx.isTimedOut, remainingTimeoutMs: bctx.remainingTimeoutMs,
   }
 
   const { deficitCounts, surplusCounts, savings } = classifyRecipeCounts({
     recipes, counts, zeroingCtx, referenceCost, useMarginalSplit, burdenUnitCosts, actualBurden,
   })
 
+  if (bctx.isTimedOut?.()) {
+    return buildEmptyPatternResult(id, metric, bctx)
+  }
+
   const built = buildAllocations(recipes, deficitCounts, surplusCounts, savings, singleValues)
   const baseline = classifyMode === 'turn' ? baselineTurn : baselineAp
-  // even-turn/even-ap のカード合計も単独負担基準にする。合計コストLPの baseline-referenceCost
-  // のままだと、ついで枠で下がった単独負担の山がマシュのアドバイスに一切反映されない。
   const totalSaved = burdenUnitCosts
     ? Math.max(0, evaluateBurden(fullNeed, recipes, new Map(), burdenUnitCosts) - actualBurden)
     : Math.max(0, baseline - referenceCost)
@@ -939,6 +1161,86 @@ export const resolveVisiblePatternId = (
   return Reflect.get(plan.absorbedInto, id) ?? 'runs'
 }
 
+const DEFAULT_TIMEOUT_MS = 10000
+
+type SolverContextPair = {
+  ctxTurn: SolverContext
+  ctxAp: SolverContext
+  burdenNeed: Map<string, number>
+  itemsWithDropData: Set<string>
+}
+
+const initSolverContextPair = (
+  drops: Drops,
+  fullNeed: Record<string, number>,
+  ownedIngredients: IngredientCounts,
+  questIds: string[],
+  recipes: readonly EventCraftRecipe[],
+  remainingTimeoutMs?: () => number,
+): SolverContextPair => {
+  const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
+  const farmableNeed = extractFarmableNeed(fullNeed, itemsWithDropData)
+  const recipeYieldTargets = getRecipeYieldTargets(recipes)
+  const burdenNeed = new Map(
+    [...farmableNeed].filter(([itemId]) => recipeYieldTargets.has(itemId)),
+  )
+
+  const ctxTurn = createSolverContext(drops, fullNeed, ownedIngredients, {
+    mode: 'turn', questIds, recipes, remainingTimeoutMs,
+  })
+  const ctxAp = createSolverContext(drops, fullNeed, ownedIngredients, {
+    mode: 'ap', questIds, recipes, remainingTimeoutMs,
+  })
+
+  return { ctxTurn, ctxAp, burdenNeed, itemsWithDropData }
+}
+
+type PatternCountsResult = {
+  runsCounts: Map<string, number>
+  apCounts: Map<string, number>
+  evenTurnCounts: Map<string, number>
+  evenApCounts: Map<string, number>
+  unitCostsTurn?: Map<string, number>
+  unitCostsAp?: Map<string, number>
+}
+
+const solveAllPatternCounts = (
+  pair: SolverContextPair,
+  drops: Drops,
+  questIds: string[],
+  isTimedOut: () => boolean,
+): PatternCountsResult => {
+  const { ctxTurn, ctxAp, burdenNeed, itemsWithDropData } = pair
+  const zeroCounts = new Map(ctxTurn.recipes.map((r) => [r.id, 0]))
+  if (isTimedOut()) {
+    return {
+      runsCounts: zeroCounts,
+      apCounts: zeroCounts,
+      evenTurnCounts: zeroCounts,
+      evenApCounts: zeroCounts,
+    }
+  }
+
+  const runsCounts = solveStage1(ctxTurn)
+  const apCounts = !isTimedOut() ? solveStage1(ctxAp) : zeroCounts
+
+  let unitCostsTurn: Map<string, number> | undefined
+  let unitCostsAp: Map<string, number> | undefined
+  let evenTurnCounts = zeroCounts
+  let evenApCounts = zeroCounts
+
+  if (!isTimedOut()) {
+    unitCostsTurn = computeSingleItemUnitCosts(drops, questIds, 'turn', burdenNeed.keys(), itemsWithDropData)
+    evenTurnCounts = solveEvenBurden(ctxTurn, burdenNeed, unitCostsTurn)
+  }
+  if (!isTimedOut()) {
+    unitCostsAp = computeSingleItemUnitCosts(drops, questIds, 'ap', burdenNeed.keys(), itemsWithDropData)
+    evenApCounts = solveEvenBurden(ctxAp, burdenNeed, unitCostsAp)
+  }
+
+  return { runsCounts, apCounts, evenTurnCounts, evenApCounts, unitCostsTurn, unitCostsAp }
+}
+
 export const computeEventCraftPlan = (
   drops: Drops,
   fullNeed: Record<string, number>,
@@ -946,68 +1248,60 @@ export const computeEventCraftPlan = (
   questIds: string[],
   options?: EventCraftPlanOptions,
 ): EventCraftPlanResult => {
+  const rawTimeout = options?.timeoutMs
+  const timeoutMs =
+    typeof rawTimeout === 'number' && Number.isFinite(rawTimeout)
+      ? rawTimeout
+      : DEFAULT_TIMEOUT_MS
+
+  const startTime = Date.now()
+  const isTimedOut = () => timeoutMs <= 0 || Date.now() - startTime > timeoutMs
+  const remainingTimeoutMs = () => Math.max(0, timeoutMs - (Date.now() - startTime))
+
   const recipes = options?.recipes ?? EVENT_CRAFT_RECIPES_2026
-  const allowedQuestsList = questIds
-  const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
-  const farmableNeed = extractFarmableNeed(fullNeed, itemsWithDropData)
-  // 満遍なくの対象はレシピが実際に生産できる素材だけに絞る。fullNeed にはイベント無関係の
-  // 不足も含まれ得るため、絞らないと無関係な不足の単独負担がmaxを支配してしまう。
-  const recipeYieldTargets = getRecipeYieldTargets(recipes)
-  const burdenNeed = new Map(
-    [...farmableNeed].filter(([itemId]) => recipeYieldTargets.has(itemId)),
-  )
+  const zeroCounts = new Map(recipes.map((r) => [r.id, 0]))
 
-  const ctxTurn = createSolverContext(drops, fullNeed, ownedIngredients, {
-    mode: 'turn', questIds, recipes,
-  })
-  const ctxAp = createSolverContext(drops, fullNeed, ownedIngredients, {
-    mode: 'ap', questIds, recipes,
-  })
+  if (isTimedOut()) {
+    const bctxFallback: PatternBuildContext = {
+      drops, fullNeed, recipes, allowedQuestsList: questIds, ownedIngredients,
+      baselineTurn: 0, baselineAp: 0, singleValues: new Map(),
+      itemsWithDropData: new Set(), isTimedOut: () => true,
+    }
+    return foldEventCraftPatterns([
+      buildPatternResult('runs', 'turn', 'turn', zeroCounts, bctxFallback),
+      buildPatternResult('ap', 'ap', 'ap', zeroCounts, bctxFallback),
+      buildPatternResult('even-turn', 'turn', 'turn', zeroCounts, bctxFallback),
+      buildPatternResult('even-ap', 'ap', 'ap', zeroCounts, bctxFallback),
+      buildPatternResult('exhaust', 'both', 'turn', zeroCounts, bctxFallback),
+    ])
+  }
 
-  const singleValuesTurn = computeSingleItemBaseValues(drops, questIds, 'turn', {
-    recipes, itemsWithDropData,
-  })
-  const singleValuesAp = computeSingleItemBaseValues(drops, questIds, 'ap', {
-    recipes, itemsWithDropData,
-  })
+  const pair = initSolverContextPair(drops, fullNeed, ownedIngredients, questIds, recipes, remainingTimeoutMs)
+  const singleValuesTurn = computeSingleItemBaseValues(drops, questIds, 'turn', { recipes, itemsWithDropData: pair.itemsWithDropData })
+  const singleValuesAp = computeSingleItemBaseValues(drops, questIds, 'ap', { recipes, itemsWithDropData: pair.itemsWithDropData })
 
-  const runsCounts = solveStage1(ctxTurn)
-  const apCounts = solveStage1(ctxAp)
-
-  const unitCostsTurn = computeSingleItemUnitCosts(
-    drops, questIds, 'turn', burdenNeed.keys(), itemsWithDropData,
-  )
-  const unitCostsAp = computeSingleItemUnitCosts(
-    drops, questIds, 'ap', burdenNeed.keys(), itemsWithDropData,
-  )
-  const evenTurnCounts = solveEvenBurden(ctxTurn, burdenNeed, unitCostsTurn)
-  const evenApCounts = solveEvenBurden(ctxAp, burdenNeed, unitCostsAp)
-
-  const exhaustCounts = solveExhaust(ctxTurn, recipes, ownedIngredients)
+  const solved = solveAllPatternCounts(pair, drops, questIds, isTimedOut)
+  const exhaustCounts = !isTimedOut()
+    ? solveExhaust(pair.ctxTurn, recipes, ownedIngredients)
+    : zeroCounts
 
   const bctxBase = {
-    drops,
-    fullNeed,
-    recipes,
-    allowedQuestsList,
-    ownedIngredients,
-    baselineTurn: ctxTurn.baselineCost,
-    baselineAp: ctxAp.baselineCost,
+    drops, fullNeed, recipes, allowedQuestsList: questIds, ownedIngredients,
+    baselineTurn: pair.ctxTurn.baselineCost, baselineAp: pair.ctxAp.baselineCost,
+    residualCache: new Map<string, { turn: number; ap: number }>(),
+    itemsWithDropData: pair.itemsWithDropData,
+    isTimedOut,
+    remainingTimeoutMs,
   }
 
   const all: EventCraftPatternResult[] = [
-    buildPatternResult('runs', 'turn', 'turn', runsCounts, { ...bctxBase, singleValues: singleValuesTurn }),
-    buildPatternResult('ap', 'ap', 'ap', apCounts, { ...bctxBase, singleValues: singleValuesAp }),
-    buildPatternResult('even-turn', 'turn', 'turn', evenTurnCounts, {
-      ...bctxBase, singleValues: singleValuesTurn, burdenUnitCosts: unitCostsTurn,
-    }),
-    buildPatternResult('even-ap', 'ap', 'ap', evenApCounts, {
-      ...bctxBase, singleValues: singleValuesAp, burdenUnitCosts: unitCostsAp,
-    }),
+    buildPatternResult('runs', 'turn', 'turn', solved.runsCounts, { ...bctxBase, singleValues: singleValuesTurn }),
+    buildPatternResult('ap', 'ap', 'ap', solved.apCounts, { ...bctxBase, singleValues: singleValuesAp }),
+    buildPatternResult('even-turn', 'turn', 'turn', solved.evenTurnCounts, { ...bctxBase, singleValues: singleValuesTurn, burdenUnitCosts: solved.unitCostsTurn }),
+    buildPatternResult('even-ap', 'ap', 'ap', solved.evenApCounts, { ...bctxBase, singleValues: singleValuesAp, burdenUnitCosts: solved.unitCostsAp }),
     buildPatternResult('exhaust', 'both', 'turn', exhaustCounts, { ...bctxBase, singleValues: singleValuesTurn }),
   ]
 
-  // all は既に runs/ap/even-turn/even-ap/exhaust の表示順で構築済み。
   return foldEventCraftPatterns(all)
 }
 
