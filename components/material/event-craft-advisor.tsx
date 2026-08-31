@@ -580,13 +580,65 @@ const spawnEventCraftAllocationWorker = (
   }
 }
 
+const useEventCraftWorkerResult = (
+  enabled: boolean,
+  request: EventCraftAllocationWorkerRequest | null,
+  requestKey: string,
+) => {
+  const [settled, setSettled] = useState<{
+    key: string
+    result: EventCraftSolverResult
+  } | null>(null)
+
+  useEffect(() => {
+    if (!enabled || request == null) return
+    const key = requestKey
+    return spawnEventCraftAllocationWorker(request, (result) => {
+      setSettled({ key, result })
+    })
+  }, [enabled, request, requestKey])
+
+  const isPlanLoading = enabled && settled?.key !== requestKey
+  const result = settled?.key === requestKey ? settled.result : null
+  return { result, isPlanLoading }
+}
+
+const useEventCraftAdviceView = (
+  drops: Drops & { isLoading?: boolean },
+  result: EventCraftSolverResult,
+  config: EventCraftAdvisorConfig,
+  mode: DenominatorMode,
+  questIds: string[],
+  isDataReady: boolean,
+  isPlanLoading: boolean,
+) => {
+  const { t } = useTranslation('material')
+  const advice = useMemo(
+    () =>
+      resolveAdviceMessage({
+        isDataLoading: !!drops.isLoading,
+        isPlanLoading,
+        hasQuests: questIds.length > 0,
+        result,
+        config,
+        mode,
+        t: (k, d, o) => t(k, d, o),
+      }),
+    [drops.isLoading, isPlanLoading, questIds.length, result, config, mode, t],
+  )
+  const sortedAllocations = useMemo(
+    () => (isDataReady && !isPlanLoading ? sortAllocations(result.allocations) : []),
+    [result.allocations, isDataReady, isPlanLoading],
+  )
+  return { advice, sortedAllocations }
+}
+
 const useEventCraftCalculation = (
   drops: Drops & { isLoading?: boolean },
   fullNeed: Record<string, number>,
   config: EventCraftAdvisorConfig,
   mode: DenominatorMode,
 ) => {
-  const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
   const isDataReady = !drops.isLoading && questIds.length > 0
   const canUseWorker = typeof Worker !== 'undefined'
@@ -597,6 +649,26 @@ const useEventCraftCalculation = (
       recipes: EVENT_CRAFT_RECIPES_2026,
     }),
     [config.exhaustIngredients],
+  )
+
+  const workerRequest = useMemo((): EventCraftAllocationWorkerRequest | null => {
+    if (!canUseWorker || !isDataReady) return null
+    return {
+      drops,
+      fullNeed,
+      ownedIngredients: config.ingredients,
+      mode,
+      questIds,
+      options: solverOptions,
+    }
+  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
+
+  const requestKey = `${mode}:${config.exhaustIngredients}:${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
+
+  const { result: workerResult, isPlanLoading } = useEventCraftWorkerResult(
+    canUseWorker && isDataReady,
+    workerRequest,
+    requestKey,
   )
 
   const syncResult = useMemo(() => {
@@ -611,44 +683,12 @@ const useEventCraftCalculation = (
     )
   }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
 
-  const [workerResult, setWorkerResult] = useState<EventCraftSolverResult | null>(null)
+  const result = canUseWorker
+    ? (workerResult ?? emptyResultFor(config.ingredients))
+    : syncResult
 
-  useEffect(() => {
-    if (!canUseWorker || !isDataReady) return
-    setWorkerResult(null)
-    return spawnEventCraftAllocationWorker(
-      {
-        drops,
-        fullNeed,
-        ownedIngredients: config.ingredients,
-        mode,
-        questIds,
-        options: solverOptions,
-      },
-      setWorkerResult,
-    )
-  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
-
-  const result = canUseWorker ? (workerResult ?? emptyResultFor(config.ingredients)) : syncResult
-  const isPlanLoading = canUseWorker && isDataReady && workerResult === null
-
-  const advice = useMemo(
-    () =>
-      resolveAdviceMessage({
-        isDataLoading: !!drops.isLoading,
-        isPlanLoading,
-        hasQuests: questIds.length > 0,
-        result,
-        config,
-        mode,
-        t: (k, d, o) => t(k, d, o),
-      }),
-    [drops.isLoading, isPlanLoading, questIds.length, result, config, mode, t],
-  )
-
-  const sortedAllocations = useMemo(
-    () => (isDataReady && !isPlanLoading ? sortAllocations(result.allocations) : []),
-    [result.allocations, isDataReady, isPlanLoading],
+  const { advice, sortedAllocations } = useEventCraftAdviceView(
+    drops, result, config, mode, questIds, isDataReady, isPlanLoading,
   )
 
   return { result, advice, sortedAllocations, isDataReady, isPlanLoading }

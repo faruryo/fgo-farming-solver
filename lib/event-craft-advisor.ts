@@ -627,10 +627,17 @@ const executeSolveStages = (
   recipes: readonly EventCraftRecipe[],
   exhaust: boolean,
 ) => {
-  const { deficitCounts, optimalCost } = solveStage1(ctx)
+  const { deficitCounts } = solveStage1(ctx)
   const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
   const surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
-  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, optimalCost)
+  const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+  const residualCost = continuousOptimalCost(
+    ctx.drops,
+    remainingNeed,
+    Array.from(ctx.allowedQuests),
+    ctx.mode,
+  )
+  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
   const allocated = buildAllocations(
     recipes,
     deficitCounts,
@@ -638,7 +645,7 @@ const executeSolveStages = (
     allocatedSavings,
     singleItemBaseValues,
   )
-  return { allocated, optimalCost }
+  return { allocated, optimalCost: residualCost }
 }
 
 export const solveEventCraftAllocation = (

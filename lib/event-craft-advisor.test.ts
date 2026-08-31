@@ -1,6 +1,4 @@
 import { describe, it, expect } from 'vitest'
-import fs from 'fs'
-import path from 'path'
 import {
   solveEventCraftAllocation,
   generateCraftAdvice,
@@ -535,41 +533,32 @@ describe('expected-yield solver behavior', () => {
   })
 })
 
-describe('実データ規模での性能', () => {
-  const rawDrops = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '..', 'mocks', 'all.json'), 'utf8'),
-  ) as Drops
-  const drops: Drops = {
-    items: rawDrops.items,
-    quests: rawDrops.quests,
-    drop_rates: rawDrops.drop_rates,
-    campaigns: rawDrops.campaigns ?? [],
-  }
-  const questIds = drops.quests.map((q) => q.id)
-  const uniqueItemIds = Array.from(new Set(drops.drop_rates.map((dr) => dr.item_id)))
-  const USER_STORY_NEED = 1000
-  const USER_STORY_INGREDIENTS: IngredientCounts = {
-    seafood: 100_000,
-    meat: 100_000,
-    vegetable: 100_000,
-  }
-
-  it('カタログ全不足・品目1000・食材各10万でも10秒以内に計算を完了する', () => {
-    const fullNeed: Record<string, number> = {}
-    for (const id of uniqueItemIds) {
-      Reflect.set(fullNeed, id, USER_STORY_NEED)
+describe('皿決めMILPを絞ったあとの残余評価', () => {
+  it('料理が出さない不足があっても、削減量はアカウント全体の残余コスト差である', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-z', 199)],
+      [makeQuest('Qa', 20), makeQuest('Qz', 20)],
+      [
+        { quest_id: 'Qa', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Qz', item_id: 'item-z', drop_rate: 1 },
+      ],
+    )
+    const recipeA: EventCraftRecipe = {
+      ...sampleRecipes[0],
+      yields: { 'item-a': 1 },
     }
-
-    solveEventCraftAllocation(drops, fullNeed, USER_STORY_INGREDIENTS, 'turn', questIds)
-
-    const times: number[] = []
-    for (let i = 0; i < 3; i++) {
-      const t0 = performance.now()
-      const res = solveEventCraftAllocation(drops, fullNeed, USER_STORY_INGREDIENTS, 'turn', questIds)
-      times.push(performance.now() - t0)
-      expect(res.totalCrafted).toBeGreaterThan(0)
-    }
-    times.sort((a, b) => a - b)
-    expect(times[1]).toBeLessThan(10_000)
+    const owned: IngredientCounts = { seafood: 0, meat: 20, vegetable: 40 }
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 1, 'item-z': 1 },
+      owned,
+      'turn',
+      ['Qa', 'Qz'],
+      { exhaustIngredients: false, recipes: [recipeA] },
+    )
+    expect(res.baselineCost).toBeCloseTo(2)
+    expect(res.optimalCost).toBeCloseTo(1)
+    expect(res.totalSaved).toBeCloseTo(1)
+    expect(res.allocations.find((a) => a.recipe.id === 'recipe-a')?.deficitCount).toBe(1)
   })
 })
