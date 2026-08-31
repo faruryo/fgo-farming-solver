@@ -620,6 +620,24 @@ const calculateLeftovers = (
   vegetable: Math.max(0, (owned.vegetable ?? 0) - spent.vegetable),
 })
 
+const dropDeficitsThatDoNotReduceResidual = (
+  recipes: readonly EventCraftRecipe[],
+  deficitCounts: Map<string, number>,
+  allocatedSavings: Map<string, { totalSaved: number; unitSaved: number }>,
+): { counts: Map<string, number>; dropped: boolean } => {
+  const counts = new Map(deficitCounts)
+  let dropped = false
+  for (const recipe of recipes) {
+    const count = counts.get(recipe.id) ?? 0
+    const saved = allocatedSavings.get(recipe.id)?.totalSaved ?? 0
+    if (count > 0 && saved <= EPSILON) {
+      counts.set(recipe.id, 0)
+      dropped = true
+    }
+  }
+  return { counts, dropped }
+}
+
 const executeSolveStages = (
   ctx: SolverContext,
   ownedIngredients: IngredientCounts,
@@ -627,17 +645,31 @@ const executeSolveStages = (
   recipes: readonly EventCraftRecipe[],
   exhaust: boolean,
 ) => {
-  const { deficitCounts } = solveStage1(ctx)
-  const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
-  const surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
-  const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
-  const residualCost = continuousOptimalCost(
+  let { deficitCounts } = solveStage1(ctx)
+  let remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+  let surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
+  let remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+  let residualCost = continuousOptimalCost(
     ctx.drops,
     remainingNeed,
     Array.from(ctx.allowedQuests),
     ctx.mode,
   )
-  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  let allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, allocatedSavings)
+  if (pruned.dropped) {
+    deficitCounts = pruned.counts
+    remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+    surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
+    remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+    residualCost = continuousOptimalCost(
+      ctx.drops,
+      remainingNeed,
+      Array.from(ctx.allowedQuests),
+      ctx.mode,
+    )
+    allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  }
   const allocated = buildAllocations(
     recipes,
     deficitCounts,

@@ -513,6 +513,7 @@ const sortAllocations = (allocations: CraftAllocationItem[]) =>
 type AdviceResolutionParams = {
   isDataLoading: boolean
   isPlanLoading: boolean
+  didPlanTimeout: boolean
   hasQuests: boolean
   result: EventCraftSolverResult
   config: EventCraftAdvisorConfig
@@ -521,12 +522,18 @@ type AdviceResolutionParams = {
 }
 
 const resolveAdviceMessage = (params: AdviceResolutionParams) => {
-  const { isDataLoading, isPlanLoading, hasQuests, result, config, mode, t } = params
+  const { isDataLoading, isPlanLoading, didPlanTimeout, hasQuests, result, config, mode, t } = params
   if (isDataLoading) {
     return t('event-craft-loading', 'ドロップデータを読み込み中です、先輩...')
   }
   if (isPlanLoading) {
     return t('event-craft-plan-computing', '最適な配分を計算中です、先輩...')
+  }
+  if (didPlanTimeout) {
+    return t(
+      'event-craft-plan-timeout',
+      '配分の計算が時間内に終わりませんでした、先輩。通信や端末の負荷を確認するか、時間をおいて再度お試しください。',
+    )
   }
   if (!hasQuests) {
     return t(
@@ -552,25 +559,25 @@ const emptyResultFor = (ingredients: IngredientCounts): EventCraftSolverResult =
 
 const spawnEventCraftAllocationWorker = (
   request: EventCraftAllocationWorkerRequest,
-  onSettled: (result: EventCraftSolverResult) => void,
+  onSettled: (result: EventCraftSolverResult, timedOut: boolean) => void,
 ): (() => void) => {
   let settled = false
   const worker = new Worker(new URL('../../lib/event-craft-allocation.worker', import.meta.url))
 
-  const finish = (result: EventCraftSolverResult) => {
+  const finish = (result: EventCraftSolverResult, timedOut: boolean) => {
     if (settled) return
     settled = true
     clearTimeout(hardTimeout)
     worker.terminate()
-    onSettled(result)
+    onSettled(result, timedOut)
   }
   const hardTimeout = setTimeout(
-    () => finish(emptyResultFor(request.ownedIngredients)),
+    () => finish(emptyResultFor(request.ownedIngredients), true),
     WORKER_HARD_TIMEOUT_MS,
   )
 
-  worker.onmessage = (e: MessageEvent<EventCraftSolverResult>) => finish(e.data)
-  worker.onerror = () => finish(emptyResultFor(request.ownedIngredients))
+  worker.onmessage = (e: MessageEvent<EventCraftSolverResult>) => finish(e.data, false)
+  worker.onerror = () => finish(emptyResultFor(request.ownedIngredients), true)
   worker.postMessage(request)
 
   return () => {
@@ -588,47 +595,55 @@ const useEventCraftWorkerResult = (
   const [settled, setSettled] = useState<{
     key: string
     result: EventCraftSolverResult
+    timedOut: boolean
   } | null>(null)
 
   useEffect(() => {
     if (!enabled || request == null) return
     const key = requestKey
-    return spawnEventCraftAllocationWorker(request, (result) => {
-      setSettled({ key, result })
+    return spawnEventCraftAllocationWorker(request, (result, timedOut) => {
+      setSettled({ key, result, timedOut })
     })
   }, [enabled, request, requestKey])
 
   const isPlanLoading = enabled && settled?.key !== requestKey
   const result = settled?.key === requestKey ? settled.result : null
-  return { result, isPlanLoading }
+  const didPlanTimeout = settled?.key === requestKey && settled.timedOut
+  return { result, isPlanLoading, didPlanTimeout }
 }
 
-const useEventCraftAdviceView = (
-  drops: Drops & { isLoading?: boolean },
-  result: EventCraftSolverResult,
-  config: EventCraftAdvisorConfig,
-  mode: DenominatorMode,
-  questIds: string[],
-  isDataReady: boolean,
-  isPlanLoading: boolean,
-) => {
+const useEventCraftAdviceView = (params: {
+  drops: Drops & { isLoading?: boolean }
+  result: EventCraftSolverResult
+  config: EventCraftAdvisorConfig
+  mode: DenominatorMode
+  questIds: string[]
+  isDataReady: boolean
+  isPlanLoading: boolean
+  didPlanTimeout: boolean
+}) => {
+  const { drops, result, config, mode, questIds, isDataReady, isPlanLoading, didPlanTimeout } = params
   const { t } = useTranslation('material')
   const advice = useMemo(
     () =>
       resolveAdviceMessage({
         isDataLoading: !!drops.isLoading,
         isPlanLoading,
+        didPlanTimeout,
         hasQuests: questIds.length > 0,
         result,
         config,
         mode,
         t: (k, d, o) => t(k, d, o),
       }),
-    [drops.isLoading, isPlanLoading, questIds.length, result, config, mode, t],
+    [drops.isLoading, isPlanLoading, didPlanTimeout, questIds.length, result, config, mode, t],
   )
   const sortedAllocations = useMemo(
-    () => (isDataReady && !isPlanLoading ? sortAllocations(result.allocations) : []),
-    [result.allocations, isDataReady, isPlanLoading],
+    () =>
+      isDataReady && !isPlanLoading && !didPlanTimeout
+        ? sortAllocations(result.allocations)
+        : [],
+    [result.allocations, isDataReady, isPlanLoading, didPlanTimeout],
   )
   return { advice, sortedAllocations }
 }
@@ -665,7 +680,7 @@ const useEventCraftCalculation = (
 
   const requestKey = `${mode}:${config.exhaustIngredients}:${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
 
-  const { result: workerResult, isPlanLoading } = useEventCraftWorkerResult(
+  const { result: workerResult, isPlanLoading, didPlanTimeout } = useEventCraftWorkerResult(
     canUseWorker && isDataReady,
     workerRequest,
     requestKey,
@@ -687,11 +702,11 @@ const useEventCraftCalculation = (
     ? (workerResult ?? emptyResultFor(config.ingredients))
     : syncResult
 
-  const { advice, sortedAllocations } = useEventCraftAdviceView(
-    drops, result, config, mode, questIds, isDataReady, isPlanLoading,
-  )
+  const { advice, sortedAllocations } = useEventCraftAdviceView({
+    drops, result, config, mode, questIds, isDataReady, isPlanLoading, didPlanTimeout,
+  })
 
-  return { result, advice, sortedAllocations, isDataReady, isPlanLoading }
+  return { result, advice, sortedAllocations, isDataReady, isPlanLoading, didPlanTimeout }
 }
 
 const useAdvisorState = () => {
@@ -774,7 +789,7 @@ export const EventCraftAdvisor = ({
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
   const { config, setIngredientCount, setExhaust, reset } = useAdvisorState()
-  const { result, advice, sortedAllocations, isDataReady, isPlanLoading } =
+  const { result, advice, sortedAllocations, isDataReady, isPlanLoading, didPlanTimeout } =
     useEventCraftCalculation(drops, fullNeed, config, mode)
   const { t } = useTranslation('material')
   const unitLabel = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
@@ -798,7 +813,7 @@ export const EventCraftAdvisor = ({
           onChange={setIngredientCount}
         />
         <ServantPraise message={advice} size={44} />
-        {isDataReady && !isPlanLoading && (
+        {isDataReady && !isPlanLoading && !didPlanTimeout && (
           <>
             <EventCraftExpectedYields
               entries={sumExpectedCraftYields(sortedAllocations)}
