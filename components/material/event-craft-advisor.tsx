@@ -685,6 +685,15 @@ const spawnEventCraftPlanWorker = (
   let settled = false
   const worker = new Worker(new URL('../../lib/event-craft-plan.worker', import.meta.url))
 
+  const timedOutPlan = () =>
+    computeEventCraftPlan(
+      request.drops,
+      request.fullNeed,
+      request.ownedIngredients,
+      request.questIds,
+      { timeoutMs: -1 },
+    )
+
   const finish = (result: EventCraftPlanResult, timedOut: boolean) => {
     if (settled) return
     settled = true
@@ -692,10 +701,10 @@ const spawnEventCraftPlanWorker = (
     worker.terminate()
     onSettled(result, timedOut)
   }
-  const hardTimeout = setTimeout(() => finish(EMPTY_PLAN_RESULT, true), WORKER_HARD_TIMEOUT_MS)
+  const hardTimeout = setTimeout(() => finish(timedOutPlan(), true), WORKER_HARD_TIMEOUT_MS)
 
   worker.onmessage = (e: MessageEvent<EventCraftPlanResult>) => finish(e.data, false)
-  worker.onerror = () => finish(EMPTY_PLAN_RESULT, true)
+  worker.onerror = () => finish(timedOutPlan(), true)
   worker.postMessage(request)
 
   return () => {
@@ -723,22 +732,21 @@ const useEventCraftPlan = (
   }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, questIds])
 
   const [workerPlan, setWorkerPlan] = useState<EventCraftPlanResult>(EMPTY_PLAN_RESULT)
-  const [didWorkerTimeout, setDidWorkerTimeout] = useState(false)
 
   useEffect(() => {
     if (!canUseWorker || !isDataReady) return
+    setWorkerPlan(EMPTY_PLAN_RESULT)
     return spawnEventCraftPlanWorker(
       { drops, fullNeed, ownedIngredients: config.ingredients, questIds },
-      (result, timedOut) => {
+      (result) => {
         setWorkerPlan(result)
-        setDidWorkerTimeout(timedOut)
       },
     )
   }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, questIds])
 
   const plan = canUseWorker ? workerPlan : syncPlan
   // plan.patterns は常に非空(runs/exhaustは必ず含む)なので、空のままは計算未完了の合図として使える。
-  const isPlanLoading = canUseWorker && isDataReady && plan.patterns.length === 0 && !didWorkerTimeout
+  const isPlanLoading = canUseWorker && isDataReady && plan.patterns.length === 0
   const selectedPatternId = resolveVisiblePatternId(plan, config.planPattern)
   const selectedPattern = plan.patterns.find((p) => p.id === selectedPatternId)
 

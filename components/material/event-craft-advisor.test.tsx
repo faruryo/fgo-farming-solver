@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import {
   EventCraftAdvisor,
   EventCraftExpectedYields,
@@ -281,6 +281,81 @@ describe('EventCraftAdvisor pattern cards', () => {
     // even-turn が後で再び表示されるようになったとき、ユーザーの意図に反して静かに選択が戻ってしまう。
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}') as { planPattern?: string }
     expect(stored.planPattern).toBe('runs')
+  })
+})
+
+describe('EventCraftAdvisor worker lifecycle', () => {
+  class FakeWorker {
+    static latest: FakeWorker | null = null
+    onmessage: ((e: MessageEvent<EventCraftPlanResult>) => void) | null = null
+    onerror: (() => void) | null = null
+    postMessage = vi.fn()
+    terminate = vi.fn()
+    constructor() {
+      FakeWorker.latest = this
+    }
+    emit(result: EventCraftPlanResult) {
+      this.onmessage?.({ data: result } as MessageEvent<EventCraftPlanResult>)
+    }
+  }
+
+  const zeroPlan = makePlan([
+    makePattern('runs', 'turn', []),
+    makePattern('exhaust', 'both', []),
+  ])
+  const cookedPlan = makePlan([
+    makePattern('runs', 'turn', [makeAllocation(recipeA, 1)]),
+    makePattern('exhaust', 'both', [makeAllocation(recipeA, 1)]),
+  ])
+
+  beforeEach(() => {
+    localStorage.clear()
+    mockComputeEventCraftPlan.mockReset()
+    mockComputeEventCraftPlan.mockReturnValue(zeroPlan)
+    FakeWorker.latest = null
+    vi.stubGlobal('Worker', FakeWorker)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps runs/exhaust cards with the 0-dish fallback when the worker times out', async () => {
+    render(<EventCraftAdvisor items={items} fullNeed={{}} />)
+
+    expect(screen.getByText('最適な配分を計算中です、先輩...')).toBeTruthy()
+    FakeWorker.latest?.onerror?.()
+
+    await waitFor(() => {
+      expect(screen.getByText('周回を減らす')).toBeTruthy()
+    })
+    expect(screen.getByText('食材を使い切る')).toBeTruthy()
+    expect(screen.queryByText('ドロップデータを取得できませんでした、先輩。通信環境を確認するか、時間をおいて再度お試しください。')).toBeNull()
+    expect(mockComputeEventCraftPlan).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      { timeoutMs: -1 },
+    )
+  })
+
+  it('shows computing state instead of the previous plan when inputs change', async () => {
+    render(<EventCraftAdvisor items={items} fullNeed={{}} />)
+    FakeWorker.latest?.emit(cookedPlan)
+
+    await waitFor(() => {
+      expect(screen.getAllByText('recipe-recipe-a').length).toBeGreaterThan(0)
+    })
+
+    const seafoodInput = screen.getAllByRole('spinbutton')[0]
+    fireEvent.change(seafoodInput, { target: { value: '10' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('最適な配分を計算中です、先輩...')).toBeTruthy()
+    })
+    expect(screen.queryByText('recipe-recipe-a')).toBeNull()
   })
 })
 
