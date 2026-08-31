@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
@@ -9,10 +9,10 @@ import { Item } from '../../interfaces/atlas-academy'
 import { Drops } from '../../lib/get-drops'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
 import { DenominatorMode } from '../../lib/material-selection-advisor'
+import type { EventCraftAllocationWorkerRequest } from '../../lib/event-craft-allocation.worker'
 import {
   solveEventCraftAllocation,
   generateCraftAdvice,
-  computeSingleItemBaseValues,
   CraftAllocationItem,
   EventCraftSolverResult,
   AdviceTranslator,
@@ -512,6 +512,7 @@ const sortAllocations = (allocations: CraftAllocationItem[]) =>
 
 type AdviceResolutionParams = {
   isDataLoading: boolean
+  isPlanLoading: boolean
   hasQuests: boolean
   result: EventCraftSolverResult
   config: EventCraftAdvisorConfig
@@ -520,9 +521,12 @@ type AdviceResolutionParams = {
 }
 
 const resolveAdviceMessage = (params: AdviceResolutionParams) => {
-  const { isDataLoading, hasQuests, result, config, mode, t } = params
+  const { isDataLoading, isPlanLoading, hasQuests, result, config, mode, t } = params
   if (isDataLoading) {
     return t('event-craft-loading', 'ドロップデータを読み込み中です、先輩...')
+  }
+  if (isPlanLoading) {
+    return t('event-craft-plan-computing', '最適な配分を計算中です、先輩...')
   }
   if (!hasQuests) {
     return t(
@@ -539,44 +543,41 @@ const resolveAdviceMessage = (params: AdviceResolutionParams) => {
   )
 }
 
-type CalculationParams = {
-  drops: Drops & { isLoading?: boolean }
-  fullNeed: Record<string, number>
-  config: EventCraftAdvisorConfig
-  mode: DenominatorMode
-  questIds: string[]
-  singleItemBaseValues: Map<string, number>
-  isDataReady: boolean
-}
+const WORKER_HARD_TIMEOUT_MS = 10000
 
-const calculateEventCraftResult = (params: CalculationParams): EventCraftSolverResult => {
-  const {
-    drops,
-    fullNeed,
-    config,
-    mode,
-    questIds,
-    singleItemBaseValues,
-    isDataReady,
-  } = params
-  if (!isDataReady) {
-    return {
-      ...EMPTY_ALLOCATION_RESULT,
-      leftoverIngredients: { ...config.ingredients },
-    }
+const emptyResultFor = (ingredients: IngredientCounts): EventCraftSolverResult => ({
+  ...EMPTY_ALLOCATION_RESULT,
+  leftoverIngredients: { ...ingredients },
+})
+
+const spawnEventCraftAllocationWorker = (
+  request: EventCraftAllocationWorkerRequest,
+  onSettled: (result: EventCraftSolverResult) => void,
+): (() => void) => {
+  let settled = false
+  const worker = new Worker(new URL('../../lib/event-craft-allocation.worker', import.meta.url))
+
+  const finish = (result: EventCraftSolverResult) => {
+    if (settled) return
+    settled = true
+    clearTimeout(hardTimeout)
+    worker.terminate()
+    onSettled(result)
   }
-  return solveEventCraftAllocation(
-    drops,
-    fullNeed,
-    config.ingredients,
-    mode,
-    questIds,
-    {
-      exhaustIngredients: config.exhaustIngredients,
-      recipes: EVENT_CRAFT_RECIPES_2026,
-      singleItemBaseValues,
-    },
+  const hardTimeout = setTimeout(
+    () => finish(emptyResultFor(request.ownedIngredients)),
+    WORKER_HARD_TIMEOUT_MS,
   )
+
+  worker.onmessage = (e: MessageEvent<EventCraftSolverResult>) => finish(e.data)
+  worker.onerror = () => finish(emptyResultFor(request.ownedIngredients))
+  worker.postMessage(request)
+
+  return () => {
+    settled = true
+    clearTimeout(hardTimeout)
+    worker.terminate()
+  }
 }
 
 const useEventCraftCalculation = (
@@ -588,55 +589,69 @@ const useEventCraftCalculation = (
   const { t } = useTranslation('material')
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
   const isDataReady = !drops.isLoading && questIds.length > 0
+  const canUseWorker = typeof Worker !== 'undefined'
 
-  const singleItemBaseValues = useMemo(() => {
-    if (!isDataReady) return new Map<string, number>()
-    return computeSingleItemBaseValues(drops, questIds, mode, {
+  const solverOptions = useMemo(
+    () => ({
+      exhaustIngredients: config.exhaustIngredients,
       recipes: EVENT_CRAFT_RECIPES_2026,
-    })
-  }, [drops, questIds, mode, isDataReady])
+    }),
+    [config.exhaustIngredients],
+  )
 
-  const result = useMemo(
-    () =>
-      calculateEventCraftResult({
-        drops,
-        fullNeed,
-        config,
-        mode,
-        questIds,
-        singleItemBaseValues,
-        isDataReady,
-      }),
-    [
+  const syncResult = useMemo(() => {
+    if (canUseWorker || !isDataReady) return emptyResultFor(config.ingredients)
+    return solveEventCraftAllocation(
       drops,
       fullNeed,
-      config,
+      config.ingredients,
       mode,
       questIds,
-      singleItemBaseValues,
-      isDataReady,
-    ],
-  )
+      solverOptions,
+    )
+  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
+
+  const [workerResult, setWorkerResult] = useState<EventCraftSolverResult | null>(null)
+
+  useEffect(() => {
+    if (!canUseWorker || !isDataReady) return
+    setWorkerResult(null)
+    return spawnEventCraftAllocationWorker(
+      {
+        drops,
+        fullNeed,
+        ownedIngredients: config.ingredients,
+        mode,
+        questIds,
+        options: solverOptions,
+      },
+      setWorkerResult,
+    )
+  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
+
+  const result = canUseWorker ? (workerResult ?? emptyResultFor(config.ingredients)) : syncResult
+  const isPlanLoading = canUseWorker && isDataReady && workerResult === null
 
   const advice = useMemo(
     () =>
       resolveAdviceMessage({
         isDataLoading: !!drops.isLoading,
+        isPlanLoading,
         hasQuests: questIds.length > 0,
         result,
         config,
         mode,
         t: (k, d, o) => t(k, d, o),
       }),
-    [drops.isLoading, questIds.length, result, config, mode, t],
+    [drops.isLoading, isPlanLoading, questIds.length, result, config, mode, t],
   )
 
   const sortedAllocations = useMemo(
-    () => (isDataReady ? sortAllocations(result.allocations) : []),
-    [result.allocations, isDataReady],
+    () => (isDataReady && !isPlanLoading ? sortAllocations(result.allocations) : []),
+    [result.allocations, isDataReady, isPlanLoading],
   )
 
-  return { result, advice, sortedAllocations, isDataReady }
+  return { result, advice, sortedAllocations, isDataReady, isPlanLoading }
 }
 
 const useAdvisorState = () => {
@@ -719,7 +734,7 @@ export const EventCraftAdvisor = ({
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
   const { config, setIngredientCount, setExhaust, reset } = useAdvisorState()
-  const { result, advice, sortedAllocations, isDataReady } =
+  const { result, advice, sortedAllocations, isDataReady, isPlanLoading } =
     useEventCraftCalculation(drops, fullNeed, config, mode)
   const { t } = useTranslation('material')
   const unitLabel = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
@@ -743,7 +758,7 @@ export const EventCraftAdvisor = ({
           onChange={setIngredientCount}
         />
         <ServantPraise message={advice} size={44} />
-        {isDataReady && (
+        {isDataReady && !isPlanLoading && (
           <>
             <EventCraftExpectedYields
               entries={sumExpectedCraftYields(sortedAllocations)}

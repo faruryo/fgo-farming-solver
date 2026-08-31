@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import fs from 'fs'
+import path from 'path'
 import {
   solveEventCraftAllocation,
   generateCraftAdvice,
@@ -530,5 +532,44 @@ describe('expected-yield solver behavior', () => {
     expect(aAmt).toBeCloseTo(res.totalCrafted * 0.4)
     expect(res.totalDeficitCrafted).toBeGreaterThan(0)
     expect(res.totalSurplusCrafted).toBeGreaterThan(0)
+  })
+})
+
+describe('実データ規模での性能', () => {
+  const rawDrops = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '..', 'mocks', 'all.json'), 'utf8'),
+  ) as Drops
+  const drops: Drops = {
+    items: rawDrops.items,
+    quests: rawDrops.quests,
+    drop_rates: rawDrops.drop_rates,
+    campaigns: rawDrops.campaigns ?? [],
+  }
+  const questIds = drops.quests.map((q) => q.id)
+  const uniqueItemIds = Array.from(new Set(drops.drop_rates.map((dr) => dr.item_id)))
+  const USER_STORY_NEED = 1000
+  const USER_STORY_INGREDIENTS: IngredientCounts = {
+    seafood: 100_000,
+    meat: 100_000,
+    vegetable: 100_000,
+  }
+
+  it('カタログ全不足・品目1000・食材各10万でも10秒以内に計算を完了する', () => {
+    const fullNeed: Record<string, number> = {}
+    for (const id of uniqueItemIds) {
+      Reflect.set(fullNeed, id, USER_STORY_NEED)
+    }
+
+    solveEventCraftAllocation(drops, fullNeed, USER_STORY_INGREDIENTS, 'turn', questIds)
+
+    const times: number[] = []
+    for (let i = 0; i < 3; i++) {
+      const t0 = performance.now()
+      const res = solveEventCraftAllocation(drops, fullNeed, USER_STORY_INGREDIENTS, 'turn', questIds)
+      times.push(performance.now() - t0)
+      expect(res.totalCrafted).toBeGreaterThan(0)
+    }
+    times.sort((a, b) => a - b)
+    expect(times[1]).toBeLessThan(10_000)
   })
 })

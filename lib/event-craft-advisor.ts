@@ -139,13 +139,40 @@ const extractFarmableNeed = (
   return farmable
 }
 
+const getRecipeYieldTargets = (
+  recipes: readonly EventCraftRecipe[],
+): Set<string> => {
+  const targets = new Set<string>()
+  for (const recipe of recipes) {
+    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+      if (y > 0) targets.add(shortId)
+    }
+  }
+  return targets
+}
+
+const findRelevantQuestIds = (
+  drops: Drops,
+  allowedQuests: Set<string>,
+  farmableNeed: Map<string, number>,
+): Set<string> => {
+  const relevant = new Set<string>()
+  for (const dr of drops.drop_rates) {
+    if (dr.drop_rate > 0 && farmableNeed.has(dr.item_id) && allowedQuests.has(dr.quest_id)) {
+      relevant.add(dr.quest_id)
+    }
+  }
+  return relevant
+}
+
 const populateQuestVars = (
   model: solver.Model,
   ctx: SolverContext,
   isTieBreak: boolean,
 ) => {
+  const relevantQuestIds = findRelevantQuestIds(ctx.drops, ctx.allowedQuests, ctx.farmableNeed)
   for (const q of ctx.drops.quests) {
-    if (!ctx.allowedQuests.has(q.id)) continue
+    if (!relevantQuestIds.has(q.id)) continue
     const qVars: Record<string, number> = {
       totalCost: ctx.mode === 'turn' ? 1 : q.ap,
     }
@@ -536,7 +563,12 @@ const createSolverContext = (
   const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
   const allowedQuests = new Set(questIds)
   const baselineCost = continuousOptimalCost(drops, fullNeed, questIds, mode)
-  const farmableNeed = extractFarmableNeed(fullNeed, itemsWithDropData)
+  const recipeYieldTargets = getRecipeYieldTargets(recipes)
+  const farmableNeed = new Map(
+    [...extractFarmableNeed(fullNeed, itemsWithDropData)].filter(([itemId]) =>
+      recipeYieldTargets.has(itemId),
+    ),
+  )
 
   const ctx: SolverContext = {
     drops,
