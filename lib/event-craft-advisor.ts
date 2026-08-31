@@ -680,7 +680,7 @@ const executeSolveStages = (
 ) => {
   const banned = new Set<string>()
   let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
-  let plan
+  let plan!: ReturnType<typeof evaluateDeficitPlan>
   for (let i = 0; i < recipes.length + 1; i++) {
     const active = recipes.filter((r) => !banned.has(r.id))
     const stageCtx: SolverContext = {
