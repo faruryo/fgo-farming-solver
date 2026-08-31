@@ -139,13 +139,40 @@ const extractFarmableNeed = (
   return farmable
 }
 
+const getRecipeYieldTargets = (
+  recipes: readonly EventCraftRecipe[],
+): Set<string> => {
+  const targets = new Set<string>()
+  for (const recipe of recipes) {
+    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+      if (y > 0) targets.add(shortId)
+    }
+  }
+  return targets
+}
+
+const findRelevantQuestIds = (
+  drops: Drops,
+  allowedQuests: Set<string>,
+  farmableNeed: Map<string, number>,
+): Set<string> => {
+  const relevant = new Set<string>()
+  for (const dr of drops.drop_rates) {
+    if (dr.drop_rate > 0 && farmableNeed.has(dr.item_id) && allowedQuests.has(dr.quest_id)) {
+      relevant.add(dr.quest_id)
+    }
+  }
+  return relevant
+}
+
 const populateQuestVars = (
   model: solver.Model,
   ctx: SolverContext,
   isTieBreak: boolean,
 ) => {
+  const relevantQuestIds = findRelevantQuestIds(ctx.drops, ctx.allowedQuests, ctx.farmableNeed)
   for (const q of ctx.drops.quests) {
-    if (!ctx.allowedQuests.has(q.id)) continue
+    if (!relevantQuestIds.has(q.id)) continue
     const qVars: Record<string, number> = {
       totalCost: ctx.mode === 'turn' ? 1 : q.ap,
     }
@@ -536,7 +563,12 @@ const createSolverContext = (
   const itemsWithDropData = new Set(drops.drop_rates.map((dr) => dr.item_id))
   const allowedQuests = new Set(questIds)
   const baselineCost = continuousOptimalCost(drops, fullNeed, questIds, mode)
-  const farmableNeed = extractFarmableNeed(fullNeed, itemsWithDropData)
+  const recipeYieldTargets = getRecipeYieldTargets(recipes)
+  const farmableNeed = new Map(
+    [...extractFarmableNeed(fullNeed, itemsWithDropData)].filter(([itemId]) =>
+      recipeYieldTargets.has(itemId),
+    ),
+  )
 
   const ctx: SolverContext = {
     drops,
@@ -588,6 +620,24 @@ const calculateLeftovers = (
   vegetable: Math.max(0, (owned.vegetable ?? 0) - spent.vegetable),
 })
 
+const dropDeficitsThatDoNotReduceResidual = (
+  recipes: readonly EventCraftRecipe[],
+  deficitCounts: Map<string, number>,
+  allocatedSavings: Map<string, { totalSaved: number; unitSaved: number }>,
+): { counts: Map<string, number>; dropped: boolean } => {
+  const counts = new Map(deficitCounts)
+  let dropped = false
+  for (const recipe of recipes) {
+    const count = counts.get(recipe.id) ?? 0
+    const saved = allocatedSavings.get(recipe.id)?.totalSaved ?? 0
+    if (count > 0 && saved <= EPSILON) {
+      counts.set(recipe.id, 0)
+      dropped = true
+    }
+  }
+  return { counts, dropped }
+}
+
 const executeSolveStages = (
   ctx: SolverContext,
   ownedIngredients: IngredientCounts,
@@ -595,10 +645,31 @@ const executeSolveStages = (
   recipes: readonly EventCraftRecipe[],
   exhaust: boolean,
 ) => {
-  const { deficitCounts, optimalCost } = solveStage1(ctx)
-  const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
-  const surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
-  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, optimalCost)
+  let { deficitCounts } = solveStage1(ctx)
+  let remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+  let surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
+  let remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+  let residualCost = continuousOptimalCost(
+    ctx.drops,
+    remainingNeed,
+    Array.from(ctx.allowedQuests),
+    ctx.mode,
+  )
+  let allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, allocatedSavings)
+  if (pruned.dropped) {
+    deficitCounts = pruned.counts
+    remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+    surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
+    remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+    residualCost = continuousOptimalCost(
+      ctx.drops,
+      remainingNeed,
+      Array.from(ctx.allowedQuests),
+      ctx.mode,
+    )
+    allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  }
   const allocated = buildAllocations(
     recipes,
     deficitCounts,
@@ -606,7 +677,7 @@ const executeSolveStages = (
     allocatedSavings,
     singleItemBaseValues,
   )
-  return { allocated, optimalCost }
+  return { allocated, optimalCost: residualCost }
 }
 
 export const solveEventCraftAllocation = (

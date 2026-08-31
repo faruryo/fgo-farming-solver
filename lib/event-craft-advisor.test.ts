@@ -532,3 +532,62 @@ describe('expected-yield solver behavior', () => {
     expect(res.totalSurplusCrafted).toBeGreaterThan(0)
   })
 })
+
+describe('皿決めMILPを絞ったあとの残余評価', () => {
+  it('料理が出さない不足があっても、削減量はアカウント全体の残余コスト差である', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-z', 199)],
+      [makeQuest('Qa', 20), makeQuest('Qz', 20)],
+      [
+        { quest_id: 'Qa', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Qz', item_id: 'item-z', drop_rate: 1 },
+      ],
+    )
+    const recipeA: EventCraftRecipe = {
+      ...sampleRecipes[0],
+      yields: { 'item-a': 1 },
+    }
+    const owned: IngredientCounts = { seafood: 0, meat: 20, vegetable: 40 }
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 1, 'item-z': 1 },
+      owned,
+      'turn',
+      ['Qa', 'Qz'],
+      { exhaustIngredients: false, recipes: [recipeA] },
+    )
+    expect(res.baselineCost).toBeCloseTo(2)
+    expect(res.optimalCost).toBeCloseTo(1)
+    expect(res.totalSaved).toBeCloseTo(1)
+    expect(res.allocations.find((a) => a.recipe.id === 'recipe-a')?.deficitCount).toBe(1)
+  })
+
+  it('同一クエストの非料理素材が残る皿は、全体の残余が下がらないので不足枠にしない', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-z', 199)],
+      [makeQuest('Q1', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Q1', item_id: 'item-z', drop_rate: 1 },
+      ],
+    )
+    const recipeA: EventCraftRecipe = {
+      ...sampleRecipes[0],
+      yields: { 'item-a': 1 },
+    }
+    const owned: IngredientCounts = { seafood: 0, meat: 20, vegetable: 40 }
+    const res = solveEventCraftAllocation(
+      d,
+      { 'item-a': 1, 'item-z': 1 },
+      owned,
+      'turn',
+      ['Q1'],
+      { exhaustIngredients: false, recipes: [recipeA] },
+    )
+    expect(res.baselineCost).toBeCloseTo(1)
+    expect(res.optimalCost).toBeCloseTo(1)
+    expect(res.totalSaved).toBeCloseTo(0)
+    expect(res.allocations.find((a) => a.recipe.id === 'recipe-a')?.deficitCount).toBe(0)
+    expect(res.totalDeficitCrafted).toBe(0)
+  })
+})
