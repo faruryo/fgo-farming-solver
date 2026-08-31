@@ -644,12 +644,7 @@ const evaluateDeficitPlan = (
   ctx: SolverContext,
   deficitCounts: Map<string, number>,
   recipes: readonly EventCraftRecipe[],
-  ownedIngredients: IngredientCounts,
-  exhaust: boolean,
-  singleItemBaseValues: Map<string, number>,
 ) => {
-  const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
-  const surplusCounts = computeSurplusCounts(exhaust, remaining, singleItemBaseValues, recipes)
   const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
   const residualCost = continuousOptimalCost(
     ctx.drops,
@@ -658,7 +653,7 @@ const evaluateDeficitPlan = (
     ctx.mode,
   )
   const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
-  return { remaining, surplusCounts, residualCost, allocatedSavings }
+  return { residualCost, allocatedSavings }
 }
 
 const executeSolveStages = (
@@ -678,9 +673,7 @@ const executeSolveStages = (
     }
     const solved = solveStage1(stageCtx)
     deficitCounts = new Map(recipes.map((r) => [r.id, solved.deficitCounts.get(r.id) ?? 0]))
-    plan = evaluateDeficitPlan(
-      ctx, deficitCounts, recipes, ownedIngredients, exhaust, singleItemBaseValues,
-    )
+    plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
     const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, plan.allocatedSavings)
     const newlyBanned = recipes.filter(
       (r) => pruned.dropped && (pruned.counts.get(r.id) ?? 0) === 0 && (deficitCounts.get(r.id) ?? 0) > 0,
@@ -689,10 +682,17 @@ const executeSolveStages = (
     if (newlyBanned.length === 0) break
     banned.add(newlyBanned[0].id)
   }
+  const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+  const surplusCounts = computeSurplusCounts(
+    exhaust,
+    remaining,
+    singleItemBaseValues,
+    recipes,
+  )
   const allocated = buildAllocations(
     recipes,
     deficitCounts,
-    plan.surplusCounts,
+    surplusCounts,
     plan.allocatedSavings,
     singleItemBaseValues,
   )
