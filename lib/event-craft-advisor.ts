@@ -55,6 +55,7 @@ type SolverContext = {
   recipes: readonly EventCraftRecipe[]
   baselineCost: number
   itemsWithDropData: Set<string>
+  eligibleRecipeIds?: Set<string>
 }
 
 const baseValuesCache = new WeakMap<object, Map<string, Map<string, number>>>()
@@ -197,6 +198,7 @@ const populateCraftVars = (
   isTieBreak: boolean,
 ) => {
   for (const recipe of ctx.recipes) {
+    if (ctx.eligibleRecipeIds && !ctx.eligibleRecipeIds.has(recipe.id)) continue
     const yields = getRecipeYields(recipe, ctx.recipes)
     const helpsDeficit = Object.entries(yields).some(
       ([shortId, y]) => y > 0 && (ctx.farmableNeed.get(shortId) ?? 0) > 0,
@@ -638,18 +640,6 @@ const dropDeficitsThatDoNotReduceResidual = (
   return { counts, dropped }
 }
 
-const farmableNeedForRecipes = (
-  ctx: SolverContext,
-  recipes: readonly EventCraftRecipe[],
-): Map<string, number> => {
-  const targets = getRecipeYieldTargets(recipes)
-  return new Map(
-    [...extractFarmableNeed(ctx.fullNeed, ctx.itemsWithDropData)].filter(([itemId]) =>
-      targets.has(itemId),
-    ),
-  )
-}
-
 const evaluateDeficitPlan = (
   ctx: SolverContext,
   deficitCounts: Map<string, number>,
@@ -682,11 +672,9 @@ const executeSolveStages = (
   let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
   let plan!: ReturnType<typeof evaluateDeficitPlan>
   for (let i = 0; i < recipes.length + 1; i++) {
-    const active = recipes.filter((r) => !banned.has(r.id))
     const stageCtx: SolverContext = {
       ...ctx,
-      recipes: active,
-      farmableNeed: farmableNeedForRecipes(ctx, active),
+      eligibleRecipeIds: new Set(recipes.filter((r) => !banned.has(r.id)).map((r) => r.id)),
     }
     const solved = solveStage1(stageCtx)
     deficitCounts = new Map(recipes.map((r) => [r.id, solved.deficitCounts.get(r.id) ?? 0]))
