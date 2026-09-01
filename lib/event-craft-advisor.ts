@@ -640,6 +640,32 @@ const dropDeficitsThatDoNotReduceResidual = (
   return { counts, dropped }
 }
 
+const findFirstZeroSavingRecipe = (
+  ctx: SolverContext,
+  recipes: readonly EventCraftRecipe[],
+  deficitCounts: Map<string, number>,
+  residualCost: number,
+): EventCraftRecipe | undefined => {
+  const allowedQuestsList = Array.from(ctx.allowedQuests)
+  for (const recipe of recipes) {
+    const count = deficitCounts.get(recipe.id) ?? 0
+    if (count <= 0) continue
+    const withoutRecipeNeed = subtractCraftYieldsFromNeed(
+      ctx.fullNeed,
+      recipes,
+      deficitCounts,
+      recipe.id,
+    )
+    const costWithout = continuousOptimalCost(
+      ctx.drops,
+      withoutRecipeNeed,
+      allowedQuestsList,
+      ctx.mode,
+    )
+    if (costWithout - residualCost <= EPSILON) return recipe
+  }
+}
+
 const evaluateDeficitPlan = (
   ctx: SolverContext,
   deficitCounts: Map<string, number>,
@@ -656,6 +682,9 @@ const evaluateDeficitPlan = (
   return { residualCost, allocatedSavings }
 }
 
+// ponytail: at most 4 Stage1 solves; leftover zero-saving dishes are dropped without further realloc
+const MAX_STAGE1_SOLVES = 4
+
 const executeSolveStages = (
   ctx: SolverContext,
   ownedIngredients: IngredientCounts,
@@ -665,22 +694,29 @@ const executeSolveStages = (
 ) => {
   const banned = new Set<string>()
   let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
-  let plan!: ReturnType<typeof evaluateDeficitPlan>
-  for (let i = 0; i < recipes.length + 1; i++) {
+  for (let i = 0; i < MAX_STAGE1_SOLVES; i++) {
     const stageCtx: SolverContext = {
       ...ctx,
       eligibleRecipeIds: new Set(recipes.filter((r) => !banned.has(r.id)).map((r) => r.id)),
     }
     const solved = solveStage1(stageCtx)
     deficitCounts = new Map(recipes.map((r) => [r.id, solved.deficitCounts.get(r.id) ?? 0]))
-    plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
-    const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, plan.allocatedSavings)
-    const newlyBanned = recipes.filter(
-      (r) => pruned.dropped && (pruned.counts.get(r.id) ?? 0) === 0 && (deficitCounts.get(r.id) ?? 0) > 0,
+    const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+    const residualCost = continuousOptimalCost(
+      ctx.drops,
+      remainingNeed,
+      Array.from(ctx.allowedQuests),
+      ctx.mode,
     )
+    const zeroSaving = findFirstZeroSavingRecipe(ctx, recipes, deficitCounts, residualCost)
+    if (!zeroSaving) break
+    banned.add(zeroSaving.id)
+  }
+  let plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
+  const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, plan.allocatedSavings)
+  if (pruned.dropped) {
     deficitCounts = pruned.counts
-    if (newlyBanned.length === 0) break
-    banned.add(newlyBanned[0].id)
+    plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
   }
   const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
   const surplusCounts = computeSurplusCounts(
