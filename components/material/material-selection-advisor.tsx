@@ -368,8 +368,6 @@ export const MaterialSelectionAdvisor = ({
           <EventCraftAdvisor
             items={items}
             fullNeed={fullNeed}
-            mode={config.mode}
-            onModeChange={setMode}
             stockEnabled={stockEnabled}
           />
         ) : (

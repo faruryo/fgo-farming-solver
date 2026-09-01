@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import {
   EventCraftAdvisor,
   EventCraftExpectedYields,
+  INGREDIENT_COMMIT_DELAY_MS,
+  migrateEventCraftConfig,
 } from './event-craft-advisor'
 import {
   EVENT_CRAFT_RECIPES_2026,
@@ -12,6 +14,7 @@ import {
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Drops } from '../../lib/get-drops'
 import { Item } from '../../interfaces/atlas-academy'
+import { IngredientCounts } from '../../data/event-craft-recipes'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -91,14 +94,20 @@ describe('EventCraftExpectedYields', () => {
 
 describe('EventCraftAdvisor cards', () => {
   beforeEach(() => {
+    vi.stubGlobal('Worker', undefined)
     localStorage.clear()
     localStorage.setItem(
       STORAGE_KEYS.EVENT_CRAFT_ADVISOR,
       JSON.stringify({
-        exhaustIngredients: false,
+        planPattern: 'runs',
         ingredients: { seafood: 20, meat: 20, vegetable: 20 },
       }),
     )
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
   it('still lists dish names and a per-dish expected yield line', () => {
@@ -119,12 +128,10 @@ describe('EventCraftAdvisor cards', () => {
       <EventCraftAdvisor
         items={items}
         fullNeed={{ '01': 1 }}
-        mode="ap"
-        onModeChange={() => undefined}
         stockEnabled={false}
       />,
     )
-    expect(screen.getByText('ドクロアンダギー')).toBeTruthy()
+    expect(screen.getAllByText('ドクロアンダギー').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/期待: /).length).toBeGreaterThan(0)
   })
 
@@ -146,24 +153,16 @@ describe('EventCraftAdvisor cards', () => {
       <EventCraftAdvisor
         items={items}
         fullNeed={{ '01': 1 }}
-        mode="ap"
-        onModeChange={() => undefined}
         stockEnabled={false}
       />,
     )
-    expect(screen.getByText('不足 あと1個')).toBeTruthy()
+    expect(screen.getAllByText('不足 あと1個').length).toBeGreaterThan(0)
   })
 
   it('renders ingredient inputs with item icons and labels', () => {
     const items: Item[] = []
     render(
-      <EventCraftAdvisor
-        items={items}
-        fullNeed={{}}
-        mode="ap"
-        onModeChange={() => undefined}
-        stockEnabled={false}
-      />,
+      <EventCraftAdvisor items={items} fullNeed={{}} stockEnabled={false} />,
     )
     const seafoodLabel = screen.getByText('うちなー海鮮盛り').closest('label')
     const meatLabel = screen.getByText('うちなーお肉盛り').closest('label')
@@ -208,14 +207,12 @@ describe('EventCraftAdvisor cards', () => {
       <EventCraftAdvisor
         items={items}
         fullNeed={{ '01': 1 }}
-        mode="ap"
-        onModeChange={() => undefined}
         stockEnabled={false}
       />,
     )
 
     // 残余食材セクションのアイコン
-    const leftoverSection = screen.getByText('残余食材:').closest('div')
+    const leftoverSection = screen.getAllByText('残余食材:')[0]?.closest('div')
     expect(leftoverSection).toBeTruthy()
     expect(
       leftoverSection?.querySelector(
@@ -232,9 +229,9 @@ describe('EventCraftAdvisor cards', () => {
         '[data-src="https://static.atlasacademy.io/JP/Items/94159004.png"]',
       ),
     ).toBeTruthy()
-    expect(screen.getByText('海鮮 0')).toBeTruthy()
-    expect(screen.getByText('お肉 0')).toBeTruthy()
-    expect(screen.getByText('野菜 0')).toBeTruthy()
+    expect(screen.getAllByText('海鮮 0').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('お肉 0').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('野菜 0').length).toBeGreaterThan(0)
 
     // 料理アイコン (ドクロアンダギー: icon_8061404.png)
     expect(
@@ -263,5 +260,82 @@ describe('EventCraftAdvisor cards', () => {
       '[data-src="https://static.atlasacademy.io/JP/Items/94159004.png"][aria-label="野菜"]',
     )
     expect(vegCostBadge).toBeTruthy()
+  })
+
+  it('shows runs and exhaust pattern cards without cooking-tab switches', () => {
+    render(<EventCraftAdvisor fullNeed={{ '01': 1 }} />)
+    expect(screen.getByRole('radio', { name: '周回を減らす' })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: '食材を使い切る' })).toBeTruthy()
+    expect(screen.queryByRole('switch')).toBeNull()
+  })
+
+  it('updates Mash advice from the selected pattern', () => {
+    localStorage.setItem(
+      STORAGE_KEYS.EVENT_CRAFT_ADVISOR,
+      JSON.stringify({
+        ingredients: { seafood: 100, meat: 100, vegetable: 100 },
+        planPattern: 'runs',
+      }),
+    )
+    render(<EventCraftAdvisor fullNeed={{}} />)
+    fireEvent.click(screen.getByRole('radio', { name: '食材を使い切る' }))
+    expect(screen.getByText(/最優先は/)).toBeTruthy()
+    expect(
+      screen
+        .getByRole('radio', { name: '食材を使い切る' })
+        .getAttribute('aria-checked'),
+    ).toBe('true')
+    const stored = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}',
+    ) as { planPattern?: string }
+    expect(stored.planPattern).toBe('exhaust')
+  })
+
+  it('keeps typed ingredients in the field before the idle delay, then persists', () => {
+    vi.useFakeTimers()
+    render(<EventCraftAdvisor fullNeed={{ '01': 1 }} />)
+    const seafood = screen.getAllByRole('spinbutton')[0]
+    fireEvent.change(seafood, { target: { value: '12' } })
+    expect(seafood).toHaveValue(12)
+    expect(screen.getByText('最適な配分を計算しています、先輩...')).toBeTruthy()
+    expect(screen.queryByRole('radio', { name: '周回を減らす' })).toBeNull()
+    const storedIngredients = () => {
+      const parsed = JSON.parse(
+        localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}',
+      ) as { ingredients?: IngredientCounts }
+      return parsed.ingredients
+    }
+    expect(storedIngredients()?.seafood).toBe(20)
+    act(() => {
+      vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS - 1)
+    })
+    expect(storedIngredients()?.seafood).toBe(20)
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(storedIngredients()?.seafood).toBe(12)
+    vi.useRealTimers()
+  })
+})
+
+describe('migrateEventCraftConfig', () => {
+  const ingredients = { seafood: 1, meat: 2, vegetable: 3 }
+
+  it('keeps a valid pattern and migrates the legacy exhaust flag', () => {
+    expect(
+      migrateEventCraftConfig({ ingredients, planPattern: 'even-ap' }),
+    ).toEqual({ ingredients, planPattern: 'even-ap' })
+    expect(
+      migrateEventCraftConfig({ ingredients, exhaustIngredients: true }),
+    ).toEqual({ ingredients, planPattern: 'exhaust' })
+    expect(
+      migrateEventCraftConfig({ ingredients, exhaustIngredients: false }),
+    ).toEqual({ ingredients, planPattern: 'runs' })
+  })
+
+  it('falls back to runs for invalid persisted data', () => {
+    expect(
+      migrateEventCraftConfig({ ingredients, planPattern: 'bad' }),
+    ).toEqual({ ingredients, planPattern: 'runs' })
   })
 })

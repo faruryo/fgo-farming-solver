@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
+import { INGREDIENT_COMMIT_DELAY_MS } from './event-craft-advisor'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Item } from '../../interfaces/atlas-academy'
 import { Drops } from '../../lib/get-drops'
@@ -118,10 +119,25 @@ const renderSummer2026Advisor = (
   )
 }
 
+const commitIngredients = (meat: string, vegetable: string) => {
+  const inputs = screen.getAllByRole('spinbutton')
+  vi.useFakeTimers()
+  fireEvent.change(inputs[1], { target: { value: meat } })
+  fireEvent.change(inputs[2], { target: { value: vegetable } })
+  act(() => {
+    vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
+  })
+  vi.useRealTimers()
+}
+
 describe('MaterialSelectionAdvisor Component', () => {
   beforeEach(() => {
     localStorage.clear()
     currentMockDrops = { ...mockDrops, isLoading: false }
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('renders tab switcher and switches between ticket advisor and event craft advisor', async () => {
@@ -191,57 +207,50 @@ describe('MaterialSelectionAdvisor Component', () => {
   })
 
   it('calculates event craft allocation when ingredients are entered', async () => {
-    const user = userEvent.setup()
     renderSummer2026Advisor({ '6533': 5 }, { '6533': 0 })
 
     // Initially 0 ingredients
     expect(screen.getByText(/お持ちのイベント食材数/)).toBeInTheDocument()
-
-    // Enter ingredients for Goya Champuru (meat: 20, veg: 40)
-    const inputs = screen.getAllByRole('spinbutton')
-    // inputs: [seafood, meat, vegetable]
-    const meatInput = inputs[1]
-    const vegInput = inputs[2]
-
-    await user.type(meatInput, '60')
-    await user.type(vegInput, '120')
+    commitIngredients('60', '120')
 
     await waitFor(() => {
-      expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
-      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
+      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
+      expect(
+        within(runsCard).getByText('ゴーヤーチャンプルー'),
+      ).toBeInTheDocument()
+      expect(within(runsCard).getByText('推奨 +3')).toBeInTheDocument()
       expect(
         screen.getByText(/最優先は「ゴーヤーチャンプルー」です/),
       ).toBeInTheDocument()
     })
   })
 
-  it('toggles exhaust ingredients and shows surplus badges', async () => {
-    const user = userEvent.setup()
+  it('shows surplus badges on the exhaust pattern card', async () => {
     renderSummer2026Advisor()
-
-    // Enter enough ingredients for 2 Goya Champuru (meat: 40, veg: 80)
-    const inputs = screen.getAllByRole('spinbutton')
-    await user.type(inputs[1], '80')
-    await user.type(inputs[2], '160')
+    commitIngredients('80', '160')
 
     await waitFor(() => {
-      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
-    })
-
-    const exhaustSwitch = screen.getByRole('switch', { name: '食材を使い切る' })
-    await user.click(exhaustSwitch)
-
-    await waitFor(() => {
-      expect(screen.getByText('推奨 +3')).toBeInTheDocument()
-      expect(screen.getByText('余剰 +1')).toBeInTheDocument()
+      const exhaustCard = screen.getByRole('radio', {
+        name: '食材を使い切る',
+      })
+      expect(within(exhaustCard).getByText('推奨 +3')).toBeInTheDocument()
+      expect(within(exhaustCard).getByText('余剰 +1')).toBeInTheDocument()
     })
   })
 
-  it('renders target material names using translation keys in recipe cards', () => {
+  it('renders target material names using translation keys in recipe cards', async () => {
     renderSummer2026Advisor()
+    commitIngredients('60', '120')
 
-    expect(screen.getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
-    expect(screen.getByText('ゴーヤーチャンプルー')).toBeInTheDocument()
+    await waitFor(() => {
+      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
+      expect(
+        within(runsCard).getByText('(宵哭きの鉄杭)'),
+      ).toBeInTheDocument()
+      expect(
+        within(runsCard).getByText('ゴーヤーチャンプルー'),
+      ).toBeInTheDocument()
+    })
   })
 
   it('renders loading message when drop data is loading', () => {
@@ -259,15 +268,12 @@ describe('MaterialSelectionAdvisor Component', () => {
   })
 
   it('renders deficit savings formatted with unit', async () => {
-    const user = userEvent.setup()
     renderSummer2026Advisor()
-
-    const inputs = screen.getAllByRole('spinbutton')
-    await user.type(inputs[1], '60')
-    await user.type(inputs[2], '120')
+    commitIngredients('60', '120')
 
     await waitFor(() => {
-      expect(screen.getByText('−20 AP')).toBeInTheDocument()
+      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
+      expect(within(runsCard).getByText('−1 周')).toBeInTheDocument()
     })
   })
 })
