@@ -1357,27 +1357,22 @@ export const resolveVisiblePatternId = (
 
 export const canPersistResolvedPattern = ({
   isDataReady,
-  isPlanLoading,
-  didPlanTimeout,
   visiblePatternCount,
 }: {
   isDataReady: boolean
-  isPlanLoading: boolean
-  didPlanTimeout: boolean
+  isPlanLoading?: boolean
+  didPlanTimeout?: boolean
   visiblePatternCount: number
-}) =>
-  isDataReady &&
-  !isPlanLoading &&
-  !didPlanTimeout &&
-  visiblePatternCount > 0
+}) => isDataReady && visiblePatternCount > 0
 
-export const computeEventCraftPlan = (
+export const computeEventCraftPlanProgressive = (
   drops: Drops,
   fullNeed: Record<string, number>,
   ownedIngredients: IngredientCounts,
   questIds: string[],
-  options?: EventCraftPlanOptions,
-): EventCraftPlanResult => {
+  options: EventCraftPlanOptions | undefined,
+  onPattern: (pattern: EventCraftPatternResult) => void,
+) => {
   const recipes = options?.recipes ?? EVENT_CRAFT_RECIPES_2026
   const turn = createSolverContext(drops, fullNeed, ownedIngredients, {
     mode: 'turn',
@@ -1389,16 +1384,36 @@ export const computeEventCraftPlan = (
     questIds,
     recipes,
   })
-  return foldEventCraftPatterns(
-    assembleEventCraftPatterns(
-      drops,
-      questIds,
-      recipes,
-      ownedIngredients,
-      turn,
-      ap,
-    ),
+  assembleEventCraftPatterns(
+    drops,
+    questIds,
+    recipes,
+    ownedIngredients,
+    turn,
+    ap,
+    onPattern,
   )
+}
+
+export const computeEventCraftPlan = (
+  drops: Drops,
+  fullNeed: Record<string, number>,
+  ownedIngredients: IngredientCounts,
+  questIds: string[],
+  options?: EventCraftPlanOptions,
+): EventCraftPlanResult => {
+  const patterns: EventCraftPatternResult[] = []
+  computeEventCraftPlanProgressive(
+    drops,
+    fullNeed,
+    ownedIngredients,
+    questIds,
+    options,
+    (pattern) => {
+      patterns.push(pattern)
+    },
+  )
+  return foldEventCraftPatterns(patterns)
 }
 
 const allocationCounts = (result: EventCraftSolverResult) =>
@@ -1409,23 +1424,19 @@ const allocationCounts = (result: EventCraftSolverResult) =>
     ]),
   )
 
-const primaryPatternResults = (
+const emitPrimaryPatternResults = (
   recipes: readonly EventCraftRecipe[],
   ownedIngredients: IngredientCounts,
   turn: ReturnType<typeof createSolverContext>,
   ap: ReturnType<typeof createSolverContext>,
-): EventCraftPatternResult[] => {
+  onPattern: (pattern: EventCraftPatternResult) => void,
+) => {
   const runsResult = executePatternAllocation(
     turn.ctx,
     ownedIngredients,
     turn.singleItemBaseValues,
   )
-  const apResult = executePatternAllocation(
-    ap.ctx,
-    ownedIngredients,
-    ap.singleItemBaseValues,
-  )
-  return [
+  onPattern(
     solverResultToPattern(
       'runs',
       'turn',
@@ -1433,6 +1444,13 @@ const primaryPatternResults = (
       evaluateResidualCost(ap.ctx, recipes, allocationCounts(runsResult), 'ap'),
       ap.ctx.baselineCost,
     ),
+  )
+  const apResult = executePatternAllocation(
+    ap.ctx,
+    ownedIngredients,
+    ap.singleItemBaseValues,
+  )
+  onPattern(
     solverResultToPattern(
       'ap',
       'ap',
@@ -1445,7 +1463,7 @@ const primaryPatternResults = (
       ),
       turn.ctx.baselineCost,
     ),
-  ]
+  )
 }
 
 const assembleEventCraftPatterns = (
@@ -1455,7 +1473,15 @@ const assembleEventCraftPatterns = (
   ownedIngredients: IngredientCounts,
   turn: ReturnType<typeof createSolverContext>,
   ap: ReturnType<typeof createSolverContext>,
-): EventCraftPatternResult[] => {
+  onPattern: (pattern: EventCraftPatternResult) => void,
+) => {
+  emitPrimaryPatternResults(
+    recipes,
+    ownedIngredients,
+    turn,
+    ap,
+    onPattern,
+  )
   const unitTurn = computeSingleItemUnitCosts(
     drops,
     questIds,
@@ -1470,20 +1496,15 @@ const assembleEventCraftPatterns = (
     ap.ctx.farmableNeed.keys(),
     ap.ctx.itemsWithDropData,
   )
-  return [
-    ...primaryPatternResults(recipes, ownedIngredients, turn, ap),
-    ...evenAndExhaustPatterns({
-      recipes,
-      ownedIngredients,
-      turn,
-      ap,
-      unitTurn,
-      unitAp,
-      evenTurnCounts: solveEvenBurden(turn.ctx, unitTurn),
-      evenApCounts: solveEvenBurden(ap.ctx, unitAp),
-      exhaustCounts: solveExhaust(turn.ctx, ownedIngredients),
-    }),
-  ]
+  emitEvenAndExhaustPatterns({
+    recipes,
+    ownedIngredients,
+    turn,
+    ap,
+    unitTurn,
+    unitAp,
+    onPattern,
+  })
 }
 
 type EvenAndExhaustInput = {
@@ -1493,22 +1514,18 @@ type EvenAndExhaustInput = {
   ap: ReturnType<typeof createSolverContext>
   unitTurn: Map<string, number>
   unitAp: Map<string, number>
-  evenTurnCounts: Map<string, number>
-  evenApCounts: Map<string, number>
-  exhaustCounts: Map<string, number>
+  onPattern: (pattern: EventCraftPatternResult) => void
 }
 
-const evenAndExhaustPatterns = ({
+const emitEvenAndExhaustPatterns = ({
   recipes,
   ownedIngredients,
   turn,
   ap,
   unitTurn,
   unitAp,
-  evenTurnCounts,
-  evenApCounts,
-  exhaustCounts,
-}: EvenAndExhaustInput): EventCraftPatternResult[] => {
+  onPattern,
+}: EvenAndExhaustInput) => {
   const residuals = (counts: Map<string, number>) => ({
     turn: evaluateResidualCost(turn.ctx, recipes, counts, 'turn'),
     ap: evaluateResidualCost(ap.ctx, recipes, counts, 'ap'),
@@ -1518,10 +1535,9 @@ const evenAndExhaustPatterns = ({
     baselineTurn: turn.ctx.baselineCost,
     baselineAp: ap.ctx.baselineCost,
   }
+  const evenTurnCounts = solveEvenBurden(turn.ctx, unitTurn)
   const evenTurnResidual = residuals(evenTurnCounts)
-  const evenApResidual = residuals(evenApCounts)
-  const exhaustResidual = residuals(exhaustCounts)
-  return [
+  onPattern(
     toPatternResult({
       id: 'even-turn',
       metric: 'turn',
@@ -1533,6 +1549,10 @@ const evenAndExhaustPatterns = ({
       classification: classifyByBurden(turn.ctx, evenTurnCounts, unitTurn),
       ...shared,
     }),
+  )
+  const evenApCounts = solveEvenBurden(ap.ctx, unitAp)
+  const evenApResidual = residuals(evenApCounts)
+  onPattern(
     toPatternResult({
       id: 'even-ap',
       metric: 'ap',
@@ -1544,6 +1564,10 @@ const evenAndExhaustPatterns = ({
       classification: classifyByBurden(ap.ctx, evenApCounts, unitAp),
       ...shared,
     }),
+  )
+  const exhaustCounts = solveExhaust(turn.ctx, ownedIngredients)
+  const exhaustResidual = residuals(exhaustCounts)
+  onPattern(
     toPatternResult({
       id: 'exhaust',
       metric: 'both',
@@ -1554,7 +1578,7 @@ const evenAndExhaustPatterns = ({
       residualAp: exhaustResidual.ap,
       ...shared,
     }),
-  ]
+  )
 }
 
 const compareDeficitAllocation = (

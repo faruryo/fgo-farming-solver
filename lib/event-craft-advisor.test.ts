@@ -833,11 +833,27 @@ describe('event craft plan patterns', () => {
     expect(
       canPersistResolvedPattern({
         isDataReady: true,
-        isPlanLoading: false,
+        isPlanLoading: true,
         didPlanTimeout: false,
         visiblePatternCount: 2,
       }),
     ).toBe(true)
+    expect(
+      canPersistResolvedPattern({
+        isDataReady: true,
+        isPlanLoading: false,
+        didPlanTimeout: true,
+        visiblePatternCount: 2,
+      }),
+    ).toBe(true)
+    expect(
+      canPersistResolvedPattern({
+        isDataReady: true,
+        isPlanLoading: false,
+        didPlanTimeout: true,
+        visiblePatternCount: 0,
+      }),
+    ).toBe(false)
   })
 
   it('uses the expected yield basket for even plans instead of one featured item per dish', () => {
