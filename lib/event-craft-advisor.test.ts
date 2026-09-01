@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
+  computeEventCraftPlan,
+  foldEventCraftPatterns,
+  resolveVisiblePatternId,
+  canPersistResolvedPattern,
   solveEventCraftAllocation,
   generateCraftAdvice,
   computeSingleItemBaseValues,
+  EventCraftPatternResult,
 } from './event-craft-advisor'
 import { EventCraftRecipe, IngredientCounts, EVENT_CRAFT_FEATURED_YIELD, sumExpectedCraftYields } from '../data/event-craft-recipes'
 import { Drops } from './get-drops'
@@ -754,5 +759,337 @@ describe('皿決めMILPを絞ったあとの残余評価', () => {
     expect(res.optimalCost).toBeCloseTo(1)
     expect(res.totalSaved).toBeCloseTo(1)
     expect(res.totalDeficitCrafted).toBe(1)
+  })
+})
+
+const patternMetricFor = (
+  id: EventCraftPatternResult['id'],
+): EventCraftPatternResult['metric'] => {
+  if (id === 'ap') return 'ap'
+  if (id === 'even-ap') return 'ap'
+  if (id === 'exhaust') return 'both'
+  return 'turn'
+}
+
+const makePattern = (
+  id: EventCraftPatternResult['id'],
+  recipe: EventCraftRecipe,
+  count: number,
+): EventCraftPatternResult => ({
+  id,
+  metric: patternMetricFor(id),
+  allocations: [
+    {
+      recipe,
+      deficitCount: count,
+      surplusCount: 0,
+      totalCount: count,
+      unitSaved: 0,
+      deficitSaved: 0,
+      surplusValue: 0,
+      spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+      deficitNeed: 0,
+    },
+  ],
+  totalCrafted: count,
+  totalDeficitCrafted: count,
+  totalSurplusCrafted: 0,
+  totalSaved: 0,
+  totalSurplusValue: 0,
+  spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+  leftoverIngredients: { seafood: 0, meat: 0, vegetable: 0 },
+  residualTurnCost: 0,
+  residualApCost: 0,
+  baselineTurnCost: 0,
+  baselineApCost: 0,
+})
+
+describe('event craft plan patterns', () => {
+  it('folds an even pattern into the first matching visible card and resolves selection', () => {
+    const runs = makePattern('runs', sampleRecipes[0], 2)
+    const ap = makePattern('ap', sampleRecipes[1], 3)
+    const evenTurn = makePattern('even-turn', sampleRecipes[1], 3)
+    const exhaust = makePattern('exhaust', sampleRecipes[0], 2)
+    const plan = foldEventCraftPatterns([runs, ap, evenTurn, exhaust])
+    expect(plan.patterns.map((pattern) => pattern.id)).toEqual([
+      'runs',
+      'ap',
+      'exhaust',
+    ])
+    expect(plan.patterns[1].aliasOf).toEqual(['even-turn'])
+    expect(resolveVisiblePatternId(plan, 'even-turn')).toBe('ap')
+    expect(resolveVisiblePatternId(plan, 'even-ap')).toBe('runs')
+  })
+
+  it('does not persist a resolved pattern until the plan has settled', () => {
+    expect(
+      canPersistResolvedPattern({
+        isDataReady: true,
+        isPlanLoading: true,
+        didPlanTimeout: false,
+        visiblePatternCount: 0,
+      }),
+    ).toBe(false)
+    expect(
+      canPersistResolvedPattern({
+        isDataReady: true,
+        isPlanLoading: false,
+        didPlanTimeout: false,
+        visiblePatternCount: 2,
+      }),
+    ).toBe(true)
+  })
+
+  it('uses the expected yield basket for even plans instead of one featured item per dish', () => {
+    const drops = buildTwoItemSharedDrops()
+    const recipe = {
+      ...sampleRecipes[0],
+      costs: { seafood: 20, meat: 0, vegetable: 0 },
+    }
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-a': 5 },
+      { seafood: 1000, meat: 0, vegetable: 0 },
+      ['Q1'],
+      { recipes: [recipe] },
+    )
+    const evenId = plan.absorbedInto['even-turn'] ?? 'even-turn'
+    const even = plan.patterns.find((pattern) => pattern.id === evenId)
+    expect(even?.allocations[0].totalCount).toBeGreaterThan(5)
+  })
+
+  it('even-turn lowers the highest single-item burden instead of the largest raw count', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-bronze', 101), makeItem('item-gold', 102)],
+      [makeQuest('Qbronze', 20), makeQuest('Qgold', 20)],
+      [
+        {
+          quest_id: 'Qbronze',
+          item_id: 'item-bronze',
+          drop_rate: 1,
+        },
+        {
+          quest_id: 'Qgold',
+          item_id: 'item-gold',
+          drop_rate: 0.05,
+        },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        ...sampleRecipes[0],
+        id: 'recipe-bronze',
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: {
+          ...sampleRecipes[0].targetItem,
+          shortId: 'item-bronze',
+        },
+      },
+      {
+        ...sampleRecipes[1],
+        id: 'recipe-gold',
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: {
+          ...sampleRecipes[1].targetItem,
+          shortId: 'item-gold',
+          rarity: 'gold',
+        },
+      },
+    ]
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-bronze': 20, 'item-gold': 2 },
+      { seafood: 160, meat: 0, vegetable: 0 },
+      ['Qbronze', 'Qgold'],
+      { recipes },
+    )
+    const even = plan.patterns.find(
+      (pattern) => pattern.id === 'even-turn',
+    )
+    expect(even).toBeDefined()
+    expect(
+      even?.allocations.find(
+        (allocation) => allocation.recipe.id === 'recipe-bronze',
+      )?.totalCount,
+    ).toBe(5)
+    expect(
+      even?.allocations.find(
+        (allocation) => allocation.recipe.id === 'recipe-gold',
+      )?.totalCount,
+    ).toBe(3)
+  })
+
+  it('separates even-turn and even-ap when their unit burdens diverge', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-x', 101), makeItem('item-y', 102)],
+      [makeQuest('Qx', 100), makeQuest('Qy', 2)],
+      [
+        { quest_id: 'Qx', item_id: 'item-x', drop_rate: 1 },
+        { quest_id: 'Qy', item_id: 'item-y', drop_rate: 0.1 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        ...sampleRecipes[0],
+        id: 'recipe-x',
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: {
+          ...sampleRecipes[0].targetItem,
+          shortId: 'item-x',
+        },
+      },
+      {
+        ...sampleRecipes[1],
+        id: 'recipe-y',
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+        targetItem: {
+          ...sampleRecipes[1].targetItem,
+          shortId: 'item-y',
+          rarity: 'gold',
+        },
+      },
+    ]
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-x': 2, 'item-y': 2 },
+      { seafood: 20, meat: 0, vegetable: 0 },
+      ['Qx', 'Qy'],
+      { recipes },
+    )
+    expect(plan.absorbedInto['even-turn']).toBe('runs')
+    expect(plan.absorbedInto['even-ap']).toBe('ap')
+    const runs = plan.patterns.find((pattern) => pattern.id === 'runs')
+    const ap = plan.patterns.find((pattern) => pattern.id === 'ap')
+    expect(
+      runs?.allocations.find(
+        (allocation) => allocation.recipe.id === 'recipe-y',
+      )?.totalCount,
+    ).toBe(1)
+    expect(
+      ap?.allocations.find(
+        (allocation) => allocation.recipe.id === 'recipe-x',
+      )?.totalCount,
+    ).toBe(1)
+  })
+
+  it('can cook a byproduct-covered material when it remains a single-item burden peak', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Qa', 20), makeQuest('Qb', 20)],
+      [
+        { quest_id: 'Qa', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Qb', item_id: 'item-b', drop_rate: 0.05 },
+      ],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        ...sampleRecipes[0],
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+      },
+      {
+        ...sampleRecipes[1],
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+      },
+    ]
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-a': 20, 'item-b': 3 },
+      { seafood: 160, meat: 0, vegetable: 0 },
+      ['Qa', 'Qb'],
+      { recipes },
+    )
+    const runs = plan.patterns.find((pattern) => pattern.id === 'runs')
+    const even = plan.patterns.find(
+      (pattern) => pattern.id === 'even-turn',
+    )
+    expect(runs?.allocations[0].totalCount).toBe(0)
+    expect(even?.allocations[0].totalCount).toBeGreaterThanOrEqual(1)
+  })
+
+  it('splits useful and surplus dishes within one exhaust recipe without farming-LP binary search', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1 }],
+    )
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-a': 1 },
+      { seafood: 0, meat: 80, vegetable: 160 },
+      ['Q1'],
+      { recipes: sampleRecipes.slice(0, 1) },
+    )
+    const exhaust = plan.patterns.find(
+      (pattern) => pattern.id === 'exhaust',
+    )
+    expect(exhaust?.allocations[0].totalCount).toBe(4)
+    expect(exhaust?.allocations[0].deficitCount).toBe(3)
+    expect(exhaust?.allocations[0].surplusCount).toBe(1)
+  })
+
+  it('sequentially attributes interchangeable exhaust recipes to one deficit slot', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-a', 101)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1 }],
+    )
+    const recipes: EventCraftRecipe[] = [
+      {
+        ...sampleRecipes[0],
+        id: 'recipe-x',
+        costs: { seafood: 20, meat: 0, vegetable: 0 },
+        yields: { 'item-a': 0.5 },
+      },
+      {
+        ...sampleRecipes[0],
+        id: 'recipe-y',
+        costs: { seafood: 0, meat: 20, vegetable: 0 },
+        yields: { 'item-a': 0.5 },
+      },
+    ]
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-a': 1 },
+      { seafood: 40, meat: 40, vegetable: 0 },
+      ['Q1'],
+      { recipes },
+    )
+    const exhaust = plan.patterns.find(
+      (pattern) => pattern.id === 'exhaust',
+    )
+    expect(exhaust?.totalCrafted).toBe(4)
+    expect(exhaust?.totalDeficitCrafted).toBe(2)
+    expect(exhaust?.totalSurplusCrafted).toBe(2)
+  })
+
+  it('scores exhaust deficit from residual farming LP, not isolated item values', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1 },
+      ],
+    )
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-a': 10, 'item-b': 2 },
+      { seafood: 100, meat: 0, vegetable: 50 },
+      ['Q1'],
+      {
+        recipes: [
+          sampleRecipes[0],
+          {
+            ...sampleRecipes[1],
+            targetItem: { ...sampleRecipes[1].targetItem, rarity: 'silver' },
+          },
+        ],
+      },
+    )
+    const exhaust = plan.patterns.find((pattern) => pattern.id === 'exhaust')
+    const allocB = exhaust?.allocations.find(
+      (allocation) => allocation.recipe.id === 'recipe-b',
+    )
+    expect(allocB?.deficitSaved ?? 1).toBe(0)
   })
 })

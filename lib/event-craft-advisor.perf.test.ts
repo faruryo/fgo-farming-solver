@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
-import { solveEventCraftAllocation } from './event-craft-advisor'
+import {
+  computeEventCraftPlan,
+  solveEventCraftAllocation,
+} from './event-craft-advisor'
 import type { Drops } from './get-drops'
 import type { IngredientCounts } from '../data/event-craft-recipes'
 
@@ -30,6 +33,29 @@ describe('event-craft allocation user-story scale', () => {
       const res = solveEventCraftAllocation(drops, fullNeed, owned, 'turn', questIds)
       times.push(performance.now() - t0)
       expect(res.totalCrafted).toBeGreaterThan(0)
+    }
+    times.sort((a, b) => a - b)
+    expect(times[1]).toBeLessThan(10_000)
+  })
+
+  it('computes all plan patterns within 10s at the same scale', () => {
+    computeEventCraftPlan(drops, fullNeed, owned, questIds)
+    const times: number[] = []
+    for (let i = 0; i < 3; i++) {
+      const startedAt = performance.now()
+      const plan = computeEventCraftPlan(
+        drops,
+        fullNeed,
+        owned,
+        questIds,
+      )
+      times.push(performance.now() - startedAt)
+      expect(plan.patterns.some((pattern) => pattern.id === 'runs')).toBe(
+        true,
+      )
+      expect(
+        plan.patterns.some((pattern) => pattern.id === 'exhaust'),
+      ).toBe(true)
     }
     times.sort((a, b) => a - b)
     expect(times[1]).toBeLessThan(10_000)
