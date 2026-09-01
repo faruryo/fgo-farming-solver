@@ -682,7 +682,7 @@ const evaluateDeficitPlan = (
   return { residualCost, allocatedSavings }
 }
 
-// ponytail: at most 4 Stage1 solves; leftover zero-saving dishes are dropped without further realloc
+// ponytail: at most 4 Stage1 solves; do not ban unless another solve can reallocate
 const MAX_STAGE1_SOLVES = 4
 
 const executeSolveStages = (
@@ -710,6 +710,7 @@ const executeSolveStages = (
     )
     const zeroSaving = findFirstZeroSavingRecipe(ctx, recipes, deficitCounts, residualCost)
     if (!zeroSaving) break
+    if (i + 1 >= MAX_STAGE1_SOLVES) break
     banned.add(zeroSaving.id)
   }
   let plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
