@@ -1,8 +1,14 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { EventCraftAdvisor, EventCraftExpectedYields } from './event-craft-advisor'
-import { EVENT_CRAFT_RECIPES_2026, sumExpectedCraftYields } from '../../data/event-craft-recipes'
+import {
+  EventCraftAdvisor,
+  EventCraftExpectedYields,
+} from './event-craft-advisor'
+import {
+  EVENT_CRAFT_RECIPES_2026,
+  sumExpectedCraftYields,
+} from '../../data/event-craft-recipes'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Drops } from '../../lib/get-drops'
 import { Item } from '../../interfaces/atlas-academy'
@@ -27,7 +33,14 @@ vi.mock('next/image', () => ({
 
 const mockDrops: Drops & { isLoading?: boolean } = {
   items: [
-    { id: '01', category: '銅素材', largeCategory: '強化素材', shortName: '凶骨', name: '凶骨', atlasId: 6516 },
+    {
+      id: '01',
+      category: '銅素材',
+      largeCategory: '強化素材',
+      shortName: '凶骨',
+      name: '凶骨',
+      atlasId: 6516,
+    },
   ],
   quests: [{ id: 'Q1', section: 'Free', area: 'A', name: 'Q1', ap: 20 }],
   drop_rates: [{ quest_id: 'Q1', item_id: '01', drop_rate: 1 }],
@@ -125,5 +138,50 @@ describe('EventCraftAdvisor cards', () => {
       />,
     )
     expect(screen.getByText('不足 あと1個')).toBeTruthy()
+  })
+
+  it('renders ingredient inputs with item icons and labels', () => {
+    const items: Item[] = []
+    render(
+      <EventCraftAdvisor
+        items={items}
+        fullNeed={{}}
+        mode="ap"
+        onModeChange={() => undefined}
+        stockEnabled={false}
+      />,
+    )
+    expect(screen.getByText('うちなー海鮮盛り')).toBeTruthy()
+    expect(screen.getByText('うちなーお肉盛り')).toBeTruthy()
+    expect(screen.getByText('うちなー野菜盛り')).toBeTruthy()
+  })
+
+  it('renders cost ingredient badges and leftover amounts', () => {
+    const items: Item[] = [
+      {
+        id: 6516,
+        name: '凶骨',
+        type: 'skillLvUp',
+        uses: 'skill',
+        detail: '',
+        icon: '',
+        background: 'bronze',
+        priority: 1,
+        dropPriority: 1,
+      },
+    ]
+    render(
+      <EventCraftAdvisor
+        items={items}
+        fullNeed={{ '01': 1 }}
+        mode="ap"
+        onModeChange={() => undefined}
+        stockEnabled={false}
+      />,
+    )
+    expect(screen.getByText('残余食材:')).toBeTruthy()
+    expect(screen.getByText('海鮮 0')).toBeTruthy()
+    expect(screen.getByText('お肉 0')).toBeTruthy()
+    expect(screen.getByText('野菜 0')).toBeTruthy()
   })
 })

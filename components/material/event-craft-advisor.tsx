@@ -177,18 +177,27 @@ const IngredientInputs = ({
         {EVENT_INGREDIENTS.map((ing) => (
           <label
             key={ing.id}
-            className="flex items-center justify-between gap-2 rounded px-2 py-1"
+            className="flex items-center justify-between gap-2 rounded px-2 py-1.5 cursor-pointer"
             style={{
               background: 'var(--bg)',
               border: '1px solid var(--border)',
             }}
           >
-            <span
-              className="truncate text-xs font-medium"
-              style={{ color: 'var(--text)' }}
-            >
-              {t(`ingredient-${ing.id}`, ing.name)}
-            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Image
+                src={ing.iconUrl}
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 flex-shrink-0 object-contain rounded"
+              />
+              <span
+                className="truncate text-xs font-medium"
+                style={{ color: 'var(--text)' }}
+              >
+                {t(`ingredient-${ing.id}`, ing.name)}
+              </span>
+            </div>
             <Input
               type="number"
               min={0}
@@ -242,6 +251,50 @@ const CraftCardBadges = ({ item }: { item: CraftAllocationItem }) => {
   )
 }
 
+const CraftCardCosts = ({ costs }: { costs: IngredientCounts }) => {
+  const { t } = useTranslation('material')
+  return (
+    <div
+      className="flex items-center gap-1.5 flex-wrap"
+      aria-label={t(
+        'event-craft-costs-format',
+        '{{seafood}}海鮮 / {{meat}}お肉 / {{vegetable}}野菜',
+        {
+          seafood: costs.seafood,
+          meat: costs.meat,
+          vegetable: costs.vegetable,
+        },
+      )}
+    >
+      {EVENT_INGREDIENTS.map((ing) => {
+        const amount = costs[ing.id]
+        if (amount <= 0) return null
+        return (
+          <span
+            key={ing.id}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <Image
+              src={ing.iconUrl}
+              alt={t(`ingredient-${ing.id}-short`, ing.shortName)}
+              width={16}
+              height={16}
+              className="h-4 w-4 object-contain"
+            />
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>
+              {amount}
+            </span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 const CraftCardMeta = ({
   costs,
   deficitSaved,
@@ -256,21 +309,11 @@ const CraftCardMeta = ({
   const { t } = useTranslation('material')
   return (
     <div
-      className="mt-1 flex flex-wrap items-center justify-between gap-x-3 text-xs"
+      className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs"
       style={{ color: 'var(--text2)' }}
     >
-      <span>
-        {t(
-          'event-craft-costs-format',
-          '{{seafood}}海鮮 / {{meat}}お肉 / {{vegetable}}野菜',
-          {
-            seafood: costs.seafood,
-            meat: costs.meat,
-            vegetable: costs.vegetable,
-          },
-        )}
-      </span>
-      <div className="flex items-center gap-2 font-medium">
+      <CraftCardCosts costs={costs} />
+      <div className="flex items-center gap-2 font-medium ml-auto">
         {deficitSaved > 0 && (
           <span style={{ color: 'var(--green)' }}>
             {t('event-craft-saved-equiv', '−{{amount}} {{unit}}', {
@@ -292,12 +335,53 @@ const CraftCardMeta = ({
   )
 }
 
-const CraftCardImage = ({ iconUrl, name }: { iconUrl: string | null; name: string }) =>
-  iconUrl ? (
-    <Image src={iconUrl} alt={name} width={36} height={36} className="flex-shrink-0 rounded" />
-  ) : (
-    <div className="h-9 w-9 flex-shrink-0 rounded" style={{ background: 'var(--border)' }} />
+const CraftCardImage = ({
+  dishIconUrl,
+  materialIconUrl,
+  materialName,
+}: {
+  dishIconUrl?: string
+  materialIconUrl: string | null
+  materialName: string
+}) => {
+  const mainIcon = dishIconUrl || materialIconUrl
+
+  return (
+    <div className="relative h-10 w-10 flex-shrink-0">
+      {mainIcon ? (
+        <Image
+          src={mainIcon}
+          alt=""
+          width={40}
+          height={40}
+          className="h-10 w-10 object-contain rounded"
+        />
+      ) : (
+        <div
+          className="h-10 w-10 rounded"
+          style={{ background: 'var(--border)' }}
+        />
+      )}
+      {dishIconUrl && materialIconUrl && (
+        <div
+          className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0.5 shadow"
+          style={{
+            background: 'var(--panel2)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <Image
+            src={materialIconUrl}
+            alt={materialName}
+            width={18}
+            height={18}
+            className="h-4 w-4 object-contain rounded-full"
+          />
+        </div>
+      )}
+    </div>
   )
+}
 
 const RARITY_FALLBACK: Record<RecipeMaterialRarity, string> = {
   bronze: '銅',
@@ -359,6 +443,31 @@ const PerDishYieldLine = ({
   )
 }
 
+const CraftCardHeader = ({
+  dishName,
+  materialName,
+  item,
+}: {
+  dishName: string
+  materialName: string
+  item: CraftAllocationItem
+}) => (
+  <div className="flex items-center justify-between gap-2">
+    <div className="flex min-w-0 items-center gap-2">
+      <span
+        className="truncate text-sm font-semibold"
+        style={{ color: 'var(--text)' }}
+      >
+        {dishName}
+      </span>
+      <span className="truncate text-xs" style={{ color: 'var(--text3)' }}>
+        ({materialName})
+      </span>
+    </div>
+    <CraftCardBadges item={item} />
+  </div>
+)
+
 const CraftCard = ({
   item,
   catItem,
@@ -372,8 +481,9 @@ const CraftCard = ({
 }) => {
   const { t } = useTranslation('material')
   const recipe = item.recipe
-  const iconUrl = getItemIcon(catItem, dropItem)
+  const materialIconUrl = getItemIcon(catItem, dropItem)
   const isSelected = item.totalCount > 0
+  const dishName = t(`recipe-${recipe.id}`, recipe.name)
   const materialName = t(
     `material-${recipe.targetItem.shortId}`,
     catItem?.name ?? recipe.targetItem.name,
@@ -384,23 +494,23 @@ const CraftCard = ({
       className="flex items-center gap-3 rounded-lg px-3 py-2"
       style={{
         background: isSelected ? 'var(--panel2)' : 'var(--panel)',
-        border: isSelected ? '1px solid var(--border2)' : '1px solid var(--border)',
+        border: isSelected
+          ? '1px solid var(--border2)'
+          : '1px solid var(--border)',
         opacity: isSelected ? 1 : 0.75,
       }}
     >
-      <CraftCardImage iconUrl={iconUrl} name={materialName} />
+      <CraftCardImage
+        dishIconUrl={recipe.iconUrl}
+        materialIconUrl={materialIconUrl}
+        materialName={materialName}
+      />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-semibold" style={{ color: 'var(--text)' }}>
-              {t(`recipe-${recipe.id}`, recipe.name)}
-            </span>
-            <span className="truncate text-xs" style={{ color: 'var(--text3)' }}>
-              ({materialName})
-            </span>
-          </div>
-          <CraftCardBadges item={item} />
-        </div>
+        <CraftCardHeader
+          dishName={dishName}
+          materialName={materialName}
+          item={item}
+        />
         <PerDishYieldLine
           recipe={recipe}
           materialName={materialName}
@@ -426,19 +536,48 @@ export const EventCraftExpectedYields = ({
   const { t } = useTranslation('material')
   if (entries.length === 0) return null
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium" style={{ color: 'var(--text2)' }}>
+    <div
+      className="flex flex-col gap-2 rounded-lg p-3"
+      style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+    >
+      <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>
         {t('event-craft-expected-yields-heading', 'この配分での期待獲得')}
       </span>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--text)' }}>
-        {entries.map((entry) => (
-          <span key={entry.shortId}>
-            {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
-              name: t(`material-${entry.shortId}`, entry.name),
-              amount: fmt(entry.amount),
-            })}
-          </span>
-        ))}
+      <div
+        className="flex flex-wrap gap-2 text-xs"
+        style={{ color: 'var(--text)' }}
+      >
+        {entries.map((entry) => {
+          const iconUrl = entry.atlasId
+            ? getItemIconUrl(String(entry.atlasId))
+            : ''
+          return (
+            <div
+              key={entry.shortId}
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1"
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {iconUrl && (
+                <Image
+                  src={iconUrl}
+                  alt={t(`material-${entry.shortId}`, entry.name)}
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 object-contain rounded"
+                />
+              )}
+              <span className="font-medium" style={{ color: 'var(--text)' }}>
+                {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
+                  name: t(`material-${entry.shortId}`, entry.name),
+                  amount: fmt(entry.amount),
+                })}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -451,16 +590,22 @@ const LeftoverList = ({ leftover }: { leftover: IngredientCounts }) => {
       <span className="font-medium text-xs" style={{ color: 'var(--text2)' }}>
         {t('event-craft-leftover-title', '残余食材')}:
       </span>
-      <div className="flex items-center gap-3 text-xs font-semibold">
-        <span style={{ color: 'var(--text)' }}>
-          {t('ingredient-seafood-short', '海鮮')} {leftover.seafood}
-        </span>
-        <span style={{ color: 'var(--text)' }}>
-          {t('ingredient-meat-short', 'お肉')} {leftover.meat}
-        </span>
-        <span style={{ color: 'var(--text)' }}>
-          {t('ingredient-vegetable-short', '野菜')} {leftover.vegetable}
-        </span>
+      <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+        {EVENT_INGREDIENTS.map((ing) => (
+          <div key={ing.id} className="flex items-center gap-1">
+            <Image
+              src={ing.iconUrl}
+              alt=""
+              width={18}
+              height={18}
+              className="h-4.5 w-4.5 object-contain"
+            />
+            <span style={{ color: 'var(--text)' }}>
+              {t(`ingredient-${ing.id}-short`, ing.shortName)}{' '}
+              {leftover[ing.id]}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -495,7 +640,10 @@ const LeftoverFooter = ({
           </Button>
         )}
         {totalSaved > 0 && (
-          <span className="font-semibold text-sm" style={{ color: 'var(--green)' }}>
+          <span
+            className="font-semibold text-sm"
+            style={{ color: 'var(--green)' }}
+          >
             {t('event-craft-total-saved', '合計 −{{amount}} {{unit}} 節約', {
               amount: fmt(totalSaved),
               unit: unitLabel,
@@ -503,11 +651,18 @@ const LeftoverFooter = ({
           </span>
         )}
         {totalSurplusValue > 0 && (
-          <span className="font-semibold text-sm" style={{ color: 'var(--blue, #3b82f6)' }}>
-            {t('event-craft-total-surplus', '余剰獲得 +{{amount}} {{unit}} 相当', {
-              amount: fmt(totalSurplusValue),
-              unit: unitLabel,
-            })}
+          <span
+            className="font-semibold text-sm"
+            style={{ color: 'var(--blue, #3b82f6)' }}
+          >
+            {t(
+              'event-craft-total-surplus',
+              '余剰獲得 +{{amount}} {{unit}} 相当',
+              {
+                amount: fmt(totalSurplusValue),
+                unit: unitLabel,
+              },
+            )}
           </span>
         )}
       </div>
@@ -547,7 +702,16 @@ type AdviceResolutionParams = {
 }
 
 const resolveAdviceMessage = (params: AdviceResolutionParams) => {
-  const { isDataLoading, isPlanLoading, didPlanTimeout, hasQuests, result, config, mode, t } = params
+  const {
+    isDataLoading,
+    isPlanLoading,
+    didPlanTimeout,
+    hasQuests,
+    result,
+    config,
+    mode,
+    t,
+  } = params
   if (isDataLoading) {
     return t('event-craft-loading', 'ドロップデータを読み込み中です、先輩...')
   }
@@ -577,7 +741,9 @@ const resolveAdviceMessage = (params: AdviceResolutionParams) => {
 
 const WORKER_HARD_TIMEOUT_MS = 10000
 
-const emptyResultFor = (ingredients: IngredientCounts): EventCraftSolverResult => ({
+const emptyResultFor = (
+  ingredients: IngredientCounts,
+): EventCraftSolverResult => ({
   ...EMPTY_ALLOCATION_RESULT,
   leftoverIngredients: { ...ingredients },
 })
@@ -587,7 +753,9 @@ const spawnEventCraftAllocationWorker = (
   onSettled: (result: EventCraftSolverResult, timedOut: boolean) => void,
 ): (() => void) => {
   let settled = false
-  const worker = new Worker(new URL('../../lib/event-craft-allocation.worker', import.meta.url))
+  const worker = new Worker(
+    new URL('../../lib/event-craft-allocation.worker', import.meta.url),
+  )
 
   const finish = (result: EventCraftSolverResult, timedOut: boolean) => {
     if (settled) return
@@ -601,7 +769,8 @@ const spawnEventCraftAllocationWorker = (
     WORKER_HARD_TIMEOUT_MS,
   )
 
-  worker.onmessage = (e: MessageEvent<EventCraftSolverResult>) => finish(e.data, false)
+  worker.onmessage = (e: MessageEvent<EventCraftSolverResult>) =>
+    finish(e.data, false)
   worker.onerror = () => finish(emptyResultFor(request.ownedIngredients), true)
   worker.postMessage(request)
 
@@ -647,7 +816,16 @@ const useEventCraftAdviceView = (params: {
   isPlanLoading: boolean
   didPlanTimeout: boolean
 }) => {
-  const { drops, result, config, mode, questIds, isDataReady, isPlanLoading, didPlanTimeout } = params
+  const {
+    drops,
+    result,
+    config,
+    mode,
+    questIds,
+    isDataReady,
+    isPlanLoading,
+    didPlanTimeout,
+  } = params
   const { t } = useTranslation('material')
   const advice = useMemo(
     () =>
@@ -661,7 +839,16 @@ const useEventCraftAdviceView = (params: {
         mode,
         t: (k, d, o) => t(k, d, o),
       }),
-    [drops.isLoading, isPlanLoading, didPlanTimeout, questIds.length, result, config, mode, t],
+    [
+      drops.isLoading,
+      isPlanLoading,
+      didPlanTimeout,
+      questIds.length,
+      result,
+      config,
+      mode,
+      t,
+    ],
   )
   const sortedAllocations = useMemo(
     () =>
@@ -691,21 +878,35 @@ const useEventCraftCalculation = (
     [config.exhaustIngredients],
   )
 
-  const workerRequest = useMemo((): EventCraftAllocationWorkerRequest | null => {
-    if (!canUseWorker || !isDataReady) return null
-    return {
+  const workerRequest =
+    useMemo((): EventCraftAllocationWorkerRequest | null => {
+      if (!canUseWorker || !isDataReady) return null
+      return {
+        drops,
+        fullNeed,
+        ownedIngredients: config.ingredients,
+        mode,
+        questIds,
+        options: solverOptions,
+      }
+    }, [
+      canUseWorker,
+      isDataReady,
       drops,
       fullNeed,
-      ownedIngredients: config.ingredients,
+      config.ingredients,
       mode,
       questIds,
-      options: solverOptions,
-    }
-  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
+      solverOptions,
+    ])
 
   const requestKey = `${mode}:${config.exhaustIngredients}:${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
 
-  const { result: workerResult, isPlanLoading, didPlanTimeout } = useEventCraftWorkerResult(
+  const {
+    result: workerResult,
+    isPlanLoading,
+    didPlanTimeout,
+  } = useEventCraftWorkerResult(
     canUseWorker && isDataReady,
     workerRequest,
     requestKey,
@@ -721,17 +922,40 @@ const useEventCraftCalculation = (
       questIds,
       solverOptions,
     )
-  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
+  }, [
+    canUseWorker,
+    isDataReady,
+    drops,
+    fullNeed,
+    config.ingredients,
+    mode,
+    questIds,
+    solverOptions,
+  ])
 
   const result = canUseWorker
     ? (workerResult ?? emptyResultFor(config.ingredients))
     : syncResult
 
   const { advice, sortedAllocations } = useEventCraftAdviceView({
-    drops, result, config, mode, questIds, isDataReady, isPlanLoading, didPlanTimeout,
+    drops,
+    result,
+    config,
+    mode,
+    questIds,
+    isDataReady,
+    isPlanLoading,
+    didPlanTimeout,
   })
 
-  return { result, advice, sortedAllocations, isDataReady, isPlanLoading, didPlanTimeout }
+  return {
+    result,
+    advice,
+    sortedAllocations,
+    isDataReady,
+    isPlanLoading,
+    didPlanTimeout,
+  }
 }
 
 const useAdvisorState = () => {
@@ -814,8 +1038,14 @@ export const EventCraftAdvisor = ({
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
   const { config, setIngredientCount, setExhaust, reset } = useAdvisorState()
-  const { result, advice, sortedAllocations, isDataReady, isPlanLoading, didPlanTimeout } =
-    useEventCraftCalculation(drops, fullNeed, config, mode)
+  const {
+    result,
+    advice,
+    sortedAllocations,
+    isDataReady,
+    isPlanLoading,
+    didPlanTimeout,
+  } = useEventCraftCalculation(drops, fullNeed, config, mode)
   const { t } = useTranslation('material')
   const unitLabel = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
 

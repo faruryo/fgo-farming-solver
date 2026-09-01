@@ -31,6 +31,8 @@ export type EventCraftRecipe = {
   name: string
   /** 必要食材（海鮮・お肉・野菜） */
   costs: IngredientCounts
+  /** 料理アイコン画像URL */
+  iconUrl?: string
   /** 作成で獲得できる素材情報（ゲーム内公開仕様・期待値高） */
   targetItem: {
     atlasId: number
@@ -90,7 +92,9 @@ export const sumExpectedCraftYields = (
   }
   for (const { recipe, totalCount } of allocations) {
     if (totalCount <= 0) continue
-    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+    for (const [shortId, y] of Object.entries(
+      getRecipeYields(recipe, recipes),
+    )) {
       if (y <= 0) continue
       amounts.set(shortId, (amounts.get(shortId) ?? 0) + totalCount * y)
     }
@@ -112,12 +116,32 @@ export type IngredientMeta = {
   id: IngredientType
   name: string
   shortName: string
+  atlasId: number
+  iconUrl: string
 }
 
 export const EVENT_INGREDIENTS: readonly IngredientMeta[] = [
-  { id: 'seafood', name: 'うちなー海鮮盛り', shortName: '海鮮' },
-  { id: 'meat', name: 'うちなーお肉盛り', shortName: 'お肉' },
-  { id: 'vegetable', name: 'うちなー野菜盛り', shortName: '野菜' },
+  {
+    id: 'seafood',
+    name: 'うちなー海鮮盛り',
+    shortName: '海鮮',
+    atlasId: 94159005,
+    iconUrl: 'https://static.atlasacademy.io/JP/Items/94159005.png',
+  },
+  {
+    id: 'meat',
+    name: 'うちなーお肉盛り',
+    shortName: 'お肉',
+    atlasId: 94159006,
+    iconUrl: 'https://static.atlasacademy.io/JP/Items/94159006.png',
+  },
+  {
+    id: 'vegetable',
+    name: 'うちなー野菜盛り',
+    shortName: '野菜',
+    atlasId: 94159004,
+    iconUrl: 'https://static.atlasacademy.io/JP/Items/94159004.png',
+  },
 ] as const
 
 /**
@@ -129,6 +153,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'goya-champuru',
     name: 'ゴーヤーチャンプルー',
     costs: { seafood: 0, meat: 20, vegetable: 40 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061401.png',
     targetItem: {
       atlasId: 6533,
       shortId: '07',
@@ -141,6 +167,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'maasu-ni',
     name: 'マース煮',
     costs: { seafood: 40, meat: 0, vegetable: 20 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061402.png',
     targetItem: {
       atlasId: 6522,
       shortId: '04',
@@ -153,6 +181,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'steak',
     name: '厚切りステーキ',
     costs: { seafood: 20, meat: 40, vegetable: 0 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061403.png',
     targetItem: {
       atlasId: 6555,
       shortId: '0d',
@@ -165,6 +195,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'skull-andagi',
     name: 'ドクロアンダギー',
     costs: { seafood: 20, meat: 20, vegetable: 20 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061404.png',
     targetItem: {
       atlasId: 6516,
       shortId: '01',
@@ -179,6 +211,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'soki-soba',
     name: 'オニオニソーキそば',
     costs: { seafood: 30, meat: 45, vegetable: 0 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061405.png',
     targetItem: {
       atlasId: 6510,
       shortId: '15',
@@ -191,6 +225,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'potatoes',
     name: 'ちまみれポテト',
     costs: { seafood: 0, meat: 30, vegetable: 45 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061406.png',
     targetItem: {
       atlasId: 6524,
       shortId: '19',
@@ -203,6 +239,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'tempura',
     name: '九尾てんぷらー',
     costs: { seafood: 45, meat: 0, vegetable: 30 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061407.png',
     targetItem: {
       atlasId: 6511,
       shortId: '16',
@@ -215,6 +253,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'taco-rice',
     name: '深淵タコライス',
     costs: { seafood: 25, meat: 25, vegetable: 25 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061408.png',
     targetItem: {
       atlasId: 6515,
       shortId: '12',
@@ -229,6 +269,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'hijah-soup',
     name: '鐘楼ヒージャー汁',
     costs: { seafood: 25, meat: 25, vegetable: 40 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061409.png',
     targetItem: {
       atlasId: 6520,
       shortId: '25',
@@ -241,6 +283,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'rafute',
     name: '城壁ラフテー',
     costs: { seafood: 25, meat: 40, vegetable: 25 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061410.png',
     targetItem: {
       atlasId: 6528,
       shortId: '29',
@@ -253,6 +297,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'curry',
     name: '底なし沼カレー',
     costs: { seafood: 40, meat: 25, vegetable: 25 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061411.png',
     targetItem: {
       atlasId: 6548,
       shortId: '2h',
@@ -265,6 +311,8 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'zenzai',
     name: '目玉ぜんざい',
     costs: { seafood: 30, meat: 30, vegetable: 30 },
+    iconUrl:
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061412.png',
     targetItem: {
       atlasId: 6517,
       shortId: '21',

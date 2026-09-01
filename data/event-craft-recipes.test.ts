@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   EVENT_CRAFT_FEATURED_YIELD,
   EVENT_CRAFT_RECIPES_2026,
+  EVENT_INGREDIENTS,
   EventCraftRecipe,
   getRecipeYields,
   otherMaterialYield,
@@ -59,5 +60,24 @@ describe('event craft expected yields', () => {
     expect(byId['01']).toBeCloseTo(2 * 0.4 + 3 * 0.15)
     expect(byId['0d']).toBeCloseTo(2 * 0.15 + 3 * 0.4)
     expect(totals.every((e) => e.amount > 0)).toBe(true)
+  })
+
+  it('provides iconUrl and atlasId for all event ingredients', () => {
+    expect(EVENT_INGREDIENTS).toHaveLength(3)
+    for (const ing of EVENT_INGREDIENTS) {
+      expect(ing.atlasId).toBeGreaterThan(0)
+      expect(ing.iconUrl).toMatch(
+        /^https:\/\/static\.atlasacademy\.io\/JP\/Items\/\d+\.png$/,
+      )
+    }
+  })
+
+  it('provides iconUrl for all 12 recipes in 2026 master data', () => {
+    expect(EVENT_CRAFT_RECIPES_2026).toHaveLength(12)
+    for (const recipe of EVENT_CRAFT_RECIPES_2026) {
+      expect(recipe.iconUrl).toMatch(
+        /^https:\/\/static\.atlasacademy\.io\/JP\/EventUI\/Prefabs\/80614\/icon_\d+\.png$/,
+      )
+    }
   })
 })
