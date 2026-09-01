@@ -9,6 +9,27 @@
  * https://appmedia.jp/fategrandorder/80305168 （水着2026）
  */
 
+import { region, staticOrigin } from '../constants/atlasacademy'
+
+/**
+ * イベント食材のアイテムアイコンURLを生成する。
+ * （公開済みゲーム内アセット: Atlas Academy static CDN JPリージョン）
+ */
+export const getEventItemIconUrl = (atlasId: number): string =>
+  `${staticOrigin}/${region}/Items/${atlasId}.png`
+
+/**
+ * 水着2026料理作成のEventUI画像URLを生成する。
+ * （公開済みゲーム内イベント80614アセット: Atlas Academy static CDN JPリージョン）
+ */
+export const getEventCraftDishIconUrl = (
+  eventId: number,
+  dishNumber: number,
+): string => {
+  const pad = String(dishNumber).padStart(2, '0')
+  return `${staticOrigin}/${region}/EventUI/Prefabs/${eventId}/icon_${eventId}${pad}.png`
+}
+
 export const EVENT_CRAFT_FEATURED_YIELD = 0.4
 
 /** 銅: 素材4+QP、銀: 素材4+種火、金: 素材4+種火+QP */
@@ -31,6 +52,8 @@ export type EventCraftRecipe = {
   name: string
   /** 必要食材（海鮮・お肉・野菜） */
   costs: IngredientCounts
+  /** 料理アイコン画像URL */
+  iconUrl?: string
   /** 作成で獲得できる素材情報（ゲーム内公開仕様・期待値高） */
   targetItem: {
     atlasId: number
@@ -90,7 +113,9 @@ export const sumExpectedCraftYields = (
   }
   for (const { recipe, totalCount } of allocations) {
     if (totalCount <= 0) continue
-    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+    for (const [shortId, y] of Object.entries(
+      getRecipeYields(recipe, recipes),
+    )) {
       if (y <= 0) continue
       amounts.set(shortId, (amounts.get(shortId) ?? 0) + totalCount * y)
     }
@@ -112,16 +137,39 @@ export type IngredientMeta = {
   id: IngredientType
   name: string
   shortName: string
+  atlasId: number
+  iconUrl: string
 }
 
 export const EVENT_INGREDIENTS: readonly IngredientMeta[] = [
-  { id: 'seafood', name: 'うちなー海鮮盛り', shortName: '海鮮' },
-  { id: 'meat', name: 'うちなーお肉盛り', shortName: 'お肉' },
-  { id: 'vegetable', name: 'うちなー野菜盛り', shortName: '野菜' },
+  {
+    id: 'seafood',
+    name: 'うちなー海鮮盛り',
+    shortName: '海鮮',
+    atlasId: 94159005,
+    iconUrl: getEventItemIconUrl(94159005),
+  },
+  {
+    id: 'meat',
+    name: 'うちなーお肉盛り',
+    shortName: 'お肉',
+    atlasId: 94159006,
+    iconUrl: getEventItemIconUrl(94159006),
+  },
+  {
+    id: 'vegetable',
+    name: 'うちなー野菜盛り',
+    shortName: '野菜',
+    atlasId: 94159004,
+    iconUrl: getEventItemIconUrl(94159004),
+  },
 ] as const
+
+const EVENT_80614_ID = 80614
 
 /**
  * 水着2026「料理作成」の12品目のレシピマスタ。
+ * アイコン画像はAtlas Academyの公開イベントUIアセット（Event 80614）を使用。
  */
 export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
   // 銅素材系（合計消費食材: 60）
@@ -129,6 +177,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'goya-champuru',
     name: 'ゴーヤーチャンプルー',
     costs: { seafood: 0, meat: 20, vegetable: 40 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 1),
     targetItem: {
       atlasId: 6533,
       shortId: '07',
@@ -141,6 +190,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'maasu-ni',
     name: 'マース煮',
     costs: { seafood: 40, meat: 0, vegetable: 20 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 2),
     targetItem: {
       atlasId: 6522,
       shortId: '04',
@@ -153,6 +203,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'steak',
     name: '厚切りステーキ',
     costs: { seafood: 20, meat: 40, vegetable: 0 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 3),
     targetItem: {
       atlasId: 6555,
       shortId: '0d',
@@ -165,6 +216,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'skull-andagi',
     name: 'ドクロアンダギー',
     costs: { seafood: 20, meat: 20, vegetable: 20 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 4),
     targetItem: {
       atlasId: 6516,
       shortId: '01',
@@ -179,6 +231,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'soki-soba',
     name: 'オニオニソーキそば',
     costs: { seafood: 30, meat: 45, vegetable: 0 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 5),
     targetItem: {
       atlasId: 6510,
       shortId: '15',
@@ -191,6 +244,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'potatoes',
     name: 'ちまみれポテト',
     costs: { seafood: 0, meat: 30, vegetable: 45 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 6),
     targetItem: {
       atlasId: 6524,
       shortId: '19',
@@ -203,6 +257,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'tempura',
     name: '九尾てんぷらー',
     costs: { seafood: 45, meat: 0, vegetable: 30 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 7),
     targetItem: {
       atlasId: 6511,
       shortId: '16',
@@ -215,6 +270,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'taco-rice',
     name: '深淵タコライス',
     costs: { seafood: 25, meat: 25, vegetable: 25 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 8),
     targetItem: {
       atlasId: 6515,
       shortId: '12',
@@ -229,6 +285,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'hijah-soup',
     name: '鐘楼ヒージャー汁',
     costs: { seafood: 25, meat: 25, vegetable: 40 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 9),
     targetItem: {
       atlasId: 6520,
       shortId: '25',
@@ -241,6 +298,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'rafute',
     name: '城壁ラフテー',
     costs: { seafood: 25, meat: 40, vegetable: 25 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 10),
     targetItem: {
       atlasId: 6528,
       shortId: '29',
@@ -253,6 +311,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'curry',
     name: '底なし沼カレー',
     costs: { seafood: 40, meat: 25, vegetable: 25 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 11),
     targetItem: {
       atlasId: 6548,
       shortId: '2h',
@@ -265,6 +324,7 @@ export const EVENT_CRAFT_RECIPES_2026: readonly EventCraftRecipe[] = [
     id: 'zenzai',
     name: '目玉ぜんざい',
     costs: { seafood: 30, meat: 30, vegetable: 30 },
+    iconUrl: getEventCraftDishIconUrl(EVENT_80614_ID, 12),
     targetItem: {
       atlasId: 6517,
       shortId: '21',
