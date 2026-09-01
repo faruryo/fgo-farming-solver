@@ -20,6 +20,7 @@ export type CraftAllocationItem = {
   deficitSaved: number
   surplusValue: number
   spentIngredients: IngredientCounts
+  deficitNeed: number
 }
 
 export type EventCraftSolverResult = {
@@ -494,6 +495,7 @@ const buildAllocations = (
   surplusCounts: Map<string, number>,
   allocatedSavings: Map<string, { totalSaved: number; unitSaved: number }>,
   singleItemBaseValues: Map<string, number>,
+  farmableNeed: Map<string, number>,
 ) => {
   const spentIngredients: IngredientCounts = {
     seafood: 0,
@@ -513,6 +515,7 @@ const buildAllocations = (
     const unitSaved = recipeSaving.unitSaved
     const surplusValue =
       (singleItemBaseValues.get(recipe.id) ?? 0) * surplusCount
+    const deficitNeed = farmableNeed.get(recipe.targetItem.shortId) ?? 0
 
     const spent: IngredientCounts = {
       seafood: recipe.costs.seafood * totalCount,
@@ -536,6 +539,7 @@ const buildAllocations = (
       deficitSaved,
       surplusValue,
       spentIngredients: spent,
+      deficitNeed,
     }
   })
 
@@ -732,6 +736,7 @@ const executeSolveStages = (
     surplusCounts,
     plan.allocatedSavings,
     singleItemBaseValues,
+    ctx.farmableNeed,
   )
   return { allocated, optimalCost: plan.residualCost }
 }

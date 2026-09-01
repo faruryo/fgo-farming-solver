@@ -100,4 +100,30 @@ describe('EventCraftAdvisor cards', () => {
     expect(screen.getByText('ドクロアンダギー')).toBeTruthy()
     expect(screen.getAllByText(/期待: /).length).toBeGreaterThan(0)
   })
+
+  it('対象素材の不足数を表示する', () => {
+    const items: Item[] = [
+      {
+        id: 6516,
+        name: '凶骨',
+        type: 'skillLvUp',
+        uses: 'skill',
+        detail: '',
+        icon: '',
+        background: 'bronze',
+        priority: 1,
+        dropPriority: 1,
+      },
+    ]
+    render(
+      <EventCraftAdvisor
+        items={items}
+        fullNeed={{ '01': 1 }}
+        mode="ap"
+        onModeChange={() => undefined}
+        stockEnabled={false}
+      />,
+    )
+    expect(screen.getByText('不足 あと1個')).toBeTruthy()
+  })
 })

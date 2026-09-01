@@ -6,6 +6,7 @@ import { MaterialSelectionAdvisor } from './material-selection-advisor'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Item } from '../../interfaces/atlas-academy'
 import { Drops } from '../../lib/get-drops'
+import { DEFAULT_STOCK_BUFFER } from '../../lib/quest-efficiency'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -152,6 +153,41 @@ describe('MaterialSelectionAdvisor Component', () => {
     expect(localStorage.getItem(STORAGE_KEYS.MATERIAL_ADVISOR_TAB)).toBe(
       JSON.stringify('summer-2026'),
     )
+  })
+
+  it('shows effective required (training + stock buffer) and its breakdown when stock target is ON', async () => {
+    localStorage.setItem(STORAGE_KEYS.STOCK_ENABLED, JSON.stringify(true))
+    localStorage.setItem(
+      STORAGE_KEYS.MATERIAL_SELECTION_ADVISOR,
+      JSON.stringify({ candidateIds: ['6533'], total: 0, mode: 'ap' }),
+    )
+
+    // 本番では items = EnrichedItem[](category/largeCategory 付き)が渡される。
+    // ここでも同じ形で渡し、mockDrops の '07'(銅素材/強化素材)と一致させる。
+    const itemsWithCategory = mockItems.map(it => ({
+      ...it,
+      category: '銅素材',
+      largeCategory: '強化素材',
+    })) as unknown as Item[]
+
+    render(
+      <MaterialSelectionAdvisor
+        items={itemsWithCategory}
+        amounts={{ '6533': 100 }}
+        possession={{ '6533': 50 }}
+      />,
+    )
+
+    const bronzeBuffer = DEFAULT_STOCK_BUFFER.normal.bronze // 300
+    expect(bronzeBuffer).toBe(300)
+    const effectiveRequired = 100 + bronzeBuffer
+
+    await waitFor(() => {
+      expect(screen.getByText(`必要 ${effectiveRequired}`)).toBeInTheDocument()
+      expect(
+        screen.getByText(`(育成 100 + ストック ${bronzeBuffer})`),
+      ).toBeInTheDocument()
+    })
   })
 
   it('calculates event craft allocation when ingredients are entered', async () => {

@@ -308,9 +308,13 @@ const RARITY_FALLBACK: Record<RecipeMaterialRarity, string> = {
 const PerDishYieldLine = ({
   recipe,
   materialName,
+  deficitNeed,
+  deficitCount,
 }: {
   recipe: EventCraftRecipe
   materialName: string
+  deficitNeed: number
+  deficitCount: number
 }) => {
   const { t } = useTranslation('material')
   const yields = getRecipeYields(recipe)
@@ -334,6 +338,22 @@ const PerDishYieldLine = ({
           otherAmount: (otherEntries[0]?.[1] ?? 0).toFixed(2),
           otherCount: otherEntries.length,
         },
+      )}
+      {deficitNeed > 0 ? (
+        <span className="ml-2">
+          {t('event-craft-deficit-need', '不足 あと{{amount}}個', {
+            amount: deficitNeed,
+          })}
+        </span>
+      ) : (
+        deficitCount > 0 && (
+          <span className="ml-2">
+            {t(
+              'event-craft-deficit-need-byproduct',
+              'この素材の不足はなし(同レア素材のついで獲得のため採用)',
+            )}
+          </span>
+        )
       )}
     </p>
   )
@@ -381,7 +401,12 @@ const CraftCard = ({
           </div>
           <CraftCardBadges item={item} />
         </div>
-        <PerDishYieldLine recipe={recipe} materialName={materialName} />
+        <PerDishYieldLine
+          recipe={recipe}
+          materialName={materialName}
+          deficitNeed={item.deficitNeed}
+          deficitCount={item.deficitCount}
+        />
         <CraftCardMeta
           costs={recipe.costs}
           deficitSaved={item.deficitSaved}
