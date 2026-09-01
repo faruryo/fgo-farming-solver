@@ -119,6 +119,17 @@ const renderSummer2026Advisor = (
   )
 }
 
+const commitIngredients = (meat: string, vegetable: string) => {
+  const inputs = screen.getAllByRole('spinbutton')
+  vi.useFakeTimers()
+  fireEvent.change(inputs[1], { target: { value: meat } })
+  fireEvent.change(inputs[2], { target: { value: vegetable } })
+  act(() => {
+    vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
+  })
+  vi.useRealTimers()
+}
+
 describe('MaterialSelectionAdvisor Component', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -200,17 +211,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     // Initially 0 ingredients
     expect(screen.getByText(/お持ちのイベント食材数/)).toBeInTheDocument()
-
-    // Enter ingredients for Goya Champuru (meat: 20, veg: 40)
-    const inputs = screen.getAllByRole('spinbutton')
-    // inputs: [seafood, meat, vegetable]
-    vi.useFakeTimers()
-    fireEvent.change(inputs[1], { target: { value: '60' } })
-    fireEvent.change(inputs[2], { target: { value: '120' } })
-    act(() => {
-      vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
-    })
-    vi.useRealTimers()
+    commitIngredients('60', '120')
 
     await waitFor(() => {
       const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
@@ -226,16 +227,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
   it('shows surplus badges on the exhaust pattern card', async () => {
     renderSummer2026Advisor()
-
-    // Enter enough ingredients for 2 Goya Champuru (meat: 40, veg: 80)
-    const inputs = screen.getAllByRole('spinbutton')
-    vi.useFakeTimers()
-    fireEvent.change(inputs[1], { target: { value: '80' } })
-    fireEvent.change(inputs[2], { target: { value: '160' } })
-    act(() => {
-      vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
-    })
-    vi.useRealTimers()
+    commitIngredients('80', '160')
 
     await waitFor(() => {
       const exhaustCard = screen.getByRole('radio', {
@@ -248,14 +240,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
   it('renders target material names using translation keys in recipe cards', async () => {
     renderSummer2026Advisor()
-    const inputs = screen.getAllByRole('spinbutton')
-    vi.useFakeTimers()
-    fireEvent.change(inputs[1], { target: { value: '60' } })
-    fireEvent.change(inputs[2], { target: { value: '120' } })
-    act(() => {
-      vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
-    })
-    vi.useRealTimers()
+    commitIngredients('60', '120')
 
     await waitFor(() => {
       const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
@@ -284,15 +269,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
   it('renders deficit savings formatted with unit', async () => {
     renderSummer2026Advisor()
-
-    const inputs = screen.getAllByRole('spinbutton')
-    vi.useFakeTimers()
-    fireEvent.change(inputs[1], { target: { value: '60' } })
-    fireEvent.change(inputs[2], { target: { value: '120' } })
-    act(() => {
-      vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
-    })
-    vi.useRealTimers()
+    commitIngredients('60', '120')
 
     await waitFor(() => {
       const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
