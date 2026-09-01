@@ -205,6 +205,47 @@ describe('solveEventCraftAllocation', () => {
     expect(allocNoDrop?.deficitNeed).toBe(0)
   })
 
+  it('対象素材に不足が無くても、同レア素材のついで獲得のために作成されることがある', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20)],
+      [{ quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 }],
+    )
+
+    const recipeCheap: EventCraftRecipe = {
+      id: 'recipe-cheap',
+      name: '安価な料理（素材B）',
+      costs: { seafood: 0, meat: 0, vegetable: 1 },
+      targetItem: { atlasId: 102, shortId: 'item-b', name: '素材B', rarity: 'bronze' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+    }
+    const recipeNormal: EventCraftRecipe = {
+      id: 'recipe-normal',
+      name: '通常の料理（素材A）',
+      costs: { seafood: 0, meat: 0, vegetable: 40 },
+      targetItem: { atlasId: 101, shortId: 'item-a', name: '素材A', rarity: 'bronze' },
+      yieldCount: EVENT_CRAFT_FEATURED_YIELD,
+    }
+
+    // item-b は不足0(所持済み)。item-a だけ不足しているが、同レアのついで獲得(0.15/皿)を
+    // 通常料理(40食材/皿)より遥かに安く得られる安価な料理(1食材/皿)が優先的に使われる。
+    const fullNeed = { 'item-a': 100 }
+    const owned: IngredientCounts = { seafood: 0, meat: 0, vegetable: 50 }
+
+    const res = solveEventCraftAllocation(
+      d,
+      fullNeed,
+      owned,
+      'turn',
+      ['Q1'],
+      { exhaustIngredients: false, recipes: [recipeCheap, recipeNormal] },
+    )
+
+    const allocCheap = res.allocations.find((a) => a.recipe.id === 'recipe-cheap')
+    expect(allocCheap?.deficitCount).toBeGreaterThan(0)
+    expect(allocCheap?.deficitNeed).toBe(0)
+  })
+
   it('周回コストが変わらないついでドロップ素材は不足枠でも作成しない (Stage 1b タイブレーク)', () => {
     // Q1 は item-a と item-b を同時に 1.0/周 で落とす
     // need: item-a: 10, item-b: 2

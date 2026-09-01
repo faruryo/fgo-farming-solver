@@ -176,6 +176,7 @@
     "event-craft-expected-yields-heading": "この配分での期待獲得",
     "event-craft-per-dish-yields": "期待: {{featured}} {{featuredAmount}} / 他{{rarity}} {{otherAmount}}×{{otherCount}}",
     "event-craft-deficit-need": "不足 あと{{amount}}個",
+    "event-craft-deficit-need-byproduct": "この素材の不足はなし(同レア素材のついで獲得のため採用)",
     "event-craft-rarity-bronze": "銅",
     "event-craft-rarity-silver": "銀",
     "event-craft-rarity-gold": "金",

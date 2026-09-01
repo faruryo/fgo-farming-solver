@@ -234,6 +234,7 @@
     "event-craft-expected-yields-heading": "Expected drops from this plan",
     "event-craft-per-dish-yields": "Expected: {{featured}} {{featuredAmount}} / other {{rarity}} {{otherAmount}}×{{otherCount}}",
     "event-craft-deficit-need": "{{amount}} more needed",
+    "event-craft-deficit-need-byproduct": "No shortage of this material (used for its side yield to a same-rarity material)",
     "event-craft-rarity-bronze": "bronze",
     "event-craft-rarity-silver": "silver",
     "event-craft-rarity-gold": "gold",
