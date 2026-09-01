@@ -70,6 +70,7 @@ describe('EventCraftExpectedYields', () => {
 
 describe('EventCraftAdvisor cards', () => {
   beforeEach(() => {
+    vi.stubGlobal('Worker', undefined)
     localStorage.clear()
     localStorage.setItem(
       STORAGE_KEYS.EVENT_CRAFT_ADVISOR,
@@ -81,6 +82,7 @@ describe('EventCraftAdvisor cards', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllGlobals()
     vi.useRealTimers()
   })
 
@@ -176,24 +178,21 @@ describe('EventCraftAdvisor cards', () => {
     expect(seafood).toHaveValue(12)
     expect(screen.getByText('最適な配分を計算しています、先輩...')).toBeTruthy()
     expect(screen.queryByRole('radio', { name: '周回を減らす' })).toBeNull()
-    const storedBefore = JSON.parse(
-      localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}',
-    ) as { ingredients?: IngredientCounts }
-    expect(storedBefore.ingredients?.seafood).toBe(20)
+    const storedIngredients = () => {
+      const parsed = JSON.parse(
+        localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}',
+      ) as { ingredients?: IngredientCounts }
+      return parsed.ingredients
+    }
+    expect(storedIngredients()?.seafood).toBe(20)
     act(() => {
       vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS - 1)
     })
-    expect(
-      JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}')
-        .ingredients.seafood,
-    ).toBe(20)
+    expect(storedIngredients()?.seafood).toBe(20)
     act(() => {
       vi.advanceTimersByTime(1)
     })
-    expect(
-      JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}')
-        .ingredients.seafood,
-    ).toBe(12)
+    expect(storedIngredients()?.seafood).toBe(12)
     vi.useRealTimers()
   })
 })

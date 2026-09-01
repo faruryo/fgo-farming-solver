@@ -762,13 +762,14 @@ describe('皿決めMILPを絞ったあとの残余評価', () => {
   })
 })
 
-const patternMetric = {
-  runs: 'turn',
-  ap: 'ap',
-  'even-turn': 'turn',
-  'even-ap': 'ap',
-  exhaust: 'both',
-} as const
+const patternMetricFor = (
+  id: EventCraftPatternResult['id'],
+): EventCraftPatternResult['metric'] => {
+  if (id === 'ap') return 'ap'
+  if (id === 'even-ap') return 'ap'
+  if (id === 'exhaust') return 'both'
+  return 'turn'
+}
 
 const makePattern = (
   id: EventCraftPatternResult['id'],
@@ -776,7 +777,7 @@ const makePattern = (
   count: number,
 ): EventCraftPatternResult => ({
   id,
-  metric: patternMetric[id],
+  metric: patternMetricFor(id),
   allocations: [
     {
       recipe,

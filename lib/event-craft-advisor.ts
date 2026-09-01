@@ -870,13 +870,10 @@ const computeSingleItemUnitCosts = (
   return costs
 }
 
-const buildEvenBurdenModel = (
+const evenBurdenConstraints = (
   ctx: SolverContext,
-  unitCosts: Map<string, number>,
-  tieBreak: boolean,
   burdenCap?: number,
-): solver.Model => {
-  const ints: Record<string, number> = {}
+): solver.Model['constraints'] => {
   const constraints: solver.Model['constraints'] = {
     seafood: { max: Math.max(0, ctx.ownedIngredients.seafood ?? 0) },
     meat: { max: Math.max(0, ctx.ownedIngredients.meat ?? 0) },
@@ -889,24 +886,15 @@ const buildEvenBurdenModel = (
   if (burdenCap != null) {
     Reflect.set(constraints, 'maxBurden', { max: burdenCap + EPSILON })
   }
-  const model: solver.Model = {
-    optimize: tieBreak ? 'totalIngredients' : 'maxBurden',
-    opType: 'min',
-    constraints,
-    variables: {},
-    ints,
-  }
-  for (const itemId of ctx.farmableNeed.keys()) {
-    Reflect.set(model.variables, `remaining_${itemId}`, {
-      [`remain_${itemId}`]: 1,
-      [`burden_${itemId}`]: -(unitCosts.get(itemId) ?? 0),
-    })
-  }
-  const maxBurden: Record<string, number> = { maxBurden: 1 }
-  for (const itemId of ctx.farmableNeed.keys()) {
-    Reflect.set(maxBurden, `burden_${itemId}`, 1)
-  }
-  Reflect.set(model.variables, 'burden', maxBurden)
+  return constraints
+}
+
+const addEvenBurdenRecipeVars = (
+  model: solver.Model,
+  ints: Record<string, number>,
+  ctx: SolverContext,
+  tieBreak: boolean,
+) => {
   for (const recipe of ctx.recipes) {
     const yields = getRecipeYields(recipe, ctx.recipes)
     if (
@@ -938,6 +926,34 @@ const buildEvenBurdenModel = (
     Reflect.set(model.variables, name, variable)
     Reflect.set(ints, name, 1)
   }
+}
+
+const buildEvenBurdenModel = (
+  ctx: SolverContext,
+  unitCosts: Map<string, number>,
+  tieBreak: boolean,
+  burdenCap?: number,
+): solver.Model => {
+  const ints: Record<string, number> = {}
+  const model: solver.Model = {
+    optimize: tieBreak ? 'totalIngredients' : 'maxBurden',
+    opType: 'min',
+    constraints: evenBurdenConstraints(ctx, burdenCap),
+    variables: {},
+    ints,
+  }
+  for (const itemId of ctx.farmableNeed.keys()) {
+    Reflect.set(model.variables, `remaining_${itemId}`, {
+      [`remain_${itemId}`]: 1,
+      [`burden_${itemId}`]: -(unitCosts.get(itemId) ?? 0),
+    })
+  }
+  const maxBurden: Record<string, number> = { maxBurden: 1 }
+  for (const itemId of ctx.farmableNeed.keys()) {
+    Reflect.set(maxBurden, `burden_${itemId}`, 1)
+  }
+  Reflect.set(model.variables, 'burden', maxBurden)
+  addEvenBurdenRecipeVars(model, ints, ctx, tieBreak)
   return model
 }
 
@@ -1166,41 +1182,52 @@ const classifyExhaustCounts = (
   return { deficit, surplus, savings }
 }
 
-const toPatternResult = (
-  id: EventCraftPatternId,
-  metric: EventCraftPatternMetric,
-  ctx: SolverContext,
-  counts: Map<string, number>,
-  owned: IngredientCounts,
-  baseValues: Map<string, number>,
-  baselineTurn: number,
-  baselineAp: number,
-  residualTurn: number,
-  residualAp: number,
-  classification?: ReturnType<typeof classifyByBurden>,
-): EventCraftPatternResult => {
-  let classified = classification
+type PatternResultInput = {
+  id: EventCraftPatternId
+  metric: EventCraftPatternMetric
+  ctx: SolverContext
+  counts: Map<string, number>
+  owned: IngredientCounts
+  baseValues: Map<string, number>
+  baselineTurn: number
+  baselineAp: number
+  residualTurn: number
+  residualAp: number
+  classification?: ReturnType<typeof classifyByBurden>
+}
+
+const toPatternResult = (input: PatternResultInput): EventCraftPatternResult => {
+  let classified = input.classification
   if (!classified) {
-    const exhaustSplit = classifyExhaustCounts(ctx, counts, baseValues)
+    const exhaustSplit = classifyExhaustCounts(
+      input.ctx,
+      input.counts,
+      input.baseValues,
+    )
     classified = {
       ...exhaustSplit,
-      savings: evaluateDeficitPlan(ctx, exhaustSplit.deficit, ctx.recipes)
-        .allocatedSavings,
+      savings: evaluateDeficitPlan(
+        input.ctx,
+        exhaustSplit.deficit,
+        input.ctx.recipes,
+      ).allocatedSavings,
     }
   }
   const built = buildAllocations(
-    ctx.recipes,
+    input.ctx.recipes,
     classified.deficit,
     classified.surplus,
     classified.savings,
-    baseValues,
-    ctx.farmableNeed,
+    input.baseValues,
+    input.ctx.farmableNeed,
   )
-  const selectedResidual = metric === 'ap' ? residualAp : residualTurn
-  const selectedBaseline = metric === 'ap' ? baselineAp : baselineTurn
+  const selectedResidual =
+    input.metric === 'ap' ? input.residualAp : input.residualTurn
+  const selectedBaseline =
+    input.metric === 'ap' ? input.baselineAp : input.baselineTurn
   return {
-    id,
-    metric,
+    id: input.id,
+    metric: input.metric,
     allocations: built.allocations,
     totalCrafted: built.totalDeficitCrafted + built.totalSurplusCrafted,
     totalDeficitCrafted: built.totalDeficitCrafted,
@@ -1208,11 +1235,14 @@ const toPatternResult = (
     totalSaved: Math.max(0, selectedBaseline - selectedResidual),
     totalSurplusValue: built.totalSurplusValue,
     spentIngredients: built.spentIngredients,
-    leftoverIngredients: calculateLeftovers(owned, built.spentIngredients),
-    residualTurnCost: residualTurn,
-    residualApCost: residualAp,
-    baselineTurnCost: baselineTurn,
-    baselineApCost: baselineAp,
+    leftoverIngredients: calculateLeftovers(
+      input.owned,
+      built.spentIngredients,
+    ),
+    residualTurnCost: input.residualTurn,
+    residualApCost: input.residualAp,
+    baselineTurnCost: input.baselineTurn,
+    baselineApCost: input.baselineAp,
   }
 }
 
@@ -1298,7 +1328,11 @@ export const foldEventCraftPatterns = (
       continue
     }
     aliases.set(match.id, [...(aliases.get(match.id) ?? []), pattern.id])
-    absorbedInto[pattern.id] = match.id
+    if (pattern.id === 'ap') absorbedInto.ap = match.id
+    else if (pattern.id === 'even-turn') absorbedInto['even-turn'] = match.id
+    else if (pattern.id === 'even-ap') absorbedInto['even-ap'] = match.id
+    else if (pattern.id === 'exhaust') absorbedInto.exhaust = match.id
+    else absorbedInto.runs = match.id
   }
   return {
     patterns: displayed.map((pattern) => ({
@@ -1314,7 +1348,11 @@ export const resolveVisiblePatternId = (
   id: EventCraftPatternId,
 ): EventCraftPatternId => {
   if (plan.patterns.some((pattern) => pattern.id === id)) return id
-  return plan.absorbedInto[id] ?? 'runs'
+  if (id === 'ap') return plan.absorbedInto.ap ?? 'runs'
+  if (id === 'even-turn') return plan.absorbedInto['even-turn'] ?? 'runs'
+  if (id === 'even-ap') return plan.absorbedInto['even-ap'] ?? 'runs'
+  if (id === 'exhaust') return plan.absorbedInto.exhaust ?? 'runs'
+  return plan.absorbedInto.runs ?? 'runs'
 }
 
 export const canPersistResolvedPattern = ({
@@ -1351,6 +1389,32 @@ export const computeEventCraftPlan = (
     questIds,
     recipes,
   })
+  return foldEventCraftPatterns(
+    assembleEventCraftPatterns(
+      drops,
+      questIds,
+      recipes,
+      ownedIngredients,
+      turn,
+      ap,
+    ),
+  )
+}
+
+const allocationCounts = (result: EventCraftSolverResult) =>
+  new Map(
+    result.allocations.map((allocation) => [
+      allocation.recipe.id,
+      allocation.totalCount,
+    ]),
+  )
+
+const primaryPatternResults = (
+  recipes: readonly EventCraftRecipe[],
+  ownedIngredients: IngredientCounts,
+  turn: ReturnType<typeof createSolverContext>,
+  ap: ReturnType<typeof createSolverContext>,
+): EventCraftPatternResult[] => {
   const runsResult = executePatternAllocation(
     turn.ctx,
     ownedIngredients,
@@ -1361,30 +1425,37 @@ export const computeEventCraftPlan = (
     ownedIngredients,
     ap.singleItemBaseValues,
   )
-  const runsCounts = new Map(
-    runsResult.allocations.map((allocation) => [
-      allocation.recipe.id,
-      allocation.totalCount,
-    ]),
-  )
-  const apCounts = new Map(
-    apResult.allocations.map((allocation) => [
-      allocation.recipe.id,
-      allocation.totalCount,
-    ]),
-  )
-  const runsResidualAp = evaluateResidualCost(
-    ap.ctx,
-    recipes,
-    runsCounts,
-    'ap',
-  )
-  const apResidualTurn = evaluateResidualCost(
-    turn.ctx,
-    recipes,
-    apCounts,
-    'turn',
-  )
+  return [
+    solverResultToPattern(
+      'runs',
+      'turn',
+      runsResult,
+      evaluateResidualCost(ap.ctx, recipes, allocationCounts(runsResult), 'ap'),
+      ap.ctx.baselineCost,
+    ),
+    solverResultToPattern(
+      'ap',
+      'ap',
+      apResult,
+      evaluateResidualCost(
+        turn.ctx,
+        recipes,
+        allocationCounts(apResult),
+        'turn',
+      ),
+      turn.ctx.baselineCost,
+    ),
+  ]
+}
+
+const assembleEventCraftPatterns = (
+  drops: Drops,
+  questIds: string[],
+  recipes: readonly EventCraftRecipe[],
+  ownedIngredients: IngredientCounts,
+  turn: ReturnType<typeof createSolverContext>,
+  ap: ReturnType<typeof createSolverContext>,
+): EventCraftPatternResult[] => {
   const unitTurn = computeSingleItemUnitCosts(
     drops,
     questIds,
@@ -1399,70 +1470,91 @@ export const computeEventCraftPlan = (
     ap.ctx.farmableNeed.keys(),
     ap.ctx.itemsWithDropData,
   )
-  const evenTurnCounts = solveEvenBurden(turn.ctx, unitTurn)
-  const evenApCounts = solveEvenBurden(ap.ctx, unitAp)
-  const exhaustCounts = solveExhaust(turn.ctx, ownedIngredients)
+  return [
+    ...primaryPatternResults(recipes, ownedIngredients, turn, ap),
+    ...evenAndExhaustPatterns({
+      recipes,
+      ownedIngredients,
+      turn,
+      ap,
+      unitTurn,
+      unitAp,
+      evenTurnCounts: solveEvenBurden(turn.ctx, unitTurn),
+      evenApCounts: solveEvenBurden(ap.ctx, unitAp),
+      exhaustCounts: solveExhaust(turn.ctx, ownedIngredients),
+    }),
+  ]
+}
+
+type EvenAndExhaustInput = {
+  recipes: readonly EventCraftRecipe[]
+  ownedIngredients: IngredientCounts
+  turn: ReturnType<typeof createSolverContext>
+  ap: ReturnType<typeof createSolverContext>
+  unitTurn: Map<string, number>
+  unitAp: Map<string, number>
+  evenTurnCounts: Map<string, number>
+  evenApCounts: Map<string, number>
+  exhaustCounts: Map<string, number>
+}
+
+const evenAndExhaustPatterns = ({
+  recipes,
+  ownedIngredients,
+  turn,
+  ap,
+  unitTurn,
+  unitAp,
+  evenTurnCounts,
+  evenApCounts,
+  exhaustCounts,
+}: EvenAndExhaustInput): EventCraftPatternResult[] => {
   const residuals = (counts: Map<string, number>) => ({
     turn: evaluateResidualCost(turn.ctx, recipes, counts, 'turn'),
     ap: evaluateResidualCost(ap.ctx, recipes, counts, 'ap'),
   })
+  const shared = {
+    owned: ownedIngredients,
+    baselineTurn: turn.ctx.baselineCost,
+    baselineAp: ap.ctx.baselineCost,
+  }
   const evenTurnResidual = residuals(evenTurnCounts)
   const evenApResidual = residuals(evenApCounts)
   const exhaustResidual = residuals(exhaustCounts)
-  return foldEventCraftPatterns([
-    solverResultToPattern(
-      'runs',
-      'turn',
-      runsResult,
-      runsResidualAp,
-      ap.ctx.baselineCost,
-    ),
-    solverResultToPattern(
-      'ap',
-      'ap',
-      apResult,
-      apResidualTurn,
-      turn.ctx.baselineCost,
-    ),
-    toPatternResult(
-      'even-turn',
-      'turn',
-      turn.ctx,
-      evenTurnCounts,
-      ownedIngredients,
-      turn.singleItemBaseValues,
-      turn.ctx.baselineCost,
-      ap.ctx.baselineCost,
-      evenTurnResidual.turn,
-      evenTurnResidual.ap,
-      classifyByBurden(turn.ctx, evenTurnCounts, unitTurn),
-    ),
-    toPatternResult(
-      'even-ap',
-      'ap',
-      ap.ctx,
-      evenApCounts,
-      ownedIngredients,
-      ap.singleItemBaseValues,
-      turn.ctx.baselineCost,
-      ap.ctx.baselineCost,
-      evenApResidual.turn,
-      evenApResidual.ap,
-      classifyByBurden(ap.ctx, evenApCounts, unitAp),
-    ),
-    toPatternResult(
-      'exhaust',
-      'both',
-      turn.ctx,
-      exhaustCounts,
-      ownedIngredients,
-      turn.singleItemBaseValues,
-      turn.ctx.baselineCost,
-      ap.ctx.baselineCost,
-      exhaustResidual.turn,
-      exhaustResidual.ap,
-    ),
-  ])
+  return [
+    toPatternResult({
+      id: 'even-turn',
+      metric: 'turn',
+      ctx: turn.ctx,
+      counts: evenTurnCounts,
+      baseValues: turn.singleItemBaseValues,
+      residualTurn: evenTurnResidual.turn,
+      residualAp: evenTurnResidual.ap,
+      classification: classifyByBurden(turn.ctx, evenTurnCounts, unitTurn),
+      ...shared,
+    }),
+    toPatternResult({
+      id: 'even-ap',
+      metric: 'ap',
+      ctx: ap.ctx,
+      counts: evenApCounts,
+      baseValues: ap.singleItemBaseValues,
+      residualTurn: evenApResidual.turn,
+      residualAp: evenApResidual.ap,
+      classification: classifyByBurden(ap.ctx, evenApCounts, unitAp),
+      ...shared,
+    }),
+    toPatternResult({
+      id: 'exhaust',
+      metric: 'both',
+      ctx: turn.ctx,
+      counts: exhaustCounts,
+      baseValues: turn.singleItemBaseValues,
+      residualTurn: exhaustResidual.turn,
+      residualAp: exhaustResidual.ap,
+      ...shared,
+    }),
+  ]
 }
 
 const compareDeficitAllocation = (

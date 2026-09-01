@@ -2,9 +2,7 @@
 
 import Image from 'next/image'
 import {
-  Dispatch,
   KeyboardEvent,
-  SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -21,7 +19,6 @@ import {
   computeEventCraftPlan,
   generateCraftAdvice,
   resolveVisiblePatternId,
-  canPersistResolvedPattern,
   CraftAllocationItem,
   EventCraftPatternId,
   EventCraftPlanPattern,
@@ -101,12 +98,22 @@ export const migrateEventCraftConfig = (
   return { ingredients, planPattern: 'runs' }
 }
 
-const PATTERN_NAME_KEYS: Record<EventCraftPatternId, [string, string]> = {
-  runs: ['event-craft-pattern-runs', '周回を減らす'],
-  ap: ['event-craft-pattern-ap', 'APを減らす'],
-  'even-turn': ['event-craft-pattern-even-turn', '満遍なく（周回）'],
-  'even-ap': ['event-craft-pattern-even-ap', '満遍なく（AP）'],
-  exhaust: ['event-craft-pattern-exhaust', '食材を使い切る'],
+const ingredientCount = (
+  ingredients: IngredientCounts,
+  type: IngredientType,
+) => {
+  if (type === 'seafood') return ingredients.seafood ?? 0
+  if (type === 'meat') return ingredients.meat ?? 0
+  return ingredients.vegetable ?? 0
+}
+
+const patternNameArgs = (id: EventCraftPatternId): [string, string] => {
+  if (id === 'ap') return ['event-craft-pattern-ap', 'APを減らす']
+  if (id === 'even-turn')
+    return ['event-craft-pattern-even-turn', '満遍なく（周回）']
+  if (id === 'even-ap') return ['event-craft-pattern-even-ap', '満遍なく（AP）']
+  if (id === 'exhaust') return ['event-craft-pattern-exhaust', '食材を使い切る']
+  return ['event-craft-pattern-runs', '周回を減らす']
 }
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
@@ -160,7 +167,11 @@ const IngredientInputs = ({
               min={0}
               inputMode="numeric"
               className="h-8 w-20 text-right"
-              value={ingredients[ing.id] === 0 ? '' : ingredients[ing.id]}
+              value={
+                ingredientCount(ingredients, ing.id) === 0
+                  ? ''
+                  : ingredientCount(ingredients, ing.id)
+              }
               placeholder="0"
               onChange={(e) => onChange(ing.id, Number(e.target.value))}
             />
@@ -612,95 +623,64 @@ const useEventCraftWorkerResult = (
   return { result, isPlanLoading, didPlanTimeout }
 }
 
-const useEventCraftCalculation = (
+const useEventCraftPlan = (
   drops: Drops & { isLoading?: boolean },
   fullNeed: Record<string, number>,
-  config: EventCraftAdvisorConfig,
-  setConfig: Dispatch<SetStateAction<EventCraftAdvisorConfig>>,
+  ingredients: IngredientCounts,
   isIngredientCommitPending: boolean,
 ) => {
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
   const isDataReady = !drops.isLoading && questIds.length > 0
   const canUseWorker = typeof Worker !== 'undefined'
-
   const workerRequest = useMemo((): EventCraftAllocationWorkerRequest | null => {
     if (!canUseWorker || !isDataReady) return null
     return {
       drops,
       fullNeed,
-      ownedIngredients: config.ingredients,
+      ownedIngredients: ingredients,
       questIds,
       options: { recipes: EVENT_CRAFT_RECIPES_2026 },
     }
-  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, questIds])
-
-  const requestKey = `${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
-
-  const {
-    result: workerResult,
-    isPlanLoading: isWorkerLoading,
-    didPlanTimeout,
-  } = useEventCraftWorkerResult(
+  }, [canUseWorker, isDataReady, drops, fullNeed, ingredients, questIds])
+  const requestKey = `${questIds.join(',')}:${JSON.stringify(ingredients)}:${JSON.stringify(fullNeed)}`
+  const worker = useEventCraftWorkerResult(
     canUseWorker && isDataReady,
     workerRequest,
     requestKey,
   )
-  const isPlanLoading = isIngredientCommitPending || isWorkerLoading
-
   const syncPlan = useMemo(
     () =>
       canUseWorker || !isDataReady
         ? EMPTY_PLAN_RESULT
-        : computeEventCraftPlan(
-            drops,
-            fullNeed,
-            config.ingredients,
-            questIds,
-          ),
-    [
-      canUseWorker,
-      isDataReady,
+        : computeEventCraftPlan(drops, fullNeed, ingredients, questIds),
+    [canUseWorker, isDataReady, drops, fullNeed, ingredients, questIds],
+  )
+  return {
+    questIds,
+    isDataReady,
+    plan: canUseWorker ? (worker.result ?? EMPTY_PLAN_RESULT) : syncPlan,
+    isPlanLoading: isIngredientCommitPending || worker.isPlanLoading,
+    didPlanTimeout: worker.didPlanTimeout,
+  }
+}
+
+const useEventCraftCalculation = (
+  drops: Drops & { isLoading?: boolean },
+  fullNeed: Record<string, number>,
+  config: EventCraftAdvisorConfig,
+  isIngredientCommitPending: boolean,
+) => {
+  const { questIds, isDataReady, plan, isPlanLoading, didPlanTimeout } =
+    useEventCraftPlan(
       drops,
       fullNeed,
       config.ingredients,
-      questIds,
-    ],
-  )
-  const plan = canUseWorker ? (workerResult ?? EMPTY_PLAN_RESULT) : syncPlan
-  const selectedPatternId = resolveVisiblePatternId(
-    plan,
-    config.planPattern,
-  )
+      isIngredientCommitPending,
+    )
+  const selectedPatternId = resolveVisiblePatternId(plan, config.planPattern)
   const selectedPattern = plan.patterns.find(
     (pattern) => pattern.id === selectedPatternId,
   )
-  useEffect(() => {
-    if (
-      !canPersistResolvedPattern({
-        isDataReady,
-        isPlanLoading,
-        didPlanTimeout,
-        visiblePatternCount: plan.patterns.length,
-      }) ||
-      selectedPatternId === config.planPattern
-    ) {
-      return
-    }
-    const previousId = config.planPattern
-    setConfig((previous) =>
-      previous.planPattern === previousId
-        ? { ...previous, planPattern: selectedPatternId }
-        : previous,
-    )
-  }, [
-    config.planPattern,
-    didPlanTimeout,
-    isDataReady,
-    isPlanLoading,
-    plan.patterns.length,
-    selectedPatternId,
-    setConfig,
-  ])
   const { t } = useTranslation('material')
   const advice = useMemo(
     () =>
@@ -741,21 +721,18 @@ const useAdvisorState = () => {
     { onGet: migrateEventCraftConfig },
   )
   const [draftIngredients, setDraftIngredients] = useState(
-    config.ingredients,
+    DEFAULT_EVENT_CRAFT_CONFIG.ingredients,
   )
-  const [isIngredientCommitPending, setIsIngredientCommitPending] =
-    useState(false)
+  const [ingredientsDirty, setIngredientsDirty] = useState(false)
+  const visibleIngredients = ingredientsDirty
+    ? draftIngredients
+    : config.ingredients
+  const isIngredientCommitPending =
+    ingredientsDirty &&
+    !sameIngredientCounts(draftIngredients, config.ingredients)
 
   useEffect(() => {
-    setDraftIngredients(config.ingredients)
-  }, [config.ingredients])
-
-  useEffect(() => {
-    if (sameIngredientCounts(draftIngredients, config.ingredients)) {
-      setIsIngredientCommitPending(false)
-      return
-    }
-    setIsIngredientCommitPending(true)
+    if (!isIngredientCommitPending) return
     const timer = window.setTimeout(() => {
       setConfig((previous) => ({
         ...previous,
@@ -763,16 +740,20 @@ const useAdvisorState = () => {
       }))
     }, INGREDIENT_COMMIT_DELAY_MS)
     return () => window.clearTimeout(timer)
-  }, [config.ingredients, draftIngredients, setConfig])
+  }, [draftIngredients, isIngredientCommitPending, setConfig])
 
   const setIngredientCount = useCallback(
     (type: IngredientType, count: number) => {
-      setDraftIngredients((previous) => ({
-        ...previous,
-        [type]: clampIngredientCount(count),
-      }))
+      const next = clampIngredientCount(count)
+      setDraftIngredients((previous) => {
+        const base = ingredientsDirty ? previous : config.ingredients
+        if (type === 'seafood') return { ...base, seafood: next }
+        if (type === 'meat') return { ...base, meat: next }
+        return { ...base, vegetable: next }
+      })
+      setIngredientsDirty(true)
     },
-    [],
+    [config.ingredients, ingredientsDirty],
   )
 
   const selectPattern = useCallback(
@@ -782,13 +763,14 @@ const useAdvisorState = () => {
   )
 
   const reset = useCallback(() => {
+    setIngredientsDirty(false)
     setDraftIngredients(DEFAULT_EVENT_CRAFT_CONFIG.ingredients)
     setConfig(DEFAULT_EVENT_CRAFT_CONFIG)
   }, [setConfig])
 
   return {
     config,
-    draftIngredients,
+    draftIngredients: visibleIngredients,
     isIngredientCommitPending,
     setConfig,
     setIngredientCount,
@@ -873,29 +855,90 @@ const PatternEvaluation = ({
   )
 }
 
+const PatternAliasLine = ({
+  aliases,
+}: {
+  aliases: readonly EventCraftPatternId[]
+}) => {
+  const { t } = useTranslation('material')
+  if (aliases.length === 0) return null
+  return (
+    <span className="text-xs" style={{ color: 'var(--text3)' }}>
+      {t('event-craft-alias-label', '同じ: {{names}}', {
+        names: aliases
+          .map((id) => {
+            const args = patternNameArgs(id)
+            return t(args[0], args[1])
+          })
+          .join('・'),
+      })}
+    </span>
+  )
+}
+
+type PatternCardProps = {
+  pattern: EventCraftPlanPattern
+  selected: boolean
+  onSelect: () => void
+  items: Item[]
+  dropItems: Drops['items']
+}
+
+const PatternCardContent = ({
+  pattern,
+  name,
+  selected,
+  allocations,
+  items,
+  dropItems,
+  unit,
+}: {
+  pattern: EventCraftPlanPattern
+  name: string
+  selected: boolean
+  allocations: CraftAllocationItem[]
+  items: Item[]
+  dropItems: Drops['items']
+  unit: string
+}) => (
+  <>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span
+        className="text-sm font-bold"
+        style={{ color: selected ? 'var(--gold)' : 'var(--text)' }}
+      >
+        {name}
+      </span>
+      <PatternEvaluation pattern={pattern} />
+    </div>
+    <PatternAliasLine aliases={pattern.aliasOf} />
+    {allocations.length > 0 && (
+      <CraftCardList
+        allocations={allocations}
+        items={items}
+        dropItems={dropItems}
+        unitLabel={unit}
+      />
+    )}
+    <LeftoverList leftover={pattern.leftoverIngredients} />
+  </>
+)
+
 const PatternCard = ({
   pattern,
   selected,
   onSelect,
   items,
   dropItems,
-}: {
-  pattern: EventCraftPlanPattern
-  selected: boolean
-  onSelect: () => void
-  items: Item[]
-  dropItems: Drops['items']
-}) => {
+}: PatternCardProps) => {
   const { t } = useTranslation('material')
-  const nameArgs = PATTERN_NAME_KEYS[pattern.id]
+  const nameArgs = patternNameArgs(pattern.id)
   const name = t(nameArgs[0], nameArgs[1])
   const allocations = sortAllocations(
     pattern.allocations.filter((allocation) => allocation.totalCount > 0),
   )
   const unit =
-    pattern.metric === 'ap'
-      ? t('unit-ap', 'AP')
-      : t('unit-runs', '周')
+    pattern.metric === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
@@ -917,37 +960,101 @@ const PatternCard = ({
           : '1px solid var(--border)',
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span
-          className="text-sm font-bold"
-          style={{ color: selected ? 'var(--gold)' : 'var(--text)' }}
-        >
-          {name}
-        </span>
-        <PatternEvaluation pattern={pattern} />
-      </div>
-      {pattern.aliasOf.length > 0 && (
-        <span className="text-xs" style={{ color: 'var(--text3)' }}>
-          {t('event-craft-alias-label', '同じ: {{names}}', {
-            names: pattern.aliasOf
-              .map((id) => {
-                const args = PATTERN_NAME_KEYS[id]
-                return t(args[0], args[1])
-              })
-              .join('・'),
-          })}
-        </span>
-      )}
-      {allocations.length > 0 && (
-        <CraftCardList
-          allocations={allocations}
-          items={items}
-          dropItems={dropItems}
-          unitLabel={unit}
-        />
-      )}
-      <LeftoverList leftover={pattern.leftoverIngredients} />
+      <PatternCardContent
+        pattern={pattern}
+        name={name}
+        selected={selected}
+        allocations={allocations}
+        items={items}
+        dropItems={dropItems}
+        unit={unit}
+      />
     </div>
+  )
+}
+
+type EventCraftPlanSectionProps = {
+  plan: EventCraftPlanResult
+  selectedPattern?: EventCraftPlanPattern
+  selectedPatternId: EventCraftPatternId
+  items: Item[]
+  dropItems: Drops['items']
+  unitLabel: string
+  leftover: IngredientCounts
+  hasInputs: boolean
+  onSelectPattern: (id: EventCraftPatternId) => void
+  onReset: () => void
+}
+
+const EventCraftPlanSection = ({
+  plan,
+  selectedPattern,
+  selectedPatternId,
+  items,
+  dropItems,
+  unitLabel,
+  leftover,
+  hasInputs,
+  onSelectPattern,
+  onReset,
+}: EventCraftPlanSectionProps) => {
+  const { t } = useTranslation('material')
+  return (
+    <>
+      <div
+        role="radiogroup"
+        aria-label={t('event-craft-pattern-group-label', '最適化パターン')}
+        className="flex flex-col gap-2"
+      >
+        {plan.patterns.map((pattern) => (
+          <PatternCard
+            key={pattern.id}
+            pattern={pattern}
+            selected={pattern.id === selectedPatternId}
+            onSelect={() => onSelectPattern(pattern.id)}
+            items={items}
+            dropItems={dropItems}
+          />
+        ))}
+      </div>
+      {selectedPattern && (
+        <>
+          <EventCraftExpectedYields
+            entries={sumExpectedCraftYields(
+              selectedPattern.allocations.filter(
+                (allocation) => allocation.totalCount > 0,
+              ),
+            )}
+          />
+          <LeftoverFooter
+            leftover={leftover}
+            hasInputs={hasInputs}
+            totalSaved={selectedPattern.totalSaved}
+            totalSurplusValue={selectedPattern.totalSurplusValue}
+            unitLabel={unitLabel}
+            onReset={onReset}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
+const EMPTY_LEFTOVER: IngredientCounts = {
+  seafood: 0,
+  meat: 0,
+  vegetable: 0,
+}
+
+const StockEvalBadge = () => {
+  const { t } = useTranslation('material')
+  return (
+    <span
+      className="self-start text-xs font-semibold"
+      style={{ color: 'var(--gold)' }}
+    >
+      {t('event-craft-stock-eval', 'ストック込みで評価中')}
+    </span>
   )
 }
 
@@ -957,94 +1064,45 @@ export const EventCraftAdvisor = ({
   stockEnabled = false,
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
-  const {
-    config,
-    draftIngredients,
-    isIngredientCommitPending,
-    setConfig,
-    setIngredientCount,
-    selectPattern,
-    reset,
-  } = useAdvisorState()
-  const {
-    plan,
-    selectedPattern,
-    selectedPatternId,
-    advice,
-    isDataReady,
-    isPlanLoading,
-    didPlanTimeout,
-  } = useEventCraftCalculation(
+  const state = useAdvisorState()
+  const calc = useEventCraftCalculation(
     drops,
     fullNeed,
-    config,
-    setConfig,
-    isIngredientCommitPending,
+    state.config,
+    state.isIngredientCommitPending,
   )
   const { t } = useTranslation('material')
   const unitLabel =
-    selectedPattern?.metric === 'ap'
+    calc.selectedPattern?.metric === 'ap'
       ? t('unit-ap', 'AP')
       : t('unit-runs', '周')
-
+  const showPlan =
+    calc.isDataReady && !calc.isPlanLoading && !calc.didPlanTimeout
   return (
     <div className="flex flex-col gap-4">
-      {stockEnabled && (
-        <span
-          className="self-start text-xs font-semibold"
-          style={{ color: 'var(--gold)' }}
-        >
-          {t('event-craft-stock-eval', 'ストック込みで評価中')}
-        </span>
-      )}
+      {stockEnabled && <StockEvalBadge />}
       <IngredientInputs
-        ingredients={draftIngredients}
-        onChange={setIngredientCount}
+        ingredients={state.draftIngredients}
+        onChange={state.setIngredientCount}
       />
-      <ServantPraise message={advice} size={44} />
-      {isDataReady && !isPlanLoading && !didPlanTimeout && (
-        <>
-          <div
-            role="radiogroup"
-            aria-label={t(
-              'event-craft-pattern-group-label',
-              '最適化パターン',
-            )}
-            className="flex flex-col gap-2"
-          >
-            {plan.patterns.map((pattern) => (
-              <PatternCard
-                key={pattern.id}
-                pattern={pattern}
-                selected={pattern.id === selectedPatternId}
-                onSelect={() => selectPattern(pattern.id)}
-                items={items}
-                dropItems={drops.items}
-              />
-            ))}
-          </div>
-          {selectedPattern && (
-            <>
-              <EventCraftExpectedYields
-                entries={sumExpectedCraftYields(
-                  selectedPattern.allocations.filter(
-                    (allocation) => allocation.totalCount > 0,
-                  ),
-                )}
-              />
-              <LeftoverFooter
-                leftover={selectedPattern.leftoverIngredients}
-                hasInputs={Object.values(config.ingredients).some(
-                  (value) => value > 0,
-                )}
-                totalSaved={selectedPattern.totalSaved}
-                totalSurplusValue={selectedPattern.totalSurplusValue}
-                unitLabel={unitLabel}
-                onReset={reset}
-              />
-            </>
+      <ServantPraise message={calc.advice} size={44} />
+      {showPlan && (
+        <EventCraftPlanSection
+          plan={calc.plan}
+          selectedPattern={calc.selectedPattern}
+          selectedPatternId={calc.selectedPatternId}
+          items={items}
+          dropItems={drops.items}
+          unitLabel={unitLabel}
+          leftover={
+            calc.selectedPattern?.leftoverIngredients ?? EMPTY_LEFTOVER
+          }
+          hasInputs={Object.values(state.config.ingredients).some(
+            (value) => value > 0,
           )}
-        </>
+          onSelectPattern={state.selectPattern}
+          onReset={state.reset}
+        />
       )}
     </div>
   )
