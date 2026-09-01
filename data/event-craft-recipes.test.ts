@@ -4,6 +4,8 @@ import {
   EVENT_CRAFT_RECIPES_2026,
   EVENT_INGREDIENTS,
   EventCraftRecipe,
+  getEventCraftDishIconUrl,
+  getEventItemIconUrl,
   getRecipeYields,
   otherMaterialYield,
   sumExpectedCraftYields,
@@ -79,5 +81,17 @@ describe('event craft expected yields', () => {
         /^https:\/\/static\.atlasacademy\.io\/JP\/EventUI\/Prefabs\/80614\/icon_\d+\.png$/,
       )
     }
+  })
+
+  it('generates expected item and dish icon URLs with helper functions', () => {
+    expect(getEventItemIconUrl(94159005)).toBe(
+      'https://static.atlasacademy.io/JP/Items/94159005.png',
+    )
+    expect(getEventCraftDishIconUrl(80614, 1)).toBe(
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061401.png',
+    )
+    expect(getEventCraftDishIconUrl(80614, 12)).toBe(
+      'https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061412.png',
+    )
   })
 })

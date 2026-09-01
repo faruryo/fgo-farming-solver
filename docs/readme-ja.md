@@ -37,9 +37,9 @@ FGOの集めたい素材の数から、どのクエストを何周するのが�
 ## 免責事項
 
 - アイテムのドロップ率は[FGOアイテム効率劇場](https://sites.google.com/view/fgo-domus-aurea)を参照しています。
-- サーヴァントの育成データは[Atlas Academy API](https://api.atlasacademy.io)を参照しています。
+- サーヴァントの育成データおよび画像アセット（アイテム・イベントUI等）は[Atlas Academy API / static CDN](https://api.atlasacademy.io)を参照しています。
 - データは自動的に更新されますが、正確・最新である保証はありません。
-- このサイトは「Fate/Grand Order」の開発・運営とは一切関係ありません。
+- このサイトは「Fate/Grand Order」の開発・運営とは一切関係ありません。「Fate/Grand Order」および関連するすべての画像・データ等の著作権・商標権は、TYPE-MOON / FGO PROJECT / Lasengle Inc. 等の権利者に帰属します。
 - このサイトを利用することによって生じた損害について、責任は負いかねます。
 
 ## 要望・不具合報告

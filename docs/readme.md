@@ -1,4 +1,3 @@
-
 # FGO Farming Solver
 
 A website to calculate the most efficient combination of quest runs from items you want to collect in mobile game "Fate/Grand Order" (FGO).
@@ -25,14 +24,13 @@ A website to calculate the most efficient combination of quest runs from items y
    Lack of data will be compensated each other.
 5. Push "Calculate Quest Runs" button. It may take a few seconds.
 6. Results will be shown. They consists of two categories:
-   
-    - Quest Runs
+   - Quest Runs
 
-        The most efficient combination of quest runs.
+     The most efficient combination of quest runs.
 
-    - Item Gain
+   - Item Gain
 
-        Expected values of gained items. Some values may be exceed required numbers because of a trade-off between items.
+     Expected values of gained items. Some values may be exceed required numbers because of a trade-off between items.
 
 ## Functions
 
@@ -49,9 +47,9 @@ A website to calculate the most efficient combination of quest runs from items y
 ## Disclaimer
 
 - Drop rates are from [FGOアイテム効率劇場](https://sites.google.com/view/fgo-domus-aurea).
-- Material data are from [Atlas Academy API](https://api.atlasacademy.io).
+- Material and image assets (items, event UI, servants) are from [Atlas Academy API / static CDN](https://api.atlasacademy.io).
 - Data will be revalidated automatically but not guaranteed to be correct and newest.
-- This website has no relations to development and operation of "Fate/Grand Order".
+- This website has no relations to development and operation of "Fate/Grand Order". All images, assets, and trademarks belong to TYPE-MOON / FGO PROJECT / Lasengle Inc.
 - We do not take any responsibility or liability for any damage or loss caused through our service.
 
 ## Feedback/Bugs
