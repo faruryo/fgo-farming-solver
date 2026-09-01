@@ -1384,7 +1384,7 @@ export const computeEventCraftPlanProgressive = (
     questIds,
     recipes,
   })
-  assembleEventCraftPatterns(
+  assembleEventCraftPatterns({
     drops,
     questIds,
     recipes,
@@ -1392,7 +1392,7 @@ export const computeEventCraftPlanProgressive = (
     turn,
     ap,
     onPattern,
-  )
+  })
 }
 
 export const computeEventCraftPlan = (
@@ -1466,15 +1466,25 @@ const emitPrimaryPatternResults = (
   )
 }
 
-const assembleEventCraftPatterns = (
-  drops: Drops,
-  questIds: string[],
-  recipes: readonly EventCraftRecipe[],
-  ownedIngredients: IngredientCounts,
-  turn: ReturnType<typeof createSolverContext>,
-  ap: ReturnType<typeof createSolverContext>,
-  onPattern: (pattern: EventCraftPatternResult) => void,
-) => {
+type AssembleEventCraftPatternsInput = {
+  drops: Drops
+  questIds: string[]
+  recipes: readonly EventCraftRecipe[]
+  ownedIngredients: IngredientCounts
+  turn: ReturnType<typeof createSolverContext>
+  ap: ReturnType<typeof createSolverContext>
+  onPattern: (pattern: EventCraftPatternResult) => void
+}
+
+const assembleEventCraftPatterns = ({
+  drops,
+  questIds,
+  recipes,
+  ownedIngredients,
+  turn,
+  ap,
+  onPattern,
+}: AssembleEventCraftPatternsInput) => {
   emitPrimaryPatternResults(
     recipes,
     ownedIngredients,
@@ -1482,27 +1492,25 @@ const assembleEventCraftPatterns = (
     ap,
     onPattern,
   )
-  const unitTurn = computeSingleItemUnitCosts(
-    drops,
-    questIds,
-    'turn',
-    turn.ctx.farmableNeed.keys(),
-    turn.ctx.itemsWithDropData,
-  )
-  const unitAp = computeSingleItemUnitCosts(
-    drops,
-    questIds,
-    'ap',
-    ap.ctx.farmableNeed.keys(),
-    ap.ctx.itemsWithDropData,
-  )
   emitEvenAndExhaustPatterns({
     recipes,
     ownedIngredients,
     turn,
     ap,
-    unitTurn,
-    unitAp,
+    unitTurn: computeSingleItemUnitCosts(
+      drops,
+      questIds,
+      'turn',
+      turn.ctx.farmableNeed.keys(),
+      turn.ctx.itemsWithDropData,
+    ),
+    unitAp: computeSingleItemUnitCosts(
+      drops,
+      questIds,
+      'ap',
+      ap.ctx.farmableNeed.keys(),
+      ap.ctx.itemsWithDropData,
+    ),
     onPattern,
   })
 }
@@ -1517,66 +1525,84 @@ type EvenAndExhaustInput = {
   onPattern: (pattern: EventCraftPatternResult) => void
 }
 
-const emitEvenAndExhaustPatterns = ({
-  recipes,
-  ownedIngredients,
-  turn,
-  ap,
-  unitTurn,
-  unitAp,
-  onPattern,
-}: EvenAndExhaustInput) => {
-  const residuals = (counts: Map<string, number>) => ({
-    turn: evaluateResidualCost(turn.ctx, recipes, counts, 'turn'),
-    ap: evaluateResidualCost(ap.ctx, recipes, counts, 'ap'),
-  })
-  const shared = {
-    owned: ownedIngredients,
-    baselineTurn: turn.ctx.baselineCost,
-    baselineAp: ap.ctx.baselineCost,
-  }
-  const evenTurnCounts = solveEvenBurden(turn.ctx, unitTurn)
-  const evenTurnResidual = residuals(evenTurnCounts)
-  onPattern(
+const emitEvenAndExhaustPatterns = (input: EvenAndExhaustInput) => {
+  emitEvenTurnPattern(input)
+  emitEvenApPattern(input)
+  emitExhaustPattern(input)
+}
+
+const evenShared = (input: EvenAndExhaustInput) => ({
+  owned: input.ownedIngredients,
+  baselineTurn: input.turn.ctx.baselineCost,
+  baselineAp: input.ap.ctx.baselineCost,
+})
+
+const residualPair = (
+  input: EvenAndExhaustInput,
+  counts: Map<string, number>,
+) => ({
+  turn: evaluateResidualCost(
+    input.turn.ctx,
+    input.recipes,
+    counts,
+    'turn',
+  ),
+  ap: evaluateResidualCost(input.ap.ctx, input.recipes, counts, 'ap'),
+})
+
+const emitEvenTurnPattern = (input: EvenAndExhaustInput) => {
+  const counts = solveEvenBurden(input.turn.ctx, input.unitTurn)
+  const residual = residualPair(input, counts)
+  input.onPattern(
     toPatternResult({
       id: 'even-turn',
       metric: 'turn',
-      ctx: turn.ctx,
-      counts: evenTurnCounts,
-      baseValues: turn.singleItemBaseValues,
-      residualTurn: evenTurnResidual.turn,
-      residualAp: evenTurnResidual.ap,
-      classification: classifyByBurden(turn.ctx, evenTurnCounts, unitTurn),
-      ...shared,
+      ctx: input.turn.ctx,
+      counts,
+      baseValues: input.turn.singleItemBaseValues,
+      residualTurn: residual.turn,
+      residualAp: residual.ap,
+      classification: classifyByBurden(
+        input.turn.ctx,
+        counts,
+        input.unitTurn,
+      ),
+      ...evenShared(input),
     }),
   )
-  const evenApCounts = solveEvenBurden(ap.ctx, unitAp)
-  const evenApResidual = residuals(evenApCounts)
-  onPattern(
+}
+
+const emitEvenApPattern = (input: EvenAndExhaustInput) => {
+  const counts = solveEvenBurden(input.ap.ctx, input.unitAp)
+  const residual = residualPair(input, counts)
+  input.onPattern(
     toPatternResult({
       id: 'even-ap',
       metric: 'ap',
-      ctx: ap.ctx,
-      counts: evenApCounts,
-      baseValues: ap.singleItemBaseValues,
-      residualTurn: evenApResidual.turn,
-      residualAp: evenApResidual.ap,
-      classification: classifyByBurden(ap.ctx, evenApCounts, unitAp),
-      ...shared,
+      ctx: input.ap.ctx,
+      counts,
+      baseValues: input.ap.singleItemBaseValues,
+      residualTurn: residual.turn,
+      residualAp: residual.ap,
+      classification: classifyByBurden(input.ap.ctx, counts, input.unitAp),
+      ...evenShared(input),
     }),
   )
-  const exhaustCounts = solveExhaust(turn.ctx, ownedIngredients)
-  const exhaustResidual = residuals(exhaustCounts)
-  onPattern(
+}
+
+const emitExhaustPattern = (input: EvenAndExhaustInput) => {
+  const counts = solveExhaust(input.turn.ctx, input.ownedIngredients)
+  const residual = residualPair(input, counts)
+  input.onPattern(
     toPatternResult({
       id: 'exhaust',
       metric: 'both',
-      ctx: turn.ctx,
-      counts: exhaustCounts,
-      baseValues: turn.singleItemBaseValues,
-      residualTurn: exhaustResidual.turn,
-      residualAp: exhaustResidual.ap,
-      ...shared,
+      ctx: input.turn.ctx,
+      counts,
+      baseValues: input.turn.singleItemBaseValues,
+      residualTurn: residual.turn,
+      residualAp: residual.ap,
+      ...evenShared(input),
     }),
   )
 }

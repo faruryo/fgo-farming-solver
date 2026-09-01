@@ -11,11 +11,19 @@ import {
 
 const recipe = EVENT_CRAFT_RECIPES_2026[0]
 
+const patternMetricFor = (
+  id: EventCraftPatternResult['id'],
+): EventCraftPatternResult['metric'] => {
+  if (id === 'ap' || id === 'even-ap') return 'ap'
+  if (id === 'exhaust') return 'both'
+  return 'turn'
+}
+
 const makePattern = (
   id: EventCraftPatternResult['id'],
 ): EventCraftPatternResult => ({
   id,
-  metric: id === 'ap' || id === 'even-ap' ? 'ap' : id === 'exhaust' ? 'both' : 'turn',
+  metric: patternMetricFor(id),
   allocations: [
     {
       recipe,

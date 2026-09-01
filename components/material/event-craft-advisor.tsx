@@ -1185,6 +1185,40 @@ type EventCraftPlanSectionProps = {
   onReset: () => void
 }
 
+const PatternProgressNotes = ({
+  isRemainingPending,
+  timedOutPatternIds,
+}: {
+  isRemainingPending: boolean
+  timedOutPatternIds: EventCraftPatternId[]
+}) => {
+  const { t } = useTranslation('material')
+  const timedOutNames = timedOutPatternIds
+    .map((id) => t(...patternNameArgs(id)))
+    .join(t('list-separator', '、'))
+  return (
+    <>
+      {isRemainingPending && (
+        <p className="text-sm text-muted-foreground">
+          {t(
+            'event-craft-pattern-pending',
+            '残りのパターンを計算しています、先輩...',
+          )}
+        </p>
+      )}
+      {timedOutPatternIds.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {t(
+            'event-craft-pattern-timeout',
+            '{{patterns}} の計算が時間内に終わりませんでした、先輩。',
+            { patterns: timedOutNames },
+          )}
+        </p>
+      )}
+    </>
+  )
+}
+
 const EventCraftPlanSection = ({
   plan,
   selectedPattern,
@@ -1200,9 +1234,6 @@ const EventCraftPlanSection = ({
   onReset,
 }: EventCraftPlanSectionProps) => {
   const { t } = useTranslation('material')
-  const timedOutNames = timedOutPatternIds
-    .map((id) => t(...patternNameArgs(id)))
-    .join(t('list-separator', '、'))
   return (
     <>
       <div
@@ -1221,23 +1252,10 @@ const EventCraftPlanSection = ({
           />
         ))}
       </div>
-      {isRemainingPending && (
-        <p className="text-sm text-muted-foreground">
-          {t(
-            'event-craft-pattern-pending',
-            '残りのパターンを計算しています、先輩...',
-          )}
-        </p>
-      )}
-      {timedOutPatternIds.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          {t(
-            'event-craft-pattern-timeout',
-            '{{patterns}} の計算が時間内に終わりませんでした、先輩。',
-            { patterns: timedOutNames },
-          )}
-        </p>
-      )}
+      <PatternProgressNotes
+        isRemainingPending={isRemainingPending}
+        timedOutPatternIds={timedOutPatternIds}
+      />
       {selectedPattern && (
         <>
           <EventCraftExpectedYields
