@@ -28,7 +28,14 @@ vi.mock('react-i18next', () => ({
 }))
 
 vi.mock('next/image', () => ({
-  default: (props: { alt: string }) => <span>{props.alt}</span>,
+  default: (props: { src?: string; alt?: string; className?: string }) => (
+    <span
+      role="img"
+      aria-label={props.alt}
+      data-src={props.src}
+      className={props.className}
+    />
+  ),
 }))
 
 const mockDrops: Drops & { isLoading?: boolean } = {
@@ -40,6 +47,7 @@ const mockDrops: Drops & { isLoading?: boolean } = {
       shortName: '凶骨',
       name: '凶骨',
       atlasId: 6516,
+      icon: 'https://static.atlasacademy.io/JP/Items/6516.png',
     },
   ],
   quests: [{ id: 'Q1', section: 'Free', area: 'A', name: 'Q1', ap: 20 }],
@@ -67,11 +75,17 @@ describe('EventCraftExpectedYields', () => {
     expect(skull).toBeDefined()
     if (!skull) return
 
-    render(<EventCraftExpectedYields entries={entries} />)
+    const { container } = render(<EventCraftExpectedYields entries={entries} />)
 
     expect(screen.getByText('この配分での期待獲得')).toBeTruthy()
     expect(screen.getByText(`凶骨 ${skull.amount.toFixed(1)}`)).toBeTruthy()
     expect(screen.queryByText(/期待: /)).toBeNull()
+
+    const skullImg = container.querySelector(
+      '[data-src="https://static.atlasacademy.io/JP/Items/6516.png"]',
+    )
+    expect(skullImg).toBeTruthy()
+    expect(skullImg?.getAttribute('aria-label')).toBe('凶骨')
   })
 })
 
@@ -95,7 +109,7 @@ describe('EventCraftAdvisor cards', () => {
         type: 'skillLvUp',
         uses: 'skill',
         detail: '',
-        icon: '',
+        icon: 'https://static.atlasacademy.io/JP/Items/6516.png',
         background: 'bronze',
         priority: 1,
         dropPriority: 1,
@@ -122,7 +136,7 @@ describe('EventCraftAdvisor cards', () => {
         type: 'skillLvUp',
         uses: 'skill',
         detail: '',
-        icon: '',
+        icon: 'https://static.atlasacademy.io/JP/Items/6516.png',
         background: 'bronze',
         priority: 1,
         dropPriority: 1,
@@ -151,12 +165,32 @@ describe('EventCraftAdvisor cards', () => {
         stockEnabled={false}
       />,
     )
-    expect(screen.getByText('うちなー海鮮盛り')).toBeTruthy()
-    expect(screen.getByText('うちなーお肉盛り')).toBeTruthy()
-    expect(screen.getByText('うちなー野菜盛り')).toBeTruthy()
+    const seafoodLabel = screen.getByText('うちなー海鮮盛り').closest('label')
+    const meatLabel = screen.getByText('うちなーお肉盛り').closest('label')
+    const vegLabel = screen.getByText('うちなー野菜盛り').closest('label')
+
+    expect(seafoodLabel).toBeTruthy()
+    expect(meatLabel).toBeTruthy()
+    expect(vegLabel).toBeTruthy()
+
+    expect(
+      seafoodLabel?.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/Items/94159005.png"]',
+      ),
+    ).toBeTruthy()
+    expect(
+      meatLabel?.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/Items/94159006.png"]',
+      ),
+    ).toBeTruthy()
+    expect(
+      vegLabel?.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/Items/94159004.png"]',
+      ),
+    ).toBeTruthy()
   })
 
-  it('renders cost ingredient badges and leftover amounts', () => {
+  it('renders dish icons, cost badges, and leftover ingredient icons', () => {
     const items: Item[] = [
       {
         id: 6516,
@@ -164,13 +198,13 @@ describe('EventCraftAdvisor cards', () => {
         type: 'skillLvUp',
         uses: 'skill',
         detail: '',
-        icon: '',
+        icon: 'https://static.atlasacademy.io/JP/Items/6516.png',
         background: 'bronze',
         priority: 1,
         dropPriority: 1,
       },
     ]
-    render(
+    const { container } = render(
       <EventCraftAdvisor
         items={items}
         fullNeed={{ '01': 1 }}
@@ -179,9 +213,55 @@ describe('EventCraftAdvisor cards', () => {
         stockEnabled={false}
       />,
     )
-    expect(screen.getByText('残余食材:')).toBeTruthy()
+
+    // 残余食材セクションのアイコン
+    const leftoverSection = screen.getByText('残余食材:').closest('div')
+    expect(leftoverSection).toBeTruthy()
+    expect(
+      leftoverSection?.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/Items/94159005.png"]',
+      ),
+    ).toBeTruthy()
+    expect(
+      leftoverSection?.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/Items/94159006.png"]',
+      ),
+    ).toBeTruthy()
+    expect(
+      leftoverSection?.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/Items/94159004.png"]',
+      ),
+    ).toBeTruthy()
     expect(screen.getByText('海鮮 0')).toBeTruthy()
     expect(screen.getByText('お肉 0')).toBeTruthy()
     expect(screen.getByText('野菜 0')).toBeTruthy()
+
+    // 料理アイコン (ドクロアンダギー: icon_8061404.png)
+    expect(
+      container.querySelector(
+        '[data-src="https://static.atlasacademy.io/JP/EventUI/Prefabs/80614/icon_8061404.png"]',
+      ),
+    ).toBeTruthy()
+
+    // 料理カードのオーバーレイ素材アイコン (凶骨: 6516.png)
+    const overlayMaterialImg = container.querySelector(
+      '[data-src="https://static.atlasacademy.io/JP/Items/6516.png"]',
+    )
+    expect(overlayMaterialImg).toBeTruthy()
+    expect(overlayMaterialImg?.getAttribute('aria-label')).toBe('凶骨')
+
+    // 消費食材バッジアイコン
+    const seafoodCostBadge = container.querySelector(
+      '[data-src="https://static.atlasacademy.io/JP/Items/94159005.png"][aria-label="海鮮"]',
+    )
+    expect(seafoodCostBadge).toBeTruthy()
+    const meatCostBadge = container.querySelector(
+      '[data-src="https://static.atlasacademy.io/JP/Items/94159006.png"][aria-label="お肉"]',
+    )
+    expect(meatCostBadge).toBeTruthy()
+    const vegCostBadge = container.querySelector(
+      '[data-src="https://static.atlasacademy.io/JP/Items/94159004.png"][aria-label="野菜"]',
+    )
+    expect(vegCostBadge).toBeTruthy()
   })
 })

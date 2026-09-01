@@ -860,7 +860,52 @@ const useEventCraftAdviceView = (params: {
   return { advice, sortedAllocations }
 }
 
-const useEventCraftCalculation = (
+type SyncCraftParams = {
+  drops: Drops
+  fullNeed: Record<string, number>
+  config: EventCraftAdvisorConfig
+  mode: DenominatorMode
+  questIds: string[]
+  solverOptions: {
+    exhaustIngredients: boolean
+    recipes: readonly EventCraftRecipe[]
+  }
+  canUseWorker: boolean
+  isDataReady: boolean
+}
+
+const useSyncCraftResult = ({
+  drops,
+  fullNeed,
+  config,
+  mode,
+  questIds,
+  solverOptions,
+  canUseWorker,
+  isDataReady,
+}: SyncCraftParams) =>
+  useMemo(() => {
+    if (canUseWorker || !isDataReady) return emptyResultFor(config.ingredients)
+    return solveEventCraftAllocation(
+      drops,
+      fullNeed,
+      config.ingredients,
+      mode,
+      questIds,
+      solverOptions,
+    )
+  }, [
+    canUseWorker,
+    isDataReady,
+    drops,
+    fullNeed,
+    config.ingredients,
+    mode,
+    questIds,
+    solverOptions,
+  ])
+
+const useEventCraftWorkerPayload = (
   drops: Drops & { isLoading?: boolean },
   fullNeed: Record<string, number>,
   config: EventCraftAdvisorConfig,
@@ -869,7 +914,6 @@ const useEventCraftCalculation = (
   const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
   const isDataReady = !drops.isLoading && questIds.length > 0
   const canUseWorker = typeof Worker !== 'undefined'
-
   const solverOptions = useMemo(
     () => ({
       exhaustIngredients: config.exhaustIngredients,
@@ -877,7 +921,6 @@ const useEventCraftCalculation = (
     }),
     [config.exhaustIngredients],
   )
-
   const workerRequest =
     useMemo((): EventCraftAllocationWorkerRequest | null => {
       if (!canUseWorker || !isDataReady) return null
@@ -902,6 +945,31 @@ const useEventCraftCalculation = (
 
   const requestKey = `${mode}:${config.exhaustIngredients}:${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
 
+  return {
+    questIds,
+    isDataReady,
+    canUseWorker,
+    solverOptions,
+    workerRequest,
+    requestKey,
+  }
+}
+
+const useEventCraftCalculation = (
+  drops: Drops & { isLoading?: boolean },
+  fullNeed: Record<string, number>,
+  config: EventCraftAdvisorConfig,
+  mode: DenominatorMode,
+) => {
+  const {
+    questIds,
+    isDataReady,
+    canUseWorker,
+    solverOptions,
+    workerRequest,
+    requestKey,
+  } = useEventCraftWorkerPayload(drops, fullNeed, config, mode)
+
   const {
     result: workerResult,
     isPlanLoading,
@@ -912,26 +980,16 @@ const useEventCraftCalculation = (
     requestKey,
   )
 
-  const syncResult = useMemo(() => {
-    if (canUseWorker || !isDataReady) return emptyResultFor(config.ingredients)
-    return solveEventCraftAllocation(
-      drops,
-      fullNeed,
-      config.ingredients,
-      mode,
-      questIds,
-      solverOptions,
-    )
-  }, [
-    canUseWorker,
-    isDataReady,
+  const syncResult = useSyncCraftResult({
     drops,
     fullNeed,
-    config.ingredients,
+    config,
     mode,
     questIds,
     solverOptions,
-  ])
+    canUseWorker,
+    isDataReady,
+  })
 
   const result = canUseWorker
     ? (workerResult ?? emptyResultFor(config.ingredients))
@@ -1029,6 +1087,53 @@ const CraftCardList = ({
   )
 }
 
+const EventCraftBody = ({
+  isDataReady,
+  isPlanLoading,
+  didPlanTimeout,
+  sortedAllocations,
+  items,
+  drops,
+  result,
+  config,
+  unitLabel,
+  reset,
+}: {
+  isDataReady: boolean
+  isPlanLoading: boolean
+  didPlanTimeout: boolean
+  sortedAllocations: CraftAllocationItem[]
+  items: Item[]
+  drops: Drops
+  result: EventCraftSolverResult
+  config: EventCraftAdvisorConfig
+  unitLabel: string
+  reset: () => void
+}) => {
+  if (!isDataReady || isPlanLoading || didPlanTimeout) return null
+  return (
+    <>
+      <EventCraftExpectedYields
+        entries={sumExpectedCraftYields(sortedAllocations)}
+      />
+      <CraftCardList
+        allocations={sortedAllocations}
+        items={items}
+        dropItems={drops.items}
+        unitLabel={unitLabel}
+      />
+      <LeftoverFooter
+        leftover={result.leftoverIngredients}
+        hasInputs={Object.values(config.ingredients).some((v) => v > 0)}
+        totalSaved={result.totalSaved}
+        totalSurplusValue={result.totalSurplusValue}
+        unitLabel={unitLabel}
+        onReset={reset}
+      />
+    </>
+  )
+}
+
 export const EventCraftAdvisor = ({
   items = [],
   fullNeed,
@@ -1068,27 +1173,18 @@ export const EventCraftAdvisor = ({
           onChange={setIngredientCount}
         />
         <ServantPraise message={advice} size={44} />
-        {isDataReady && !isPlanLoading && !didPlanTimeout && (
-          <>
-            <EventCraftExpectedYields
-              entries={sumExpectedCraftYields(sortedAllocations)}
-            />
-            <CraftCardList
-              allocations={sortedAllocations}
-              items={items}
-              dropItems={drops.items}
-              unitLabel={unitLabel}
-            />
-            <LeftoverFooter
-              leftover={result.leftoverIngredients}
-              hasInputs={Object.values(config.ingredients).some((v) => v > 0)}
-              totalSaved={result.totalSaved}
-              totalSurplusValue={result.totalSurplusValue}
-              unitLabel={unitLabel}
-              onReset={reset}
-            />
-          </>
-        )}
+        <EventCraftBody
+          isDataReady={isDataReady}
+          isPlanLoading={isPlanLoading}
+          didPlanTimeout={didPlanTimeout}
+          sortedAllocations={sortedAllocations}
+          items={items}
+          drops={drops}
+          result={result}
+          config={config}
+          unitLabel={unitLabel}
+          reset={reset}
+        />
       </div>
     </TooltipProvider>
   )
