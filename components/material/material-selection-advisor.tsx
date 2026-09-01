@@ -13,7 +13,7 @@ import {
   CandidateRef,
   DenominatorMode,
 } from '../../lib/material-selection-advisor'
-import { buildNeedByApiItemId, effectiveDeficiency } from '../../lib/quest-efficiency'
+import { buildNeedByApiItemId, buffer, effectiveDeficiency } from '../../lib/quest-efficiency'
 import { toStockItemLike } from '../../lib/farming/build-solve-params'
 import { useStockTarget } from '../../hooks/use-stock-target'
 import { ServantPraise } from '../farming/ServantPraise'
@@ -59,7 +59,12 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 type Row = {
   item: Item
   id: string
+  /** 実効必要数(育成必要数 + ストックバッファ)。 */
   required: number
+  /** 育成計算機由来の生の必要数(バッファ抜き)。 */
+  trainingRequired: number
+  /** 実際に上乗せされたストックバッファ量(OFF・対象外なら 0)。 */
+  stockBuffer: number
   owned: number
   deficiency: number
   allocated: number
@@ -162,6 +167,17 @@ export const MaterialSelectionAdvisor = ({
     [amounts, possession, itemsById, dropItemByAtlasId, resolvedStockBuffer, stockEnabled],
   )
 
+  // 実際に上乗せされるストックバッファ量(ストック目標 OFF や対象外カテゴリは 0)。
+  // 「必要」表示の内訳(育成分+ストック分)に使う。
+  const bufferFor = useCallback(
+    (id: string): number => {
+      if (!stockEnabled) return 0
+      const itemLike = itemsById.get(id) ?? dropItemByAtlasId.get(id)
+      return itemLike ? buffer(toStockItemLike(itemLike), resolvedStockBuffer) : 0
+    },
+    [itemsById, dropItemByAtlasId, resolvedStockBuffer, stockEnabled],
+  )
+
   // 全クエストID(LP の許可クエスト)。最適周回プランの基準にユーザーの全不足を回す。
   const questIds = useMemo(() => drops.quests.map(q => q.id), [drops.quests])
 
@@ -236,12 +252,15 @@ export const MaterialSelectionAdvisor = ({
     )
     const rows: Row[] = candidateRefs.map((c, i) => {
       const alloc = result.allocations[i]
-      const required = amounts[c.id] ?? 0
+      const trainingRequired = amounts[c.id] ?? 0
+      const stockBuffer = bufferFor(c.id)
       const owned = possession[c.id] ?? 0
       return {
         item: itemsById.get(c.id) ?? ({ id: Number(c.id), name: c.id } as Item),
         id: c.id,
-        required,
+        required: trainingRequired + stockBuffer,
+        trainingRequired,
+        stockBuffer,
         owned,
         deficiency: c.deficiency,
         allocated: alloc.allocated,
@@ -256,7 +275,7 @@ export const MaterialSelectionAdvisor = ({
       .filter(r => r.allocated > 0)
       .reduce<Row | null>((best, r) => (best == null || r.saved > best.saved ? r : best), null)
     return { rows, totalSaved: result.totalSaved, totalAllocated: result.totalAllocated, top }
-  }, [drops, fullNeed, candidateRefs, pricing, config.total, config.mode, questIds, amounts, possession, itemsById])
+  }, [drops, fullNeed, candidateRefs, pricing, config.total, config.mode, questIds, amounts, possession, itemsById, bufferFor])
 
   // 追加ドロップダウン候補: 未追加のアイテム。不足あり→必要あり→その他 の順に並べる。
   const addableItems = useMemo(() => {
@@ -472,10 +491,20 @@ export const MaterialSelectionAdvisor = ({
                   <ProgressBar row={row} />
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 text-xs" style={{ color: 'var(--text2)' }}>
-                  <span>所持 {row.owned}</span>
-                  <span>必要 {row.required}</span>
+                  <span>{t('advisor-owned', '所持 {{n}}', { n: row.owned })}</span>
+                  <span>{t('advisor-required', '必要 {{n}}', { n: row.required })}</span>
+                  {row.stockBuffer > 0 && (
+                    <span style={{ color: 'var(--text3)' }}>
+                      {t('advisor-required-buffer-note', '(育成 {{training}} + ストック {{buffer}})', {
+                        training: row.trainingRequired,
+                        buffer: row.stockBuffer,
+                      })}
+                    </span>
+                  )}
                   {row.stillShort > 0 && (
-                    <span style={{ color: 'var(--red)' }}>不足 {row.stillShort}</span>
+                    <span style={{ color: 'var(--red)' }}>
+                      {t('advisor-shortage', '不足 {{n}}', { n: row.stillShort })}
+                    </span>
                   )}
                   {row.noDropData ? (
                     <span style={{ color: 'var(--text3)' }}>フリクエ恒常ドロップ無し</span>
