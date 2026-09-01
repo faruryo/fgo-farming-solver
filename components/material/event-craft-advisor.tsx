@@ -31,12 +31,10 @@ import {
 import {
   EVENT_CRAFT_RECIPES_2026,
   EVENT_INGREDIENTS,
-  EventCraftRecipe,
   ExpectedCraftYieldEntry,
   IngredientCounts,
   IngredientType,
   RecipeMaterialRarity,
-  getRecipeYields,
   sumExpectedCraftYields,
 } from '../../data/event-craft-recipes'
 import { ServantPraise } from '../farming/ServantPraise'
@@ -220,7 +218,7 @@ const CraftCardBadges = ({ item }: { item: CraftAllocationItem }) => {
           className="rounded px-2 py-0.5 text-xs font-bold"
           style={{ background: 'var(--accent)', color: 'var(--gold)' }}
         >
-          {t('event-craft-rec-badge', '推奨 +{{count}}', {
+          {t('event-craft-rec-badge', '{{count}}個', {
             count: item.deficitCount,
           })}
         </span>
@@ -386,56 +384,27 @@ const RARITY_FALLBACK: Record<RecipeMaterialRarity, string> = {
   gold: '金',
 }
 
+const RARITY_ORDER: readonly RecipeMaterialRarity[] = ['bronze', 'silver', 'gold']
+
 const PerDishYieldLine = ({
-  recipe,
-  materialName,
   deficitNeed,
   deficitCount,
 }: {
-  recipe: EventCraftRecipe
-  materialName: string
   deficitNeed: number
   deficitCount: number
 }) => {
   const { t } = useTranslation('material')
-  const yields = getRecipeYields(recipe)
-  const featuredYield = yields[recipe.targetItem.shortId] ?? 0
-  const otherEntries = Object.entries(yields).filter(
-    ([id]) => id !== recipe.targetItem.shortId,
-  )
-  const rarityKey = recipe.targetItem.rarity
-  let rarityJa = RARITY_FALLBACK.bronze
-  if (rarityKey === 'silver') rarityJa = RARITY_FALLBACK.silver
-  if (rarityKey === 'gold') rarityJa = RARITY_FALLBACK.gold
+  if (deficitNeed <= 0 && deficitCount <= 0) return null
   return (
     <p className="mt-0.5 text-xs" style={{ color: 'var(--text3)' }}>
-      {t(
-        'event-craft-per-dish-yields',
-        '期待: {{featured}} {{featuredAmount}} / 他{{rarity}} {{otherAmount}}×{{otherCount}}',
-        {
-          featured: materialName,
-          featuredAmount: featuredYield.toFixed(2),
-          rarity: t(`event-craft-rarity-${rarityKey}`, rarityJa),
-          otherAmount: (otherEntries[0]?.[1] ?? 0).toFixed(2),
-          otherCount: otherEntries.length,
-        },
-      )}
-      {deficitNeed > 0 ? (
-        <span className="ml-2">
-          {t('event-craft-deficit-need', '不足 あと{{amount}}個', {
+      {deficitNeed > 0
+        ? t('event-craft-deficit-need', '不足 あと{{amount}}個', {
             amount: deficitNeed,
-          })}
-        </span>
-      ) : (
-        deficitCount > 0 && (
-          <span className="ml-2">
-            {t(
-              'event-craft-deficit-need-byproduct',
-              'この素材の不足はなし(同レア素材のついで獲得のため採用)',
-            )}
-          </span>
-        )
-      )}
+          })
+        : t(
+            'event-craft-deficit-need-byproduct',
+            'この素材の不足はなし(同レア素材のついで獲得のため採用)',
+          )}
     </p>
   )
 }
@@ -509,8 +478,6 @@ const CraftCard = ({
           item={item}
         />
         <PerDishYieldLine
-          recipe={recipe}
-          materialName={materialName}
           deficitNeed={item.deficitNeed}
           deficitCount={item.deficitCount}
         />
@@ -525,67 +492,12 @@ const CraftCard = ({
   )
 }
 
-export const EventCraftExpectedYields = ({
-  entries,
-}: {
-  entries: ExpectedCraftYieldEntry[]
-}) => {
-  const { t } = useTranslation('material')
-  if (entries.length === 0) return null
-  return (
-    <div
-      className="flex flex-col gap-2 rounded-lg p-3"
-      style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
-    >
-      <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>
-        {t('event-craft-expected-yields-heading', 'この配分での期待獲得')}
-      </span>
-      <div
-        className="flex flex-wrap gap-2 text-xs"
-        style={{ color: 'var(--text)' }}
-      >
-        {entries.map((entry) => {
-          const iconUrl = entry.atlasId
-            ? getItemIconUrl(String(entry.atlasId))
-            : ''
-          return (
-            <div
-              key={entry.shortId}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1"
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {iconUrl && (
-                <Image
-                  src={iconUrl}
-                  alt={t(`material-${entry.shortId}`, entry.name)}
-                  width={20}
-                  height={20}
-                  className="h-5 w-5 object-contain rounded"
-                />
-              )}
-              <span className="font-medium" style={{ color: 'var(--text)' }}>
-                {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
-                  name: t(`material-${entry.shortId}`, entry.name),
-                  amount: fmt(entry.amount),
-                })}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 const LeftoverList = ({ leftover }: { leftover: IngredientCounts }) => {
   const { t } = useTranslation('material')
   return (
     <div className="flex flex-wrap items-center gap-3">
       <span className="font-medium text-xs" style={{ color: 'var(--text2)' }}>
-        {t('event-craft-leftover-title', '残余食材')}:
+        {t('event-craft-leftover-title', '余った食材')}:
       </span>
       <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
         {EVENT_INGREDIENTS.map((ing) => (
@@ -1024,14 +936,171 @@ const CraftCardList = ({
   )
 }
 
-const PatternEvaluation = ({ pattern }: { pattern: EventCraftPlanPattern }) => {
+const MaterialYieldTile = ({
+  entry,
+  deficitNeed,
+}: {
+  entry: ExpectedCraftYieldEntry
+  deficitNeed: number
+}) => {
+  const { t } = useTranslation('material')
+  const ratio =
+    deficitNeed > 0 ? Math.min(1, entry.amount / (entry.amount + deficitNeed)) : 1
+  return (
+    <div
+      className="flex flex-col gap-1 rounded px-2 py-1.5"
+      style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+    >
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span style={{ color: 'var(--text)' }}>
+          {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
+            name: t(`material-${entry.shortId}`, entry.name),
+            amount: fmt(entry.amount),
+          })}
+        </span>
+        {deficitNeed > 0 && (
+          <span style={{ color: 'var(--text3)' }}>
+            {t('event-craft-material-need-remaining', 'あと{{amount}}個', {
+              amount: deficitNeed,
+            })}
+          </span>
+        )}
+      </div>
+      <div
+        className="h-1.5 w-full overflow-hidden rounded-full"
+        style={{ background: 'var(--border)' }}
+      >
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${ratio * 100}%`, background: 'var(--green)' }}
+        />
+      </div>
+    </div>
+  )
+}
+
+const rarityFallbackLabel = (rarity: RecipeMaterialRarity): string => {
+  if (rarity === 'silver') return RARITY_FALLBACK.silver
+  if (rarity === 'gold') return RARITY_FALLBACK.gold
+  return RARITY_FALLBACK.bronze
+}
+
+const RarityZoneHeading = ({
+  heading,
+  subtotal,
+  unitLabel,
+}: {
+  heading: string
+  subtotal: number
+  unitLabel: string
+}) => {
+  const { t } = useTranslation('material')
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>
+        {heading}
+      </span>
+      {subtotal > 0 && (
+        <span className="text-xs font-medium" style={{ color: 'var(--green)' }}>
+          {t('event-craft-saved-equiv', '−{{amount}} {{unit}}', {
+            amount: fmt(subtotal),
+            unit: unitLabel,
+          })}
+        </span>
+      )}
+    </div>
+  )
+}
+
+const RarityZoneEmptyNote = ({
+  heading,
+  rarityLabel,
+}: {
+  heading: string
+  rarityLabel: string
+}) => {
+  const { t } = useTranslation('material')
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>
+        {heading}
+      </span>
+      <p className="text-xs" style={{ color: 'var(--text3)' }}>
+        {t(
+          'event-craft-rarity-zone-empty',
+          '{{rarity}}レア素材は、今回の配分では対象の料理を作らないため期待獲得はありません',
+          { rarity: rarityLabel },
+        )}
+      </p>
+    </div>
+  )
+}
+
+const RarityZone = ({
+  rarity,
+  allocations,
+  items,
+  dropItems,
+  unitLabel,
+}: {
+  rarity: RecipeMaterialRarity
+  allocations: CraftAllocationItem[]
+  items: Item[]
+  dropItems: Drops['items']
+  unitLabel: string
+}) => {
+  const { t } = useTranslation('material')
+  const rarityLabel = t(`event-craft-rarity-${rarity}`, rarityFallbackLabel(rarity))
+  const heading = t('event-craft-rarity-zone-heading', '{{rarity}}レア素材', {
+    rarity: rarityLabel,
+  })
+  const zoneAllocations = sortAllocations(
+    allocations.filter(
+      (a) => a.recipe.targetItem.rarity === rarity && a.totalCount > 0,
+    ),
+  )
+  if (zoneAllocations.length === 0) {
+    return <RarityZoneEmptyNote heading={heading} rarityLabel={rarityLabel} />
+  }
+  const subtotal = zoneAllocations.reduce((sum, a) => sum + a.deficitSaved, 0)
+  const deficitByShortId = new Map(
+    allocations.map((a) => [a.recipe.targetItem.shortId, a.deficitNeed]),
+  )
+  const yieldEntries = sumExpectedCraftYields(zoneAllocations)
+  return (
+    <div className="flex flex-col gap-2">
+      <RarityZoneHeading heading={heading} subtotal={subtotal} unitLabel={unitLabel} />
+      <CraftCardList
+        allocations={zoneAllocations}
+        items={items}
+        dropItems={dropItems}
+        unitLabel={unitLabel}
+      />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {yieldEntries.map((entry) => (
+          <MaterialYieldTile
+            key={entry.shortId}
+            entry={entry}
+            deficitNeed={deficitByShortId.get(entry.shortId) ?? 0}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const PatternEvaluation = ({
+  pattern,
+}: {
+  pattern: EventCraftPlanPattern
+}) => {
   const { t } = useTranslation('material')
   if (pattern.metric === 'both') {
     return (
       <span className="text-xs" style={{ color: 'var(--text2)' }}>
         {t(
           'event-craft-residual-reference',
-          '残余参考: {{turn}} 周 / {{ap}} AP',
+          'フリクエで あと{{turn}} 周 / {{ap}} AP',
           {
             turn: fmt(pattern.residualTurnCost),
             ap: fmt(pattern.residualApCost),
@@ -1046,7 +1115,7 @@ const PatternEvaluation = ({ pattern }: { pattern: EventCraftPlanPattern }) => {
     pattern.metric === 'ap' ? pattern.residualApCost : pattern.residualTurnCost
   return (
     <span className="text-xs" style={{ color: 'var(--text2)' }}>
-      {t('event-craft-residual-single', '残余: {{amount}} {{unit}}', {
+      {t('event-craft-residual-single', 'フリクエで あと{{amount}} {{unit}}', {
         amount: fmt(amount),
         unit,
       })}
@@ -1087,7 +1156,6 @@ const PatternCardContent = ({
   pattern,
   name,
   selected,
-  allocations,
   items,
   dropItems,
   unit,
@@ -1095,7 +1163,6 @@ const PatternCardContent = ({
   pattern: EventCraftPlanPattern
   name: string
   selected: boolean
-  allocations: CraftAllocationItem[]
   items: Item[]
   dropItems: Drops['items']
   unit: string
@@ -1111,14 +1178,16 @@ const PatternCardContent = ({
       <PatternEvaluation pattern={pattern} />
     </div>
     <PatternAliasLine aliases={pattern.aliasOf} />
-    {allocations.length > 0 && (
-      <CraftCardList
-        allocations={allocations}
+    {RARITY_ORDER.map((rarity) => (
+      <RarityZone
+        key={rarity}
+        rarity={rarity}
+        allocations={pattern.allocations}
         items={items}
         dropItems={dropItems}
         unitLabel={unit}
       />
-    )}
+    ))}
     <LeftoverList leftover={pattern.leftoverIngredients} />
   </>
 )
@@ -1133,9 +1202,6 @@ const PatternCard = ({
   const { t } = useTranslation('material')
   const nameArgs = patternNameArgs(pattern.id)
   const name = t(nameArgs[0], nameArgs[1])
-  const allocations = sortAllocations(
-    pattern.allocations.filter((allocation) => allocation.totalCount > 0),
-  )
   const unit =
     pattern.metric === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -1161,7 +1227,6 @@ const PatternCard = ({
         pattern={pattern}
         name={name}
         selected={selected}
-        allocations={allocations}
         items={items}
         dropItems={dropItems}
         unit={unit}
@@ -1257,23 +1322,14 @@ const EventCraftPlanSection = ({
         timedOutPatternIds={timedOutPatternIds}
       />
       {selectedPattern && (
-        <>
-          <EventCraftExpectedYields
-            entries={sumExpectedCraftYields(
-              selectedPattern.allocations.filter(
-                (allocation) => allocation.totalCount > 0,
-              ),
-            )}
-          />
-          <LeftoverFooter
-            leftover={leftover}
-            hasInputs={hasInputs}
-            totalSaved={selectedPattern.totalSaved}
-            totalSurplusValue={selectedPattern.totalSurplusValue}
-            unitLabel={unitLabel}
-            onReset={onReset}
-          />
-        </>
+        <LeftoverFooter
+          leftover={leftover}
+          hasInputs={hasInputs}
+          totalSaved={selectedPattern.totalSaved}
+          totalSurplusValue={selectedPattern.totalSurplusValue}
+          unitLabel={unitLabel}
+          onReset={onReset}
+        />
       )}
     </>
   )

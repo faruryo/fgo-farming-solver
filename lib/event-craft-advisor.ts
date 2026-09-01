@@ -1711,6 +1711,32 @@ const buildAdviceEffectText = (
   return `${effectText}${surplusNote}`.trim()
 }
 
+const buildAdviceHeadList = (
+  allocations: CraftAllocationItem[],
+  t: AdviceTranslator,
+): string => {
+  const items = allocations
+    .filter((a) => a.totalCount > 0)
+    .sort(
+      (a, b) =>
+        b.deficitSaved + b.surplusValue - (a.deficitSaved + a.surplusValue),
+    )
+  if (items.length === 0) return ''
+  const itemsText = items
+    .map((a) =>
+      t('event-craft-advice-item-format', '{{name}}{{count}}個', {
+        name: t(`recipe-${a.recipe.id}`, a.recipe.name),
+        count: a.totalCount,
+      }),
+    )
+    .join('、')
+  return t(
+    'event-craft-advice-head-list',
+    '{{items}}を作成するのが最も効率的です、先輩。',
+    { items: itemsText },
+  )
+}
+
 export const generateCraftAdvice = (
   result: EventCraftSolverResult,
   ownedIngredients: IngredientCounts,
@@ -1755,15 +1781,8 @@ export const generateCraftAdvice = (
     )
   }
 
-  const { top, topCount, deficitTop } = findTopAllocation(result.allocations)
-  const topName = top ? t(`recipe-${top.recipe.id}`, top.recipe.name) : ''
-  const head = top
-    ? t(
-        'event-craft-advice-head',
-        '最優先は「{{name}}」です、先輩。これを {{count}} 個作成するのが最も効率的です。',
-        { name: topName, count: topCount },
-      )
-    : ''
+  const { deficitTop } = findTopAllocation(result.allocations)
+  const head = buildAdviceHeadList(result.allocations, t)
 
   const effect = buildAdviceEffectText(result, mode, deficitTop, t)
   return `${head} ${effect}`.trim()

@@ -218,9 +218,9 @@ describe('MaterialSelectionAdvisor Component', () => {
       expect(
         within(runsCard).getByText('ゴーヤーチャンプルー'),
       ).toBeInTheDocument()
-      expect(within(runsCard).getByText('推奨 +3')).toBeInTheDocument()
+      expect(within(runsCard).getByText('3個')).toBeInTheDocument()
       expect(
-        screen.getByText(/最優先は「ゴーヤーチャンプルー」です/),
+        screen.getByText(/ゴーヤーチャンプルー3個を作成するのが最も効率的です、先輩。/),
       ).toBeInTheDocument()
     })
   })
@@ -233,7 +233,7 @@ describe('MaterialSelectionAdvisor Component', () => {
       const exhaustCard = screen.getByRole('radio', {
         name: '食材を使い切る',
       })
-      expect(within(exhaustCard).getByText('推奨 +3')).toBeInTheDocument()
+      expect(within(exhaustCard).getByText('3個')).toBeInTheDocument()
       expect(within(exhaustCard).getByText('余剰 +1')).toBeInTheDocument()
     })
   })
@@ -273,7 +273,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     await waitFor(() => {
       const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getByText('−1 周')).toBeInTheDocument()
+      expect(within(runsCard).getAllByText('−1 周').length).toBeGreaterThan(0)
     })
   })
 })
