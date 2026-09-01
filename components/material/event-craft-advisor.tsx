@@ -20,6 +20,15 @@ import {
   AdviceTranslator,
 } from '../../lib/event-craft-advisor'
 import {
+  applyEventCraftWorkerMessage,
+  applyEventCraftWorkerTimeout,
+  didEventCraftPlanOverallTimeout,
+  emptyEventCraftPlanProgress,
+  EventCraftPlanProgress,
+  EventCraftWorkerMessage,
+  isEventCraftPlanAwaitingFirstPattern,
+} from '../../lib/event-craft-plan-progress'
+import {
   EVENT_CRAFT_RECIPES_2026,
   EVENT_INGREDIENTS,
   EventCraftRecipe,
@@ -735,28 +744,33 @@ const WORKER_HARD_TIMEOUT_MS = 10000
 
 const spawnEventCraftAllocationWorker = (
   request: EventCraftAllocationWorkerRequest,
-  onSettled: (result: EventCraftPlanResult, timedOut: boolean) => void,
+  onProgress: (progress: EventCraftPlanProgress) => void,
 ): (() => void) => {
   let settled = false
+  let progress = emptyEventCraftPlanProgress()
   const worker = new Worker(
     new URL('../../lib/event-craft-allocation.worker', import.meta.url),
   )
 
-  const finish = (result: EventCraftPlanResult, timedOut: boolean) => {
+  const finish = (next: EventCraftPlanProgress) => {
     if (settled) return
     settled = true
     clearTimeout(hardTimeout)
     worker.terminate()
-    onSettled(result, timedOut)
+    onProgress(next)
   }
   const hardTimeout = setTimeout(
-    () => finish(EMPTY_PLAN_RESULT, true),
+    () => finish(applyEventCraftWorkerTimeout(progress)),
     WORKER_HARD_TIMEOUT_MS,
   )
 
-  worker.onmessage = (e: MessageEvent<EventCraftPlanResult>) =>
-    finish(e.data, false)
-  worker.onerror = () => finish(EMPTY_PLAN_RESULT, true)
+  worker.onmessage = (e: MessageEvent<EventCraftWorkerMessage>) => {
+    if (settled) return
+    progress = applyEventCraftWorkerMessage(progress, e.data)
+    onProgress(progress)
+    if (progress.done) finish(progress)
+  }
+  worker.onerror = () => finish(applyEventCraftWorkerTimeout(progress))
   worker.postMessage(request)
 
   return () => {
@@ -773,22 +787,34 @@ const useEventCraftWorkerResult = (
 ) => {
   const [settled, setSettled] = useState<{
     key: string
-    result: EventCraftPlanResult
-    timedOut: boolean
+    progress: EventCraftPlanProgress
   } | null>(null)
 
   useEffect(() => {
     if (!enabled || request == null) return
     const key = requestKey
-    return spawnEventCraftAllocationWorker(request, (result, timedOut) => {
-      setSettled({ key, result, timedOut })
+    return spawnEventCraftAllocationWorker(request, (progress) => {
+      setSettled({ key, progress })
     })
   }, [enabled, request, requestKey])
 
-  const isPlanLoading = enabled && settled?.key !== requestKey
-  const result = settled?.key === requestKey ? settled.result : null
-  const didPlanTimeout = settled?.key === requestKey && settled.timedOut
-  return { result, isPlanLoading, didPlanTimeout }
+  const progress =
+    settled?.key === requestKey
+      ? settled.progress
+      : emptyEventCraftPlanProgress()
+  const isPlanLoading =
+    enabled &&
+    (settled?.key !== requestKey ||
+      isEventCraftPlanAwaitingFirstPattern(progress))
+  const didPlanTimeout =
+    settled?.key === requestKey && didEventCraftPlanOverallTimeout(progress)
+  return {
+    result: progress.plan,
+    isPlanLoading,
+    didPlanTimeout,
+    pending: !progress.done && !progress.timedOut && progress.received.length > 0,
+    timedOutPatternIds: progress.timedOutPatternIds,
+  }
 }
 
 const useEventCraftPlan = (
@@ -827,9 +853,11 @@ const useEventCraftPlan = (
   return {
     questIds,
     isDataReady,
-    plan: canUseWorker ? (worker.result ?? EMPTY_PLAN_RESULT) : syncPlan,
+    plan: canUseWorker ? worker.result : syncPlan,
     isPlanLoading: isIngredientCommitPending || worker.isPlanLoading,
     didPlanTimeout: worker.didPlanTimeout,
+    isRemainingPending: !isIngredientCommitPending && worker.pending,
+    timedOutPatternIds: worker.timedOutPatternIds,
   }
 }
 
@@ -839,7 +867,15 @@ const useEventCraftCalculation = (
   config: EventCraftAdvisorConfig,
   isIngredientCommitPending: boolean,
 ) => {
-  const { questIds, isDataReady, plan, isPlanLoading, didPlanTimeout } =
+  const {
+    questIds,
+    isDataReady,
+    plan,
+    isPlanLoading,
+    didPlanTimeout,
+    isRemainingPending,
+    timedOutPatternIds,
+  } =
     useEventCraftPlan(
       drops,
       fullNeed,
@@ -880,6 +916,8 @@ const useEventCraftCalculation = (
     isDataReady,
     isPlanLoading,
     didPlanTimeout,
+    isRemainingPending,
+    timedOutPatternIds,
   }
 }
 
@@ -1141,8 +1179,44 @@ type EventCraftPlanSectionProps = {
   unitLabel: string
   leftover: IngredientCounts
   hasInputs: boolean
+  isRemainingPending: boolean
+  timedOutPatternIds: EventCraftPatternId[]
   onSelectPattern: (id: EventCraftPatternId) => void
   onReset: () => void
+}
+
+const PatternProgressNotes = ({
+  isRemainingPending,
+  timedOutPatternIds,
+}: {
+  isRemainingPending: boolean
+  timedOutPatternIds: EventCraftPatternId[]
+}) => {
+  const { t } = useTranslation('material')
+  const timedOutNames = timedOutPatternIds
+    .map((id) => t(...patternNameArgs(id)))
+    .join(t('list-separator', '、'))
+  return (
+    <>
+      {isRemainingPending && (
+        <p className="text-sm text-muted-foreground">
+          {t(
+            'event-craft-pattern-pending',
+            '残りのパターンを計算しています、先輩...',
+          )}
+        </p>
+      )}
+      {timedOutPatternIds.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {t(
+            'event-craft-pattern-timeout',
+            '{{patterns}} の計算が時間内に終わりませんでした、先輩。',
+            { patterns: timedOutNames },
+          )}
+        </p>
+      )}
+    </>
+  )
 }
 
 const EventCraftPlanSection = ({
@@ -1154,6 +1228,8 @@ const EventCraftPlanSection = ({
   unitLabel,
   leftover,
   hasInputs,
+  isRemainingPending,
+  timedOutPatternIds,
   onSelectPattern,
   onReset,
 }: EventCraftPlanSectionProps) => {
@@ -1176,6 +1252,10 @@ const EventCraftPlanSection = ({
           />
         ))}
       </div>
+      <PatternProgressNotes
+        isRemainingPending={isRemainingPending}
+        timedOutPatternIds={timedOutPatternIds}
+      />
       {selectedPattern && (
         <>
           <EventCraftExpectedYields
@@ -1236,7 +1316,10 @@ export const EventCraftAdvisor = ({
       ? t('unit-ap', 'AP')
       : t('unit-runs', '周')
   const showPlan =
-    calc.isDataReady && !calc.isPlanLoading && !calc.didPlanTimeout
+    calc.isDataReady &&
+    !calc.isPlanLoading &&
+    !calc.didPlanTimeout &&
+    calc.plan.patterns.length > 0
   return (
     <div className="flex flex-col gap-4">
       {stockEnabled && <StockEvalBadge />}
@@ -1257,6 +1340,8 @@ export const EventCraftAdvisor = ({
           hasInputs={Object.values(state.config.ingredients).some(
             (value) => value > 0,
           )}
+          isRemainingPending={calc.isRemainingPending}
+          timedOutPatternIds={calc.timedOutPatternIds}
           onSelectPattern={state.selectPattern}
           onReset={state.reset}
         />
