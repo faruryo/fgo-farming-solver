@@ -1,20 +1,30 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Dispatch,
+  KeyboardEvent,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
 import { Item } from '../../interfaces/atlas-academy'
 import { Drops } from '../../lib/get-drops'
 import { getItemIconUrl } from '../../lib/get-item-icon-url'
-import { DenominatorMode } from '../../lib/material-selection-advisor'
 import type { EventCraftAllocationWorkerRequest } from '../../lib/event-craft-allocation.worker'
 import {
-  solveEventCraftAllocation,
+  computeEventCraftPlan,
   generateCraftAdvice,
+  resolveVisiblePatternId,
   CraftAllocationItem,
-  EventCraftSolverResult,
+  EventCraftPatternId,
+  EventCraftPlanPattern,
+  EventCraftPlanResult,
   AdviceTranslator,
 } from '../../lib/event-craft-advisor'
 import {
@@ -32,31 +42,70 @@ import { ServantPraise } from '../farming/ServantPraise'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Info } from 'lucide-react'
 
 export type EventCraftAdvisorProps = {
   items?: Item[]
   fullNeed: Record<string, number>
-  mode: DenominatorMode
-  onModeChange: (mode: DenominatorMode) => void
-  stockEnabled: boolean
+  stockEnabled?: boolean
 }
 
 export type EventCraftAdvisorConfig = {
   ingredients: IngredientCounts
-  exhaustIngredients: boolean
+  planPattern: EventCraftPatternId
 }
 
 const DEFAULT_EVENT_CRAFT_CONFIG: EventCraftAdvisorConfig = {
   ingredients: { seafood: 0, meat: 0, vegetable: 0 },
-  exhaustIngredients: false,
+  planPattern: 'runs',
+}
+
+export const INGREDIENT_COMMIT_DELAY_MS = 3000
+
+const clampIngredientCount = (count: number) =>
+  Math.max(0, Math.floor(Number.isFinite(count) ? count : 0))
+
+const sameIngredientCounts = (a: IngredientCounts, b: IngredientCounts) =>
+  a.seafood === b.seafood && a.meat === b.meat && a.vegetable === b.vegetable
+
+const PATTERN_IDS: readonly EventCraftPatternId[] = [
+  'runs',
+  'ap',
+  'even-turn',
+  'even-ap',
+  'exhaust',
+]
+
+const isPatternId = (value: unknown): value is EventCraftPatternId =>
+  typeof value === 'string' &&
+  (PATTERN_IDS as readonly string[]).includes(value)
+
+export const migrateEventCraftConfig = (
+  raw: unknown,
+): EventCraftAdvisorConfig => {
+  const value =
+    raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const ingredients =
+    value.ingredients && typeof value.ingredients === 'object'
+      ? (value.ingredients as IngredientCounts)
+      : DEFAULT_EVENT_CRAFT_CONFIG.ingredients
+  if (isPatternId(value.planPattern)) {
+    return { ingredients, planPattern: value.planPattern }
+  }
+  if ('exhaustIngredients' in value) {
+    return {
+      ingredients,
+      planPattern: value.exhaustIngredients === true ? 'exhaust' : 'runs',
+    }
+  }
+  return { ingredients, planPattern: 'runs' }
+}
+
+const PATTERN_NAME_KEYS: Record<EventCraftPatternId, [string, string]> = {
+  runs: ['event-craft-pattern-runs', '周回を減らす'],
+  ap: ['event-craft-pattern-ap', 'APを減らす'],
+  'even-turn': ['event-craft-pattern-even-turn', '満遍なく（周回）'],
+  'even-ap': ['event-craft-pattern-even-ap', '満遍なく（AP）'],
+  exhaust: ['event-craft-pattern-exhaust', '食材を使い切る'],
 }
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
@@ -68,90 +117,6 @@ const getItemIcon = (
   if (catItem?.icon) return getItemIconUrl(catItem.icon)
   if (dropItem?.icon) return getItemIconUrl(dropItem.icon)
   return null
-}
-
-const AdvisorModeSwitch = ({
-  mode,
-  onModeChange,
-  stockEnabled,
-}: {
-  mode: DenominatorMode
-  onModeChange: (mode: DenominatorMode) => void
-  stockEnabled: boolean
-}) => {
-  const { t } = useTranslation('material')
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span
-        style={{
-          color: mode === 'ap' ? 'var(--gold)' : 'var(--text3)',
-          fontWeight: 600,
-        }}
-      >
-        {t('event-craft-ap-mode', 'AP節約優先')}
-      </span>
-      <Switch
-        checked={mode === 'turn'}
-        onCheckedChange={(c) => onModeChange(c ? 'turn' : 'ap')}
-        aria-label={t('mode-switch', '最適化モード切り替え')}
-      />
-      <span
-        style={{
-          color: mode === 'turn' ? 'var(--gold)' : 'var(--text3)',
-          fontWeight: 600,
-        }}
-      >
-        {t('event-craft-turn-mode', '周回数節約優先')}
-      </span>
-      {stockEnabled && (
-        <span style={{ color: 'var(--gold)', fontWeight: 600, fontSize: 11 }}>
-          {t('event-craft-stock-eval', 'ストック込みで評価中')}
-        </span>
-      )}
-    </div>
-  )
-}
-
-const AdvisorExhaustSwitch = ({
-  exhaust,
-  onExhaustChange,
-}: {
-  exhaust: boolean
-  onExhaustChange: (exhaust: boolean) => void
-}) => {
-  const { t } = useTranslation('material')
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span style={{ color: exhaust ? 'var(--gold)' : 'var(--text2)' }}>
-        {t('event-craft-exhaust-label', '食材を使い切る')}
-      </span>
-      <Switch
-        checked={exhaust}
-        onCheckedChange={onExhaustChange}
-        aria-label={t('event-craft-exhaust-label', '食材を使い切る')}
-      />
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <button
-              type="button"
-              aria-label={t('detail-desc', '詳しい説明')}
-              className="inline-flex items-center justify-center rounded-full outline-none"
-              style={{ color: 'var(--text3)' }}
-            />
-          }
-        >
-          <Info className="h-3.5 w-3.5" />
-        </TooltipTrigger>
-        <TooltipContent className="max-w-[16rem] text-left">
-          {t(
-            'event-craft-exhaust-tooltip',
-            '不足素材を満たした後も、余った食材で単体価値の高い料理を作成して食材の余剰を最小化します。',
-          )}
-        </TooltipContent>
-      </Tooltip>
-    </div>
-  )
 }
 
 const IngredientInputs = ({
@@ -515,17 +480,9 @@ const LeftoverFooter = ({
   )
 }
 
-const EMPTY_ALLOCATION_RESULT: EventCraftSolverResult = {
-  allocations: [],
-  totalCrafted: 0,
-  totalDeficitCrafted: 0,
-  totalSurplusCrafted: 0,
-  totalSaved: 0,
-  totalSurplusValue: 0,
-  spentIngredients: { seafood: 0, meat: 0, vegetable: 0 },
-  leftoverIngredients: { seafood: 0, meat: 0, vegetable: 0 },
-  baselineCost: 0,
-  optimalCost: 0,
+const EMPTY_PLAN_RESULT: EventCraftPlanResult = {
+  patterns: [],
+  absorbedInto: {},
 }
 
 const sortAllocations = (allocations: CraftAllocationItem[]) =>
@@ -540,19 +497,29 @@ type AdviceResolutionParams = {
   isPlanLoading: boolean
   didPlanTimeout: boolean
   hasQuests: boolean
-  result: EventCraftSolverResult
-  config: EventCraftAdvisorConfig
-  mode: DenominatorMode
+  selectedPattern: EventCraftPlanPattern | undefined
+  ingredients: IngredientCounts
   t: AdviceTranslator
 }
 
 const resolveAdviceMessage = (params: AdviceResolutionParams) => {
-  const { isDataLoading, isPlanLoading, didPlanTimeout, hasQuests, result, config, mode, t } = params
+  const {
+    isDataLoading,
+    isPlanLoading,
+    didPlanTimeout,
+    hasQuests,
+    selectedPattern,
+    ingredients,
+    t,
+  } = params
   if (isDataLoading) {
     return t('event-craft-loading', 'ドロップデータを読み込み中です、先輩...')
   }
   if (isPlanLoading) {
-    return t('event-craft-plan-computing', '最適な配分を計算中です、先輩...')
+    return t(
+      'event-craft-plan-computing',
+      '最適な配分を計算しています、先輩...',
+    )
   }
   if (didPlanTimeout) {
     return t(
@@ -560,36 +527,42 @@ const resolveAdviceMessage = (params: AdviceResolutionParams) => {
       '配分の計算が時間内に終わりませんでした、先輩。通信や端末の負荷を確認するか、時間をおいて再度お試しください。',
     )
   }
-  if (!hasQuests) {
+  if (!hasQuests || !selectedPattern) {
     return t(
       'event-craft-data-unavailable',
       'ドロップデータを取得できませんでした、先輩。通信環境を確認するか、時間をおいて再度お試しください。',
     )
   }
+  const mode = selectedPattern.metric === 'ap' ? 'ap' : 'turn'
   return generateCraftAdvice(
-    result,
-    config.ingredients,
+    {
+      ...selectedPattern,
+      baselineCost:
+        mode === 'ap'
+          ? selectedPattern.baselineApCost
+          : selectedPattern.baselineTurnCost,
+      optimalCost:
+        mode === 'ap'
+          ? selectedPattern.residualApCost
+          : selectedPattern.residualTurnCost,
+    },
+    ingredients,
     mode,
-    config.exhaustIngredients,
+    selectedPattern.id === 'exhaust',
     (k, d, o) => t(k, d, o),
   )
 }
 
 const WORKER_HARD_TIMEOUT_MS = 10000
 
-const emptyResultFor = (ingredients: IngredientCounts): EventCraftSolverResult => ({
-  ...EMPTY_ALLOCATION_RESULT,
-  leftoverIngredients: { ...ingredients },
-})
-
 const spawnEventCraftAllocationWorker = (
   request: EventCraftAllocationWorkerRequest,
-  onSettled: (result: EventCraftSolverResult, timedOut: boolean) => void,
+  onSettled: (result: EventCraftPlanResult, timedOut: boolean) => void,
 ): (() => void) => {
   let settled = false
   const worker = new Worker(new URL('../../lib/event-craft-allocation.worker', import.meta.url))
 
-  const finish = (result: EventCraftSolverResult, timedOut: boolean) => {
+  const finish = (result: EventCraftPlanResult, timedOut: boolean) => {
     if (settled) return
     settled = true
     clearTimeout(hardTimeout)
@@ -597,12 +570,13 @@ const spawnEventCraftAllocationWorker = (
     onSettled(result, timedOut)
   }
   const hardTimeout = setTimeout(
-    () => finish(emptyResultFor(request.ownedIngredients), true),
+    () => finish(EMPTY_PLAN_RESULT, true),
     WORKER_HARD_TIMEOUT_MS,
   )
 
-  worker.onmessage = (e: MessageEvent<EventCraftSolverResult>) => finish(e.data, false)
-  worker.onerror = () => finish(emptyResultFor(request.ownedIngredients), true)
+  worker.onmessage = (e: MessageEvent<EventCraftPlanResult>) =>
+    finish(e.data, false)
+  worker.onerror = () => finish(EMPTY_PLAN_RESULT, true)
   worker.postMessage(request)
 
   return () => {
@@ -619,7 +593,7 @@ const useEventCraftWorkerResult = (
 ) => {
   const [settled, setSettled] = useState<{
     key: string
-    result: EventCraftSolverResult
+    result: EventCraftPlanResult
     timedOut: boolean
   } | null>(null)
 
@@ -637,17 +611,82 @@ const useEventCraftWorkerResult = (
   return { result, isPlanLoading, didPlanTimeout }
 }
 
-const useEventCraftAdviceView = (params: {
-  drops: Drops & { isLoading?: boolean }
-  result: EventCraftSolverResult
-  config: EventCraftAdvisorConfig
-  mode: DenominatorMode
-  questIds: string[]
-  isDataReady: boolean
-  isPlanLoading: boolean
-  didPlanTimeout: boolean
-}) => {
-  const { drops, result, config, mode, questIds, isDataReady, isPlanLoading, didPlanTimeout } = params
+const useEventCraftCalculation = (
+  drops: Drops & { isLoading?: boolean },
+  fullNeed: Record<string, number>,
+  config: EventCraftAdvisorConfig,
+  setConfig: Dispatch<SetStateAction<EventCraftAdvisorConfig>>,
+  isIngredientCommitPending: boolean,
+) => {
+  const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
+  const isDataReady = !drops.isLoading && questIds.length > 0
+  const canUseWorker = typeof Worker !== 'undefined'
+
+  const workerRequest = useMemo((): EventCraftAllocationWorkerRequest | null => {
+    if (!canUseWorker || !isDataReady) return null
+    return {
+      drops,
+      fullNeed,
+      ownedIngredients: config.ingredients,
+      questIds,
+      options: { recipes: EVENT_CRAFT_RECIPES_2026 },
+    }
+  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, questIds])
+
+  const requestKey = `${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
+
+  const {
+    result: workerResult,
+    isPlanLoading: isWorkerLoading,
+    didPlanTimeout,
+  } = useEventCraftWorkerResult(
+    canUseWorker && isDataReady,
+    workerRequest,
+    requestKey,
+  )
+  const isPlanLoading = isIngredientCommitPending || isWorkerLoading
+
+  const syncPlan = useMemo(
+    () =>
+      canUseWorker || !isDataReady
+        ? EMPTY_PLAN_RESULT
+        : computeEventCraftPlan(
+            drops,
+            fullNeed,
+            config.ingredients,
+            questIds,
+          ),
+    [
+      canUseWorker,
+      isDataReady,
+      drops,
+      fullNeed,
+      config.ingredients,
+      questIds,
+    ],
+  )
+  const plan = canUseWorker ? (workerResult ?? EMPTY_PLAN_RESULT) : syncPlan
+  const selectedPatternId = resolveVisiblePatternId(
+    plan,
+    config.planPattern,
+  )
+  const selectedPattern = plan.patterns.find(
+    (pattern) => pattern.id === selectedPatternId,
+  )
+  useEffect(() => {
+    if (!isDataReady || selectedPatternId === config.planPattern) return
+    const previousId = config.planPattern
+    setConfig((previous) =>
+      previous.planPattern === previousId
+        ? { ...previous, planPattern: selectedPatternId }
+        : previous,
+    )
+  }, [
+    config.planPattern,
+    isDataReady,
+    selectedPatternId,
+    setConfig,
+  ])
   const { t } = useTranslation('material')
   const advice = useMemo(
     () =>
@@ -656,115 +695,92 @@ const useEventCraftAdviceView = (params: {
         isPlanLoading,
         didPlanTimeout,
         hasQuests: questIds.length > 0,
-        result,
-        config,
-        mode,
-        t: (k, d, o) => t(k, d, o),
+        selectedPattern,
+        ingredients: config.ingredients,
+        t: (key, fallback, options) => t(key, fallback, options),
       }),
-    [drops.isLoading, isPlanLoading, didPlanTimeout, questIds.length, result, config, mode, t],
-  )
-  const sortedAllocations = useMemo(
-    () =>
-      isDataReady && !isPlanLoading && !didPlanTimeout
-        ? sortAllocations(result.allocations)
-        : [],
-    [result.allocations, isDataReady, isPlanLoading, didPlanTimeout],
-  )
-  return { advice, sortedAllocations }
-}
-
-const useEventCraftCalculation = (
-  drops: Drops & { isLoading?: boolean },
-  fullNeed: Record<string, number>,
-  config: EventCraftAdvisorConfig,
-  mode: DenominatorMode,
-) => {
-  const questIds = useMemo(() => drops.quests.map((q) => q.id), [drops.quests])
-  const isDataReady = !drops.isLoading && questIds.length > 0
-  const canUseWorker = typeof Worker !== 'undefined'
-
-  const solverOptions = useMemo(
-    () => ({
-      exhaustIngredients: config.exhaustIngredients,
-      recipes: EVENT_CRAFT_RECIPES_2026,
-    }),
-    [config.exhaustIngredients],
-  )
-
-  const workerRequest = useMemo((): EventCraftAllocationWorkerRequest | null => {
-    if (!canUseWorker || !isDataReady) return null
-    return {
-      drops,
-      fullNeed,
-      ownedIngredients: config.ingredients,
-      mode,
-      questIds,
-      options: solverOptions,
-    }
-  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
-
-  const requestKey = `${mode}:${config.exhaustIngredients}:${questIds.join(',')}:${JSON.stringify(config.ingredients)}:${JSON.stringify(fullNeed)}`
-
-  const { result: workerResult, isPlanLoading, didPlanTimeout } = useEventCraftWorkerResult(
-    canUseWorker && isDataReady,
-    workerRequest,
-    requestKey,
-  )
-
-  const syncResult = useMemo(() => {
-    if (canUseWorker || !isDataReady) return emptyResultFor(config.ingredients)
-    return solveEventCraftAllocation(
-      drops,
-      fullNeed,
+    [
       config.ingredients,
-      mode,
-      questIds,
-      solverOptions,
-    )
-  }, [canUseWorker, isDataReady, drops, fullNeed, config.ingredients, mode, questIds, solverOptions])
-
-  const result = canUseWorker
-    ? (workerResult ?? emptyResultFor(config.ingredients))
-    : syncResult
-
-  const { advice, sortedAllocations } = useEventCraftAdviceView({
-    drops, result, config, mode, questIds, isDataReady, isPlanLoading, didPlanTimeout,
-  })
-
-  return { result, advice, sortedAllocations, isDataReady, isPlanLoading, didPlanTimeout }
+      didPlanTimeout,
+      drops.isLoading,
+      isPlanLoading,
+      questIds.length,
+      selectedPattern,
+      t,
+    ],
+  )
+  return {
+    plan,
+    selectedPattern,
+    selectedPatternId,
+    advice,
+    isDataReady,
+    isPlanLoading,
+    didPlanTimeout,
+  }
 }
 
 const useAdvisorState = () => {
   const [config, setConfig] = useLocalStorage<EventCraftAdvisorConfig>(
     STORAGE_KEYS.EVENT_CRAFT_ADVISOR,
     DEFAULT_EVENT_CRAFT_CONFIG,
+    { onGet: migrateEventCraftConfig },
   )
+  const [draftIngredients, setDraftIngredients] = useState(
+    config.ingredients,
+  )
+  const [isIngredientCommitPending, setIsIngredientCommitPending] =
+    useState(false)
+
+  useEffect(() => {
+    setDraftIngredients(config.ingredients)
+  }, [config.ingredients])
+
+  useEffect(() => {
+    if (sameIngredientCounts(draftIngredients, config.ingredients)) {
+      setIsIngredientCommitPending(false)
+      return
+    }
+    setIsIngredientCommitPending(true)
+    const timer = window.setTimeout(() => {
+      setConfig((previous) => ({
+        ...previous,
+        ingredients: draftIngredients,
+      }))
+    }, INGREDIENT_COMMIT_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [config.ingredients, draftIngredients, setConfig])
 
   const setIngredientCount = useCallback(
     (type: IngredientType, count: number) => {
-      setConfig((prev) => ({
-        ...prev,
-        ingredients: {
-          ...prev.ingredients,
-          [type]: Math.max(0, Math.floor(Number.isFinite(count) ? count : 0)),
-        },
+      setDraftIngredients((previous) => ({
+        ...previous,
+        [type]: clampIngredientCount(count),
       }))
     },
+    [],
+  )
+
+  const selectPattern = useCallback(
+    (planPattern: EventCraftPatternId) =>
+      setConfig((prev) => ({ ...prev, planPattern })),
     [setConfig],
   )
 
-  const setExhaust = useCallback(
-    (exhaustIngredients: boolean) =>
-      setConfig((prev) => ({ ...prev, exhaustIngredients })),
-    [setConfig],
-  )
+  const reset = useCallback(() => {
+    setDraftIngredients(DEFAULT_EVENT_CRAFT_CONFIG.ingredients)
+    setConfig(DEFAULT_EVENT_CRAFT_CONFIG)
+  }, [setConfig])
 
-  const reset = useCallback(
-    () => setConfig(DEFAULT_EVENT_CRAFT_CONFIG),
-    [setConfig],
-  )
-
-  return { config, setIngredientCount, setExhaust, reset }
+  return {
+    config,
+    draftIngredients,
+    isIngredientCommitPending,
+    setConfig,
+    setIngredientCount,
+    selectPattern,
+    reset,
+  }
 }
 
 const CraftCardList = ({
@@ -805,61 +821,217 @@ const CraftCardList = ({
   )
 }
 
+const PatternEvaluation = ({
+  pattern,
+}: {
+  pattern: EventCraftPlanPattern
+}) => {
+  const { t } = useTranslation('material')
+  if (pattern.metric === 'both') {
+    return (
+      <span className="text-xs" style={{ color: 'var(--text2)' }}>
+        {t(
+          'event-craft-residual-reference',
+          '残余参考: {{turn}} 周 / {{ap}} AP',
+          {
+            turn: fmt(pattern.residualTurnCost),
+            ap: fmt(pattern.residualApCost),
+          },
+        )}
+      </span>
+    )
+  }
+  const unit =
+    pattern.metric === 'ap'
+      ? t('unit-ap', 'AP')
+      : t('unit-runs-full', '周回')
+  const amount =
+    pattern.metric === 'ap'
+      ? pattern.residualApCost
+      : pattern.residualTurnCost
+  return (
+    <span className="text-xs" style={{ color: 'var(--text2)' }}>
+      {t('event-craft-residual-single', '残余: {{amount}} {{unit}}', {
+        amount: fmt(amount),
+        unit,
+      })}
+    </span>
+  )
+}
+
+const PatternCard = ({
+  pattern,
+  selected,
+  onSelect,
+  items,
+  dropItems,
+}: {
+  pattern: EventCraftPlanPattern
+  selected: boolean
+  onSelect: () => void
+  items: Item[]
+  dropItems: Drops['items']
+}) => {
+  const { t } = useTranslation('material')
+  const nameArgs = PATTERN_NAME_KEYS[pattern.id]
+  const name = t(nameArgs[0], nameArgs[1])
+  const allocations = sortAllocations(
+    pattern.allocations.filter((allocation) => allocation.totalCount > 0),
+  )
+  const unit =
+    pattern.metric === 'ap'
+      ? t('unit-ap', 'AP')
+      : t('unit-runs', '周')
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onSelect()
+  }
+  return (
+    <div
+      role="radio"
+      aria-checked={selected}
+      aria-label={name}
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={handleKeyDown}
+      className="flex cursor-pointer flex-col gap-2 rounded-lg p-3"
+      style={{
+        background: selected ? 'var(--panel2)' : 'var(--panel)',
+        border: selected
+          ? '1px solid var(--gold)'
+          : '1px solid var(--border)',
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span
+          className="text-sm font-bold"
+          style={{ color: selected ? 'var(--gold)' : 'var(--text)' }}
+        >
+          {name}
+        </span>
+        <PatternEvaluation pattern={pattern} />
+      </div>
+      {pattern.aliasOf.length > 0 && (
+        <span className="text-xs" style={{ color: 'var(--text3)' }}>
+          {t('event-craft-alias-label', '同じ: {{names}}', {
+            names: pattern.aliasOf
+              .map((id) => {
+                const args = PATTERN_NAME_KEYS[id]
+                return t(args[0], args[1])
+              })
+              .join('・'),
+          })}
+        </span>
+      )}
+      {allocations.length > 0 && (
+        <CraftCardList
+          allocations={allocations}
+          items={items}
+          dropItems={dropItems}
+          unitLabel={unit}
+        />
+      )}
+      <LeftoverList leftover={pattern.leftoverIngredients} />
+    </div>
+  )
+}
+
 export const EventCraftAdvisor = ({
   items = [],
   fullNeed,
-  mode,
-  onModeChange,
-  stockEnabled,
+  stockEnabled = false,
 }: EventCraftAdvisorProps) => {
   const drops = useDrops()
-  const { config, setIngredientCount, setExhaust, reset } = useAdvisorState()
-  const { result, advice, sortedAllocations, isDataReady, isPlanLoading, didPlanTimeout } =
-    useEventCraftCalculation(drops, fullNeed, config, mode)
+  const {
+    config,
+    draftIngredients,
+    isIngredientCommitPending,
+    setConfig,
+    setIngredientCount,
+    selectPattern,
+    reset,
+  } = useAdvisorState()
+  const {
+    plan,
+    selectedPattern,
+    selectedPatternId,
+    advice,
+    isDataReady,
+    isPlanLoading,
+    didPlanTimeout,
+  } = useEventCraftCalculation(
+    drops,
+    fullNeed,
+    config,
+    setConfig,
+    isIngredientCommitPending,
+  )
   const { t } = useTranslation('material')
-  const unitLabel = mode === 'ap' ? t('unit-ap', 'AP') : t('unit-runs', '周')
+  const unitLabel =
+    selectedPattern?.metric === 'ap'
+      ? t('unit-ap', 'AP')
+      : t('unit-runs', '周')
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <AdvisorModeSwitch
-            mode={mode}
-            onModeChange={onModeChange}
-            stockEnabled={stockEnabled}
-          />
-          <AdvisorExhaustSwitch
-            exhaust={config.exhaustIngredients}
-            onExhaustChange={setExhaust}
-          />
-        </div>
-        <IngredientInputs
-          ingredients={config.ingredients}
-          onChange={setIngredientCount}
-        />
-        <ServantPraise message={advice} size={44} />
-        {isDataReady && !isPlanLoading && !didPlanTimeout && (
-          <>
-            <EventCraftExpectedYields
-              entries={sumExpectedCraftYields(sortedAllocations)}
-            />
-            <CraftCardList
-              allocations={sortedAllocations}
-              items={items}
-              dropItems={drops.items}
-              unitLabel={unitLabel}
-            />
-            <LeftoverFooter
-              leftover={result.leftoverIngredients}
-              hasInputs={Object.values(config.ingredients).some((v) => v > 0)}
-              totalSaved={result.totalSaved}
-              totalSurplusValue={result.totalSurplusValue}
-              unitLabel={unitLabel}
-              onReset={reset}
-            />
-          </>
-        )}
-      </div>
-    </TooltipProvider>
+    <div className="flex flex-col gap-4">
+      {stockEnabled && (
+        <span
+          className="self-start text-xs font-semibold"
+          style={{ color: 'var(--gold)' }}
+        >
+          {t('event-craft-stock-eval', 'ストック込みで評価中')}
+        </span>
+      )}
+      <IngredientInputs
+        ingredients={draftIngredients}
+        onChange={setIngredientCount}
+      />
+      <ServantPraise message={advice} size={44} />
+      {isDataReady && !isPlanLoading && !didPlanTimeout && (
+        <>
+          <div
+            role="radiogroup"
+            aria-label={t(
+              'event-craft-pattern-group-label',
+              '最適化パターン',
+            )}
+            className="flex flex-col gap-2"
+          >
+            {plan.patterns.map((pattern) => (
+              <PatternCard
+                key={pattern.id}
+                pattern={pattern}
+                selected={pattern.id === selectedPatternId}
+                onSelect={() => selectPattern(pattern.id)}
+                items={items}
+                dropItems={drops.items}
+              />
+            ))}
+          </div>
+          {selectedPattern && (
+            <>
+              <EventCraftExpectedYields
+                entries={sumExpectedCraftYields(
+                  selectedPattern.allocations.filter(
+                    (allocation) => allocation.totalCount > 0,
+                  ),
+                )}
+              />
+              <LeftoverFooter
+                leftover={selectedPattern.leftoverIngredients}
+                hasInputs={Object.values(config.ingredients).some(
+                  (value) => value > 0,
+                )}
+                totalSaved={selectedPattern.totalSaved}
+                totalSurplusValue={selectedPattern.totalSurplusValue}
+                unitLabel={unitLabel}
+                onReset={reset}
+              />
+            </>
+          )}
+        </>
+      )}
+    </div>
   )
 }
