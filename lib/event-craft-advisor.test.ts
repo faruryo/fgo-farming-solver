@@ -431,7 +431,7 @@ describe('generateCraftAdvice', () => {
     expect(advice).toContain('お持ちのイベント食材数')
   })
 
-  it('削減効果がある場合は最優先料理と削減量を案内する', () => {
+  it('削減効果がある場合は作成する料理と削減量を案内する', () => {
     const d = buildTestDrops(
       [makeItem('item-a', 101)],
       [makeQuest('Q1', 20)],
@@ -450,7 +450,8 @@ describe('generateCraftAdvice', () => {
       },
     )
     const advice = generateCraftAdvice(res, owned, 'ap', false)
-    expect(advice).toContain('最優先は「料理A（素材A）」です')
+    expect(advice).toContain('料理A（素材A）')
+    expect(advice).toContain('を作成するのが最も効率的です、先輩。')
     expect(advice).toContain('AP を削減できます')
   })
 
@@ -488,29 +489,43 @@ describe('generateCraftAdvice', () => {
       { exhaustIngredients: true, recipes: sampleRecipes.slice(0, 1) },
     )
     const advice = generateCraftAdvice(res, owned, 'ap', true)
-    expect(advice).toContain('最優先は「料理A（素材A）」です')
+    expect(advice).toContain('料理A（素材A）')
+    expect(advice).toContain('を作成するのが最も効率的です、先輩。')
     expect(advice).toContain('余った食材で「料理A（素材A）」を作成し')
   })
 
-  it('1回あたりの周回削減効率（unitSaved）が高い料理を最優先として案内する', () => {
-    // Q1 drops item-a (AP 20, rate 1.0 -> 20 AP/item)
-    // Q2 drops item-b (AP 40, rate 1.0 -> 40 AP/item)
-    const d = buildTwoQuestDrops()
-    // Recipe A saves 20 AP each. Recipe B saves 40 AP each.
-    // User needs 3 of item-a and 1 of item-b.
-    // Recipe A total deficit saved = 60 AP. Recipe B total deficit saved = 40 AP.
-    // However, Recipe B is more efficient per craft (40 AP vs 20 AP), so advice should name Recipe B.
-    const owned: IngredientCounts = { seafood: 80, meat: 180, vegetable: 400 }
+  it('作成する全ての料理を合計削減量の降順で列挙する', () => {
+    // item-a (bronze) と nodrop-item (gold) は別レア帯なので、ついで獲得で
+    // 一方が他方を満たすことはなく、両方の料理が独立に作成される。
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('nodrop-item', 999)],
+      [makeQuest('Q1', 20), makeQuest('Q3', 100)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q3', item_id: 'nodrop-item', drop_rate: 1.0 },
+      ],
+    )
+    const owned: IngredientCounts = { seafood: 50, meat: 100, vegetable: 200 }
     const res = solveEventCraftAllocation(
       d,
-      { 'item-a': 3, 'item-b': 1 },
+      { 'item-a': 3, 'nodrop-item': 1 },
       owned,
       'ap',
-      ['Q1', 'Q2'],
-      { exhaustIngredients: false, recipes: sampleRecipes.slice(0, 2) },
+      ['Q1', 'Q3'],
+      { exhaustIngredients: false, recipes: [sampleRecipes[0], sampleRecipes[3]] },
     )
     const advice = generateCraftAdvice(res, owned, 'ap', false)
-    expect(advice).toContain('最優先は「料理A（素材A）」です')
+    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
+    const allocNodrop = res.allocations.find((a) => a.recipe.id === 'recipe-nodrop')
+    expect(allocA?.totalCount).toBeGreaterThan(0)
+    expect(allocNodrop?.totalCount).toBeGreaterThan(0)
+    const sorted = [allocA, allocNodrop].sort(
+      (a, b) => (b?.deficitSaved ?? 0) - (a?.deficitSaved ?? 0),
+    )
+    const expectedList = sorted
+      .map((a) => `${a?.recipe.name}${a?.totalCount}個`)
+      .join('、')
+    expect(advice).toContain(`${expectedList}を作成するのが最も効率的です、先輩。`)
   })
 
   it('dropsオブジェクトが更新された場合はキャッシュを共有せず最新のドロップデータで再計算する', () => {

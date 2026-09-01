@@ -3,14 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import {
   EventCraftAdvisor,
-  EventCraftExpectedYields,
   INGREDIENT_COMMIT_DELAY_MS,
   migrateEventCraftConfig,
 } from './event-craft-advisor'
-import {
-  EVENT_CRAFT_RECIPES_2026,
-  sumExpectedCraftYields,
-} from '../../data/event-craft-recipes'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Drops } from '../../lib/get-drops'
 import { Item } from '../../interfaces/atlas-academy'
@@ -63,35 +58,6 @@ vi.mock('../../hooks/use-drops', () => ({
   useDrops: () => mockDrops,
 }))
 
-describe('EventCraftExpectedYields', () => {
-  it('shows the plan heading and summed expected counts, not only per-dish yields', () => {
-    const andagi = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'skull-andagi')
-    const steak = EVENT_CRAFT_RECIPES_2026.find((r) => r.id === 'steak')
-    if (!andagi || !steak) {
-      throw new Error('missing bronze recipes')
-    }
-    const entries = sumExpectedCraftYields([
-      { recipe: andagi, totalCount: 2 },
-      { recipe: steak, totalCount: 3 },
-    ])
-    const skull = entries.find((e) => e.shortId === '01')
-    expect(skull).toBeDefined()
-    if (!skull) return
-
-    const { container } = render(<EventCraftExpectedYields entries={entries} />)
-
-    expect(screen.getByText('この配分での期待獲得')).toBeTruthy()
-    expect(screen.getByText(`凶骨 ${skull.amount.toFixed(1)}`)).toBeTruthy()
-    expect(screen.queryByText(/期待: /)).toBeNull()
-
-    const skullImg = container.querySelector(
-      '[data-src="https://static.atlasacademy.io/JP/Items/6516.png"]',
-    )
-    expect(skullImg).toBeTruthy()
-    expect(skullImg?.getAttribute('aria-label')).toBe('凶骨')
-  })
-})
-
 describe('EventCraftAdvisor cards', () => {
   beforeEach(() => {
     vi.stubGlobal('Worker', undefined)
@@ -110,7 +76,7 @@ describe('EventCraftAdvisor cards', () => {
     vi.useRealTimers()
   })
 
-  it('still lists dish names and a per-dish expected yield line', () => {
+  it('groups dish cards and summed material yields by rarity zone instead of a flat plan-wide list', () => {
     const items: Item[] = [
       {
         id: 6516,
@@ -132,7 +98,10 @@ describe('EventCraftAdvisor cards', () => {
       />,
     )
     expect(screen.getAllByText('ドクロアンダギー').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/期待: /).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('銅レア素材').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/凶骨 /).length).toBeGreaterThan(0)
+    expect(screen.queryByText('この配分での期待獲得')).toBeNull()
+    expect(screen.queryByText(/期待: /)).toBeNull()
   })
 
   it('対象素材の不足数を表示する', () => {
@@ -211,8 +180,8 @@ describe('EventCraftAdvisor cards', () => {
       />,
     )
 
-    // 残余食材セクションのアイコン
-    const leftoverSection = screen.getAllByText('残余食材:')[0]?.closest('div')
+    // 余った食材セクションのアイコン
+    const leftoverSection = screen.getAllByText('余った食材:')[0]?.closest('div')
     expect(leftoverSection).toBeTruthy()
     expect(
       leftoverSection?.querySelector(
@@ -279,7 +248,7 @@ describe('EventCraftAdvisor cards', () => {
     )
     render(<EventCraftAdvisor fullNeed={{}} />)
     fireEvent.click(screen.getByRole('radio', { name: '食材を使い切る' }))
-    expect(screen.getByText(/最優先は/)).toBeTruthy()
+    expect(screen.getByText(/を作成するのが最も効率的です、先輩。/)).toBeTruthy()
     expect(
       screen
         .getByRole('radio', { name: '食材を使い切る' })
