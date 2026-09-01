@@ -153,6 +153,58 @@ describe('solveEventCraftAllocation', () => {
     expect(res.totalSaved).toBeCloseTo(3)
   })
 
+  it('各料理の対象素材について farmableNeed の不足数を deficitNeed として返す', () => {
+    const d = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20), makeQuest('Q2', 40)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1.0 },
+        { quest_id: 'Q2', item_id: 'item-b', drop_rate: 0.5 },
+      ],
+    )
+
+    const fullNeed = { 'item-a': 5, 'item-b': 226 }
+    const owned: IngredientCounts = { seafood: 80, meat: 40, vegetable: 120 }
+
+    const res = solveEventCraftAllocation(
+      d,
+      fullNeed,
+      owned,
+      'turn',
+      ['Q1', 'Q2'],
+      {
+        exhaustIngredients: false,
+        recipes: sampleRecipes.slice(0, 2),
+      },
+    )
+
+    const allocA = res.allocations.find((a) => a.recipe.id === 'recipe-a')
+    const allocB = res.allocations.find((a) => a.recipe.id === 'recipe-b')
+    expect(allocA?.deficitNeed).toBe(5)
+    expect(allocB?.deficitNeed).toBe(226)
+  })
+
+  it('ドロップデータのない対象素材は deficitNeed が 0 になる', () => {
+    const d = buildTestDrops([], [], [])
+    const fullNeed = { 'nodrop-item': 3 }
+    const owned: IngredientCounts = { seafood: 10, meat: 10, vegetable: 10 }
+
+    const res = solveEventCraftAllocation(
+      d,
+      fullNeed,
+      owned,
+      'turn',
+      [],
+      {
+        exhaustIngredients: false,
+        recipes: [sampleRecipes[3]],
+      },
+    )
+
+    const allocNoDrop = res.allocations.find((a) => a.recipe.id === 'recipe-nodrop')
+    expect(allocNoDrop?.deficitNeed).toBe(0)
+  })
+
   it('周回コストが変わらないついでドロップ素材は不足枠でも作成しない (Stage 1b タイブレーク)', () => {
     // Q1 は item-a と item-b を同時に 1.0/周 で落とす
     // need: item-a: 10, item-b: 2

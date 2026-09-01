@@ -229,6 +229,7 @@
     "event-craft-data-unavailable": "Could not retrieve drop data, Senpai. Please check your connection and try again.",
     "event-craft-expected-yields-heading": "Expected drops from this plan",
     "event-craft-per-dish-yields": "Expected: {{featured}} {{featuredAmount}} / other {{rarity}} {{otherAmount}}×{{otherCount}}",
+    "event-craft-deficit-need": "{{amount}} more needed",
     "event-craft-rarity-bronze": "bronze",
     "event-craft-rarity-silver": "silver",
     "event-craft-rarity-gold": "gold",
