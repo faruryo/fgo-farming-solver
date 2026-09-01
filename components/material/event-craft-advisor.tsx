@@ -21,6 +21,7 @@ import {
   computeEventCraftPlan,
   generateCraftAdvice,
   resolveVisiblePatternId,
+  canPersistResolvedPattern,
   CraftAllocationItem,
   EventCraftPatternId,
   EventCraftPlanPattern,
@@ -674,7 +675,17 @@ const useEventCraftCalculation = (
     (pattern) => pattern.id === selectedPatternId,
   )
   useEffect(() => {
-    if (!isDataReady || selectedPatternId === config.planPattern) return
+    if (
+      !canPersistResolvedPattern({
+        isDataReady,
+        isPlanLoading,
+        didPlanTimeout,
+        visiblePatternCount: plan.patterns.length,
+      }) ||
+      selectedPatternId === config.planPattern
+    ) {
+      return
+    }
     const previousId = config.planPattern
     setConfig((previous) =>
       previous.planPattern === previousId
@@ -683,7 +694,10 @@ const useEventCraftCalculation = (
     )
   }, [
     config.planPattern,
+    didPlanTimeout,
     isDataReady,
+    isPlanLoading,
+    plan.patterns.length,
     selectedPatternId,
     setConfig,
   ])

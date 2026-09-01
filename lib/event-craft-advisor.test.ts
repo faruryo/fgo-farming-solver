@@ -3,6 +3,7 @@ import {
   computeEventCraftPlan,
   foldEventCraftPatterns,
   resolveVisiblePatternId,
+  canPersistResolvedPattern,
   solveEventCraftAllocation,
   generateCraftAdvice,
   computeSingleItemBaseValues,
@@ -819,6 +820,25 @@ describe('event craft plan patterns', () => {
     expect(resolveVisiblePatternId(plan, 'even-ap')).toBe('runs')
   })
 
+  it('does not persist a resolved pattern until the plan has settled', () => {
+    expect(
+      canPersistResolvedPattern({
+        isDataReady: true,
+        isPlanLoading: true,
+        didPlanTimeout: false,
+        visiblePatternCount: 0,
+      }),
+    ).toBe(false)
+    expect(
+      canPersistResolvedPattern({
+        isDataReady: true,
+        isPlanLoading: false,
+        didPlanTimeout: false,
+        visiblePatternCount: 2,
+      }),
+    ).toBe(true)
+  })
+
   it('uses the expected yield basket for even plans instead of one featured item per dish', () => {
     const drops = buildTwoItemSharedDrops()
     const recipe = {
@@ -1039,5 +1059,36 @@ describe('event craft plan patterns', () => {
     expect(exhaust?.totalCrafted).toBe(4)
     expect(exhaust?.totalDeficitCrafted).toBe(2)
     expect(exhaust?.totalSurplusCrafted).toBe(2)
+  })
+
+  it('scores exhaust deficit from residual farming LP, not isolated item values', () => {
+    const drops = buildTestDrops(
+      [makeItem('item-a', 101), makeItem('item-b', 102)],
+      [makeQuest('Q1', 20)],
+      [
+        { quest_id: 'Q1', item_id: 'item-a', drop_rate: 1 },
+        { quest_id: 'Q1', item_id: 'item-b', drop_rate: 1 },
+      ],
+    )
+    const plan = computeEventCraftPlan(
+      drops,
+      { 'item-a': 10, 'item-b': 2 },
+      { seafood: 100, meat: 0, vegetable: 50 },
+      ['Q1'],
+      {
+        recipes: [
+          sampleRecipes[0],
+          {
+            ...sampleRecipes[1],
+            targetItem: { ...sampleRecipes[1].targetItem, rarity: 'silver' },
+          },
+        ],
+      },
+    )
+    const exhaust = plan.patterns.find((pattern) => pattern.id === 'exhaust')
+    const allocB = exhaust?.allocations.find(
+      (allocation) => allocation.recipe.id === 'recipe-b',
+    )
+    expect(allocB?.deficitSaved ?? 1).toBe(0)
   })
 })

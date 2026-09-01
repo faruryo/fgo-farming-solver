@@ -1181,7 +1181,12 @@ const toPatternResult = (
 ): EventCraftPatternResult => {
   let classified = classification
   if (!classified) {
-    classified = classifyExhaustCounts(ctx, counts, baseValues)
+    const exhaustSplit = classifyExhaustCounts(ctx, counts, baseValues)
+    classified = {
+      ...exhaustSplit,
+      savings: evaluateDeficitPlan(ctx, exhaustSplit.deficit, ctx.recipes)
+        .allocatedSavings,
+    }
   }
   const built = buildAllocations(
     ctx.recipes,
@@ -1311,6 +1316,22 @@ export const resolveVisiblePatternId = (
   if (plan.patterns.some((pattern) => pattern.id === id)) return id
   return plan.absorbedInto[id] ?? 'runs'
 }
+
+export const canPersistResolvedPattern = ({
+  isDataReady,
+  isPlanLoading,
+  didPlanTimeout,
+  visiblePatternCount,
+}: {
+  isDataReady: boolean
+  isPlanLoading: boolean
+  didPlanTimeout: boolean
+  visiblePatternCount: number
+}) =>
+  isDataReady &&
+  !isPlanLoading &&
+  !didPlanTimeout &&
+  visiblePatternCount > 0
 
 export const computeEventCraftPlan = (
   drops: Drops,
