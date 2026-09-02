@@ -10,7 +10,6 @@ export const EVENT_CRAFT_PATTERN_ORDER: readonly EventCraftPatternId[] = [
   'ap',
   'even-turn',
   'even-ap',
-  'exhaust',
 ]
 
 export type EventCraftWorkerMessage =
@@ -65,10 +64,7 @@ export const applyEventCraftWorkerTimeout = (
 
 export const isEventCraftPlanAwaitingFirstPattern = (
   progress: EventCraftPlanProgress,
-) =>
-  !progress.done &&
-  !progress.timedOut &&
-  progress.received.length === 0
+) => !progress.done && !progress.timedOut && progress.received.length === 0
 
 export const didEventCraftPlanOverallTimeout = (
   progress: EventCraftPlanProgress,

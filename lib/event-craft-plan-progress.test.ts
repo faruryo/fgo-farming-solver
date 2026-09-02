@@ -15,7 +15,6 @@ const patternMetricFor = (
   id: EventCraftPatternResult['id'],
 ): EventCraftPatternResult['metric'] => {
   if (id === 'ap' || id === 'even-ap') return 'ap'
-  if (id === 'exhaust') return 'both'
   return 'turn'
 }
 
@@ -66,7 +65,7 @@ describe('event craft plan progress', () => {
       expected: {
         overall: true,
         awaiting: false,
-        ids: ['runs', 'ap', 'even-turn', 'even-ap', 'exhaust'],
+        ids: ['runs', 'ap', 'even-turn', 'even-ap'],
         count: 0,
       },
     },
@@ -89,7 +88,7 @@ describe('event craft plan progress', () => {
       expected: {
         overall: false,
         awaiting: false,
-        ids: ['ap', 'even-turn', 'even-ap', 'exhaust'],
+        ids: ['ap', 'even-turn', 'even-ap'],
         count: 1,
         visible: ['runs'],
       },
@@ -98,7 +97,7 @@ describe('event craft plan progress', () => {
       name: 'done まで全部',
       run: () => {
         let state = emptyEventCraftPlanProgress()
-        for (const id of ['runs', 'ap', 'even-turn', 'even-ap', 'exhaust'] as const) {
+        for (const id of ['runs', 'ap', 'even-turn', 'even-ap'] as const) {
           state = applyEventCraftWorkerMessage(state, {
             type: 'pattern',
             pattern: makePattern(id),
@@ -118,7 +117,7 @@ describe('event craft plan progress', () => {
         awaiting: false,
         done: true,
         timedOut: false,
-        count: 2,
+        count: 1,
       },
     },
   ])('$name', ({ run, expected }) => {

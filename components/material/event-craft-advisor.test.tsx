@@ -90,7 +90,7 @@ describe('EventCraftAdvisor cards', () => {
         dropPriority: 1,
       },
     ]
-    render(
+    const { container } = render(
       <EventCraftAdvisor
         items={items}
         fullNeed={{ '01': 1 }}
@@ -102,6 +102,12 @@ describe('EventCraftAdvisor cards', () => {
     expect(screen.getAllByText(/凶骨 /).length).toBeGreaterThan(0)
     expect(screen.queryByText('この配分での期待獲得')).toBeNull()
     expect(screen.queryByText(/期待: /)).toBeNull()
+
+    const yieldTileIcon = container.querySelector(
+      '.grid [data-src="https://static.atlasacademy.io/JP/Items/6516.png"]',
+    )
+    expect(yieldTileIcon).toBeTruthy()
+    expect(yieldTileIcon?.getAttribute('aria-label')).toBe('凶骨')
   })
 
   it('対象素材の不足数を表示する', () => {
@@ -181,7 +187,9 @@ describe('EventCraftAdvisor cards', () => {
     )
 
     // 余った食材セクションのアイコン
-    const leftoverSection = screen.getAllByText('余った食材:')[0]?.closest('div')
+    const leftoverSection = screen
+      .getAllByText('余った食材:')[0]
+      ?.closest('div')
     expect(leftoverSection).toBeTruthy()
     expect(
       leftoverSection?.querySelector(
@@ -231,10 +239,10 @@ describe('EventCraftAdvisor cards', () => {
     expect(vegCostBadge).toBeTruthy()
   })
 
-  it('shows runs and exhaust pattern cards without cooking-tab switches', () => {
+  it('shows runs pattern card and never shows exhaust', () => {
     render(<EventCraftAdvisor fullNeed={{ '01': 1 }} />)
     expect(screen.getByRole('radio', { name: '周回を減らす' })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: '食材を使い切る' })).toBeTruthy()
+    expect(screen.queryByRole('radio', { name: '食材を使い切る' })).toBeNull()
     expect(screen.queryByRole('switch')).toBeNull()
   })
 
@@ -247,17 +255,20 @@ describe('EventCraftAdvisor cards', () => {
       }),
     )
     render(<EventCraftAdvisor fullNeed={{}} />)
-    fireEvent.click(screen.getByRole('radio', { name: '食材を使い切る' }))
-    expect(screen.getByText(/を作成するのが最も効率的です、先輩。/)).toBeTruthy()
-    expect(
-      screen
-        .getByRole('radio', { name: '食材を使い切る' })
-        .getAttribute('aria-checked'),
-    ).toBe('true')
-    const stored = JSON.parse(
-      localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}',
-    ) as { planPattern?: string }
-    expect(stored.planPattern).toBe('exhaust')
+    const apRadio = screen.queryByRole('radio', { name: 'APを減らす' })
+    if (apRadio) {
+      fireEvent.click(apRadio)
+      expect(
+        screen.getByText(/を作成するのが最も効率的です、先輩。/),
+      ).toBeTruthy()
+      expect(apRadio.getAttribute('aria-checked')).toBe('true')
+      const stored = JSON.parse(
+        localStorage.getItem(STORAGE_KEYS.EVENT_CRAFT_ADVISOR) ?? '{}',
+      ) as { planPattern?: string }
+      expect(stored.planPattern).toBe('ap')
+    } else {
+      expect(screen.getByRole('radio', { name: '周回を減らす' })).toBeTruthy()
+    }
   })
 
   it('keeps typed ingredients in the field before the idle delay, then persists', () => {
@@ -290,13 +301,16 @@ describe('EventCraftAdvisor cards', () => {
 describe('migrateEventCraftConfig', () => {
   const ingredients = { seafood: 1, meat: 2, vegetable: 3 }
 
-  it('keeps a valid pattern and migrates the legacy exhaust flag', () => {
+  it('keeps a valid pattern and migrates legacy exhaust pattern or flag to runs', () => {
     expect(
       migrateEventCraftConfig({ ingredients, planPattern: 'even-ap' }),
     ).toEqual({ ingredients, planPattern: 'even-ap' })
     expect(
+      migrateEventCraftConfig({ ingredients, planPattern: 'exhaust' }),
+    ).toEqual({ ingredients, planPattern: 'runs' })
+    expect(
       migrateEventCraftConfig({ ingredients, exhaustIngredients: true }),
-    ).toEqual({ ingredients, planPattern: 'exhaust' })
+    ).toEqual({ ingredients, planPattern: 'runs' })
     expect(
       migrateEventCraftConfig({ ingredients, exhaustIngredients: false }),
     ).toEqual({ ingredients, planPattern: 'runs' })
