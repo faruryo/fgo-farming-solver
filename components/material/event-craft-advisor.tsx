@@ -71,7 +71,6 @@ const PATTERN_IDS: readonly EventCraftPatternId[] = [
   'ap',
   'even-turn',
   'even-ap',
-  'exhaust',
 ]
 
 const isPatternId = (value: unknown): value is EventCraftPatternId =>
@@ -87,14 +86,11 @@ export const migrateEventCraftConfig = (
     value.ingredients && typeof value.ingredients === 'object'
       ? (value.ingredients as IngredientCounts)
       : DEFAULT_EVENT_CRAFT_CONFIG.ingredients
+  if (value.planPattern === 'exhaust') {
+    return { ingredients, planPattern: 'runs' }
+  }
   if (isPatternId(value.planPattern)) {
     return { ingredients, planPattern: value.planPattern }
-  }
-  if ('exhaustIngredients' in value) {
-    return {
-      ingredients,
-      planPattern: value.exhaustIngredients === true ? 'exhaust' : 'runs',
-    }
   }
   return { ingredients, planPattern: 'runs' }
 }
@@ -113,7 +109,6 @@ const patternNameArgs = (id: EventCraftPatternId): [string, string] => {
   if (id === 'even-turn')
     return ['event-craft-pattern-even-turn', '満遍なく（周回）']
   if (id === 'even-ap') return ['event-craft-pattern-even-ap', '満遍なく（AP）']
-  if (id === 'exhaust') return ['event-craft-pattern-exhaust', '食材を使い切る']
   return ['event-craft-pattern-runs', '周回を減らす']
 }
 
@@ -122,9 +117,11 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 const getItemIcon = (
   catItem?: Item,
   dropItem?: Drops['items'][number],
+  targetAtlasId?: number,
 ): string | null => {
   if (catItem?.icon) return getItemIconUrl(catItem.icon)
   if (dropItem?.icon) return getItemIconUrl(dropItem.icon)
+  if (targetAtlasId) return getItemIconUrl(String(targetAtlasId))
   return null
 }
 
@@ -384,7 +381,11 @@ const RARITY_FALLBACK: Record<RecipeMaterialRarity, string> = {
   gold: '金',
 }
 
-const RARITY_ORDER: readonly RecipeMaterialRarity[] = ['bronze', 'silver', 'gold']
+const RARITY_ORDER: readonly RecipeMaterialRarity[] = [
+  'bronze',
+  'silver',
+  'gold',
+]
 
 const PerDishYieldLine = ({
   deficitNeed,
@@ -447,7 +448,11 @@ const CraftCard = ({
 }) => {
   const { t } = useTranslation('material')
   const recipe = item.recipe
-  const materialIconUrl = getItemIcon(catItem, dropItem)
+  const materialIconUrl = getItemIcon(
+    catItem,
+    dropItem,
+    recipe.targetItem.atlasId,
+  )
   const isSelected = item.totalCount > 0
   const dishName = t(`recipe-${recipe.id}`, recipe.name)
   const materialName = t(
@@ -647,7 +652,6 @@ const resolveAdviceMessage = (params: AdviceResolutionParams) => {
     },
     ingredients,
     mode,
-    selectedPattern.id === 'exhaust',
     (k, d, o) => t(k, d, o),
   )
 }
@@ -724,7 +728,8 @@ const useEventCraftWorkerResult = (
     result: progress.plan,
     isPlanLoading,
     didPlanTimeout,
-    pending: !progress.done && !progress.timedOut && progress.received.length > 0,
+    pending:
+      !progress.done && !progress.timedOut && progress.received.length > 0,
     timedOutPatternIds: progress.timedOutPatternIds,
   }
 }
@@ -787,13 +792,12 @@ const useEventCraftCalculation = (
     didPlanTimeout,
     isRemainingPending,
     timedOutPatternIds,
-  } =
-    useEventCraftPlan(
-      drops,
-      fullNeed,
-      config.ingredients,
-      isIngredientCommitPending,
-    )
+  } = useEventCraftPlan(
+    drops,
+    fullNeed,
+    config.ingredients,
+    isIngredientCommitPending,
+  )
   const selectedPatternId = resolveVisiblePatternId(plan, config.planPattern)
   const selectedPattern = plan.patterns.find(
     (pattern) => pattern.id === selectedPatternId,
@@ -936,6 +940,28 @@ const CraftCardList = ({
   )
 }
 
+const MaterialYieldIcon = ({
+  iconUrl,
+  alt,
+}: {
+  iconUrl: string
+  alt: string
+}) =>
+  iconUrl ? (
+    <Image
+      src={iconUrl}
+      alt={alt}
+      width={28}
+      height={28}
+      className="h-7 w-7 flex-shrink-0 object-contain rounded"
+    />
+  ) : (
+    <div
+      className="h-7 w-7 flex-shrink-0 rounded"
+      style={{ background: 'var(--border)' }}
+    />
+  )
+
 const MaterialYieldTile = ({
   entry,
   deficitNeed,
@@ -945,35 +971,46 @@ const MaterialYieldTile = ({
 }) => {
   const { t } = useTranslation('material')
   const ratio =
-    deficitNeed > 0 ? Math.min(1, entry.amount / (entry.amount + deficitNeed)) : 1
+    deficitNeed > 0
+      ? Math.min(1, entry.amount / (entry.amount + deficitNeed))
+      : 1
+  const iconUrl = entry.atlasId ? getItemIconUrl(String(entry.atlasId)) : ''
+  const materialName = t(`material-${entry.shortId}`, entry.name)
+
   return (
     <div
-      className="flex flex-col gap-1 rounded px-2 py-1.5"
+      className="flex items-center gap-2.5 rounded px-2.5 py-1.5"
       style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
     >
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span style={{ color: 'var(--text)' }}>
-          {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
-            name: t(`material-${entry.shortId}`, entry.name),
-            amount: fmt(entry.amount),
-          })}
-        </span>
-        {deficitNeed > 0 && (
-          <span style={{ color: 'var(--text3)' }}>
-            {t('event-craft-material-need-remaining', 'あと{{amount}}個', {
-              amount: deficitNeed,
+      <MaterialYieldIcon iconUrl={iconUrl} alt={materialName} />
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span
+            className="truncate font-medium"
+            style={{ color: 'var(--text)' }}
+          >
+            {t('event-craft-expected-yield-amount', '{{name}} {{amount}}', {
+              name: materialName,
+              amount: fmt(entry.amount),
             })}
           </span>
-        )}
-      </div>
-      <div
-        className="h-1.5 w-full overflow-hidden rounded-full"
-        style={{ background: 'var(--border)' }}
-      >
+          {deficitNeed > 0 && (
+            <span className="flex-shrink-0" style={{ color: 'var(--text3)' }}>
+              {t('event-craft-material-need-remaining', 'あと{{amount}}個', {
+                amount: deficitNeed,
+              })}
+            </span>
+          )}
+        </div>
         <div
-          className="h-full rounded-full"
-          style={{ width: `${ratio * 100}%`, background: 'var(--green)' }}
-        />
+          className="h-1.5 w-full overflow-hidden rounded-full"
+          style={{ background: 'var(--border)' }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${ratio * 100}%`, background: 'var(--green)' }}
+          />
+        </div>
       </div>
     </div>
   )
@@ -1050,7 +1087,10 @@ const RarityZone = ({
   unitLabel: string
 }) => {
   const { t } = useTranslation('material')
-  const rarityLabel = t(`event-craft-rarity-${rarity}`, rarityFallbackLabel(rarity))
+  const rarityLabel = t(
+    `event-craft-rarity-${rarity}`,
+    rarityFallbackLabel(rarity),
+  )
   const heading = t('event-craft-rarity-zone-heading', '{{rarity}}レア素材', {
     rarity: rarityLabel,
   })
@@ -1069,7 +1109,11 @@ const RarityZone = ({
   const yieldEntries = sumExpectedCraftYields(zoneAllocations)
   return (
     <div className="flex flex-col gap-2">
-      <RarityZoneHeading heading={heading} subtotal={subtotal} unitLabel={unitLabel} />
+      <RarityZoneHeading
+        heading={heading}
+        subtotal={subtotal}
+        unitLabel={unitLabel}
+      />
       <CraftCardList
         allocations={zoneAllocations}
         items={items}
@@ -1089,26 +1133,8 @@ const RarityZone = ({
   )
 }
 
-const PatternEvaluation = ({
-  pattern,
-}: {
-  pattern: EventCraftPlanPattern
-}) => {
+const PatternEvaluation = ({ pattern }: { pattern: EventCraftPlanPattern }) => {
   const { t } = useTranslation('material')
-  if (pattern.metric === 'both') {
-    return (
-      <span className="text-xs" style={{ color: 'var(--text2)' }}>
-        {t(
-          'event-craft-residual-reference',
-          'フリクエで あと{{turn}} 周 / {{ap}} AP',
-          {
-            turn: fmt(pattern.residualTurnCost),
-            ap: fmt(pattern.residualApCost),
-          },
-        )}
-      </span>
-    )
-  }
   const unit =
     pattern.metric === 'ap' ? t('unit-ap', 'AP') : t('unit-runs-full', '周回')
   const amount =

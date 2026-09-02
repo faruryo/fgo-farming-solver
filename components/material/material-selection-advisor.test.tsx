@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
 import { INGREDIENT_COMMIT_DELAY_MS } from './event-craft-advisor'
@@ -163,7 +170,8 @@ describe('MaterialSelectionAdvisor Component', () => {
     expect(screen.getByText('うちなー海鮮盛り')).toBeInTheDocument()
     expect(screen.getByText('うちなーお肉盛り')).toBeInTheDocument()
     expect(screen.getByText('うちなー野菜盛り')).toBeInTheDocument()
-    expect(screen.getByText('食材を使い切る')).toBeInTheDocument()
+    expect(screen.getByText('周回を減らす')).toBeInTheDocument()
+    expect(screen.queryByText('食材を使い切る')).toBeNull()
 
     // Persisted tab in localStorage
     expect(localStorage.getItem(STORAGE_KEYS.MATERIAL_ADVISOR_TAB)).toBe(
@@ -180,7 +188,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     // 本番では items = EnrichedItem[](category/largeCategory 付き)が渡される。
     // ここでも同じ形で渡し、mockDrops の '07'(銅素材/強化素材)と一致させる。
-    const itemsWithCategory = mockItems.map(it => ({
+    const itemsWithCategory = mockItems.map((it) => ({
       ...it,
       category: '銅素材',
       largeCategory: '強化素材',
@@ -220,21 +228,22 @@ describe('MaterialSelectionAdvisor Component', () => {
       ).toBeInTheDocument()
       expect(within(runsCard).getByText('3個')).toBeInTheDocument()
       expect(
-        screen.getByText(/ゴーヤーチャンプルー3個を作成するのが最も効率的です、先輩。/),
+        screen.getByText(
+          /ゴーヤーチャンプルー3個を作成するのが最も効率的です、先輩。/,
+        ),
       ).toBeInTheDocument()
     })
   })
 
-  it('shows surplus badges on the exhaust pattern card', async () => {
+  it('does not display exhaust pattern card in pattern selection', async () => {
     renderSummer2026Advisor()
     commitIngredients('80', '160')
 
     await waitFor(() => {
-      const exhaustCard = screen.getByRole('radio', {
-        name: '食材を使い切る',
-      })
-      expect(within(exhaustCard).getByText('3個')).toBeInTheDocument()
-      expect(within(exhaustCard).getByText('余剰 +1')).toBeInTheDocument()
+      expect(
+        screen.getByRole('radio', { name: '周回を減らす' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('radio', { name: '食材を使い切る' })).toBeNull()
     })
   })
 
@@ -244,9 +253,7 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     await waitFor(() => {
       const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(
-        within(runsCard).getByText('(宵哭きの鉄杭)'),
-      ).toBeInTheDocument()
+      expect(within(runsCard).getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
       expect(
         within(runsCard).getByText('ゴーヤーチャンプルー'),
       ).toBeInTheDocument()
@@ -257,14 +264,18 @@ describe('MaterialSelectionAdvisor Component', () => {
     currentMockDrops = { ...mockDrops, isLoading: true }
     renderSummer2026Advisor()
 
-    expect(screen.getByText('ドロップデータを読み込み中です、先輩...')).toBeInTheDocument()
+    expect(
+      screen.getByText('ドロップデータを読み込み中です、先輩...'),
+    ).toBeInTheDocument()
   })
 
   it('renders unavailable message when quests are empty', () => {
     currentMockDrops = { ...mockDrops, isLoading: false, quests: [] }
     renderSummer2026Advisor()
 
-    expect(screen.getByText(/ドロップデータを取得できませんでした/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/ドロップデータを取得できませんでした/),
+    ).toBeInTheDocument()
   })
 
   it('renders deficit savings formatted with unit', async () => {

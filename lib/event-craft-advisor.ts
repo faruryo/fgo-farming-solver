@@ -42,14 +42,9 @@ export type EventCraftSolverOptions = {
   singleItemBaseValues?: Map<string, number>
 }
 
-export type EventCraftPatternId =
-  | 'runs'
-  | 'ap'
-  | 'even-turn'
-  | 'even-ap'
-  | 'exhaust'
+export type EventCraftPatternId = 'runs' | 'ap' | 'even-turn' | 'even-ap'
 
-export type EventCraftPatternMetric = 'turn' | 'ap' | 'both'
+export type EventCraftPatternMetric = 'turn' | 'ap'
 
 export type EventCraftPatternResult = {
   id: EventCraftPatternId
@@ -185,7 +180,9 @@ const getRecipeYieldTargets = (
 ): Set<string> => {
   const targets = new Set<string>()
   for (const recipe of recipes) {
-    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+    for (const [shortId, y] of Object.entries(
+      getRecipeYields(recipe, recipes),
+    )) {
       if (y > 0) targets.add(shortId)
     }
   }
@@ -199,7 +196,11 @@ const findRelevantQuestIds = (
 ): Set<string> => {
   const relevant = new Set<string>()
   for (const dr of drops.drop_rates) {
-    if (dr.drop_rate > 0 && farmableNeed.has(dr.item_id) && allowedQuests.has(dr.quest_id)) {
+    if (
+      dr.drop_rate > 0 &&
+      farmableNeed.has(dr.item_id) &&
+      allowedQuests.has(dr.quest_id)
+    ) {
       relevant.add(dr.quest_id)
     }
   }
@@ -211,7 +212,11 @@ const populateQuestVars = (
   ctx: SolverContext,
   isTieBreak: boolean,
 ) => {
-  const relevantQuestIds = findRelevantQuestIds(ctx.drops, ctx.allowedQuests, ctx.farmableNeed)
+  const relevantQuestIds = findRelevantQuestIds(
+    ctx.drops,
+    ctx.allowedQuests,
+    ctx.farmableNeed,
+  )
   for (const q of ctx.drops.quests) {
     if (!relevantQuestIds.has(q.id)) continue
     const qVars: Record<string, number> = {
@@ -483,7 +488,9 @@ const subtractCraftYieldsFromNeed = (
     if (recipe.id === excludeRecipeId) continue
     const count = counts.get(recipe.id) ?? 0
     if (count <= 0) continue
-    for (const [shortId, y] of Object.entries(getRecipeYields(recipe, recipes))) {
+    for (const [shortId, y] of Object.entries(
+      getRecipeYields(recipe, recipes),
+    )) {
       if (y <= 0) continue
       const cur = (Reflect.get(next, shortId) as number | undefined) ?? 0
       Reflect.set(next, shortId, Math.max(0, cur - count * y))
@@ -549,7 +556,10 @@ const buildAllocations = (
     const deficitCount = deficitCounts.get(recipe.id) ?? 0
     const surplusCount = surplusCounts.get(recipe.id) ?? 0
     const totalCount = deficitCount + surplusCount
-    const recipeSaving = allocatedSavings.get(recipe.id) ?? { totalSaved: 0, unitSaved: 0 }
+    const recipeSaving = allocatedSavings.get(recipe.id) ?? {
+      totalSaved: 0,
+      unitSaved: 0,
+    }
     const deficitSaved = recipeSaving.totalSaved
     const unitSaved = recipeSaving.unitSaved
     const surplusValue =
@@ -714,19 +724,67 @@ const evaluateDeficitPlan = (
   deficitCounts: Map<string, number>,
   recipes: readonly EventCraftRecipe[],
 ) => {
-  const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
+  const remainingNeed = subtractCraftYieldsFromNeed(
+    ctx.fullNeed,
+    recipes,
+    deficitCounts,
+  )
   const residualCost = continuousOptimalCost(
     ctx.drops,
     remainingNeed,
     Array.from(ctx.allowedQuests),
     ctx.mode,
   )
-  const allocatedSavings = calculateAllocatedDeficitSavings(ctx, deficitCounts, residualCost)
+  const allocatedSavings = calculateAllocatedDeficitSavings(
+    ctx,
+    deficitCounts,
+    residualCost,
+  )
   return { residualCost, allocatedSavings }
 }
 
 // ponytail: at most 4 Stage1 solves; do not ban unless another solve can reallocate
 const MAX_STAGE1_SOLVES = 4
+
+const solveStage1WithRetries = (
+  ctx: SolverContext,
+  recipes: readonly EventCraftRecipe[],
+): Map<string, number> => {
+  const banned = new Set<string>()
+  let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
+  for (let i = 0; i < MAX_STAGE1_SOLVES; i++) {
+    const stageCtx: SolverContext = {
+      ...ctx,
+      eligibleRecipeIds: new Set(
+        recipes.filter((r) => !banned.has(r.id)).map((r) => r.id),
+      ),
+    }
+    const solved = solveStage1(stageCtx)
+    deficitCounts = new Map(
+      recipes.map((r) => [r.id, solved.deficitCounts.get(r.id) ?? 0]),
+    )
+    const remainingNeed = subtractCraftYieldsFromNeed(
+      ctx.fullNeed,
+      recipes,
+      deficitCounts,
+    )
+    const residualCost = continuousOptimalCost(
+      ctx.drops,
+      remainingNeed,
+      Array.from(ctx.allowedQuests),
+      ctx.mode,
+    )
+    const zeroSaving = findFirstZeroSavingRecipe(
+      ctx,
+      recipes,
+      deficitCounts,
+      residualCost,
+    )
+    if (!zeroSaving || i + 1 >= MAX_STAGE1_SOLVES) break
+    banned.add(zeroSaving.id)
+  }
+  return deficitCounts
+}
 
 const executeSolveStages = (
   ctx: SolverContext,
@@ -735,34 +793,22 @@ const executeSolveStages = (
   recipes: readonly EventCraftRecipe[],
   exhaust: boolean,
 ) => {
-  const banned = new Set<string>()
-  let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
-  for (let i = 0; i < MAX_STAGE1_SOLVES; i++) {
-    const stageCtx: SolverContext = {
-      ...ctx,
-      eligibleRecipeIds: new Set(recipes.filter((r) => !banned.has(r.id)).map((r) => r.id)),
-    }
-    const solved = solveStage1(stageCtx)
-    deficitCounts = new Map(recipes.map((r) => [r.id, solved.deficitCounts.get(r.id) ?? 0]))
-    const remainingNeed = subtractCraftYieldsFromNeed(ctx.fullNeed, recipes, deficitCounts)
-    const residualCost = continuousOptimalCost(
-      ctx.drops,
-      remainingNeed,
-      Array.from(ctx.allowedQuests),
-      ctx.mode,
-    )
-    const zeroSaving = findFirstZeroSavingRecipe(ctx, recipes, deficitCounts, residualCost)
-    if (!zeroSaving) break
-    if (i + 1 >= MAX_STAGE1_SOLVES) break
-    banned.add(zeroSaving.id)
-  }
+  let deficitCounts = solveStage1WithRetries(ctx, recipes)
   let plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
-  const pruned = dropDeficitsThatDoNotReduceResidual(recipes, deficitCounts, plan.allocatedSavings)
+  const pruned = dropDeficitsThatDoNotReduceResidual(
+    recipes,
+    deficitCounts,
+    plan.allocatedSavings,
+  )
   if (pruned.dropped) {
     deficitCounts = pruned.counts
     plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
   }
-  const remaining = calculateRemainingIngredients(ownedIngredients, deficitCounts, recipes)
+  const remaining = calculateRemainingIngredients(
+    ownedIngredients,
+    deficitCounts,
+    recipes,
+  )
   const surplusCounts = computeSurplusCounts(
     exhaust,
     remaining,
@@ -829,7 +875,10 @@ export const solveEventCraftAllocation = (
     totalSaved: Math.max(0, ctx.baselineCost - optimalCost),
     totalSurplusValue: allocated.totalSurplusValue,
     spentIngredients: allocated.spentIngredients,
-    leftoverIngredients: calculateLeftovers(ownedIngredients, allocated.spentIngredients),
+    leftoverIngredients: calculateLeftovers(
+      ownedIngredients,
+      allocated.spentIngredients,
+    ),
     baselineCost: ctx.baselineCost,
     optimalCost,
   }
@@ -912,9 +961,7 @@ const addEvenBurdenRecipeVars = (
       ...(tieBreak
         ? {
             totalIngredients:
-              recipe.costs.seafood +
-              recipe.costs.meat +
-              recipe.costs.vegetable,
+              recipe.costs.seafood + recipe.costs.meat + recipe.costs.vegetable,
           }
         : {}),
     }
@@ -974,86 +1021,7 @@ const solveEvenBurden = (
   const second = solver.Solve(
     buildEvenBurdenModel(ctx, unitCosts, true, burden),
   )
-  return readCraftCounts(
-    ctx.recipes,
-    second.feasible ? second : first,
-  )
-}
-
-const buildExhaustPhaseAModel = (
-  recipes: readonly EventCraftRecipe[],
-  owned: IngredientCounts,
-): solver.Model => {
-  const ints: Record<string, number> = {}
-  const model: solver.Model = {
-    optimize: 'totalIngredientsSpent',
-    opType: 'max',
-    constraints: {
-      seafood: { max: Math.max(0, owned.seafood ?? 0) },
-      meat: { max: Math.max(0, owned.meat ?? 0) },
-      vegetable: { max: Math.max(0, owned.vegetable ?? 0) },
-    },
-    variables: {},
-    ints,
-  }
-  for (const recipe of recipes) {
-    const name = `craft_${recipe.id}`
-    Reflect.set(model.variables, name, {
-      totalIngredientsSpent:
-        recipe.costs.seafood + recipe.costs.meat + recipe.costs.vegetable,
-      seafood: recipe.costs.seafood,
-      meat: recipe.costs.meat,
-      vegetable: recipe.costs.vegetable,
-    })
-    Reflect.set(ints, name, 1)
-  }
-  return model
-}
-
-const buildExhaustPhaseBModel = (
-  ctx: SolverContext,
-  maxSpend: number,
-): solver.Model => {
-  const { model, ints } = initStage1Model(ctx, 'totalCost')
-  populateStage1Vars(model, ints, ctx, false)
-  for (const recipe of ctx.recipes) {
-    const name = `craft_${recipe.id}`
-    let variable = Reflect.get(model.variables, name) as
-      | Record<string, number>
-      | undefined
-    if (!variable) {
-      variable = {
-        totalCost: 0,
-        seafood: recipe.costs.seafood,
-        meat: recipe.costs.meat,
-        vegetable: recipe.costs.vegetable,
-      }
-      Reflect.set(model.variables, name, variable)
-      Reflect.set(ints, name, 1)
-    }
-    variable.totalIngredientsSpent =
-      recipe.costs.seafood + recipe.costs.meat + recipe.costs.vegetable
-  }
-  Reflect.set(model.constraints, 'totalIngredientsSpent', {
-    min: Math.max(0, maxSpend - EPSILON),
-  })
-  return model
-}
-
-const solveExhaust = (
-  ctx: SolverContext,
-  owned: IngredientCounts,
-): Map<string, number> => {
-  const zero = new Map(ctx.recipes.map((recipe) => [recipe.id, 0]))
-  const phaseA = solver.Solve(buildExhaustPhaseAModel(ctx.recipes, owned))
-  const maxSpend =
-    phaseA.feasible && typeof phaseA.result === 'number' ? phaseA.result : 0
-  if (maxSpend <= EPSILON) return zero
-  const phaseB = solver.Solve(buildExhaustPhaseBModel(ctx, maxSpend))
-  return readCraftCounts(
-    ctx.recipes,
-    phaseB.feasible ? phaseB : phaseA,
-  )
+  return readCraftCounts(ctx.recipes, second.feasible ? second : first)
 }
 
 const evaluateResidualCost = (
@@ -1116,72 +1084,6 @@ const classifyByBurden = (
   return { deficit, surplus, savings }
 }
 
-const computeYieldResidual = (
-  fullNeed: Record<string, number>,
-  recipes: readonly EventCraftRecipe[],
-  counts: Map<string, number>,
-): Map<string, number> => {
-  const remaining = subtractCraftYieldsFromNeed(fullNeed, recipes, counts)
-  return new Map(
-    Object.entries(remaining).map(([itemId, count]) => [
-      itemId,
-      Math.max(0, count),
-    ]),
-  )
-}
-
-/**
- * Exhaust attribution is intentionally done in recipe-yield space. It preserves
- * the final residual need vector without invoking a full farming LP per recipe
- * or per binary-search step.
- */
-const classifyExhaustCounts = (
-  ctx: SolverContext,
-  counts: Map<string, number>,
-  baseValues: Map<string, number>,
-) => {
-  const targetResidual = computeYieldResidual(
-    ctx.fullNeed,
-    ctx.recipes,
-    counts,
-  )
-  const working = new Map(counts)
-  const deficit = new Map<string, number>()
-  const surplus = new Map<string, number>()
-  const savings = new Map<string, { totalSaved: number; unitSaved: number }>()
-  for (const recipe of ctx.recipes) {
-    const count = counts.get(recipe.id) ?? 0
-    working.set(recipe.id, 0)
-    const withoutResidual = computeYieldResidual(
-      ctx.fullNeed,
-      ctx.recipes,
-      working,
-    )
-    let useful = 0
-    for (const [itemId, yieldCount] of Object.entries(
-      getRecipeYields(recipe, ctx.recipes),
-    )) {
-      if (yieldCount <= 0) continue
-      const required = Math.max(
-        0,
-        (withoutResidual.get(itemId) ?? 0) -
-          (targetResidual.get(itemId) ?? 0),
-      )
-      useful = Math.max(useful, Math.ceil((required - EPSILON) / yieldCount))
-    }
-    useful = Math.min(count, useful)
-    working.set(recipe.id, useful)
-    deficit.set(recipe.id, useful)
-    surplus.set(recipe.id, count - useful)
-    const saved = Math.max(0, (baseValues.get(recipe.id) ?? 0) * useful)
-    savings.set(recipe.id, {
-      totalSaved: saved,
-      unitSaved: useful > 0 ? saved / useful : 0,
-    })
-  }
-  return { deficit, surplus, savings }
-}
-
 type PatternResultInput = {
   id: EventCraftPatternId
   metric: EventCraftPatternMetric
@@ -1193,26 +1095,13 @@ type PatternResultInput = {
   baselineAp: number
   residualTurn: number
   residualAp: number
-  classification?: ReturnType<typeof classifyByBurden>
+  classification: ReturnType<typeof classifyByBurden>
 }
 
-const toPatternResult = (input: PatternResultInput): EventCraftPatternResult => {
-  let classified = input.classification
-  if (!classified) {
-    const exhaustSplit = classifyExhaustCounts(
-      input.ctx,
-      input.counts,
-      input.baseValues,
-    )
-    classified = {
-      ...exhaustSplit,
-      savings: evaluateDeficitPlan(
-        input.ctx,
-        exhaustSplit.deficit,
-        input.ctx.recipes,
-      ).allocatedSavings,
-    }
-  }
+const toPatternResult = (
+  input: PatternResultInput,
+): EventCraftPatternResult => {
+  const classified = input.classification
   const built = buildAllocations(
     input.ctx.recipes,
     classified.deficit,
@@ -1289,10 +1178,7 @@ const executePatternAllocation = (
     totalSaved: Math.max(0, ctx.baselineCost - optimalCost),
     totalSurplusValue: 0,
     spentIngredients: allocated.spentIngredients,
-    leftoverIngredients: calculateLeftovers(
-      owned,
-      allocated.spentIngredients,
-    ),
+    leftoverIngredients: calculateLeftovers(owned, allocated.spentIngredients),
     baselineCost: ctx.baselineCost,
     optimalCost,
   }
@@ -1304,24 +1190,19 @@ export const foldEventCraftPatterns = (
   const positiveKey = (pattern: EventCraftPatternResult) =>
     pattern.allocations
       .filter((allocation) => allocation.totalCount > 0)
-      .map(
-        (allocation) =>
-          `${allocation.recipe.id}:${allocation.totalCount}`,
-      )
+      .map((allocation) => `${allocation.recipe.id}:${allocation.totalCount}`)
       .sort((a, b) => a.localeCompare(b))
       .join('|')
   const displayed: EventCraftPatternResult[] = []
   const aliases = new Map<EventCraftPatternId, EventCraftPatternId[]>()
   const absorbedInto: EventCraftPlanResult['absorbedInto'] = {}
   for (const pattern of patternsInOrder) {
-    if (pattern.id === 'runs' || pattern.id === 'exhaust') {
+    if (pattern.id === 'runs') {
       displayed.push(pattern)
       continue
     }
     const match = displayed.find(
-      (candidate) =>
-        candidate.id !== 'exhaust' &&
-        positiveKey(candidate) === positiveKey(pattern),
+      (candidate) => positiveKey(candidate) === positiveKey(pattern),
     )
     if (!match) {
       displayed.push(pattern)
@@ -1331,7 +1212,6 @@ export const foldEventCraftPatterns = (
     if (pattern.id === 'ap') absorbedInto.ap = match.id
     else if (pattern.id === 'even-turn') absorbedInto['even-turn'] = match.id
     else if (pattern.id === 'even-ap') absorbedInto['even-ap'] = match.id
-    else if (pattern.id === 'exhaust') absorbedInto.exhaust = match.id
     else absorbedInto.runs = match.id
   }
   return {
@@ -1345,13 +1225,13 @@ export const foldEventCraftPatterns = (
 
 export const resolveVisiblePatternId = (
   plan: EventCraftPlanResult,
-  id: EventCraftPatternId,
+  id: EventCraftPatternId | string,
 ): EventCraftPatternId => {
-  if (plan.patterns.some((pattern) => pattern.id === id)) return id
+  if (plan.patterns.some((pattern) => pattern.id === id))
+    return id as EventCraftPatternId
   if (id === 'ap') return plan.absorbedInto.ap ?? 'runs'
   if (id === 'even-turn') return plan.absorbedInto['even-turn'] ?? 'runs'
   if (id === 'even-ap') return plan.absorbedInto['even-ap'] ?? 'runs'
-  if (id === 'exhaust') return plan.absorbedInto.exhaust ?? 'runs'
   return plan.absorbedInto.runs ?? 'runs'
 }
 
@@ -1485,14 +1365,8 @@ const assembleEventCraftPatterns = ({
   ap,
   onPattern,
 }: AssembleEventCraftPatternsInput) => {
-  emitPrimaryPatternResults(
-    recipes,
-    ownedIngredients,
-    turn,
-    ap,
-    onPattern,
-  )
-  emitEvenAndExhaustPatterns({
+  emitPrimaryPatternResults(recipes, ownedIngredients, turn, ap, onPattern)
+  emitEvenPatterns({
     recipes,
     ownedIngredients,
     turn,
@@ -1515,7 +1389,7 @@ const assembleEventCraftPatterns = ({
   })
 }
 
-type EvenAndExhaustInput = {
+type EvenPatternsInput = {
   recipes: readonly EventCraftRecipe[]
   ownedIngredients: IngredientCounts
   turn: ReturnType<typeof createSolverContext>
@@ -1525,32 +1399,26 @@ type EvenAndExhaustInput = {
   onPattern: (pattern: EventCraftPatternResult) => void
 }
 
-const emitEvenAndExhaustPatterns = (input: EvenAndExhaustInput) => {
+const emitEvenPatterns = (input: EvenPatternsInput) => {
   emitEvenTurnPattern(input)
   emitEvenApPattern(input)
-  emitExhaustPattern(input)
 }
 
-const evenShared = (input: EvenAndExhaustInput) => ({
+const evenShared = (input: EvenPatternsInput) => ({
   owned: input.ownedIngredients,
   baselineTurn: input.turn.ctx.baselineCost,
   baselineAp: input.ap.ctx.baselineCost,
 })
 
 const residualPair = (
-  input: EvenAndExhaustInput,
+  input: EvenPatternsInput,
   counts: Map<string, number>,
 ) => ({
-  turn: evaluateResidualCost(
-    input.turn.ctx,
-    input.recipes,
-    counts,
-    'turn',
-  ),
+  turn: evaluateResidualCost(input.turn.ctx, input.recipes, counts, 'turn'),
   ap: evaluateResidualCost(input.ap.ctx, input.recipes, counts, 'ap'),
 })
 
-const emitEvenTurnPattern = (input: EvenAndExhaustInput) => {
+const emitEvenTurnPattern = (input: EvenPatternsInput) => {
   const counts = solveEvenBurden(input.turn.ctx, input.unitTurn)
   const residual = residualPair(input, counts)
   input.onPattern(
@@ -1562,17 +1430,13 @@ const emitEvenTurnPattern = (input: EvenAndExhaustInput) => {
       baseValues: input.turn.singleItemBaseValues,
       residualTurn: residual.turn,
       residualAp: residual.ap,
-      classification: classifyByBurden(
-        input.turn.ctx,
-        counts,
-        input.unitTurn,
-      ),
+      classification: classifyByBurden(input.turn.ctx, counts, input.unitTurn),
       ...evenShared(input),
     }),
   )
 }
 
-const emitEvenApPattern = (input: EvenAndExhaustInput) => {
+const emitEvenApPattern = (input: EvenPatternsInput) => {
   const counts = solveEvenBurden(input.ap.ctx, input.unitAp)
   const residual = residualPair(input, counts)
   input.onPattern(
@@ -1585,23 +1449,6 @@ const emitEvenApPattern = (input: EvenAndExhaustInput) => {
       residualTurn: residual.turn,
       residualAp: residual.ap,
       classification: classifyByBurden(input.ap.ctx, counts, input.unitAp),
-      ...evenShared(input),
-    }),
-  )
-}
-
-const emitExhaustPattern = (input: EvenAndExhaustInput) => {
-  const counts = solveExhaust(input.turn.ctx, input.ownedIngredients)
-  const residual = residualPair(input, counts)
-  input.onPattern(
-    toPatternResult({
-      id: 'exhaust',
-      metric: 'both',
-      ctx: input.turn.ctx,
-      counts,
-      baseValues: input.turn.singleItemBaseValues,
-      residualTurn: residual.turn,
-      residualAp: residual.ap,
       ...evenShared(input),
     }),
   )
@@ -1656,7 +1503,11 @@ export type AdviceTranslator = (
   options?: Record<string, unknown>,
 ) => string
 
-const defaultAdviceTranslator: AdviceTranslator = (_key, defaultVal, options) => {
+const defaultAdviceTranslator: AdviceTranslator = (
+  _key,
+  defaultVal,
+  options,
+) => {
   if (!options) return defaultVal
   let res = defaultVal
   for (const [k, v] of Object.entries(options)) {
@@ -1675,7 +1526,10 @@ const buildAdviceEffectText = (
   const modeTail =
     mode === 'ap'
       ? t('event-craft-advice-ap-tail', 'りんごや石の温存に最適な配分です。')
-      : t('event-craft-advice-turn-tail', 'リアルの周回時間を最小化する配分です。')
+      : t(
+          'event-craft-advice-turn-tail',
+          'リアルの周回時間を最小化する配分です。',
+        )
 
   let effectText = ''
   if (result.totalSaved > 0) {
@@ -1741,9 +1595,13 @@ export const generateCraftAdvice = (
   result: EventCraftSolverResult,
   ownedIngredients: IngredientCounts,
   mode: DenominatorMode,
-  exhaustIngredients: boolean,
-  t: AdviceTranslator = defaultAdviceTranslator,
+  exhaustIngredientsOrTranslator?: boolean | AdviceTranslator,
+  optionalTranslator?: AdviceTranslator,
 ): string => {
+  const t =
+    typeof exhaustIngredientsOrTranslator === 'function'
+      ? exhaustIngredientsOrTranslator
+      : (optionalTranslator ?? defaultAdviceTranslator)
   const totalOwned =
     (ownedIngredients.seafood ?? 0) +
     (ownedIngredients.meat ?? 0) +
@@ -1757,10 +1615,10 @@ export const generateCraftAdvice = (
   }
 
   if (result.totalCrafted === 0) {
-    if (result.baselineCost <= 0 && !exhaustIngredients) {
+    if (result.baselineCost <= 0) {
       return t(
         'event-craft-advice-no-shortage',
-        '現在、不足している対象素材がありません、先輩。食材が余っているなら「食材を使い切る」パターンも確認してみましょう。',
+        '現在、不足している対象素材がありません、先輩。',
       )
     }
     const canCraftAny = result.allocations.some(
@@ -1769,10 +1627,10 @@ export const generateCraftAdvice = (
         a.recipe.costs.meat <= (ownedIngredients.meat ?? 0) &&
         a.recipe.costs.vegetable <= (ownedIngredients.vegetable ?? 0),
     )
-    if (canCraftAny && !exhaustIngredients) {
+    if (canCraftAny) {
       return t(
         'event-craft-advice-no-saving',
-        'この配分では周回削減効果がありません、先輩。「食材を使い切る」パターンも確認してみましょう。',
+        'この配分では周回削減効果がありません、先輩。',
       )
     }
     return t(

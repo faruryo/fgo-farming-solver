@@ -292,11 +292,6 @@
       "count": 1
     },
     {
-      "file": "components/common/possession-import/PossessionImportDialog.test.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 3
-    },
-    {
       "file": "components/common/possession-import/PossessionImportDialog.tsx",
       "rule": "max-lines-per-function",
       "count": 2
@@ -1080,11 +1075,6 @@
       "file": "hooks/use-dashboard-sort-mode.ts",
       "rule": "react-hooks/set-state-in-effect",
       "count": 2
-    },
-    {
-      "file": "hooks/use-drops.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
     },
     {
       "file": "hooks/use-farming-result.ts",
