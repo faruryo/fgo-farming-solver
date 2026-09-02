@@ -940,6 +940,28 @@ const CraftCardList = ({
   )
 }
 
+const MaterialYieldIcon = ({
+  iconUrl,
+  alt,
+}: {
+  iconUrl: string
+  alt: string
+}) =>
+  iconUrl ? (
+    <Image
+      src={iconUrl}
+      alt={alt}
+      width={28}
+      height={28}
+      className="h-7 w-7 flex-shrink-0 object-contain rounded"
+    />
+  ) : (
+    <div
+      className="h-7 w-7 flex-shrink-0 rounded"
+      style={{ background: 'var(--border)' }}
+    />
+  )
+
 const MaterialYieldTile = ({
   entry,
   deficitNeed,
@@ -960,20 +982,7 @@ const MaterialYieldTile = ({
       className="flex items-center gap-2.5 rounded px-2.5 py-1.5"
       style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
     >
-      {iconUrl ? (
-        <Image
-          src={iconUrl}
-          alt={materialName}
-          width={28}
-          height={28}
-          className="h-7 w-7 flex-shrink-0 object-contain rounded"
-        />
-      ) : (
-        <div
-          className="h-7 w-7 flex-shrink-0 rounded"
-          style={{ background: 'var(--border)' }}
-        />
-      )}
+      <MaterialYieldIcon iconUrl={iconUrl} alt={materialName} />
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2 text-xs">
           <span

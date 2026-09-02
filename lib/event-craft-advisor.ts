@@ -746,13 +746,10 @@ const evaluateDeficitPlan = (
 // ponytail: at most 4 Stage1 solves; do not ban unless another solve can reallocate
 const MAX_STAGE1_SOLVES = 4
 
-const executeSolveStages = (
+const solveStage1WithRetries = (
   ctx: SolverContext,
-  ownedIngredients: IngredientCounts,
-  singleItemBaseValues: Map<string, number>,
   recipes: readonly EventCraftRecipe[],
-  exhaust: boolean,
-) => {
+): Map<string, number> => {
   const banned = new Set<string>()
   let deficitCounts = new Map(recipes.map((r) => [r.id, 0]))
   for (let i = 0; i < MAX_STAGE1_SOLVES; i++) {
@@ -783,10 +780,20 @@ const executeSolveStages = (
       deficitCounts,
       residualCost,
     )
-    if (!zeroSaving) break
-    if (i + 1 >= MAX_STAGE1_SOLVES) break
+    if (!zeroSaving || i + 1 >= MAX_STAGE1_SOLVES) break
     banned.add(zeroSaving.id)
   }
+  return deficitCounts
+}
+
+const executeSolveStages = (
+  ctx: SolverContext,
+  ownedIngredients: IngredientCounts,
+  singleItemBaseValues: Map<string, number>,
+  recipes: readonly EventCraftRecipe[],
+  exhaust: boolean,
+) => {
+  let deficitCounts = solveStage1WithRetries(ctx, recipes)
   let plan = evaluateDeficitPlan(ctx, deficitCounts, recipes)
   const pruned = dropDeficitsThatDoNotReduceResidual(
     recipes,
