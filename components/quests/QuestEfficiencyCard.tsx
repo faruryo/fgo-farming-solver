@@ -4,7 +4,11 @@ import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaBolt } from 'react-icons/fa'
 import { Info } from 'lucide-react'
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
@@ -20,15 +24,21 @@ import {
   efficiencyScoreLabelKey,
 } from '../../lib/quest-efficiency-display'
 import { EfficiencyDenominatorToggle } from './EfficiencyDenominatorToggle'
-import { StockIncludedToggle } from './StockIncludedToggle'
+import { FarmingPurposeSelector } from '../common/FarmingPurposeSelector'
 
-const REWARD_NAMES: Record<string, string> = { qp: 'QP', bond: '基本絆P', exp: 'EXP' }
+const REWARD_NAMES: Record<string, string> = {
+  qp: 'QP',
+  bond: '基本絆P',
+  exp: 'EXP',
+}
 
 /**
  * クエスト詳細用: そのクエストの効率ポイント合計と素材別 contribution 内訳を表示。
  * 一覧と同じ localStorage 設定(所持数・目標・しきい値・トグル)を反映する。
  */
-export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) => {
+export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({
+  questId,
+}) => {
   const { t } = useTranslation('quests')
   const drops = useDrops()
   const { items: dropItems, isLoading } = drops
@@ -38,9 +48,8 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
     possession,
     materialResult,
     itemsRaw,
-    stockEnabled,
+    purpose,
     resolvedStockBuffer,
-    shortageOnly,
     includeSkillStones,
     includePieces,
     denominator,
@@ -56,20 +65,36 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
       possession,
       goals: mergeGoals(materialResult, itemsRaw, dropItems ?? []),
       activeCampaigns,
-      shortageOnly,
+      purpose,
       includeSkillStones,
       includePieces,
       stockBuffer: resolvedStockBuffer,
-      stockEnabled,
       denominator,
       includeQp,
       includeBond,
       includeExp,
     })
-  }, [drops, isLoading, questId, possession, materialResult, itemsRaw, dropItems, activeCampaigns, shortageOnly, includeSkillStones, includePieces, resolvedStockBuffer, stockEnabled, denominator, includeQp, includeBond, includeExp])
+  }, [
+    drops,
+    isLoading,
+    questId,
+    possession,
+    materialResult,
+    itemsRaw,
+    dropItems,
+    activeCampaigns,
+    purpose,
+    includeSkillStones,
+    includePieces,
+    resolvedStockBuffer,
+    denominator,
+    includeQp,
+    includeBond,
+    includeExp,
+  ])
 
   if (isLoading || !eff) return null
-  const itemById = new Map((dropItems ?? []).map(i => [i.id, i]))
+  const itemById = new Map((dropItems ?? []).map((i) => [i.id, i]))
   const scoreLabel = t(
     efficiencyScoreLabelKey(denominator),
     efficiencyScoreLabelFallback(denominator),
@@ -93,14 +118,26 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
               >
                 <Info size={14} />
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
-                {t('efficiency-score-explanation', '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。')}
+              <TooltipContent
+                side="bottom"
+                className="max-w-[260px] text-left leading-relaxed"
+              >
+                {t(
+                  'efficiency-score-explanation',
+                  '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。',
+                )}
               </TooltipContent>
             </Tooltip>
-            <EfficiencyDenominatorToggle value={denominator} onChange={setDenominator} />
-            <StockIncludedToggle />
+            <EfficiencyDenominatorToggle
+              value={denominator}
+              onChange={setDenominator}
+            />
+            <FarmingPurposeSelector compact />
           </div>
-          <span className="text-2xl font-bold tabular-nums" style={{ color: scoreColor }}>
+          <span
+            className="text-2xl font-bold tabular-nums"
+            style={{ color: scoreColor }}
+          >
             {eff.score.toFixed(2)}
           </span>
         </div>
@@ -110,7 +147,13 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
             {t('効率内訳')}
           </p>
           {eff.contributions.length === 0 ? (
-            <p className="text-xs py-3 text-center rounded-md" style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text3)' }}>
+            <p
+              className="text-xs py-3 text-center rounded-md"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                color: 'var(--text3)',
+              }}
+            >
               {t('no-contributions', '対象となる不足素材がありません')}
             </p>
           ) : (
@@ -120,12 +163,16 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
                 style={{ color: 'var(--text3)' }}
               >
                 <span className="w-7 flex-shrink-0" />
-                <span className="flex-1 min-w-0">{t('breakdown-material', '素材')}</span>
+                <span className="flex-1 min-w-0">
+                  {t('breakdown-material', '素材')}
+                </span>
                 <span>{t('breakdown-weight', '重み')}</span>
-                <span className="w-12 text-right">{t('breakdown-contribution', '寄与度')}</span>
+                <span className="w-12 text-right">
+                  {t('breakdown-contribution', '寄与度')}
+                </span>
               </div>
               <div className="flex flex-col gap-2">
-                {eff.contributions.map(c => {
+                {eff.contributions.map((c) => {
                   const reward = c.itemId.startsWith(REWARD_ITEM_PREFIX)
                     ? REWARD_NAMES[c.itemId.slice(REWARD_ITEM_PREFIX.length)]
                     : undefined
@@ -140,18 +187,33 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({ questId }) 
                       {reward ? (
                         <span
                           className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded text-[9px] font-bold"
-                          style={{ background: 'rgba(154,114,36,0.15)', color: 'var(--gold)' }}
+                          style={{
+                            background: 'rgba(154,114,36,0.15)',
+                            color: 'var(--gold)',
+                          }}
                         >
                           {reward}
                         </span>
                       ) : (
-                        <ItemIdentity icon={item?.icon} name={label} size={28} />
+                        <ItemIdentity
+                          icon={item?.icon}
+                          name={label}
+                          size={28}
+                        />
                       )}
-                      <span className="text-xs font-bold truncate flex-1 min-w-0">{label}</span>
-                      <span className="text-[10px] tabular-nums" style={{ color: 'var(--text3)' }}>
+                      <span className="text-xs font-bold truncate flex-1 min-w-0">
+                        {label}
+                      </span>
+                      <span
+                        className="text-[10px] tabular-nums"
+                        style={{ color: 'var(--text3)' }}
+                      >
                         ×{c.weight}
                       </span>
-                      <span className="text-xs font-bold tabular-nums w-12 text-right" style={{ color: scoreColor }}>
+                      <span
+                        className="text-xs font-bold tabular-nums w-12 text-right"
+                        style={{ color: scoreColor }}
+                      >
                         {c.weighted.toFixed(2)}
                       </span>
                     </div>
