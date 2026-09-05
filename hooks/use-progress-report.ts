@@ -5,7 +5,11 @@ import { useSession } from 'next-auth/react'
 import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
 import type { Drops } from '../lib/get-drops'
-import { computeForwardProgress, computeEffortLaps, resolveUnitPrices } from '../lib/progress/lap-value'
+import {
+  computeForwardProgress,
+  computeEffortLaps,
+  resolveUnitPrices,
+} from '../lib/progress/lap-value'
 import { computeItemThroughput } from '../lib/progress/throughput'
 import { finalizeBaselineSummary } from '../lib/progress/finalize-baseline'
 import {
@@ -14,10 +18,15 @@ import {
   type WindowKey,
   type WindowLapValues,
 } from '../lib/progress/select-baseline'
-import { resolveStockBuffer, type PartialStockBuffer, type SurplusThreshold } from '../lib/quest-efficiency'
+import {
+  resolveStockBuffer,
+  type PartialStockBuffer,
+  type SurplusThreshold,
+} from '../lib/quest-efficiency'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
+import { isFarmingPurpose } from '../lib/farming-purpose'
 
-const readJson = <T,>(key: string): T | null => {
+const readJson = <T>(key: string): T | null => {
   if (typeof window === 'undefined') return null
   const raw = localStorage.getItem(key)
   if (raw == null) return null
@@ -35,6 +44,11 @@ const buildCurrentState = (totalAp: number | null) => ({
   totalAp,
 })
 
+const resolvePurpose = (stored: unknown, stockEnabled: boolean) => {
+  if (isFarmingPurpose(stored)) return stored
+  return stockEnabled ? 'reserve' : 'training'
+}
+
 export type UseProgressReport = {
   current: PeriodSummary | null
   loading: boolean
@@ -43,7 +57,7 @@ export type UseProgressReport = {
 
 export const useProgressReport = (
   totalAp: number | null,
-  drops?: Drops | null
+  drops?: Drops | null,
 ): UseProgressReport => {
   const { data: session } = useSession()
   const userId = session?.user?.id ?? null
@@ -65,7 +79,7 @@ export const useProgressReport = (
           signal,
         })
         if (!res.ok) throw new Error(`status ${res.status}`)
-        setData((await res.json()))
+        setData(await res.json())
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') return
         setError(e instanceof Error ? e.message : 'unknown')
@@ -73,7 +87,7 @@ export const useProgressReport = (
         setLoading(false)
       }
     },
-    [userId, totalAp]
+    [userId, totalAp],
   )
 
   useEffect(() => {
@@ -98,25 +112,45 @@ export const useProgressReport = (
   // (data/drops を変えずに)更新された場合は再計算されない。ここで生文字列を読んで
   // 依存配列に含め、値が変わった際の再レンダリングで確実に再計算させる。
   const rawPosession =
-    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.POSSESSION) : null
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.POSSESSION)
+      : null
   const rawTargets =
-    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.MATERIAL_RESULT) : null
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.MATERIAL_RESULT)
+      : null
   const rawQuests =
-    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.QUESTS) : null
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.QUESTS)
+      : null
   const rawStockEnabled =
-    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.STOCK_ENABLED) : null
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.STOCK_ENABLED)
+      : null
+  const rawPurpose =
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.FARMING_PURPOSE)
+      : null
   const rawStockBuffer =
-    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.STOCK_BUFFER) : null
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.STOCK_BUFFER)
+      : null
   const rawSurplusThreshold =
-    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.SURPLUS_THRESHOLD) : null
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.SURPLUS_THRESHOLD)
+      : null
 
   const current = useMemo<PeriodSummary | null>(() => {
     if (!data) return null
 
-    const posession = readJson<Record<string, number>>(STORAGE_KEYS.POSSESSION) ?? {}
-    const targets = readJson<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT) ?? {}
+    const posession =
+      readJson<Record<string, number>>(STORAGE_KEYS.POSSESSION) ?? {}
+    const targets =
+      readJson<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT) ?? {}
     const selectedQuestIds = readJson<string[]>(STORAGE_KEYS.QUESTS) ?? []
     const stockEnabled = readJson<boolean>(STORAGE_KEYS.STOCK_ENABLED) ?? false
+    const storedPurpose = readJson<unknown>(STORAGE_KEYS.FARMING_PURPOSE)
+    const purpose = resolvePurpose(storedPurpose, stockEnabled)
     const rawStockBuffer = readJson<PartialStockBuffer>(STORAGE_KEYS.STOCK_BUFFER)
     const legacySurplusThreshold = readJson<SurplusThreshold>(STORAGE_KEYS.SURPLUS_THRESHOLD)
     const stockBuffer = resolveStockBuffer(rawStockBuffer, legacySurplusThreshold)
@@ -139,6 +173,7 @@ export const useProgressReport = (
           pastPosession: summary.pastPosession,
           stockBuffer,
           stockEnabled,
+          purpose,
           unitPrices,
         })
         const effortLaps = computeEffortLaps(
@@ -146,7 +181,7 @@ export const useProgressReport = (
           selectedQuestIds,
           summary.pastPosession,
           posession,
-          unitPrices
+          unitPrices,
         )
         lapValuesByWindow[key] = {
           forwardLaps: forward?.forwardLaps,
@@ -161,7 +196,7 @@ export const useProgressReport = (
 
     const { itemsFarmed, itemsConsumed } = computeItemThroughput(
       baseline.pastPosession,
-      posession
+      posession,
     )
     const lv = lapValuesByWindow[baseline.period] ?? {}
 
@@ -179,6 +214,7 @@ export const useProgressReport = (
     rawTargets,
     rawQuests,
     rawStockEnabled,
+    rawPurpose,
     rawStockBuffer,
     rawSurplusThreshold,
   ])

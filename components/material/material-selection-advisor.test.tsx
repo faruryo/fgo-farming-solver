@@ -204,12 +204,12 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     const bronzeBuffer = DEFAULT_STOCK_BUFFER.normal.bronze // 300
     expect(bronzeBuffer).toBe(300)
-    const effectiveRequired = 100 + bronzeBuffer
+    const effectiveRequired = Math.max(100, bronzeBuffer)
 
     await waitFor(() => {
       expect(screen.getByText(`必要 ${effectiveRequired}`)).toBeInTheDocument()
       expect(
-        screen.getByText(`(育成 100 + ストック ${bronzeBuffer})`),
+        screen.getByText(`(育成 100 / 在庫基準 ${bronzeBuffer} の大きい方)`),
       ).toBeInTheDocument()
     })
   })

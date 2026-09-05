@@ -32,6 +32,7 @@ import { usePathname } from 'next/navigation'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCloudSync } from '../../hooks/use-cloud-sync'
+import { FarmingPurposeSelector } from './FarmingPurposeSelector'
 
 /* ------------------------------------------------------------------ */
 /* Menu data                                                            */
@@ -53,15 +54,21 @@ type MenuGroup = {
  * prefix 一致だけだと /material/result 訪問時に /material も active になるため、
  * より長い（より具体的な）sibling が同じパスを prefix で一致させている場合は false を返す。
  */
-const isActiveHref = (href: string, pathname: string, allItems: MenuItem[]): boolean => {
+const isActiveHref = (
+  href: string,
+  pathname: string,
+  allItems: MenuItem[],
+): boolean => {
   // hash を除いたパス部分で比較する。
   const hrefPath = href.split('#')[0]
   if (pathname === hrefPath) return true
   if (hrefPath === '/') return false
   if (!pathname.startsWith(hrefPath)) return false
-  return !allItems.some(item => {
+  return !allItems.some((item) => {
     const p = item.href.split('#')[0]
-    return p !== hrefPath && p.length > hrefPath.length && pathname.startsWith(p)
+    return (
+      p !== hrefPath && p.length > hrefPath.length && pathname.startsWith(p)
+    )
   })
 }
 
@@ -69,34 +76,78 @@ export const menuGroups: MenuGroup[] = [
   {
     title: 'Tools',
     items: [
-      { href: '/material',         icon: FlaskConical, label: { ja: '育成素材計算機',   en: 'Material Calculator' } },
-      { href: '/material/result#advisor', icon: Sparkles, label: { ja: '配布アドバイザー', en: 'Advisor' } },
-      { href: '/farming/manual',  icon: Route,        label: { ja: '手動で周回',       en: 'Manual Solver' } },
-      { href: '/quests',          icon: Gauge,        label: { ja: 'クエスト効率',   en: 'Quest Efficiency' } },
-      { href: '/events',          icon: Gift,         label: { ja: 'ボックスイベント', en: 'Box Events' } },
-      { href: '/farming/history', icon: History,      label: { ja: '計算履歴',       en: 'History' } },
-      { href: '/todo',            icon: ListChecks,   label: { ja: 'TODO管理',       en: 'TODO' } },
+      {
+        href: '/material',
+        icon: FlaskConical,
+        label: { ja: '育成素材計算機', en: 'Material Calculator' },
+      },
+      {
+        href: '/material/result#advisor',
+        icon: Sparkles,
+        label: { ja: '配布アドバイザー', en: 'Advisor' },
+      },
+      {
+        href: '/farming/manual',
+        icon: Route,
+        label: { ja: '手動で周回', en: 'Manual Solver' },
+      },
+      {
+        href: '/quests',
+        icon: Gauge,
+        label: { ja: 'クエスト効率', en: 'Quest Efficiency' },
+      },
+      {
+        href: '/events',
+        icon: Gift,
+        label: { ja: 'ボックスイベント', en: 'Box Events' },
+      },
+      {
+        href: '/farming/history',
+        icon: History,
+        label: { ja: '計算履歴', en: 'History' },
+      },
+      {
+        href: '/todo',
+        icon: ListChecks,
+        label: { ja: 'TODO管理', en: 'TODO' },
+      },
     ],
   },
   {
     title: 'Reference',
     items: [
-      { href: '/servants', icon: Users,   label: { ja: 'サーヴァント一覧', en: 'Servants' } },
-      { href: '/items',    icon: Package, label: { ja: 'アイテム一覧',     en: 'Items' } },
+      {
+        href: '/servants',
+        icon: Users,
+        label: { ja: 'サーヴァント一覧', en: 'Servants' },
+      },
+      {
+        href: '/items',
+        icon: Package,
+        label: { ja: 'アイテム一覧', en: 'Items' },
+      },
     ],
   },
   {
     title: 'Account',
     items: [
-      { href: '/cloud', icon: Cloud, label: { ja: 'データ管理', en: 'Data Management' } },
+      {
+        href: '/cloud',
+        icon: Cloud,
+        label: { ja: 'データ管理', en: 'Data Management' },
+      },
     ],
   },
   {
     title: 'Docs',
     items: [
-      { href: '/docs',    icon: BookOpen, label: { ja: '使い方',   en: 'About' } },
-      { href: '/news',    icon: Bell,     label: { ja: 'お知らせ', en: 'News' } },
-      { href: '/LICENSE', icon: FileText, label: { ja: 'License',  en: 'License' } },
+      { href: '/docs', icon: BookOpen, label: { ja: '使い方', en: 'About' } },
+      { href: '/news', icon: Bell, label: { ja: 'お知らせ', en: 'News' } },
+      {
+        href: '/LICENSE',
+        icon: FileText,
+        label: { ja: 'License', en: 'License' },
+      },
     ],
   },
 ]
@@ -105,16 +156,16 @@ export const menuGroups: MenuGroup[] = [
 /* Design tokens                                                        */
 /* ------------------------------------------------------------------ */
 
-const NAV_BG      = 'rgba(14,22,38,0.98)'
-const GOLD        = '#9a7224'
-const GOLD2       = '#c09030'
-const GOLD_DIM    = 'rgba(154,114,36,0.3)'
-const GOLD_HOVER  = 'rgba(154,114,36,0.12)'
+const NAV_BG = 'rgba(14,22,38,0.98)'
+const GOLD = '#9a7224'
+const GOLD2 = '#c09030'
+const GOLD_DIM = 'rgba(154,114,36,0.3)'
+const GOLD_HOVER = 'rgba(154,114,36,0.12)'
 const GOLD_ACTIVE = 'rgba(154,114,36,0.2)'
 const BORDER_LINE = 'rgba(154,114,36,0.28)'
 const TEXT_BRIGHT = 'rgba(255,255,255,0.9)'
-const TEXT_MID    = 'rgba(255,255,255,0.55)'
-const TEXT_DIM    = 'rgba(255,255,255,0.35)'
+const TEXT_MID = 'rgba(255,255,255,0.55)'
+const TEXT_DIM = 'rgba(255,255,255,0.35)'
 
 /* ------------------------------------------------------------------ */
 /* Header — brand + auth + close on one row                            */
@@ -136,7 +187,10 @@ const NavHeader = () => {
         >
           CHALDEA
         </div>
-        <div className="text-[10px] mt-1 leading-none" style={{ color: TEXT_DIM }}>
+        <div
+          className="text-[10px] mt-1 leading-none"
+          style={{ color: TEXT_DIM }}
+        >
           FGO周回ソルバー
         </div>
       </div>
@@ -199,14 +253,19 @@ const NavHeader = () => {
 const CloudRow = () => {
   const { t } = useTranslation('common')
   const {
-    session, cloudData, isSaving, saveStatus,
-    autoSyncEnabled, toggleAutoSync, hasConflict,
+    session,
+    cloudData,
+    isSaving,
+    saveStatus,
+    autoSyncEnabled,
+    toggleAutoSync,
+    hasConflict,
   } = useCloudSync()
 
   if (!session && process.env.NODE_ENV !== 'development') return null
 
   const isUpToDate = (saveStatus === true || !cloudData) && !hasConflict
-  const iconColor  = hasConflict ? '#e05555' : isUpToDate ? GOLD_DIM : GOLD
+  const iconColor = hasConflict ? '#e05555' : isUpToDate ? GOLD_DIM : GOLD
 
   return (
     <div
@@ -215,7 +274,14 @@ const CloudRow = () => {
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2">
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={iconColor}
+            strokeWidth="2"
+          >
             <path d="M17.5 19c.7 0 1.3-.2 1.8-.7.5-.5.7-1.1.7-1.8 0-.5-.1-.9-.4-1.3-.2-.4-.6-.7-1-.9 0-.1 0-.2.1-.3 0-1.4-.5-2.6-1.5-3.5-1-.9-2.1-1.4-3.5-1.4-.9 0-1.8.2-2.6.7-.8.5-1.4 1.1-1.8 1.9-.3-.1-.6-.2-.9-.2-1.1 0-2.1.4-2.8 1.2s-1.1 1.7-1.1 2.8c0 1.1.4 2.1 1.2 2.8.8.8 1.7 1.2 2.8 1.2h10z" />
           </svg>
           <span
@@ -225,7 +291,9 @@ const CloudRow = () => {
             {hasConflict ? 'CONFLICT' : 'CLOUD SYNC'}
           </span>
         </div>
-        {isSaving && <Loader2 className="h-3 w-3 animate-spin" style={{ color: GOLD }} />}
+        {isSaving && (
+          <Loader2 className="h-3 w-3 animate-spin" style={{ color: GOLD }} />
+        )}
       </div>
 
       {hasConflict ? (
@@ -233,7 +301,11 @@ const CloudRow = () => {
           render={<NextLink href="/cloud" />}
           nativeButton={false}
           className="flex items-center justify-center w-full h-8 text-[11px] rounded border transition-colors"
-          style={{ background: 'rgba(224,85,85,0.1)', borderColor: '#e05555', color: '#e05555' }}
+          style={{
+            background: 'rgba(224,85,85,0.1)',
+            borderColor: '#e05555',
+            color: '#e05555',
+          }}
         >
           解決 → データ管理
         </SheetClose>
@@ -264,7 +336,10 @@ const CloudRow = () => {
 /* ------------------------------------------------------------------ */
 
 const NavItem = ({
-  href, icon: Icon, label, isActive,
+  href,
+  icon: Icon,
+  label,
+  isActive,
 }: {
   href: string
   icon: LucideIcon
@@ -279,17 +354,22 @@ const NavItem = ({
       color: isActive ? GOLD2 : TEXT_BRIGHT,
       background: isActive ? GOLD_ACTIVE : 'transparent',
     }}
-    onMouseEnter={e => {
-      if (!isActive) (e.currentTarget as HTMLElement).style.background = GOLD_HOVER
+    onMouseEnter={(e) => {
+      if (!isActive)
+        (e.currentTarget as HTMLElement).style.background = GOLD_HOVER
     }}
-    onMouseLeave={e => {
-      if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'
+    onMouseLeave={(e) => {
+      if (!isActive)
+        (e.currentTarget as HTMLElement).style.background = 'transparent'
     }}
   >
     <Icon size={16} style={{ color: isActive ? GOLD2 : GOLD, flexShrink: 0 }} />
     <span className="text-sm leading-none">{label}</span>
     {isActive && (
-      <div className="ml-auto w-1 h-3 rounded-full" style={{ background: GOLD2 }} />
+      <div
+        className="ml-auto w-1 h-3 rounded-full"
+        style={{ background: GOLD2 }}
+      />
     )}
   </SheetClose>
 )
@@ -300,33 +380,18 @@ const NavItem = ({
 
 export const Nav = () => {
   const { i18n } = useTranslation()
-  const locale   = i18n.language as 'en' | 'ja'
+  const locale = i18n.language as 'en' | 'ja'
   const pathname = usePathname()
-  const allItems = menuGroups.flatMap(g => g.items)
+  const allItems = menuGroups.flatMap((g) => g.items)
 
   return (
     <nav>
       <Sheet>
-        <SheetTrigger
-          render={
-            <Button
-              aria-label="Menu"
-              variant="ghost"
-              size="icon"
-              style={{ color: GOLD }}
-              className="hover:bg-[rgba(154,114,36,0.15)]"
-            />
-          }
-        >
+        <SheetTrigger render={<Button aria-label="Menu" variant="ghost" size="icon" style={{ color: GOLD }} className="hover:bg-[rgba(154,114,36,0.15)]" />}>
           <AlignJustify size={20} />
         </SheetTrigger>
 
-        <SheetContent
-          side="right"
-          showCloseButton={false}
-          className="gap-0 p-0 sm:max-w-[280px] border-l flex flex-col"
-          style={{ background: NAV_BG, borderColor: GOLD_DIM }}
-        >
+        <SheetContent side="right" showCloseButton={false} className="gap-0 p-0 sm:max-w-[280px] border-l flex flex-col" style={{ background: NAV_BG, borderColor: GOLD_DIM }}>
           {/* Fixed header: brand + auth + close */}
           <NavHeader />
 
@@ -334,6 +399,7 @@ export const Nav = () => {
           <div className="flex-1 overflow-y-auto">
             {/* Cloud sync at top of scroll */}
             <CloudRow />
+            <FarmingPurposeSelector />
 
             {/* Nav groups */}
             {menuGroups.map(({ title, items }, gi) => (
@@ -342,10 +408,7 @@ export const Nav = () => {
                   <div className="mx-5 my-1" style={{ borderTop: `1px solid ${BORDER_LINE}` }} />
                 )}
                 <div>
-                  <div
-                    className="px-5 pt-5 pb-2 text-[11px] tracking-[0.15em] font-bold uppercase"
-                    style={{ color: GOLD }}
-                  >
+                  <div className="px-5 pt-5 pb-2 text-[11px] tracking-[0.15em] font-bold uppercase" style={{ color: GOLD }}>
                     {title}
                   </div>
                   {items.map(({ href, icon, label }) => (
@@ -362,10 +425,7 @@ export const Nav = () => {
             ))}
 
             {/* Footer */}
-            <div
-              className="px-5 py-4 mt-2 text-center"
-              style={{ borderTop: `1px solid ${BORDER_LINE}` }}
-            >
+            <div className="px-5 py-4 mt-2 text-center" style={{ borderTop: `1px solid ${BORDER_LINE}` }}>
               <span className="text-[11px] tracking-widest" style={{ color: TEXT_DIM }}>
                 © CHALDEA PROJECT
               </span>

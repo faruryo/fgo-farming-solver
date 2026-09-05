@@ -7,9 +7,13 @@ export const useQuestEfficiencyOptions = () => {
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(STORAGE_KEYS.POSSESSION, {})
   const [materialResult, setMaterialResult] = useLocalStorage<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT, {})
   const [itemsRaw, setItemsRaw] = useLocalStorage<Record<string, string | number | undefined>>(STORAGE_KEYS.ITEMS, {})
-  const { stockEnabled, setStockEnabled, stockBuffer: resolvedStockBuffer } = useStockTarget()
-
-  const [shortageOnly, setShortageOnly] = useLocalStorage<boolean>(STORAGE_KEYS.QUEST_EFFICIENCY_SHORTAGE_ONLY, true)
+  const {
+    purpose,
+    setPurpose,
+    stockEnabled,
+    setStockEnabled,
+    stockBuffer: resolvedStockBuffer,
+  } = useStockTarget()
   const [includeSkillStones, setIncludeSkillStones] = useLocalStorage<boolean>(STORAGE_KEYS.QUEST_EFFICIENCY_INCLUDE_SKILL_STONES, true)
   const [includePieces, setIncludePieces] = useLocalStorage<boolean>(STORAGE_KEYS.QUEST_EFFICIENCY_INCLUDE_PIECES, true)
   const [denominator, setDenominator] = useLocalStorage<EfficiencyDenominator>(STORAGE_KEYS.QUEST_EFFICIENCY_DENOMINATOR, 'ap')
@@ -19,17 +23,30 @@ export const useQuestEfficiencyOptions = () => {
   const [showLowKanni, setShowLowKanni] = useLocalStorage<boolean>(STORAGE_KEYS.QUEST_EFFICIENCY_SHOW_LOW_KANNI, false)
 
   return {
-    possession, setPossession,
-    materialResult, setMaterialResult,
-    itemsRaw, setItemsRaw,
-    stockEnabled, setStockEnabled, resolvedStockBuffer,
-    shortageOnly, setShortageOnly,
-    includeSkillStones, setIncludeSkillStones,
-    includePieces, setIncludePieces,
-    denominator, setDenominator,
-    includeQp, setIncludeQp,
-    includeBond, setIncludeBond,
-    includeExp, setIncludeExp,
-    showLowKanni, setShowLowKanni,
+    possession,
+    setPossession,
+    materialResult,
+    setMaterialResult,
+    itemsRaw,
+    setItemsRaw,
+    purpose,
+    setPurpose,
+    stockEnabled,
+    setStockEnabled,
+    resolvedStockBuffer,
+    includeSkillStones,
+    setIncludeSkillStones,
+    includePieces,
+    setIncludePieces,
+    denominator,
+    setDenominator,
+    includeQp,
+    setIncludeQp,
+    includeBond,
+    setIncludeBond,
+    includeExp,
+    setIncludeExp,
+    showLowKanni,
+    setShowLowKanni,
   }
 }

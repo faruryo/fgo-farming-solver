@@ -1,5 +1,10 @@
 import type { Drops } from '../get-drops'
-import { effectiveRequired, type StockBuffer } from '../quest-efficiency'
+import {
+  computeFiniteTarget,
+  effectiveRequired,
+  type StockBuffer,
+} from '../quest-efficiency'
+import type { FarmingPurpose } from '../farming-purpose'
 import { EXCLUDED_ATLAS_IDS } from './constants'
 
 type CountMap = Record<string, number | string | undefined>
@@ -23,7 +28,7 @@ export type UnitPrice = {
  */
 export const resolveUnitPrices = (
   drops: Drops,
-  selectedQuestIds: string[]
+  selectedQuestIds: string[],
 ): Map<string, UnitPrice> => {
   const selected = new Set(selectedQuestIds)
   const apByQuest = new Map(drops.quests.map((q) => [q.id, q.ap]))
@@ -57,8 +62,10 @@ export const resolveUnitPrices = (
     if (dr.drop_rate > agg.bestRateAll) agg.bestRateAll = dr.drop_rate
     if (apPerDrop < agg.minApPerDropAll) agg.minApPerDropAll = apPerDrop
     if (selected.has(dr.quest_id)) {
-      if (dr.drop_rate > agg.bestRateSelected) agg.bestRateSelected = dr.drop_rate
-      if (apPerDrop < agg.minApPerDropSelected) agg.minApPerDropSelected = apPerDrop
+      if (dr.drop_rate > agg.bestRateSelected)
+        agg.bestRateSelected = dr.drop_rate
+      if (apPerDrop < agg.minApPerDropSelected)
+        agg.minApPerDropSelected = apPerDrop
     }
   }
 
@@ -68,11 +75,17 @@ export const resolveUnitPrices = (
     if (atlasId == null) continue
     const agg = aggByItemId.get(item.id)
     if (!agg) continue
-    const bestRate = agg.bestRateSelected > 0 ? agg.bestRateSelected : agg.bestRateAll
+    const bestRate =
+      agg.bestRateSelected > 0 ? agg.bestRateSelected : agg.bestRateAll
     if (bestRate <= 0) continue
     const minApPerDrop =
-      agg.minApPerDropSelected < Infinity ? agg.minApPerDropSelected : agg.minApPerDropAll
-    byAtlasId.set(String(atlasId), { lapPrice: 1 / bestRate, apPrice: minApPerDrop })
+      agg.minApPerDropSelected < Infinity
+        ? agg.minApPerDropSelected
+        : agg.minApPerDropAll
+    byAtlasId.set(String(atlasId), {
+      lapPrice: 1 / bestRate,
+      apPrice: minApPerDrop,
+    })
   }
   return byAtlasId
 }
@@ -86,6 +99,7 @@ export type ForwardProgressInput = {
   pastPosession: CountMap | null | undefined
   stockBuffer: StockBuffer
   stockEnabled: boolean
+  purpose?: FarmingPurpose
   /**
    * 呼び出し側で resolveUnitPrices 済みなら渡す(省略時は内部で計算する)。
    * drops/selectedQuestIds が同じなら pastPosession が異なっても単価表は不変なため、
@@ -101,6 +115,19 @@ export type ForwardProgress = {
   forwardApEquivalent: number
 }
 
+const resolveTarget = (
+  item: Parameters<typeof computeFiniteTarget>[0],
+  required: number,
+  stockBuffer: StockBuffer,
+  purpose: FarmingPurpose | undefined,
+  stockEnabled: boolean,
+) => {
+  if (!purpose)
+    return effectiveRequired(item, required, stockBuffer, stockEnabled)
+  const finitePurpose = purpose === 'reserve' ? 'reserve' : 'training'
+  return computeFiniteTarget(item, required, stockBuffer, finitePurpose)
+}
+
 /**
  * 前進周回・AP相当(design.md D1)。
  *   実効目標_i   = effectiveRequired(item_i, 育成必要数_i, stockBuffer, stockEnabled)
@@ -109,7 +136,7 @@ export type ForwardProgress = {
  * 過去所持が無い(比較スナップショット無し)場合は算出不能として null。
  */
 export const computeForwardProgress = (
-  input: ForwardProgressInput
+  input: ForwardProgressInput,
 ): ForwardProgress | null => {
   const {
     drops,
@@ -119,11 +146,13 @@ export const computeForwardProgress = (
     pastPosession,
     stockBuffer,
     stockEnabled,
+    purpose,
     unitPrices: precomputedUnitPrices,
   } = input
   if (pastPosession == null) return null
 
-  const unitPrices = precomputedUnitPrices ?? resolveUnitPrices(drops, selectedQuestIds)
+  const unitPrices =
+    precomputedUnitPrices ?? resolveUnitPrices(drops, selectedQuestIds)
   let forwardLaps = 0
   let forwardApEquivalent = 0
 
@@ -134,13 +163,21 @@ export const computeForwardProgress = (
     if (EXCLUDED_ATLAS_IDS.has(key)) continue
 
     const required = toNum(targets[key])
-    const effectiveTarget = effectiveRequired(item, required, stockBuffer, stockEnabled)
+    const effectiveTarget = resolveTarget(
+      item,
+      required,
+      stockBuffer,
+      purpose,
+      stockEnabled,
+    )
     if (effectiveTarget <= 0) continue
 
     const past = toNum(pastPosession[key])
     const now = toNum(currentPosession[key])
     const adjustedNow = Math.max(now, past)
-    const resolved = Math.max(0, effectiveTarget - past) - Math.max(0, effectiveTarget - adjustedNow)
+    const resolved =
+      Math.max(0, effectiveTarget - past) -
+      Math.max(0, effectiveTarget - adjustedNow)
     if (resolved <= 0) continue
 
     const price = unitPrices.get(key)
@@ -162,10 +199,11 @@ export const computeEffortLaps = (
   pastPosession: CountMap | null | undefined,
   currentPosession: CountMap,
   /** 呼び出し側で resolveUnitPrices 済みなら渡す(省略時は内部で計算する)。 */
-  precomputedUnitPrices?: Map<string, UnitPrice>
+  precomputedUnitPrices?: Map<string, UnitPrice>,
 ): number => {
   if (pastPosession == null) return 0
-  const unitPrices = precomputedUnitPrices ?? resolveUnitPrices(drops, selectedQuestIds)
+  const unitPrices =
+    precomputedUnitPrices ?? resolveUnitPrices(drops, selectedQuestIds)
   let effortLaps = 0
 
   for (const item of drops.items) {

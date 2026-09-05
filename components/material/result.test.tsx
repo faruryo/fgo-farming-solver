@@ -94,8 +94,8 @@ afterEach(() => {
 })
 
 describe('goSolver — goal A/B transport (5.1)', () => {
-  it('stockEnabled ON, A and B differ: sends both items and itemsStock', async () => {
-    setLocalStorage('efficiency/stockEnabled', true)
+  it('reserveは在庫基準までの単一目標を送る', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
     setLocalStorage('material/result', { '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
     const fetchMock = stubFetch()
@@ -105,8 +105,8 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
     const url = solveCallUrl(fetchMock)
-    expect(url.searchParams.get('items')).toBe('20:5')
-    expect(url.searchParams.get('itemsStock')).toBe('20:65,10:150')
+    expect(url.searchParams.get('items')).toBe('20:60,10:147')
+    expect(url.searchParams.has('itemsStock')).toBe(false)
   })
 
   it('stockEnabled OFF: sends items only, no itemsStock', async () => {
@@ -143,8 +143,8 @@ describe('goSolver — quest exclusion (5.2)', () => {
 })
 
 describe('goSolver — boundary cases (5.3)', () => {
-  it('(a) goal A=0, goal B>0 (stock-only): submits with B as the sole items param, no itemsStock', async () => {
-    setLocalStorage('efficiency/stockEnabled', true)
+  it('(a) reserve目標だけ不足する場合も単一itemsで送る', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
     setLocalStorage('material/result', { '200': 3 })
     setLocalStorage('posession', { '200': 3 })
     const fetchMock = stubFetch()
@@ -156,7 +156,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
     const url = solveCallUrl(fetchMock)
-    expect(url.searchParams.get('items')).toBe('10:150')
+    expect(url.searchParams.get('items')).toBe('10:147')
     expect(url.searchParams.has('itemsStock')).toBe(false)
   })
 
@@ -173,7 +173,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(
-      screen.getByText('集めたいアイテムの数を最低1つ入力してください。')
+      screen.getByText('集めたいアイテムの数を最低1つ入力してください。'),
     ).toBeInTheDocument()
   })
 
@@ -191,7 +191,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(
-      screen.getByText('周回対象に含めるクエストを最低1つ選択してください。')
+      screen.getByText('周回対象に含めるクエストを最低1つ選択してください。'),
     ).toBeInTheDocument()
   })
 })

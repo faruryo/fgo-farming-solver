@@ -9,6 +9,7 @@ import {
   isSkillStone,
   Rarity,
 } from './item-rarity'
+import type { FarmingPurpose } from './farming-purpose'
 
 // クエストの「効率ポイント」を算出する純粋関数群。
 //
@@ -107,6 +108,8 @@ export type QuestEfficiencyOptions = {
   stockBuffer?: PartialStockBuffer
   /** 余剰ストックを目標に含めるグローバル設定(default false)。ON で余剰ストック帯が次点(0.3)から目標(1.0)に昇格する。 */
   stockEnabled?: boolean
+  /** ユーザーの周回目的。指定時は旧 shortageOnly/stockEnabled より優先する。 */
+  purpose?: FarmingPurpose
   /** 効率の分母。'ap'(default=AP効率) か 'turn'(周回効率=ターン数で割る)。 */
   denominator?: EfficiencyDenominator
   /** QP 報酬を効率ポイントに加算する(default false)。 */
@@ -119,7 +122,10 @@ export type QuestEfficiencyOptions = {
 
 /** 報酬(擬似アイテム)の contribution itemId プレフィックス。 */
 export const REWARD_ITEM_PREFIX = 'reward:'
-type RewardDef = { key: 'qp' | 'bond' | 'exp'; field: 'qp' | 'bondPoints' | 'exp' }
+type RewardDef = {
+  key: 'qp' | 'bond' | 'exp'
+  field: 'qp' | 'bondPoints' | 'exp'
+}
 const REWARD_DEFS: RewardDef[] = [
   { key: 'qp', field: 'qp' },
   { key: 'bond', field: 'bondPoints' },
@@ -144,10 +150,16 @@ export type QuestEfficiency = {
   contributions: ItemContribution[]
 }
 
-type ItemLike = { id: string; category: string; largeCategory?: string; atlasId?: number }
+type ItemLike = {
+  id: string
+  category: string
+  largeCategory?: string
+  atlasId?: number
+}
 
 /** 所持数・必要数(material/result)は Atlas ID 空間で持つため、アイテムの参照キーは atlasId を優先。 */
-const possessionKey = (item: ItemLike): string => (item.atlasId != null ? String(item.atlasId) : item.id)
+const possessionKey = (item: ItemLike): string =>
+  item.atlasId != null ? String(item.atlasId) : item.id
 
 /**
  * 旧 `efficiency/surplusThreshold`(flat 金銀銅)から `stockBuffer.normal` への移行込みで
@@ -162,12 +174,21 @@ export const resolveStockBuffer = (
   if (storedStockBuffer != null) {
     return {
       normal: { ...DEFAULT_STOCK_BUFFER.normal, ...storedStockBuffer.normal },
-      skillStone: { ...DEFAULT_STOCK_BUFFER.skillStone, ...storedStockBuffer.skillStone },
-      monumentPiece: { ...DEFAULT_STOCK_BUFFER.monumentPiece, ...storedStockBuffer.monumentPiece },
+      skillStone: {
+        ...DEFAULT_STOCK_BUFFER.skillStone,
+        ...storedStockBuffer.skillStone,
+      },
+      monumentPiece: {
+        ...DEFAULT_STOCK_BUFFER.monumentPiece,
+        ...storedStockBuffer.monumentPiece,
+      },
     }
   }
   return {
-    normal: { ...DEFAULT_STOCK_BUFFER.normal, ...(legacySurplusThreshold ?? {}) },
+    normal: {
+      ...DEFAULT_STOCK_BUFFER.normal,
+      ...(legacySurplusThreshold ?? {}),
+    },
     skillStone: { ...DEFAULT_STOCK_BUFFER.skillStone },
     monumentPiece: { ...DEFAULT_STOCK_BUFFER.monumentPiece },
   }
@@ -189,6 +210,17 @@ export const buffer = (item: ItemLike, stockBuffer: StockBuffer): number => {
  * 全 farming 画面(クエスト効率・周回ソルバー取り込み・配布アドバイザー)が
  * 同じ定義を参照することで「今どちらの目標で見ているか」の不整合を構造的に防ぐ(D3)。
  */
+export const computeFiniteTarget = (
+  item: ItemLike,
+  trainingRequired: number,
+  stockBuffer: StockBuffer,
+  purpose: Exclude<FarmingPurpose, 'all'>,
+): number =>
+  purpose === 'reserve'
+    ? Math.max(trainingRequired, buffer(item, stockBuffer))
+    : trainingRequired
+
+/** 旧呼び出し互換。新規コードは computeFiniteTarget を使う。 */
 export const effectiveRequired = (
   item: ItemLike,
   trainingRequired: number,
@@ -203,7 +235,12 @@ export const effectiveDeficiency = (
   owned: number,
   stockBuffer: StockBuffer,
   stockEnabled: boolean,
-): number => Math.max(0, effectiveRequired(item, trainingRequired, stockBuffer, stockEnabled) - owned)
+): number =>
+  Math.max(
+    0,
+    effectiveRequired(item, trainingRequired, stockBuffer, stockEnabled) -
+      owned,
+  )
 
 /**
  * 単一素材の重みを決定する(2段階)。
@@ -222,15 +259,28 @@ export const computeItemWeight = (
   owned: number,
   goal: number,
   opts: {
-    shortageOnly: boolean
+    shortageOnly?: boolean
     includeSkillStones: boolean
     includePieces: boolean
     stockBuffer: StockBuffer
-    stockEnabled: boolean
+    stockEnabled?: boolean
+    purpose?: FarmingPurpose
   },
 ): number => {
   if (!opts.includeSkillStones && isSkillStone(item.largeCategory)) return 0
   if (!opts.includePieces && isMonumentOrPiece(item.largeCategory)) return 0
+  if (opts.purpose) {
+    if (opts.purpose === 'all') return 1
+    const target = computeFiniteTarget(
+      item,
+      goal,
+      opts.stockBuffer,
+      opts.purpose,
+    )
+    if (owned >= target) return 0
+    const buf = buffer(item, opts.stockBuffer)
+    return buf > 0 ? 1 + buf / (owned + buf) : 1
+  }
   if (!opts.shortageOnly) return 1
   if (owned < goal) return 1
   const buf = buffer(item, opts.stockBuffer)
@@ -256,6 +306,7 @@ export const computeQuestEfficiency = (
     includeSkillStones = true,
     includePieces = true,
     stockEnabled = false,
+    purpose,
     denominator = 'ap',
     includeQp = false,
     includeBond = false,
@@ -263,12 +314,18 @@ export const computeQuestEfficiency = (
   } = options
   // 旧 `surplusThreshold` は normal 群のフォールバック(移行元)。`stockBuffer` が明示されれば優先。
   // 解決ロジックは resolveStockBuffer に集約(コンポーネント側のフック useStockTarget と同一)。
-  const resolvedStockBuffer = resolveStockBuffer(options.stockBuffer ?? null, options.surplusThreshold)
+  const resolvedStockBuffer = resolveStockBuffer(
+    options.stockBuffer ?? null,
+    options.surplusThreshold,
+  )
   const enabledRewards = REWARD_DEFS.filter(
-    r => (r.key === 'qp' && includeQp) || (r.key === 'bond' && includeBond) || (r.key === 'exp' && includeExp),
+    (r) =>
+      (r.key === 'qp' && includeQp) ||
+      (r.key === 'bond' && includeBond) ||
+      (r.key === 'exp' && includeExp),
   )
 
-  const itemById = new Map(drops.items.map(i => [i.id, i]))
+  const itemById = new Map(drops.items.map((i) => [i.id, i]))
 
   // クエストごとの「分母」。'ap'=実効AP / 'turn'=ターン数(wave数)。0以下は無効。
   const denomByQuest = new Map<string, number>()
@@ -278,13 +335,19 @@ export const computeQuestEfficiency = (
       const turns = (q as { waveCount?: number }).waveCount
       denom = turns != null && turns > 0 ? turns : DEFAULT_TURNS
     } else {
-      denom = activeCampaigns.length > 0 ? computeEffectiveAp(q.ap, q.id, activeCampaigns) : q.ap
+      denom =
+        activeCampaigns.length > 0
+          ? computeEffectiveAp(q.ap, q.id, activeCampaigns)
+          : q.ap
     }
     denomByQuest.set(q.id, denom)
   }
 
   // eff(i,q) = drop_rate / denom(q)。分母が0以下なら無効。
-  const effOf = (dr: { quest_id: string; drop_rate: number }): number | null => {
+  const effOf = (dr: {
+    quest_id: string
+    drop_rate: number
+  }): number | null => {
     const denom = denomByQuest.get(dr.quest_id)
     if (denom == null || denom <= 0) return null
     return dr.drop_rate / denom
@@ -296,7 +359,8 @@ export const computeQuestEfficiency = (
     if (dr.drop_rate <= 0) continue
     const eff = effOf(dr)
     if (eff == null) continue
-    if (eff > (bestEffByItem.get(dr.item_id) ?? 0)) bestEffByItem.set(dr.item_id, eff)
+    if (eff > (bestEffByItem.get(dr.item_id) ?? 0))
+      bestEffByItem.set(dr.item_id, eff)
   }
 
   // weight per item (キャッシュ)
@@ -306,15 +370,18 @@ export const computeQuestEfficiency = (
     if (cached != null) return cached
     const item = itemById.get(itemId)
     const key = item ? possessionKey(item) : itemId
-    const w = item
-      ? computeItemWeight(item, possession[key] ?? 0, goals[key] ?? 0, {
-          shortageOnly,
-          includeSkillStones,
-          includePieces,
-          stockBuffer: resolvedStockBuffer,
-          stockEnabled,
-        })
-      : 0
+    const owned = possession[key]
+    const w =
+      item && !(purpose === 'reserve' && owned == null)
+        ? computeItemWeight(item, owned ?? 0, goals[key] ?? 0, {
+            shortageOnly,
+            includeSkillStones,
+            includePieces,
+            stockBuffer: resolvedStockBuffer,
+            stockEnabled,
+            purpose,
+          })
+        : 0
     weightByItem.set(itemId, w)
     return w
   }
@@ -351,20 +418,24 @@ export const computeQuestEfficiency = (
     let best = 0
     for (const q of drops.quests) {
       const denom = denomByQuest.get(q.id)
-      const amount = amountOf(q as unknown as Record<string, unknown>, rw.field)
-      if (amount > 0 && denom != null && denom > 0) best = Math.max(best, amount / denom)
+      const amount = amountOf(q, rw.field)
+      if (amount > 0 && denom != null && denom > 0)
+        best = Math.max(best, amount / denom)
     }
     if (best > 0) bestEffReward.set(rw.key, best)
   }
 
-  const result: QuestEfficiency[] = drops.quests.map(q => {
+  const result: QuestEfficiency[] = drops.quests.map((q) => {
     const contributions = [...(acc.get(q.id) ?? [])]
     // 報酬を擬似アイテムとして加算(トグルON時、weight=1)。
     const denom = denomByQuest.get(q.id)
     if (denom != null && denom > 0) {
       for (const rw of enabledRewards) {
         const best = bestEffReward.get(rw.key)
-        const amount = amountOf(q as unknown as Record<string, unknown>, rw.field)
+        const amount = amountOf(
+          q,
+          rw.field,
+        )
         if (best != null && best > 0 && amount > 0) {
           const relativeEff = amount / denom / best
           contributions.push({
@@ -396,7 +467,8 @@ export const mergeGoals = (
   dropItems: { id: string; atlasId?: number }[],
 ): Record<string, number> => {
   const shortToAtlas = new Map<string, number>()
-  for (const i of dropItems) if (i.atlasId != null) shortToAtlas.set(i.id, i.atlasId)
+  for (const i of dropItems)
+    if (i.atlasId != null) shortToAtlas.set(i.id, i.atlasId)
 
   const out: Record<string, number> = {}
   for (const [shortId, v] of Object.entries(itemsRaw)) {
@@ -423,7 +495,7 @@ export const buildNeedByApiItemId = (
   possession: Record<string, number | string | undefined>,
   drops: Drops,
   stockBuffer: StockBuffer,
-  stockEnabled: boolean,
+  purpose: FarmingPurpose | boolean,
 ): Record<string, number> => {
   const toNum = (v: number | string | undefined): number => {
     const n = typeof v === 'string' ? Number(v) : v
@@ -434,9 +506,15 @@ export const buildNeedByApiItemId = (
     const atlasId = (item as { atlasId?: number }).atlasId
     if (atlasId == null) continue
     const key = String(atlasId)
+    if (!(key in possession)) continue
     const required = toNum(targets[key])
     const owned = toNum(possession[key])
-    const deficit = effectiveDeficiency(item, required, owned, stockBuffer, stockEnabled)
+    const finitePurpose =
+      purpose === true || purpose === 'reserve' ? 'reserve' : 'training'
+    const deficit = Math.max(
+      0,
+      computeFiniteTarget(item, required, stockBuffer, finitePurpose) - owned,
+    )
     if (deficit > 0) need[item.id] = deficit
   }
   return need
@@ -448,4 +526,5 @@ export const computeSingleQuestEfficiency = (
   questId: string,
   options: QuestEfficiencyOptions = {},
 ): QuestEfficiency | null =>
-  computeQuestEfficiency(drops, options).find(q => q.questId === questId) ?? null
+  computeQuestEfficiency(drops, options).find((q) => q.questId === questId) ??
+  null

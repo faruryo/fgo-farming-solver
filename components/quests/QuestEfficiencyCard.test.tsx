@@ -113,7 +113,9 @@ describe('QuestEfficiencyCard', () => {
 
     expect(screen.getByText('AP効率ポイント')).toBeInTheDocument()
     expect(screen.getByText('英雄の証')).toBeInTheDocument()
-    expect(screen.getByRole('switch', { name: 'ストック込み目標切り替え' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '今の育成を進める' }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '周回効率' })).toBeInTheDocument()
   })
 
@@ -139,8 +141,12 @@ describe('QuestEfficiencyCard', () => {
 
     expect(screen.getByText('AP効率ポイント')).toBeInTheDocument()
     expect(screen.getByText('0.00')).toBeInTheDocument()
-    expect(screen.getByText('対象となる不足素材がありません')).toBeInTheDocument()
+    expect(
+      screen.getByText('対象となる不足素材がありません'),
+    ).toBeInTheDocument()
     // トグルボタンが表示されていることを確認
-    expect(screen.getByRole('switch', { name: 'ストック込み目標切り替え' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '今の育成を進める' }),
+    ).toBeInTheDocument()
   })
 })

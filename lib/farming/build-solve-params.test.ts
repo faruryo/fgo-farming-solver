@@ -12,7 +12,7 @@ const makeItem = (
   id: number,
   name: string,
   category: string = '金素材',
-  largeCategory: string = '強化素材'
+  largeCategory: string = '強化素材',
 ): EnrichedItem => ({
   id,
   name,
@@ -93,7 +93,7 @@ describe('build-solve-params', () => {
         possession,
         false,
         { ...defaultBuffer, normal: { ...defaultBuffer.normal, gold: 5 } },
-        items
+        items,
       )
       expect(result).toBe('')
     })
@@ -109,9 +109,9 @@ describe('build-solve-params', () => {
         possession,
         true,
         { ...defaultBuffer, normal: { ...defaultBuffer.normal, gold: 5 } },
-        items
+        items,
       )
-      expect(result).toBe('20:10')
+      expect(result).toBe('20:5')
     })
   })
 
@@ -167,19 +167,22 @@ describe('build-solve-params', () => {
       expect(res.params?.get('fields')).toBe('id')
     })
 
-    it('builds two-goal batch query when Goal B differs from Goal A', () => {
+    it('reserveでも単一目標だけを送る', () => {
       const res = buildSolveParams({
         solverItems: [item1],
         amounts: { '100': 10 },
         possession: { '100': 2 }, // A = 8, B (with buffer 5) = 13
         stockEnabled: true,
-        resolvedStockBuffer: { ...defaultBuffer, normal: { ...defaultBuffer.normal, gold: 5 } },
+        resolvedStockBuffer: {
+          ...defaultBuffer,
+          normal: { ...defaultBuffer.normal, gold: 5 },
+        },
         items,
         checkedQuests: ['q1'],
       })
 
       expect(res.params?.get('items')).toBe('20:8')
-      expect(res.params?.get('itemsStock')).toBe('20:13')
+      expect(res.params?.get('itemsStock')).toBeNull()
       expect(res.params?.get('quests')).toBe('q1')
     })
 
@@ -204,13 +207,16 @@ describe('build-solve-params', () => {
         amounts: { '100': 10 },
         possession: { '100': 10 }, // A = 0, B = 5 (due to buffer)
         stockEnabled: true,
-        resolvedStockBuffer: { ...defaultBuffer, normal: { ...defaultBuffer.normal, gold: 5 } },
+        resolvedStockBuffer: {
+          ...defaultBuffer,
+          normal: { ...defaultBuffer.normal, gold: 15 },
+        },
         items,
         checkedQuests: ['q1'],
       })
 
-      expect(res.queryItemsA).toBe('')
-      expect(res.queryItemsB).toBe('20:5')
+      expect(res.queryItemsA).toBe('20:5')
+      expect(res.queryItemsB).toBe('')
       expect(res.needsItemTarget).toBe(false)
       expect(res.params?.get('items')).toBe('20:5')
       expect(res.params?.get('itemsStock')).toBeNull()
@@ -232,7 +238,7 @@ describe('build-solve-params', () => {
       })
 
       expect(res.queryItemsA).toBe('20:10')
-      expect(res.queryItemsB).toBe('20:10')
+      expect(res.queryItemsB).toBe('')
       expect(res.params?.get('items')).toBe('20:10')
     })
   })
