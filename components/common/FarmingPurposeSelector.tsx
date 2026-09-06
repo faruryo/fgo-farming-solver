@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,7 @@ export const FarmingPurposeSelector = ({
             setPurpose={setPurpose}
             onDetails={() => setDetailsOpen(true)}
             t={t}
+            variant="dialog"
           />
           <FormulaDialog
             open={detailsOpen}
@@ -80,9 +82,84 @@ export const FarmingPurposeSelector = ({
         setPurpose={setPurpose}
         onDetails={() => setDetailsOpen(true)}
         t={t}
+        variant="nav"
       />
       <FormulaDialog open={detailsOpen} onOpenChange={setDetailsOpen} t={t} />
     </div>
+  )
+}
+
+const OPTION_STYLES = {
+  nav: {
+    selected: {
+      borderColor: '#c09030',
+      color: '#f6e5be',
+      background: 'rgba(154,114,36,0.22)',
+      fontWeight: 600,
+    },
+    unselected: {
+      borderColor: 'rgba(154,114,36,0.28)',
+      color: 'rgba(255,255,255,0.9)',
+      background: 'rgba(255,255,255,0.03)',
+    },
+    dot: '#c09030',
+  },
+  dialog: {
+    selected: {
+      borderColor: 'var(--gold)',
+      color: '#7a5410',
+      background: 'rgba(154,114,36,0.12)',
+      fontWeight: 600,
+    },
+    unselected: {
+      borderColor: 'var(--border2)',
+      color: 'var(--text)',
+      background: 'transparent',
+    },
+    dot: 'var(--gold)',
+  },
+} as const
+
+const PurposeOptionButton = ({
+  isSelected,
+  onClick,
+  isNav,
+  label,
+}: {
+  isSelected: boolean
+  onClick: () => void
+  isNav: boolean
+  label: string
+}) => {
+  const theme = isNav ? OPTION_STYLES.nav : OPTION_STYLES.dialog
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isSelected}
+      onClick={onClick}
+      className="flex items-center justify-between rounded-md border px-3 py-2 text-left text-xs transition-colors cursor-pointer"
+      style={isSelected ? theme.selected : theme.unselected}
+      onMouseEnter={(e) => {
+        if (!isSelected && isNav) {
+          e.currentTarget.style.background = 'rgba(154,114,36,0.12)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected && isNav) {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+        }
+      }}
+    >
+      <span>{label}</span>
+      {isSelected && (
+        <span
+          className="h-1.5 w-1.5 rounded-full shrink-0"
+          style={{ background: theme.dot }}
+        />
+      )}
+    </button>
   )
 }
 
@@ -91,53 +168,61 @@ const PurposeContent = ({
   setPurpose,
   onDetails,
   t,
+  variant = 'nav',
 }: {
   purpose: FarmingPurpose
   setPurpose: (purpose: FarmingPurpose) => void
   onDetails: () => void
   t: (key: string, fallback: string) => string
-}) => (
-  <div className="space-y-2">
-    <p className="text-xs font-semibold">{t('farming-purpose', '周回目的')}</p>
-    <div
-      className="grid gap-1"
-      role="radiogroup"
-      aria-label={t('farming-purpose', '周回目的')}
-    >
-      {PURPOSES.map((item) => (
-        <button
-          key={item.value}
-          type="button"
-          role="radio"
-          aria-checked={purpose === item.value}
-          onClick={() => setPurpose(item.value)}
-          className="rounded-md border px-3 py-2 text-left text-xs transition-colors"
-          style={
-            purpose === item.value
-              ? {
-                  borderColor: 'var(--gold)',
-                  color: 'var(--gold)',
-                  background: 'var(--accent)',
-                }
-              : { borderColor: 'var(--border)', color: 'var(--text2)' }
-          }
-        >
-          {t(item.key, item.fallback)}
-        </button>
-      ))}
+  variant?: 'nav' | 'dialog'
+}) => {
+  const isNav = variant === 'nav'
+
+  return (
+    <div className="space-y-2.5">
+      {isNav ? (
+        <div className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#c09030]">
+          {t('farming-purpose', '周回目的')}
+        </div>
+      ) : (
+        <p className="text-xs font-semibold">
+          {t('farming-purpose', '周回目的')}
+        </p>
+      )}
+      <div
+        className="grid gap-1.5"
+        role="radiogroup"
+        aria-label={t('farming-purpose', '周回目的')}
+      >
+        {PURPOSES.map((item) => (
+          <PurposeOptionButton
+            key={item.value}
+            isSelected={purpose === item.value}
+            onClick={() => setPurpose(item.value)}
+            isNav={isNav}
+            label={t(item.key, item.fallback)}
+          />
+        ))}
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={cn(
+          'w-full cursor-pointer gap-1.5 text-xs',
+          isNav
+            ? 'hover:bg-[rgba(154,114,36,0.15)] hover:text-[#f6e5be]'
+            : 'text-muted-foreground hover:text-foreground',
+        )}
+        style={isNav ? { color: '#c09030' } : undefined}
+        onClick={onDetails}
+      >
+        <Info size={13} className="shrink-0" />
+        {t('farming-purpose-formula-link', '計算方法を見る')}
+      </Button>
     </div>
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      className="w-full"
-      onClick={onDetails}
-    >
-      <Info size={13} />
-      {t('farming-purpose-formula-link', '計算方法を見る')}
-    </Button>
-  </div>
-)
+  )
+}
 
 const FormulaDialog = ({
   open,
