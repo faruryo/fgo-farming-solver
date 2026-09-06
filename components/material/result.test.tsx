@@ -84,6 +84,14 @@ const allQuestIds = quests.map((q) => q.id)
 const setLocalStorage = (key: string, value: unknown) =>
   localStorage.setItem(key, JSON.stringify(value))
 
+const submitAndReadUrl = async () => {
+  const fetchMock = stubFetch()
+  render(<Result items={items} quests={quests} />)
+  await userEvent.click(await submitButton())
+  await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+  return solveCallUrl(fetchMock)
+}
+
 beforeEach(() => {
   localStorage.clear()
   push.mockClear()
@@ -98,13 +106,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
     setLocalStorage('material/result', { '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
-    const fetchMock = stubFetch()
-
-    render(<Result items={items} quests={quests} />)
-    await userEvent.click(await submitButton())
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:60,10:147')
     expect(url.searchParams.has('itemsStock')).toBe(false)
   })
@@ -113,13 +115,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
     setLocalStorage('efficiency/stockEnabled', false)
     setLocalStorage('material/result', { '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
-    const fetchMock = stubFetch()
-
-    render(<Result items={items} quests={quests} />)
-    await userEvent.click(await submitButton())
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:5')
     expect(url.searchParams.has('itemsStock')).toBe(false)
   })
