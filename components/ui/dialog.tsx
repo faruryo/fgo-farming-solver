@@ -33,7 +33,7 @@ function DialogOverlay({
       className={cn(
         // 固定ヘッダー(.c-header, z-index:200)やドロワーシート(Sheet, z-index:300)より前面に出す。
         // Sheet内でダイアログを開いた際にもや(SheetOverlayのbackdrop-blur)がかかるのを防ぐ。
-        'fixed inset-0 isolate z-[500] bg-black/40 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
+        'fixed inset-0 isolate z-[500] bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
         className,
       )}
       {...props}

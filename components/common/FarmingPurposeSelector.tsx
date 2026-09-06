@@ -89,93 +89,36 @@ export const FarmingPurposeSelector = ({
   )
 }
 
-const NavOptionButton = ({
-  isSelected,
-  onClick,
-  label,
-}: {
-  isSelected: boolean
-  onClick: () => void
-  label: string
-}) => (
-  <button
-    type="button"
-    role="radio"
-    aria-checked={isSelected}
-    onClick={onClick}
-    className="flex items-center justify-between rounded-md border px-3 py-2 text-left text-xs transition-colors cursor-pointer"
-    style={
-      isSelected
-        ? {
-            borderColor: '#c09030',
-            color: '#f6e5be',
-            background: 'rgba(154,114,36,0.22)',
-            fontWeight: 600,
-          }
-        : {
-            borderColor: 'rgba(154,114,36,0.28)',
-            color: 'rgba(255,255,255,0.9)',
-            background: 'rgba(255,255,255,0.03)',
-          }
-    }
-    onMouseEnter={(e) => {
-      if (!isSelected)
-        e.currentTarget.style.background = 'rgba(154,114,36,0.12)'
-    }}
-    onMouseLeave={(e) => {
-      if (!isSelected)
-        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
-    }}
-  >
-    <span>{label}</span>
-    {isSelected && (
-      <span
-        className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ background: '#c09030' }}
-      />
-    )}
-  </button>
-)
-
-const DialogOptionButton = ({
-  isSelected,
-  onClick,
-  label,
-}: {
-  isSelected: boolean
-  onClick: () => void
-  label: string
-}) => (
-  <button
-    type="button"
-    role="radio"
-    aria-checked={isSelected}
-    onClick={onClick}
-    className="flex items-center justify-between rounded-md border px-3 py-2 text-left text-xs transition-colors cursor-pointer"
-    style={
-      isSelected
-        ? {
-            borderColor: 'var(--gold)',
-            color: '#7a5410',
-            background: 'rgba(154,114,36,0.12)',
-            fontWeight: 600,
-          }
-        : {
-            borderColor: 'var(--border2)',
-            color: 'var(--text)',
-            background: 'transparent',
-          }
-    }
-  >
-    <span>{label}</span>
-    {isSelected && (
-      <span
-        className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ background: 'var(--gold)' }}
-      />
-    )}
-  </button>
-)
+const OPTION_STYLES = {
+  nav: {
+    selected: {
+      borderColor: '#c09030',
+      color: '#f6e5be',
+      background: 'rgba(154,114,36,0.22)',
+      fontWeight: 600,
+    },
+    unselected: {
+      borderColor: 'rgba(154,114,36,0.28)',
+      color: 'rgba(255,255,255,0.9)',
+      background: 'rgba(255,255,255,0.03)',
+    },
+    dot: '#c09030',
+  },
+  dialog: {
+    selected: {
+      borderColor: 'var(--gold)',
+      color: '#7a5410',
+      background: 'rgba(154,114,36,0.12)',
+      fontWeight: 600,
+    },
+    unselected: {
+      borderColor: 'var(--border2)',
+      color: 'var(--text)',
+      background: 'transparent',
+    },
+    dot: 'var(--gold)',
+  },
+} as const
 
 const PurposeOptionButton = ({
   isSelected,
@@ -187,16 +130,38 @@ const PurposeOptionButton = ({
   onClick: () => void
   isNav: boolean
   label: string
-}) =>
-  isNav ? (
-    <NavOptionButton isSelected={isSelected} onClick={onClick} label={label} />
-  ) : (
-    <DialogOptionButton
-      isSelected={isSelected}
+}) => {
+  const theme = isNav ? OPTION_STYLES.nav : OPTION_STYLES.dialog
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isSelected}
       onClick={onClick}
-      label={label}
-    />
+      className="flex items-center justify-between rounded-md border px-3 py-2 text-left text-xs transition-colors cursor-pointer"
+      style={isSelected ? theme.selected : theme.unselected}
+      onMouseEnter={(e) => {
+        if (!isSelected && isNav) {
+          e.currentTarget.style.background = 'rgba(154,114,36,0.12)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected && isNav) {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+        }
+      }}
+    >
+      <span>{label}</span>
+      {isSelected && (
+        <span
+          className="h-1.5 w-1.5 rounded-full shrink-0"
+          style={{ background: theme.dot }}
+        />
+      )}
+    </button>
   )
+}
 
 const PurposeContent = ({
   purpose,
@@ -220,7 +185,9 @@ const PurposeContent = ({
           {t('farming-purpose', '周回目的')}
         </div>
       ) : (
-        <p className="text-xs font-semibold">{t('farming-purpose', '周回目的')}</p>
+        <p className="text-xs font-semibold">
+          {t('farming-purpose', '周回目的')}
+        </p>
       )}
       <div
         className="grid gap-1.5"
