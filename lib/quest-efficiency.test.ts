@@ -616,4 +616,13 @@ describe('buildNeedByApiItemId', () => {
       buildNeedByApiItemId(targets, possession, dropsWithAtlas, BUF, 'reserve'),
     ).toEqual({ g: 46 })
   })
+
+  it('所持数未入力はtrainingでは0個、reserveでは対象外にする', () => {
+    expect(
+      buildNeedByApiItemId({ '1': 10 }, {}, dropsWithAtlas, BUF, 'training'),
+    ).toEqual({ g: 10 })
+    expect(
+      buildNeedByApiItemId({ '1': 10 }, {}, dropsWithAtlas, BUF, 'reserve'),
+    ).toEqual({})
+  })
 })

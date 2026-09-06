@@ -504,9 +504,9 @@ export const buildNeedByApiItemId = (
   const need: Record<string, number> = {}
   for (const item of drops.items) {
     const atlasId = (item as { atlasId?: number }).atlasId
-    if (atlasId == null) continue
+        if (atlasId == null) continue
     const key = String(atlasId)
-    if (!(key in possession)) continue
+    if ((purpose === true || purpose === 'reserve') && !(key in possession)) continue
     const required = toNum(targets[key])
     const owned = toNum(possession[key])
     const finitePurpose =

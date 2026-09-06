@@ -181,7 +181,10 @@ const FormulaDialog = ({
           )}
         </p>
         <p className="rounded-md bg-muted p-3 font-mono text-xs">
-          1 + 在庫基準 ÷ (所持数 + 在庫基準)
+          {t(
+            'farming-purpose-formula-low-stock',
+            '1 + 在庫基準 ÷ (所持数 + 在庫基準)',
+          )}
         </p>
         <p>
           {t(

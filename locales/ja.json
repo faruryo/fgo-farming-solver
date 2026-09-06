@@ -10,6 +10,7 @@
     "farming-purpose-formula-training": "今の育成：必要数に足りない素材を、在庫が少ないほど高く評価します。",
     "farming-purpose-formula-reserve": "新規への備え：育成必要数と在庫基準の大きい方まで集めます。",
     "farming-purpose-formula-all": "素材全体：所持数に関係なく、全素材を同じ重みで比較します。",
+    "farming-purpose-formula-low-stock": "1 + 在庫基準 ÷ (所持数 + 在庫基準)",
     "farming-purpose-formula-denominator": "AP効率は消費AP、周回効率はターン数で割ります。QP・絆・EXPは設定時だけ加算します。",
     "farming-purpose-training-fallback": "この画面は今の育成を基準に計算します。",
     "farming-purpose-solver-fallback": "周回計算は今の育成を使用",

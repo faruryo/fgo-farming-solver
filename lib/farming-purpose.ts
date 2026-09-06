@@ -14,3 +14,30 @@ export const migrateFarmingPurpose = (
   if (legacyAll) return 'all'
   return legacyStock ? 'reserve' : 'training'
 }
+
+const readStoredBoolean = (value: string | undefined, fallback: boolean) => {
+  try {
+    return value == null ? fallback : JSON.parse(value) === true
+  } catch {
+    return fallback
+  }
+}
+
+export const migrateFarmingPurposeStorage = (
+  data: Record<string, string>,
+): Record<string, string> => {
+  const purposeKey = 'efficiency/farmingPurpose'
+  const shortageKey = 'quests/efficiency/shortageOnly'
+  const stockKey = 'efficiency/stockEnabled'
+  if (typeof Reflect.get(data, purposeKey) === 'string') return data
+  if (!(shortageKey in data) && !(stockKey in data)) return data
+  const purpose = migrateFarmingPurpose(
+    null,
+    !readStoredBoolean(Reflect.get(data, shortageKey), true),
+    readStoredBoolean(Reflect.get(data, stockKey), false),
+  )
+  return {
+    ...data,
+    'efficiency/farmingPurpose': JSON.stringify(purpose),
+  }
+}

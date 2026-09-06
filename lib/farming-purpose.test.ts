@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { migrateFarmingPurpose } from './farming-purpose'
+import {
+  migrateFarmingPurpose,
+  migrateFarmingPurposeStorage,
+} from './farming-purpose'
 
 describe('migrateFarmingPurpose', () => {
   it('新しい値を旧設定より優先する', () => {
@@ -14,5 +17,26 @@ describe('migrateFarmingPurpose', () => {
 
   it('壊れた新しい値は旧設定から復旧する', () => {
     expect(migrateFarmingPurpose('broken', false, true)).toBe('reserve')
+  })
+})
+
+describe('migrateFarmingPurposeStorage', () => {
+  it('新キーがない旧クラウドデータへ移行値を追加する', () => {
+    expect(
+      migrateFarmingPurposeStorage({
+        'efficiency/stockEnabled': 'true',
+      }),
+    ).toEqual({
+      'efficiency/stockEnabled': 'true',
+      'efficiency/farmingPurpose': '"reserve"',
+    })
+  })
+
+  it('新キーを優先し、旧設定がないデータには既定値を追加しない', () => {
+    const current = { 'efficiency/farmingPurpose': '"all"' }
+    expect(migrateFarmingPurposeStorage(current)).toBe(current)
+    expect(migrateFarmingPurposeStorage({ material: '{}' })).toEqual({
+      material: '{}',
+    })
   })
 })

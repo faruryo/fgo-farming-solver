@@ -28,6 +28,7 @@ import {
 } from '../lib/cloud-sync/shrink-guard'
 import { normalizeCloudResponse, type CloudData } from '../lib/cloud-sync/parse'
 import { STORAGE_KEYS, CLOUD_SYNC_KEYS, isCloudSyncKey } from '../lib/constants/storage-keys'
+import { migrateFarmingPurposeStorage } from '../lib/farming-purpose'
 
 export type { LocalMetadata } from '../lib/cloud-sync/decision'
 export type { CloudData } from '../lib/cloud-sync/parse'
@@ -164,8 +165,9 @@ const [isSaving, setIsSaving] = useState(false)
   const applyData = useCallback((data: Record<string, string>, metadata: CloudData['metadata']) => {
     isApplyingCloudData = true
     try {
-      const appliedKeys = KEYS.filter((key) => typeof data[key] === 'string')
-      appliedKeys.forEach((key) => localStorage.setItem(key, data[key]))
+      const migratedData = migrateFarmingPurposeStorage(data)
+      const appliedKeys = KEYS.filter((key) => typeof migratedData[key] === 'string')
+      appliedKeys.forEach((key) => localStorage.setItem(key, migratedData[key]))
 
       // Sync metadata (resolves conflict, stays clean)
       const newLocalMeta = metadataAfterApply(getLocalMetadata(), metadata)

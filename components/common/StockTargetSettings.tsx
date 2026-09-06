@@ -61,7 +61,7 @@ export const StockTargetSettings: React.FC = () => {
     >
       <div className="mb-1">
         <p className="text-xs font-semibold" style={{ color: 'var(--text1)' }}>
-          {t('inventory-baseline-settings', '在庫基準の設定')}
+          {t('common:inventory-baseline-settings', '在庫基準の設定')}
         </p>
       </div>
       <p
@@ -69,7 +69,7 @@ export const StockTargetSettings: React.FC = () => {
         style={{ color: 'var(--text3)' }}
       >
         {t(
-          'inventory-baseline-description',
+          'common:inventory-baseline-description',
           '在庫がこの個数を下回る素材ほど、周回効率ポイントで高く評価します。',
         )}
       </p>
@@ -127,7 +127,7 @@ export const StockTargetSettings: React.FC = () => {
         style={{ color: 'var(--text3)' }}
       >
         {t(
-          'inventory-baseline-hint',
+          'common:inventory-baseline-hint',
           '新規サーヴァントへの備えでは、育成必要数とこの在庫基準の大きい方を目標にします。',
         )}
       </p>
