@@ -418,8 +418,7 @@ export const QuestEfficiencyList: React.FC = () => {
         <div className="flex flex-col gap-2">
           {filtered.map((r, index) => {
             const consumesPod = questConsumesPod(r.quest.area)
-            const isPodFreeQuest =
-              consumesPod && podFree.questIds.has(r.quest.id)
+            const isPodFreeQuest = consumesPod && podFree.questIds.has(r.quest.id)
             return (
               <NextLink
                 key={r.quest.id}
@@ -429,10 +428,7 @@ export const QuestEfficiencyList: React.FC = () => {
                   borderLeft: `3px solid ${isPodFreeQuest ? '#60c890' : 'var(--gold)'}`,
                 }}
               >
-                <span
-                  className="w-5 text-[11px] font-bold tabular-nums select-none text-right flex-shrink-0"
-                  style={{ color: 'var(--text3)' }}
-                >
+                <span className="w-5 text-[11px] font-bold tabular-nums select-none text-right flex-shrink-0" style={{ color: 'var(--text3)' }}>
                   {index + 1}
                 </span>
                 <QuestIdentity
@@ -461,13 +457,7 @@ export const QuestEfficiencyList: React.FC = () => {
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {isPodFreeQuest && (
-                    <span
-                      className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                      style={{
-                        background: 'rgba(96,200,144,0.15)',
-                        color: '#60c890',
-                      }}
-                    >
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(96,200,144,0.15)', color: '#60c890' }}>
                       {t('ポッド無料中')}
                     </span>
                   )}
