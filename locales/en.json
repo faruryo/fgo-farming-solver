@@ -223,6 +223,7 @@
     "advisor-required": "Required {{n}}",
     "advisor-shortage": "Short {{n}}",
     "advisor-required-buffer-note": "(training {{training}} + stock {{buffer}})",
+    "advisor-required-buffer-note-purpose": "(larger of training {{training}} / inventory baseline {{buffer}})",
     "mode-switch": "Optimization Mode Switch",
     "detail-desc": "Detailed Explanation",
     "unit-ap": "AP",

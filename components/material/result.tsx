@@ -63,10 +63,9 @@ const bgColor = (bg: string) =>
 type MatCardProps = {
   item: EnrichedItem
   required: number
+  trainingRequired: number
   owned: number | undefined
   deficiency: number
-  /** 必要数+buffer 未達分(effectiveDeficiency)。stock OFF 時は deficiency と一致。 */
-  stockDeficiency?: number
   rarityColor: string
   onChange: (id: string, val: number) => void
   stockEnabled?: boolean
@@ -78,20 +77,19 @@ import { getItemIconUrl } from '../../lib/get-item-icon-url'
 const MatCard = ({
   item,
   required,
+  trainingRequired,
   owned,
   deficiency,
-  stockDeficiency = 0,
   rarityColor,
   onChange,
   stockEnabled,
   stockBufferAmount,
 }: MatCardProps) => {
+  const { t } = useTranslation('material')
   const [editing, setEditing] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const isShort = deficiency > 0
-  // 必要数は満たすが buffer 分が足りない(stock-only)。stock ON のときだけ立つ。
-  const isStockShort = deficiency === 0 && stockDeficiency > 0
-  const isMet = deficiency === 0 && stockDeficiency === 0 && required > 0
+  const isMet = deficiency === 0 && required > 0
 
   useEffect(() => {
     if (editing && cardRef.current) {
@@ -102,7 +100,7 @@ const MatCard = ({
   return (
     <div
       ref={cardRef}
-      className={`c-mat-card${isShort ? ' short' : isStockShort ? ' stock-short' : isMet ? ' met' : ''}`}
+      className={`c-mat-card${isShort ? ' short' : isMet ? ' met' : ''}`}
       style={{ '--rarity-color': rarityColor } as React.CSSProperties}
     >
       {isMet && <div className="c-mat-met-badge">✓</div>}
@@ -119,9 +117,6 @@ const MatCard = ({
           <div className="c-mat-icon-placeholder" />
         )}
         {isShort && <div className="c-mat-short-badge">−{deficiency}</div>}
-        {isStockShort && (
-          <div className="c-mat-stock-badge">−{stockDeficiency}</div>
-        )}
       </div>
       <div className="c-mat-name">{item.name}</div>
 
@@ -133,7 +128,11 @@ const MatCard = ({
             <span
               style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}
             >
-              +ストック {stockBufferAmount}
+              {t(
+                'advisor-required-buffer-note-purpose',
+                '(育成 {{training}} / 在庫基準 {{buffer}} の大きい方)',
+                { training: trainingRequired, buffer: stockBufferAmount },
+              )}
             </span>
           )}
         </div>
@@ -319,8 +318,10 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     () =>
       trackedItems.filter(
         (item) =>
-          item.id.toString() in amounts ||
-          (purpose === 'reserve' && item.id.toString() in possession),
+          Object.hasOwn(
+            purpose === 'reserve' ? possession : amounts,
+            item.id.toString(),
+          ),
       ),
     [trackedItems, amounts, possession, purpose],
   )
@@ -584,25 +585,26 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
                       />
                     </div>
                     <div className="c-mat-grid">
-                      {sectionItems.map((item: EnrichedItem) => (
-                        <MatCard
+                      {sectionItems.map((item: EnrichedItem) => {
+                        const id = item.id.toString()
+                        const trainingRequired = Reflect.get(amounts, id) ?? 0
+                        const bufferAmount = buffer(
+                          toStockItemLike(item),
+                          resolvedStockBuffer,
+                        )
+                        return <MatCard
                           key={item.id}
                           item={item}
-                          required={amounts[item.id.toString()] ?? 0}
-                          owned={possession[item.id.toString()]}
-                          deficiency={deficiencies[item.id.toString()] ?? 0}
-                          stockDeficiency={
-                            stockDeficiencies[item.id.toString()] ?? 0
-                          }
+                          required={stockEnabled ? Math.max(trainingRequired, bufferAmount) : trainingRequired}
+                          trainingRequired={trainingRequired}
+                          owned={Reflect.get(possession, id)}
+                          deficiency={stockEnabled ? Reflect.get(stockDeficiencies, id) ?? 0 : Reflect.get(deficiencies, id) ?? 0}
                           rarityColor={bgColor(item.background)}
                           onChange={onChange}
                           stockEnabled={stockEnabled}
-                          stockBufferAmount={buffer(
-                            toStockItemLike(item),
-                            resolvedStockBuffer,
-                          )}
+                          stockBufferAmount={bufferAmount}
                         />
-                      ))}
+                      })}
                     </div>
                   </div>
                 )

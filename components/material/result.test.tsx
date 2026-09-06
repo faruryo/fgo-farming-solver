@@ -17,7 +17,17 @@ import {
 } from '../../lib/farming/solve-request-test-utils'
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
+  useTranslation: () => ({
+    t: (
+      _key: string,
+      fallback: string,
+      options?: Record<string, unknown>,
+    ) =>
+      Object.entries(options ?? {}).reduce(
+        (text, [key, value]) => text.replace(`{{${key}}}`, String(value)),
+        fallback,
+      ),
+  }),
 }))
 
 const push = vi.fn()
@@ -109,6 +119,29 @@ describe('goSolver — goal A/B transport (5.1)', () => {
     const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:60,10:147')
     expect(url.searchParams.has('itemsStock')).toBe(false)
+  })
+
+  it('reserveでは未入力の対象素材を0個として送らない', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
+    const fetchMock = stubFetch()
+
+    render(<Result items={items} quests={quests} />)
+    expect(await submitButton()).toBeDisabled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('reserveのカードは育成必要数と在庫基準の最大値を表示する', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 100 })
+    setLocalStorage('posession', { '100': 0 })
+
+    render(<Result items={items} quests={quests} />)
+    expect(
+      await screen.findByText('(育成 100 / 在庫基準 60 の大きい方)'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('+ストック 60')).toBeNull()
   })
 
   it('stockEnabled OFF: sends items only, no itemsStock', async () => {
