@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { QuestEfficiencyCard } from './QuestEfficiencyCard'
 import type { Drops } from '../../lib/get-drops'
 import type { EfficiencyDenominator } from '../../lib/quest-efficiency'
+import type { FarmingPurpose } from '../../lib/farming-purpose'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -61,8 +62,8 @@ let mockOptions = {
     skillStone: { gold: 150, silver: 150, bronze: 150 },
     monumentPiece: { gold: 50, silver: 50 },
   },
-  shortageOnly: true,
-  setShortageOnly: vi.fn(),
+  purpose: 'training' as FarmingPurpose,
+  setPurpose: vi.fn(),
   includeSkillStones: true,
   setIncludeSkillStones: vi.fn(),
   includePieces: true,
@@ -94,7 +95,7 @@ describe('QuestEfficiencyCard', () => {
       materialResult: {},
       itemsRaw: {},
       stockEnabled: false,
-      shortageOnly: true,
+      purpose: 'training',
       denominator: 'ap',
       setDenominator: vi.fn(),
     }
@@ -113,7 +114,9 @@ describe('QuestEfficiencyCard', () => {
 
     expect(screen.getByText('AP効率ポイント')).toBeInTheDocument()
     expect(screen.getByText('英雄の証')).toBeInTheDocument()
-    expect(screen.getByRole('switch', { name: 'ストック込み目標切り替え' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '今の育成を進める' }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '周回効率' })).toBeInTheDocument()
   })
 
@@ -139,8 +142,12 @@ describe('QuestEfficiencyCard', () => {
 
     expect(screen.getByText('AP効率ポイント')).toBeInTheDocument()
     expect(screen.getByText('0.00')).toBeInTheDocument()
-    expect(screen.getByText('対象となる不足素材がありません')).toBeInTheDocument()
+    expect(
+      screen.getByText('対象となる不足素材がありません'),
+    ).toBeInTheDocument()
     // トグルボタンが表示されていることを確認
-    expect(screen.getByRole('switch', { name: 'ストック込み目標切り替え' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '今の育成を進める' }),
+    ).toBeInTheDocument()
   })
 })

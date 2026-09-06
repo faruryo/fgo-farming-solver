@@ -1,11 +1,14 @@
 import { EnrichedItem } from '../get-items'
 import { toApiItemId } from '../to-api-item-id'
-import { effectiveDeficiency, StockBuffer } from '../quest-efficiency'
+import { computeFiniteTarget, StockBuffer } from '../quest-efficiency'
+import type { FarmingPurpose } from '../farming-purpose'
 import { hasSelectedQuests, hasSubmittableItems } from './submit-solve'
 
-export const toStockItemLike = (
-  item: { id: string | number; category?: string; largeCategory?: string }
-): { id: string; category: string; largeCategory: string } => ({
+export const toStockItemLike = (item: {
+  id: string | number
+  category?: string
+  largeCategory?: string
+}): { id: string; category: string; largeCategory: string } => ({
   id: item.id.toString(),
   category: item.category ?? '',
   largeCategory: item.largeCategory ?? '',
@@ -15,12 +18,13 @@ export const buildQueryItemsA = (
   solverItems: EnrichedItem[],
   amounts: Record<string, number>,
   possession: Record<string, number | undefined>,
-  items: EnrichedItem[]
+  items: EnrichedItem[],
 ): string => {
   const plainDeficiency = (item: EnrichedItem): number =>
     Math.max(
       0,
-      (amounts[item.id.toString()] ?? 0) - (possession[item.id.toString()] ?? 0)
+      (amounts[item.id.toString()] ?? 0) -
+        (possession[item.id.toString()] ?? 0),
     )
   return solverItems
     .filter((item) => plainDeficiency(item) > 0 && toApiItemId(item, items))
@@ -32,18 +36,20 @@ export const buildQueryItemsB = (
   solverItems: EnrichedItem[],
   amounts: Record<string, number>,
   possession: Record<string, number | undefined>,
-  stockEnabled: boolean,
+  purpose: FarmingPurpose | boolean,
   resolvedStockBuffer: StockBuffer,
-  items: EnrichedItem[]
+  items: EnrichedItem[],
 ): string => {
-  if (!stockEnabled) return ''
+  if (purpose !== 'reserve' && purpose !== true) return ''
   const effDef = (item: EnrichedItem): number =>
-    effectiveDeficiency(
-      toStockItemLike(item),
-      amounts[item.id.toString()] ?? 0,
-      possession[item.id.toString()] ?? 0,
-      resolvedStockBuffer,
-      true
+    Math.max(
+      0,
+      computeFiniteTarget(
+        toStockItemLike(item),
+        amounts[item.id.toString()] ?? 0,
+        resolvedStockBuffer,
+        'reserve',
+      ) - (possession[item.id.toString()] ?? 0),
     )
   return solverItems
     .filter((item) => effDef(item) > 0 && toApiItemId(item, items))
@@ -55,7 +61,9 @@ export interface BuildSolveParamsInput {
   solverItems: EnrichedItem[]
   amounts: Record<string, number>
   possession: Record<string, number | undefined>
-  stockEnabled: boolean
+  purpose?: FarmingPurpose
+  /** 旧呼び出し互換。新規コードは purpose を使う。 */
+  stockEnabled?: boolean
   resolvedStockBuffer: StockBuffer
   items: EnrichedItem[]
   checkedQuests: string[]
@@ -70,56 +78,48 @@ export interface BuildSolveParamsResult {
 }
 
 export const buildSolveParams = (
-  input: BuildSolveParamsInput
+  input: BuildSolveParamsInput,
 ): BuildSolveParamsResult => {
   const queryItemsA = buildQueryItemsA(
     input.solverItems,
     input.amounts,
     input.possession,
-    input.items
+    input.items,
   )
   const queryItemsB = buildQueryItemsB(
     input.solverItems,
     input.amounts,
     input.possession,
-    input.stockEnabled,
+    input.purpose ?? (input.stockEnabled ? 'reserve' : 'training'),
     input.resolvedStockBuffer,
-    input.items
+    input.items,
   )
 
-  const needsItemTarget =
-    !hasSubmittableItems(queryItemsA) && !hasSubmittableItems(queryItemsB)
+  const selectedItems = hasSubmittableItems(queryItemsB)
+    ? queryItemsB
+    : queryItemsA
+  const needsItemTarget = !hasSubmittableItems(selectedItems)
   const needsQuestSelection = !hasSelectedQuests(input.checkedQuests)
 
   if (needsItemTarget || needsQuestSelection) {
     return {
-      queryItemsA,
-      queryItemsB,
+      queryItemsA: selectedItems,
+      queryItemsB: '',
       needsItemTarget,
       needsQuestSelection,
       params: null,
     }
   }
 
-  // 目標Aが0件(stock-only)のときは目標Bを唯一の items として単独送信する
-  // (itemsStock は付けず2目標バッチにしない。design.md 参照)。
-  const itemsParam = hasSubmittableItems(queryItemsA) ? queryItemsA : queryItemsB
-  // B と A が完全一致(全素材 buffer=0)のときは itemsStock を送らない。
-  const includeStock =
-    hasSubmittableItems(queryItemsA) &&
-    hasSubmittableItems(queryItemsB) &&
-    queryItemsB !== queryItemsA
-
   const params = new URLSearchParams({
-    items: itemsParam,
-    ...(includeStock ? { itemsStock: queryItemsB } : {}),
+    items: selectedItems,
     quests: input.checkedQuests.join(','),
     fields: 'id',
   })
 
   return {
-    queryItemsA,
-    queryItemsB,
+    queryItemsA: selectedItems,
+    queryItemsB: '',
     needsItemTarget,
     needsQuestSelection,
     params,

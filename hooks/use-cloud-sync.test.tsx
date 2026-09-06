@@ -109,6 +109,18 @@ describe('useCloudSync first-device restore', () => {
     expect(result.current.hasConflict).toBe(false)
   })
 
+  it('migrates a legacy cloud stock setting after the local default was created', async () => {
+    localStorage.setItem('efficiency/farmingPurpose', '"training"')
+    const { result } = renderHook(() => useCloudSync())
+
+    result.current.applyData(
+      { 'efficiency/stockEnabled': 'true' },
+      { updatedAt: CLOUD_UPDATED_AT, deviceId: 'desktop-device' },
+    )
+
+    expect(localStorage.getItem('efficiency/farmingPurpose')).toBe('"reserve"')
+  })
+
   it('does not treat a derived recalculation as an unsynced local change', async () => {
     const { result } = renderHook(() => useCloudSync())
 

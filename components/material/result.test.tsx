@@ -17,7 +17,17 @@ import {
 } from '../../lib/farming/solve-request-test-utils'
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
+  useTranslation: () => ({
+    t: (
+      _key: string,
+      fallback: string,
+      options?: Record<string, unknown>,
+    ) =>
+      Object.entries(options ?? {}).reduce(
+        (text, [key, value]) => text.replace(`{{${key}}}`, String(value)),
+        fallback,
+      ),
+  }),
 }))
 
 const push = vi.fn()
@@ -84,6 +94,14 @@ const allQuestIds = quests.map((q) => q.id)
 const setLocalStorage = (key: string, value: unknown) =>
   localStorage.setItem(key, JSON.stringify(value))
 
+const submitAndReadUrl = async () => {
+  const fetchMock = stubFetch()
+  render(<Result items={items} quests={quests} />)
+  await userEvent.click(await submitButton())
+  await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+  return solveCallUrl(fetchMock)
+}
+
 beforeEach(() => {
   localStorage.clear()
   push.mockClear()
@@ -94,32 +112,65 @@ afterEach(() => {
 })
 
 describe('goSolver — goal A/B transport (5.1)', () => {
-  it('stockEnabled ON, A and B differ: sends both items and itemsStock', async () => {
-    setLocalStorage('efficiency/stockEnabled', true)
+  it('reserveは在庫基準までの単一目標を送る', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
     setLocalStorage('material/result', { '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
+    const url = await submitAndReadUrl()
+    expect(url.searchParams.get('items')).toBe('20:60,10:147')
+    expect(url.searchParams.has('itemsStock')).toBe(false)
+  })
+
+  it('reserveでは未入力の対象素材を0個として送らない', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
     const fetchMock = stubFetch()
 
     render(<Result items={items} quests={quests} />)
-    await userEvent.click(await submitButton())
+    expect(await submitButton()).toBeDisabled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
-    expect(url.searchParams.get('items')).toBe('20:5')
-    expect(url.searchParams.get('itemsStock')).toBe('20:65,10:150')
+  it('reserveのカードは育成必要数と在庫基準の最大値を表示する', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 100 })
+    setLocalStorage('posession', { '100': 0 })
+
+    render(<Result items={items} quests={quests} />)
+    expect(
+      await screen.findByText('(育成 100 / 在庫基準 60 の大きい方)'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('+ストック 60')).toBeNull()
+  })
+
+  it('reserveでは未入力素材を不足として数えない', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    setLocalStorage('posession', { '200': 3 })
+
+    render(<Result items={items} quests={quests} />)
+    expect(screen.getByText('金素材A')).toBeInTheDocument()
+    expect(screen.queryByText('−5')).toBeNull()
+    expect(screen.getByText('−147')).toBeInTheDocument()
+  })
+
+  it('reserveの不足フィルタは有限目標の不足を使う', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '200': 3 })
+    setLocalStorage('posession', { '200': 3 })
+
+    render(<Result items={items} quests={quests} />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: '不足' }))
+    expect(screen.getByText('銀素材B')).toBeInTheDocument()
   })
 
   it('stockEnabled OFF: sends items only, no itemsStock', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
     setLocalStorage('material/result', { '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
-    const fetchMock = stubFetch()
-
-    render(<Result items={items} quests={quests} />)
-    await userEvent.click(await submitButton())
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:5')
     expect(url.searchParams.has('itemsStock')).toBe(false)
   })
@@ -143,8 +194,8 @@ describe('goSolver — quest exclusion (5.2)', () => {
 })
 
 describe('goSolver — boundary cases (5.3)', () => {
-  it('(a) goal A=0, goal B>0 (stock-only): submits with B as the sole items param, no itemsStock', async () => {
-    setLocalStorage('efficiency/stockEnabled', true)
+  it('(a) reserve目標だけ不足する場合も単一itemsで送る', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
     setLocalStorage('material/result', { '200': 3 })
     setLocalStorage('posession', { '200': 3 })
     const fetchMock = stubFetch()
@@ -156,7 +207,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
     const url = solveCallUrl(fetchMock)
-    expect(url.searchParams.get('items')).toBe('10:150')
+    expect(url.searchParams.get('items')).toBe('10:147')
     expect(url.searchParams.has('itemsStock')).toBe(false)
   })
 
@@ -173,7 +224,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(
-      screen.getByText('集めたいアイテムの数を最低1つ入力してください。')
+      screen.getByText('集めたいアイテムの数を最低1つ入力してください。'),
     ).toBeInTheDocument()
   })
 
@@ -191,7 +242,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(
-      screen.getByText('周回対象に含めるクエストを最低1つ選択してください。')
+      screen.getByText('周回対象に含めるクエストを最低1つ選択してください。'),
     ).toBeInTheDocument()
   })
 })

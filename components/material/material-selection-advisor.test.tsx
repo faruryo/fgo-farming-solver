@@ -179,6 +179,13 @@ describe('MaterialSelectionAdvisor Component', () => {
     )
   })
 
+  it('shows all-mode fallback on the summer 2026 advisor tab', () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_PURPOSE, JSON.stringify('all'))
+    renderSummer2026Advisor()
+
+    expect(screen.getByText('配布評価は今の育成を使用')).toBeInTheDocument()
+  })
+
   it('shows effective required (training + stock buffer) and its breakdown when stock target is ON', async () => {
     localStorage.setItem(STORAGE_KEYS.STOCK_ENABLED, JSON.stringify(true))
     localStorage.setItem(
@@ -204,12 +211,12 @@ describe('MaterialSelectionAdvisor Component', () => {
 
     const bronzeBuffer = DEFAULT_STOCK_BUFFER.normal.bronze // 300
     expect(bronzeBuffer).toBe(300)
-    const effectiveRequired = 100 + bronzeBuffer
+    const effectiveRequired = Math.max(100, bronzeBuffer)
 
     await waitFor(() => {
       expect(screen.getByText(`必要 ${effectiveRequired}`)).toBeInTheDocument()
       expect(
-        screen.getByText(`(育成 100 + ストック ${bronzeBuffer})`),
+        screen.getByText(`(育成 100 / 在庫基準 ${bronzeBuffer} の大きい方)`),
       ).toBeInTheDocument()
     })
   })

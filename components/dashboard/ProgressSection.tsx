@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { useDrops } from '../../hooks/use-drops'
 import { useProgressReport } from '../../hooks/use-progress-report'
 import { ProgressReportPanel } from '../farming/ProgressReportPanel'
+import { FarmingPurposeSelector } from '../common/FarmingPurposeSelector'
+import { useFarmingPurpose } from '../../hooks/use-farming-purpose'
 
 export const ProgressSection: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common'])
@@ -20,6 +22,7 @@ export const ProgressSection: React.FC = () => {
   const drops = useDrops()
   // 現在 total_ap はパネル表示に必須ではない(減少はクライアント再ソルブで算出)ため null。
   const progress = useProgressReport(null, drops)
+  const { purpose } = useFarmingPurpose()
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0)
@@ -35,27 +38,51 @@ export const ProgressSection: React.FC = () => {
       append: { current: 0, total: 0 },
     }
 
-    Object.values(chaldea).forEach(servant => {
+    Object.values(chaldea).forEach((servant) => {
       if (servant.disabled) return
       const asc = servant.targets.ascension
       if (asc && !asc.disabled) {
-        asc.ranges.forEach(r => { breakdown.ascension.current += r.start; breakdown.ascension.total += r.end })
+        asc.ranges.forEach((r) => {
+          breakdown.ascension.current += r.start
+          breakdown.ascension.total += r.end
+        })
       }
       const sk = servant.targets.skill
       if (sk && !sk.disabled) {
-        sk.ranges.forEach(r => { breakdown.skill.current += (r.start - 1); breakdown.skill.total += (r.end - 1) })
+        sk.ranges.forEach((r) => {
+          breakdown.skill.current += r.start - 1
+          breakdown.skill.total += r.end - 1
+        })
       }
       const ap = servant.targets.appendSkill
       if (ap && !ap.disabled) {
-        ap.ranges.forEach(r => { breakdown.append.current += r.start; breakdown.append.total += r.end })
+        ap.ranges.forEach((r) => {
+          breakdown.append.current += r.start
+          breakdown.append.total += r.end
+        })
       }
     })
 
     return [
-      { name: t('再臨'), value: breakdown.ascension.current, total: breakdown.ascension.total, color: CHART_COLORS.ascension },
-      { name: t('スキル'), value: breakdown.skill.current, total: breakdown.skill.total, color: CHART_COLORS.skill },
-      { name: t('アペンド'), value: breakdown.append.current, total: breakdown.append.total, color: CHART_COLORS.append },
-    ].filter(d => d.total > 0)
+      {
+        name: t('再臨'),
+        value: breakdown.ascension.current,
+        total: breakdown.ascension.total,
+        color: CHART_COLORS.ascension,
+      },
+      {
+        name: t('スキル'),
+        value: breakdown.skill.current,
+        total: breakdown.skill.total,
+        color: CHART_COLORS.skill,
+      },
+      {
+        name: t('アペンド'),
+        value: breakdown.append.current,
+        total: breakdown.append.total,
+        color: CHART_COLORS.append,
+      },
+    ].filter((d) => d.total > 0)
   }, [chaldea, t])
 
   const showProgressPanel = progress.loading || progress.current != null
@@ -68,58 +95,101 @@ export const ProgressSection: React.FC = () => {
       </div>
 
       {showProgressPanel && (
-        <ProgressReportPanel current={progress.current} loading={progress.loading} />
+        <div>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <FarmingPurposeSelector compact />
+            {purpose === 'all' && (
+              <span className="text-xs text-muted-foreground">
+                {t(
+                  'common:farming-purpose-progress-fallback',
+                  '進捗は今の育成を使用',
+                )}
+              </span>
+            )}
+          </div>
+          <ProgressReportPanel
+            current={progress.current}
+            loading={progress.loading}
+          />
+        </div>
       )}
 
       {!stats || stats.length === 0 ? (
-        <div className="u-fgo-card p-8 text-center rounded-xl" style={{ background: 'var(--panel2)' }}>
+        <div
+          className="u-fgo-card p-8 text-center rounded-xl"
+          style={{ background: 'var(--panel2)' }}
+        >
           <div className="flex flex-col items-center gap-4">
-            <p style={{ color: 'var(--text2)', fontWeight: 'bold' }}>{t('目標が設定されていません')}</p>
+            <p style={{ color: 'var(--text2)', fontWeight: 'bold' }}>
+              {t('目標が設定されていません')}
+            </p>
             <p className="text-sm" style={{ color: 'var(--text3)' }}>
-              {t('育成素材計算機で目標レベルを設定すると、全体の進捗がグラフで表示されます。')}
+              {t(
+                '育成素材計算機で目標レベルを設定すると、全体の進捗がグラフで表示されます。',
+              )}
             </p>
             <NextLink href="/material">
-              <Button size="sm" className="mt-2 bg-yellow-500 hover:bg-yellow-400 text-black">
+              <Button
+                size="sm"
+                className="mt-2 bg-yellow-500 hover:bg-yellow-400 text-black"
+              >
                 {t('common:育成素材計算機へ')}
               </Button>
             </NextLink>
           </div>
         </div>
       ) : (
-      <div className="grid grid-cols-3 gap-4">
-        {stats.map(stat => {
-          const percent = stat.total > 0 ? Math.round((stat.value / stat.total) * 100) : 0
-          const chartData = [
-            { name: 'Completed', value: stat.value },
-            { name: 'Remaining', value: Math.max(0, stat.total - stat.value) },
-          ]
-          return (
-            <div key={stat.name} className="u-fgo-card relative p-3 rounded-md" style={{ background: 'var(--panel2)' }}>
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative h-[60px] w-full">
-                  {isMounted && (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                      <PieChart>
-                        <Pie data={chartData} cx="50%" cy="50%" innerRadius={18} outerRadius={27} paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270} isAnimationActive={false}>
-                          <Cell fill={stat.color} stroke="none" />
-                          <Cell fill="rgba(0,0,0,0.1)" stroke="none" />
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                    <p className="text-xs font-bold" style={{ color: 'var(--navy)' }}>{percent}%</p>
+        <div className="grid grid-cols-3 gap-4">
+          {stats.map((stat) => {
+            const percent = stat.total > 0 ? Math.round((stat.value / stat.total) * 100) : 0
+            const chartData = [
+              { name: 'Completed', value: stat.value },
+              { name: 'Remaining', value: Math.max(0, stat.total - stat.value) },
+            ]
+            return (
+              <div key={stat.name} className="u-fgo-card relative p-3 rounded-md" style={{ background: 'var(--panel2)' }}>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative h-[60px] w-full">
+                    {isMounted && (
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={18}
+                            outerRadius={27}
+                            paddingAngle={2}
+                            dataKey="value"
+                            startAngle={90}
+                            endAngle={-270}
+                            isAnimationActive={false}
+                          >
+                            <Cell fill={stat.color} stroke="none" />
+                            <Cell fill="rgba(0,0,0,0.1)" stroke="none" />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                      <p className="text-xs font-bold" style={{ color: 'var(--navy)' }}>
+                        {percent}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <p style={{ fontSize: '11px', color: 'var(--text2)', fontWeight: 600 }}>
+                      {stat.name}
+                    </p>
+                    <p style={{ fontSize: '9px', color: 'var(--text3)' }}>
+                      {stat.value} / {stat.total}
+                    </p>
                   </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <p style={{ fontSize: '11px', color: 'var(--text2)', fontWeight: 600 }}>{stat.name}</p>
-                  <p style={{ fontSize: '9px', color: 'var(--text3)' }}>{stat.value} / {stat.total}</p>
-                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )

@@ -7,6 +7,7 @@ import {
   SurplusThreshold,
 } from '../lib/quest-efficiency'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
+import { useFarmingPurpose } from './use-farming-purpose'
 
 /**
  * 余剰ストック目標(`stockEnabled` + カテゴリ群×レアの `stockBuffer`)を localStorage から
@@ -17,14 +18,10 @@ import { STORAGE_KEYS } from '../lib/constants/storage-keys'
  * (D3)。キー名・デフォルト・移行ルールの変更が1箇所で済む。
  */
 export const useStockTarget = () => {
-  const [stockEnabled, setStockEnabled] = useLocalStorage<boolean>(
-    STORAGE_KEYS.STOCK_ENABLED,
-    false
-  )
-  const [rawStockBuffer, setRawStockBuffer] = useLocalStorage<Partial<StockBuffer>>(
-    STORAGE_KEYS.STOCK_BUFFER,
-    {},
-  )
+  const { purpose, setPurpose } = useFarmingPurpose()
+  const [rawStockBuffer, setRawStockBuffer] = useLocalStorage<
+    Partial<StockBuffer>
+  >(STORAGE_KEYS.STOCK_BUFFER, {})
   // 旧キー。新規には書き込まないが、ストック目標未設定ユーザーの移行元として読み続ける。
   const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
     STORAGE_KEYS.SURPLUS_THRESHOLD,
@@ -34,10 +31,21 @@ export const useStockTarget = () => {
     () =>
       resolveStockBuffer(
         // localStorage に "null" 等が入っていても落ちないようガード(空/未設定は移行元 fallback へ)。
-        rawStockBuffer && Object.keys(rawStockBuffer).length > 0 ? rawStockBuffer : null,
+        rawStockBuffer && Object.keys(rawStockBuffer).length > 0
+          ? rawStockBuffer
+          : null,
         surplusThreshold,
       ),
     [rawStockBuffer, surplusThreshold],
   )
-  return { stockEnabled, setStockEnabled, rawStockBuffer, setRawStockBuffer, stockBuffer }
+  return {
+    purpose,
+    setPurpose,
+    stockEnabled: purpose === 'reserve',
+    setStockEnabled: (enabled: boolean) =>
+      setPurpose(enabled ? 'reserve' : 'training'),
+    rawStockBuffer,
+    setRawStockBuffer,
+    stockBuffer,
+  }
 }
