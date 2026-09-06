@@ -248,7 +248,10 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
           if (!hasEnteredPossession(id)) return [id, 0]
           return [
             id,
-            Math.max(0, (amounts[id] ?? 0) - (possession[id] ?? 0)),
+            Math.max(
+              0,
+              (Reflect.get(amounts, id) ?? 0) - (Reflect.get(possession, id) ?? 0),
+            ),
           ]
         }),
       ),
@@ -268,10 +271,10 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
               0,
               computeFiniteTarget(
                 toStockItemLike(item),
-                amounts[id] ?? 0,
+                Reflect.get(amounts, id) ?? 0,
                 resolvedStockBuffer,
                 purpose === 'reserve' ? 'reserve' : 'training',
-              ) - (possession[id] ?? 0),
+              ) - (Reflect.get(possession, id) ?? 0),
             ),
           ]
         }),
