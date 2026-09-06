@@ -235,40 +235,58 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     }
   }, [])
 
+  const hasEnteredPossession = useCallback(
+    (id: string) => purpose !== 'reserve' || Object.hasOwn(possession, id),
+    [purpose, possession],
+  )
+
   const deficiencies = useMemo(
     () =>
       Object.fromEntries(
-        trackedItems.map((item) => [
-          item.id.toString(),
-          Math.max(
-            0,
-            (amounts[item.id.toString()] ?? 0) -
-              (possession[item.id.toString()] ?? 0),
-          ),
-        ]),
+        trackedItems.map((item) => {
+          const id = item.id.toString()
+          if (!hasEnteredPossession(id)) return [id, 0]
+          return [
+            id,
+            Math.max(0, (amounts[id] ?? 0) - (possession[id] ?? 0)),
+          ]
+        }),
       ),
-    [amounts, possession, trackedItems],
+    [amounts, possession, trackedItems, hasEnteredPossession],
   )
 
   // ストック不足(目標B): max(0, 必要数+buffer−所持)。stock OFF 時は deficiencies と一致。
   const stockDeficiencies = useMemo(
     () =>
       Object.fromEntries(
-        trackedItems.map((item) => [
-          item.id.toString(),
-          Math.max(
-            0,
-            computeFiniteTarget(
-              toStockItemLike(item),
-              amounts[item.id.toString()] ?? 0,
-              resolvedStockBuffer,
-              purpose === 'reserve' ? 'reserve' : 'training',
-            ) - (possession[item.id.toString()] ?? 0),
-          ),
-        ]),
+        trackedItems.map((item) => {
+          const id = item.id.toString()
+          if (!hasEnteredPossession(id)) return [id, 0]
+          return [
+            id,
+            Math.max(
+              0,
+              computeFiniteTarget(
+                toStockItemLike(item),
+                amounts[id] ?? 0,
+                resolvedStockBuffer,
+                purpose === 'reserve' ? 'reserve' : 'training',
+              ) - (possession[id] ?? 0),
+            ),
+          ]
+        }),
       ),
-    [amounts, possession, trackedItems, resolvedStockBuffer, purpose],
+    [
+      amounts,
+      possession,
+      trackedItems,
+      resolvedStockBuffer,
+      purpose,
+      hasEnteredPossession,
+    ],
   )
+
+  const shortageDeficiencies = stockEnabled ? stockDeficiencies : deficiencies
 
   // stock を OFF にしたら「ストック不足」フィルタは選べないので不足にフォールバック。
   useEffect(() => {
@@ -372,7 +390,9 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
 
   const displayedItems =
     filterMode === 'short'
-      ? trackedItems.filter((item) => deficiencies[item.id.toString()] > 0)
+      ? trackedItems.filter(
+          (item) => shortageDeficiencies[item.id.toString()] > 0,
+        )
       : filterMode === 'stock' && stockEnabled
         ? trackedItems.filter(
             (item) => stockDeficiencies[item.id.toString()] > 0,
@@ -417,22 +437,31 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     return base.filter((s) => s.items.length > 0)
   }, [itemsByFloor])
 
-  const totalShort = trackedItems.filter(
-    (item) => deficiencies[item.id.toString()] > 0,
+  const countableItems = useMemo(
+    () =>
+      purpose === 'reserve'
+        ? trackedItems.filter((item) =>
+            Object.hasOwn(possession, item.id.toString()),
+          )
+        : trackedItems,
+    [purpose, trackedItems, possession],
+  )
+
+  const totalShort = countableItems.filter(
+    (item) => shortageDeficiencies[item.id.toString()] > 0,
   ).length
   // ストック不足(必要数は満たすが buffer 未達 = stock-only)。stock ON のときのみ。
   const totalStockShort = stockEnabled
-    ? trackedItems.filter(
+    ? countableItems.filter(
         (item) =>
           deficiencies[item.id.toString()] === 0 &&
           stockDeficiencies[item.id.toString()] > 0,
       ).length
     : 0
-  const totalMet = trackedItems.filter(
+  const totalMet = countableItems.filter(
     (item) =>
       (amounts[item.id.toString()] ?? 0) > 0 &&
-      deficiencies[item.id.toString()] === 0 &&
-      (!stockEnabled || stockDeficiencies[item.id.toString()] === 0),
+      shortageDeficiencies[item.id.toString()] === 0,
   ).length
 
   if (!mounted) return null

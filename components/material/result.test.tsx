@@ -144,6 +144,28 @@ describe('goSolver — goal A/B transport (5.1)', () => {
     expect(screen.queryByText('+ストック 60')).toBeNull()
   })
 
+  it('reserveでは未入力素材を不足として数えない', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    setLocalStorage('posession', { '200': 3 })
+
+    render(<Result items={items} quests={quests} />)
+    expect(screen.getByText('金素材A')).toBeInTheDocument()
+    expect(screen.queryByText('−5')).toBeNull()
+    expect(screen.getByText('−147')).toBeInTheDocument()
+  })
+
+  it('reserveの不足フィルタは有限目標の不足を使う', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '200': 3 })
+    setLocalStorage('posession', { '200': 3 })
+
+    render(<Result items={items} quests={quests} />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: '不足' }))
+    expect(screen.getByText('銀素材B')).toBeInTheDocument()
+  })
+
   it('stockEnabled OFF: sends items only, no itemsStock', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
     setLocalStorage('material/result', { '100': 5, '200': 3 })

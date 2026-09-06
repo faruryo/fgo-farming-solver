@@ -445,11 +445,24 @@ export const MaterialSelectionAdvisor = ({
         </div>
 
         {activeTab === 'summer-2026' ? (
-          <EventCraftAdvisor
-            items={items}
-            fullNeed={fullNeed}
-            stockEnabled={stockEnabled}
-          />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <FarmingPurposeSelector compact />
+              {purpose === 'all' && (
+                <span style={{ color: 'var(--text3)', fontSize: 11 }}>
+                  {t(
+                    'common:farming-purpose-advisor-fallback',
+                    '配布評価は今の育成を使用',
+                  )}
+                </span>
+              )}
+            </div>
+            <EventCraftAdvisor
+              items={items}
+              fullNeed={fullNeed}
+              stockEnabled={stockEnabled}
+            />
+          </div>
         ) : (
           <>
             {/* モード切替・総数入力 */}
