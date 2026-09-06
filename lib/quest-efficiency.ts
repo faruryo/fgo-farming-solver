@@ -206,7 +206,7 @@ export const buffer = (item: ItemLike, stockBuffer: StockBuffer): number => {
 }
 
 /**
- * 実効必要数 = 育成必要数 + (stockEnabled ? buffer(item) : 0)。
+ * 実効必要数 = MAX(育成必要数, 在庫基準) (reserve時) / 育成必要数 (training時)。
  * 全 farming 画面(クエスト効率・周回ソルバー取り込み・配布アドバイザー)が
  * 同じ定義を参照することで「今どちらの目標で見ているか」の不整合を構造的に防ぐ(D3)。
  */
@@ -432,10 +432,7 @@ export const computeQuestEfficiency = (
     if (denom != null && denom > 0) {
       for (const rw of enabledRewards) {
         const best = bestEffReward.get(rw.key)
-        const amount = amountOf(
-          q,
-          rw.field,
-        )
+        const amount = amountOf(q, rw.field)
         if (best != null && best > 0 && amount > 0) {
           const relativeEff = amount / denom / best
           contributions.push({
@@ -504,9 +501,10 @@ export const buildNeedByApiItemId = (
   const need: Record<string, number> = {}
   for (const item of drops.items) {
     const atlasId = (item as { atlasId?: number }).atlasId
-        if (atlasId == null) continue
+    if (atlasId == null) continue
     const key = String(atlasId)
-    if ((purpose === true || purpose === 'reserve') && !(key in possession)) continue
+    if ((purpose === true || purpose === 'reserve') && !(key in possession))
+      continue
     const required = toNum(targets[key])
     const owned = toNum(possession[key])
     const finitePurpose =

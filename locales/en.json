@@ -383,7 +383,7 @@
     "efficiency-score": "Efficiency Pt",
     "ap-efficiency-score": "AP Efficiency Pt",
     "turn-efficiency-score": "Turn Efficiency Pt",
-    "efficiency-score-explanation": "A score showing how worthwhile a quest is to farm, based on your current stock and target amounts. The higher the number, the more valuable it is to run that quest. Filters: gems, denominator (AP/turn), scope (needed/all), reward add-ons (QP/Bond/EXP).",
+    "efficiency-score-explanation": "A score showing how worthwhile a quest is to farm, based on your current stock and target amounts. The higher the number, the more valuable it is to run that quest. Filters: gems, denominator (AP/turn), purpose (training/prepare/all), reward add-ons (QP/Bond/EXP).",
     "efficiency-score-help": "Efficiency score explanation",
     "クエストを検索": "Search by quest or area",
     "石含む": "Incl. gems",

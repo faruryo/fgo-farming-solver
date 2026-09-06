@@ -354,7 +354,7 @@ export const QuestEfficiencyList: React.FC = () => {
             >
               {t(
                 'efficiency-score-explanation',
-                '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。',
+                '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・周回目的(育成/備え/全体)・報酬加算(QP/絆/EXP) を切替できます。',
               )}
             </p>
           </PopoverContent>
@@ -378,7 +378,7 @@ export const QuestEfficiencyList: React.FC = () => {
           >
             {t(
               'efficiency-score-explanation',
-              '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・対象(不足/全部)・報酬加算(QP/絆/EXP) を切替できます。',
+              '所持数や目標必要数をもとに、どのクエストを周回すると効率的かを表すスコアです。数値が大きいほど、そのクエストを周回する価値が高いことを意味します。フィルターで 石の有無・分母(AP/ターン)・周回目的(育成/備え/全体)・報酬加算(QP/絆/EXP) を切替できます。',
             )}
           </TooltipContent>
         </Tooltip>
@@ -418,7 +418,8 @@ export const QuestEfficiencyList: React.FC = () => {
         <div className="flex flex-col gap-2">
           {filtered.map((r, index) => {
             const consumesPod = questConsumesPod(r.quest.area)
-            const isPodFreeQuest = consumesPod && podFree.questIds.has(r.quest.id)
+            const isPodFreeQuest =
+              consumesPod && podFree.questIds.has(r.quest.id)
             return (
               <NextLink
                 key={r.quest.id}
@@ -428,7 +429,10 @@ export const QuestEfficiencyList: React.FC = () => {
                   borderLeft: `3px solid ${isPodFreeQuest ? '#60c890' : 'var(--gold)'}`,
                 }}
               >
-                <span className="w-5 text-[11px] font-bold tabular-nums select-none text-right flex-shrink-0" style={{ color: 'var(--text3)' }}>
+                <span
+                  className="w-5 text-[11px] font-bold tabular-nums select-none text-right flex-shrink-0"
+                  style={{ color: 'var(--text3)' }}
+                >
                   {index + 1}
                 </span>
                 <QuestIdentity
@@ -457,7 +461,13 @@ export const QuestEfficiencyList: React.FC = () => {
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {isPodFreeQuest && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(96,200,144,0.15)', color: '#60c890' }}>
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                      style={{
+                        background: 'rgba(96,200,144,0.15)',
+                        color: '#60c890',
+                      }}
+                    >
                       {t('ポッド無料中')}
                     </span>
                   )}

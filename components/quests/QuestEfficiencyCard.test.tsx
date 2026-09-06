@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { QuestEfficiencyCard } from './QuestEfficiencyCard'
 import type { Drops } from '../../lib/get-drops'
 import type { EfficiencyDenominator } from '../../lib/quest-efficiency'
+import type { FarmingPurpose } from '../../lib/farming-purpose'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -61,8 +62,8 @@ let mockOptions = {
     skillStone: { gold: 150, silver: 150, bronze: 150 },
     monumentPiece: { gold: 50, silver: 50 },
   },
-  shortageOnly: true,
-  setShortageOnly: vi.fn(),
+  purpose: 'training' as FarmingPurpose,
+  setPurpose: vi.fn(),
   includeSkillStones: true,
   setIncludeSkillStones: vi.fn(),
   includePieces: true,
@@ -94,7 +95,7 @@ describe('QuestEfficiencyCard', () => {
       materialResult: {},
       itemsRaw: {},
       stockEnabled: false,
-      shortageOnly: true,
+      purpose: 'training',
       denominator: 'ap',
       setDenominator: vi.fn(),
     }

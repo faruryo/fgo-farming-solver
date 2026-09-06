@@ -208,7 +208,10 @@ export const QuestEfficiencyCard: React.FC<{ questId: string }> = ({
                         className="text-[10px] tabular-nums"
                         style={{ color: 'var(--text3)' }}
                       >
-                        ×{c.weight}
+                        ×
+                        {Number.isInteger(c.weight)
+                          ? c.weight
+                          : c.weight.toFixed(2)}
                       </span>
                       <span
                         className="text-xs font-bold tabular-nums w-12 text-right"
