@@ -74,6 +74,9 @@ Repository-only maintenance that does not change product/runtime behavior—such
   - 製品/runtime 挙動を変更しない PR（CI、lint、開発ツール、agent 規約、文書、PR template 等）に対して OpenSpec 不足を指摘しない（OpenSpec は製品/runtime 挙動変更時のみ必須）。
 - **No Mechanical Linting (CI 領域の除外)**:
   - ESLint、Prettier、TypeScript strict (`tsc --noEmit`)、warning ratchet (`pnpm run lint:ratchet`)、jscpd (`audit:duplicates`)、Knip (`audit:dead-code`) などの CI で機械的に検知できる事項（構文、フォーマット、使われていない変数、既存警告の残高等）は指摘しない。ドメイン不変条件、データ安全性、同期・状態整合性に集中すること。
+- **Review Language (レビュー言語は日本語)**:
+  - レビューサマリー、インラインコメント、指摘の見出し・本文・修正提案は原則としてすべて**日本語**で記述すること。英語でのレビュー出力は禁止する。
+  - コード識別子（関数名、変数名、型名など）、ファイル名、パス、CLI コマンド、コミットハッシュなどの技術的固有名詞はそのままで構わないが、解説や推論は英語ではなく日本語で行うこと。
 
 ### 2. High-Priority Domain Invariants (重点検証すべきドメイン不変条件)
 
