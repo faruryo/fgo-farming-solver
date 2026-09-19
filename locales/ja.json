@@ -521,6 +521,7 @@
       "goToResult": "必要数一覧を見る"
     },
     "status": {
+      "label": "クラススコア状態",
       "target": "目標",
       "completed": "解放済",
       "none": "未設定"

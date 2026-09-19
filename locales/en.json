@@ -598,6 +598,7 @@
       "goToResult": "View Required Items"
     },
     "status": {
+      "label": "Class board status",
       "target": "Target",
       "completed": "Completed",
       "none": "None"

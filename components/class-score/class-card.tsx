@@ -166,46 +166,73 @@ const ClassCardSummary: React.FC = () => {
   )
 }
 
+const getActionSegmentClass = (
+  isSelected: boolean,
+  statusKey: ClassScoreStatus,
+): string => {
+  if (!isSelected) {
+    return 'text-muted-foreground hover:text-foreground hover:bg-background/40'
+  }
+  if (statusKey === 'target') {
+    return 'bg-primary text-primary-foreground shadow-xs font-semibold'
+  }
+  if (statusKey === 'completed') {
+    return 'bg-emerald-600 text-white shadow-xs font-semibold'
+  }
+  return 'bg-background text-foreground shadow-xs font-semibold'
+}
+
 const ClassCardActions: React.FC<{
   status: ClassScoreStatus
   onChangeStatus: (status: ClassScoreStatus) => void
 }> = ({ status, onChangeStatus }) => {
   const { t } = useTranslation('classScore')
-  const isTarget = status === 'target'
-  const isCompleted = status === 'completed'
 
   return (
-    <div className="grid grid-cols-3 gap-1.5 pt-1">
-      <Button
-        size="sm"
-        variant={!isTarget && !isCompleted ? 'secondary' : 'outline'}
-        className="text-xs h-8 px-2"
+    <div
+      role="group"
+      aria-label={t('status.label', 'クラススコア状態')}
+      className="grid grid-cols-3 p-1 rounded-lg bg-muted/70 border border-border/40 gap-1 text-xs select-none"
+    >
+      <button
+        type="button"
+        aria-pressed={status === 'none'}
         onClick={() => onChangeStatus('none')}
+        className={`flex items-center justify-center py-1.5 px-2 rounded-md font-medium transition-all duration-150 cursor-pointer ${getActionSegmentClass(
+          status === 'none',
+          'none',
+        )}`}
       >
         {t('action.none', '未設定')}
-      </Button>
-      <Button
-        size="sm"
-        variant={isTarget ? 'default' : 'outline'}
-        className="text-xs h-8 px-2"
-        onClick={() => onChangeStatus('target')}
+      </button>
+      <button
+        type="button"
+        aria-pressed={status === 'target'}
+        onClick={() =>
+          onChangeStatus(status === 'target' ? 'none' : 'target')
+        }
+        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-medium transition-all duration-150 cursor-pointer ${getActionSegmentClass(
+          status === 'target',
+          'target',
+        )}`}
       >
-        <Target className="w-3 h-3 mr-1" />
-        {t('action.target', '目標')}
-      </Button>
-      <Button
-        size="sm"
-        variant={isCompleted ? 'secondary' : 'outline'}
-        className={`text-xs h-8 px-2 ${
-          isCompleted
-            ? 'bg-emerald-600/20 text-emerald-600 dark:text-emerald-400'
-            : ''
-        }`}
-        onClick={() => onChangeStatus('completed')}
+        <Target className="w-3.5 h-3.5" />
+        <span>{t('action.target', '目標')}</span>
+      </button>
+      <button
+        type="button"
+        aria-pressed={status === 'completed'}
+        onClick={() =>
+          onChangeStatus(status === 'completed' ? 'none' : 'completed')
+        }
+        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-medium transition-all duration-150 cursor-pointer ${getActionSegmentClass(
+          status === 'completed',
+          'completed',
+        )}`}
       >
-        <Check className="w-3 h-3 mr-1" />
-        {t('action.completed', '解放済')}
-      </Button>
+        <Check className="w-3.5 h-3.5" />
+        <span>{t('action.completed', '解放済')}</span>
+      </button>
     </div>
   )
 }
