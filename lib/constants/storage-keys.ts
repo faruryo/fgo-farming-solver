@@ -25,6 +25,7 @@ export const STORAGE_KEYS = {
   STOCK_BUFFER: 'efficiency/stockBuffer',
   FARMING_PURPOSE: 'efficiency/farmingPurpose',
   MASTER_LEVEL: 'masterLevel',
+  CLASS_SCORE: 'classScore',
   TODO_STATE: 'todoState',
   TODO_SETTINGS: 'todoSettings',
 
@@ -78,6 +79,7 @@ export const CLOUD_SYNC_KEYS = [
   STORAGE_KEYS.STOCK_BUFFER,
   STORAGE_KEYS.FARMING_PURPOSE,
   STORAGE_KEYS.MASTER_LEVEL,
+  STORAGE_KEYS.CLASS_SCORE,
   STORAGE_KEYS.TODO_STATE,
   STORAGE_KEYS.TODO_SETTINGS,
 ] as const

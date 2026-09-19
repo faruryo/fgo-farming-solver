@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { MaterialsForServants } from '../../lib/get-materials'
-import { sumMaterials } from '../../lib/sum-materials'
+import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 export const CalcButton = ({
@@ -23,7 +23,7 @@ export const CalcButton = ({
   const { t } = useTranslation('material')
   const calc = () => {
     setCalculating(true)
-    const result = sumMaterials(state, materials)
+    const result = calculateTotalRequiredMaterials(state, materials)
     localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify(result))
     // Notify change tracking (dirty metadata / auto-save) — direct setItem
     // is invisible to the cloud-sync modification listener otherwise.

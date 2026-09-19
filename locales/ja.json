@@ -150,6 +150,10 @@
     "title": "{{name}}のドロップ"
   },
   "material": {
+    "class-score-link": "クラススコア目標設定",
+    "class-score-breakdown-note": "(内CS: {{amount}})",
+    "class-score-materials": "クラススコア素材",
+    "class-score-settings-link": "クラススコア設定",
     "catalog-loading": "素材データを読み込んでいます…",
     "catalog-load-error": "素材データを読み込めません。",
     "catalog-retry": "再試行",
@@ -484,5 +488,74 @@
     "ウィークリー": "ウィークリー",
     "イベント交換": "イベント交換",
     "カスタム": "カスタム"
+  },
+  "classScore": {
+    "title": "クラススコア目標シミュレータ",
+    "description": "各クラスの最大解放に必要な素材（モニュピ・通常素材・QP・砂・トーチ）を目標に組み込みます。",
+    "nav": {
+      "backToMaterial": "育成素材計算機に戻る"
+    },
+    "menu": {
+      "more": "一括操作",
+      "setAllTarget": "全クラスを目標にする",
+      "resetAll": "設定を一括リセット"
+    },
+    "undo": {
+      "message": "設定を変更しました。誤操作の場合は直前の状態に戻せます。",
+      "button": "元に戻す",
+      "dismiss": "閉じる"
+    },
+    "summary": {
+      "title": "目標集計サマリー",
+      "targetCount": "目標",
+      "completedCount": "解放済",
+      "empty": "目標に設定されているクラススコアはありません。下のカードから目標にするクラスを選んでください。",
+      "totalQp": "合計必要QP",
+      "totalSand": "星光の砂",
+      "qp": "必要QP",
+      "sand": "星光の砂",
+      "monuments": "モニュメント",
+      "torches": "トーチ合計",
+      "actionDesc": "周回ソルバー反映",
+      "syncNote": "計算時に素材目標へ自動合算されます",
+      "goToResult": "必要数一覧を見る"
+    },
+    "status": {
+      "target": "目標",
+      "completed": "解放済",
+      "none": "未設定"
+    },
+    "action": {
+      "target": "目標",
+      "completed": "解放済",
+      "none": "未設定",
+      "viewResult": "素材結果を見る"
+    },
+    "materials": {
+      "hide": "必要素材を閉じる",
+      "show": "必要素材の内訳を見る",
+      "generic": "通常強化素材",
+      "pieces": "ピース / モニュメント"
+    },
+    "dialog": {
+      "cancel": "キャンセル",
+      "reset": {
+        "title": "クラススコア設定のリセット",
+        "description": "全9クラスのクラススコア目標設定をすべてリセット（未設定）にしますか？",
+        "note": "※実行後も画面下のトーストから「元に戻す」ことができます。",
+        "confirm": "リセットする"
+      }
+    },
+    "class-name": {
+      "saber": "セイバー",
+      "archer": "アーチャー",
+      "lancer": "ランサー",
+      "rider": "ライダー",
+      "caster": "キャスター",
+      "assassin": "アサシン",
+      "berserker": "バーサーカー",
+      "extra1": "EXTRA I（ルーラー・アヴェンジャー・ムーンキャンサー）",
+      "extra2": "EXTRA II（アルターエゴ・フォーリナー・プリテンダー・ビースト）"
+    }
   }
 }
