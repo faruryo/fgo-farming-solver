@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +9,7 @@ import { MaterialsForServants } from '../../lib/get-materials'
 import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-catalog'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
-import { sumMaterials } from '../../lib/sum-materials'
+import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
 import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import Image from 'next/image'
@@ -230,7 +231,7 @@ export const Index = ({
   )
 
   const handleCalc = () => {
-    const result = sumMaterials(chaldeaState, materials)
+    const result = calculateTotalRequiredMaterials(chaldeaState, materials)
     localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify(result))
     // Notify change tracking (dirty metadata / auto-save) — direct setItem
     // is invisible to the cloud-sync modification listener otherwise.
@@ -257,6 +258,15 @@ export const Index = ({
           <div>
             <div className="c-page-en">MATERIAL CALCULATOR</div>
             <h1 className="c-page-title">育成素材計算機</h1>
+            <div className="flex items-center gap-3 mt-1.5">
+              <Link
+                href="/material/class-score"
+                className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1 bg-primary/10 px-2.5 py-1 rounded-full transition-colors"
+              >
+                <span>{t('class-score-link', 'クラススコア目標設定')}</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
           <div className="c-stats">
             <div className="c-stat">

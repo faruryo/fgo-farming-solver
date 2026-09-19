@@ -25,6 +25,7 @@ import {
   FileText,
   Sparkles,
   ListChecks,
+  Target,
   type LucideIcon,
 } from 'lucide-react'
 import NextLink from 'next/link'
@@ -80,6 +81,11 @@ export const menuGroups: MenuGroup[] = [
         href: '/material',
         icon: FlaskConical,
         label: { ja: '育成素材計算機', en: 'Material Calculator' },
+      },
+      {
+        href: '/material/class-score',
+        icon: Target,
+        label: { ja: 'クラススコア', en: 'Class Score' },
       },
       {
         href: '/material/result#advisor',

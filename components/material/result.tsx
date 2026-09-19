@@ -18,11 +18,10 @@ import { Quest } from '../../interfaces/fgodrop'
 import { groupBy } from '../../utils/group-by'
 import { buffer, computeFiniteTarget } from '../../lib/quest-efficiency'
 import { submitSolve } from '../../lib/farming/submit-solve'
-import {
-  buildSolveParams,
-  toStockItemLike,
-} from '../../lib/farming/build-solve-params'
+import { buildSolveParams, toStockItemLike } from '../../lib/farming/build-solve-params'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { useClassScore } from '../../hooks/use-class-score'
+import { sumClassScoreMaterials } from '../../lib/class-score/sum'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -64,6 +63,7 @@ type MatCardProps = {
   item: EnrichedItem
   required: number
   trainingRequired: number
+  classScoreRequired?: number
   owned: number | undefined
   deficiency: number
   rarityColor: string
@@ -78,6 +78,7 @@ const MatCard = ({
   item,
   required,
   trainingRequired,
+  classScoreRequired,
   owned,
   deficiency,
   rarityColor,
@@ -124,6 +125,15 @@ const MatCard = ({
         <div className="c-mat-count-row">
           <span className="c-mat-count-label">必要</span>
           <span className="c-mat-count-val required">{required}</span>
+          {classScoreRequired != null && classScoreRequired > 0 && (
+            <span
+              style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}
+            >
+              {t('class-score-breakdown-note', '(内CS: {{amount}})', {
+                amount: classScoreRequired,
+              })}
+            </span>
+          )}
           {stockEnabled && (stockBufferAmount ?? 0) > 0 && (
             <span
               style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}
@@ -190,6 +200,12 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   const [amounts] = useLocalStorage<Record<string, number>>(
     STORAGE_KEYS.MATERIAL_RESULT,
     initialAmounts,
+  )
+
+  const { state: classScoreState } = useClassScore()
+  const classScoreAmounts = useMemo(
+    () => sumClassScoreMaterials(classScoreState),
+    [classScoreState],
   )
 
   const {
@@ -421,6 +437,22 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
       color: s.color,
       items: itemsByFloor[String(s.floor)] ?? [],
     }))
+    // クラススコア素材（星光の砂: 50, 新星のトーチ: 51, 明星のトーチ: 52, 極星のトーチ: 53）
+    const classScoreItemIds = new Set(['50', '51', '52', '53'])
+    const classScoreItems = Object.entries(itemsByFloor)
+      .filter(([floor]) => !known.has(Number(floor)))
+      .flatMap(([, arr]) => arr ?? [])
+      .filter((item) => classScoreItemIds.has(item.id.toString()))
+      .sort((a, b) => a.priority - b.priority)
+    if (classScoreItems.length > 0) {
+      base.push({
+        key: 'classScore',
+        label: t('class-score-materials', 'クラススコア素材'),
+        color: '#8b5cf6',
+        items: classScoreItems,
+      })
+    }
+
     // floor 1〜3 以外(QP=floor0 / 聖杯=floor4 / 星光の砂等=floor10…)のうち、
     // 「その他」は当面 QP のみ表示する(聖杯・特殊素材等は出さない)。
     // これらは toApiItemId が空=ソルバー対象外で、表示・所持トラッキング専用。
@@ -438,7 +470,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
       })
     }
     return base.filter((s) => s.items.length > 0)
-  }, [itemsByFloor])
+  }, [itemsByFloor, t])
 
   const countableItems = useMemo(
     () =>
@@ -583,6 +615,9 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
                   setPossession((prev) => ({ ...prev, ...updates }))
                 }
               />
+              <Link href="/material/class-score" className="c-back-btn">
+                {t('class-score-settings-link', 'クラススコア設定')}
+              </Link>
               <Link href="/material" className="c-back-btn">
                 ← 設定に戻る
               </Link>
@@ -629,6 +664,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
                           item={item}
                           required={stockEnabled ? Math.max(trainingRequired, bufferAmount) : trainingRequired}
                           trainingRequired={trainingRequired}
+                          classScoreRequired={Reflect.get(classScoreAmounts, id) ?? 0}
                           owned={Reflect.get(possession, id)}
                           deficiency={stockEnabled ? Reflect.get(stockDeficiencies, id) ?? 0 : Reflect.get(deficiencies, id) ?? 0}
                           rarityColor={bgColor(item.background)}

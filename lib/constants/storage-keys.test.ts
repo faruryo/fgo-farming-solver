@@ -32,6 +32,7 @@ describe('storage-keys', () => {
       'efficiency/stockBuffer',
       'efficiency/farmingPurpose',
       'masterLevel',
+      'classScore',
       'todoState',
       'todoSettings',
     ])

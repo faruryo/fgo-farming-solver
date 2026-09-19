@@ -208,6 +208,10 @@
     "ドロップ": "Drops"
   },
   "material": {
+    "class-score-link": "Class Score Settings",
+    "class-score-breakdown-note": "(CS: {{amount}})",
+    "class-score-materials": "Class Score Materials",
+    "class-score-settings-link": "Class Score Settings",
     "catalog-loading": "Loading material data…",
     "catalog-load-error": "Material data could not be loaded.",
     "catalog-retry": "Retry",
@@ -561,5 +565,75 @@
     "ウィークリー": "Weekly",
     "イベント交換": "Event",
     "カスタム": "Custom"
+  },
+  "classScore": {
+    "title": "Class Board Simulator",
+    "description": "Add required materials (Monuments, Pieces, Standard Materials, QP, Starlight Sand, Torches) to your farming targets.",
+    "nav": {
+      "backToMaterial": "Back to Material Calculator"
+    },
+    "menu": {
+      "more": "Bulk Actions",
+      "setAllTarget": "Set All Classes to Target",
+      "resetAll": "Reset All Settings"
+    },
+    "undo": {
+      "message": "Settings updated. You can undo if this was a mistake.",
+      "button": "Undo",
+      "dismiss": "Dismiss"
+    },
+    "summary": {
+      "title": "Target Summary",
+      "targetCount": "Target",
+      "completedCount": "Completed",
+      "empty": "No class boards are currently targeted. Choose classes below to set targets.",
+      "totalQp": "Total QP Required",
+      "totalSand": "Starlight Sand",
+      "qp": "QP Required",
+      "sand": "Starlight Sand",
+      "monuments": "Monuments",
+      "torches": "Torches",
+      "actionDesc": "Solver Sync",
+      "syncNote": "Automatically merged into material targets when calculated",
+      "goToResult": "View Required Items"
+    },
+    "status": {
+      "label": "Class board status",
+      "target": "Target",
+      "completed": "Completed",
+      "none": "None"
+    },
+    "action": {
+      "target": "Target",
+      "completed": "Completed",
+      "none": "None",
+      "viewResult": "View Results"
+    },
+    "materials": {
+      "hide": "Hide Material Details",
+      "show": "Show Material Details",
+      "generic": "Standard Materials",
+      "pieces": "Pieces & Monuments"
+    },
+    "dialog": {
+      "cancel": "Cancel",
+      "reset": {
+        "title": "Reset Class Score Settings",
+        "description": "Are you sure you want to reset all 9 class board targets to default (unset)?",
+        "note": "※ You can still undo this action using the banner at the bottom of the screen.",
+        "confirm": "Reset"
+      }
+    },
+    "class-name": {
+      "saber": "Saber",
+      "archer": "Archer",
+      "lancer": "Lancer",
+      "rider": "Rider",
+      "caster": "Caster",
+      "assassin": "Assassin",
+      "berserker": "Berserker",
+      "extra1": "EXTRA I (Ruler, Avenger, Moon Cancer)",
+      "extra2": "EXTRA II (Alter Ego, Foreigner, Pretender, Beast)"
+    }
   }
 }
