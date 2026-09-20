@@ -1,0 +1,186 @@
+import type { ClassBoardData, ClassBoardLine } from './board-types'
+import type { ClassBoardDetailState } from './types'
+
+const buildUndirectedAdjacency = (lines: ClassBoardLine[]): Map<number, number[]> => {
+  const adj = new Map<number, number[]>()
+  for (const line of lines) {
+    const listPrev = adj.get(line.prev) ?? []
+    listPrev.push(line.next)
+    adj.set(line.prev, listPrev)
+
+    const listNext = adj.get(line.next) ?? []
+    listNext.push(line.prev)
+    adj.set(line.next, listNext)
+  }
+  return adj
+}
+
+/**
+ * 起点から指定マスまでの経路上のマスを「目標」に一括設定する純関数
+ * - すでに「解放済」のマスは解放済みのまま維持する。
+ * - 未解放マスのみを「目標」に追加する。
+ */
+export const computeRouteTargets = (
+  curBoard: ClassBoardDetailState | undefined,
+  path: number[],
+): ClassBoardDetailState => {
+  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
+  const targets = new Set(curBoard?.targetSquareIds ?? [])
+  for (const sqId of path) {
+    if (!unlocked.has(sqId)) {
+      targets.add(sqId)
+    }
+  }
+  return {
+    unlockedSquareIds: Array.from(unlocked),
+    targetSquareIds: Array.from(targets),
+  }
+}
+
+/**
+ * 起点から指定マスまでの経路上のマスを「解放済」に一括設定する純関数
+ * - 経路上の全マスを「解放済」に追加する。
+ * - 経路上のマスが「目標」に含まれていた場合は削除する（目標達成扱い）。
+ */
+export const computeRouteUnlocked = (
+  curBoard: ClassBoardDetailState | undefined,
+  path: number[],
+): ClassBoardDetailState => {
+  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
+  const targets = new Set(curBoard?.targetSquareIds ?? [])
+  for (const sqId of path) {
+    unlocked.add(sqId)
+    targets.delete(sqId)
+  }
+  return {
+    unlockedSquareIds: Array.from(unlocked),
+    targetSquareIds: Array.from(targets),
+  }
+}
+
+const addStartSeed = (
+  startId: number,
+  removedSquareId: number,
+  active: Set<number>,
+  adj: Map<number, number[]>,
+  reachable: Set<number>,
+  queue: number[],
+) => {
+  if (startId === removedSquareId) return
+  if (active.has(startId)) {
+    reachable.add(startId)
+    queue.push(startId)
+    return
+  }
+  const neighbors = adj.get(startId) ?? []
+  for (const n of neighbors) {
+    if (n !== removedSquareId && active.has(n) && !reachable.has(n)) {
+      reachable.add(n)
+      queue.push(n)
+    }
+  }
+}
+
+const findReachableSquares = (
+  active: Set<number>,
+  lines: ClassBoardLine[],
+  startSquareIds: number[],
+  removedSquareId: number,
+): Set<number> => {
+  const adj = buildUndirectedAdjacency(lines)
+  const reachable = new Set<number>()
+  const queue: number[] = []
+
+  for (const startId of startSquareIds) {
+    addStartSeed(startId, removedSquareId, active, adj, reachable, queue)
+  }
+
+  while (queue.length > 0) {
+    const curr = queue.shift()
+    if (curr === undefined) break
+    const neighbors = adj.get(curr) ?? []
+    for (const neighbor of neighbors) {
+      if (active.has(neighbor) && !reachable.has(neighbor)) {
+        reachable.add(neighbor)
+        queue.push(neighbor)
+      }
+    }
+  }
+
+  return reachable
+}
+
+/**
+ * 指定マスを未解放にした際、起点からそのマスを経由しないと到達できなくなった
+ * 「起点と反対側（下流/外側）のマス群」を一括で未解放にする純関数。
+ * 起点マスから有効な隣接マスだけを辿って到達可能なマスのみを保持する。
+ */
+export const computePrunedOnNone = (
+  curBoard: ClassBoardDetailState | undefined,
+  removedSquareId: number,
+  lines: ClassBoardLine[],
+  startSquareIds: number[],
+): ClassBoardDetailState => {
+  if (!curBoard) {
+    return { unlockedSquareIds: [], targetSquareIds: [] }
+  }
+
+  const active = new Set([
+    ...curBoard.unlockedSquareIds,
+    ...curBoard.targetSquareIds,
+  ])
+  active.delete(removedSquareId)
+
+  if (active.size === 0) {
+    return { unlockedSquareIds: [], targetSquareIds: [] }
+  }
+
+  const reachable = findReachableSquares(active, lines, startSquareIds, removedSquareId)
+
+  return {
+    unlockedSquareIds: curBoard.unlockedSquareIds.filter((id) => reachable.has(id)),
+    targetSquareIds: curBoard.targetSquareIds.filter((id) => reachable.has(id)),
+  }
+}
+
+/**
+ * 実サインマス（blankマス以外）の全IDを取得する純関数
+ */
+export const getPlayableSquareIds = (boardData: ClassBoardData | undefined): number[] => {
+  if (!boardData) return []
+  return boardData.squares
+    .filter((sq) => !sq.flags.includes('blank'))
+    .map((sq) => sq.id)
+}
+
+/**
+ * 全実サインマスを一括で目標に設定する純関数（既存の解放済マスは維持）
+ */
+export const computeBoardAllTarget = (
+  curBoard: ClassBoardDetailState | undefined,
+  playableSquareIds: number[],
+): ClassBoardDetailState => {
+  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
+  const targets = new Set<number>()
+
+  for (const id of playableSquareIds) {
+    if (!unlocked.has(id)) {
+      targets.add(id)
+    }
+  }
+
+  return {
+    unlockedSquareIds: Array.from(unlocked),
+    targetSquareIds: Array.from(targets),
+  }
+}
+
+/**
+ * 全実サインマスを一括で解放済に設定する純関数
+ */
+export const computeBoardAllUnlocked = (
+  playableSquareIds: number[],
+): ClassBoardDetailState => ({
+  unlockedSquareIds: [...playableSquareIds],
+  targetSquareIds: [],
+})

@@ -3,7 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import { Check, Lock, Navigation, Sparkles, Target, X } from 'lucide-react'
+import { Check, Lock, Sparkles, Target, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ export type SquareDialogProps = {
   onClose: () => void
   onSetStatus: (status: ClassBoardSquareStatus) => void
   onSetRouteTarget: (squareId: number) => void
+  onSetRouteUnlocked: (squareId: number) => void
 }
 
 const SquareBadges: React.FC<{ square: ClassBoardSquare }> = ({ square }) => {
@@ -67,45 +68,89 @@ const SquareItemsList: React.FC<{ square: ClassBoardSquare }> = ({ square }) => 
   )
 }
 
+const SingleSquareOptions: React.FC<{
+  onSetStatus: (status: ClassBoardSquareStatus) => void
+}> = ({ onSetStatus }) => {
+  const { t } = useTranslation('classScore')
+  return (
+    <div className="flex items-center justify-between pt-1.5 border-t border-border/30 text-[11px] text-muted-foreground">
+      <span>{t('square.status.single-toggle', '単体操作')}:</span>
+      <div className="flex gap-1.5">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-amber-500 cursor-pointer"
+          onClick={() => onSetStatus('target')}
+        >
+          {t('square.status.single-target', 'このマスのみ目標')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-emerald-500 cursor-pointer"
+          onClick={() => onSetStatus('unlocked')}
+        >
+          {t('square.status.single-unlocked', 'このマスのみ解放済')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 const SquareStatusSelector: React.FC<{
   status: ClassBoardSquareStatus
   onSetStatus: (status: ClassBoardSquareStatus) => void
-}> = ({ status, onSetStatus }) => {
+  onSetRouteTarget: () => void
+  onSetRouteUnlocked: () => void
+}> = ({ status, onSetStatus, onSetRouteTarget, onSetRouteUnlocked }) => {
   const { t } = useTranslation('classScore')
   return (
-    <div className="grid grid-cols-3 gap-1 p-1 bg-muted/60 rounded-lg border border-border/40 text-xs">
-      <Button
-        type="button"
-        size="sm"
-        variant={status === 'none' ? 'secondary' : 'ghost'}
-        className="h-8 text-xs cursor-pointer"
-        onClick={() => onSetStatus('none')}
-      >
-        <X className="w-3.5 h-3.5 mr-1" />
-        {t('square.status.none', '未解放')}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant={status === 'target' ? 'default' : 'ghost'}
-        className="h-8 text-xs cursor-pointer"
-        onClick={() => onSetStatus('target')}
-      >
-        <Target className="w-3.5 h-3.5 mr-1" />
-        {t('square.status.target', '目標')}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant={status === 'unlocked' ? 'secondary' : 'ghost'}
-        className={`h-8 text-xs cursor-pointer ${
-          status === 'unlocked' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''
-        }`}
-        onClick={() => onSetStatus('unlocked')}
-      >
-        <Check className="w-3.5 h-3.5 mr-1" />
-        {t('square.status.unlocked', '解放済')}
-      </Button>
+    <div className="space-y-2">
+      <div className="grid grid-cols-3 gap-1 p-1 bg-muted/60 rounded-lg border border-border/40 text-xs">
+        <Button
+          type="button"
+          size="sm"
+          variant={status === 'none' ? 'secondary' : 'ghost'}
+          className="h-8 text-xs cursor-pointer"
+          onClick={() => onSetStatus('none')}
+        >
+          <X className="w-3.5 h-3.5 mr-1" />
+          {t('square.status.none', '未解放')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={status === 'target' ? 'default' : 'ghost'}
+          className="h-8 text-xs cursor-pointer"
+          onClick={onSetRouteTarget}
+        >
+          <Target className="w-3.5 h-3.5 mr-1" />
+          {t('square.status.route-target', 'ルート目標')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={status === 'unlocked' ? 'secondary' : 'ghost'}
+          className={`h-8 text-xs cursor-pointer ${
+            status === 'unlocked' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''
+          }`}
+          onClick={onSetRouteUnlocked}
+        >
+          <Check className="w-3.5 h-3.5 mr-1" />
+          {t('square.status.route-unlocked', 'ルート解放済')}
+        </Button>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground/80 px-0.5">
+        {t(
+          'square.status.route-help',
+          '※目標・解放済は起点からの最短ルートを一括設定します',
+        )}
+      </p>
+
+      <SingleSquareOptions onSetStatus={onSetStatus} />
     </div>
   )
 }
@@ -156,6 +201,7 @@ export const SquareDialog: React.FC<SquareDialogProps> = ({
   onClose,
   onSetStatus,
   onSetRouteTarget,
+  onSetRouteUnlocked,
 }) => {
   const { t } = useTranslation('classScore')
   if (!square) return null
@@ -178,24 +224,13 @@ export const SquareDialog: React.FC<SquareDialogProps> = ({
             <span className="text-xs font-semibold text-muted-foreground block">
               {t('square.status.label', 'このマスの状態')}
             </span>
-            <SquareStatusSelector status={status} onSetStatus={onSetStatus} />
+            <SquareStatusSelector
+              status={status}
+              onSetStatus={onSetStatus}
+              onSetRouteTarget={() => onSetRouteTarget(square.id)}
+              onSetRouteUnlocked={() => onSetRouteUnlocked(square.id)}
+            />
           </div>
-
-          {status !== 'unlocked' && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full text-xs font-medium text-amber-500 border-amber-500/40 hover:bg-amber-500/10 cursor-pointer flex items-center justify-center gap-1.5"
-              onClick={() => {
-                onSetRouteTarget(square.id)
-                onClose()
-              }}
-            >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>{t('square.action.route-target', '起点からここまでルート一括目標')}</span>
-            </Button>
-          )}
         </div>
       </DialogContent>
     </Dialog>

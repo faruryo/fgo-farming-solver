@@ -11,6 +11,18 @@ import {
 import { useLocalStorage } from './use-local-storage'
 import { getClassBoardData } from '../lib/class-score/board-loader'
 import { findShortestPathFromStarts } from '../lib/class-score/find-shortest-path'
+import {
+  computeBoardAllTarget,
+  computeBoardAllUnlocked,
+  computePrunedOnNone,
+  computeRouteTargets,
+  computeRouteUnlocked,
+  getPlayableSquareIds,
+} from '../lib/class-score/route-actions'
+import type {
+  ClassBoardData,
+  ClassBoardSquareStatus,
+} from '../lib/class-score/board-types'
 
 const buildAllStatusClasses = (
   status: ClassScoreStatus,
@@ -32,7 +44,7 @@ const countStatus = (
 const updateSquareInState = (
   current: ClassBoardDetailState | undefined,
   squareId: number,
-  status: 'none' | 'target' | 'unlocked',
+  status: ClassBoardSquareStatus,
 ): ClassBoardDetailState => {
   const unlocked = new Set(current?.unlockedSquareIds ?? [])
   const targets = new Set(current?.targetSquareIds ?? [])
@@ -50,6 +62,26 @@ const updateSquareInState = (
     unlockedSquareIds: Array.from(unlocked),
     targetSquareIds: Array.from(targets),
   }
+}
+
+const updateSquareStatusInBoard = (
+  curBoard: ClassBoardDetailState | undefined,
+  squareId: number,
+  status: ClassBoardSquareStatus,
+  boardData: ClassBoardData | undefined,
+): ClassBoardDetailState => {
+  if (status === 'none') {
+    if (!boardData) {
+      return updateSquareInState(curBoard, squareId, 'none')
+    }
+    return computePrunedOnNone(
+      curBoard,
+      squareId,
+      boardData.lines,
+      boardData.startSquareIds,
+    )
+  }
+  return updateSquareInState(curBoard, squareId, status)
 }
 
 const getBoardDetail = (
@@ -90,21 +122,52 @@ const withRemovedBoard = (
   }
 }
 
-const computeRouteTargets = (
-  curBoard: ClassBoardDetailState | undefined,
-  path: number[],
-): ClassBoardDetailState => {
-  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
-  const targets = new Set(curBoard?.targetSquareIds ?? [])
-  for (const sqId of path) {
-    if (!unlocked.has(sqId)) {
-      targets.add(sqId)
+const buildClassStatusUpdate = (
+  prev: ClassScoreState | null,
+  key: ClassScoreClassKey,
+  status: ClassScoreStatus,
+): ClassScoreState => {
+  const nextClasses = { ...(prev?.classes ?? DEFAULT_CLASS_SCORE_STATE.classes) }
+  Reflect.set(nextClasses, key, status)
+  const boardData = getClassBoardData(key)
+  const playables = getPlayableSquareIds(boardData)
+  const curBoards = prev?.boards ?? {}
+  const nextBoards = { ...curBoards }
+
+  if (status === 'target') {
+    const curDetail = Reflect.get(curBoards, key)
+    Reflect.set(nextBoards, key, computeBoardAllTarget(curDetail, playables))
+  } else if (status === 'completed') {
+    Reflect.set(nextBoards, key, computeBoardAllUnlocked(playables))
+  } else {
+    Reflect.deleteProperty(nextBoards, key)
+  }
+
+  return { classes: nextClasses, boards: nextBoards }
+}
+
+const buildAllStatusUpdate = (
+  status: ClassScoreStatus,
+  prevBoards: Partial<Record<ClassScoreClassKey, ClassBoardDetailState>> | undefined,
+): ClassScoreState => {
+  const nextClasses = buildAllStatusClasses(status)
+  if (status === 'none') {
+    return { classes: nextClasses, boards: {} }
+  }
+
+  const nextBoards: Partial<Record<ClassScoreClassKey, ClassBoardDetailState>> = {}
+  for (const key of CLASS_SCORE_CLASS_KEYS) {
+    const boardData = getClassBoardData(key)
+    const playables = getPlayableSquareIds(boardData)
+    if (status === 'target') {
+      const curDetail = prevBoards ? Reflect.get(prevBoards, key) : undefined
+      Reflect.set(nextBoards, key, computeBoardAllTarget(curDetail, playables))
+    } else {
+      Reflect.set(nextBoards, key, computeBoardAllUnlocked(playables))
     }
   }
-  return {
-    unlockedSquareIds: Array.from(unlocked),
-    targetSquareIds: Array.from(targets),
-  }
+
+  return { classes: nextClasses, boards: nextBoards }
 }
 
 const useClassScoreUndo = (
@@ -127,14 +190,34 @@ const useClassScoreUndo = (
   return { setUndoState, undo, clearUndo, canUndo: undoState !== null }
 }
 
+const updateRouteInState = (
+  prev: ClassScoreState | null,
+  key: ClassScoreClassKey,
+  targetSquareId: number,
+  computeFn: (cur: ClassBoardDetailState | undefined, path: number[]) => ClassBoardDetailState,
+): ClassScoreState => {
+  const boardData = getClassBoardData(key)
+  if (!boardData) return prev ?? DEFAULT_CLASS_SCORE_STATE
+  const path = findShortestPathFromStarts(
+    boardData.lines,
+    boardData.startSquareIds,
+    targetSquareId,
+  )
+  if (path.length === 0) return prev ?? DEFAULT_CLASS_SCORE_STATE
+  const curBoard = getBoardDetail(prev?.boards, key)
+  const nextBoard = computeFn(curBoard, path)
+  return withUpdatedBoard(prev, key, nextBoard)
+}
+
 const useClassScoreBoardActions = (
   setState: React.Dispatch<React.SetStateAction<ClassScoreState>>,
 ) => {
   const setSquareStatus = useCallback(
-    (key: ClassScoreClassKey, squareId: number, status: 'none' | 'target' | 'unlocked') => {
+    (key: ClassScoreClassKey, squareId: number, status: ClassBoardSquareStatus) => {
+      const boardData = getClassBoardData(key)
       setState((prev) => {
         const curBoard = getBoardDetail(prev?.boards, key)
-        const nextBoard = updateSquareInState(curBoard, squareId, status)
+        const nextBoard = updateSquareStatusInBoard(curBoard, squareId, status, boardData)
         return withUpdatedBoard(prev, key, nextBoard)
       })
     },
@@ -143,19 +226,14 @@ const useClassScoreBoardActions = (
 
   const setSquareRouteTarget = useCallback(
     (key: ClassScoreClassKey, targetSquareId: number) => {
-      const boardData = getClassBoardData(key)
-      if (!boardData) return
-      const path = findShortestPathFromStarts(
-        boardData.lines,
-        boardData.startSquareIds,
-        targetSquareId,
-      )
-      if (path.length === 0) return
-      setState((prev) => {
-        const curBoard = getBoardDetail(prev?.boards, key)
-        const nextBoard = computeRouteTargets(curBoard, path)
-        return withUpdatedBoard(prev, key, nextBoard)
-      })
+      setState((prev) => updateRouteInState(prev, key, targetSquareId, computeRouteTargets))
+    },
+    [setState],
+  )
+
+  const setSquareRouteUnlocked = useCallback(
+    (key: ClassScoreClassKey, targetSquareId: number) => {
+      setState((prev) => updateRouteInState(prev, key, targetSquareId, computeRouteUnlocked))
     },
     [setState],
   )
@@ -167,7 +245,12 @@ const useClassScoreBoardActions = (
     [setState],
   )
 
-  return { setSquareStatus, setSquareRouteTarget, resetBoardDetail }
+  return {
+    setSquareStatus,
+    setSquareRouteTarget,
+    setSquareRouteUnlocked,
+    resetBoardDetail,
+  }
 }
 
 export const useClassScore = () => {
@@ -176,16 +259,16 @@ export const useClassScore = () => {
     DEFAULT_CLASS_SCORE_STATE,
   )
   const { setUndoState, undo, clearUndo, canUndo } = useClassScoreUndo(setState)
-  const { setSquareStatus, setSquareRouteTarget, resetBoardDetail } =
-    useClassScoreBoardActions(setState)
+  const {
+    setSquareStatus,
+    setSquareRouteTarget,
+    setSquareRouteUnlocked,
+    resetBoardDetail,
+  } = useClassScoreBoardActions(setState)
 
   const setClassStatus = useCallback(
     (key: ClassScoreClassKey, status: ClassScoreStatus) => {
-      setState((prev) => {
-        const nextClasses = { ...(prev?.classes ?? DEFAULT_CLASS_SCORE_STATE.classes) }
-        Reflect.set(nextClasses, key, status)
-        return { ...prev, classes: nextClasses }
-      })
+      setState((prev) => buildClassStatusUpdate(prev, key, status))
     },
     [setState],
   )
@@ -194,7 +277,7 @@ export const useClassScore = () => {
     (status: ClassScoreStatus) => {
       setState((prev) => {
         setUndoState(prev)
-        return { classes: buildAllStatusClasses(status) }
+        return buildAllStatusUpdate(status, prev?.boards)
       })
     },
     [setState, setUndoState],
@@ -210,6 +293,7 @@ export const useClassScore = () => {
     setClassStatus,
     setSquareStatus,
     setSquareRouteTarget,
+    setSquareRouteUnlocked,
     resetBoardDetail,
     setAllStatus,
     resetAll,

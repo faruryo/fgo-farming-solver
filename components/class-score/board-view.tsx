@@ -172,7 +172,13 @@ const BoardViewLegend: React.FC = () => {
 }
 
 const useBoardViewSelection = (board: ClassBoardData) => {
-  const { state, setSquareStatus, setSquareRouteTarget, resetBoardDetail } = useClassScore()
+  const {
+    state,
+    setSquareStatus,
+    setSquareRouteTarget,
+    setSquareRouteUnlocked,
+    resetBoardDetail,
+  } = useClassScore()
   const boardDetail = state.boards ? Reflect.get(state.boards, board.key) : undefined
   const playableSquares = useMemo(
     () => board.squares.filter((sq) => !sq.flags.includes('blank')),
@@ -217,6 +223,7 @@ const useBoardViewSelection = (board: ClassBoardData) => {
     handleSetAllTarget,
     setSquareStatus,
     setSquareRouteTarget,
+    setSquareRouteUnlocked,
     resetBoardDetail,
   }
 }
@@ -231,6 +238,7 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
     handleSetAllTarget,
     setSquareStatus,
     setSquareRouteTarget,
+    setSquareRouteUnlocked,
     resetBoardDetail,
   } = useBoardViewSelection(board)
 
@@ -273,6 +281,7 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
           }
         }}
         onSetRouteTarget={(sqId) => setSquareRouteTarget(board.key, sqId)}
+        onSetRouteUnlocked={(sqId) => setSquareRouteUnlocked(board.key, sqId)}
       />
     </div>
   )

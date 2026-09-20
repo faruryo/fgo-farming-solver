@@ -643,10 +643,17 @@
         "label": "Sign Status",
         "none": "Locked",
         "target": "Target",
-        "unlocked": "Unlocked"
+        "unlocked": "Unlocked",
+        "route-target": "Route Target",
+        "route-unlocked": "Route Unlocked",
+        "route-help": "※Target & Unlocked apply to the shortest route from the start.",
+        "single-toggle": "Single square mode",
+        "single-target": "Target this square only",
+        "single-unlocked": "Unlock this square only"
       },
       "action": {
-        "route-target": "Batch Target Route from Start"
+        "route-target": "Batch Target Route from Start",
+        "route-unlocked": "Batch Unlock Route from Start"
       }
     },
     "materials": {
