@@ -137,6 +137,26 @@ describe('route-actions', () => {
       expect(result.unlockedSquareIds).toEqual([1])
       expect(numSort(result.targetSquareIds)).toEqual([10, 11])
     })
+
+    it('中継点（blankマス）を経由するルートにおいて、中継点を透過して先のマスを正常に保持する', () => {
+      // グラフ構造: 1(start) - 2 - 73(blank) - 74(blank) - 3 - 4
+      const blankLines: ClassBoardLine[] = [
+        { id: 1, prev: 1, next: 2 },
+        { id: 2, prev: 2, next: 73 },
+        { id: 3, prev: 73, next: 74 },
+        { id: 4, prev: 74, next: 3 },
+        { id: 5, prev: 3, next: 4 },
+      ]
+      const blankIds = new Set([73, 74])
+      const initial: ClassBoardDetailState = {
+        unlockedSquareIds: [1, 2],
+        targetSquareIds: [3, 4],
+      }
+      // マス4を未解放にする -> 4だけが未解放になり、中継点(73, 74)の先にある3は残る！
+      const result = computePrunedOnNone(initial, 4, blankLines, [1], blankIds)
+      expect(numSort(result.unlockedSquareIds)).toEqual([1, 2])
+      expect(numSort(result.targetSquareIds)).toEqual([3])
+    })
   })
 
   describe('computeBoardAllTarget & computeBoardAllUnlocked', () => {

@@ -17,6 +17,7 @@ import {
   computePrunedOnNone,
   computeRouteTargets,
   computeRouteUnlocked,
+  getBlankSquareIds,
   getPlayableSquareIds,
 } from '../lib/class-score/route-actions'
 import type {
@@ -79,6 +80,7 @@ const updateSquareStatusInBoard = (
       squareId,
       boardData.lines,
       boardData.startSquareIds,
+      getBlankSquareIds(boardData),
     )
   }
   return updateSquareInState(curBoard, squareId, status)

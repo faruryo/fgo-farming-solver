@@ -58,25 +58,45 @@ export const computeRouteUnlocked = (
   }
 }
 
-const addStartSeed = (
-  startId: number,
-  removedSquareId: number,
-  active: Set<number>,
-  adj: Map<number, number[]>,
-  reachable: Set<number>,
+type ReachableContext = {
+  active: Set<number>
+  blankIds: Set<number>
+  removedSquareId: number
+}
+
+const isTraversable = (nodeId: number, ctx: ReachableContext): boolean => {
+  if (nodeId === ctx.removedSquareId) return false
+  if (ctx.blankIds.has(nodeId)) return true
+  return ctx.active.has(nodeId)
+}
+
+const addSeedNode = (
+  nodeId: number,
+  visited: Set<number>,
   queue: number[],
 ) => {
-  if (startId === removedSquareId) return
-  if (active.has(startId)) {
-    reachable.add(startId)
-    queue.push(startId)
-    return
-  }
-  const neighbors = adj.get(startId) ?? []
-  for (const n of neighbors) {
-    if (n !== removedSquareId && active.has(n) && !reachable.has(n)) {
-      reachable.add(n)
-      queue.push(n)
+  visited.add(nodeId)
+  queue.push(nodeId)
+}
+
+const addStartSeeds = (
+  startSquareIds: number[],
+  ctx: ReachableContext,
+  adj: Map<number, number[]>,
+  visited: Set<number>,
+  queue: number[],
+) => {
+  for (const startId of startSquareIds) {
+    if (startId === ctx.removedSquareId) continue
+    if (ctx.active.has(startId) || ctx.blankIds.has(startId)) {
+      addSeedNode(startId, visited, queue)
+    } else {
+      const neighbors = adj.get(startId) ?? []
+      for (const n of neighbors) {
+        if (!visited.has(n) && isTraversable(n, ctx)) {
+          addSeedNode(n, visited, queue)
+        }
+      }
     }
   }
 }
@@ -86,40 +106,62 @@ const findReachableSquares = (
   lines: ClassBoardLine[],
   startSquareIds: number[],
   removedSquareId: number,
+  blankIds: Set<number>,
 ): Set<number> => {
   const adj = buildUndirectedAdjacency(lines)
-  const reachable = new Set<number>()
+  const visited = new Set<number>()
   const queue: number[] = []
+  const ctx: ReachableContext = { active, blankIds, removedSquareId }
 
-  for (const startId of startSquareIds) {
-    addStartSeed(startId, removedSquareId, active, adj, reachable, queue)
-  }
+  addStartSeeds(startSquareIds, ctx, adj, visited, queue)
 
   while (queue.length > 0) {
     const curr = queue.shift()
     if (curr === undefined) break
     const neighbors = adj.get(curr) ?? []
     for (const neighbor of neighbors) {
-      if (active.has(neighbor) && !reachable.has(neighbor)) {
-        reachable.add(neighbor)
-        queue.push(neighbor)
+      if (!visited.has(neighbor) && isTraversable(neighbor, ctx)) {
+        addSeedNode(neighbor, visited, queue)
       }
     }
   }
 
-  return reachable
+  return visited
+}
+
+/**
+ * 実サインマス（blankマス以外）の全IDを取得する純関数
+ */
+export const getPlayableSquareIds = (boardData: ClassBoardData | undefined): number[] => {
+  if (!boardData) return []
+  return boardData.squares
+    .filter((sq) => !sq.flags.includes('blank'))
+    .map((sq) => sq.id)
+}
+
+/**
+ * 中継点（blankマス）の全IDを取得する純関数
+ */
+export const getBlankSquareIds = (boardData: ClassBoardData | undefined): Set<number> => {
+  if (!boardData) return new Set()
+  return new Set(
+    boardData.squares
+      .filter((sq) => sq.flags.includes('blank'))
+      .map((sq) => sq.id),
+  )
 }
 
 /**
  * 指定マスを未解放にした際、起点からそのマスを経由しないと到達できなくなった
  * 「起点と反対側（下流/外側）のマス群」を一括で未解放にする純関数。
- * 起点マスから有効な隣接マスだけを辿って到達可能なマスのみを保持する。
+ * 中継点（blankマス）は透過的に通過し、起点マスから有効なマスだけを辿って到達可能なマスのみを保持する。
  */
 export const computePrunedOnNone = (
   curBoard: ClassBoardDetailState | undefined,
   removedSquareId: number,
   lines: ClassBoardLine[],
   startSquareIds: number[],
+  blankSquareIds: Set<number> = new Set(),
 ): ClassBoardDetailState => {
   if (!curBoard) {
     return { unlockedSquareIds: [], targetSquareIds: [] }
@@ -135,22 +177,18 @@ export const computePrunedOnNone = (
     return { unlockedSquareIds: [], targetSquareIds: [] }
   }
 
-  const reachable = findReachableSquares(active, lines, startSquareIds, removedSquareId)
+  const reachable = findReachableSquares(
+    active,
+    lines,
+    startSquareIds,
+    removedSquareId,
+    blankSquareIds,
+  )
 
   return {
     unlockedSquareIds: curBoard.unlockedSquareIds.filter((id) => reachable.has(id)),
     targetSquareIds: curBoard.targetSquareIds.filter((id) => reachable.has(id)),
   }
-}
-
-/**
- * 実サインマス（blankマス以外）の全IDを取得する純関数
- */
-export const getPlayableSquareIds = (boardData: ClassBoardData | undefined): number[] => {
-  if (!boardData) return []
-  return boardData.squares
-    .filter((sq) => !sq.flags.includes('blank'))
-    .map((sq) => sq.id)
 }
 
 /**
