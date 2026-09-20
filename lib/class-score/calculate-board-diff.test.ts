@@ -65,5 +65,16 @@ describe('calculateBoardDiffMaterials', () => {
     expect(nova?.amount).toBe(4)
     expect(star?.amount).toBe(4)
     expect(polar?.amount).toBe(2)
+    // 72 playable squares (excluding 10 blank waypoint squares)
+    expect(res.activeTargetCount).toBe(72)
+  })
+
+  it('ignores blank waypoint squares in activeTargetCount and materials', () => {
+    // Square 73 is a blank waypoint square
+    const res = calculateBoardDiffMaterials(saberBoard, [73], [])
+    expect(res.activeTargetCount).toBe(0)
+    expect(res.qp).toBe(0)
+    expect(res.sand).toBe(0)
+    expect(res.materials).toHaveLength(0)
   })
 })

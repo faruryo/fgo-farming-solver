@@ -30,14 +30,14 @@ const getSquareStatus = (
 const getLineColor = (
   prevStatus: ClassBoardSquareStatus,
   nextStatus: ClassBoardSquareStatus,
-): { stroke: string; strokeWidth: number; opacity: number } => {
+): { stroke: string; strokeWidth: number; opacity: number; glow: boolean } => {
   if (prevStatus === 'unlocked' && nextStatus === 'unlocked') {
-    return { stroke: '#38bdf8', strokeWidth: 3, opacity: 0.9 }
+    return { stroke: '#38bdf8', strokeWidth: 4.5, opacity: 1.0, glow: true }
   }
   if (prevStatus === 'target' || nextStatus === 'target') {
-    return { stroke: '#f59e0b', strokeWidth: 2.5, opacity: 0.8 }
+    return { stroke: '#f59e0b', strokeWidth: 4, opacity: 0.95, glow: true }
   }
-  return { stroke: '#334155', strokeWidth: 2, opacity: 0.4 }
+  return { stroke: '#64748b', strokeWidth: 3.5, opacity: 0.75, glow: false }
 }
 
 const BoardCanvasLines: React.FC<{
@@ -57,17 +57,30 @@ const BoardCanvasLines: React.FC<{
         const style = getLineColor(prevStatus, nextStatus)
 
         return (
-          <line
-            key={`line-${line.id}`}
-            x1={prevSq.posX}
-            y1={prevSq.posY}
-            x2={nextSq.posX}
-            y2={nextSq.posY}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
-            opacity={style.opacity}
-            strokeLinecap="round"
-          />
+          <g key={`line-group-${line.id}`}>
+            {style.glow && (
+              <line
+                x1={prevSq.posX}
+                y1={prevSq.posY}
+                x2={nextSq.posX}
+                y2={nextSq.posY}
+                stroke={style.stroke}
+                strokeWidth={style.strokeWidth + 4}
+                opacity={0.35}
+                strokeLinecap="round"
+              />
+            )}
+            <line
+              x1={prevSq.posX}
+              y1={prevSq.posY}
+              x2={nextSq.posX}
+              y2={nextSq.posY}
+              stroke={style.stroke}
+              strokeWidth={style.strokeWidth}
+              opacity={style.opacity}
+              strokeLinecap="round"
+            />
+          </g>
         )
       })}
     </g>
@@ -308,14 +321,17 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
         <BoardCanvasLines board={board} selection={selection} squareMap={squareMap} />
 
         <g className="squares-layer">
-          {board.squares.map((sq) => (
-            <BoardSquareNode
-              key={`sq-${sq.id}`}
-              square={sq}
-              status={getSquareStatus(sq.id, selection)}
-              onSelect={() => onSelectSquare(sq)}
-            />
-          ))}
+          {board.squares.map((sq) => {
+            if (sq.flags.includes('blank')) return null
+            return (
+              <BoardSquareNode
+                key={`sq-${sq.id}`}
+                square={sq}
+                status={getSquareStatus(sq.id, selection)}
+                onSelect={() => onSelectSquare(sq)}
+              />
+            )
+          })}
         </g>
       </svg>
     </div>

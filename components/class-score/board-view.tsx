@@ -174,6 +174,10 @@ const BoardViewLegend: React.FC = () => {
 const useBoardViewSelection = (board: ClassBoardData) => {
   const { state, setSquareStatus, setSquareRouteTarget, resetBoardDetail } = useClassScore()
   const boardDetail = state.boards ? Reflect.get(state.boards, board.key) : undefined
+  const playableSquares = useMemo(
+    () => board.squares.filter((sq) => !sq.flags.includes('blank')),
+    [board.squares],
+  )
   const selection = useMemo(
     () => ({
       unlockedSquareIds: boardDetail?.unlockedSquareIds ?? [],
@@ -193,16 +197,23 @@ const useBoardViewSelection = (board: ClassBoardData) => {
   )
 
   const handleSetAllTarget = () => {
-    board.squares.forEach((sq) => {
+    playableSquares.forEach((sq) => {
       if (!selection.unlockedSquareIds.includes(sq.id)) {
         setSquareStatus(board.key, sq.id, 'target')
       }
     })
   }
 
+  const unlockedCount = useMemo(
+    () => playableSquares.filter((sq) => selection.unlockedSquareIds.includes(sq.id)).length,
+    [playableSquares, selection.unlockedSquareIds],
+  )
+
   return {
     selection,
     diff,
+    playableSquares,
+    unlockedCount,
     handleSetAllTarget,
     setSquareStatus,
     setSquareRouteTarget,
@@ -215,6 +226,8 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
   const {
     selection,
     diff,
+    playableSquares,
+    unlockedCount,
     handleSetAllTarget,
     setSquareStatus,
     setSquareRouteTarget,
@@ -237,8 +250,8 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
       />
       <BoardViewSummary
         activeTargetCount={diff.activeTargetCount}
-        unlockedCount={selection.unlockedSquareIds.length}
-        totalSquares={board.squares.length}
+        unlockedCount={unlockedCount}
+        totalSquares={playableSquares.length}
         qp={diff.qp}
         sand={diff.sand}
         torches={diff.torches}

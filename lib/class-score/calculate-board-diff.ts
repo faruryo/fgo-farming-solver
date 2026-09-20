@@ -64,7 +64,7 @@ export const calculateBoardDiffMaterials = (
   for (const id of targetSet) {
     if (unlockedSet.has(id)) continue
     const sq = squareMap.get(id)
-    if (!sq) continue
+    if (!sq || sq.flags.includes('blank')) continue
 
     activeTargetCount++
     const { qp, sand } = aggregateSquareItems(sq.items, materialMap, torchMap)
