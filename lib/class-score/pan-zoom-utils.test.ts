@@ -57,7 +57,7 @@ describe('pan-zoom-utils', () => {
 
     it('shifts correctly when pan offset is applied', () => {
       const vb = computeViewBox(defaultBounds, 1.0, { x: 100, y: -50 })
-      expect(vb).toBe('100 -50 1000 800')
+      expect(vb).toBe('-100 50 1000 800')
     })
   })
 
@@ -66,8 +66,18 @@ describe('pan-zoom-utils', () => {
       const containerSize = { width: 500, height: 400 }
       const delta = computePanDelta(50, 20, containerSize, 1.0, defaultBounds)
       // viewBox is 1000x800, container is 500x400 -> scale is 2
-      expect(delta.x).toBe(-100)
-      expect(delta.y).toBe(-40)
+      expect(delta.x).toBe(100)
+      expect(delta.y).toBe(40)
+    })
+
+    it('applies uniform scale when container aspect ratio differs from bounds (meet behavior)', () => {
+      // Bounds: 1000x800. Container: 1000x500.
+      // Width ratio: 1000/1000 = 1. Height ratio: 800/500 = 1.6.
+      // Meet mode fits by height (ratio 1.6), so 1 screen px = 1.6 viewBox units in both axes.
+      const containerSize = { width: 1000, height: 500 }
+      const delta = computePanDelta(10, 10, containerSize, 1.0, defaultBounds)
+      expect(delta.x).toBe(16)
+      expect(delta.y).toBe(16)
     })
 
     it('returns zero delta for invalid container size', () => {

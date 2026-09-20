@@ -55,9 +55,11 @@ export const computeViewBox = (
   const width = baseBounds.width / safeZoom
   const height = baseBounds.height / safeZoom
 
-  // Zoom centered on the base bounds center + pan offset
-  const centerX = baseBounds.minX + baseBounds.width / 2 + panOffset.x
-  const centerY = baseBounds.minY + baseBounds.height / 2 + panOffset.y
+  // Zoom centered on the base bounds center - pan offset
+  // Panning right (panOffset.x > 0) moves the camera left (centerX decreases)
+  // so that the content appears to move right under the cursor.
+  const centerX = baseBounds.minX + baseBounds.width / 2 - panOffset.x
+  const centerY = baseBounds.minY + baseBounds.height / 2 - panOffset.y
 
   const minX = centerX - width / 2
   const minY = centerY - height / 2
@@ -80,12 +82,16 @@ export const computePanDelta = (
   const currentVbWidth = baseBounds.width / safeZoom
   const currentVbHeight = baseBounds.height / safeZoom
 
-  const scaleX = currentVbWidth / containerSize.width
-  const scaleY = currentVbHeight / containerSize.height
+  // The SVG container uses preserveAspectRatio="xMidYMid meet" by default.
+  // The uniform scale factor (viewBox units per screen pixel) is the max ratio.
+  const scale = Math.max(
+    currentVbWidth / containerSize.width,
+    currentVbHeight / containerSize.height,
+  )
 
   return {
-    x: -screenDeltaX * scaleX,
-    y: -screenDeltaY * scaleY,
+    x: screenDeltaX * scale,
+    y: screenDeltaY * scale,
   }
 }
 

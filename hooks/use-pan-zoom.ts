@@ -56,7 +56,7 @@ const useMousePanHandlers = ({
       const dy = e.clientY - lastPosRef.current.y
       lastPosRef.current = { x: e.clientX, y: e.clientY }
       const delta = computePanDelta(dx, dy, rect, zoom, initialBounds)
-      setPan((prev) => ({ x: prev.x - delta.x, y: prev.y - delta.y }))
+      setPan((prev) => ({ x: prev.x + delta.x, y: prev.y + delta.y }))
     },
     [isDraggingRef, lastPosRef, containerRef, initialBounds, zoom, setPan],
   )
@@ -101,7 +101,7 @@ const useTouchPanHandlers = ({
         const dy = t.clientY - lastPosRef.current.y
         lastPosRef.current = { x: t.clientX, y: t.clientY }
         const delta = computePanDelta(dx, dy, rect, zoom, initialBounds)
-        setPan((prev) => ({ x: prev.x - delta.x, y: prev.y - delta.y }))
+        setPan((prev) => ({ x: prev.x + delta.x, y: prev.y + delta.y }))
       } else if (e.touches.length === 2) {
         const dist = computeTouchDistance(e.touches[0], e.touches[1])
         if (touchDistRef.current > 0) {
