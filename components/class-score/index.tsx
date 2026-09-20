@@ -229,12 +229,14 @@ export const ClassScoreIndex: React.FC = () => {
           {CLASS_SCORE_CLASS_KEYS.map((key: ClassScoreClassKey) => {
             const board = BOARD_MAP.get(key)
             const status = getClassStatus(state.classes, key)
+            const boardDetail = state.boards ? Reflect.get(state.boards, key) : undefined
             if (!board) return null
             return (
               <ClassCard
                 key={key}
                 board={board}
                 status={status}
+                boardDetail={boardDetail}
                 onChangeStatus={(newStatus) => setClassStatus(key, newStatus)}
               />
             )

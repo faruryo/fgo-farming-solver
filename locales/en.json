@@ -601,13 +601,53 @@
       "label": "Class board status",
       "target": "Target",
       "completed": "Completed",
-      "none": "None"
+      "none": "None",
+      "detail-target": "{{count}} Signs Targeted"
     },
     "action": {
       "target": "Target",
       "completed": "Completed",
       "none": "None",
-      "viewResult": "View Results"
+      "viewResult": "View Results",
+      "open-board-map": "Open Board Map"
+    },
+    "board": {
+      "back": "Back to List",
+      "title-suffix": "Class Board",
+      "action": {
+        "all-target": "Target All",
+        "reset": "Reset Board"
+      },
+      "summary": {
+        "progress": "Progress",
+        "unlocked-unit": "unlocked",
+        "target-unit": "targeted"
+      },
+      "legend": {
+        "none": "Locked",
+        "target": "Target",
+        "unlocked": "Unlocked",
+        "lock": "Tour Lock",
+        "start": "Start"
+      }
+    },
+    "square": {
+      "badge": {
+        "start": "Start Sign",
+        "lock": "Tour Lock"
+      },
+      "materials": {
+        "title": "Materials Required"
+      },
+      "status": {
+        "label": "Sign Status",
+        "none": "Locked",
+        "target": "Target",
+        "unlocked": "Unlocked"
+      },
+      "action": {
+        "route-target": "Batch Target Route from Start"
+      }
     },
     "materials": {
       "hide": "Hide Material Details",

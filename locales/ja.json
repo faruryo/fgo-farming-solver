@@ -524,13 +524,53 @@
       "label": "クラススコア状態",
       "target": "目標",
       "completed": "解放済",
-      "none": "未設定"
+      "none": "未設定",
+      "detail-target": "{{count}}マス目標"
     },
     "action": {
       "target": "目標",
       "completed": "解放済",
       "none": "未設定",
-      "viewResult": "素材結果を見る"
+      "viewResult": "素材結果を見る",
+      "open-board-map": "盤面マップで個別指定"
+    },
+    "board": {
+      "back": "一覧に戻る",
+      "title-suffix": "クラススコア盤面",
+      "action": {
+        "all-target": "全マス目標",
+        "reset": "盤面リセット"
+      },
+      "summary": {
+        "progress": "進捗",
+        "unlocked-unit": "解放",
+        "target-unit": "目標"
+      },
+      "legend": {
+        "none": "未解放",
+        "target": "目標マス",
+        "unlocked": "解放済",
+        "lock": "ツアーロック",
+        "start": "起点"
+      }
+    },
+    "square": {
+      "badge": {
+        "start": "起点サイン",
+        "lock": "ツアーロック"
+      },
+      "materials": {
+        "title": "解放に必要な素材"
+      },
+      "status": {
+        "label": "このマスの状態",
+        "none": "未解放",
+        "target": "目標",
+        "unlocked": "解放済"
+      },
+      "action": {
+        "route-target": "起点からここまでルート一括目標"
+      }
     },
     "materials": {
       "hide": "必要素材を閉じる",

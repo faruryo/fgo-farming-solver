@@ -14,8 +14,14 @@ export type ClassScoreClassKey = (typeof CLASS_SCORE_CLASS_KEYS)[number]
 
 export type ClassScoreStatus = 'none' | 'target' | 'completed'
 
+export type ClassBoardDetailState = {
+  unlockedSquareIds: number[]
+  targetSquareIds: number[]
+}
+
 export type ClassScoreState = {
   classes: Partial<Record<ClassScoreClassKey, ClassScoreStatus>>
+  boards?: Partial<Record<ClassScoreClassKey, ClassBoardDetailState>>
 }
 
 export type ClassScoreItemRequirement = {
