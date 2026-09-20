@@ -110,9 +110,9 @@ const SquareStatusSelector: React.FC<{
   )
 }
 
-const SquareDialogHeader: React.FC<{ square: ClassBoardSquare }> = ({ square }) => (
-  <DialogHeader className="flex flex-row items-start gap-3 space-y-0">
-    {square.icon ? (
+const SquareIcon: React.FC<{ square: ClassBoardSquare }> = ({ square }) => {
+  if (square.icon) {
+    return (
       <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden border border-border/60 bg-muted/20">
         <Image
           src={square.icon}
@@ -123,7 +123,23 @@ const SquareDialogHeader: React.FC<{ square: ClassBoardSquare }> = ({ square }) 
           unoptimized
         />
       </div>
-    ) : null}
+    )
+  }
+
+  if (square.isLock) {
+    return (
+      <div className="w-12 h-12 shrink-0 rounded-lg border border-rose-500/40 bg-rose-950/30 flex items-center justify-center text-rose-400">
+        <Lock className="w-6 h-6" />
+      </div>
+    )
+  }
+
+  return null
+}
+
+const SquareDialogHeader: React.FC<{ square: ClassBoardSquare }> = ({ square }) => (
+  <DialogHeader className="flex flex-row items-start gap-3 space-y-0">
+    <SquareIcon square={square} />
     <div className="flex-1 min-w-0">
       <DialogTitle className="text-base font-bold leading-tight truncate">
         {square.name}

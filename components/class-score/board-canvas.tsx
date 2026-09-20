@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { Plus, Minus, RotateCcw, Lock } from 'lucide-react'
+import { Plus, Minus, RotateCcw, Lock, LockOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type {
   ClassBoardData,
@@ -74,7 +74,7 @@ const BoardCanvasLines: React.FC<{
   )
 }
 
-const getSquareStyles = (status: ClassBoardSquareStatus) => {
+const getSquareStyles = (status: ClassBoardSquareStatus, isLock: boolean = false) => {
   if (status === 'unlocked') {
     return {
       fill: '#082f49',
@@ -93,6 +93,15 @@ const getSquareStyles = (status: ClassBoardSquareStatus) => {
       glow: true,
     }
   }
+  if (isLock) {
+    return {
+      fill: '#2a0a14',
+      stroke: '#9f1239',
+      strokeWidth: 2,
+      iconOpacity: 0.8,
+      glow: false,
+    }
+  }
   return {
     fill: '#0f172a',
     stroke: '#334155',
@@ -102,12 +111,52 @@ const getSquareStyles = (status: ClassBoardSquareStatus) => {
   }
 }
 
+const SquareLockIcon: React.FC<{ status: ClassBoardSquareStatus }> = ({ status }) => {
+  if (status === 'unlocked') {
+    return <LockOpen x={-11} y={-11} width={22} height={22} className="text-sky-400" />
+  }
+  if (status === 'target') {
+    return <Lock x={-11} y={-11} width={22} height={22} className="text-amber-400" />
+  }
+  return <Lock x={-11} y={-11} width={22} height={22} className="text-rose-400/90" />
+}
+
+const SquareNodeContent: React.FC<{
+  square: ClassBoardSquare
+  status: ClassBoardSquareStatus
+  iconOpacity: number
+}> = ({ square, status, iconOpacity }) => {
+  if (square.isLock) {
+    return (
+      <g className="transition-all duration-150 group-hover:brightness-125">
+        <SquareLockIcon status={status} />
+      </g>
+    )
+  }
+
+  if (square.icon) {
+    return (
+      <image
+        href={square.icon}
+        x={-16}
+        y={-16}
+        width={32}
+        height={32}
+        opacity={iconOpacity}
+        className="transition-all duration-150 group-hover:opacity-100 group-hover:brightness-110"
+      />
+    )
+  }
+
+  return null
+}
+
 const BoardSquareNode: React.FC<{
   square: ClassBoardSquare
   status: ClassBoardSquareStatus
   onSelect: () => void
 }> = ({ square, status, onSelect }) => {
-  const styles = getSquareStyles(status)
+  const styles = getSquareStyles(status, square.isLock)
   const size = 44
   const half = size / 2
 
@@ -115,7 +164,7 @@ const BoardSquareNode: React.FC<{
     <g
       transform={`translate(${square.posX}, ${square.posY})`}
       onClick={onSelect}
-      className="cursor-pointer transition-transform duration-150 hover:scale-110 select-none outline-none"
+      className="group cursor-pointer select-none outline-none"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -127,7 +176,14 @@ const BoardSquareNode: React.FC<{
       aria-label={`${square.name} (${status})`}
     >
       {square.isStart && (
-        <circle r={half + 6} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 2" />
+        <circle
+          r={half + 6}
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+          className="transition-all duration-150 group-hover:stroke-amber-300 group-hover:stroke-[2.5]"
+        />
       )}
       <rect
         x={-half}
@@ -138,23 +194,13 @@ const BoardSquareNode: React.FC<{
         fill={styles.fill}
         stroke={styles.stroke}
         strokeWidth={styles.strokeWidth}
+        className="transition-all duration-150 group-hover:stroke-[3px] group-hover:brightness-130 group-focus-visible:stroke-[3px] group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
       />
-      {square.icon ? (
-        <image
-          href={square.icon}
-          x={-16}
-          y={-16}
-          width={32}
-          height={32}
-          opacity={styles.iconOpacity}
-        />
-      ) : null}
-      {square.isLock && status !== 'unlocked' && (
-        <g transform="translate(10, 10)">
-          <circle r={8} fill="#be123c" />
-          <Lock className="w-3 h-3 text-white -translate-x-1.5 -translate-y-1.5" />
-        </g>
-      )}
+      <SquareNodeContent
+        square={square}
+        status={status}
+        iconOpacity={styles.iconOpacity}
+      />
     </g>
   )
 }

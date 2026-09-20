@@ -97,10 +97,6 @@ def main():
                 else ''
             )
             icon = sq.get('icon', '')
-            if is_lock and not icon:
-                icon = (
-                    'https://static.atlasacademy.io/JP/ClassBoard/Icon/lock.png'
-                )
 
             processed_squares.append({
                 'id': sq_id,
