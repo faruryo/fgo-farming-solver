@@ -5,6 +5,7 @@ import {
   computeViewBox,
   computePanDelta,
   computeTouchDistance,
+  getDisplayPosY,
 } from './pan-zoom-utils'
 
 describe('pan-zoom-utils', () => {
@@ -15,15 +16,23 @@ describe('pan-zoom-utils', () => {
     height: 800,
   }
 
+  describe('getDisplayPosY', () => {
+    it('inverts the Cartesian Y coordinate for SVG display', () => {
+      expect(getDisplayPosY(100)).toBe(-100)
+      expect(getDisplayPosY(-250)).toBe(250)
+      expect(getDisplayPosY(0)).toBe(-0)
+    })
+  })
+
   describe('computeBoardBounds', () => {
-    it('computes bounding box with padding', () => {
+    it('computes bounding box with padding and inverted Y', () => {
       const squares = [
-        { posX: -100, posY: -200 },
-        { posX: 300, posY: 400 },
+        { posX: -100, posY: -200 }, // displayY = 200
+        { posX: 300, posY: 400 }, // displayY = -400
       ]
       const bounds = computeBoardBounds(squares, 50)
       expect(bounds.minX).toBe(-150)
-      expect(bounds.minY).toBe(-250)
+      expect(bounds.minY).toBe(-450)
       expect(bounds.width).toBe(500)
       expect(bounds.height).toBe(700)
     })

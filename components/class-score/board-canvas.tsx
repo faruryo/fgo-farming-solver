@@ -10,7 +10,8 @@ import type {
   ClassBoardSelectionState,
 } from '../../lib/class-score/board-types'
 import { usePanZoom } from '../../hooks/use-pan-zoom'
-import { computeBoardBounds } from '../../lib/class-score/pan-zoom-utils'
+import { computeBoardBounds, getDisplayPosY } from '../../lib/class-score/pan-zoom-utils'
+import { resolveLineEndpoints, type LineEndpoints } from '../../lib/class-score/line-endpoints'
 
 export type BoardCanvasProps = {
   board: ClassBoardData
@@ -44,7 +45,8 @@ const BoardCanvasLines: React.FC<{
   board: ClassBoardData
   selection: ClassBoardSelectionState
   squareMap: Map<number, ClassBoardSquare>
-}> = ({ board, selection, squareMap }) => {
+  lineEndpointsMap: Map<number, LineEndpoints>
+}> = ({ board, selection, squareMap, lineEndpointsMap }) => {
   return (
     <g className="lines-layer">
       {board.lines.map((line) => {
@@ -52,8 +54,9 @@ const BoardCanvasLines: React.FC<{
         const nextSq = squareMap.get(line.next)
         if (!prevSq || !nextSq) return null
 
-        const prevStatus = getSquareStatus(line.prev, selection)
-        const nextStatus = getSquareStatus(line.next, selection)
+        const endpoints = lineEndpointsMap.get(line.id)
+        const prevStatus = endpoints ? getSquareStatus(endpoints.endpointA, selection) : 'none'
+        const nextStatus = endpoints ? getSquareStatus(endpoints.endpointB, selection) : 'none'
         const style = getLineColor(prevStatus, nextStatus)
 
         return (
@@ -61,9 +64,9 @@ const BoardCanvasLines: React.FC<{
             {style.glow && (
               <line
                 x1={prevSq.posX}
-                y1={prevSq.posY}
+                y1={getDisplayPosY(prevSq.posY)}
                 x2={nextSq.posX}
-                y2={nextSq.posY}
+                y2={getDisplayPosY(nextSq.posY)}
                 stroke={style.stroke}
                 strokeWidth={style.strokeWidth + 4}
                 opacity={0.35}
@@ -72,9 +75,9 @@ const BoardCanvasLines: React.FC<{
             )}
             <line
               x1={prevSq.posX}
-              y1={prevSq.posY}
+              y1={getDisplayPosY(prevSq.posY)}
               x2={nextSq.posX}
-              y2={nextSq.posY}
+              y2={getDisplayPosY(nextSq.posY)}
               stroke={style.stroke}
               strokeWidth={style.strokeWidth}
               opacity={style.opacity}
@@ -164,6 +167,12 @@ const SquareNodeContent: React.FC<{
   return null
 }
 
+const getStartIndicatorStroke = (status: ClassBoardSquareStatus): string => {
+  if (status === 'unlocked') return '#38bdf8'
+  if (status === 'target') return '#f59e0b'
+  return '#94a3b8'
+}
+
 const BoardSquareNode: React.FC<{
   square: ClassBoardSquare
   status: ClassBoardSquareStatus
@@ -175,7 +184,7 @@ const BoardSquareNode: React.FC<{
 
   return (
     <g
-      transform={`translate(${square.posX}, ${square.posY})`}
+      transform={`translate(${square.posX}, ${getDisplayPosY(square.posY)})`}
       onClick={onSelect}
       className="group cursor-pointer select-none outline-none"
       role="button"
@@ -192,10 +201,10 @@ const BoardSquareNode: React.FC<{
         <circle
           r={half + 6}
           fill="none"
-          stroke="#f59e0b"
+          stroke={getStartIndicatorStroke(status)}
           strokeWidth={2}
           strokeDasharray="4 2"
-          className="transition-all duration-150 group-hover:stroke-amber-300 group-hover:stroke-[2.5]"
+          className="transition-all duration-150 group-hover:stroke-[2.5]"
         />
       )}
       <rect
@@ -275,16 +284,34 @@ const BoardCanvasBackground: React.FC<{ bounds: { minX: number; minY: number; wi
   </>
 )
 
-export const BoardCanvas: React.FC<BoardCanvasProps> = ({
-  board,
-  selection,
-  onSelectSquare,
-}) => {
+const useBoardCanvasGraph = (board: ClassBoardData) => {
   const bounds = useMemo(() => computeBoardBounds(board.squares), [board.squares])
   const squareMap = useMemo(
     () => new Map(board.squares.map((sq) => [sq.id, sq])),
     [board.squares],
   )
+  const blankSquareIds = useMemo(
+    () =>
+      new Set(
+        board.squares
+          .filter((sq) => sq.flags.includes('blank'))
+          .map((sq) => sq.id),
+      ),
+    [board.squares],
+  )
+  const lineEndpointsMap = useMemo(
+    () => resolveLineEndpoints(board.lines, blankSquareIds),
+    [board.lines, blankSquareIds],
+  )
+  return { bounds, squareMap, lineEndpointsMap }
+}
+
+export const BoardCanvas: React.FC<BoardCanvasProps> = ({
+  board,
+  selection,
+  onSelectSquare,
+}) => {
+  const { bounds, squareMap, lineEndpointsMap } = useBoardCanvasGraph(board)
   const svgRef = React.useRef<SVGSVGElement | null>(null)
 
   const {
@@ -318,7 +345,12 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
         onWheel={handleWheel}
       >
         <BoardCanvasBackground bounds={bounds} />
-        <BoardCanvasLines board={board} selection={selection} squareMap={squareMap} />
+        <BoardCanvasLines
+          board={board}
+          selection={selection}
+          squareMap={squareMap}
+          lineEndpointsMap={lineEndpointsMap}
+        />
 
         <g className="squares-layer">
           {board.squares.map((sq) => {

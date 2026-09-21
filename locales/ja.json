@@ -569,10 +569,7 @@
         "unlocked": "解放済",
         "route-target": "ルート目標",
         "route-unlocked": "ルート解放済",
-        "route-help": "※目標・解放済は起点からの最短ルートを一括設定します",
-        "single-toggle": "単体操作",
-        "single-target": "このマスのみ目標",
-        "single-unlocked": "このマスのみ解放済"
+        "route-help": "※目標・解放済は起点からの最短ルートを一括設定します"
       },
       "action": {
         "route-target": "起点からここまでルート一括目標",

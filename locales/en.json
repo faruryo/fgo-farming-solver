@@ -646,10 +646,7 @@
         "unlocked": "Unlocked",
         "route-target": "Route Target",
         "route-unlocked": "Route Unlocked",
-        "route-help": "※Target & Unlocked apply to the shortest route from the start.",
-        "single-toggle": "Single square mode",
-        "single-target": "Target this square only",
-        "single-unlocked": "Unlock this square only"
+        "route-help": "※Target & Unlocked apply to the shortest route from the start."
       },
       "action": {
         "route-target": "Batch Target Route from Start",

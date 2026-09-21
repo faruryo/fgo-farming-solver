@@ -68,37 +68,6 @@ const SquareItemsList: React.FC<{ square: ClassBoardSquare }> = ({ square }) => 
   )
 }
 
-const SingleSquareOptions: React.FC<{
-  onSetStatus: (status: ClassBoardSquareStatus) => void
-}> = ({ onSetStatus }) => {
-  const { t } = useTranslation('classScore')
-  return (
-    <div className="flex items-center justify-between pt-1.5 border-t border-border/30 text-[11px] text-muted-foreground">
-      <span>{t('square.status.single-toggle', '単体操作')}:</span>
-      <div className="flex gap-1.5">
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-amber-500 cursor-pointer"
-          onClick={() => onSetStatus('target')}
-        >
-          {t('square.status.single-target', 'このマスのみ目標')}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-6 px-2 text-[10px] text-muted-foreground hover:text-emerald-500 cursor-pointer"
-          onClick={() => onSetStatus('unlocked')}
-        >
-          {t('square.status.single-unlocked', 'このマスのみ解放済')}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 const SquareStatusSelector: React.FC<{
   status: ClassBoardSquareStatus
   onSetStatus: (status: ClassBoardSquareStatus) => void
@@ -149,8 +118,6 @@ const SquareStatusSelector: React.FC<{
           '※目標・解放済は起点からの最短ルートを一括設定します',
         )}
       </p>
-
-      <SingleSquareOptions onSetStatus={onSetStatus} />
     </div>
   )
 }

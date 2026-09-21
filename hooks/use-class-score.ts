@@ -17,6 +17,7 @@ import {
   computePrunedOnNone,
   computeRouteTargets,
   computeRouteUnlocked,
+  deriveClassStatusFromBoard,
   getBlankSquareIds,
   getPlayableSquareIds,
 } from '../lib/class-score/route-actions'
@@ -102,8 +103,15 @@ const withUpdatedBoard = (
   const curBoards = prev?.boards ?? {}
   const nextBoards = { ...curBoards }
   Reflect.set(nextBoards, key, board)
+
+  const nextClasses = { ...(prev?.classes ?? DEFAULT_CLASS_SCORE_STATE.classes) }
+  const boardData = getClassBoardData(key)
+  const playables = getPlayableSquareIds(boardData)
+  const derivedStatus = deriveClassStatusFromBoard(board, playables)
+  Reflect.set(nextClasses, key, derivedStatus)
+
   return {
-    classes: { ...(prev?.classes ?? DEFAULT_CLASS_SCORE_STATE.classes) },
+    classes: nextClasses,
     boards: nextBoards,
   }
 }
@@ -113,13 +121,14 @@ const withRemovedBoard = (
   key: ClassScoreClassKey,
 ): ClassScoreState => {
   const curBoards = prev?.boards ?? {}
-  if (!Reflect.has(curBoards, key)) {
-    return prev ?? DEFAULT_CLASS_SCORE_STATE
-  }
   const nextBoards = { ...curBoards }
   Reflect.deleteProperty(nextBoards, key)
+
+  const nextClasses = { ...(prev?.classes ?? DEFAULT_CLASS_SCORE_STATE.classes) }
+  Reflect.set(nextClasses, key, 'none')
+
   return {
-    classes: { ...(prev?.classes ?? DEFAULT_CLASS_SCORE_STATE.classes) },
+    classes: nextClasses,
     boards: nextBoards,
   }
 }
@@ -196,7 +205,11 @@ const updateRouteInState = (
   prev: ClassScoreState | null,
   key: ClassScoreClassKey,
   targetSquareId: number,
-  computeFn: (cur: ClassBoardDetailState | undefined, path: number[]) => ClassBoardDetailState,
+  computeFn: (
+    cur: ClassBoardDetailState | undefined,
+    path: number[],
+    blankSquareIds?: Set<number>,
+  ) => ClassBoardDetailState,
 ): ClassScoreState => {
   const boardData = getClassBoardData(key)
   if (!boardData) return prev ?? DEFAULT_CLASS_SCORE_STATE
@@ -207,7 +220,8 @@ const updateRouteInState = (
   )
   if (path.length === 0) return prev ?? DEFAULT_CLASS_SCORE_STATE
   const curBoard = getBoardDetail(prev?.boards, key)
-  const nextBoard = computeFn(curBoard, path)
+  const blankIds = getBlankSquareIds(boardData)
+  const nextBoard = computeFn(curBoard, path, blankIds)
   return withUpdatedBoard(prev, key, nextBoard)
 }
 

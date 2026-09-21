@@ -10,6 +10,11 @@ export type Point = {
   y: number
 }
 
+/**
+ * Convert game Cartesian Y (where +Y is up) to SVG coordinate Y (where +Y is down).
+ */
+export const getDisplayPosY = (posY: number): number => -posY
+
 export const computeBoardBounds = (
   squares: { posX: number; posY: number }[],
   padding = 120,
@@ -24,10 +29,11 @@ export const computeBoardBounds = (
   let maxY = -Infinity
 
   for (const sq of squares) {
+    const displayY = getDisplayPosY(sq.posY)
     if (sq.posX < minX) minX = sq.posX
     if (sq.posX > maxX) maxX = sq.posX
-    if (sq.posY < minY) minY = sq.posY
-    if (sq.posY > maxY) maxY = sq.posY
+    if (displayY < minY) minY = displayY
+    if (displayY > maxY) maxY = displayY
   }
 
   return {

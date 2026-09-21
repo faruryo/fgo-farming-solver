@@ -178,6 +178,7 @@ const useBoardViewSelection = (board: ClassBoardData) => {
     setSquareRouteTarget,
     setSquareRouteUnlocked,
     resetBoardDetail,
+    setClassStatus,
   } = useClassScore()
   const boardDetail = state.boards ? Reflect.get(state.boards, board.key) : undefined
   const playableSquares = useMemo(
@@ -203,11 +204,7 @@ const useBoardViewSelection = (board: ClassBoardData) => {
   )
 
   const handleSetAllTarget = () => {
-    playableSquares.forEach((sq) => {
-      if (!selection.unlockedSquareIds.includes(sq.id)) {
-        setSquareStatus(board.key, sq.id, 'target')
-      }
-    })
+    setClassStatus(board.key, 'target')
   }
 
   const unlockedCount = useMemo(
@@ -250,8 +247,9 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
   }, [selectedSquare, selection])
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto px-2 sm:px-4 py-4">
-      <BoardViewHeader
+    <div className="min-h-screen pt-20 pb-16">
+      <div className="space-y-4 max-w-7xl mx-auto px-2 sm:px-4">
+        <BoardViewHeader
         board={board}
         onReset={() => resetBoardDetail(board.key)}
         onSetAllTarget={handleSetAllTarget}
@@ -283,6 +281,7 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
         onSetRouteTarget={(sqId) => setSquareRouteTarget(board.key, sqId)}
         onSetRouteUnlocked={(sqId) => setSquareRouteUnlocked(board.key, sqId)}
       />
+      </div>
     </div>
   )
 }

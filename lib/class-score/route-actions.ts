@@ -1,5 +1,5 @@
 import type { ClassBoardData, ClassBoardLine } from './board-types'
-import type { ClassBoardDetailState } from './types'
+import type { ClassBoardDetailState, ClassScoreStatus } from './types'
 
 const buildUndirectedAdjacency = (lines: ClassBoardLine[]): Map<number, number[]> => {
   const adj = new Map<number, number[]>()
@@ -23,11 +23,12 @@ const buildUndirectedAdjacency = (lines: ClassBoardLine[]): Map<number, number[]
 export const computeRouteTargets = (
   curBoard: ClassBoardDetailState | undefined,
   path: number[],
+  blankSquareIds: Set<number> = new Set(),
 ): ClassBoardDetailState => {
   const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
   const targets = new Set(curBoard?.targetSquareIds ?? [])
   for (const sqId of path) {
-    if (!unlocked.has(sqId)) {
+    if (!blankSquareIds.has(sqId) && !unlocked.has(sqId)) {
       targets.add(sqId)
     }
   }
@@ -39,18 +40,21 @@ export const computeRouteTargets = (
 
 /**
  * 起点から指定マスまでの経路上のマスを「解放済」に一括設定する純関数
- * - 経路上の全マスを「解放済」に追加する。
+ * - 経路上の実サインマスを「解放済」に追加する（中継点blankマスは除外）。
  * - 経路上のマスが「目標」に含まれていた場合は削除する（目標達成扱い）。
  */
 export const computeRouteUnlocked = (
   curBoard: ClassBoardDetailState | undefined,
   path: number[],
+  blankSquareIds: Set<number> = new Set(),
 ): ClassBoardDetailState => {
   const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
   const targets = new Set(curBoard?.targetSquareIds ?? [])
   for (const sqId of path) {
-    unlocked.add(sqId)
-    targets.delete(sqId)
+    if (!blankSquareIds.has(sqId)) {
+      unlocked.add(sqId)
+      targets.delete(sqId)
+    }
   }
   return {
     unlockedSquareIds: Array.from(unlocked),
@@ -222,3 +226,29 @@ export const computeBoardAllUnlocked = (
   unlockedSquareIds: [...playableSquareIds],
   targetSquareIds: [],
 })
+
+/**
+ * 盤面の状態からクラススコア全体のステータス（'none' | 'target' | 'completed'）を導出する純関数
+ * - 全実サインマスが解放済 -> 'completed'
+ * - 全実サインマスが解放済または目標（かつ目標が1つ以上） -> 'target'
+ * - それ以外（未設定または一部のみ目標） -> 'none'
+ */
+export const deriveClassStatusFromBoard = (
+  board: ClassBoardDetailState | undefined,
+  playableSquareIds: number[],
+): ClassScoreStatus => {
+  if (!board || playableSquareIds.length === 0) return 'none'
+  const unlockedSet = new Set(board.unlockedSquareIds)
+  const targetSet = new Set(board.targetSquareIds)
+
+  const allUnlocked = playableSquareIds.every((id) => unlockedSet.has(id))
+  if (allUnlocked) return 'completed'
+
+  const allCovered = playableSquareIds.every(
+    (id) => unlockedSet.has(id) || targetSet.has(id),
+  )
+  if (allCovered && targetSet.size > 0) return 'target'
+
+  return 'none'
+}
+
