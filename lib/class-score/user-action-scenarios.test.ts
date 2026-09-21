@@ -89,17 +89,18 @@ describe('User Action Scenarios (Extra2 Board)', () => {
     expect(state.unlockedSquareIds).toContain(53)
   })
 
-  it('シナリオ4: 未開放操作時、枝の途中マスを消すと下流が連鎖未開放になり、末端マスを消すと単独のみ未開放になる', () => {
+  it('シナリオ4: 未開放操作時、目標フラグは連鎖して消えず、消した本人のマスだけが目標から外れる', () => {
     // 全マス目標状態
     const state = computeBoardAllTarget(undefined, playables)
 
     // 枝の途中マス（44: 69 -> 44 -> 45 -> blank -> 46）を未開放にする
     const pruned44 = computePrunedOnNone(state, 44, lines, startIds, blankIds)
-    // 44とその下流（45, 46）の3マスが未開放になり、残りは69マス
+    // 44自身は目標から外れるが、45, 46はもともと解放済ではなく目標のままなので、
+    // 到達不能になっても連鎖して消えない（残りは71マス）
     expect(pruned44.targetSquareIds).not.toContain(44)
-    expect(pruned44.targetSquareIds).not.toContain(45)
-    expect(pruned44.targetSquareIds).not.toContain(46)
-    expect(pruned44.targetSquareIds).toHaveLength(69)
+    expect(pruned44.targetSquareIds).toContain(45)
+    expect(pruned44.targetSquareIds).toContain(46)
+    expect(pruned44.targetSquareIds).toHaveLength(71)
 
     // 末端マス（46）を未開放にする
     const pruned46 = computePrunedOnNone(state, 46, lines, startIds, blankIds)

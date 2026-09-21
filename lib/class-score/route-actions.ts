@@ -157,8 +157,10 @@ export const getBlankSquareIds = (boardData: ClassBoardData | undefined): Set<nu
 
 /**
  * 指定マスを未解放にした際、起点からそのマスを経由しないと到達できなくなった
- * 「起点と反対側（下流/外側）のマス群」を一括で未解放にする純関数。
- * 中継点（blankマス）は透過的に通過し、起点マスから有効なマスだけを辿って到達可能なマスのみを保持する。
+ * 「起点と反対側（下流/外側）のマス群」の解放済フラグを一括で外す純関数。
+ * 中継点（blankマス）は透過的に通過し、起点マスから有効なマスだけを辿って到達可能なマスのみを解放済として維持する。
+ * 「目標」は到達可能性に関係なく維持し、指定マス自身が目標だった場合のみそれを外す
+ * （未開放に戻しても、その先の目標プランは崩さないため）。
  */
 export const computePrunedOnNone = (
   curBoard: ClassBoardDetailState | undefined,
@@ -177,8 +179,10 @@ export const computePrunedOnNone = (
   ])
   active.delete(removedSquareId)
 
+  const targetSquareIds = curBoard.targetSquareIds.filter((id) => id !== removedSquareId)
+
   if (active.size === 0) {
-    return { unlockedSquareIds: [], targetSquareIds: [] }
+    return { unlockedSquareIds: [], targetSquareIds }
   }
 
   const reachable = findReachableSquares(
@@ -191,7 +195,7 @@ export const computePrunedOnNone = (
 
   return {
     unlockedSquareIds: curBoard.unlockedSquareIds.filter((id) => reachable.has(id)),
-    targetSquareIds: curBoard.targetSquareIds.filter((id) => reachable.has(id)),
+    targetSquareIds,
   }
 }
 

@@ -102,15 +102,16 @@ describe('route-actions', () => {
     ]
     const startIds = [1]
 
-    it('途中マスを未解放にしたとき、起点と反対側（下流ノード）もすべて未解放にする', () => {
+    it('途中マスを未解放にしたとき、起点と反対側（下流ノード）は解放済から外れるが、目標フラグは連鎖して消えない', () => {
       const initial: ClassBoardDetailState = {
         unlockedSquareIds: [1, 2],
         targetSquareIds: [3, 4],
       }
-      // マス2を未解放にする -> 2, 3, 4 が未解放になり、1だけが残る
+      // マス2を未解放にする -> unlockedは1だけが残る。3, 4は2自体が目標ではないため、
+      // 到達不能になっても targetSquareIds からは消えない
       const result = computePrunedOnNone(initial, 2, lines, startIds)
       expect(result.unlockedSquareIds).toEqual([1])
-      expect(result.targetSquareIds).toEqual([])
+      expect(numSort(result.targetSquareIds)).toEqual([3, 4])
     })
 
     it('末端マスを未解放にしたとき、手前のマスはすべて維持される', () => {
@@ -124,18 +125,18 @@ describe('route-actions', () => {
       expect(numSort(result.targetSquareIds)).toEqual([3])
     })
 
-    it('起点マスそのものを未解放にしたとき、その枝の全マスが未解放になる', () => {
+    it('起点マスそのものを未解放にしたとき、解放済は全て外れるが目標フラグは連鎖して消えない', () => {
       const initial: ClassBoardDetailState = {
         unlockedSquareIds: [1, 2],
         targetSquareIds: [3, 4],
       }
-      // 起点1を未解放にする -> 全て未解放
+      // 起点1を未解放にする -> unlockedは全て消える。3, 4は1が目標ではないため targetSquareIds に残る
       const result = computePrunedOnNone(initial, 1, lines, startIds)
       expect(result.unlockedSquareIds).toEqual([])
-      expect(result.targetSquareIds).toEqual([])
+      expect(numSort(result.targetSquareIds)).toEqual([3, 4])
     })
 
-    it('別ブランチのマスは孤立していなければ未解放にならず残る', () => {
+    it('別ブランチのマスは孤立していなければ未解放にならず残る（目標フラグは連鎖して消えない）', () => {
       // グラフ構造: 1(start) - 2 - 3, 1(start) - 10 - 11
       const branchLines: ClassBoardLine[] = [
         { id: 1, prev: 1, next: 2 },
@@ -147,10 +148,10 @@ describe('route-actions', () => {
         unlockedSquareIds: [1],
         targetSquareIds: [2, 3, 10, 11],
       }
-      // マス2を未解放にする -> 2, 3は消えるが、別ブランチの1, 10, 11は残る
+      // マス2(目標)を未解放にする -> 2は目標から外れるが、3は目標のまま残る（到達不能でも連鎖して消えない）
       const result = computePrunedOnNone(initial, 2, branchLines, [1])
       expect(result.unlockedSquareIds).toEqual([1])
-      expect(numSort(result.targetSquareIds)).toEqual([10, 11])
+      expect(numSort(result.targetSquareIds)).toEqual([3, 10, 11])
     })
 
     it('中継点（blankマス）を経由するルートにおいて、中継点を透過して先のマスを正常に保持する', () => {
