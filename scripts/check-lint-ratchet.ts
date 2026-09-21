@@ -125,7 +125,9 @@ const run = async () => {
       ? new Set(files.map((file) => normalizeFile(file, cwd)))
       : null
 
-  const eslint = new ESLint({ cwd, fix, cache: true })
+  // File cache does not invalidate when imported types change, so type-aware
+  // warning counts can be written stale into the baseline.
+  const eslint = new ESLint({ cwd, fix })
   const results = await eslint.lintFiles(lintTargets)
   if (fix) await ESLint.outputFixes(results)
 
