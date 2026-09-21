@@ -11,8 +11,8 @@
     "deploy": "pnpm run build && pnpm exec wrangler deploy",
     "start": "next start",
     "lint": "eslint .",
-    "lint:ratchet": "node scripts/check-lint-ratchet.mjs",
-    "lint:ratchet:update": "node scripts/check-lint-ratchet.mjs --write",
+    "lint:ratchet": "tsx scripts/check-lint-ratchet.ts",
+    "lint:ratchet:update": "tsx scripts/check-lint-ratchet.ts --write",
     "audit:duplicates": "jscpd . --config .jscpd.json --no-tips",
     "audit:dead-code": "knip --config knip.json --reporter json --no-exit-code",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",
@@ -116,7 +116,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
+      "tsx scripts/check-lint-ratchet.ts --fix"
     ]
   }
 }

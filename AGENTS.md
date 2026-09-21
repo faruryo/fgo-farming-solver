@@ -31,7 +31,7 @@
 - `pnpm run build` — Next.js build + OpenNext Cloudflare build
 - `pnpm run deploy` — build + `wrangler deploy` to Cloudflare Workers
 - `pnpm run lint` — ESLint
-- `pnpm run lint:ratchet` — 既存lint警告のファイル・ルール別ベースラインから増加がないことを確認
+- `pnpm run lint:ratchet` — 既存lint警告のファイル・ルール別ベースラインから増加がないことを確認。pre-commit はステージ済みファイルだけを同じ判定で見る（全体 lint は CI）
 - `pnpm run audit:duplicates` — jscpd重複レポート（report-only）
 - `pnpm run audit:dead-code` — Knip未使用候補レポート（report-only）
 - `pnpm run type-check` — tsc --noEmit

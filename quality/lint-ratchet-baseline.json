@@ -759,7 +759,7 @@
     {
       "file": "components/material/result.tsx",
       "rule": "sonarjs/no-nested-conditional",
-      "count": 5
+      "count": 4
     },
     {
       "file": "components/material/servant-card.tsx",
@@ -1762,16 +1762,6 @@
       "count": 10
     },
     {
-      "file": "lib/quest-efficiency.test.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 2
-    },
-    {
-      "file": "lib/quest-efficiency.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 2
-    },
-    {
       "file": "lib/quest-efficiency.ts",
       "rule": "complexity",
       "count": 1
@@ -1960,11 +1950,6 @@
       "file": "scripts/bench-updater.ts",
       "rule": "security/detect-object-injection",
       "count": 1
-    },
-    {
-      "file": "scripts/check-lint-ratchet.mjs",
-      "rule": "security/detect-non-literal-fs-filename",
-      "count": 3
     },
     {
       "file": "scripts/kv-rest.ts",
