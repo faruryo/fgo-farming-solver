@@ -1,0 +1,2555 @@
+{
+  "key": "berserker",
+  "id": 7,
+  "name": "バーサーカー",
+  "startSquareIds": [
+    1,
+    32
+  ],
+  "squares": [
+    {
+      "id": 1,
+      "posX": -172,
+      "posY": -2,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を2%アップ",
+      "skillType": "passive",
+      "flags": [
+        "start"
+      ],
+      "isStart": true,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 30
+        },
+        {
+          "id": "6534",
+          "name": "励振火薬",
+          "amount": 14
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "posX": -340,
+      "posY": -2,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00321.png",
+      "name": "スター発生アップ",
+      "detail": "スター発生率を5%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 30
+        },
+        {
+          "id": "6552",
+          "name": "忘れじの灰",
+          "amount": 14
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "posX": -449,
+      "posY": 0,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 30
+        },
+        {
+          "id": "7007",
+          "name": "バーサーカーピース",
+          "amount": 14
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "posX": -481,
+      "posY": -95,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 40
+        },
+        {
+          "id": "6545",
+          "name": "神脈霊子",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "posX": -430,
+      "posY": -193,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 50
+        },
+        {
+          "id": "6515",
+          "name": "八連双晶",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "posX": -348,
+      "posY": -254,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00388.png",
+      "name": "Extra Attackカード性能アップ",
+      "detail": "Extra Attackカードの性能を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 2000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 60
+        },
+        {
+          "id": "7007",
+          "name": "バーサーカーピース",
+          "amount": 28
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "posX": -634,
+      "posY": -457,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を6%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6507",
+          "name": "混沌の爪",
+          "amount": 9
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "posX": -762,
+      "posY": -530,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "posX": -916,
+      "posY": -232,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6544",
+          "name": "煌星のカケラ",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "posX": -874,
+      "posY": -99,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "posX": -688,
+      "posY": 112,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00324.png",
+      "name": "クリティカル威力アップ",
+      "detail": "クリティカル威力を5%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 14000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 200
+        },
+        {
+          "id": "6529",
+          "name": "呪獣胆石",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "posX": -884,
+      "posY": 84,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00310.png",
+      "name": "宝具威力アップ",
+      "detail": "宝具威力を5%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 20000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 250
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "posX": -669,
+      "posY": -336,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00321.png",
+      "name": "スター発生アップ",
+      "detail": "スター発生率を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6529",
+          "name": "呪獣胆石",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "posX": -578,
+      "posY": -229,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "6539",
+          "name": "暁光炉心",
+          "amount": 18
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "posX": -710,
+      "posY": -178,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/cs_03861.png",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "commandSpell",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 10000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 190
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "posX": -235,
+      "posY": -407,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を8%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6537",
+          "name": "巨人の指輪",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "posX": -158,
+      "posY": -487,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00321.png",
+      "name": "スター発生アップ",
+      "detail": "スター発生率を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "6505",
+          "name": "虚影の塵",
+          "amount": 56
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "posX": -52,
+      "posY": -490,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 5000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 120
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "posX": -418,
+      "posY": 94,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/cs_03861.png",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "commandSpell",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 40
+        },
+        {
+          "id": "6526",
+          "name": "追憶の貝殻",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "posX": -368,
+      "posY": 177,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 50
+        },
+        {
+          "id": "6537",
+          "name": "巨人の指輪",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "posX": -381,
+      "posY": 275,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 2000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 60
+        },
+        {
+          "id": "7007",
+          "name": "バーサーカーピース",
+          "amount": 28
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "posX": -597,
+      "posY": 238,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を6%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6539",
+          "name": "暁光炉心",
+          "amount": 9
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "posX": -647,
+      "posY": 391,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "posX": -821,
+      "posY": 476,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6507",
+          "name": "混沌の爪",
+          "amount": 18
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "posX": -763,
+      "posY": 283,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "6545",
+          "name": "神脈霊子",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "posX": -924,
+      "posY": 359,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00388.png",
+      "name": "Extra Attackカード性能アップ",
+      "detail": "Extra Attackカードの性能を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 10000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 190
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "posX": -612,
+      "posY": 543,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6515",
+          "name": "八連双晶",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "posX": -464,
+      "posY": 534,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "posX": -236,
+      "posY": 405,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00321.png",
+      "name": "スター発生アップ",
+      "detail": "スター発生率を5%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6515",
+          "name": "八連双晶",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "posX": -156,
+      "posY": 488,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "6530",
+          "name": "魔術髄液",
+          "amount": 56
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "posX": -49,
+      "posY": 468,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00388.png",
+      "name": "Extra Attackカード性能アップ",
+      "detail": "Extra Attackカードの性能を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 5000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 120
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "posX": 172,
+      "posY": -2,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [
+        "start"
+      ],
+      "isStart": true,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 30
+        },
+        {
+          "id": "6530",
+          "name": "魔術髄液",
+          "amount": 14
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "posX": 337,
+      "posY": -2,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を6%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 30
+        },
+        {
+          "id": "6505",
+          "name": "虚影の塵",
+          "amount": 14
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "posX": 469,
+      "posY": -2,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 30
+        },
+        {
+          "id": "7007",
+          "name": "バーサーカーピース",
+          "amount": 14
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "posX": 420,
+      "posY": 86,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 40
+        },
+        {
+          "id": "6537",
+          "name": "巨人の指輪",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "posX": 372,
+      "posY": 165,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 50
+        },
+        {
+          "id": "6526",
+          "name": "追憶の貝殻",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "posX": 347,
+      "posY": 251,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00388.png",
+      "name": "Extra Attackカード性能アップ",
+      "detail": "Extra Attackカードの性能を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 2000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 60
+        },
+        {
+          "id": "7007",
+          "name": "バーサーカーピース",
+          "amount": 28
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "posX": 457,
+      "posY": 452,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6539",
+          "name": "暁光炉心",
+          "amount": 9
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "posX": 557,
+      "posY": 315,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を12%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "posX": 870,
+      "posY": 183,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6529",
+          "name": "呪獣胆石",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "posX": 682,
+      "posY": 114,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を12%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "posX": 873,
+      "posY": -46,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00324.png",
+      "name": "クリティカル威力アップ",
+      "detail": "クリティカル威力を5%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 14000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 200
+        },
+        {
+          "id": "6544",
+          "name": "煌星のカケラ",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "posX": 786,
+      "posY": -221,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00310.png",
+      "name": "宝具威力アップ",
+      "detail": "宝具威力を5%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 20000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 250
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "posX": 885,
+      "posY": 371,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6544",
+          "name": "煌星のカケラ",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "posX": 717,
+      "posY": 529,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "6507",
+          "name": "混沌の爪",
+          "amount": 18
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "posX": 588,
+      "posY": 492,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/cs_03861.png",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "commandSpell",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 10000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 190
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "posX": 243,
+      "posY": 422,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を12%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6545",
+          "name": "神脈霊子",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "posX": 144,
+      "posY": 382,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00321.png",
+      "name": "スター発生アップ",
+      "detail": "スター発生率を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "6552",
+          "name": "忘れじの灰",
+          "amount": 56
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "posX": 42,
+      "posY": 407,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 5000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 120
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "posX": 477,
+      "posY": -103,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/cs_03861.png",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "commandSpell",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 40
+        },
+        {
+          "id": "6515",
+          "name": "八連双晶",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "posX": 444,
+      "posY": -203,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 1500000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 50
+        },
+        {
+          "id": "6545",
+          "name": "神脈霊子",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "posX": 345,
+      "posY": -254,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00390.png",
+      "name": "Quickクリティカル威力アップ",
+      "detail": "Quickカードのクリティカル威力を6%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 2000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 60
+        },
+        {
+          "id": "7007",
+          "name": "バーサーカーピース",
+          "amount": 28
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "posX": 398,
+      "posY": -474,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00392.png",
+      "name": "Busterクリティカル威力アップ",
+      "detail": "Busterカードのクリティカル威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6507",
+          "name": "混沌の爪",
+          "amount": 9
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "posX": 573,
+      "posY": -472,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を8%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "posX": 840,
+      "posY": -353,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00356.png",
+      "name": "Quickカード威力アップ",
+      "detail": "Quickカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6539",
+          "name": "暁光炉心",
+          "amount": 18
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "posX": 912,
+      "posY": -472,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00391.png",
+      "name": "Artsクリティカル威力アップ",
+      "detail": "Artsカードのクリティカル威力を8%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "6526",
+          "name": "追憶の貝殻",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "posX": 766,
+      "posY": -527,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00388.png",
+      "name": "Extra Attackカード性能アップ",
+      "detail": "Extra Attackカードの性能を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 10000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 190
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "posX": 621,
+      "posY": -289,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00358.png",
+      "name": "Busterカード威力アップ",
+      "detail": "Busterカードの威力を2%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 6000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 130
+        },
+        {
+          "id": "6537",
+          "name": "巨人の指輪",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "posX": 659,
+      "posY": -119,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 8000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 160
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 30
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "posX": 244,
+      "posY": -426,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00321.png",
+      "name": "スター発生アップ",
+      "detail": "スター発生率を10%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 3000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 80
+        },
+        {
+          "id": "6526",
+          "name": "追憶の貝殻",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "posX": 145,
+      "posY": -384,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/skill_00357.png",
+      "name": "Artsカード威力アップ",
+      "detail": "Artsカードの威力を4%アップ",
+      "skillType": "passive",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 4000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 100
+        },
+        {
+          "id": "6534",
+          "name": "励振火薬",
+          "amount": 56
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "posX": 44,
+      "posY": -429,
+      "icon": "https://static.atlasacademy.io/JP/ClassBoard/Icon/cs_03861.png",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "commandSpell",
+      "flags": [],
+      "isStart": false,
+      "isLock": false,
+      "items": [
+        {
+          "id": "1",
+          "name": "QP",
+          "amount": 5000000
+        },
+        {
+          "id": "50",
+          "name": "星光の砂",
+          "amount": 120
+        },
+        {
+          "id": "7107",
+          "name": "バーサーカーモニュメント",
+          "amount": 20
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "posX": -299,
+      "posY": -336,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "51",
+          "name": "新星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "posX": -790,
+      "posY": -365,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "52",
+          "name": "明星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "posX": -734,
+      "posY": 8,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "53",
+          "name": "極星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "posX": -297,
+      "posY": 329,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "51",
+          "name": "新星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 67,
+      "posX": -701,
+      "posY": 467,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "52",
+          "name": "明星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "posX": 330,
+      "posY": 362,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "51",
+          "name": "新星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 69,
+      "posX": 733,
+      "posY": 360,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "52",
+          "name": "明星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "posX": 750,
+      "posY": -12,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "53",
+          "name": "極星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 71,
+      "posX": 288,
+      "posY": -322,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "51",
+          "name": "新星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "posX": 693,
+      "posY": -382,
+      "icon": "",
+      "name": "ツアーロック",
+      "detail": "トーチを消費してルートを解放します。",
+      "skillType": "none",
+      "flags": [],
+      "isStart": false,
+      "isLock": true,
+      "items": [
+        {
+          "id": "52",
+          "name": "明星のトーチ",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": 73,
+      "posX": -430,
+      "posY": -491,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 74,
+      "posX": -917,
+      "posY": -358,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 75,
+      "posX": -816,
+      "posY": 160,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 76,
+      "posX": -455,
+      "posY": 424,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 77,
+      "posX": -873,
+      "posY": 283,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 78,
+      "posX": 656,
+      "posY": 278,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 79,
+      "posX": 804,
+      "posY": 98,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 80,
+      "posX": 885,
+      "posY": -170,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 81,
+      "posX": 840,
+      "posY": 476,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    },
+    {
+      "id": 82,
+      "posX": 474,
+      "posY": -537,
+      "icon": "",
+      "name": "サイン",
+      "detail": "",
+      "skillType": "none",
+      "flags": [
+        "blank"
+      ],
+      "isStart": false,
+      "isLock": false,
+      "items": []
+    }
+  ],
+  "lines": [
+    {
+      "id": 1,
+      "prev": 1,
+      "next": 2
+    },
+    {
+      "id": 2,
+      "prev": 2,
+      "next": 3
+    },
+    {
+      "id": 3,
+      "prev": 3,
+      "next": 4
+    },
+    {
+      "id": 4,
+      "prev": 3,
+      "next": 19
+    },
+    {
+      "id": 5,
+      "prev": 4,
+      "next": 5
+    },
+    {
+      "id": 6,
+      "prev": 5,
+      "next": 6
+    },
+    {
+      "id": 7,
+      "prev": 6,
+      "next": 63
+    },
+    {
+      "id": 8,
+      "prev": 7,
+      "next": 8
+    },
+    {
+      "id": 9,
+      "prev": 8,
+      "next": 64
+    },
+    {
+      "id": 10,
+      "prev": 9,
+      "next": 10
+    },
+    {
+      "id": 11,
+      "prev": 10,
+      "next": 65
+    },
+    {
+      "id": 12,
+      "prev": 11,
+      "next": 75
+    },
+    {
+      "id": 13,
+      "prev": 13,
+      "next": 14
+    },
+    {
+      "id": 14,
+      "prev": 14,
+      "next": 15
+    },
+    {
+      "id": 15,
+      "prev": 16,
+      "next": 17
+    },
+    {
+      "id": 16,
+      "prev": 17,
+      "next": 18
+    },
+    {
+      "id": 17,
+      "prev": 19,
+      "next": 20
+    },
+    {
+      "id": 18,
+      "prev": 20,
+      "next": 21
+    },
+    {
+      "id": 19,
+      "prev": 21,
+      "next": 66
+    },
+    {
+      "id": 20,
+      "prev": 22,
+      "next": 23
+    },
+    {
+      "id": 21,
+      "prev": 23,
+      "next": 67
+    },
+    {
+      "id": 22,
+      "prev": 24,
+      "next": 25
+    },
+    {
+      "id": 23,
+      "prev": 25,
+      "next": 77
+    },
+    {
+      "id": 24,
+      "prev": 27,
+      "next": 28
+    },
+    {
+      "id": 25,
+      "prev": 29,
+      "next": 30
+    },
+    {
+      "id": 26,
+      "prev": 30,
+      "next": 31
+    },
+    {
+      "id": 27,
+      "prev": 32,
+      "next": 33
+    },
+    {
+      "id": 28,
+      "prev": 33,
+      "next": 34
+    },
+    {
+      "id": 29,
+      "prev": 34,
+      "next": 35
+    },
+    {
+      "id": 30,
+      "prev": 34,
+      "next": 50
+    },
+    {
+      "id": 31,
+      "prev": 35,
+      "next": 36
+    },
+    {
+      "id": 32,
+      "prev": 36,
+      "next": 37
+    },
+    {
+      "id": 33,
+      "prev": 37,
+      "next": 68
+    },
+    {
+      "id": 34,
+      "prev": 38,
+      "next": 39
+    },
+    {
+      "id": 35,
+      "prev": 39,
+      "next": 78
+    },
+    {
+      "id": 36,
+      "prev": 40,
+      "next": 79
+    },
+    {
+      "id": 37,
+      "prev": 41,
+      "next": 70
+    },
+    {
+      "id": 38,
+      "prev": 42,
+      "next": 80
+    },
+    {
+      "id": 39,
+      "prev": 44,
+      "next": 81
+    },
+    {
+      "id": 40,
+      "prev": 45,
+      "next": 46
+    },
+    {
+      "id": 41,
+      "prev": 47,
+      "next": 48
+    },
+    {
+      "id": 42,
+      "prev": 48,
+      "next": 49
+    },
+    {
+      "id": 43,
+      "prev": 50,
+      "next": 51
+    },
+    {
+      "id": 44,
+      "prev": 51,
+      "next": 52
+    },
+    {
+      "id": 45,
+      "prev": 52,
+      "next": 71
+    },
+    {
+      "id": 46,
+      "prev": 53,
+      "next": 82
+    },
+    {
+      "id": 47,
+      "prev": 54,
+      "next": 72
+    },
+    {
+      "id": 48,
+      "prev": 55,
+      "next": 56
+    },
+    {
+      "id": 49,
+      "prev": 56,
+      "next": 57
+    },
+    {
+      "id": 50,
+      "prev": 58,
+      "next": 59
+    },
+    {
+      "id": 51,
+      "prev": 60,
+      "next": 61
+    },
+    {
+      "id": 52,
+      "prev": 61,
+      "next": 62
+    },
+    {
+      "id": 53,
+      "prev": 63,
+      "next": 73
+    },
+    {
+      "id": 54,
+      "prev": 63,
+      "next": 16
+    },
+    {
+      "id": 55,
+      "prev": 64,
+      "next": 13
+    },
+    {
+      "id": 56,
+      "prev": 64,
+      "next": 74
+    },
+    {
+      "id": 57,
+      "prev": 65,
+      "next": 11
+    },
+    {
+      "id": 58,
+      "prev": 66,
+      "next": 29
+    },
+    {
+      "id": 59,
+      "prev": 66,
+      "next": 76
+    },
+    {
+      "id": 60,
+      "prev": 67,
+      "next": 27
+    },
+    {
+      "id": 61,
+      "prev": 67,
+      "next": 24
+    },
+    {
+      "id": 62,
+      "prev": 68,
+      "next": 47
+    },
+    {
+      "id": 63,
+      "prev": 68,
+      "next": 38
+    },
+    {
+      "id": 64,
+      "prev": 69,
+      "next": 44
+    },
+    {
+      "id": 65,
+      "prev": 69,
+      "next": 40
+    },
+    {
+      "id": 66,
+      "prev": 70,
+      "next": 42
+    },
+    {
+      "id": 67,
+      "prev": 71,
+      "next": 60
+    },
+    {
+      "id": 68,
+      "prev": 71,
+      "next": 53
+    },
+    {
+      "id": 69,
+      "prev": 72,
+      "next": 55
+    },
+    {
+      "id": 70,
+      "prev": 72,
+      "next": 58
+    },
+    {
+      "id": 71,
+      "prev": 73,
+      "next": 7
+    },
+    {
+      "id": 72,
+      "prev": 74,
+      "next": 9
+    },
+    {
+      "id": 73,
+      "prev": 75,
+      "next": 12
+    },
+    {
+      "id": 74,
+      "prev": 76,
+      "next": 22
+    },
+    {
+      "id": 75,
+      "prev": 77,
+      "next": 26
+    },
+    {
+      "id": 76,
+      "prev": 78,
+      "next": 69
+    },
+    {
+      "id": 77,
+      "prev": 79,
+      "next": 41
+    },
+    {
+      "id": 78,
+      "prev": 80,
+      "next": 43
+    },
+    {
+      "id": 79,
+      "prev": 81,
+      "next": 45
+    },
+    {
+      "id": 80,
+      "prev": 82,
+      "next": 54
+    }
+  ]
+}

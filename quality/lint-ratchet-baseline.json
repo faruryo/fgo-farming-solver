@@ -759,7 +759,7 @@
     {
       "file": "components/material/result.tsx",
       "rule": "sonarjs/no-nested-conditional",
-      "count": 5
+      "count": 4
     },
     {
       "file": "components/material/servant-card.tsx",
@@ -1760,16 +1760,6 @@
       "file": "lib/quest-efficiency.test.ts",
       "rule": "@typescript-eslint/no-non-null-assertion",
       "count": 10
-    },
-    {
-      "file": "lib/quest-efficiency.test.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 2
-    },
-    {
-      "file": "lib/quest-efficiency.ts",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 2
     },
     {
       "file": "lib/quest-efficiency.ts",

@@ -3,10 +3,13 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import { Check, ChevronDown, ChevronUp, Target } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { Check, ChevronDown, ChevronUp, Network, Target } from 'lucide-react'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import {
+  ClassBoardDetailState,
   ClassScoreBoardDefinition,
   ClassScoreStatus,
 } from '../../lib/class-score/types'
@@ -28,6 +31,7 @@ const CLASS_TO_ICON_CLASS: Record<string, ClassName> = {
 export type ClassCardProps = {
   board: ClassScoreBoardDefinition
   status: ClassScoreStatus
+  boardDetail?: ClassBoardDetailState
   onChangeStatus: (status: ClassScoreStatus) => void
 }
 
@@ -84,14 +88,54 @@ const ClassCardMaterials: React.FC<{
   )
 }
 
+const ClassCardBadge: React.FC<{
+  status: ClassScoreStatus
+  detailTargetsCount: number
+}> = ({ status, detailTargetsCount }) => {
+  const { t } = useTranslation('classScore')
+
+  if (detailTargetsCount > 0) {
+    return (
+      <Badge variant="default" className="gap-1 font-semibold bg-amber-600 hover:bg-amber-600">
+        <Target className="w-3.5 h-3.5" />
+        <span>{t('status.detail-target', '{{count}}マス目標', { count: detailTargetsCount })}</span>
+      </Badge>
+    )
+  }
+  if (status === 'target') {
+    return (
+      <Badge variant="default" className="gap-1 font-semibold">
+        <Target className="w-3.5 h-3.5" />
+        {t('status.target', '目標')}
+      </Badge>
+    )
+  }
+  if (status === 'completed') {
+    return (
+      <Badge
+        variant="secondary"
+        className="gap-1 bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 font-semibold"
+      >
+        <Check className="w-3.5 h-3.5" />
+        {t('status.completed', '解放済')}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="text-muted-foreground">
+      {t('status.none', '未設定')}
+    </Badge>
+  )
+}
+
 const ClassCardHeader: React.FC<{
   board: ClassScoreBoardDefinition
   status: ClassScoreStatus
-}> = ({ board, status }) => {
+  detailTargetsCount: number
+}> = ({ board, status, detailTargetsCount }) => {
   const { t } = useTranslation('classScore')
   const iconClass =
-    (Reflect.get(CLASS_TO_ICON_CLASS, board.key) as ClassName | undefined) ??
-    'saber'
+    (Reflect.get(CLASS_TO_ICON_CLASS, board.key) as ClassName | undefined) ?? 'saber'
   const iconUrl = getClassIconUrl(iconClass, 5)
 
   return (
@@ -116,28 +160,7 @@ const ClassCardHeader: React.FC<{
         </div>
       </div>
 
-      <div>
-        {status === 'target' && (
-          <Badge variant="default" className="gap-1 font-semibold">
-            <Target className="w-3.5 h-3.5" />
-            {t('status.target', '目標')}
-          </Badge>
-        )}
-        {status === 'completed' && (
-          <Badge
-            variant="secondary"
-            className="gap-1 bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 font-semibold"
-          >
-            <Check className="w-3.5 h-3.5" />
-            {t('status.completed', '解放済')}
-          </Badge>
-        )}
-        {status === 'none' && (
-          <Badge variant="outline" className="text-muted-foreground">
-            {t('status.none', '未設定')}
-          </Badge>
-        )}
-      </div>
+      <ClassCardBadge status={status} detailTargetsCount={detailTargetsCount} />
     </div>
   )
 }
@@ -240,10 +263,12 @@ const ClassCardActions: React.FC<{
 export const ClassCard: React.FC<ClassCardProps> = ({
   board,
   status,
+  boardDetail,
   onChangeStatus,
 }) => {
   const { t } = useTranslation('classScore')
   const [expanded, setExpanded] = useState(false)
+  const detailTargetsCount = boardDetail?.targetSquareIds?.length ?? 0
 
   return (
     <div
@@ -252,9 +277,24 @@ export const ClassCard: React.FC<ClassCardProps> = ({
       )}`}
     >
       <div className="p-4 flex flex-col gap-3">
-        <ClassCardHeader board={board} status={status} />
+        <ClassCardHeader
+          board={board}
+          status={status}
+          detailTargetsCount={detailTargetsCount}
+        />
         <ClassCardSummary />
         <ClassCardActions status={status} onChangeStatus={onChangeStatus} />
+
+        <Link
+          href={`/material/class-score/${board.key}`}
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'w-full text-xs h-8 flex items-center justify-center gap-1.5 font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer',
+          )}
+        >
+          <Network className="w-3.5 h-3.5 text-primary" />
+          <span>{t('action.open-board-map', '盤面マップで個別指定')}</span>
+        </Link>
 
         <div className="pt-1 border-t border-border/40">
           <Button
