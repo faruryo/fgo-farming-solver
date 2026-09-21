@@ -15,6 +15,25 @@ const buildUndirectedAdjacency = (lines: ClassBoardLine[]): Map<number, number[]
   return adj
 }
 
+const applyRouteAction = (
+  curBoard: ClassBoardDetailState | undefined,
+  path: number[],
+  blankSquareIds: Set<number>,
+  applySquare: (sqId: number, unlocked: Set<number>, targets: Set<number>) => void,
+): ClassBoardDetailState => {
+  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
+  const targets = new Set(curBoard?.targetSquareIds ?? [])
+  for (const sqId of path) {
+    if (!blankSquareIds.has(sqId)) {
+      applySquare(sqId, unlocked, targets)
+    }
+  }
+  return {
+    unlockedSquareIds: Array.from(unlocked),
+    targetSquareIds: Array.from(targets),
+  }
+}
+
 /**
  * 起点から指定マスまでの経路上のマスを「目標」に一括設定する純関数
  * - すでに「解放済」のマスは解放済みのまま維持する。
@@ -24,19 +43,10 @@ export const computeRouteTargets = (
   curBoard: ClassBoardDetailState | undefined,
   path: number[],
   blankSquareIds: Set<number> = new Set(),
-): ClassBoardDetailState => {
-  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
-  const targets = new Set(curBoard?.targetSquareIds ?? [])
-  for (const sqId of path) {
-    if (!blankSquareIds.has(sqId) && !unlocked.has(sqId)) {
-      targets.add(sqId)
-    }
-  }
-  return {
-    unlockedSquareIds: Array.from(unlocked),
-    targetSquareIds: Array.from(targets),
-  }
-}
+): ClassBoardDetailState =>
+  applyRouteAction(curBoard, path, blankSquareIds, (sqId, unlocked, targets) => {
+    if (!unlocked.has(sqId)) targets.add(sqId)
+  })
 
 /**
  * 起点から指定マスまでの経路上のマスを「解放済」に一括設定する純関数
@@ -47,20 +57,11 @@ export const computeRouteUnlocked = (
   curBoard: ClassBoardDetailState | undefined,
   path: number[],
   blankSquareIds: Set<number> = new Set(),
-): ClassBoardDetailState => {
-  const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
-  const targets = new Set(curBoard?.targetSquareIds ?? [])
-  for (const sqId of path) {
-    if (!blankSquareIds.has(sqId)) {
-      unlocked.add(sqId)
-      targets.delete(sqId)
-    }
-  }
-  return {
-    unlockedSquareIds: Array.from(unlocked),
-    targetSquareIds: Array.from(targets),
-  }
-}
+): ClassBoardDetailState =>
+  applyRouteAction(curBoard, path, blankSquareIds, (sqId, unlocked, targets) => {
+    unlocked.add(sqId)
+    targets.delete(sqId)
+  })
 
 type ReachableContext = {
   active: Set<number>
