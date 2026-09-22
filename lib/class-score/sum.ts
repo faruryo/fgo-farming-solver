@@ -1,16 +1,54 @@
 import { CLASS_SCORE_BOARDS } from './data'
-import { CLASS_SCORE_CLASS_KEYS, ClassScoreState } from './types'
+import {
+  CLASS_SCORE_CLASS_KEYS,
+  ClassScoreClassKey,
+  ClassScoreState,
+} from './types'
+import { getClassBoardData } from './board-loader'
+import { calculateBoardDiffMaterials } from './calculate-board-diff'
 
 const addAmount = (map: Map<string, number>, id: string, amount: number) => {
   map.set(id, (map.get(id) ?? 0) + amount)
 }
 
+const addBoardTotalMaterials = (
+  sumMap: Map<string, number>,
+  key: ClassScoreClassKey,
+) => {
+  const board = Reflect.get(CLASS_SCORE_BOARDS, key)
+  if (!board) return
+
+  addAmount(sumMap, '1', board.qp)
+  board.materials.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
+  board.pieces.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
+  board.monuments.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
+  board.specialItems.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
+}
+
+const addBoardDetailMaterials = (
+  sumMap: Map<string, number>,
+  key: ClassScoreClassKey,
+  targetSquareIds: number[],
+  unlockedSquareIds: number[],
+) => {
+  const boardData = getClassBoardData(key)
+  if (!boardData) return
+
+  const diff = calculateBoardDiffMaterials(
+    boardData,
+    targetSquareIds,
+    unlockedSquareIds,
+  )
+
+  if (diff.qp > 0) addAmount(sumMap, '1', diff.qp)
+  if (diff.sand > 0) addAmount(sumMap, '50', diff.sand)
+  diff.torches.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
+  diff.materials.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
+}
+
 /**
- * クラススコアで目標（'target'）に設定されている全クラスの
- * 最大解放必要素材（通常素材、ピース、モニュメント、QP、砂、トーチ）を合算する純関数。
- *
- * @param state ユーザーのクラススコア設定
- * @returns アイテムID（Atlas ID、QPは'1'）をキー、合計必要数を値とするRecord
+ * クラススコアの全目標必要素材を合算する純関数。
+ * マス単位の詳細設定（boards）があるクラスはその差分を、ないクラスは全体目標（'target'）の全量を合算する。
  */
 export const sumClassScoreMaterials = (
   state: ClassScoreState,
@@ -18,32 +56,19 @@ export const sumClassScoreMaterials = (
   const sumMap = new Map<string, number>()
 
   CLASS_SCORE_CLASS_KEYS.forEach((key) => {
-    if (Reflect.get(state.classes, key) !== 'target') return
-    const board = Reflect.get(CLASS_SCORE_BOARDS, key)
-    if (!board) return
+    const boardDetail = state.boards ? Reflect.get(state.boards, key) : undefined
+    const hasDetailTargets = (boardDetail?.targetSquareIds?.length ?? 0) > 0
 
-    // QP
-    addAmount(sumMap, '1', board.qp)
-
-    // 通常素材
-    board.materials.forEach(({ id, amount }) => {
-      addAmount(sumMap, id, amount)
-    })
-
-    // ピース
-    board.pieces.forEach(({ id, amount }) => {
-      addAmount(sumMap, id, amount)
-    })
-
-    // モニュメント
-    board.monuments.forEach(({ id, amount }) => {
-      addAmount(sumMap, id, amount)
-    })
-
-    // 特殊アイテム（砂・トーチ）
-    board.specialItems.forEach(({ id, amount }) => {
-      addAmount(sumMap, id, amount)
-    })
+    if (hasDetailTargets && boardDetail) {
+      addBoardDetailMaterials(
+        sumMap,
+        key,
+        boardDetail.targetSquareIds,
+        boardDetail.unlockedSquareIds ?? [],
+      )
+    } else if (Reflect.get(state.classes, key) === 'target') {
+      addBoardTotalMaterials(sumMap, key)
+    }
   })
 
   return Object.fromEntries(sumMap)
@@ -58,7 +83,6 @@ export const sumClassScoreFarmingMaterials = (
 ): Record<string, number> => {
   const all = sumClassScoreMaterials(state)
   const filteredMap = new Map<string, number>()
-  // トーチ (51, 52, 53) は周回ドロップ対象外のため除外
   const excludedIds = new Set(['51', '52', '53'])
 
   Object.entries(all).forEach(([id, amount]) => {

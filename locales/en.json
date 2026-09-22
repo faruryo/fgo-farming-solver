@@ -601,13 +601,57 @@
       "label": "Class board status",
       "target": "Target",
       "completed": "Completed",
-      "none": "None"
+      "none": "None",
+      "detail-target": "{{count}} Signs Targeted"
     },
     "action": {
       "target": "Target",
       "completed": "Completed",
       "none": "None",
-      "viewResult": "View Results"
+      "viewResult": "View Results",
+      "open-board-map": "Open Board Map"
+    },
+    "board": {
+      "back": "Back to List",
+      "title-suffix": "Class Board",
+      "action": {
+        "all-target": "Target All",
+        "reset": "Reset Board"
+      },
+      "summary": {
+        "progress": "Progress",
+        "unlocked-unit": "unlocked",
+        "target-unit": "targeted"
+      },
+      "legend": {
+        "none": "Locked",
+        "target": "Target",
+        "unlocked": "Unlocked",
+        "lock": "Tour Lock",
+        "start": "Start"
+      }
+    },
+    "square": {
+      "badge": {
+        "start": "Start Sign",
+        "lock": "Tour Lock"
+      },
+      "materials": {
+        "title": "Materials Required"
+      },
+      "status": {
+        "label": "Sign Status",
+        "none": "Locked",
+        "target": "Target",
+        "unlocked": "Unlocked",
+        "route-target": "Route Target",
+        "route-unlocked": "Route Unlocked",
+        "route-help": "※Target & Unlocked apply to the shortest route from the start."
+      },
+      "action": {
+        "route-target": "Batch Target Route from Start",
+        "route-unlocked": "Batch Unlock Route from Start"
+      }
     },
     "materials": {
       "hide": "Hide Material Details",
