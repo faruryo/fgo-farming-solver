@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTodoTasks } from './use-todo-tasks'
 import type { TodoTask } from '../types/todo'
 
@@ -9,7 +9,7 @@ const EVENT_TASK: TodoTask = {
   id: 'event-shop-80612',
   title: 'テストイベント アイテム交換を完了する',
   category: 'event',
-  deadline: '2026-07-29T03:59:59.000Z',
+  deadline: '2026-09-21T14:13:20.000Z',
   completed: false,
 }
 
@@ -26,13 +26,20 @@ const dashboardMeta = {
   ],
 }
 
+const NOW = Date.parse('2026-06-23T01:00:00.000Z')
+
 const storedTasks = () =>
   JSON.parse(localStorage.getItem('todoState') ?? '[]') as TodoTask[]
 
 describe('useTodoTasks', () => {
   beforeEach(() => {
     localStorage.clear()
-    vi.useRealTimers()
+    vi.spyOn(Date, 'now').mockReturnValue(NOW)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   // dashboard-meta の取得が終わる前に merge すると events: [] で自動生成され、

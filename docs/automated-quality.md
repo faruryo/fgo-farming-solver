@@ -21,9 +21,11 @@ CI、lint、開発ツール、agent規約、文書、PR templateだけを変更�
 `quality/lint-ratchet-baseline.json` は警告をファイル・ルール単位で数えた在庫である。総数だけではないため、別ファイルへの負債移動も新規違反として失敗する。
 
 1. まず `pnpm run lint:ratchet` で増加がないことを確認する。
-2. 警告を直したら、`pnpm run lint:ratchet:update` を実行する。
+2. 警告を直したら、`pnpm run lint:ratchet:update` を実行する。特定ファイルだけ直したときは `pnpm run lint:ratchet:update -- path/to/file.ts` でそのファイルの在庫だけを書き換える。
 3. baseline diffが減少だけであることを確認する。増加を受け入れるためにupdateしてはならない。
 4. ルールの在庫がゼロになったら、`eslint.config.mjs` でwarningからerrorへ昇格し、baselineから消す。
+
+`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `eslint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint` と `pnpm run lint:ratchet` が担う。既存警告の掃除はコミットの必須条件ではない。
 
 ## Report-only structural audits
 

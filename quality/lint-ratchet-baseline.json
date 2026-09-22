@@ -1952,11 +1952,6 @@
       "count": 1
     },
     {
-      "file": "scripts/check-lint-ratchet.mjs",
-      "rule": "security/detect-non-literal-fs-filename",
-      "count": 3
-    },
-    {
       "file": "scripts/kv-rest.ts",
       "rule": "security/detect-non-literal-fs-filename",
       "count": 2
