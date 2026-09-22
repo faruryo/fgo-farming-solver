@@ -158,6 +158,7 @@
     "catalog-load-error": "素材データを読み込めません。",
     "catalog-retry": "再試行",
     "quest-selection-heading": "周回対象に含めるクエスト",
+    "advisor-section-heading": "配布・交換券アドバイザー",
     "submit-need-item-target": "集めたいアイテムの数を最低1つ入力してください。",
     "submit-need-quest-selection": "周回対象に含めるクエストを最低1つ選択してください。",
     "owned-card-gesture-hint": "タップ:+1 ／ 右クリック・長押し:-1",

@@ -18,11 +18,7 @@ import {
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (
-      _key: string,
-      fallback: string,
-      options?: Record<string, unknown>,
-    ) =>
+    t: (_key: string, fallback: string, options?: Record<string, unknown>) =>
       Object.entries(options ?? {}).reduce(
         (text, [key, value]) => text.replace(`{{${key}}}`, String(value)),
         fallback,
@@ -244,6 +240,27 @@ describe('goSolver — boundary cases (5.3)', () => {
     expect(
       screen.getByText('周回対象に含めるクエストを最低1つ選択してください。'),
     ).toBeInTheDocument()
+  })
+})
+
+describe('result sections', () => {
+  it('アドバイザーは開いた状態で #advisor に結び付く', () => {
+    render(<Result items={items} quests={quests} />)
+    expect(document.getElementById('advisor')).toBeTruthy()
+    expect(screen.getByText('advisor')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '配布・交換券アドバイザー' }),
+    ).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('クエスト選択は閉じて始まり、ヘッダーで開く', async () => {
+    const user = userEvent.setup()
+    render(<Result items={items} quests={quests} />)
+    expect(screen.queryByText('1章')).not.toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: '周回対象に含めるクエスト' }),
+    )
+    expect(screen.getByText('1章')).toBeInTheDocument()
   })
 })
 

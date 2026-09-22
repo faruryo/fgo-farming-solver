@@ -18,18 +18,16 @@ import { Quest } from '../../interfaces/fgodrop'
 import { groupBy } from '../../utils/group-by'
 import { buffer, computeFiniteTarget } from '../../lib/quest-efficiency'
 import { submitSolve } from '../../lib/farming/submit-solve'
-import { buildSolveParams, toStockItemLike } from '../../lib/farming/build-solve-params'
+import {
+  buildSolveParams,
+  toStockItemLike,
+} from '../../lib/farming/build-solve-params'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { useClassScore } from '../../hooks/use-class-score'
 import { sumClassScoreMaterials } from '../../lib/class-score/sum'
 import { CheckboxTree } from '../common/checkbox-tree'
+import { CollapsibleSection } from '../common/collapsible-section'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
 import {
   Dialog,
   DialogContent,
@@ -266,7 +264,8 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
             id,
             Math.max(
               0,
-              (Reflect.get(amounts, id) ?? 0) - (Reflect.get(possession, id) ?? 0),
+              (Reflect.get(amounts, id) ?? 0) -
+                (Reflect.get(possession, id) ?? 0),
             ),
           ]
         }),
@@ -353,12 +352,11 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   // 未入力を 0 個扱いして全素材へ目標を広げない。
   const solverItems = useMemo(
     () =>
-      trackedItems.filter(
-        (item) =>
-          Object.hasOwn(
-            purpose === 'reserve' ? possession : amounts,
-            item.id.toString(),
-          ),
+      trackedItems.filter((item) =>
+        Object.hasOwn(
+          purpose === 'reserve' ? possession : amounts,
+          item.id.toString(),
+        ),
       ),
     [trackedItems, amounts, possession, purpose],
   )
@@ -659,19 +657,31 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
                           toStockItemLike(item),
                           resolvedStockBuffer,
                         )
-                        return <MatCard
-                          key={item.id}
-                          item={item}
-                          required={stockEnabled ? Math.max(trainingRequired, bufferAmount) : trainingRequired}
-                          trainingRequired={trainingRequired}
-                          classScoreRequired={Reflect.get(classScoreAmounts, id) ?? 0}
-                          owned={Reflect.get(possession, id)}
-                          deficiency={stockEnabled ? Reflect.get(stockDeficiencies, id) ?? 0 : Reflect.get(deficiencies, id) ?? 0}
-                          rarityColor={bgColor(item.background)}
-                          onChange={onChange}
-                          stockEnabled={stockEnabled}
-                          stockBufferAmount={bufferAmount}
-                        />
+                        return (
+                          <MatCard
+                            key={item.id}
+                            item={item}
+                            required={
+                              stockEnabled
+                                ? Math.max(trainingRequired, bufferAmount)
+                                : trainingRequired
+                            }
+                            trainingRequired={trainingRequired}
+                            classScoreRequired={
+                              Reflect.get(classScoreAmounts, id) ?? 0
+                            }
+                            owned={Reflect.get(possession, id)}
+                            deficiency={
+                              stockEnabled
+                                ? (Reflect.get(stockDeficiencies, id) ?? 0)
+                                : (Reflect.get(deficiencies, id) ?? 0)
+                            }
+                            rarityColor={bgColor(item.background)}
+                            onChange={onChange}
+                            stockEnabled={stockEnabled}
+                            stockBufferAmount={bufferAmount}
+                          />
+                        )
                       })}
                     </div>
                   </div>
@@ -680,48 +690,38 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
             </>
           )}
 
-          <div id="advisor" className="c-mat-section">
-            <Accordion multiple={false} defaultValue={['advisor']}>
-              <AccordionItem value="advisor" style={{ border: 'none' }}>
-                <AccordionTrigger
-                  className="c-mat-section-title"
-                  style={{ color: 'var(--gold)' }}
-                >
-                  配布・交換券アドバイザー
-                </AccordionTrigger>
-                <AccordionContent>
-                  <MaterialSelectionAdvisor
-                    items={items}
-                    amounts={amounts}
-                    possession={possession}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          <div className="c-mat-section">
+            <CollapsibleSection
+              id="advisor"
+              defaultOpen
+              headerClassName="text-[var(--gold)]"
+              title={t('advisor-section-heading', '配布・交換券アドバイザー')}
+            >
+              <MaterialSelectionAdvisor
+                items={items}
+                amounts={amounts}
+                possession={possession}
+              />
+            </CollapsibleSection>
           </div>
 
-          <div id="quest-selection" className="c-mat-section">
-            <Accordion multiple={false} defaultValue={[]}>
-              <AccordionItem value="quest-selection" style={{ border: 'none' }}>
-                <AccordionTrigger
-                  className="c-mat-section-title"
-                  style={{ color: 'var(--gold)' }}
-                >
-                  {t('quest-selection-heading', '周回対象に含めるクエスト')}
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="c-card w-full p-5">
-                    <CheckboxTree
-                      tree={questTree}
-                      checked={checkedQuestTree}
-                      onCheck={onCheckQuest}
-                      expanded={expandedQuests}
-                      onExpand={onExpandQuests}
-                    />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          <div className="c-mat-section">
+            <CollapsibleSection
+              id="quest-selection"
+              defaultOpen={false}
+              headerClassName="text-[var(--gold)]"
+              title={t('quest-selection-heading', '周回対象に含めるクエスト')}
+            >
+              <div className="c-card w-full p-5">
+                <CheckboxTree
+                  tree={questTree}
+                  checked={checkedQuestTree}
+                  onCheck={onCheckQuest}
+                  expanded={expandedQuests}
+                  onExpand={onExpandQuests}
+                />
+              </div>
+            </CollapsibleSection>
           </div>
 
           {needsItemTarget && (
