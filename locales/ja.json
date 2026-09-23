@@ -32,6 +32,8 @@
     "item-list-description": "アイテムのクエストごとのドロップ率を確認できます。",
     "shared-results-description": "Twitterに投稿された計算結果を見られます。",
     "cloud-description": "入力内容をGoogleアカウントに紐づけてサーバーに保存します。",
+    "preview-auth-completing": "ログインを完了しています",
+    "preview-auth-failed": "プレビューへのログインに失敗しました",
     "local-backup-title": "ローカルバックアップ / 復元",
     "local-backup-description": "データをファイル（JSON）として自身のPC/端末に保存します。クラウドセーブを使いたくない場合や、オフラインでのバックアップに利用してください。",
     "export-to-file": "ファイルに書き出し",

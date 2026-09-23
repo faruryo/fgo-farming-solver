@@ -21,24 +21,26 @@ npm run deploy
 GitHub に push するだけで、メインアプリが自動的にデプロイされます（master-data / rarity 更新は worker ではなく定期ワークフローが担当。下記「マスターデータの自動更新」参照）。
 
 #### A. GitHub Secrets の設定
+
 リポジトリの **[Settings] > [Secrets and variables] > [Actions]** に以下の Secret を登録してください：
 
-| Secret 名 | 説明 |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | [Cloudflare 編集用トークン](https://dash.cloudflare.com/profile/api-tokens) |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare ダッシュボードの右側に表示されている ID |
+| Secret 名               | 説明                                                                        |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | [Cloudflare 編集用トークン](https://dash.cloudflare.com/profile/api-tokens) |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare ダッシュボードの右側に表示されている ID                          |
 
 #### B. ワークフローの構成
+
 `.github/workflows/deploy.yml` に記述されている内容は以下の通りです。
 
 ```yaml
 # (前略)
-      - name: Deploy Main App
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+- name: Deploy Main App
+  uses: cloudflare/wrangler-action@v3
+  with:
+    apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    command: deploy
 ```
 
 ### 🚩 事前準備（重要）
@@ -104,12 +106,18 @@ pnpm exec wrangler d1 execute fgo-farming-solver-db --remote --file=db/schema.sq
 
 以下のシークレットを `pnpm exec wrangler secret put <変数名>` コマンド、または Cloudflare ダッシュボードから設定してください。
 
-| 変数名 | 説明 | 生成・取得方法 |
-|---|---|---|
-| `AUTH_SECRET` | Auth.js 用シークレット | `openssl rand -base64 32` で生成 |
-| `GOOGLE_CLIENT_ID` | Google OAuth ID | Google Cloud Console から取得 |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Secret | Google Cloud Console から取得 |
-| `VAPID_PUBLIC_KEY` | Web Push VAPID 公開鍵（クライアントの購読登録に使用） | `pnpm exec web-push generate-vapid-keys` で生成。秘密鍵 (`VAPID_PRIVATE_KEY`) は Worker には設定せず、GitHub Secrets（通知ディスパッチャ用）にのみ設定する |
+| 変数名                          | 説明                                                                                           | 生成・取得方法                                                                                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AUTH_SECRET`                   | Auth.js 用シークレット                                                                         | `openssl rand -base64 32` で生成                                                                                                                           |
+| `PREVIEW_HANDOFF_SECRET`        | プレビューログインの引き渡し用。`AUTH_SECRET` とは別の値にする                                 | `openssl rand -base64 32` で生成                                                                                                                           |
+| `PREVIEW_AUTH_HANDOFF`          | `1` のときだけ、本番コールバックが `pv1.` state を引き渡し処理する。それ以外は従来の Auth.js   | `1` を設定して有効化                                                                                                                                       |
+| `PREVIEW_WORKERS_DEV_SUBDOMAIN` | 戻り先を許可する workers.dev のアカウントサブドメイン                                          | Cloudflare アカウントの `*.workers.dev` サブドメイン                                                                                                       |
+| `PREVIEW_LOGIN_ALLOWED_IDS`     | プレビューへセッションを渡してよい Google の `providerAccountId`。カンマ区切り。空なら全員拒否 | Google アカウントの `sub`                                                                                                                                  |
+| `GOOGLE_CLIENT_ID`              | Google OAuth ID                                                                                | Google Cloud Console から取得                                                                                                                              |
+| `GOOGLE_CLIENT_SECRET`          | Google OAuth Secret                                                                            | Google Cloud Console から取得                                                                                                                              |
+| `VAPID_PUBLIC_KEY`              | Web Push VAPID 公開鍵（クライアントの購読登録に使用）                                          | `pnpm exec web-push generate-vapid-keys` で生成。秘密鍵 (`VAPID_PRIVATE_KEY`) は Worker には設定せず、GitHub Secrets（通知ディスパッチャ用）にのみ設定する |
+
+`PREVIEW_AUTH_HANDOFF=1` の前に、`db/schema.sql` の `preview_auth_jti` を本番 D1 へ適用する。表が無いとプレビューログインの完了はセッションを書かない。
 
 ---
 
@@ -128,9 +136,11 @@ pnpm run deploy
 ## ❓ トラブルシューティング
 
 ### `D1_ERROR: no such table: farming_results`
+
 D1 の初期化（`wrangler d1 execute`）が行われていません。上記の「Cloudflare D1 の作成」の手順を実行してください。
 
 ### `KV namespace 'YOUR_KV_NAMESPACE_ID' is not valid. [code: 10042]`
+
 `wrangler.toml` の `id` がデフォルトのままになっています。手順に従って作成した KV の ID に書き換えてください。
 
 ---
@@ -138,6 +148,7 @@ D1 の初期化（`wrangler d1 execute`）が行われていません。上記�
 ## 🛠️ ローカル開発
 
 ### 1. マスターデータの更新
+
 ローカルの `mocks/all.json` を最新のスプレッドシートの内容に更新します：
 
 ```bash
@@ -145,6 +156,7 @@ pnpm update-data
 ```
 
 ### 2. プレビュー
+
 OpenNext の環境をローカルでシミュレートして動作確認を行う場合は、以下のコマンドを使用します：
 
 ```bash

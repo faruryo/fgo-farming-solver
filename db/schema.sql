@@ -26,3 +26,8 @@ CREATE TABLE IF NOT EXISTS state_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_snapshots_user_created
   ON state_snapshots(user_id, created_at DESC);
+
+-- Preview handoff JWTs. A row means that jti was consumed. Do not delete it.
+CREATE TABLE IF NOT EXISTS preview_auth_jti (
+  jti TEXT PRIMARY KEY
+);

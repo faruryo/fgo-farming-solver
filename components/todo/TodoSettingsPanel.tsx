@@ -1,13 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { beginGoogleSignIn } from '@/lib/preview-auth/sign-in'
 import { signIn, useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { Switch } from '@/components/ui/switch'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { DEFAULT_TODO_SETTINGS } from '../../lib/todo/settings'
-import { urlBase64ToUint8Array, isPushSupported, isIosFamily, PushSubscribeError } from '../../lib/todo/push'
+import {
+  urlBase64ToUint8Array,
+  isPushSupported,
+  isIosFamily,
+  PushSubscribeError,
+} from '../../lib/todo/push'
 import type { TodoSettings } from '../../types/todo'
 
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -28,18 +34,33 @@ const ROWS: { key: keyof TodoSettings; labelKey: string }[] = [
  * 途中で失敗した場合は理由別の PushSubscribeError を投げ、呼び出し側で fgo_push_enabled
  * を false のまま保つ。
  */
+const readPublicKey = (value: unknown): string | null => {
+  if (typeof value !== 'object' || value === null || !('publicKey' in value)) return null
+  return typeof value.publicKey === 'string' ? value.publicKey : null
+}
+
 const subscribeToPush = async (): Promise<void> => {
   if (!isPushSupported()) throw new PushSubscribeError('unsupported')
 
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') throw new PushSubscribeError('permission-denied')
+  if (permission !== 'granted')
+    throw new PushSubscribeError('permission-denied')
 
   const [keyRes, registration] = await Promise.all([
     fetch('/api/notifications/subscribe'),
     navigator.serviceWorker.ready,
   ])
-  if (!keyRes.ok) throw new PushSubscribeError('server-error', 'Failed to fetch VAPID public key')
-  const { publicKey } = (await keyRes.json()) as { publicKey: string }
+  if (!keyRes.ok)
+    throw new PushSubscribeError(
+      'server-error',
+      'Failed to fetch VAPID public key',
+    )
+  const publicKey = readPublicKey(await keyRes.json())
+  if (!publicKey)
+    throw new PushSubscribeError(
+      'server-error',
+      'Failed to fetch VAPID public key',
+    )
 
   let subscription: PushSubscription
   try {
@@ -48,7 +69,10 @@ const subscribeToPush = async (): Promise<void> => {
       applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
     })
   } catch (error) {
-    throw new PushSubscribeError('subscribe-failed', error instanceof Error ? error.message : undefined)
+    throw new PushSubscribeError(
+      'subscribe-failed',
+      error instanceof Error ? error.message : undefined,
+    )
   }
 
   const res = await fetch('/api/notifications/subscribe', {
@@ -56,7 +80,11 @@ const subscribeToPush = async (): Promise<void> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(subscription.toJSON()),
   })
-  if (!res.ok) throw new PushSubscribeError('server-error', 'Failed to register subscription')
+  if (!res.ok)
+    throw new PushSubscribeError(
+      'server-error',
+      'Failed to register subscription',
+    )
 }
 
 /**
@@ -73,7 +101,10 @@ const unsubscribeFromPush = async (): Promise<void> => {
   try {
     await subscription.unsubscribe()
   } catch (error) {
-    throw new PushSubscribeError('unsubscribe-failed', error instanceof Error ? error.message : undefined)
+    throw new PushSubscribeError(
+      'unsubscribe-failed',
+      error instanceof Error ? error.message : undefined,
+    )
   }
 
   const res = await fetch('/api/notifications/subscribe', {
@@ -81,7 +112,11 @@ const unsubscribeFromPush = async (): Promise<void> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ endpoint: subscription.endpoint }),
   })
-  if (!res.ok) throw new PushSubscribeError('unsubscribe-failed', 'Failed to delete subscription on server')
+  if (!res.ok)
+    throw new PushSubscribeError(
+      'unsubscribe-failed',
+      'Failed to delete subscription on server',
+    )
 }
 
 /**
@@ -97,9 +132,14 @@ const migratePushEnabled = async (): Promise<void> => {
   let legacyEnabled = false
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TODO_SETTINGS)
-    if (raw) legacyEnabled = (JSON.parse(raw) as { pushEnabled?: boolean }).pushEnabled === true
+    if (raw)
+      legacyEnabled =
+        (JSON.parse(raw) as { pushEnabled?: boolean }).pushEnabled === true
   } catch (e) {
-    console.error('Failed to parse legacy todoSettings during pushEnabled migration', e)
+    console.error(
+      'Failed to parse legacy todoSettings during pushEnabled migration',
+      e,
+    )
   }
   if (!legacyEnabled || !isPushSupported()) return
 
@@ -109,7 +149,9 @@ const migratePushEnabled = async (): Promise<void> => {
     if (!subscription) return // 購読の実在が無ければ移行しない(表示だけONになる不整合を防ぐ)
     localStorage.setItem(PUSH_ENABLED_KEY, 'true')
     // 同一タブで既にマウント済みの useLocalStorage(PUSH_ENABLED_KEY) 側へ反映する
-    window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: PUSH_ENABLED_KEY } }))
+    window.dispatchEvent(
+      new CustomEvent('ls-sync', { detail: { key: PUSH_ENABLED_KEY } }),
+    )
   } catch (e) {
     console.error('Failed to migrate pushEnabled to fgo_push_enabled', e)
   }
@@ -132,9 +174,12 @@ export const TodoSettingsPanel: React.FC = () => {
   const { data: session } = useSession()
   const [settings, setSettings] = useLocalStorage<TodoSettings>(
     STORAGE_KEYS.TODO_SETTINGS,
-    DEFAULT_TODO_SETTINGS
+    DEFAULT_TODO_SETTINGS,
   )
-  const [pushEnabled, setPushEnabled] = useLocalStorage<boolean>(PUSH_ENABLED_KEY, false)
+  const [pushEnabled, setPushEnabled] = useLocalStorage<boolean>(
+    PUSH_ENABLED_KEY,
+    false,
+  )
   const [pushBusy, setPushBusy] = useState(false)
   // 判定中(null)はトグルを disabled にし、SSR/ハイドレーション不一致を避けるためマウント後に評価する
   const [pushSupported, setPushSupported] = useState<boolean | null>(null)
@@ -174,7 +219,9 @@ export const TodoSettingsPanel: React.FC = () => {
                 ? t(
                     '通知が許可されませんでした。iOSでは一度拒否すると再確認が表示されないため、ホーム画面に追加したアプリを削除して入れ直す必要がある場合があります',
                   )
-                : t('通知が許可されませんでした。ブラウザのサイト設定から通知の許可をブロック解除して再度お試しください'),
+                : t(
+                    '通知が許可されませんでした。ブラウザのサイト設定から通知の許可をブロック解除して再度お試しください',
+                  ),
             )
             break
           case 'server-error':
@@ -188,11 +235,19 @@ export const TodoSettingsPanel: React.FC = () => {
           case 'unsubscribe-failed':
             // D1 の解除に失敗しただけの可能性があるため、ここでは pushEnabled を false へ
             // 倒さずトグル ON を維持する（次回 ON 操作で既存のブラウザ購読を再 POST し復旧できる）。
-            toast.error(t('プッシュ通知の解除に失敗しました。時間をおいて再度お試しください'))
+            toast.error(
+              t(
+                'プッシュ通知の解除に失敗しました。時間をおいて再度お試しください',
+              ),
+            )
             break
         }
       } else {
-        toast.error(checked ? t('プッシュ通知の登録に失敗しました') : t('プッシュ通知の解除に失敗しました'))
+        toast.error(
+          checked
+            ? t('プッシュ通知の登録に失敗しました')
+            : t('プッシュ通知の解除に失敗しました'),
+        )
       }
     } finally {
       setPushBusy(false)
@@ -200,8 +255,14 @@ export const TodoSettingsPanel: React.FC = () => {
   }
 
   return (
-    <div className="rounded-lg p-3.5" style={{ background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}>
-      <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text)' }}>
+    <div
+      className="rounded-lg p-3.5"
+      style={{ background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}
+    >
+      <p
+        className="text-xs font-semibold mb-3"
+        style={{ color: 'var(--text)' }}
+      >
         {t('TODO自動生成・通知設定')}
       </p>
       <div className="flex flex-col gap-3">
@@ -210,11 +271,18 @@ export const TodoSettingsPanel: React.FC = () => {
             <span className="text-[11px]" style={{ color: 'var(--text2)' }}>
               {t(labelKey)}
             </span>
-            <Switch checked={settings[key]} onCheckedChange={toggle(key)} aria-label={t(labelKey)} />
+            <Switch
+              checked={settings[key]}
+              onCheckedChange={toggle(key)}
+              aria-label={t(labelKey)}
+            />
           </label>
         ))}
 
-        <div className="flex flex-col gap-1.5 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+        <div
+          className="flex flex-col gap-1.5 pt-2"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
           <label className="flex items-center justify-between gap-3">
             <span className="text-[11px]" style={{ color: 'var(--text2)' }}>
               {t('プッシュ通知を有効にする')}
@@ -236,7 +304,14 @@ export const TodoSettingsPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  signIn('google').catch((error) => console.error(error))
+                  beginGoogleSignIn(window.location.hostname, {
+                    navigate: (url) => {
+                      window.location.assign(url)
+                    },
+                    signInGoogle: () => {
+                      signIn('google').catch((error) => console.error(error))
+                    },
+                  })
                 }}
                 className="text-[11px] underline underline-offset-2"
                 style={{ color: 'var(--gold)' }}
@@ -249,7 +324,9 @@ export const TodoSettingsPanel: React.FC = () => {
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px]" style={{ color: 'var(--text3)' }}>
                 {isIosFamily()
-                  ? t('共有メニューから『ホーム画面に追加』し、追加したアイコンから開くとプッシュ通知を利用できます')
+                  ? t(
+                      '共有メニューから『ホーム画面に追加』し、追加したアイコンから開くとプッシュ通知を利用できます',
+                    )
                   : t('このブラウザはプッシュ通知に対応していません')}
               </span>
             </div>
