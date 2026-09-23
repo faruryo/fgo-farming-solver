@@ -82,6 +82,19 @@ const exchangeCode = async (
   config: HandoffConfig,
   fetchImpl: FetchLike,
 ): Promise<GoogleProfile | null> => {
+  try {
+    return await requestProfile(code, verifier, config, fetchImpl)
+  } catch {
+    return null
+  }
+}
+
+const requestProfile = async (
+  code: string,
+  verifier: string,
+  config: HandoffConfig,
+  fetchImpl: FetchLike,
+): Promise<GoogleProfile | null> => {
   const body = new URLSearchParams({
     code,
     client_id: config.clientId,

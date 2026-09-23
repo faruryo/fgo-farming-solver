@@ -231,6 +231,21 @@ describe('preview auth handoff', () => {
     expect(calls).toEqual([])
   })
 
+  it('returns 400 when the code exchange throws', async () => {
+    const response = await handleHandoffCallback({
+      state: await stateFor(),
+      code: 'code',
+      config: config(),
+      nowSec: NOW,
+      fetch: () => {
+        throw new Error('network')
+      },
+      randomId: () => 'jti-1',
+    })
+    expect(response.status).toBe(400)
+    expect(response.headers.get('Location')).toBeNull()
+  })
+
   it('rejects a bad return origin before code exchange', async () => {
     const { fetch: fetchImpl, calls } = googleFetch()
     const response = await handleHandoffCallback({
