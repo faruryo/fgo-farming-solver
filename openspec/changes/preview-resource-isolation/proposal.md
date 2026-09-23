@@ -7,7 +7,8 @@ Workers Builds のプレビューは、本番と同じ Worker のバージョン
 - 本番以外のブランチは、本番のシークレットと本番の KV / D1 を持たないプレビューとして出す。Version URL（`wrangler versions upload`）を PR 確認に使わない。
 - プレビューの `CLOUD_SAVE` と `DB` は空の専用リソースにする。本番の ID をプレビュー設定に書かない。
 - プレビューの `AUTH_SECRET` は本番と別の値にする。`GOOGLE_CLIENT_SECRET` はプレビューに置かない。コード交換は本番だけが行う。
-- このリポジトリへ push できない PR（fork）ではプレビューをビルドしない。push できるのは現時点でオーナーだけである。
+- このリポジトリへ push できない PR（fork）ではプレビューをビルドしない。push できる人間は現時点でオーナーだけである。Dependabot は GitHub Actions だけを更新する。
+- 本番ホストはプレビューログインの完了を拒否する。プレビューと共有する引き渡しシークレットでは、本番のセッションを発行できない。
 - `preview-google-login` が「許可アカウントの本番データをプレビューから書き換えてよい」としている許容は取り下げ、この change の要件に置き換える。
 
 ## Capabilities

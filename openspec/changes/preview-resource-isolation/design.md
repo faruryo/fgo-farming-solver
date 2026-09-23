@@ -63,7 +63,9 @@
 
 `GOOGLE_CLIENT_SECRET` は入れない。コード交換は本番のコールバックだけが行う。
 
-引き渡しシークレットをプレビューが持っていても、本番のセッションにはならない。完了処理は audience がリクエストのオリジンと一致するときだけ Cookie を書き、署名にはその環境の `AUTH_SECRET` を使う。本番の開始ルートは workers.dev のプレビューホスト以外に nonce Cookie を置かない。Cookie は `__Host-` なので、プレビューから本番ホストへは付かない。
+`PREVIEW_HANDOFF_SECRET` はプレビューと共有する。プレビュー上のコードはこの値を読める。値を知る人は、本番オリジンを audience にしたトークンを作り、自分のブラウザで本番ホストに `__Host-` の nonce Cookie を置ける。開始ルートが Cookie を置かないことでは、この入力を止められない。
+
+本番の完了ルートは、リクエストのオリジンが `isAllowedReturnOrigin` を満たすプレビューホストでないとき、セッションを書かずに 400 を返す。この確認のあとだけ、audience と nonce と許可リストと `jti` を見る。本番ホストはこの確認で落ちるので、本番の `AUTH_SECRET` ではセッションを署名しない。許可されたプレビューホストでは、これまでどおりそのホストの `AUTH_SECRET` でセッションを書く。
 
 ### 4. 戻り先ホストは実 URL に合わせ、許可範囲は広げすぎない
 
@@ -81,6 +83,8 @@ Worker Previews のホスト名を 1 件取り、`isAllowedReturnOrigin` が通�
 ### 6. fork はビルドしない
 
 Workers Builds は接続したリポジトリへの push で動く。fork の pull request は上流のブランチを作らない。ダッシュボードで、プレビュービルドの対象がこのリポジトリのブランチだけであることを確認する。
+
+push できる人間は現時点でオーナーだけである。Dependabot は `.github/dependabot.yml` の `github-actions` だけを更新し、アプリの依存は更新しない。npm の更新を足すときは、その bot のブランチもプレビュー対象になる。
 
 `pull_request` や `pull_request_target` で `CLOUDFLARE_API_TOKEN` を使うジョブは足さない。fork のワークフローはシークレットを持たないが、`pull_request_target` は持つ。
 
