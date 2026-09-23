@@ -1,13 +1,5 @@
-export const asBytes = (bytes: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const buffer = new ArrayBuffer(bytes.byteLength)
-  const view = new Uint8Array(buffer)
-  let offset = 0
-  for (const byte of bytes) {
-    view.set([byte], offset)
-    offset += 1
-  }
-  return view
-}
+export const asBytes = (bytes: Uint8Array): Uint8Array<ArrayBuffer> =>
+  new Uint8Array(bytes)
 
 const stripPadding = (value: string): string => {
   let end = value.length
