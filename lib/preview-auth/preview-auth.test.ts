@@ -7,7 +7,7 @@ import {
   signHandoffJwt,
   verifyHandoffJwt,
 } from './crypto'
-import { dispatchAuthGet } from './dispatch'
+import { dispatchAuthGet, requestNeedsHandoff } from './dispatch'
 import { d1ConsumeJti } from './jti'
 import { completeHandoff, handleHandoffCallback, type FetchLike } from './flow'
 import {
@@ -212,6 +212,17 @@ describe('preview auth callback dispatch', () => {
     })
     expect(handed).toBe(true)
     expect(await response.text()).toBe('handoff')
+  })
+
+  it('rejects mixed state parameters without calling either handler', async () => {
+    const url =
+      'https://fgo-farming-solver.faru.jp/api/auth/callback/google?state=authjs-state&state=pv1.payload'
+    expect(requestNeedsHandoff(url)).toBe(true)
+    const response = await dispatchAuthGet(new Request(url), env(), {
+      nextAuthGet: () => Promise.reject(new Error('authjs must not run')),
+      handleHandoff: () => Promise.reject(new Error('handoff must not run')),
+    })
+    expect(response.status).toBe(400)
   })
 })
 

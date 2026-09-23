@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest } from 'next/server'
 import { handlers } from '../../../../lib/auth'
-import { dispatchAuthGet } from '../../../../lib/preview-auth/dispatch'
+import { dispatchAuthGet, requestNeedsHandoff } from '../../../../lib/preview-auth/dispatch'
 import { handleHandoffCallback } from '../../../../lib/preview-auth/flow'
 import { readHandoffConfig } from '../../../../lib/preview-auth/policy'
 import { randomToken } from '../../../../lib/preview-auth/codec'
@@ -24,6 +24,7 @@ const handoffFromRequest = (
 }
 
 export async function GET(request: NextRequest) {
+  if (!requestNeedsHandoff(request.url)) return handlers.GET(request)
   const { env } = await readRuntimeBindings()
   return dispatchAuthGet(request, env, {
     nextAuthGet: (incoming) => handlers.GET(incoming as NextRequest),

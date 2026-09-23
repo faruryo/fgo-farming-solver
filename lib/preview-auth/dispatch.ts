@@ -1,10 +1,9 @@
-import {
-  HANDOFF_PREFIX,
-  isHandoffBranchEnabled,
-  type EnvSource,
-} from './policy'
+import { HANDOFF_PREFIX, isHandoffBranchEnabled, shouldHandlePreviewHandoff, type EnvSource } from './policy'
 
 const reject = (): Response => new Response(null, { status: 400 })
+
+export const requestNeedsHandoff = (url: string): boolean =>
+  new URL(url).searchParams.getAll('state').some((state) => state.startsWith(HANDOFF_PREFIX))
 
 export const dispatchAuthGet = async (
   request: Request,
@@ -14,12 +13,10 @@ export const dispatchAuthGet = async (
     handleHandoff: (request: Request) => Promise<Response>
   },
 ): Promise<Response> => {
-  if (!isHandoffBranchEnabled(env)) return deps.nextAuthGet(request)
   const states = new URL(request.url).searchParams.getAll('state')
-  const handoffStates = states.filter((state) =>
-    state.startsWith(HANDOFF_PREFIX),
-  )
-  if (handoffStates.length === 0) return deps.nextAuthGet(request)
-  if (states.length !== 1) return reject()
-  return deps.handleHandoff(request)
+  if (states.length === 1 && shouldHandlePreviewHandoff(states[0] ?? null, env)) {
+    return deps.handleHandoff(request)
+  }
+  if (isHandoffBranchEnabled(env) && requestNeedsHandoff(request.url)) return reject()
+  return deps.nextAuthGet(request)
 }
