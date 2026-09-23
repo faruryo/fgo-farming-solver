@@ -28,4 +28,4 @@
 - [ ] 5.1 非本番ブランチのプレビューで、本番にある履歴が返らないこと、プレビューで保存した同期データが本番に出ないこと、プレビュー発行のセッション Cookie を本番がログイン済みとして扱わないことを確認する
 - [ ] 5.2 プレビューの自己呼び出しが本番の `DB` と `CLOUD_SAVE` を読まないことを確認する。読む場合は preview builds を止め、`[env.preview]`（`fgo-farming-solver-preview`、自己参照は自分自身、本番 Worker の preview builds は無効）へ移す
 - [ ] 5.3 `main` の本番デプロイ後に、既存ユーザーの本番履歴が読めることを確認する
-- [ ] 5.4 `openspec validate --change preview-resource-isolation` を通す
+- [ ] 5.4 `openspec validate preview-resource-isolation --type change` を通す
