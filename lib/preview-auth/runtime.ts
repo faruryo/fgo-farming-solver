@@ -1,5 +1,6 @@
-import type { KVNamespace } from '@cloudflare/workers-types'
-import { JTI_KEY_PREFIX, JTI_TTL_SECONDS, type EnvSource } from './policy'
+import type { D1Database } from '@cloudflare/workers-types'
+import { d1ConsumeJti } from './jti'
+import type { EnvSource } from './policy'
 
 export type RuntimeBindings = {
   env: EnvSource
@@ -8,14 +9,11 @@ export type RuntimeBindings = {
 
 const stringEnv = (): EnvSource => ({ ...process.env })
 
-export const kvConsumeJti =
-  (kv: KVNamespace) =>
-  async (jti: string): Promise<boolean> => {
-    const key = `${JTI_KEY_PREFIX}${jti}`
-    if ((await kv.get(key)) !== null) return false
-    await kv.put(key, '1', { expirationTtl: JTI_TTL_SECONDS })
-    return true
-  }
+const isD1 = (value: unknown): value is D1Database =>
+  typeof value === 'object' &&
+  value !== null &&
+  'prepare' in value &&
+  typeof value.prepare === 'function'
 
 export const readRuntimeBindings = async (): Promise<RuntimeBindings> => {
   const env = stringEnv()
@@ -30,10 +28,7 @@ export const readRuntimeBindings = async (): Promise<RuntimeBindings> => {
       ),
     )
     Object.assign(env, strings)
-    const kv = bindings.CLOUD_SAVE
-    if (kv && typeof kv === 'object' && 'get' in kv && 'put' in kv) {
-      return { env, consumeJti: kvConsumeJti(kv as KVNamespace) }
-    }
+    if (isD1(bindings.DB)) return { env, consumeJti: d1ConsumeJti(bindings.DB) }
   } catch {
     // next dev has no worker binding. Preview login is not the localhost path.
   }

@@ -4,11 +4,9 @@ export const PRODUCTION_REDIRECT_URI =
 export const WORKER_NAME = 'fgo-farming-solver'
 export const STATE_TTL_SECONDS = 10 * 60
 export const HANDOFF_TTL_SECONDS = 60
-export const JTI_TTL_SECONDS = 120
 export const NONCE_COOKIE = '__Host-preview-auth-nonce'
 export const SESSION_COOKIE = '__Secure-authjs.session-token'
 export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60
-export const JTI_KEY_PREFIX = 'preview-auth-jti:'
 
 const isLabelChar = (char: string): boolean => {
   const code = char.charCodeAt(0)

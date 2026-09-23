@@ -117,6 +117,8 @@ pnpm exec wrangler d1 execute fgo-farming-solver-db --remote --file=db/schema.sq
 | `GOOGLE_CLIENT_SECRET`          | Google OAuth Secret                                                                            | Google Cloud Console から取得                                                                                                                              |
 | `VAPID_PUBLIC_KEY`              | Web Push VAPID 公開鍵（クライアントの購読登録に使用）                                          | `pnpm exec web-push generate-vapid-keys` で生成。秘密鍵 (`VAPID_PRIVATE_KEY`) は Worker には設定せず、GitHub Secrets（通知ディスパッチャ用）にのみ設定する |
 
+`PREVIEW_AUTH_HANDOFF=1` の前に、`db/schema.sql` の `preview_auth_jti` を本番 D1 へ適用する。表が無いとプレビューログインの完了はセッションを書かない。
+
 ---
 
 ## 🚀 デプロイ手順

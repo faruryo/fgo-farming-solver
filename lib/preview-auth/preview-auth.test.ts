@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { D1Database } from '@cloudflare/workers-types'
 import { decode } from 'next-auth/jwt'
 import {
   decryptState,
@@ -7,6 +8,7 @@ import {
   verifyHandoffJwt,
 } from './crypto'
 import { dispatchAuthGet } from './dispatch'
+import { d1ConsumeJti } from './jti'
 import { completeHandoff, handleHandoffCallback, type FetchLike } from './flow'
 import {
   HANDOFF_TTL_SECONDS,
@@ -376,5 +378,39 @@ describe('preview auth handoff', () => {
     })
     expect(token?.sub).toBe('12345')
     expect(token?.email).toBe('master@example.com')
+  })
+
+  it('lets one concurrent insert win and fails closed when D1 throws', async () => {
+    const rows = new Set<string>()
+    const statements: string[] = []
+    const db = {
+      prepare: (sql: string) => {
+        statements.push(sql)
+        return {
+          bind: (jti: string) => ({
+            run: () => {
+              if (rows.has(jti)) return Promise.resolve({ meta: { changes: 0 } })
+              rows.add(jti)
+              return Promise.resolve({ meta: { changes: 1 } })
+            },
+          }),
+        }
+      },
+    } as unknown as D1Database
+    const consume = d1ConsumeJti(db)
+    const results = await Promise.all([consume('jti-1'), consume('jti-1')])
+    expect(results.filter(Boolean)).toHaveLength(1)
+    expect(statements.every((sql) => sql.includes('ON CONFLICT(jti) DO NOTHING'))).toBe(
+      true,
+    )
+    expect(statements.some((sql) => sql.includes('DELETE'))).toBe(false)
+    const failing = {
+      prepare: () => ({
+        bind: () => ({
+          run: () => Promise.reject(new Error('no such table')),
+        }),
+      }),
+    } as unknown as D1Database
+    expect(await d1ConsumeJti(failing)('jti-1')).toBe(false)
   })
 })

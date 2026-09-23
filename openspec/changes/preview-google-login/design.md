@@ -48,7 +48,7 @@ HMAC-SHA256 の JWT。`exp` は 60 秒、`aud` は戻り先オリジン。クレ
 
 ### 6. nonce と jti
 
-開始時に HttpOnly / Secure / SameSite=Lax の nonce Cookie を書く。完了時に JWT の nonce と照合し、不一致ならセッションを書かない。`jti` は `CLOUD_SAVE` のキー `preview-auth-jti:<jti>`（TTL 120 秒）で一度きりにする。ユーザーデータのキー `cloud:` とは衝突しない。KV は結果整合なので、ごく短い競合では再使用を取りこぼす可能性がある。
+開始時に HttpOnly / Secure / SameSite=Lax の nonce Cookie を書く。完了時に JWT の nonce と照合し、不一致ならセッションを書かない。`jti` は本番 D1 の `preview_auth_jti` へ `INSERT ... ON CONFLICT DO NOTHING` し、挿入できたリクエストだけセッションを書く。行は消さない。Durable Object はプレビュー URL が生成されなくなるため使わない。
 
 ### 7. コード交換
 
@@ -57,13 +57,13 @@ HMAC-SHA256 の JWT。`exp` は 60 秒、`aud` は戻り先オリジン。クレ
 ## Risks / Trade-offs
 
 - [許可アカウントの本番 KV / D1 をプレビューのコードが書ける] → issue の許容事項。リストを空にすれば誰も入れない。
-- [KV の結果整合で jti の再使用を取りこぼす] → 60 秒の JWT と nonce Cookie が主防衛。jti は追加。
+- [D1 に `preview_auth_jti` が無いと完了は失敗する] → 有効化の前に `db/schema.sql` を本番 D1 へ適用する。未作成ならセッションは書かない。
 - [プレビューが `AUTH_SECRET` を持ったまま] → #91。今回の引き渡し署名は別シークレットにする。
 - [フラグを立てる前はプレビューログインは今までどおり失敗する] → 本番の通常ログインは変わらない。
 
 ## Migration Plan
 
-1. `PREVIEW_HANDOFF_SECRET`（`AUTH_SECRET` とは別）、`PREVIEW_WORKERS_DEV_SUBDOMAIN`、`PREVIEW_LOGIN_ALLOWED_IDS` を Worker に設定する。
+1. `db/schema.sql` の `preview_auth_jti` を本番 D1 に作る。`PREVIEW_HANDOFF_SECRET`（`AUTH_SECRET` とは別）、`PREVIEW_WORKERS_DEV_SUBDOMAIN`、`PREVIEW_LOGIN_ALLOWED_IDS` を Worker に設定する。
 2. `PREVIEW_AUTH_HANDOFF=1` を設定して分岐を有効にする。
 3. 戻すときは `PREVIEW_AUTH_HANDOFF` を外す。通常の Auth.js コールバックに戻る。
 
