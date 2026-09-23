@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { beginGoogleSignIn } from '@/lib/preview-auth/sign-in'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useTranslation } from 'react-i18next'
 import { FaGoogle } from 'react-icons/fa'
@@ -33,7 +34,14 @@ export const AuthButton = () => {
   return (
     <Button
       onClick={() => {
-        signIn('google').catch((error) => console.error(error))
+        beginGoogleSignIn(window.location.hostname, {
+          navigate: (url) => {
+            window.location.assign(url)
+          },
+          signInGoogle: () => {
+            signIn('google').catch((error) => console.error(error))
+          },
+        })
       }}
       className="h-11 px-6 text-sm"
     >

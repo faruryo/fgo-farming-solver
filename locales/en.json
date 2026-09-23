@@ -35,6 +35,8 @@
     "shared-results-description": "Calculation results shared on Twitter.",
     "前回の結果": "Previous Result",
     "サインイン": "Sign in",
+    "preview-auth-completing": "Completing sign-in",
+    "preview-auth-failed": "Preview sign-in failed",
     "サインアウト": "Sign out",
     "クラウドセーブ": "Save to cloud",
     "cloud-description": "Saves input data to server linked to your Google account.",
