@@ -30,3 +30,4 @@
 - [ ] 5.2 プレビューの自己呼び出しが本番の `DB` と `CLOUD_SAVE` を読まないことを確認する。読む場合は preview builds を止め、`[env.preview]`（`fgo-farming-solver-preview`、自己参照は自分自身、本番 Worker の preview builds は無効）へ移す
 - [ ] 5.3 `main` の本番デプロイ後に、既存ユーザーの本番履歴が読めることを確認する
 - [ ] 5.4 `openspec validate preview-resource-isolation --type change` を通す
+- [ ] 5.5 本番の完了ルートへ、引き渡しシークレットで署名したトークンと自作の nonce Cookie を送ると 400 が返り、セッションが発行されないことを確認する
