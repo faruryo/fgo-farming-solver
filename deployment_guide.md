@@ -119,6 +119,37 @@ pnpm exec wrangler d1 execute fgo-farming-solver-db --remote --file=db/schema.sq
 
 `PREVIEW_AUTH_HANDOFF=1` の前に、`db/schema.sql` の `preview_auth_jti` を本番 D1 へ適用する。表が無いとプレビューログインの完了はセッションを書かない。
 
+#### 6. Worker Previews（本番のシークレットとデータを持たせない）
+
+本番以外のブランチは Worker Previews で出す。`wrangler versions upload` の Version URL は PR 確認に使わない。
+
+既存 Worker の Builds は、ダッシュボードで一度だけ Worker Previews に切り替える。この切り替えは戻せない。Preview コマンドは `npx wrangler preview` にする。戻したくなったら preview builds を止め、`versions upload` には戻さない。
+
+`wrangler.toml` のトップレベルは本番の KV / D1 のままにする。`previews` ブロックだけを、空のプレビュー用 KV / D1 へ向ける。本番の ID を `previews` に書くと CI（`pnpm run check:preview-bindings`）が失敗する。マスターデータの定期ワークフローの書き込み先は本番 KV のままにする。プレビューの `MASTER_DATA` へは公開データの複製を一度入れる。
+
+Previews Base のシークレットは本番から import しない。次のコマンドで入れ直す。
+
+```bash
+pnpm exec wrangler preview base-config secret put AUTH_SECRET
+pnpm exec wrangler preview base-config secret put PREVIEW_HANDOFF_SECRET
+pnpm exec wrangler preview base-config secret put PREVIEW_WORKERS_DEV_SUBDOMAIN
+pnpm exec wrangler preview base-config secret put PREVIEW_LOGIN_ALLOWED_IDS
+pnpm exec wrangler preview base-config secret put GOOGLE_CLIENT_ID
+```
+
+| 変数                            | プレビューでの値                              |
+| ------------------------------- | --------------------------------------------- |
+| `AUTH_SECRET`                   | 本番と別の値。`PREVIEW_HANDOFF_SECRET` とも別 |
+| `PREVIEW_HANDOFF_SECRET`        | 本番と同じ値                                  |
+| `PREVIEW_WORKERS_DEV_SUBDOMAIN` | 本番と同じアカウントサブドメイン              |
+| `PREVIEW_LOGIN_ALLOWED_IDS`     | 本番と同じ許可リスト                          |
+| `GOOGLE_CLIENT_ID`              | 本番と同じ公開値                              |
+| `GOOGLE_CLIENT_SECRET`          | 入れない。コード交換は本番だけが行う          |
+
+入れたあと `pnpm exec wrangler preview base-config secret list` で名前を確かめる。表に無い名前（過去に import した `GOOGLE_CLIENT_SECRET` など）が残っていれば `pnpm exec wrangler preview base-config secret delete <名前>` で消す。
+
+`PREVIEW_AUTH_HANDOFF=1` は `wrangler.toml` の `[previews.vars]` に置く。fork の pull request は上流にブランチを作らないので、Workers Builds はプレビューを作らない。`pull_request` と `pull_request_target` のジョブに `CLOUDFLARE_API_TOKEN` を足さない。
+
 ---
 
 ## 🚀 デプロイ手順

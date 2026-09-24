@@ -17,6 +17,7 @@
     "audit:dead-code": "knip --config knip.json --reporter json --no-exit-code",
     "format": "prettier --write --ignore-path .gitignore ./**/*.{js,jsx,ts,tsx}",
     "type-check": "tsc --noEmit",
+    "check:preview-bindings": "tsx scripts/check-preview-bindings.ts",
     "test": "vitest",
     "test:perf": "vitest run --config vitest.perf.config.ts",
     "update-data": "tsx scripts/update-data.ts",
@@ -84,12 +85,13 @@
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "raw-loader": "^4.0.2",
+    "smol-toml": "1.7.1",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.4",
     "workerd": "^1.20260411.1",
-    "wrangler": "^4.87.0"
+    "wrangler": "^4.137.0"
   },
   "overrides": {
     "esbuild": "0.28.0",

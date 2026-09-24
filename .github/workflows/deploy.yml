@@ -51,6 +51,9 @@ jobs:
       - name: Type check
         run: pnpm run type-check
 
+      - name: Check preview bindings
+        run: pnpm run check:preview-bindings
+
       - name: Apply D1 migrations (local)
         run: pnpm exec wrangler d1 migrations apply fgo-farming-solver-db --local
 
@@ -137,7 +140,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: d1 migrations apply fgo-farming-solver-db --remote
-          wranglerVersion: '4.87.0'
+          wranglerVersion: '4.137.0'
           packageManager: pnpm
 
       - name: Deploy to Cloudflare Workers
@@ -146,7 +149,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
-          wranglerVersion: '4.87.0'
+          wranglerVersion: '4.137.0'
           packageManager: pnpm
 
   # 旧 deploy-updater / deploy-rarity ジョブは廃止: master-data / rarity 更新は
