@@ -31,3 +31,20 @@ NEXT_PUBLIC_SITE_URL = "https://fgo-farming-solver.faru.jp"
 
 [observability]
 enabled = true
+
+# プレビューは本番の KV / D1 を継承しない。ここは空の専用リソースだけを向ける。
+[previews.vars]
+PREVIEW_AUTH_HANDOFF = "1"
+
+[[previews.kv_namespaces]]
+binding = "CLOUD_SAVE"
+id = "a6cff391f6d847a1925ebb70d94a4c46"
+
+[[previews.kv_namespaces]]
+binding = "MASTER_DATA"
+id = "9d4d9cbdf56e4cb284d6c74234e40a5d"
+
+[[previews.d1_databases]]
+binding = "DB"
+database_name = "fgo-farming-solver-preview-db"
+database_id = "d7c3219a-3f26-4da3-b2dc-326dc3ec67e6"
