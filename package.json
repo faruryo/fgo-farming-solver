@@ -85,6 +85,7 @@
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "raw-loader": "^4.0.2",
+    "smol-toml": "1.7.1",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",

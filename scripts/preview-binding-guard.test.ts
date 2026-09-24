@@ -43,6 +43,27 @@ describe('productionIdsInPreviews', () => {
     ])
   })
 
+  it('fails on a commented header and a literal string', () => {
+    expect(
+      productionIdsInPreviews(`
+[[previews.kv_namespaces]] # comment
+id = '${PRODUCTION_KV}'
+`),
+    ).toEqual([PRODUCTION_KV])
+  })
+
+  it('fails on a known production id even when the top level changes', () => {
+    expect(
+      productionIdsInPreviews(`
+[[d1_databases]]
+database_id = "${PREVIEW_D1}"
+
+[[previews.d1_databases]]
+database_id = "${PRODUCTION_D1}"
+`),
+    ).toEqual([PRODUCTION_D1])
+  })
+
   it('passes when the previews block is absent', () => {
     expect(
       productionIdsInPreviews(`

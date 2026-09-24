@@ -146,6 +146,8 @@ pnpm exec wrangler preview base-config secret put GOOGLE_CLIENT_ID
 | `GOOGLE_CLIENT_ID`              | 本番と同じ公開値                              |
 | `GOOGLE_CLIENT_SECRET`          | 入れない。コード交換は本番だけが行う          |
 
+入れたあと `pnpm exec wrangler preview base-config secret list` で名前を確かめる。表に無い名前（過去に import した `GOOGLE_CLIENT_SECRET` など）が残っていれば `pnpm exec wrangler preview base-config secret delete <名前>` で消す。
+
 `PREVIEW_AUTH_HANDOFF=1` は `wrangler.toml` の `[previews.vars]` に置く。fork の pull request は上流にブランチを作らないので、Workers Builds はプレビューを作らない。`pull_request` と `pull_request_target` のジョブに `CLOUDFLARE_API_TOKEN` を足さない。
 
 ---
