@@ -6,6 +6,7 @@ import {
   NONCE_COOKIE,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
+  isAllowedReturnOrigin,
   readHandoffConfig,
 } from '../../../../../lib/preview-auth/policy'
 import { readRuntimeBindings } from '../../../../../lib/preview-auth/runtime'
@@ -35,6 +36,8 @@ export async function POST(request: NextRequest) {
   const config = readHandoffConfig(env)
   const handoff = await readHandoff(request)
   if (!config || !handoff) return new NextResponse(null, { status: 400 })
+  if (!isAllowedReturnOrigin(requestOrigin, config.subdomain))
+    return new NextResponse(null, { status: 400 })
   const result = await completeHandoff({
     token: handoff,
     requestOrigin,
