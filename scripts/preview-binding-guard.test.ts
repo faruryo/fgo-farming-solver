@@ -64,6 +64,16 @@ database_id = "${PRODUCTION_D1}"
     ).toEqual([PRODUCTION_D1])
   })
 
+  it('fails when previews bind a service to the production worker', () => {
+    expect(
+      productionIdsInPreviews(`
+[[previews.services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "fgo-farming-solver"
+`),
+    ).toEqual(['fgo-farming-solver'])
+  })
+
   it('passes when the previews block is absent', () => {
     expect(
       productionIdsInPreviews(`
