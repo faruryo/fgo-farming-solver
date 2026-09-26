@@ -294,6 +294,15 @@
 - **WHEN** 別の認証済み端末でログインまたは同期を実行したとき
 - **THEN** クラウドに保存された `classScore` がローカルに復元・適用される。
 
+### Requirement: プレビューセッションのユーザー識別子
+
+プレビュー環境で確立したセッションのユーザー識別子は、本番で同じ Google アカウントに割り当てる `providerAccountId` と一致しなければならない (MUST)。
+
+#### Scenario: プレビューログイン後の識別子
+
+- **WHEN** 許可されたアカウントがプレビューでログインを完了したとき
+- **THEN** セッションのユーザー識別子は、その Google アカウントの `providerAccountId` であり、本番のセッションと同じ値である
+
 ## Constraints
 - **同期対象**: `posession`, `input`, `objective`, `farming/results` 等、主要な設定および履歴データ。
 - **メタデータ**: 各データセットは `updatedAt`, `lastSyncedAt`, `deviceId` を保持すること。
