@@ -119,12 +119,13 @@
 
 ### Requirement: プレビューが自分のセッション Cookie を書く
 
-フラグメントはプレビューのサーバへ送られない。プレビューのページがフラグメントを読み、同一オリジンのエンドポイントへ渡さなければならない (MUST)。そのエンドポイントは、署名と期限が正しく、audience がリクエストのオリジンと一致し、`sub` が許可リストに今も含まれるときだけ、そのホストのセッション Cookie を書かなければならない (MUST)。セッション Cookie は、そのプレビューの `AUTH_SECRET` で Auth.js の `encode` を通した値を `__Secure-authjs.session-token` として、`HttpOnly`・`Secure`・`SameSite=Lax` で書かなければならない (MUST)。移動先のパスは、JWT のパスに完了時にも同じ相対パスの検証をかけ直したものでなければならない (MUST)。`user.id` は `providerAccountId` でなければならない (MUST)。Cookie を書いたあと、フラグメントを除いた URL へ移さなければならない (MUST)。期限切れや audience 不一致では Cookie を書いてはならない (MUST NOT)。
+フラグメントはプレビューのサーバへ送られない。プレビューのページがフラグメントを読み、同一オリジンのエンドポイントへ渡さなければならない (MUST)。そのエンドポイントは、署名と期限が正しく、audience がリクエストのオリジンと一致し、`sub` が許可リストに今も含まれるときだけ、そのホストのセッション Cookie を書かなければならない (MUST)。セッション Cookie は、そのプレビューで Auth.js が使うシークレット（`AUTH_SECRET`、未設定なら `NEXTAUTH_SECRET`）で Auth.js の `encode` を通した値を `__Secure-authjs.session-token` として、`Path=/`・`HttpOnly`・`Secure`・`SameSite=Lax` で書かなければならない (MUST)。移動先のパスは、JWT のパスに完了時にも同じ相対パスの検証をかけ直したものでなければならない (MUST)。`user.id` は `providerAccountId` でなければならない (MUST)。Cookie を書いたあと、フラグメントを除いた URL へ移さなければならない (MUST)。期限切れや audience 不一致では Cookie を書いてはならない (MUST NOT)。
 
 #### Scenario: 一致した audience で Cookie を書く
 
 - **WHEN** プレビューが、自分のオリジンを audience とする期限内の引き渡し JWT を受け取る
 - **THEN** そのホストにセッション Cookie を書き、`user.id` は JWT の `sub`（`providerAccountId`）である
+- **THEN** セッション Cookie は `Path=/` で、`/api/auth/session` とアプリの画面に送られる
 - **THEN** ブラウザはフラグメントを含まない、開始時の相対パスへ移る
 
 #### Scenario: audience が違う、または期限切れ
