@@ -53,7 +53,12 @@ build.log
 .open-next
 
 # AI Agent folders
-.claude/
+# .claude/ は OpenSpec の skill だけ追跡する(新しい作業ツリーで Claude Code から
+# openspec-* skill が見えなくなるため)。更新は `openspec update` で行う。
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/openspec-*/
 .codex/
 .agent/
 .antigravitycli/
@@ -63,7 +68,7 @@ build.log
 # (一時 .agents/ ごと ignore されていたが、追跡済みファイルには効かず気付かれなかった。
 #  新規ルールを追加したときだけ黙って漏れる状態だったので解除した)
 # プラグイン由来の skill は各自の環境に入るためリポジトリには含めない。
-.agents/skills/openspec-*/
+# openspec-* は例外で追跡する(OpenSpec 1.13 以降 Codex / Antigravity 共通の出力先)。
 .agents/skills/shadcn/
 .openspec-target
 .agents/.openspec-target
