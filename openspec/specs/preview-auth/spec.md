@@ -22,7 +22,7 @@
 
 ### Requirement: プレビューは本番のリダイレクト URI で認可を始める
 
-許可されたプレビューホストでサインインを始めたとき、Google の認可 URL の `redirect_uri` は `https://fgo-farming-solver.faru.jp/api/auth/callback/google` でなければならない (MUST)。戻り先のオリジンは、その開始リクエストのオリジンだけで決まり、クエリの `callbackUrl` からは取ってはならない (MUST NOT)。`state` は接頭辞 `pv1.` を持ち、戻り先、発行から 10 分の有効期限、nonce、PKCE verifier を共有シークレットで暗号化して含めなければならない (MUST)。Auth.js がプレビューに置く `state` Cookie や PKCE Cookie は、この経路では使ってはならない (MUST NOT)。
+許可されたプレビューホストでサインインを始めたとき、Google の認可 URL の `redirect_uri` は `https://fgo-farming-solver.faru.jp/api/auth/callback/google` でなければならない (MUST)。戻り先のオリジンは、その開始リクエストのオリジンだけで決まり、クエリの `callbackUrl` からは取ってはならない (MUST NOT)。戻りパスは、開始リクエストと同じオリジンの Referer の pathname だけから取らなければならない (MUST)。`/` で始まらない値、`//` で始まる値、`\`・`?`・`#`・`://` を含む値は `/` に置き換えなければならない (MUST)。`state` は接頭辞 `pv1.` を持ち、戻り先、発行から 10 分の有効期限、nonce、PKCE verifier を共有シークレットで暗号化して含めなければならない (MUST)。Auth.js がプレビューに置く `state` Cookie や PKCE Cookie は、この経路では使ってはならない (MUST NOT)。
 
 #### Scenario: プレビューのサインイン開始
 
@@ -34,6 +34,11 @@
 
 - **WHEN** ホストが本番または localhost である
 - **THEN** サインインは従来の `signIn('google')` のままである
+
+#### Scenario: 外部へ出る戻りパスは使わない
+
+- **WHEN** Referer が別オリジンである、または pathname が `//evil.example` のように外部遷移として解釈される
+- **THEN** 戻りパスは `/` になる
 
 ### Requirement: 署名できない state は捨てる
 
@@ -107,7 +112,7 @@
 
 ### Requirement: プレビューが自分のセッション Cookie を書く
 
-フラグメントはプレビューのサーバへ送られない。プレビューのページがフラグメントを読み、同一オリジンのエンドポイントへ渡さなければならない (MUST)。そのエンドポイントは、署名と期限が正しく、audience がリクエストのオリジンと一致し、`sub` が許可リストに今も含まれるときだけ、そのホストのセッション Cookie を書かなければならない (MUST)。`user.id` は `providerAccountId` でなければならない (MUST)。Cookie を書いたあと、フラグメントを除いた URL へ移さなければならない (MUST)。期限切れや audience 不一致では Cookie を書いてはならない (MUST NOT)。
+フラグメントはプレビューのサーバへ送られない。プレビューのページがフラグメントを読み、同一オリジンのエンドポイントへ渡さなければならない (MUST)。そのエンドポイントは、署名と期限が正しく、audience がリクエストのオリジンと一致し、`sub` が許可リストに今も含まれるときだけ、そのホストのセッション Cookie を書かなければならない (MUST)。セッション Cookie は、そのプレビューの `AUTH_SECRET` で Auth.js の `encode` を通した値を `__Secure-authjs.session-token` として、`HttpOnly`・`Secure`・`SameSite=Lax` で書かなければならない (MUST)。移動先のパスは、JWT のパスに完了時にも同じ相対パスの検証をかけ直したものでなければならない (MUST)。`user.id` は `providerAccountId` でなければならない (MUST)。Cookie を書いたあと、フラグメントを除いた URL へ移さなければならない (MUST)。期限切れや audience 不一致では Cookie を書いてはならない (MUST NOT)。
 
 #### Scenario: 一致した audience で Cookie を書く
 
@@ -127,7 +132,7 @@
 
 ### Requirement: nonce と jti で引き渡しを一度きりにする
 
-プレビューは認可開始時に nonce を HttpOnly Cookie へ書き、完了時に引き渡し JWT の nonce と照合しなければならない (MUST)。不一致では Cookie を書いてはならない (MUST NOT)。引き渡し JWT の `jti` は一度使ったら再使用できてはならない (MUST NOT)。
+プレビューは認可開始時に nonce を `HttpOnly`・`Secure`・`SameSite=Lax` の Cookie へ書き、完了時に引き渡し JWT の nonce と照合しなければならない (MUST)。不一致では Cookie を書いてはならない (MUST NOT)。引き渡し JWT の `jti` は一度使ったら再使用できてはならない (MUST NOT)。
 
 #### Scenario: nonce が Cookie と一致しない
 
