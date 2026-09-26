@@ -25,7 +25,6 @@ database_name = "fgo-farming-solver-db"
 database_id = "4bb0a615-9079-4233-b57f-a5725b9eb4da"
 
 [vars]
-NEXT_PUBLIC_SITE_URL = "https://fgo-farming-solver.faru.jp"
 # 注: Cloudflare Web Analytics の beacon token は NEXT_PUBLIC_ のためビルド時インラインが必要。
 # runtime var(ここ)では効かないので .github/workflows/deploy.yml の Build ステップで供給している。
 
