@@ -1,6 +1,6 @@
 ## Context
 
-ログインは Auth.js（`lib/auth.ts`）で、`token.sub` に Google の `providerAccountId` を入れている。コールバックは `app/api/auth/[...nextauth]/route.ts`。承認済みリダイレクト URI は本番だけ（`deployment_guide.md`）。プレビューは本番の `CLOUD_SAVE` と `DB` にバインドされている。動機は proposal.md を参照。
+ログインは Auth.js（`lib/auth.ts`）で、`token.sub` に Google の `providerAccountId` を入れている。コールバックは `app/api/auth/[...nextauth]/route.ts`。承認済みリダイレクト URI は本番だけ（`deployment_guide.md`）。この change の時点では、プレビューは本番の `CLOUD_SAVE` と `DB` にバインドされていた（#91 の `preview-isolation` で専用リソースへ分離済み）。動機は proposal.md を参照。
 
 ## Goals / Non-Goals
 
@@ -58,7 +58,7 @@ HMAC-SHA256 の JWT。`exp` は 60 秒、`aud` は戻り先オリジン。クレ
 
 - [許可アカウントの本番 KV / D1 をプレビューのコードが書ける] → 許容しない。プレビューの保存先は `preview-isolation` の専用リソースであり、本番の KV / D1 には向けない。
 - [D1 に `preview_auth_jti` が無いと完了は失敗する] → 有効化の前に `db/schema.sql` を本番 D1 へ適用する。未作成ならセッションは書かない。
-- [プレビューが `AUTH_SECRET` を持ったまま] → #91。今回の引き渡し署名は別シークレットにする。
+- [プレビューが `AUTH_SECRET` を持ったまま] → #91。今回の引き渡し署名は別シークレットにする。#91 の `preview-isolation` で、プレビューの `AUTH_SECRET` は本番と別の値になった。
 - [フラグを立てる前はプレビューログインは今までどおり失敗する] → 本番の通常ログインは変わらない。
 
 ## Migration Plan
