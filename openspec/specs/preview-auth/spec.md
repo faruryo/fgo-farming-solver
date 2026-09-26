@@ -22,7 +22,7 @@
 
 ### Requirement: プレビューは本番のリダイレクト URI で認可を始める
 
-許可されたプレビューホストでサインインを始めたとき、Google の認可 URL の `redirect_uri` は `https://fgo-farming-solver.faru.jp/api/auth/callback/google` でなければならない (MUST)。戻り先のオリジンは、その開始リクエストのオリジンだけで決まり、クエリの `callbackUrl` からは取ってはならない (MUST NOT)。`state` は接頭辞 `pv1.` を持ち、戻り先、有効期限、nonce、PKCE verifier を共有シークレットで暗号化して含めなければならない (MUST)。Auth.js がプレビューに置く `state` Cookie や PKCE Cookie は、この経路では使ってはならない (MUST NOT)。
+許可されたプレビューホストでサインインを始めたとき、Google の認可 URL の `redirect_uri` は `https://fgo-farming-solver.faru.jp/api/auth/callback/google` でなければならない (MUST)。戻り先のオリジンは、その開始リクエストのオリジンだけで決まり、クエリの `callbackUrl` からは取ってはならない (MUST NOT)。`state` は接頭辞 `pv1.` を持ち、戻り先、発行から 10 分の有効期限、nonce、PKCE verifier を共有シークレットで暗号化して含めなければならない (MUST)。Auth.js がプレビューに置く `state` Cookie や PKCE Cookie は、この経路では使ってはならない (MUST NOT)。
 
 #### Scenario: プレビューのサインイン開始
 
@@ -42,6 +42,12 @@
 #### Scenario: 復号に失敗する
 
 - **WHEN** 引き渡し分岐が有効で、`state` が `pv1.` で始まり、共有シークレットで復号できない
+- **THEN** Google のトークンエンドポイントを呼ばない
+- **THEN** リダイレクトレスポンスを返さない
+
+#### Scenario: 10 分を過ぎた state
+
+- **WHEN** 引き渡し分岐が有効で、`state` の発行から 10 分を過ぎている
 - **THEN** Google のトークンエンドポイントを呼ばない
 - **THEN** リダイレクトレスポンスを返さない
 
@@ -85,7 +91,7 @@
 
 ### Requirement: 引き渡し JWT は 60 秒で戻り先オリジンだけが受け取れる
 
-本番は、有効期限 60 秒の JWT を URL フラグメントに付け、検証済みのプレビュー URL へ 302 しなければならない (MUST)。JWT の audience は戻り先オリジンでなければならない (MUST)。中身は `providerAccountId`、名前、メール、画像、nonce、`jti`、開始時に同じオリジンから取り出した相対パスに限る (MUST)。署名用シークレットは `AUTH_SECRET` とは別の値でなければならない (MUST)。同じ値、または未設定のときは JWT を発行してはならない (MUST NOT)。
+本番は、有効期限 60 秒の JWT を URL フラグメントに付け、検証済みのプレビュー URL へ 302 しなければならない (MUST)。JWT の audience は戻り先オリジンでなければならない (MUST)。中身は `sub` クレームに入れた `providerAccountId`、名前、メール、画像、nonce、`jti`、開始時に同じオリジンから取り出した相対パスに限る (MUST)。署名用シークレットは Auth.js が使うシークレット（`AUTH_SECRET`、未設定なら `NEXTAUTH_SECRET`）とは別の値でなければならない (MUST)。未設定、または同じ値のときは、Google と通信せず、JWT を発行してはならない (MUST NOT)。
 
 #### Scenario: フラグメントでプレビューへ戻る
 
@@ -95,22 +101,28 @@
 
 #### Scenario: 引き渡しシークレットが Auth.js のシークレットと同じ
 
-- **WHEN** 引き渡し用シークレットが未設定、または `AUTH_SECRET` と同じである
+- **WHEN** 引き渡し用シークレットが未設定、または Auth.js が使うシークレット（`AUTH_SECRET`、未設定なら `NEXTAUTH_SECRET`）と同じである
+- **THEN** 認可コードを交換せず、Google のトークンエンドポイントを呼ばない
 - **THEN** 引き渡し JWT を発行しない
 
 ### Requirement: プレビューが自分のセッション Cookie を書く
 
-フラグメントはプレビューのサーバへ送られない。プレビューのページがフラグメントを読み、同一オリジンのエンドポイントへ渡さなければならない (MUST)。そのエンドポイントは、署名、期限、audience がリクエストのオリジンと一致するときだけ、そのホストのセッション Cookie を書かなければならない (MUST)。`user.id` は `providerAccountId` でなければならない (MUST)。Cookie を書いたあと、フラグメントを除いた URL へ移さなければならない (MUST)。期限切れや audience 不一致では Cookie を書いてはならない (MUST NOT)。
+フラグメントはプレビューのサーバへ送られない。プレビューのページがフラグメントを読み、同一オリジンのエンドポイントへ渡さなければならない (MUST)。そのエンドポイントは、署名と期限が正しく、audience がリクエストのオリジンと一致し、`sub` が許可リストに今も含まれるときだけ、そのホストのセッション Cookie を書かなければならない (MUST)。`user.id` は `providerAccountId` でなければならない (MUST)。Cookie を書いたあと、フラグメントを除いた URL へ移さなければならない (MUST)。期限切れや audience 不一致では Cookie を書いてはならない (MUST NOT)。
 
 #### Scenario: 一致した audience で Cookie を書く
 
 - **WHEN** プレビューが、自分のオリジンを audience とする期限内の引き渡し JWT を受け取る
-- **THEN** そのホストにセッション Cookie を書き、`user.id` は JWT の `providerAccountId` である
+- **THEN** そのホストにセッション Cookie を書き、`user.id` は JWT の `sub`（`providerAccountId`）である
 - **THEN** ブラウザはフラグメントを含まない、開始時の相対パスへ移る
 
 #### Scenario: audience が違う、または期限切れ
 
 - **WHEN** audience がリクエストのオリジンと違う、または期限切れである
+- **THEN** セッション Cookie を書かない
+
+#### Scenario: 発行後に許可リストから外れた
+
+- **WHEN** 引き渡し JWT の発行後、完了までの間に、その `sub` が許可リストから外れた
 - **THEN** セッション Cookie を書かない
 
 ### Requirement: nonce と jti で引き渡しを一度きりにする
