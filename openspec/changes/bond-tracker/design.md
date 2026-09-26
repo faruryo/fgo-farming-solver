@@ -5,18 +5,23 @@
 - サーヴァントの表示情報は Material Catalog(`material_catalog_v1`)が持つ。GitHub Actions の updater が `nice_servant.json` 全体を条件付き GET で取り込み、蒸留して KV に置く。クライアントは `/api/material-catalog` から受け取る。
 - updater は前回カタログを schemaVersion を確かめずに読み、検証子で条件付き GET を送る。304 なら前回のサーヴァント一覧をそのまま再利用する(`lib/material-catalog-updater.ts` の `servantSection`)。
 - クエストの基本絆ポイントは FGODrop CSV 由来の `Quest.bondPoints` にあり、モックでは304クエストすべてが持つ。クライアントは `useDrops()`(`/api/drops`)で quests と campaigns を得る。実効APは `computeEffectiveAp`(`lib/solver.ts`)。
+- ストームポッドを消費するクエストは `questConsumesPod(area)`(`lib/quest-consumes-pod.ts`)が area 名で判定している。
+- 冠位研鑽戦のクラス縛りは Atlas の quest phase `restrictions`(`individuality equal [クラス特性]`)にあるが、〔エクストラⅠ/Ⅱ〕は `aaQuestId` を持たず Atlas から引けない。
 - localStorage は `useLocalStorage`(`hooks/use-local-storage.ts`)で読み書きし、`STORAGE_KEYS` に登録したキーは同期エンジンの変更追跡に乗る。
 
 ## Goals / Non-Goals
 
 **Goals:**
-- 見積もりの判断(残りポイント、1周あたり獲得絆、周回数、ティーポット、クエスト候補の並び、保存値の解釈)をすべて pure 関数にし、ケース表でテストする。
+- 見積もりの判断(残りポイント、1周の獲得絆の換算、周回数、ティーポット、クエスト候補の絞り込みと並び、クエスト別集計、保存値の解釈)をすべて pure 関数にし、ケース表でテストする。
 - 新しい KV キーや更新ジョブを増やさず、既存の Material Catalog 経路に `bondGrowth` を載せる。
 
 **Non-Goals:**
 - 絆キャンペーン(`questFriendship`)の自動反映。倍率はユーザー入力にも設けない。
 - ティーポットの失効日・月次交換数の管理。見積もりに効くのは所持数だけなので入力しない。
-- 複数騎を同じ編成で回す前提の、ティーポット共有の最適配分。
+- 礼装・編成ボーナスからの獲得絆の計算、および絆礼装の組み合わせの提案(D7)。
+- 複数騎・複数クエストをまたいだ、ティーポット共有の最適配分。
+- ストームポッドの所持数や日々の流入を踏まえた日程の計算。必要数の表示にとどめる。
+- 冠位研鑽戦のグランドサーヴァント編成条件の判定。
 - 絆Lv16 の上限解放状態の判定。目標Lv16は入力どおり計算する。
 - スクリーンショットからの絆状態取り込み。
 - 周回ソルバーの直近結果(周回予定)から得られる絆の見積もり。後続 change で扱う。`bondPerRun` と `estimateRuns` はクエスト単位の入力にしておき、周回予定の各クエストへ同じ関数を適用できる形を保つ。
@@ -45,22 +50,26 @@
 
 - `bondIncrement(growth, level)`: Lv→Lv+1 の必要増分(`growth[level] - growth[level-1]`、Lv0 は `growth[0]`)。
 - `remainingBond(growth, { currentLevel, remainingToNext, targetLevel })`: 残りポイント、または範囲外の項目を示すエラー。
-- `bondPerRun(baseBond, { cePercent, frontline, friendFrontline, bond15Count })`: `floor(base × (1 + ce/100 + 0.2·frontline + 0.04·friend + 0.25·n))`。
+- `bondPerRun({ observed, teapotRun, measuredBase, questBase })`: ティーポット周回の値なら `floor(observed/2)`、計測クエストと異なれば `floor(値 × questBase / measuredBase)`。推定かどうかも返す。
 - `estimateRuns(remaining, perRun, teapotStock | null)`: `{ runs, runsWithoutTeapot, teapotRuns }`。ティーポット周回を先に充てる。
-- `rankBondQuests(quests, campaigns)`: `bondPoints / computeEffectiveAp` の降順。`bondPoints` のないクエストは除く。
-- `parseBondTrackerState(unknown)`: 保存値を検証し、壊れていれば空状態を返す。`useLocalStorage` の `onGet` に渡す。
-
-ボーナスは全部を加算して基本値に掛け、ティーポットは最後に2倍する。一次情報で順序が確定していないので、画面に概算と明示する(spec)。
+- `bondQuestCandidates(quests, campaigns, className)`: 編成できるクエスト(D8)を `bondPoints / computeEffectiveAp` の降順で返す。`bondPoints` のないクエストは除く。
+- `groupByQuest(estimates)`: クエスト別に周回数(最大値)・AP・ポッド数と全体合計を返す。ポッド判定は `questConsumesPod` を使う。
+- `parseBondTrackerState(unknown, questIds)`: 保存値を検証し、壊れていれば空状態を返す。存在しないクエストは候補の先頭に置き換える。`useLocalStorage` の `onGet` に渡す。
 
 ### D5. 保存は単一キー `bondTracker`
 
 ```ts
 type BondTrackerState = {
-  entries: { servantId: number; currentLevel: number; remainingToNext: number; targetLevel: number; frontline: boolean }[]
-  questId: string | null
-  cePercent: number
-  friendFrontline: boolean
-  bond15Count: number
+  entries: {
+    servantId: number
+    questId: string
+    currentLevel: number
+    remainingToNext: number
+    targetLevel: number
+    observedPerRun: number
+    observedTeapotRun: boolean
+    measuredQuestId: string
+  }[]
   teapot: { enabled: boolean; stock: number }
 }
 ```
@@ -72,15 +81,31 @@ type BondTrackerState = {
 
 - `app/bond/page.tsx`(client)。カタログは `/api/material-catalog`、クエストは `useDrops()` で取る。素材計算機のローダーに取得処理が閉じている場合は hook に切り出して共用する。
 - サーヴァント追加は名前検索(Input + 絞り込みリスト)。素材計算機の全件グリッドは登録済みの管理に向かないため流用しない。
-- 見積もりは登録サーヴァントごとのカードで、残りポイント・周回数・AP・(ティーポット使用時)縮む周回数を出す。
+- 入力タブは登録サーヴァントごとのカード(周回クエストの選択、絆状態、1周の獲得絆、ティーポット周回の指定)と、その場の見積もりを出す。見積もりタブはクエスト別のまとまりと合計(周回・AP・ポッド)を出す。
 - ナビは `components/common/nav.tsx` の Tools グループに1件追加する。文言は新しい namespace `bond` を `locales/{ja,en}.json` に足す。
+
+### D7. 1周の獲得絆はリザルト画面の実測値を入力させる
+
+礼装・位置・絆15・イベントのボーナスを入力させて式で計算する案は採らない。
+
+- 式そのものは Chaldea(chaldea-center/chaldea `lib/app/modules/bond/formation_bond.dart`)の実装で確認できた: `floor(floor(基本絆 × (1+位置%)) × (1+min(割合%, 500%))) + 固定値`、最後にティーポットで×2。位置%は前衛20%・フレンド前衛4%、割合%は礼装・イベント・自軍の絆15サーヴァント1騎25%。
+- それでも入力が重い。ユーザーは装備礼装の%を覚えておらず、自身だけに効く礼装やフレンドの礼装で合計の意味も揺れる。実測値ならすべてのボーナスと上限が含まれ、入力は1騎1つの数値で済む。
+- 代償は、未計測のクエストの値が基本絆の比による近似になること。絆上げは同じクエストを繰り返すので、1周目の値を入れれば実測に戻る。
+
+### D8. クラス縛りはクエスト名から判定する
+
+冠位研鑽戦の〔セイバー〕〜〔バーサーカー〕はクエスト名の括弧内を `className` に対応づけ、一致するサーヴァントにだけ候補に出す。〔エクストラⅠ/Ⅱ〕は基本7クラス以外に出す。
+
+- 代替: Atlas の `restrictions` をマスターデータ更新で取り込む。正確だが、〔エクストラ〕は `aaQuestId` がなく引けないため結局名前に頼る部分が残る。
+- エクストラの対応クラスは画面で「ゲーム内で確認」と添える。
 
 ## Risks / Trade-offs
 
 - [絆ページが素材データ込みのカタログ全体を読む] → 素材計算機と同じ API・同じキャッシュ経路で、追加の取得はない。転送量が問題になったら D1 の代替(専用キー)へ切り出す。
-- [ボーナス計算順序が実際と違い、周回数がずれる] → 概算と明示し、状態の入れ直しで補正する前提の機能にしている。
+- [未計測クエストの換算値が実際とずれる] → 推定と明示し、そのクエストで1周したら実測値を入れ直す運用にする。
+- [冠位研鑽戦の名前表記が変わるとクラス判定が外れる] → 判定できないクエストはクラス縛りなしとして全員に出さず、候補から外す(誤って編成不能なクエストを勧めない)。
 - [デプロイから次回 updater 実行(最大2時間)まで `bondGrowth` がない] → spec の「絆データ未取得」表示で扱い、クラッシュしない。
-- [ティーポットを騎ごとに所持数全体で見積もる] → 同じ編成で回すと共有される旨を画面に出す(spec)。
+- [ティーポットをクエストごとに所持数全体で見積もる] → 前提を画面に出す(spec)。
 
 ## Migration Plan
 
