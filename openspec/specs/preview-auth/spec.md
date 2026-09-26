@@ -7,7 +7,7 @@
 
 ### Requirement: 本番と localhost のサインインは変更しない
 
-本番ホストと localhost の Google サインインは、既存の Auth.js の経路のままでなければならない (MUST)。プレビュー用の分岐は、環境変数で全体を無効化できなければならない (MUST)。無効化されているとき、引き渡し用の `state` も Auth.js に渡さなければならない (MUST)。
+本番ホストと localhost の Google サインインは、既存の Auth.js の経路のままでなければならない (MUST)。プレビュー用の分岐は、`PREVIEW_AUTH_HANDOFF` が文字列 `1` のときだけ有効でなければならない (MUST)。未設定や `1` 以外の値では無効として扱い、そのとき引き渡し用の `state` も Auth.js に渡さなければならない (MUST)。
 
 #### Scenario: 通常の Auth.js state はそのまま渡る
 
@@ -16,18 +16,19 @@
 
 #### Scenario: 分岐を無効化する
 
-- **WHEN** 引き渡し分岐を無効化する環境変数が有効でない
+- **WHEN** `PREVIEW_AUTH_HANDOFF` が未設定、または `1` 以外の値である
 - **THEN** `state` が `pv1.` で始まっていても Auth.js のコールバックへ渡る
 - **THEN** このアプリの引き渡し処理は Google と通信しない
 
 ### Requirement: プレビューは本番のリダイレクト URI で認可を始める
 
-許可されたプレビューホストでサインインを始めたとき、Google の認可 URL の `redirect_uri` は `https://fgo-farming-solver.faru.jp/api/auth/callback/google` でなければならない (MUST)。戻り先のオリジンは、その開始リクエストのオリジンだけで決まり、クエリの `callbackUrl` からは取ってはならない (MUST NOT)。戻りパスは、開始リクエストと同じオリジンの Referer の pathname だけから取らなければならない (MUST)。`/` で始まらない値、`//` で始まる値、`\`・`?`・`#`・`://` を含む値は `/` に置き換えなければならない (MUST)。`state` は接頭辞 `pv1.` を持ち、戻り先、発行から 10 分の有効期限、nonce、PKCE verifier を共有シークレットで暗号化して含めなければならない (MUST)。Auth.js がプレビューに置く `state` Cookie や PKCE Cookie は、この経路では使ってはならない (MUST NOT)。
+許可されたプレビューホストでサインインを始めたとき、Google の認可 URL の `redirect_uri` は `https://fgo-farming-solver.faru.jp/api/auth/callback/google` でなければならない (MUST)。戻り先のオリジンは、その開始リクエストのオリジンだけで決まり、クエリの `callbackUrl` からは取ってはならない (MUST NOT)。戻りパスは、開始リクエストと同じオリジンの Referer の pathname だけから取らなければならない (MUST)。`/` で始まらない値、`//` で始まる値、`\`・`?`・`#`・`://` を含む値は `/` に置き換えなければならない (MUST)。`state` は接頭辞 `pv1.` を持ち、戻り先、発行から 10 分の有効期限、nonce、PKCE verifier を、共有シークレットから導いた鍵で AES-GCM（または同等の認証付き暗号）により暗号化して含めなければならない (MUST)。認可 URL に `access_type=offline` を付けてはならず、リフレッシュトークンを要求してはならない (MUST NOT)。Auth.js がプレビューに置く `state` Cookie や PKCE Cookie は、この経路では使ってはならない (MUST NOT)。
 
 #### Scenario: プレビューのサインイン開始
 
 - **WHEN** 許可されたプレビューホストで Google サインインを開始する
 - **THEN** ブラウザは、本番のリダイレクト URI と `pv1.` で始まる `state` を持つ Google の認可 URL へ移る
+- **THEN** 認可 URL に `access_type=offline` は含まれない
 - **THEN** 戻り先オリジンは開始リクエストのオリジンと一致し、クエリ文字列からは決まらない
 
 #### Scenario: 本番と localhost は従来の開始経路
@@ -48,6 +49,12 @@
 
 - **WHEN** 引き渡し分岐が有効で、`state` が `pv1.` で始まり、共有シークレットで復号できない
 - **THEN** Google のトークンエンドポイントを呼ばない
+- **THEN** リダイレクトレスポンスを返さない
+
+#### Scenario: 改ざんされた state
+
+- **WHEN** 引き渡し分岐が有効で、`pv1.` の `state` の暗号文が 1 バイトでも書き換えられている
+- **THEN** 認証タグの検証に失敗し、Google のトークンエンドポイントを呼ばない
 - **THEN** リダイレクトレスポンスを返さない
 
 #### Scenario: 10 分を過ぎた state
