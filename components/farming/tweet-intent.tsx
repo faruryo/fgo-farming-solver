@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useSyncExternalStore } from 'react'
 import { Button } from '@/components/ui/button'
 import { FaXTwitter } from 'react-icons/fa6'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -10,8 +10,13 @@ export const TweetIntent = ({ text }: { text: string }) => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const asPath = `${pathname}${searchParams?.toString() ? '?' + searchParams.toString() : ''}`
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  const url = siteUrl ? `${siteUrl}${asPath}` : ''
+  // サーバー描画とハイドレーションでは空にし、描画後に表示中のオリジンを使う
+  const origin = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => '',
+  )
+  const url = origin ? `${origin}${asPath}` : ''
   const hashtags = 'FGO周回ソルバー'
 
   const params = new URLSearchParams()
