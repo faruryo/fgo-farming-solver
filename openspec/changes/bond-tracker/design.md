@@ -48,13 +48,14 @@
 
 ### D4. 見積もりロジックを `lib/bond/` の pure 関数に集める
 
-- `bondIncrement(growth, level)`: Lv→Lv+1 の必要増分(`growth[level] - growth[level-1]`、Lv0 は `growth[0]`)。
+- `bondIncrement(growth, level)`: Lv→Lv+1 の必要増分(`growth[level] - growth[level-1]`、Lv0 は `growth[0]`)。`growth` が目標Lvまでの要素を持たなければ「絆データ未取得」を返す。
 - `remainingBond(growth, { currentLevel, remainingToNext, targetLevel })`: 残りポイント、または範囲外の項目を示すエラー。
-- `bondPerRun({ observed, teapotRun, measuredBase, questBase })`: ティーポット周回の値なら `floor(observed/2)`、計測クエストと異なれば `floor(値 × questBase / measuredBase)`。推定かどうかも返す。
+- `bondPerRun({ observed, teapotRun, measuredBase, questBase })`: 先にティーポット周回の半減 `floor(observed/2)` を済ませ、その値に計測クエストとの基本絆比を掛ける `floor(値 × questBase / measuredBase)`。推定かどうかも返す。`measuredBase` がない(計測クエストが消えた)ときは入れ直しを求めるエラーを返す。
 - `estimateRuns(remaining, perRun, teapotStock | null)`: `{ runs, runsWithoutTeapot, teapotRuns }`。ティーポット周回を先に充てる。
-- `bondQuestCandidates(quests, campaigns, className)`: 編成できるクエスト(D8)を `bondPoints / computeEffectiveAp` の降順で返す。`bondPoints` のないクエストは除く。
+- `bondQuestCandidates(quests, activeCampaigns, className)`: 編成できるクエスト(D8)を `bondPoints / computeEffectiveAp` の降順で返し、各候補に対象クラス未確認かどうかを付ける。`bondPoints` のないクエストは除く。`activeCampaigns` は画面側で既存の `useActiveCampaigns(drops.campaigns)` を通した有効期間中のものだけを渡す(クエスト効率画面と同じ)。
 - `groupByQuest(estimates)`: クエスト別に周回数(最大値)・AP・ポッド数と全体合計を返す。ポッド判定は `questConsumesPod` を使う。
-- `parseBondTrackerState(unknown, questIds)`: 保存値を検証し、壊れていれば空状態を返す。存在しないクエストは候補の先頭に置き換える。`useLocalStorage` の `onGet` に渡す。
+- `parseBondTrackerState(unknown)`: 保存値の形だけを検証し、壊れていれば空状態を返す。`useLocalStorage` の `onGet` に渡す。
+- `reconcileEntry(entry, candidates, questIds)`: マスターデータ読込後に騎ごとに呼ぶ。周回クエストが候補になければ確認済み候補の先頭へ置き換え、計測クエストが消えていれば入れ直しが必要な状態にする。保存値の解釈(形)と、マスターデータとの突き合わせを分ける。
 
 ### D5. 保存は単一キー `bondTracker`
 
@@ -94,10 +95,10 @@ type BondTrackerState = {
 
 ### D8. クラス縛りはクエスト名から判定する
 
-冠位研鑽戦の〔セイバー〕〜〔バーサーカー〕はクエスト名の括弧内を `className` に対応づけ、一致するサーヴァントにだけ候補に出す。〔エクストラⅠ/Ⅱ〕は基本7クラス以外に出す。
+冠位研鑽戦の〔セイバー〕〜〔バーサーカー〕はクエスト名の括弧内を `className` に対応づけ、一致するサーヴァントにだけ候補に出す。〔エクストラⅠ/Ⅱ〕は対象クラスを確定できないので、基本7クラス以外に「対象クラス未確認」の印付きで出し、初期値には選ばない(編成できないクエストを勧めない)。
 
 - 代替: Atlas の `restrictions` をマスターデータ更新で取り込む。正確だが、〔エクストラ〕は `aaQuestId` がなく引けないため結局名前に頼る部分が残る。
-- エクストラの対応クラスは画面で「ゲーム内で確認」と添える。
+- エクストラの対象クラスが判明したら、名前→クラスの対応表に足して印を外す。
 
 ## Risks / Trade-offs
 
@@ -106,6 +107,7 @@ type BondTrackerState = {
 - [冠位研鑽戦の名前表記が変わるとクラス判定が外れる] → 判定できないクエストはクラス縛りなしとして全員に出さず、候補から外す(誤って編成不能なクエストを勧めない)。
 - [デプロイから次回 updater 実行(最大2時間)まで `bondGrowth` がない] → spec の「絆データ未取得」表示で扱い、クラッシュしない。
 - [ティーポットをクエストごとに所持数全体で見積もる] → 前提を画面に出す(spec)。
+- [古い版のJSを開いたままの端末がクラウドへ保存すると `bondTracker` が消える] → `/api/cloud` は保存値を丸ごと置き換え、縮小ガードも現行キーとの積集合しか見ないため検知できない。同期キーを足すたびに起きる既存の性質(`classScore` 等も同じ)で、直すにはサーバー側のキー単位マージなど同期の設計変更が要る。今回は扱わず、別 change の候補とする。
 
 ## Migration Plan
 

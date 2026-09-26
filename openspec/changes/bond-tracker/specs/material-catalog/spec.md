@@ -15,7 +15,7 @@
 #### Scenario: 表示に不要なアセットを除外する
 
 - **WHEN** Atlas Academy の `nice_servant.json` からサーヴァント表示情報を蒸留するとき
-- **THEN** 各サーヴァントには `id`、`name`、`className`、`collectionNo`、`rarity` と、カードで使用する代表顔画像 URL と、絆Lv別の累積必要ポイント `bondGrowth` だけが含まれる。
+- **THEN** 各サーヴァントには `id`、`name`、`className`、`collectionNo`、`rarity` と、カードで使用する代表顔画像 URL だけが含まれ、有効な絆Lv別の累積必要ポイントを持つサーヴァントにはそれに加えて `bondGrowth` が含まれる。
 - **THEN** `charaGraph`、衣装別画像一式、その他の未使用 `extraAssets` は Material Catalog に含まれない。
 
 #### Scenario: アイテム情報を用途に限定する
