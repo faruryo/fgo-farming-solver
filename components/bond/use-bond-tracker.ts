@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
+import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { useDrops } from '../../hooks/use-drops'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { useRecentResult } from '../../hooks/use-recent-result'
@@ -53,7 +54,9 @@ export const useBondTracker = (servants: MaterialCatalogServant[] | undefined) =
     onGet: parseBondTrackerState,
   })
   const { result: recentResult } = useRecentResult()
-  const plannedLaps = useMemo(() => plannedLapsByQuest(recentResult), [recentResult])
+  const campaignAdjustedResult = useDashboardResult(recentResult, drops.isLoading ? null : drops)
+  const displayResult = campaignAdjustedResult ?? recentResult
+  const plannedLaps = useMemo(() => plannedLapsByQuest(displayResult), [displayResult])
   const servantsById = useMemo(() => new Map(servants?.map(s => [s.id, s]) ?? []), [servants])
   const questsById = useMemo(() => new Map(drops.quests.map(q => [q.id, q])), [drops.quests])
   const candidatesByClass = useMemo(
