@@ -248,7 +248,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                     {t('farming-result-visibility-label', '結果を公開する')}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {status === 'authenticated'
+                    {status !== 'unauthenticated'
                       ? t(
                           'farming-result-visibility-desc-logged-in',
                           'オフにすると、あなた以外には結果が見えない非公開状態で保存されます。結果画面で後から切り替えることも可能です。'

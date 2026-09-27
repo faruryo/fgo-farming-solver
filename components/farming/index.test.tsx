@@ -141,6 +141,12 @@ describe('/farming direct access (5.4 regression)', () => {
     const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
     expect(toggle).not.toBeChecked()
     expect(toggle).toHaveAttribute('aria-disabled', 'true')
+    expect(
+      screen.getByText(/オフにすると、あなた以外には結果が見えない非公開状態で保存されます/)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/ログインしていない場合、結果は常に公開されます/)
+    ).not.toBeInTheDocument()
 
     const url = await inputItemCountAndSolve(user, fetchMock)
     expect(url.searchParams.get('isPublic')).toBe('false')
