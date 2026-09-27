@@ -2,19 +2,30 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import type { Quest } from '../../interfaces/fgodrop'
+import { QuestIdentity } from '../common/QuestIdentity'
+import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import type { EntryEstimate } from '../../lib/bond/entry-estimate'
 import {
   MAX_CURRENT_BOND_LEVEL,
   MAX_TARGET_BOND_LEVEL,
   type BondInputError,
 } from '../../lib/bond/estimate'
-import { apCampaignLabel, splitByPlan } from '../../lib/bond/plan'
+import { splitByPlan } from '../../lib/bond/plan'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
 import { filterQuestCandidates, withCurrentLevel, type BondTrackerEntry } from '../../lib/bond/state'
 import { getClassName } from '../../lib/class-names'
@@ -73,19 +84,41 @@ export function ClassIcon({ servant, size }: Readonly<{ servant: MaterialCatalog
 
 type EntryChange = (entry: BondTrackerEntry) => void
 
-// 候補の後ろに付ける注記(APキャンペーン・周回予定・対象クラス未確認)
-const questNotes = (c: BondQuestCandidate, planned: number | undefined, t: TFunction<'bond'>) => {
-  const notes: string[] = []
-  const campaign = apCampaignLabel(c.quest.ap, c.effectiveAp)
-  if (campaign) {
-    const label = campaign.fraction
-      ? t('ap-campaign-ratio', 'AP{{fraction}}', { fraction: campaign.fraction })
-      : t('ap-campaign', 'AP割引')
-    notes.push(`${label} ${c.effectiveAp}AP`)
-  }
-  if (planned) notes.push(t('plan-option', '周回予定 {{count}}周', { count: planned }))
-  if (c.unconfirmedClass) notes.push(t('unconfirmed-class', '※対象クラス未確認'))
-  return notes.map(note => ` ${note}`).join('')
+function QuestOption({
+  candidate: c,
+  rank,
+  planned,
+}: Readonly<{ candidate: BondQuestCandidate; rank?: number; planned: number | undefined }>) {
+  const { t } = useTranslation('bond')
+  return (
+    <div className="flex w-full min-w-0 items-center gap-2 text-left">
+      {rank !== undefined && (
+        <span className="w-5 shrink-0 text-right text-[11px] font-bold tabular-nums" style={{ color: 'var(--text3)' }}>
+          {rank}
+        </span>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <QuestIdentity
+          area={c.quest.area}
+          name={c.quest.name}
+          ap={c.effectiveAp}
+          originalAp={c.quest.ap}
+          consumesPod={questConsumesPod(c.quest.area)}
+        />
+        {(planned || c.unconfirmedClass) && (
+          <div className="flex flex-wrap items-center gap-1 pl-10">
+            {planned ? <Badge variant="secondary">{t('plan-option', '周回予定 {{count}}周', { count: planned })}</Badge> : null}
+            {c.unconfirmedClass && (
+              <span className="text-[9px]" style={{ color: 'var(--text3)' }}>{t('unconfirmed-class', '※対象クラス未確認')}</span>
+            )}
+          </div>
+        )}
+      </div>
+      <span className="shrink-0 text-[13px] font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
+        {t('bond-per-ap', '{{rate}}/AP', { rate: ((c.quest.bondPoints as number) / c.effectiveAp).toFixed(1) })}
+      </span>
+    </div>
+  )
 }
 
 function QuestSelect({
@@ -102,34 +135,44 @@ function QuestSelect({
   const { t } = useTranslation('bond')
   const [keyword, setKeyword] = useState('')
   const id = `bond-${entry.servantId}-quest`
+  const selected = candidates.find(c => c.quest.id === entry.questId)
+  const items = filterQuestCandidates(candidates, keyword, entry.questId)
   return (
     <div className="flex flex-col gap-1 text-xs">
       <label htmlFor={id}>{t('quest', '周回クエスト')}</label>
-      <Input
-        type="search"
-        value={keyword}
-        onChange={e => setKeyword(e.target.value)}
-        placeholder={t('quest-filter', 'クエスト名で絞り込み(効率順)')}
-        aria-label={t('quest-filter', 'クエスト名で絞り込み(効率順)')}
-        aria-controls={id}
-      />
-      <select
-        id={id}
-        className="c-global-dd w-full text-left"
-        value={entry.questId}
-        onChange={e => onChange({ ...entry, questId: e.target.value })}
+      <Combobox
+        items={items}
+        filter={null}
+        value={items.find(i => i.candidate.quest.id === entry.questId) ?? null}
+        isItemEqualToValue={(a, b) => a.candidate.quest.id === b.candidate.quest.id}
+        itemToStringLabel={i => questLabel(i.candidate.quest)}
+        onValueChange={i => i && onChange({ ...entry, questId: i.candidate.quest.id })}
+        inputValue={keyword}
+        onInputValueChange={setKeyword}
+        onOpenChange={open => !open && setKeyword('')}
       >
-        {filterQuestCandidates(candidates, keyword, entry.questId).map(({ candidate: c, rank }) => (
-          <option key={c.quest.id} value={c.quest.id}>
-            {rank}. {questLabel(c.quest)} ({t('bond-per-ap-rate', '絆{{bond}} / {{ap}}AP = {{rate}}/AP', {
-              bond: c.quest.bondPoints,
-              ap: c.effectiveAp,
-              rate: ((c.quest.bondPoints as number) / c.effectiveAp).toFixed(1),
-            })})
-            {questNotes(c, plannedLaps.get(c.quest.id), t)}
-          </option>
-        ))}
-      </select>
+        <ComboboxTrigger
+          id={id}
+          render={<Button variant="outline" className="h-auto w-full justify-between gap-2 py-1.5" />}
+        >
+          {selected ? (
+            <QuestOption candidate={selected} planned={plannedLaps.get(selected.quest.id)} />
+          ) : (
+            <span style={{ color: 'var(--text3)' }}>{t('quest-placeholder', 'クエストを選択')}</span>
+          )}
+        </ComboboxTrigger>
+        <ComboboxContent className="w-[min(28rem,calc(100vw-2rem))]">
+          <ComboboxInput showTrigger={false} placeholder={t('quest-filter', 'クエスト名で絞り込み(効率順)')} />
+          <ComboboxEmpty>{t('quest-empty', '該当するクエストがありません')}</ComboboxEmpty>
+          <ComboboxList>
+            {(i: (typeof items)[number]) => (
+              <ComboboxItem key={i.candidate.quest.id} value={i}>
+                <QuestOption candidate={i.candidate} rank={i.rank} planned={plannedLaps.get(i.candidate.quest.id)} />
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
     </div>
   )
 }

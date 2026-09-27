@@ -26,10 +26,3 @@ export const splitByPlan = (
   const inPlanBond = Math.min(remaining, (inPlanRuns + inPlanTeapot) * perRun)
   return { planned, inPlanRuns, inPlanBond, overRuns: runs - inPlanRuns, achieved: runs <= planned }
 }
-
-/** 実効APが通常APと違うときの表示。整数分の1なら比率、それ以外は fraction: null。 */
-export const apCampaignLabel = (ap: number, effectiveAp: number): { fraction: string | null } | null => {
-  if (effectiveAp === ap) return null
-  const ratio = ap / effectiveAp
-  return { fraction: Number.isInteger(ratio) && ratio > 1 ? `1/${ratio}` : null }
-}

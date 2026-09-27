@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Result } from '../../interfaces/api'
-import { apCampaignLabel, plannedLapsByQuest, splitByPlan } from './plan'
+import { plannedLapsByQuest, splitByPlan } from './plan'
 
 const result = (laps: Record<string, number>): Result => ({
   params: { objective: 'ap', items: {}, quests: [] },
@@ -52,13 +52,4 @@ describe('splitByPlan', () => {
       inPlanRuns: 10, inPlanBond: 15_000, overRuns: 2,
     })
   })
-})
-
-describe('apCampaignLabel', () => {
-  it('キャンペーンなしは null', () => expect(apCampaignLabel(40, 40)).toBeNull())
-  it('整数分の1は比率', () => {
-    expect(apCampaignLabel(40, 20)).toEqual({ fraction: '1/2' })
-    expect(apCampaignLabel(40, 10)).toEqual({ fraction: '1/4' })
-  })
-  it('比率にならない割引', () => expect(apCampaignLabel(40, 30)).toEqual({ fraction: null }))
 })
