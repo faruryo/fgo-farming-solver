@@ -30,21 +30,23 @@
   ```sql
   ALTER TABLE farming_results ADD COLUMN is_public INTEGER NOT NULL DEFAULT 1;
   ```
+- 新規環境およびプレビュー環境で参照される `db/schema.sql` の `farming_results` テーブル定義にも `is_public INTEGER NOT NULL DEFAULT 1` を追加して同期。
 - SQLite における `DEFAULT 1` 付きの `ADD COLUMN` はテーブル再構築を伴わず即座に適用可能。
 - 既存行は自動的に `is_public = 1`（公開）となり、バックフィル不要で後方互換性を完全に保つ。
 
 ### 2. 既定公開設定の管理（ユーザー設定）
-- キー: `STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC` (`fgo:farming:default_public`)。
+- キー: `STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC` (`farming/defaultPublic`)。
 - 初期値: `true`（公開）。
-- 配置場所: 周回計算画面（`/farming` および `/farming/manual`）のオプション欄。
+- 配置場所: 周回計算画面（`/farming`）のオプション欄。
 - 保存先: 端末ごとの localStorage（クラウド同期対象外）。
-- ログイン中のみ設定を有効・表示し、未ログイン時は「ログインすると非公開保存を選べます」といった注記または非活性とする。
+- セッション読み込み中（`status === 'loading'`）は周回計算送信を抑止（disabled）。認証確定後、ログイン中のみトグル操作を可能とし、未ログイン時は公開固定とする。
 
-### 3. 計算実行時の保存ロジック（`app/api/solve/route.ts`）
+### 3. 計算実行時の保存ロジック（`app/api/solve/route.ts` & `submitSolve`）
 - リクエストのクエリパラメータに `isPublic`（`'true' | 'false' | '1' | '0'`）を受け付ける。
-- `userId === 'anonymous'` の場合は強制的に `is_public = 1`。
+- `userId === 'anonymous'` かつ非公開要求（`isPublic === 'false' || isPublic === '0'`）の場合は 401 Unauthorized エラーを返却して公開保存を防ぐ（fail-closed）。未指定または公開要求時は `is_public = 1`。
 - ログインユーザーの場合、指定された値（指定なしは 1）を `farming_results.is_public` にバインドして `INSERT`。
 - `batch_id` による 2 行保存の場合、`idA` と `idB` の両方に同一の `is_public` 値を保存。
+- 共通ヘルパー `submitSolve`（`lib/farming/submit-solve.ts`）は、クエリに `isPublic` が指定されていない場合は常に安全な既定値 `true`（公開）を付与し、未認証導線で誤って非公開要求が送信されるのを防止する。
 
 ### 4. 結果取得と閲覧権限判定（`lib/get-result.ts` & Server Component）
 - `lib/get-result.ts` の `getResult(id: string, currentUserId?: string | null)`:
@@ -53,7 +55,7 @@
   - アクセス制御:
     - `row.is_public === 0`（非公開）かつ `row.user_id !== currentUserId` の場合、エラー（`Result not found`）をスローし、呼出元で 404 扱いとする。
     - 所有者（`row.user_id === currentUserId`）であれば、`is_public` の値に関わらず正常に取得。
-  - 開発環境（モック）では `isPublic = true`, `isOwner = true` を返し、開発を阻害しない。
+  - 開発環境（モック）では `isPublic = true`、`isOwner = Boolean(currentUserId)` を返し、未認証時の誤った所有者権限の露出を防ぎつつ本番と同一の境界を維持する。
 - `app/farming/results/[id]/page.tsx`:
   - `auth()` でセッションを取得し、`getResult(id, session?.user?.id)` に渡す。
   - 非公開で権限がない場合は `notFound()` により Next.js 標準の 404 ページを表示。

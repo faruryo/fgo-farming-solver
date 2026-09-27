@@ -2,13 +2,13 @@
 
 ## 1. Database & Data Access Layer
 
-- [x] 1.1 `migrations/0005_farming_results_visibility.sql` を作成し、`farming_results` に `is_public INTEGER NOT NULL DEFAULT 1` を追加する。
+- [x] 1.1 `migrations/0005_farming_results_visibility.sql` を作成し、`farming_results` に `is_public INTEGER NOT NULL DEFAULT 1` を追加する。また参照スキーマ `db/schema.sql` にも同期する。
 - [x] 1.2 `lib/get-result.ts` を修正し、`is_public` を含めた上で、非所有者による非公開アクセスの拒否（エラー送出）と所有者判定（`isOwner`）を実装する（共有リンク維持のため `deleted_at` 条件は除外）。
 - [x] 1.3 `lib/get-result.test.ts` を作成または拡充し、公開行・所有者による非公開行・第三者による非公開行の取得挙動および `userId` 非露出を検証するテストを通す。
 
 ## 2. Backend API Routes
 
-- [x] 2.1 `app/api/solve/route.ts` を修正し、リクエストパラメータから公開設定を受け取って D1 保存時に `is_public`（未ログイン時は強制 1、batch_id ペア時は両行）を保存する。
+- [x] 2.1 `app/api/solve/route.ts` を修正し、リクエストパラメータから公開設定を受け取って D1 保存時に `is_public`（未ログイン時の非公開要求は 401 fail-closed、batch_id ペア時は両行）を保存する。
 - [x] 2.2 `app/api/farming/results/[id]/route.ts` に `PATCH` ハンドラを実装し、セッション検証・所有者検証・`batch_id` 連動更新を含む公開・非公開状態の切り替えを実装する。
 - [x] 2.3 `app/api/farming/results/[id]/route.ts` の `GET` ハンドラに認証セッション連携と非公開時の 404 判定を統合する。
 - [x] 2.4 API ルートのユニットテスト（`app/api/farming/results/[id]/route.test.ts` および `app/api/solve/route.test.ts`）を作成または更新して検証する。
