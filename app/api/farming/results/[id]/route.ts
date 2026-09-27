@@ -52,6 +52,13 @@ async function updateResultVisibility(
   return result.meta.changes > 0
 }
 
+async function getD1Database(): Promise<D1Database | undefined> {
+  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
+    env: CloudflareEnv
+  }
+  return env?.DB || (process.env as unknown as CloudflareEnv).DB
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -76,11 +83,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true, isPublic: body.isPublic })
   }
 
-  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-    env: CloudflareEnv
-  }
-  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
-
+  const db = await getD1Database()
   if (!db) {
     return NextResponse.json({ error: 'Database not available' }, { status: 500 })
   }
@@ -114,11 +117,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-    env: CloudflareEnv
-  }
-  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
-
+  const db = await getD1Database()
   if (!db) {
     return NextResponse.json({ error: 'Database not available' }, { status: 500 })
   }

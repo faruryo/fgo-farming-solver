@@ -130,21 +130,31 @@ describe('PATCH /api/farming/results/[id]', () => {
     expect(res.status).toBe(404)
   })
 
-  it('updates single row visibility and returns 200 for owner', async () => {
-    mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-    const mockRun = vi.fn().mockResolvedValue({ meta: { changes: 1 } })
+  function setupMockDbForPatch({
+    userId = 'user-1',
+    batchId = null as string | null,
+    changes = 1,
+  } = {}) {
+    mockAuth.mockResolvedValue({ user: { id: userId } })
+    const mockRun = vi.fn().mockResolvedValue({ meta: { changes } })
     const mockUpdateBind = vi.fn().mockReturnValue({ run: mockRun })
 
     mockPrepare.mockImplementation((sql: string) => {
       if (sql.includes('SELECT')) {
         return {
           bind: vi.fn().mockReturnValue({
-            first: vi.fn().mockResolvedValue({ batch_id: null, user_id: 'user-1' }),
+            first: vi.fn().mockResolvedValue({ batch_id: batchId, user_id: userId }),
           }),
         }
       }
       return { bind: mockUpdateBind }
     })
+
+    return { mockRun, mockUpdateBind }
+  }
+
+  it('updates single row visibility and returns 200 for owner', async () => {
+    const { mockUpdateBind } = setupMockDbForPatch()
 
     const req = new NextRequest('http://localhost/api/farming/results/res-1', {
       method: 'PATCH',
@@ -158,20 +168,7 @@ describe('PATCH /api/farming/results/[id]', () => {
   })
 
   it('updates batch pair visibility and returns 200 for owner', async () => {
-    mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-    const mockRun = vi.fn().mockResolvedValue({ meta: { changes: 2 } })
-    const mockUpdateBind = vi.fn().mockReturnValue({ run: mockRun })
-
-    mockPrepare.mockImplementation((sql: string) => {
-      if (sql.includes('SELECT')) {
-        return {
-          bind: vi.fn().mockReturnValue({
-            first: vi.fn().mockResolvedValue({ batch_id: 'batch-999', user_id: 'user-1' }),
-          }),
-        }
-      }
-      return { bind: mockUpdateBind }
-    })
+    const { mockUpdateBind } = setupMockDbForPatch({ batchId: 'batch-999', changes: 2 })
 
     const req = new NextRequest('http://localhost/api/farming/results/res-1', {
       method: 'PATCH',
@@ -185,20 +182,7 @@ describe('PATCH /api/farming/results/[id]', () => {
   })
 
   it('updates visibility even if result was soft-deleted', async () => {
-    mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-    const mockRun = vi.fn().mockResolvedValue({ meta: { changes: 1 } })
-    const mockUpdateBind = vi.fn().mockReturnValue({ run: mockRun })
-
-    mockPrepare.mockImplementation((sql: string) => {
-      if (sql.includes('SELECT')) {
-        return {
-          bind: vi.fn().mockReturnValue({
-            first: vi.fn().mockResolvedValue({ batch_id: null, user_id: 'user-1' }),
-          }),
-        }
-      }
-      return { bind: mockUpdateBind }
-    })
+    const { mockUpdateBind } = setupMockDbForPatch()
 
     const req = new NextRequest('http://localhost/api/farming/results/deleted-res', {
       method: 'PATCH',
