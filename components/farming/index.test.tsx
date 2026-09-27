@@ -73,22 +73,30 @@ describe('/farming direct access (5.4 regression)', () => {
     ).toBeInTheDocument()
   })
 
-  it('submits manually entered counts to /api/solve without itemsStock (5.5)', async () => {
-    const fetchMock = stubFetch()
-    const user = userEvent.setup()
-
-    render(<Index items={items} quests={quests} />)
-
+  async function inputItemCountAndSolve(
+    user: ReturnType<typeof userEvent.setup>,
+    fetchMock: ReturnType<typeof stubFetch>,
+    count = '2'
+  ) {
     const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
     await user.clear(countInput)
-    await user.type(countInput, '3')
+    await user.type(countInput, count)
 
     const button = await submitButton()
     await waitFor(() => expect(button).not.toBeDisabled())
     await user.click(button)
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    return solveCallUrl(fetchMock)
+  }
+
+  it('submits manually entered counts to /api/solve without itemsStock (5.5)', async () => {
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const url = await inputItemCountAndSolve(user, fetchMock, '3')
     expect(url.searchParams.get('items')).toBe('100:3')
     expect(url.searchParams.has('itemsStock')).toBe(false)
     expect(url.searchParams.get('isPublic')).toBe('true')
@@ -112,16 +120,7 @@ describe('/farming direct access (5.4 regression)', () => {
     await user.click(toggle)
     expect(toggle).not.toBeChecked()
 
-    const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
-    await user.clear(countInput)
-    await user.type(countInput, '2')
-
-    const button = await submitButton()
-    await waitFor(() => expect(button).not.toBeDisabled())
-    await user.click(button)
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    const url = await inputItemCountAndSolve(user, fetchMock)
     expect(url.searchParams.get('isPublic')).toBe('false')
   })
 
@@ -140,16 +139,7 @@ describe('/farming direct access (5.4 regression)', () => {
     expect(toggle).not.toBeChecked()
     expect(toggle).toHaveAttribute('aria-disabled', 'true')
 
-    const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
-    await user.clear(countInput)
-    await user.type(countInput, '2')
-
-    const button = await submitButton()
-    await waitFor(() => expect(button).not.toBeDisabled())
-    await user.click(button)
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    const url = await inputItemCountAndSolve(user, fetchMock)
     expect(url.searchParams.get('isPublic')).toBe('false')
   })
 })
