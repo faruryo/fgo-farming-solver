@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { hasSelectedQuests, hasSubmittableItems, submitSolve } from './submit-solve'
+import { hasSelectedQuests, hasSubmittableItems, parseStoredDefaultPublic, submitSolve } from './submit-solve'
 
 vi.mock('../progress/snapshot-client', () => ({
   saveProgressSnapshot: vi.fn().mockResolvedValue(undefined),
@@ -17,6 +17,33 @@ describe('hasSubmittableItems', () => {
 
   it('is true for a non-empty items query', () => {
     expect(hasSubmittableItems('1a:3')).toBe(true)
+  })
+})
+
+describe('parseStoredDefaultPublic', () => {
+  it('returns true when stored is null (unset)', () => {
+    expect(parseStoredDefaultPublic(null)).toBe(true)
+  })
+
+  it('returns boolean true when stored is "true"', () => {
+    expect(parseStoredDefaultPublic('true')).toBe(true)
+  })
+
+  it('returns boolean false when stored is "false"', () => {
+    expect(parseStoredDefaultPublic('false')).toBe(false)
+  })
+
+  it('returns true when stored is a string like "\\"false\\""', () => {
+    expect(parseStoredDefaultPublic('"false"')).toBe(true)
+  })
+
+  it('returns true when stored is an object or invalid type', () => {
+    expect(parseStoredDefaultPublic('{}')).toBe(true)
+    expect(parseStoredDefaultPublic('123')).toBe(true)
+  })
+
+  it('returns true on malformed JSON', () => {
+    expect(parseStoredDefaultPublic('{invalid')).toBe(true)
   })
 })
 
@@ -45,7 +72,8 @@ describe('submitSolve', () => {
 
   it('on success, writes farming/results, fires ls-sync, saves a progress snapshot, and navigates to the result page', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
-      json: () => Promise.resolve({ id: 'abc-123' }),
+      ok: true,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
     })
     vi.stubGlobal('fetch', fetchMock)
     const onSync = vi.fn()
@@ -54,7 +82,7 @@ describe('submitSolve', () => {
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
     await submitSolve(params, router)
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id')
+    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=true')
     expect(localStorage.getItem('farming/results')).toBe('/farming/results/abc-123')
     expect(onSync).toHaveBeenCalledTimes(1)
     const event = onSync.mock.calls[0][0] as CustomEvent<{ key?: string }>
@@ -64,8 +92,23 @@ describe('submitSolve', () => {
     window.removeEventListener('ls-sync', onSync)
   })
 
+  it('defaults isPublic=true when param is omitted, even if defaultPublic=false is in localStorage', async () => {
+    localStorage.setItem('farming/defaultPublic', 'false')
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
+    await submitSolve(params, router)
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=true')
+  })
+
   it('navigates to /500 when the response has no id (hasId guard fails)', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: () => Promise.resolve({ error: 'boom' }),
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -79,6 +122,7 @@ describe('submitSolve', () => {
 
   it('navigates to /500 when id is present but not a string', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: () => Promise.resolve({ id: 123 }),
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -86,6 +130,36 @@ describe('submitSolve', () => {
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
     await submitSolve(params, router)
 
+    expect(push).toHaveBeenCalledWith('/500')
+  })
+
+  it('navigates to /500 when fetch returns HTTP 401', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ error: 'Unauthorized' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id', isPublic: 'false' })
+    await submitSolve(params, router)
+
+    expect(localStorage.getItem('farming/results')).toBeNull()
+    expect(push).toHaveBeenCalledWith('/500')
+  })
+
+  it('fails closed when private was requested but response indicates isPublic: true', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id', isPublic: 'false' })
+    await submitSolve(params, router)
+
+    expect(localStorage.getItem('farming/results')).toBeNull()
     expect(push).toHaveBeenCalledWith('/500')
   })
 })

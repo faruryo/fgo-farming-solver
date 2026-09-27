@@ -146,7 +146,16 @@
     "progress-compare-today": "今日",
     "progress-compare-yesterday": "昨日",
     "progress-compare-days-ago": "{{count}}日前",
-    "progress-compare-caption": "{{label}}と比べて"
+    "progress-compare-caption": "{{label}}と比べて",
+    "farming-result-visibility-section": "計算結果の公開設定",
+    "farming-result-visibility-label": "結果を公開する",
+    "farming-result-visibility-setting-label": "公開設定",
+    "farming-result-visibility-desc-logged-in": "オフにすると、あなた以外には結果が見えない非公開状態で保存されます。結果画面で後から切り替えることも可能です。",
+    "farming-result-visibility-desc-anonymous": "※ログインしていない場合、結果は常に公開されます。非公開で保存するにはログインしてください。",
+    "farming-result-status-public": "公開中",
+    "farming-result-status-private": "非公開",
+    "farming-result-visibility-toggle-aria": "公開・非公開の切り替え",
+    "farming-result-visibility-update-error": "公開設定の更新に失敗しました"
   },
   "items": {
     "title": "{{name}}のドロップ"

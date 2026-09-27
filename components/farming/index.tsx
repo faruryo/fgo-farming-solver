@@ -2,8 +2,10 @@
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
@@ -106,6 +108,15 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     setSelected
   )
 
+  const { status } = useSession()
+  const [defaultPublic, setDefaultPublic] = useLocalStorage<boolean>(
+    STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC,
+    true,
+    {
+      onGet: (val: unknown) => (typeof val === 'boolean' ? val : true),
+    }
+  )
+
   useEffect(() => {
     if (!searchParams) return
     const query = Object.fromEntries(searchParams.entries())
@@ -141,11 +152,22 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       setIsLoading.on()
-      const query = inputToQuery({ itemCounts, checkedQuests })
-      const params = new URLSearchParams({ ...query, fields: 'id' })
-      await submitSolve(params, router)
+      try {
+        const query = inputToQuery({ itemCounts, checkedQuests })
+        const isPublic = status === 'authenticated' ? defaultPublic : true
+        const params = new URLSearchParams({
+          ...query,
+          fields: 'id',
+          isPublic: String(isPublic),
+        })
+        await submitSolve(params, router)
+      } catch (e) {
+        console.error('[farming] solve submission failed:', e)
+      } finally {
+        setIsLoading.off()
+      }
     },
-    [checkedQuests, itemCounts, router, setIsLoading]
+    [checkedQuests, defaultPublic, itemCounts, router, setIsLoading, status]
   )
 
   const onReset = useCallback(() => {
@@ -216,6 +238,37 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                 />
               </div>
             </fieldset>
+            <fieldset style={{ width: '100%' }}>
+              <legend className="c-settings-section-label mb-4 flex">
+                {t('farming-result-visibility-section', '計算結果の公開設定')}
+              </legend>
+              <div className="c-card w-full p-5 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">
+                    {t('farming-result-visibility-label', '結果を公開する')}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {status !== 'unauthenticated'
+                      ? t(
+                          'farming-result-visibility-desc-logged-in',
+                          'オフにすると、あなた以外には結果が見えない非公開状態で保存されます。結果画面で後から切り替えることも可能です。'
+                        )
+                      : t(
+                          'farming-result-visibility-desc-anonymous',
+                          '※ログインしていない場合、結果は常に公開されます。非公開で保存するにはログインしてください。'
+                        )}
+                  </div>
+                </div>
+                <Switch
+                  checked={status === 'unauthenticated' ? true : defaultPublic}
+                  onCheckedChange={setDefaultPublic}
+                  disabled={status !== 'authenticated'}
+                  size="sm"
+                  className="gold-switch"
+                  aria-label={t('farming-result-visibility-label', '結果を公開する')}
+                />
+              </div>
+            </fieldset>
             {!hasSelectedQuests(checkedQuests) && (
               <Alert variant="destructive">
                 <AlertCircle />
@@ -231,6 +284,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   type="submit"
                   disabled={
                     isLoading ||
+                    status === 'loading' ||
                     !hasSubmittableItems(itemsQuery) ||
                     !hasSelectedQuests(checkedQuests)
                   }

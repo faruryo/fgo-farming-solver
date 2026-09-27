@@ -43,6 +43,7 @@ export const STORAGE_KEYS = {
   DASHBOARD_RECOMMENDED_QUEST_SORT_MODE: 'dashboard.recommendedQuest.sortMode',
   DASHBOARD_HIDE_COMPLETED_EVENTS: 'dashboard.eventSection.hideCompleted',
   EVENTS_GOLDEN_FRUIT: 'events/goldenFruit',
+  FARMING_RESULT_DEFAULT_PUBLIC: 'farming/defaultPublic',
 
   // Quest efficiency filters
   QUEST_EFFICIENCY_SHORTAGE_ONLY: 'quests/efficiency/shortageOnly',

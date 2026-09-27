@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS farming_results (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
   quest_selection TEXT,       -- JSON string. NULL = pre-feature rows.
-  batch_id TEXT               -- UUID shared by A/B dual-goal pair. NULL = single-goal row.
+  batch_id TEXT,              -- UUID shared by A/B dual-goal pair. NULL = single-goal row.
+  is_public INTEGER NOT NULL DEFAULT 1 -- 1 = public, 0 = private
 );
 
 CREATE INDEX IF NOT EXISTS idx_results_user_id ON farming_results(user_id);

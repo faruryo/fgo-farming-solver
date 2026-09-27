@@ -46,12 +46,32 @@ const itemMapsEqual = (a: Record<string, number>, b: Record<string, number>): bo
   return keysA.every((k) => a[k] === b[k])
 }
 
+export type VisibilityResult =
+  | { ok: true; isPublic: number }
+  | { ok: false; error: string }
+
+/** 計算結果の公開設定（1=公開, 0=非公開）を決定する。未ログイン時の非公開要求は fail-closed でエラー。 */
+export const resolveSolveVisibility = (
+  userId: string,
+  isPublicParam: string | null
+): VisibilityResult => {
+  const wantsPrivate = isPublicParam === 'false' || isPublicParam === '0'
+  if (wantsPrivate) {
+    if (userId === 'anonymous') {
+      return { ok: false, error: 'Unauthorized: Private results require authentication' }
+    }
+    return { ok: true, isPublic: 0 }
+  }
+  return { ok: true, isPublic: 1 }
+}
+
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams
   const itemsRaw = searchParams.get('items') || ''
   const itemsStockRaw = searchParams.get('itemsStock') || ''
   const questsRaw = searchParams.get('quests') || ''
   const apCoefficients = searchParams.get('ap_coefficients') || ''
+  const isPublicParam = searchParams.get('isPublic')
 
   const itemCounts = parseItemCounts(itemsRaw)
   const itemCountsStock = itemsStockRaw ? parseItemCounts(itemsStockRaw) : null
@@ -88,13 +108,18 @@ export async function GET(req: NextRequest) {
 
   const questSelectionJson = buildQuestSelection(drops.quests, allowedQuests)
   const userId = session?.user?.id || 'anonymous'
+  const visibility = resolveSolveVisibility(userId, isPublicParam)
+  if (!visibility.ok) {
+    return Response.json({ error: visibility.error }, { status: 401 })
+  }
+  const isPublic = visibility.isPublic
 
   if (hasBatch) {
     // 2目標(目標A=必要分 / 目標B=ストック込み)の同時計算・2行保存。
     const paramsA: Params = { objective: 'both', items: itemCounts, quests: allowedQuests }
     const paramsB: Params = {
       objective: 'both',
-      items: itemCountsStock!,
+      items: itemCountsStock,
       quests: allowedQuests,
       stockIncluded: true,
     }
@@ -114,7 +139,7 @@ export async function GET(req: NextRequest) {
       try {
         await db.batch([
           db.prepare(
-            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             idA, userId, 'both',
             JSON.stringify(itemCounts),
@@ -122,9 +147,10 @@ export async function GET(req: NextRequest) {
             JSON.stringify(resultA),
             questSelectionJson,
             batchId,
+            isPublic,
           ),
           db.prepare(
-            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             idB, userId, 'both',
             JSON.stringify(itemCountsStock),
@@ -132,6 +158,7 @@ export async function GET(req: NextRequest) {
             JSON.stringify(resultB),
             questSelectionJson,
             batchId,
+            isPublic,
           ),
         ])
       } catch (e) {
@@ -140,7 +167,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 着地は目標A行(進捗アンカー)。batchId をレスポンスに含める。
-    return Response.json({ ...resultA, id: idA, batchId })
+    return Response.json({ ...resultA, id: idA, batchId, isPublic: isPublic === 1 })
   }
 
   // 従来どおり: 単独目標(stockEnabled=OFF / B==A)は batch_id=NULL の1行。
@@ -151,7 +178,7 @@ export async function GET(req: NextRequest) {
   if (db) {
     try {
       await db.prepare(
-        'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
       )
         .bind(
           id,
@@ -161,7 +188,8 @@ export async function GET(req: NextRequest) {
           result.ap.total_ap,
           result.lap.total_lap,
           JSON.stringify(result),
-          questSelectionJson
+          questSelectionJson,
+          isPublic,
         )
         .run()
     } catch (e) {
@@ -169,5 +197,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return Response.json({ ...result, id })
+  return Response.json({ ...result, id, isPublic: isPublic === 1 })
 }

@@ -15,9 +15,15 @@ import {
   stubFetch,
   submitButton,
 } from '../../lib/farming/solve-request-test-utils'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
+}))
+
+const mockSession = vi.fn().mockReturnValue({ data: null, status: 'unauthenticated' })
+vi.mock('next-auth/react', () => ({
+  useSession: () => mockSession(),
 }))
 
 const push = vi.fn()
@@ -67,23 +73,111 @@ describe('/farming direct access (5.4 regression)', () => {
     ).toBeInTheDocument()
   })
 
-  it('submits manually entered counts to /api/solve without itemsStock (5.5)', async () => {
-    const fetchMock = stubFetch()
-    const user = userEvent.setup()
-
-    render(<Index items={items} quests={quests} />)
-
+  async function inputItemCountAndSolve(
+    user: ReturnType<typeof userEvent.setup>,
+    fetchMock: ReturnType<typeof stubFetch>,
+    count = '2'
+  ) {
     const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
     await user.clear(countInput)
-    await user.type(countInput, '3')
+    await user.type(countInput, count)
 
     const button = await submitButton()
     await waitFor(() => expect(button).not.toBeDisabled())
     await user.click(button)
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const url = solveCallUrl(fetchMock)
+    return solveCallUrl(fetchMock)
+  }
+
+  it('submits manually entered counts to /api/solve without itemsStock (5.5)', async () => {
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const url = await inputItemCountAndSolve(user, fetchMock, '3')
     expect(url.searchParams.get('items')).toBe('100:3')
     expect(url.searchParams.has('itemsStock')).toBe(false)
+    expect(url.searchParams.get('isPublic')).toBe('true')
+  })
+
+  function setupAuthenticatedFarming() {
+    mockSession.mockReturnValue({
+      data: { user: { id: 'test-user', name: 'Tester' } },
+      status: 'authenticated',
+    })
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+    render(<Index items={items} quests={quests} />)
+    const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    return { fetchMock, user, toggle }
+  }
+
+  it('allows logged-in user to toggle default visibility to private and submits isPublic=false', async () => {
+    const { fetchMock, user, toggle } = setupAuthenticatedFarming()
+    expect(toggle).not.toBeDisabled()
+    expect(toggle).toBeChecked()
+
+    // Toggle off
+    await user.click(toggle)
+    expect(toggle).not.toBeChecked()
+
+    const url = await inputItemCountAndSolve(user, fetchMock)
+    expect(url.searchParams.get('isPublic')).toBe('false')
+  })
+
+  it('disables submit when session status is loading', async () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, 'false')
+    mockSession.mockReturnValue({
+      data: null,
+      status: 'loading',
+    })
+    render(<Index items={items} quests={quests} />)
+
+    const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    expect(toggle).not.toBeChecked()
+    expect(toggle).toHaveAttribute('aria-disabled', 'true')
+    expect(
+      screen.getByText(/オフにすると、あなた以外には結果が見えない非公開状態で保存されます/)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/ログインしていない場合、結果は常に公開されます/)
+    ).not.toBeInTheDocument()
+
+    const submitBtn = screen.getByRole('button', { name: /周回数を求める/ })
+    expect(submitBtn).toBeDisabled()
+  })
+
+  it('submits isPublic=true when unauthenticated even if stored defaultPublic is false', async () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, 'false')
+    mockSession.mockReturnValue({
+      data: null,
+      status: 'unauthenticated',
+    })
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    expect(toggle).toBeChecked()
+    expect(toggle).toHaveAttribute('aria-disabled', 'true')
+    expect(
+      screen.getByText(/ログインしていない場合、結果は常に公開されます/)
+    ).toBeInTheDocument()
+
+    const url = await inputItemCountAndSolve(user, fetchMock)
+    expect(url.searchParams.get('isPublic')).toBe('true')
+  })
+
+  it('falls back to defaultPublic=true when stored value is non-boolean like "\\"false\\""', async () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, '"false"')
+    const { fetchMock, user, toggle } = setupAuthenticatedFarming()
+
+    await waitFor(() => expect(toggle).toBeChecked())
+
+    const url = await inputItemCountAndSolve(user, fetchMock)
+    expect(url.searchParams.get('isPublic')).toBe('true')
   })
 })

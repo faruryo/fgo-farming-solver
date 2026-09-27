@@ -11,12 +11,93 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
-    const result = await getResult(id)
+    const [{ id }, session] = await Promise.all([params, auth()])
+    const result = await getResult(id, session?.user?.id)
     return NextResponse.json(result)
   } catch (e) {
     console.error('Failed to get result:', e)
     return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+}
+
+async function updateResultVisibility(
+  db: D1Database,
+  id: string,
+  userId: string,
+  isPublic: boolean
+): Promise<boolean> {
+  const target = await db
+    .prepare('SELECT batch_id, user_id FROM farming_results WHERE id = ?')
+    .bind(id)
+    .first<{ batch_id: string | null; user_id: string }>()
+
+  if (!target || target.user_id !== userId) {
+    return false
+  }
+
+  const newVisibility = isPublic ? 1 : 0
+  const statement = target.batch_id
+    ? db
+        .prepare(
+          'UPDATE farming_results SET is_public = ? WHERE batch_id = ? AND user_id = ?'
+        )
+        .bind(newVisibility, target.batch_id, userId)
+    : db
+        .prepare(
+          'UPDATE farming_results SET is_public = ? WHERE id = ? AND user_id = ?'
+        )
+        .bind(newVisibility, id, userId)
+
+  const result = await statement.run()
+  return result.meta.changes > 0
+}
+
+async function getD1Database(): Promise<D1Database | undefined> {
+  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
+    env: CloudflareEnv
+  }
+  return env?.DB || (process.env as unknown as CloudflareEnv).DB
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  let body: { isPublic?: boolean }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  if (!body || typeof body !== 'object' || typeof body.isPublic !== 'boolean') {
+    return NextResponse.json({ error: 'isPublic must be a boolean' }, { status: 400 })
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    return NextResponse.json({ ok: true, isPublic: body.isPublic })
+  }
+
+  const db = await getD1Database()
+  if (!db) {
+    return NextResponse.json({ error: 'Database not available' }, { status: 500 })
+  }
+
+  try {
+    const { id } = await params
+    const updated = await updateResultVisibility(db, id, session.user.id, body.isPublic)
+    if (!updated) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+    }
+    return NextResponse.json({ ok: true, isPublic: body.isPublic })
+  } catch (e) {
+    console.error('Failed to update result visibility:', e)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -36,11 +117,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { env } = (await getCloudflareContext({ async: true })) as unknown as {
-    env: CloudflareEnv
-  }
-  const db = env?.DB || (process.env as unknown as CloudflareEnv).DB
-
+  const db = await getD1Database()
   if (!db) {
     return NextResponse.json({ error: 'Database not available' }, { status: 500 })
   }

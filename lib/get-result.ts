@@ -7,15 +7,55 @@ export type GetResultPayload = (Result | BothResult) & {
   batchId?: string | null
   /** 同一 batch_id を持つ兄弟行(B行=ストック込み)の result_data。batch_id=NULL なら null。 */
   siblingResult?: BothResult | null
+  isOwner?: boolean
+  isPublic?: boolean
 }
 
-export const getResult = async (id: string): Promise<GetResultPayload> => {
+export const canViewResult = (
+  isPublic: boolean,
+  ownerId: string,
+  currentUserId?: string | null
+): boolean => {
+  if (isPublic) return true
+  if (currentUserId && ownerId === currentUserId) return true
+  return false
+}
+
+type FarmingResultRow = {
+  result_data: string
+  created_at: string
+  batch_id: string | null
+  user_id: string
+  is_public: number | null
+}
+
+const fetchSiblingResult = async (
+  db: D1Database,
+  batchId: string | null,
+  excludeId: string
+): Promise<BothResult | null> => {
+  if (!batchId) return null
+  const sibling = await db
+    .prepare(
+      'SELECT result_data FROM farming_results WHERE batch_id = ? AND id != ?'
+    )
+    .bind(batchId, excludeId)
+    .first<{ result_data: string }>()
+  return sibling ? (JSON.parse(sibling.result_data) as BothResult) : null
+}
+
+export const getResult = async (
+  id: string,
+  currentUserId?: string | null
+): Promise<GetResultPayload> => {
   // 1. Try local mock (dev)
   const mock = await readLocalJson<Result | BothResult>('mocks/result.json')
   if (mock) {
     return {
       ...mock,
       createdAt: new Date().toISOString(),
+      isOwner: Boolean(currentUserId),
+      isPublic: true,
     }
   }
 
@@ -31,35 +71,31 @@ export const getResult = async (id: string): Promise<GetResultPayload> => {
     }
 
     const row = await ctx.env.DB.prepare(
-      'SELECT result_data, created_at, batch_id FROM farming_results WHERE id = ?'
+      'SELECT result_data, created_at, batch_id, user_id, is_public FROM farming_results WHERE id = ?'
     )
       .bind(id)
-      .first<{ result_data: string; created_at: string; batch_id: string | null }>()
+      .first<FarmingResultRow>()
 
     if (!row) {
       throw new Error(`Result not found for id ${id}`)
     }
 
-    const parsed = JSON.parse(row.result_data) as Result | BothResult
-
-    // batch_id がある場合、兄弟行(B行=ストック込み)を取得して返す。
-    let siblingResult: BothResult | null = null
-    if (row.batch_id) {
-      const sibling = await ctx.env.DB.prepare(
-        'SELECT result_data FROM farming_results WHERE batch_id = ? AND id != ? AND deleted_at IS NULL'
-      )
-        .bind(row.batch_id, id)
-        .first<{ result_data: string }>()
-      if (sibling) {
-        siblingResult = JSON.parse(sibling.result_data) as BothResult
-      }
+    const isPublic = row.is_public !== 0
+    if (!canViewResult(isPublic, row.user_id, currentUserId)) {
+      throw new Error(`Result not found for id ${id}`)
     }
+
+    const isOwner = Boolean(currentUserId && row.user_id === currentUserId)
+    const parsed = JSON.parse(row.result_data) as Result | BothResult
+    const siblingResult = await fetchSiblingResult(ctx.env.DB, row.batch_id, id)
 
     return {
       ...parsed,
       createdAt: row.created_at,
       batchId: row.batch_id ?? null,
       siblingResult,
+      isOwner,
+      isPublic,
     }
   } catch (e) {
     throw e instanceof Error ? e : new Error(String(e))
