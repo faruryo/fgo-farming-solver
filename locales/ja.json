@@ -635,7 +635,7 @@
     "no-bond-data": "絆データ未取得のため見積もれません",
     "observed-per-run": "1周の獲得絆",
     "observed-placeholder": "リザルト画面の値",
-    "observed-teapot-run": "ティーポットを使った周回の値",
+    "observed-teapot-run": "ティーポット使用時の値",
     "per-run": "1周の獲得絆",
     "per-run-estimated": "1周の獲得絆(推定)",
     "plan-achieved": "周回予定 {{planned}}周の予定内で達成",

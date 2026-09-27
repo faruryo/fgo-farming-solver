@@ -6,6 +6,7 @@ import {
   parseBondTrackerState,
   reconcileEntry,
   withCurrentLevel,
+  withObservedPerRun,
   type BondTrackerEntry,
 } from './state'
 
@@ -117,5 +118,17 @@ describe('filterQuestCandidates', () => {
       ['c', 3],
     ])
     expect(filterQuestCandidates(list, '大橋', 'a').map(x => x.rank)).toEqual([1, 3])
+  })
+})
+
+describe('withObservedPerRun', () => {
+  it('resets observedTeapotRun when observedPerRun becomes 0', () => {
+    const entry = { ...ENTRY, observedTeapotRun: true }
+    expect(withObservedPerRun(entry, 0)).toEqual({ ...entry, observedPerRun: 0, observedTeapotRun: false })
+  })
+
+  it('keeps observedTeapotRun when observedPerRun stays positive', () => {
+    const entry = { ...ENTRY, observedTeapotRun: true }
+    expect(withObservedPerRun(entry, 6000)).toEqual({ ...entry, observedPerRun: 6000, observedTeapotRun: true })
   })
 })

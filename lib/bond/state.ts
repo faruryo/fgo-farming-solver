@@ -82,6 +82,13 @@ export const reconcileEntry = (
   }
 }
 
+/** 1周の獲得絆が0になったら、無関係になるティーポットのフラグも一緒に落とす。 */
+export const withObservedPerRun = (entry: BondTrackerEntry, observedPerRun: number): BondTrackerEntry => ({
+  ...entry,
+  observedPerRun,
+  observedTeapotRun: observedPerRun > 0 && entry.observedTeapotRun,
+})
+
 /** 現在Lvを変えたら「次のLvまで」をそのLvの必要増分(満額)に戻す。絆データが無ければ入力値を残す。 */
 export const withCurrentLevel = (
   entry: BondTrackerEntry,

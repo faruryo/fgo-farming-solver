@@ -27,7 +27,7 @@ import {
 } from '../../lib/bond/estimate'
 import { splitByPlan } from '../../lib/bond/plan'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
-import { filterQuestCandidates, withCurrentLevel, type BondTrackerEntry } from '../../lib/bond/state'
+import { filterQuestCandidates, withCurrentLevel, withObservedPerRun, type BondTrackerEntry } from '../../lib/bond/state'
 import { getClassName } from '../../lib/class-names'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
@@ -227,6 +227,39 @@ function BaseNote() {
   )
 }
 
+function ObservedPerRunInput({
+  entry,
+  questBase,
+  remeasure,
+}: Readonly<{
+  entry: BondTrackerEntry
+  questBase: number | undefined
+  remeasure: (patch: Partial<BondTrackerEntry>) => void
+}>) {
+  const { t } = useTranslation('bond')
+  const id = `bond-${entry.servantId}-observed`
+  return (
+    <div className="flex flex-col gap-1">
+      <CountInput
+        id={id}
+        label={t('observed-per-run', '1周の獲得絆')}
+        placeholder={questBase ? String(questBase) : t('observed-placeholder', 'リザルト画面の値')}
+        value={entry.observedPerRun}
+        onChange={observedPerRun => remeasure(withObservedPerRun(entry, observedPerRun))}
+      />
+      {entry.observedPerRun > 0 && (
+        <label className="flex items-center gap-2 whitespace-nowrap">
+          <Checkbox
+            checked={entry.observedTeapotRun}
+            onCheckedChange={checked => remeasure({ observedTeapotRun: Boolean(checked) })}
+          />
+          {t('observed-teapot-run', 'ティーポット使用時の値')}
+        </label>
+      )}
+    </div>
+  )
+}
+
 function BondStateInputs({
   entry,
   growth,
@@ -267,23 +300,8 @@ function BondStateInputs({
           to={MAX_TARGET_BOND_LEVEL}
           onChange={targetLevel => onChange({ ...entry, targetLevel })}
         />
-        <CountInput
-          id={id('observed')}
-          label={t('observed-per-run', '1周の獲得絆')}
-          placeholder={
-            questBase ? String(questBase) : t('observed-placeholder', 'リザルト画面の値')
-          }
-          value={entry.observedPerRun}
-          onChange={observedPerRun => remeasure({ observedPerRun })}
-        />
+        <ObservedPerRunInput entry={entry} questBase={questBase} remeasure={remeasure} />
       </div>
-      <label className="flex items-center gap-2 text-xs">
-        <Checkbox
-          checked={entry.observedTeapotRun}
-          onCheckedChange={checked => remeasure({ observedTeapotRun: Boolean(checked) })}
-        />
-        {t('observed-teapot-run', 'ティーポットを使った周回の値')}
-      </label>
       {entry.observedPerRun === 0 && <BaseNote />}
     </>
   )
