@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildMaterialCatalog,
+  isValidBondGrowth,
   materialCatalogFingerprint,
   validateMaterialCatalog,
 } from './material-catalog'
@@ -258,5 +259,55 @@ describe('Material Catalog', () => {
     expect(materialCatalogFingerprint(first)).toBe(
       materialCatalogFingerprint(second),
     )
+  })
+})
+
+describe('isValidBondGrowth', () => {
+  it.each([
+    ['monotonic 16 levels', Array.from({ length: 16 }, (_, i) => (i + 1) * 1000), true],
+    ['single level', [1000], true],
+    ['equal neighbours are non-decreasing', [1000, 1000, 2000], true],
+    ['empty array', [], false],
+    ['not an array', undefined, false],
+    ['zero', [0, 1000], false],
+    ['negative value', [1000, -1], false],
+    ['NaN', [1000, Number.NaN], false],
+    ['Infinity', [1000, Number.POSITIVE_INFINITY], false],
+    ['non-number', [1000, '2000'], false],
+    ['decreasing', [1000, 3000, 2000], false],
+  ])('%s', (_label, value, expected) => {
+    expect(isValidBondGrowth(value)).toBe(expected)
+  })
+})
+
+describe('Material Catalog bondGrowth', () => {
+  const withBond = (id: number, bondGrowth: unknown) =>
+    ({
+      ...makeServant({
+        id,
+        collectionNo: id,
+        extraAssets: { faces: { ascension: { '0': 'face.png' } }, charaGraph: {} },
+      }),
+      bondGrowth,
+    }) as ReturnType<typeof makeServant>
+
+  it('distills valid bondGrowth and omits invalid values without rejecting the catalog', () => {
+    const catalog = buildMaterialCatalog({
+      servants: [withBond(1, [1000, 3000]), withBond(2, [1000, -5]), withBond(3, undefined)],
+      materials: { 1: makeCompleteMaterials(), 2: makeCompleteMaterials(), 3: makeCompleteMaterials() },
+      items: [100, 200, 300, 400, 500].map(id => makeItem({ id })),
+      sources: { niceServant: {}, niceItem: {} },
+      updatedAt: 1,
+    })
+    expect(catalog.servants[0].bondGrowth).toEqual([1000, 3000])
+    expect(catalog.servants[1]).not.toHaveProperty('bondGrowth')
+    expect(catalog.servants[2]).not.toHaveProperty('bondGrowth')
+    expect(validateMaterialCatalog(catalog)).toEqual({ ok: true })
+  })
+
+  it('keeps bondGrowth when rebuilding from an already distilled catalog', () => {
+    const first = createCatalog(withBond(1, [1000, 3000]))
+    const rebuilt = buildMaterialCatalog({ ...first, servants: first.servants })
+    expect(rebuilt.servants[0].bondGrowth).toEqual([1000, 3000])
   })
 })

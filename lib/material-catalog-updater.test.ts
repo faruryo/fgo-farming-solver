@@ -69,4 +69,19 @@ describe('updateMaterialCatalog', () => {
     expect(result.catalog?.items.map(item => item.id)).toContain(999)
     expect(fetchSource).toHaveBeenNthCalledWith(3, 'items', {})
   })
+
+  it.each([
+    ['without bondGrowth', previous, {}],
+    ['with bondGrowth', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }, { etag: 'servant-v1' }],
+  ])('refetches nice_servant unconditionally only when the previous catalog has no bondGrowth (%s)', async (_label, prev, expectedValidator) => {
+    const fetchSource = vi.fn(async (url: string, validator: SourceValidator) => {
+      if (url === 'servants' && !validator.etag) {
+        return { status: 200 as const, value: [{ ...servant, ...makeCompleteMaterials(), bondGrowth: [1000, 3000] }], validator: { etag: 'servant-v1' } }
+      }
+      return { status: 304 as const, validator: {} }
+    })
+    const result = await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', now: () => 2 })
+    expect(fetchSource).toHaveBeenCalledWith('servants', expectedValidator)
+    if (!('etag' in expectedValidator)) expect(result.catalog?.servants[0].bondGrowth).toEqual([1000, 3000])
+  })
 })

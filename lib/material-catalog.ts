@@ -15,7 +15,7 @@ export type SourceValidator = { etag?: string; lastModified?: string }
 export type MaterialCatalogServant = Pick<
   NiceServant,
   'id' | 'name' | 'className' | 'collectionNo' | 'rarity'
-> & { face: string | null }
+> & { face: string | null; bondGrowth?: number[] }
 
 export type MaterialCatalogItem = Pick<Item, 'id' | 'name' | 'icon'>
 
@@ -64,6 +64,15 @@ export const materialCatalogFace = (servant: NiceServant): string | null => {
   )
 }
 
+/** 1要素以上・各要素が有限の正値・単調非減少のときだけ有効な絆Lv別累積必要ポイント。 */
+export const isValidBondGrowth = (value: unknown): value is number[] =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every(
+    (point, index) =>
+      isFinitePositive(point) && (index === 0 || point >= (value[index - 1] as number)),
+  )
+
 export const buildMaterialCatalog = ({
   servants,
   materials,
@@ -88,6 +97,9 @@ export const buildMaterialCatalog = ({
     rarity: servant.rarity,
     face:
       'extraAssets' in servant ? materialCatalogFace(servant) : servant.face,
+    ...(isValidBondGrowth(servant.bondGrowth)
+      ? { bondGrowth: [...servant.bondGrowth] }
+      : {}),
   })),
   materials,
   items: items.map(({ id, name, icon }) => ({ id, name, icon })),

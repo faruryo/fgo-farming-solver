@@ -35,6 +35,7 @@ describe('storage-keys', () => {
       'classScore',
       'todoState',
       'todoSettings',
+      'bondTracker',
     ])
   })
 
