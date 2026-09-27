@@ -108,7 +108,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     setSelected
   )
 
-  const { data: session } = useSession()
+  const { status } = useSession()
   const [defaultPublic, setDefaultPublic] = useLocalStorage<boolean>(
     STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC,
     true
@@ -237,7 +237,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                     {t('farming-result-visibility-label', '結果を公開する')}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {session?.user
+                    {status === 'authenticated'
                       ? t(
                           'farming-result-visibility-desc-logged-in',
                           'オフにすると、あなた以外には結果が見えない非公開状態で保存されます。結果画面で後から切り替えることも可能です。'
@@ -249,9 +249,9 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   </div>
                 </div>
                 <Switch
-                  checked={session?.user ? defaultPublic : true}
+                  checked={status === 'unauthenticated' ? true : defaultPublic}
                   onCheckedChange={setDefaultPublic}
-                  disabled={!session?.user}
+                  disabled={status !== 'authenticated'}
                   size="sm"
                   className="gold-switch"
                   aria-label={t('farming-result-visibility-label', '結果を公開する')}

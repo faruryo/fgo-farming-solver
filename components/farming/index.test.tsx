@@ -136,6 +136,10 @@ describe('/farming direct access (5.4 regression)', () => {
 
     render(<Index items={items} quests={quests} />)
 
+    const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    expect(toggle).not.toBeChecked()
+    expect(toggle).toHaveAttribute('aria-disabled', 'true')
+
     const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
     await user.clear(countInput)
     await user.type(countInput, '2')
