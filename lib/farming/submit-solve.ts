@@ -45,8 +45,19 @@ export const submitSolve = async (
     params.set('isPublic', String(parseStoredDefaultPublic(stored)))
   }
   const url = `/api/solve?${params.toString()}`
-  const result = await fetch(url).then((res) => res.json() as unknown)
+  const res = await fetch(url)
+  if (!res.ok) {
+    router.push('/500')
+    return
+  }
+  const result: unknown = await res.json()
   if (hasId(result) && typeof result.id == 'string') {
+    const isPublic = (result as { isPublic?: boolean }).isPublic
+    if (params.get('isPublic') === 'false' && isPublic === true) {
+      router.push('/500')
+      return
+    }
+
     const resultUrl = `/farming/results/${result.id}`
     localStorage.setItem(STORAGE_KEYS.FARMING_RESULTS, resultUrl)
     // Notify change tracking (dirty metadata / auto-save) — direct

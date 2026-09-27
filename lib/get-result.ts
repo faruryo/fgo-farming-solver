@@ -54,7 +54,7 @@ export const getResult = async (
     return {
       ...mock,
       createdAt: new Date().toISOString(),
-      isOwner: true,
+      isOwner: Boolean(currentUserId),
       isPublic: true,
     }
   }

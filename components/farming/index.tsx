@@ -152,14 +152,22 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       setIsLoading.on()
-      const query = inputToQuery({ itemCounts, checkedQuests })
-      const params = new URLSearchParams({
-        ...query,
-        fields: 'id',
-      })
-      await submitSolve(params, router)
+      try {
+        const query = inputToQuery({ itemCounts, checkedQuests })
+        const isPublic = status === 'unauthenticated' ? true : defaultPublic
+        const params = new URLSearchParams({
+          ...query,
+          fields: 'id',
+          isPublic: String(isPublic),
+        })
+        await submitSolve(params, router)
+      } catch (e) {
+        console.error('[farming] solve submission failed:', e)
+      } finally {
+        setIsLoading.off()
+      }
     },
-    [checkedQuests, itemCounts, router, setIsLoading]
+    [checkedQuests, defaultPublic, itemCounts, router, setIsLoading, status]
   )
 
   const onReset = useCallback(() => {

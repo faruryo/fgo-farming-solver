@@ -52,13 +52,16 @@ describe('getResult', () => {
 
   it('returns createdAt and isPublic when mock file is present', async () => {
     mockReadLocalJson.mockResolvedValue(minimalResult)
-    const result = await getResult('test-id')
+    const result = await getResult('test-id', 'test-user')
     expect(result.createdAt).toBeDefined()
     expect(typeof result.createdAt).toBe('string')
     expect(isNaN(new Date(result.createdAt!).getTime())).toBe(false)
     expect(result.isPublic).toBe(true)
     expect(result.isOwner).toBe(true)
     expect((result as Record<string, unknown>).userId).toBeUndefined()
+
+    const unauthed = await getResult('test-id')
+    expect(unauthed.isOwner).toBe(false)
   })
 
   it('spreads mock result data alongside createdAt', async () => {

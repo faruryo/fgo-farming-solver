@@ -72,7 +72,8 @@ describe('submitSolve', () => {
 
   it('on success, writes farming/results, fires ls-sync, saves a progress snapshot, and navigates to the result page', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
-      json: () => Promise.resolve({ id: 'abc-123' }),
+      ok: true,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
     })
     vi.stubGlobal('fetch', fetchMock)
     const onSync = vi.fn()
@@ -94,7 +95,8 @@ describe('submitSolve', () => {
   it('respects stored defaultPublic when param is omitted', async () => {
     localStorage.setItem('farming/defaultPublic', 'false')
     const fetchMock = vi.fn().mockResolvedValue({
-      json: () => Promise.resolve({ id: 'abc-123' }),
+      ok: true,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: false }),
     })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -107,7 +109,8 @@ describe('submitSolve', () => {
   it('falls back to isPublic=true when stored defaultPublic is not a boolean', async () => {
     localStorage.setItem('farming/defaultPublic', '"false"')
     const fetchMock = vi.fn().mockResolvedValue({
-      json: () => Promise.resolve({ id: 'abc-123' }),
+      ok: true,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
     })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -119,6 +122,7 @@ describe('submitSolve', () => {
 
   it('navigates to /500 when the response has no id (hasId guard fails)', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: () => Promise.resolve({ error: 'boom' }),
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -132,6 +136,7 @@ describe('submitSolve', () => {
 
   it('navigates to /500 when id is present but not a string', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
       json: () => Promise.resolve({ id: 123 }),
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -139,6 +144,36 @@ describe('submitSolve', () => {
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
     await submitSolve(params, router)
 
+    expect(push).toHaveBeenCalledWith('/500')
+  })
+
+  it('navigates to /500 when fetch returns HTTP 401', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ error: 'Unauthorized' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id', isPublic: 'false' })
+    await submitSolve(params, router)
+
+    expect(localStorage.getItem('farming/results')).toBeNull()
+    expect(push).toHaveBeenCalledWith('/500')
+  })
+
+  it('fails closed when private was requested but response indicates isPublic: true', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id', isPublic: 'false' })
+    await submitSolve(params, router)
+
+    expect(localStorage.getItem('farming/results')).toBeNull()
     expect(push).toHaveBeenCalledWith('/500')
   })
 })

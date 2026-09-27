@@ -46,14 +46,23 @@ const itemMapsEqual = (a: Record<string, number>, b: Record<string, number>): bo
   return keysA.every((k) => a[k] === b[k])
 }
 
-/** 計算結果の公開設定（1=公開, 0=非公開）を決定する。未ログイン時は常に公開（1）。 */
+export type VisibilityResult =
+  | { ok: true; isPublic: number }
+  | { ok: false; error: string }
+
+/** 計算結果の公開設定（1=公開, 0=非公開）を決定する。未ログイン時の非公開要求は fail-closed でエラー。 */
 export const resolveSolveVisibility = (
   userId: string,
   isPublicParam: string | null
-): number => {
-  if (userId === 'anonymous') return 1
-  if (isPublicParam === 'false' || isPublicParam === '0') return 0
-  return 1
+): VisibilityResult => {
+  const wantsPrivate = isPublicParam === 'false' || isPublicParam === '0'
+  if (wantsPrivate) {
+    if (userId === 'anonymous') {
+      return { ok: false, error: 'Unauthorized: Private results require authentication' }
+    }
+    return { ok: true, isPublic: 0 }
+  }
+  return { ok: true, isPublic: 1 }
 }
 
 export async function GET(req: NextRequest) {
@@ -99,7 +108,11 @@ export async function GET(req: NextRequest) {
 
   const questSelectionJson = buildQuestSelection(drops.quests, allowedQuests)
   const userId = session?.user?.id || 'anonymous'
-  const isPublic = resolveSolveVisibility(userId, isPublicParam)
+  const visibility = resolveSolveVisibility(userId, isPublicParam)
+  if (!visibility.ok) {
+    return Response.json({ error: visibility.error }, { status: 401 })
+  }
+  const isPublic = visibility.isPublic
 
   if (hasBatch) {
     // 2目標(目標A=必要分 / 目標B=ストック込み)の同時計算・2行保存。
