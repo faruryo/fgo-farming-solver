@@ -102,17 +102,20 @@ describe('/farming direct access (5.4 regression)', () => {
     expect(url.searchParams.get('isPublic')).toBe('true')
   })
 
-  it('allows logged-in user to toggle default visibility to private and submits isPublic=false', async () => {
+  function setupAuthenticatedFarming() {
     mockSession.mockReturnValue({
       data: { user: { id: 'test-user', name: 'Tester' } },
       status: 'authenticated',
     })
     const fetchMock = stubFetch()
     const user = userEvent.setup()
-
     render(<Index items={items} quests={quests} />)
-
     const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    return { fetchMock, user, toggle }
+  }
+
+  it('allows logged-in user to toggle default visibility to private and submits isPublic=false', async () => {
+    const { fetchMock, user, toggle } = setupAuthenticatedFarming()
     expect(toggle).not.toBeDisabled()
     expect(toggle).toBeChecked()
 
@@ -141,5 +144,15 @@ describe('/farming direct access (5.4 regression)', () => {
 
     const url = await inputItemCountAndSolve(user, fetchMock)
     expect(url.searchParams.get('isPublic')).toBe('false')
+  })
+
+  it('falls back to defaultPublic=true when stored value is non-boolean like "\\"false\\""', async () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, '"false"')
+    const { fetchMock, user, toggle } = setupAuthenticatedFarming()
+
+    await waitFor(() => expect(toggle).toBeChecked())
+
+    const url = await inputItemCountAndSolve(user, fetchMock)
+    expect(url.searchParams.get('isPublic')).toBe('true')
   })
 })

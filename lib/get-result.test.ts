@@ -138,12 +138,15 @@ describe('getResult', () => {
       await expect(getResult('deleted-id', 'owner-user')).rejects.toThrow('Result not found for id deleted-id')
     })
 
-    it('does not return siblingResult if sibling row was soft-deleted', async () => {
+    it('returns siblingResult for batch row even if results were soft-deleted', async () => {
+      const siblingResultData = { ...minimalResult, total_ap: 999 }
       mockPrepare.mockImplementation((sql: string) => {
         if (sql.includes('batch_id = ? AND id != ?')) {
           return {
             bind: vi.fn().mockReturnValue({
-              first: vi.fn().mockResolvedValue(null),
+              first: vi.fn().mockResolvedValue({
+                result_data: JSON.stringify(siblingResultData),
+              }),
             }),
           }
         }
@@ -161,7 +164,7 @@ describe('getResult', () => {
       })
 
       const result = await getResult('res-1', 'owner-user')
-      expect(result.siblingResult).toBeNull()
+      expect(result.siblingResult).toEqual(siblingResultData)
     })
   })
 })

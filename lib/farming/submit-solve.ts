@@ -16,6 +16,21 @@ const hasId = (arg: unknown): arg is { id: unknown } =>
   typeof arg == 'object' && arg != null && 'id' in arg
 
 /**
+ * localStorage に保存された既定公開設定を boolean に正規化してパースする。
+ * 未設定（null）、JSON パースエラー、または非 boolean 値（例: 文字列 "false" やオブジェクト）の場合は
+ * 既定値 true（公開）を返す。
+ */
+export const parseStoredDefaultPublic = (stored: string | null): boolean => {
+  if (stored === null) return true
+  try {
+    const parsed: unknown = JSON.parse(stored)
+    return typeof parsed === 'boolean' ? parsed : true
+  } catch {
+    return true
+  }
+}
+
+/**
  * `/api/solve` へ送信し、成功時は結果を `localStorage['farming/results']` へ記録して
  * 結果ページへ遷移する。`/farming`(手入力)・`/material/result`(直接送信)の両方から
  * 共有される送信 I/O 境界。バリデーション（送信可否の判断）は `hasSubmittableItems` /
@@ -26,13 +41,8 @@ export const submitSolve = async (
   router: { push: (url: string) => void }
 ): Promise<void> => {
   if (!params.has('isPublic')) {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC)
-      const isPublic = stored === null ? true : JSON.parse(stored) === true
-      params.set('isPublic', String(isPublic))
-    } catch {
-      params.set('isPublic', 'true')
-    }
+    const stored = localStorage.getItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC)
+    params.set('isPublic', String(parseStoredDefaultPublic(stored)))
   }
   const url = `/api/solve?${params.toString()}`
   const result = await fetch(url).then((res) => res.json() as unknown)

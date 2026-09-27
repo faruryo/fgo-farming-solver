@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { hasSelectedQuests, hasSubmittableItems, submitSolve } from './submit-solve'
+import { hasSelectedQuests, hasSubmittableItems, parseStoredDefaultPublic, submitSolve } from './submit-solve'
 
 vi.mock('../progress/snapshot-client', () => ({
   saveProgressSnapshot: vi.fn().mockResolvedValue(undefined),
@@ -17,6 +17,33 @@ describe('hasSubmittableItems', () => {
 
   it('is true for a non-empty items query', () => {
     expect(hasSubmittableItems('1a:3')).toBe(true)
+  })
+})
+
+describe('parseStoredDefaultPublic', () => {
+  it('returns true when stored is null (unset)', () => {
+    expect(parseStoredDefaultPublic(null)).toBe(true)
+  })
+
+  it('returns boolean true when stored is "true"', () => {
+    expect(parseStoredDefaultPublic('true')).toBe(true)
+  })
+
+  it('returns boolean false when stored is "false"', () => {
+    expect(parseStoredDefaultPublic('false')).toBe(false)
+  })
+
+  it('returns true when stored is a string like "\\"false\\""', () => {
+    expect(parseStoredDefaultPublic('"false"')).toBe(true)
+  })
+
+  it('returns true when stored is an object or invalid type', () => {
+    expect(parseStoredDefaultPublic('{}')).toBe(true)
+    expect(parseStoredDefaultPublic('123')).toBe(true)
+  })
+
+  it('returns true on malformed JSON', () => {
+    expect(parseStoredDefaultPublic('{invalid')).toBe(true)
   })
 })
 
@@ -75,6 +102,19 @@ describe('submitSolve', () => {
     await submitSolve(params, router)
 
     expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=false')
+  })
+
+  it('falls back to isPublic=true when stored defaultPublic is not a boolean', async () => {
+    localStorage.setItem('farming/defaultPublic', '"false"')
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: () => Promise.resolve({ id: 'abc-123' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
+    await submitSolve(params, router)
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=true')
   })
 
   it('navigates to /500 when the response has no id (hasId guard fails)', async () => {

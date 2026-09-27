@@ -111,7 +111,10 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   const { status } = useSession()
   const [defaultPublic, setDefaultPublic] = useLocalStorage<boolean>(
     STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC,
-    true
+    true,
+    {
+      onGet: (val: unknown) => (typeof val === 'boolean' ? val : true),
+    }
   )
 
   useEffect(() => {
