@@ -45,8 +45,6 @@ function ErrorMessage({ error }: Readonly<{ error: BondInputError }>) {
   const { t } = useTranslation('bond')
   if (error.kind === 'no-bond-data')
     return <>{t('no-bond-data', '絆データ未取得のため見積もれません')}</>
-  if (error.kind === 'remeasure')
-    return <>{t('remeasure', '計測したクエストが見つかりません。1周の獲得絆を入れ直してください')}</>
   const field = {
     currentLevel: t('current-level', '現在の絆Lv'),
     targetLevel: t('target-level', '目標の絆Lv'),
@@ -220,11 +218,26 @@ function CountInput({
   )
 }
 
+function BaseNote() {
+  const { t } = useTranslation('bond')
+  return (
+    <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
+      {t('base-note', '基礎値(ボーナスなし)で見積もり — 実測値を入れると正確になります')}
+    </p>
+  )
+}
+
 function BondStateInputs({
   entry,
   growth,
+  questBase,
   onChange,
-}: Readonly<{ entry: BondTrackerEntry; growth: number[] | undefined; onChange: EntryChange }>) {
+}: Readonly<{
+  entry: BondTrackerEntry
+  growth: number[] | undefined
+  questBase: number | undefined
+  onChange: EntryChange
+}>) {
   const { t } = useTranslation('bond')
   const id = (field: string) => `bond-${entry.servantId}-${field}`
   // 獲得絆を入れ直したら、その時点の周回クエストを計測クエストにする
@@ -257,7 +270,9 @@ function BondStateInputs({
         <CountInput
           id={id('observed')}
           label={t('observed-per-run', '1周の獲得絆')}
-          placeholder={t('observed-placeholder', 'リザルト画面の値')}
+          placeholder={
+            questBase ? String(questBase) : t('observed-placeholder', 'リザルト画面の値')
+          }
           value={entry.observedPerRun}
           onChange={observedPerRun => remeasure({ observedPerRun })}
         />
@@ -269,6 +284,7 @@ function BondStateInputs({
         />
         {t('observed-teapot-run', 'ティーポットを使った周回の値')}
       </label>
+      {entry.observedPerRun === 0 && <BaseNote />}
     </>
   )
 }
@@ -306,13 +322,14 @@ function EstimateResult({
               })}
         </p>
       )}
-      {result.estimated && (
+      {result.basis === 'converted' && (
         <p className={note} style={{ color: 'var(--text3)' }}>
           {t('estimated-note', '{{quest}}で計測した値を基本絆の比で換算した推定値です', {
             quest: questLabel(result.measuredQuest),
           })}
         </p>
       )}
+      {result.basis === 'base' && <BaseNote />}
       {teapotEnabled && (
         <p className={note} style={{ color: 'var(--text3)' }}>
           {t('teapot-saving', 'ティーポット{{teapot}}個使用で{{saved}}周短縮', {
@@ -358,7 +375,12 @@ export function BondServantCard({
         </Button>
       </div>
       <QuestSelect entry={entry} candidates={candidates} plannedLaps={plannedLaps} onChange={onChange} />
-      <BondStateInputs entry={entry} growth={servant?.bondGrowth} onChange={onChange} />
+      <BondStateInputs
+        entry={entry}
+        growth={servant?.bondGrowth}
+        questBase={estimate.candidate?.quest.bondPoints}
+        onChange={onChange}
+      />
       {errors.length > 0 && (
         <ul className="flex flex-col gap-1 text-xs" role="alert" style={{ color: 'var(--red, #c0392b)' }}>
           {errors.map(error => (

@@ -618,6 +618,7 @@
   },
   "bond": {
     "back-to-dashboard": "ダッシュボードへ戻る",
+    "base-note": "基礎値(ボーナスなし)で見積もり — 実測値を入れると正確になります",
     "catalog-load-error": "サーヴァントデータを読み込めません。",
     "catalog-retry": "再試行",
     "current-level": "現在の絆Lv",
@@ -647,7 +648,6 @@
     "remaining-bond": "残り絆",
     "remaining-runs": "残り周回",
     "remaining-to-next": "次のLvまで",
-    "remeasure": "計測したクエストが見つかりません。1周の獲得絆を入れ直してください",
     "remove": "削除",
     "required-ap": "必要AP",
     "runs-count": "{{count}}周",

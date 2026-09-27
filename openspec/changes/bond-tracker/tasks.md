@@ -43,3 +43,4 @@
 - [x] 6.3 `useRecentResult` の結果から予定周回数を絆トラッカーに渡し、候補に「周回予定 N周」とAPキャンペーン表示を併記する(順位は変えない)
 - [x] 6.4 カードの見積もりに予定内/予定超過/予定内で達成を、見積もりタブのクエスト別集計に予定周回数と予定超過の周回数を表示する。ja/en の `bond` namespace に文言を追加する
 - [x] 6.5 `openspec validate bond-tracker --strict`、`pnpm run lint:ratchet`、`pnpm run type-check`、`pnpm vitest run`、`pnpm run audit:duplicates` を確認する
+- [x] 6.6 1周の獲得絆が未入力(0)、または計測クエストが消えたときに、周回クエストの基本絆ポイントを基本値として見積もる(`bondPerRun` に `basis: 'base' | 'measured' | 'converted'` を追加)。入力欄のプレースホルダーと基本値であることの注記を表示し、`remeasure` によるブロックを廃止する。ja/en の `bond` namespace に文言を追加し、未入力→基本値、実測・換算は従来どおり、ティーポットの基本値、クエスト切替追従のケースをテストで確認する

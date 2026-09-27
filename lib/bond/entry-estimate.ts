@@ -1,6 +1,13 @@
 import type { Quest } from '../../interfaces/fgodrop'
 import { questConsumesPod } from '../quest-consumes-pod'
-import { bondPerRun, estimateRuns, remainingBond, type BondInputError, type RunEstimate } from './estimate'
+import {
+  bondPerRun,
+  estimateRuns,
+  remainingBond,
+  type BondInputError,
+  type BondPerRunBasis,
+  type RunEstimate,
+} from './estimate'
 import type { BondQuestCandidate } from './quest-candidates'
 import { reconcileEntry, type BondTrackerEntry } from './state'
 
@@ -12,6 +19,7 @@ export type EntryEstimate = {
     remaining: number
     perRun: number
     estimated: boolean
+    basis: BondPerRunBasis
     measuredQuest: Quest | undefined
     runs: RunEstimate
     ap: number
@@ -32,7 +40,7 @@ export const estimateEntry = ({
   questsById: ReadonlyMap<string, Quest>
   teapotStock: number | null
 }): EntryEstimate => {
-  const { entry, needsRemeasure } = reconcileEntry(savedEntry, candidates, new Set(questsById.keys()))
+  const { entry } = reconcileEntry(savedEntry, candidates, new Set(questsById.keys()))
   const candidate = candidates.find(c => c.quest.id === entry.questId)
   const measuredQuest = questsById.get(entry.measuredQuestId)
   const errors: BondInputError[] = []
@@ -41,7 +49,7 @@ export const estimateEntry = ({
   const perRun = bondPerRun({
     observed: entry.observedPerRun,
     teapotRun: entry.observedTeapotRun,
-    measuredBase: needsRemeasure ? undefined : measuredQuest?.bondPoints,
+    measuredBase: measuredQuest?.bondPoints,
     questBase: candidate?.quest.bondPoints ?? 0,
     isMeasuredQuest: entry.measuredQuestId === entry.questId,
   })
@@ -56,6 +64,7 @@ export const estimateEntry = ({
       remaining: remaining.remaining,
       perRun: perRun.perRun,
       estimated: perRun.estimated,
+      basis: perRun.basis,
       measuredQuest,
       runs,
       ap: runs.runs * candidate.effectiveAp,

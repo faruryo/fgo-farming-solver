@@ -62,22 +62,23 @@ describe('remainingBond', () => {
 describe('bondPerRun', () => {
   const base = { measuredBase: 3797, questBase: 3797, isMeasuredQuest: true }
   it.each([
-    ['measured quest', { ...base, observed: 5240, teapotRun: false }, { ok: true, perRun: 5240, estimated: false }],
-    ['teapot run is halved', { ...base, observed: 10480, teapotRun: true }, { ok: true, perRun: 5240, estimated: false }],
-    ['teapot halving floors', { ...base, observed: 10481, teapotRun: true }, { ok: true, perRun: 5240, estimated: false }],
-    ['converted to another quest', { observed: 5240, teapotRun: false, measuredBase: 3797, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 6552, estimated: true }],
-    ['teapot halves before conversion', { observed: 10480, teapotRun: true, measuredBase: 3797, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 6552, estimated: true }],
+    ['measured quest', { ...base, observed: 5240, teapotRun: false }, { ok: true, perRun: 5240, estimated: false, basis: 'measured' }],
+    ['teapot run is halved', { ...base, observed: 10480, teapotRun: true }, { ok: true, perRun: 5240, estimated: false, basis: 'measured' }],
+    ['teapot halving floors', { ...base, observed: 10481, teapotRun: true }, { ok: true, perRun: 5240, estimated: false, basis: 'measured' }],
+    ['converted to another quest', { observed: 5240, teapotRun: false, measuredBase: 3797, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 6552, estimated: true, basis: 'converted' }],
+    ['teapot halves before conversion', { observed: 10480, teapotRun: true, measuredBase: 3797, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 6552, estimated: true, basis: 'converted' }],
     // 換算→半減の順だと floor(floor(10481*4748/3797)/2) = 6553 になる
-    ['halving happens before conversion', { observed: 10481, teapotRun: true, measuredBase: 3797, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 6552, estimated: true }],
-    ['different quest with same base is still estimated', { observed: 5240, teapotRun: false, measuredBase: 3797, questBase: 3797, isMeasuredQuest: false }, { ok: true, perRun: 5240, estimated: true }],
+    ['halving happens before conversion', { observed: 10481, teapotRun: true, measuredBase: 3797, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 6552, estimated: true, basis: 'converted' }],
+    ['different quest with same base is still estimated', { observed: 5240, teapotRun: false, measuredBase: 3797, questBase: 3797, isMeasuredQuest: false }, { ok: true, perRun: 5240, estimated: true, basis: 'converted' }],
+    ['unmeasured falls back to the quest base', { observed: 0, teapotRun: false, measuredBase: undefined, questBase: 3797, isMeasuredQuest: false }, { ok: true, perRun: 3797, estimated: true, basis: 'base' }],
+    ['unmeasured on a teapot run still uses the plain base', { observed: 0, teapotRun: true, measuredBase: undefined, questBase: 3797, isMeasuredQuest: false }, { ok: true, perRun: 3797, estimated: true, basis: 'base' }],
+    ['measured quest gone falls back to the quest base', { observed: 5240, teapotRun: false, measuredBase: undefined, questBase: 4748, isMeasuredQuest: false }, { ok: true, perRun: 4748, estimated: true, basis: 'base' }],
   ])('%s', (_label, input, expected) => {
     expect(bondPerRun(input)).toEqual(expected)
   })
 
   it.each([
     ['1 on a teapot run', { ...base, observed: 1, teapotRun: true }, { kind: 'range', field: 'observedPerRun', min: 2 }],
-    ['0 on a normal run', { ...base, observed: 0, teapotRun: false }, { kind: 'range', field: 'observedPerRun', min: 1 }],
-    ['missing measured quest', { ...base, observed: 5240, teapotRun: false, measuredBase: undefined }, { kind: 'remeasure' }],
   ])('rejects %s', (_label, input, error) => {
     expect(bondPerRun(input)).toEqual({ ok: false, error })
   })

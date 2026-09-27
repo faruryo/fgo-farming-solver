@@ -12,7 +12,6 @@ export type BondInputField =
 export type BondInputError =
   | { kind: 'range'; field: BondInputField; min: number; max?: number }
   | { kind: 'no-bond-data' }
-  | { kind: 'remeasure' }
 
 type Result<T> = ({ ok: true } & T) | { ok: false; error: BondInputError }
 
@@ -61,6 +60,8 @@ export const remainingBond = (
  * リザルト画面の獲得絆を、周回クエストの1周あたりに直す。
  * ティーポット周回の半減を先に済ませ、その値に基本絆の比を掛ける(どちらも切り捨て)。
  */
+export type BondPerRunBasis = 'base' | 'measured' | 'converted'
+
 export const bondPerRun = ({
   observed,
   teapotRun,
@@ -74,15 +75,17 @@ export const bondPerRun = ({
   measuredBase: number | undefined
   questBase: number
   isMeasuredQuest: boolean
-}): Result<{ perRun: number; estimated: boolean }> => {
+}): Result<{ perRun: number; estimated: boolean; basis: BondPerRunBasis }> => {
+  // 未計測(0)、または計測クエストが消えて換算できないときは、クエストの基本絆(ボーナスなし)を下限として使う
+  if (observed === 0 || !measuredBase)
+    return { ok: true, perRun: questBase, estimated: true, basis: 'base' }
   const min = teapotRun ? 2 : 1
   if (!isIntegerIn(observed, min)) return rangeError('observedPerRun', min)
-  if (!measuredBase) return { ok: false, error: { kind: 'remeasure' } }
   const base = teapotRun ? Math.floor(observed / 2) : observed
-  if (isMeasuredQuest) return { ok: true, perRun: base, estimated: false }
+  if (isMeasuredQuest) return { ok: true, perRun: base, estimated: false, basis: 'measured' }
   // ponytail: 換算で0になると周回数が無限になるため1周1ptを下限にする
   const perRun = Math.max(1, Math.floor((base * questBase) / measuredBase))
-  return { ok: true, perRun, estimated: true }
+  return { ok: true, perRun, estimated: true, basis: 'converted' }
 }
 
 export type RunEstimate = {

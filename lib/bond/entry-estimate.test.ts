@@ -47,23 +47,32 @@ describe('estimateEntry', () => {
     expect(run({}, GROWTH, 5).result?.runs).toEqual({ runs: 15, runsWithoutTeapot: 20, teapotRuns: 5 })
   })
 
-  it('hides the estimate and lists every out-of-range field', () => {
+  it('hides the estimate on an out-of-range field even when observedPerRun is unset', () => {
     const estimate = run({ remainingToNext: 2000000, observedPerRun: 0 })
     expect(estimate.result).toBeNull()
-    expect(estimate.errors).toEqual([
-      { kind: 'range', field: 'remainingToNext', min: 1, max: 1640000 },
-      { kind: 'range', field: 'observedPerRun', min: 1 },
-    ])
+    expect(estimate.errors).toEqual([{ kind: 'range', field: 'remainingToNext', min: 1, max: 1640000 }])
   })
 
   it('reports missing bond data', () => {
     expect(estimateEntry({ entry: ENTRY, growth: undefined, candidates, questsById, teapotStock: null }).errors).toEqual([{ kind: 'no-bond-data' }])
   })
 
-  it('asks to re-measure when the measured quest disappeared', () => {
+  it('falls back to the quest base when unmeasured (observedPerRun 0)', () => {
+    expect(run({ observedPerRun: 0 }).result).toMatchObject({ perRun: 3797, estimated: true, basis: 'base' })
+  })
+
+  it('follows the newly selected quest base while unmeasured', () => {
+    expect(run({ observedPerRun: 0, questId: 'grand', measuredQuestId: 'ordeal' }).result).toMatchObject({
+      perRun: 4748,
+      estimated: true,
+      basis: 'base',
+    })
+  })
+
+  it('falls back to the quest base when the measured quest disappeared instead of blocking', () => {
     const estimate = run({ measuredQuestId: 'gone' })
-    expect(estimate.result).toBeNull()
-    expect(estimate.errors).toEqual([{ kind: 'remeasure' }])
+    expect(estimate.errors).toEqual([])
+    expect(estimate.result).toMatchObject({ perRun: 3797, estimated: true, basis: 'base' })
   })
 
   it('moves a quest that is no longer a candidate to the first confirmed candidate', () => {

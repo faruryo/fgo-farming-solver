@@ -695,6 +695,7 @@
   },
   "bond": {
     "back-to-dashboard": "Back to dashboard",
+    "base-note": "Estimated using the base value (no bonuses) — enter a measured value for accuracy",
     "catalog-load-error": "Could not load servant data.",
     "catalog-retry": "Retry",
     "current-level": "Current bond Lv",
@@ -724,7 +725,6 @@
     "remaining-bond": "Bond remaining",
     "remaining-runs": "Runs remaining",
     "remaining-to-next": "To next Lv",
-    "remeasure": "The measured quest no longer exists. Please re-enter the bond per run",
     "remove": "Remove",
     "required-ap": "AP required",
     "runs-count": "{{count}} runs",
