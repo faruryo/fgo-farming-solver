@@ -135,7 +135,7 @@ function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServa
           ))}
         </TabsContent>
         <TabsContent value="estimate">
-          <BondEstimateTable summary={tracker.summary} questsById={tracker.questsById} plannedLaps={tracker.plannedLaps} />
+          <BondEstimateTable summary={tracker.summary} cards={tracker.cards} questsById={tracker.questsById} plannedLaps={tracker.plannedLaps} />
         </TabsContent>
       </Tabs>
     </div>

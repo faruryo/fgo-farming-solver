@@ -44,3 +44,6 @@
 - [x] 6.4 カードの見積もりに予定内/予定超過/予定内で達成を、見積もりタブのクエスト別集計に予定周回数と予定超過の周回数を表示する。ja/en の `bond` namespace に文言を追加する
 - [x] 6.5 `openspec validate bond-tracker --strict`、`pnpm run lint:ratchet`、`pnpm run type-check`、`pnpm vitest run`、`pnpm run audit:duplicates` を確認する
 - [x] 6.6 1周の獲得絆が未入力(0)、または計測クエストが消えたときに、周回クエストの基本絆ポイントを基本値として見積もる(`bondPerRun` に `basis: 'base' | 'measured' | 'converted'` を追加)。入力欄のプレースホルダーと基本値であることの注記を表示し、`remeasure` によるブロックを廃止する。ja/en の `bond` namespace に文言を追加し、未入力→基本値、実測・換算は従来どおり、ティーポットの基本値、クエスト切替追従のケースをテストで確認する
+- [x] 6.7 `lib/bond/progress.ts` に `timeToGoal`(AP自然回復288/日とポッド配布 3個/日+40個/月の概算から到達日数とボトルネック)と `bondProgress`(累計絆での目標Lvまでの到達率)を実装し、テストで確認する
+- [x] 6.8 見積もりタブの先頭に到達見込み(残り周回・必要AP・ストームポッド・到達まで)のタイルとボトルネックを表示する。375px では 2x2 に並べる
+- [x] 6.9 見積もりタブにサーヴァント別の進捗(顔・クラス・進捗バー・残り絆・残り周回・周回クエスト)を表示し、見積もれない騎は薄く表示する。クエスト別集計を shadcn Table に置き換える。ja/en の `bond` namespace に文言を追加する
