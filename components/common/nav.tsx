@@ -26,6 +26,7 @@ import {
   Sparkles,
   ListChecks,
   Target,
+  HeartHandshake,
   type LucideIcon,
 } from 'lucide-react'
 import NextLink from 'next/link'
@@ -101,6 +102,11 @@ export const menuGroups: MenuGroup[] = [
         href: '/quests',
         icon: Gauge,
         label: { ja: 'クエスト効率', en: 'Quest Efficiency' },
+      },
+      {
+        href: '/bond',
+        icon: HeartHandshake,
+        label: { ja: '絆トラッカー', en: 'Bond Tracker' },
       },
       {
         href: '/events',

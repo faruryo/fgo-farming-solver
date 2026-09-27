@@ -74,6 +74,11 @@ const materialItemsAreKnown = (materials: MaterialsForServants, items: MaterialC
   return [...materialCatalogItemIds(materials)].every(itemId => knownItemIds.has(itemId))
 }
 
+// bondGrowth を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
+// 一部の欠落は Atlas 側の通常状態なので、全騎が持たないときだけ取り直す。
+const servantValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
+  previous?.servants.some(servant => servant.bondGrowth) ? previous.sources.niceServant : {}
+
 export const updateMaterialCatalog = async ({
   previous,
   fetchSource,
@@ -88,7 +93,7 @@ export const updateMaterialCatalog = async ({
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
   const [servantsResponse, initialItemsResponse] = await Promise.all([
-    fetchSource(servantUrl, previous?.sources.niceServant ?? {}),
+    fetchSource(servantUrl, servantValidatorFor(previous)),
     fetchSource(itemUrl, previous?.sources.niceItem ?? {}),
   ])
   if (servantsResponse.status === 304 && initialItemsResponse.status === 304) {

@@ -44,7 +44,11 @@ export type Servant = {
 
 export type MaterialsRecord = Record<MaterialsKey, Materials>
 
-export type NiceServant = Servant & MaterialsRecord
+export type NiceServant = Servant &
+  MaterialsRecord & {
+    /** 絆Lvごとの累積必要ポイント(index 0 が Lv1 到達に必要な累積値)。 */
+    bondGrowth?: number[]
+  }
 
 export type Materials = {
   [key: string]: {

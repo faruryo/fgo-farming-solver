@@ -892,6 +892,11 @@
       "count": 1
     },
     {
+      "file": "components/ui/combobox.tsx",
+      "rule": "sonarjs/prefer-read-only-props",
+      "count": 11
+    },
+    {
       "file": "components/ui/dialog.tsx",
       "rule": "sonarjs/prefer-read-only-props",
       "count": 7

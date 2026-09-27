@@ -28,6 +28,7 @@ export const STORAGE_KEYS = {
   CLASS_SCORE: 'classScore',
   TODO_STATE: 'todoState',
   TODO_SETTINGS: 'todoSettings',
+  BOND_TRACKER: 'bondTracker',
 
   // Local/UI-only state and metadata
   TRACKING_MODE: 'material/tracking-mode',
@@ -83,6 +84,7 @@ export const CLOUD_SYNC_KEYS = [
   STORAGE_KEYS.CLASS_SCORE,
   STORAGE_KEYS.TODO_STATE,
   STORAGE_KEYS.TODO_SETTINGS,
+  STORAGE_KEYS.BOND_TRACKER,
 ] as const
 
 export type CloudSyncKey = (typeof CLOUD_SYNC_KEYS)[number]

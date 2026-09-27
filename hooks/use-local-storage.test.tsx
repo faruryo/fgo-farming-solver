@@ -39,6 +39,23 @@ describe('useLocalStorage change notifications', () => {
 
     window.removeEventListener('ls-sync', onSync)
   })
+
+  it('ignores a corrupted value synced from another tab instead of throwing', async () => {
+    const { result } = renderHook(() =>
+      useLocalStorage('test/corrupted-sync', { count: 0 }),
+    )
+
+    await waitFor(() => {
+      expect(localStorage.getItem('test/corrupted-sync')).toBe('{"count":0}')
+    })
+
+    localStorage.setItem('test/corrupted-sync', '{not valid json')
+    act(() => {
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'test/corrupted-sync' } }))
+    })
+
+    expect(result.current[0]).toEqual({ count: 0 })
+  })
 })
 
 describe('useLocalStorage + mergeChaldeaState integration (material state)', () => {
