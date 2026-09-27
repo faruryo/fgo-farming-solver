@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaChevronLeft, FaChevronRight, FaBox } from 'react-icons/fa'
+import { FaChevronRight, FaBox } from 'react-icons/fa'
 import { Link } from '../common/link'
+import { PageHeader } from '../common/page-header'
 import { Badge } from '@/components/ui/badge'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 
@@ -38,31 +39,11 @@ export const EventListClient: React.FC<Props> = ({ events }) => {
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-6">
-          <div className="c-page-header">
-            <div className="flex flex-col gap-2">
-              <Link
-                href="/"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: 'var(--text3)',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                <FaChevronLeft size={11} /> {t('ダッシュボードへ戻る')}
-              </Link>
-              <div className="flex flex-col">
-                <div className="c-page-en">EVENT PLANNER</div>
-                <h1 className="c-page-title">{t('ロトイベント一覧')}</h1>
-              </div>
-              <p className="text-sm" style={{ color: 'var(--text3)' }}>
-                {t('イベント一覧説明')}
-              </p>
-            </div>
-          </div>
+          <PageHeader backLabel={t('ダッシュボードへ戻る')} en="EVENT PLANNER" title={t('ロトイベント一覧')}>
+            <p className="text-sm" style={{ color: 'var(--text3)' }}>
+              {t('イベント一覧説明')}
+            </p>
+          </PageHeader>
 
           {events.length === 0 && (
             <div
