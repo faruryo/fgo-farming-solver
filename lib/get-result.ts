@@ -37,7 +37,7 @@ const fetchSiblingResult = async (
   if (!batchId) return null
   const sibling = await db
     .prepare(
-      'SELECT result_data FROM farming_results WHERE batch_id = ? AND id != ?'
+      'SELECT result_data FROM farming_results WHERE batch_id = ? AND id != ? AND deleted_at IS NULL'
     )
     .bind(batchId, excludeId)
     .first<{ result_data: string }>()

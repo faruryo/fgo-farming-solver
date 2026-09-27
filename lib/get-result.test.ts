@@ -137,5 +137,31 @@ describe('getResult', () => {
 
       await expect(getResult('deleted-id', 'owner-user')).rejects.toThrow('Result not found for id deleted-id')
     })
+
+    it('does not return siblingResult if sibling row was soft-deleted', async () => {
+      mockPrepare.mockImplementation((sql: string) => {
+        if (sql.includes('batch_id = ? AND id != ?')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(null),
+            }),
+          }
+        }
+        return {
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue({
+              result_data: JSON.stringify(minimalResult),
+              created_at: '2026-09-27T00:00:00.000Z',
+              batch_id: 'batch-1',
+              user_id: 'owner-user',
+              is_public: 1,
+            }),
+          }),
+        }
+      })
+
+      const result = await getResult('res-1', 'owner-user')
+      expect(result.siblingResult).toBeNull()
+    })
   })
 })
