@@ -54,7 +54,7 @@ describe('submitSolve', () => {
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
     await submitSolve(params, router)
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id')
+    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=true')
     expect(localStorage.getItem('farming/results')).toBe('/farming/results/abc-123')
     expect(onSync).toHaveBeenCalledTimes(1)
     const event = onSync.mock.calls[0][0] as CustomEvent<{ key?: string }>
@@ -62,6 +62,19 @@ describe('submitSolve', () => {
     expect(push).toHaveBeenCalledWith('/farming/results/abc-123')
 
     window.removeEventListener('ls-sync', onSync)
+  })
+
+  it('respects stored defaultPublic when param is omitted', async () => {
+    localStorage.setItem('farming/defaultPublic', 'false')
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: () => Promise.resolve({ id: 'abc-123' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
+    await submitSolve(params, router)
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=false')
   })
 
   it('navigates to /500 when the response has no id (hasId guard fails)', async () => {

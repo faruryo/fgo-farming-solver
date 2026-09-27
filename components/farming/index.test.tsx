@@ -15,9 +15,15 @@ import {
   stubFetch,
   submitButton,
 } from '../../lib/farming/solve-request-test-utils'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
+}))
+
+const mockSession = vi.fn().mockReturnValue({ data: null, status: 'unauthenticated' })
+vi.mock('next-auth/react', () => ({
+  useSession: () => mockSession(),
 }))
 
 const push = vi.fn()
@@ -85,5 +91,61 @@ describe('/farming direct access (5.4 regression)', () => {
     const url = solveCallUrl(fetchMock)
     expect(url.searchParams.get('items')).toBe('100:3')
     expect(url.searchParams.has('itemsStock')).toBe(false)
+    expect(url.searchParams.get('isPublic')).toBe('true')
+  })
+
+  it('allows logged-in user to toggle default visibility to private and submits isPublic=false', async () => {
+    mockSession.mockReturnValue({
+      data: { user: { id: 'test-user', name: 'Tester' } },
+      status: 'authenticated',
+    })
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    expect(toggle).not.toBeDisabled()
+    expect(toggle).toBeChecked()
+
+    // Toggle off
+    await user.click(toggle)
+    expect(toggle).not.toBeChecked()
+
+    const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
+    await user.clear(countInput)
+    await user.type(countInput, '2')
+
+    const button = await submitButton()
+    await waitFor(() => expect(button).not.toBeDisabled())
+    await user.click(button)
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+    const url = solveCallUrl(fetchMock)
+    expect(url.searchParams.get('isPublic')).toBe('false')
+  })
+
+  it('submits stored defaultPublic=false even when session status is loading', async () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, 'false')
+    mockSession.mockReturnValue({
+      data: null,
+      status: 'loading',
+    })
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const countInput = screen.getByRole('spinbutton', { name: /灯火の焔/ })
+    await user.clear(countInput)
+    await user.type(countInput, '2')
+
+    const button = await submitButton()
+    await waitFor(() => expect(button).not.toBeDisabled())
+    await user.click(button)
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+    const url = solveCallUrl(fetchMock)
+    expect(url.searchParams.get('isPublic')).toBe('false')
   })
 })

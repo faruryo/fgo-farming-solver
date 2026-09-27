@@ -863,11 +863,6 @@
     },
     {
       "file": "components/todo/TodoSettingsPanel.tsx",
-      "rule": "@typescript-eslint/no-unnecessary-type-assertion",
-      "count": 1
-    },
-    {
-      "file": "components/todo/TodoSettingsPanel.tsx",
       "rule": "max-lines-per-function",
       "count": 1
     },

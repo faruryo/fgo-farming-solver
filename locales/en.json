@@ -194,7 +194,16 @@
     "progress-compare-today": "today",
     "progress-compare-yesterday": "yesterday",
     "progress-compare-days-ago": "{{count}} days ago",
-    "progress-compare-caption": "Compared to {{label}}"
+    "progress-compare-caption": "Compared to {{label}}",
+    "farming-result-visibility-section": "Calculation Result Visibility",
+    "farming-result-visibility-label": "Publish Result",
+    "farming-result-visibility-setting-label": "Visibility",
+    "farming-result-visibility-desc-logged-in": "When turned off, results are saved as private and visible only to you. You can also toggle this later from the result page.",
+    "farming-result-visibility-desc-anonymous": "Note: Results are always public when not logged in. Please log in to save results privately.",
+    "farming-result-status-public": "Public",
+    "farming-result-status-private": "Private",
+    "farming-result-visibility-toggle-aria": "Toggle public / private visibility",
+    "farming-result-visibility-update-error": "Failed to update visibility settings"
   },
   "items": {
     "アイテム一覧": "Item List",
