@@ -27,7 +27,13 @@ import {
 } from '../../lib/bond/estimate'
 import { splitByPlan } from '../../lib/bond/plan'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
-import { filterQuestCandidates, withCurrentLevel, withObservedPerRun, type BondTrackerEntry } from '../../lib/bond/state'
+import {
+  filterQuestCandidates,
+  withCurrentLevel,
+  withObservedPerRun,
+  withObservedTeapotRun,
+  type BondTrackerEntry,
+} from '../../lib/bond/state'
 import { getClassName } from '../../lib/class-names'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
@@ -113,7 +119,9 @@ function QuestOption({
         )}
       </div>
       <span className="shrink-0 text-[13px] font-bold tabular-nums" style={{ color: 'var(--gold)' }}>
-        {t('bond-per-ap', '{{rate}}/AP', { rate: ((c.quest.bondPoints as number) / c.effectiveAp).toFixed(1) })}
+        {c.effectiveAp === 0
+          ? t('bond-per-ap-free', 'AP消費なし')
+          : t('bond-per-ap', '{{rate}}/AP', { rate: ((c.quest.bondPoints as number) / c.effectiveAp).toFixed(1) })}
       </span>
     </div>
   )
@@ -231,10 +239,12 @@ function ObservedPerRunInput({
   entry,
   questBase,
   remeasure,
+  onChange,
 }: Readonly<{
   entry: BondTrackerEntry
   questBase: number | undefined
   remeasure: (patch: Partial<BondTrackerEntry>) => void
+  onChange: EntryChange
 }>) {
   const { t } = useTranslation('bond')
   const id = `bond-${entry.servantId}-observed`
@@ -251,7 +261,7 @@ function ObservedPerRunInput({
         <label className="flex items-center gap-2 whitespace-nowrap">
           <Checkbox
             checked={entry.observedTeapotRun}
-            onCheckedChange={checked => remeasure({ observedTeapotRun: Boolean(checked) })}
+            onCheckedChange={checked => onChange(withObservedTeapotRun(entry, Boolean(checked)))}
           />
           {t('observed-teapot-run', 'ティーポット使用時の値')}
         </label>
@@ -300,7 +310,7 @@ function BondStateInputs({
           to={MAX_TARGET_BOND_LEVEL}
           onChange={targetLevel => onChange({ ...entry, targetLevel })}
         />
-        <ObservedPerRunInput entry={entry} questBase={questBase} remeasure={remeasure} />
+        <ObservedPerRunInput entry={entry} questBase={questBase} remeasure={remeasure} onChange={onChange} />
       </div>
       {entry.observedPerRun === 0 && <BaseNote />}
     </>

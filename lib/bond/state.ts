@@ -89,6 +89,12 @@ export const withObservedPerRun = (entry: BondTrackerEntry, observedPerRun: numb
   observedTeapotRun: observedPerRun > 0 && entry.observedTeapotRun,
 })
 
+/** ティーポットチェックの切り替えは表示中クエストの分類変更に過ぎず、計測クエストは動かさない。 */
+export const withObservedTeapotRun = (entry: BondTrackerEntry, observedTeapotRun: boolean): BondTrackerEntry => ({
+  ...entry,
+  observedTeapotRun,
+})
+
 /** 現在Lvを変えたら「次のLvまで」をそのLvの必要増分(満額)に戻す。絆データが無ければ入力値を残す。 */
 export const withCurrentLevel = (
   entry: BondTrackerEntry,

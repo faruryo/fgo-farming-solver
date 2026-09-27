@@ -695,6 +695,7 @@
   },
   "bond": {
     "ap": "AP",
+    "bond-per-ap-free": "No AP cost",
     "back-to-dashboard": "Back to dashboard",
     "base-note": "Estimated using the base value (no bonuses) — enter a measured value for accuracy",
     "bottleneck": "Bottleneck: {{name}}",

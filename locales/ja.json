@@ -618,6 +618,7 @@
   },
   "bond": {
     "ap": "AP",
+    "bond-per-ap-free": "AP消費なし",
     "back-to-dashboard": "ダッシュボードへ戻る",
     "base-note": "基礎値(ボーナスなし)で見積もり — 実測値を入れると正確になります",
     "bottleneck": "ボトルネック: {{name}}",

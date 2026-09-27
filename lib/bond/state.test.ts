@@ -7,6 +7,7 @@ import {
   reconcileEntry,
   withCurrentLevel,
   withObservedPerRun,
+  withObservedTeapotRun,
   type BondTrackerEntry,
 } from './state'
 
@@ -130,5 +131,13 @@ describe('withObservedPerRun', () => {
   it('keeps observedTeapotRun when observedPerRun stays positive', () => {
     const entry = { ...ENTRY, observedTeapotRun: true }
     expect(withObservedPerRun(entry, 6000)).toEqual({ ...entry, observedPerRun: 6000, observedTeapotRun: true })
+  })
+})
+
+describe('withObservedTeapotRun', () => {
+  it('toggles the flag without touching measuredQuestId, even after the tracked quest changed', () => {
+    // 計測はクエストAで実施済み、その後クエストBに切り替えて見積り中のシナリオ
+    const entry = { ...ENTRY, questId: 'q2', measuredQuestId: 'q1' }
+    expect(withObservedTeapotRun(entry, true)).toEqual({ ...entry, observedTeapotRun: true })
   })
 })

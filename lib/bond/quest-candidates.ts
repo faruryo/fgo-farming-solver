@@ -49,7 +49,13 @@ export const bondQuestCandidates = (
       if (!allowed) return []
       return [{ quest, effectiveAp: computeEffectiveAp(quest.ap, quest.id, activeCampaigns), unconfirmedClass }]
     })
-    .sort(
-      (a, b) =>
-        (b.quest.bondPoints as number) / b.effectiveAp - (a.quest.bondPoints as number) / a.effectiveAp,
-    )
+    .sort((a, b) => {
+      // AP0（AP消費なしキャンペーン中）は割り算が Infinity になるため先頭固定。
+      // 両方AP0ならbondPoints降順、片方だけAP0ならそちらを優先する。
+      if (a.effectiveAp === 0 || b.effectiveAp === 0) {
+        if (a.effectiveAp === 0 && b.effectiveAp === 0)
+          return (b.quest.bondPoints as number) - (a.quest.bondPoints as number)
+        return a.effectiveAp === 0 ? -1 : 1
+      }
+      return (b.quest.bondPoints as number) / b.effectiveAp - (a.quest.bondPoints as number) / a.effectiveAp
+    })

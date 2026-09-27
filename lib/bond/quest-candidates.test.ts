@@ -60,4 +60,21 @@ describe('bondQuestCandidates', () => {
     const deepCut: Campaign = { ...halfAp, calcType: 'fixedValue', value: 5 }
     expect(bondQuestCandidates(QUESTS, [deepCut], 'caster')[0].quest.id).toBe('daily')
   })
+
+  it('ranks AP0 (AP-free campaign) quests first instead of Infinity/NaN sort', () => {
+    // caster-low(3622) は ordeal(3797) より元の並びで先だが、bondPoints降順ではordealが先。
+    // stable sortでNaN比較を素通しするだけの実装だと元の並び(caster-low, ordeal)のままになり検出できる。
+    const apFree: Campaign = {
+      id: 2,
+      calcType: 'fixedValue',
+      value: 0,
+      validFrom: 0,
+      validTo: 1,
+      questIds: ['caster-low', 'ordeal'],
+    }
+    const candidates = bondQuestCandidates(QUESTS, [apFree], 'caster')
+    expect(candidates.find(c => c.quest.id === 'ordeal')?.effectiveAp).toBe(0)
+    expect(candidates.find(c => c.quest.id === 'caster-low')?.effectiveAp).toBe(0)
+    expect(candidates.map(c => c.quest.id)).toEqual(['ordeal', 'caster-low', 'caster', 'daily'])
+  })
 })
