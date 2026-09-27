@@ -235,7 +235,7 @@ function BaseNote() {
   )
 }
 
-function ObservedPerRunInput({
+export function ObservedPerRunInput({
   entry,
   questBase,
   remeasure,
