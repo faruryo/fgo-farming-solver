@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -13,6 +14,7 @@ import {
   MAX_TARGET_BOND_LEVEL,
   type BondInputError,
 } from '../../lib/bond/estimate'
+import { apCampaignLabel, splitByPlan } from '../../lib/bond/plan'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
 import { filterQuestCandidates, withCurrentLevel, type BondTrackerEntry } from '../../lib/bond/state'
 import { getClassName } from '../../lib/class-names'
@@ -71,11 +73,32 @@ export function ClassIcon({ servant, size }: Readonly<{ servant: MaterialCatalog
 
 type EntryChange = (entry: BondTrackerEntry) => void
 
+// 候補の後ろに付ける注記(APキャンペーン・周回予定・対象クラス未確認)
+const questNotes = (c: BondQuestCandidate, planned: number | undefined, t: TFunction<'bond'>) => {
+  const notes: string[] = []
+  const campaign = apCampaignLabel(c.quest.ap, c.effectiveAp)
+  if (campaign) {
+    const label = campaign.fraction
+      ? t('ap-campaign-ratio', 'AP{{fraction}}', { fraction: campaign.fraction })
+      : t('ap-campaign', 'AP割引')
+    notes.push(`${label} ${c.effectiveAp}AP`)
+  }
+  if (planned) notes.push(t('plan-option', '周回予定 {{count}}周', { count: planned }))
+  if (c.unconfirmedClass) notes.push(t('unconfirmed-class', '※対象クラス未確認'))
+  return notes.map(note => ` ${note}`).join('')
+}
+
 function QuestSelect({
   entry,
   candidates,
+  plannedLaps,
   onChange,
-}: Readonly<{ entry: BondTrackerEntry; candidates: BondQuestCandidate[]; onChange: EntryChange }>) {
+}: Readonly<{
+  entry: BondTrackerEntry
+  candidates: BondQuestCandidate[]
+  plannedLaps: ReadonlyMap<string, number>
+  onChange: EntryChange
+}>) {
   const { t } = useTranslation('bond')
   const [keyword, setKeyword] = useState('')
   const id = `bond-${entry.servantId}-quest`
@@ -103,7 +126,7 @@ function QuestSelect({
               ap: c.effectiveAp,
               rate: ((c.quest.bondPoints as number) / c.effectiveAp).toFixed(1),
             })})
-            {c.unconfirmedClass ? ` ${t('unconfirmed-class', '※対象クラス未確認')}` : ''}
+            {questNotes(c, plannedLaps.get(c.quest.id), t)}
           </option>
         ))}
       </select>
@@ -210,8 +233,10 @@ function BondStateInputs({
 function EstimateResult({
   result,
   teapotEnabled,
-}: Readonly<{ result: NonNullable<EntryEstimate['result']>; teapotEnabled: boolean }>) {
+  planned,
+}: Readonly<{ result: NonNullable<EntryEstimate['result']>; teapotEnabled: boolean; planned: number | undefined }>) {
   const { t } = useTranslation('bond')
+  const plan = splitByPlan({ ...result.runs, perRun: result.perRun, remaining: result.remaining }, planned)
   const note = 'text-[11px]'
   return (
     <div className="flex flex-col gap-2" data-testid="bond-estimate">
@@ -227,6 +252,17 @@ function EstimateResult({
           <Stat label={t('storm-pods', 'ストームポッド')} value={t('pods-count', '{{count}}個', { count: result.pods })} />
         )}
       </div>
+      {plan && (
+        <p className="text-xs" data-testid="bond-plan">
+          {plan.achieved
+            ? t('plan-achieved', '周回予定 {{planned}}周の予定内で達成', { planned: plan.planned })
+            : t('plan-split', '予定内 {{inPlan}}周(絆{{bond}}) / 予定超過 {{over}}周', {
+                inPlan: plan.inPlanRuns,
+                bond: plan.inPlanBond.toLocaleString(),
+                over: plan.overRuns,
+              })}
+        </p>
+      )}
       {result.estimated && (
         <p className={note} style={{ color: 'var(--text3)' }}>
           {t('estimated-note', '{{quest}}で計測した値を基本絆の比で換算した推定値です', {
@@ -251,6 +287,7 @@ export function BondServantCard({
   estimate,
   candidates,
   teapotEnabled,
+  plannedLaps,
   onChange,
   onRemove,
 }: Readonly<{
@@ -258,6 +295,7 @@ export function BondServantCard({
   estimate: EntryEstimate
   candidates: BondQuestCandidate[]
   teapotEnabled: boolean
+  plannedLaps: ReadonlyMap<string, number>
   onChange: EntryChange
   onRemove: () => void
 }>) {
@@ -276,7 +314,7 @@ export function BondServantCard({
           {t('remove', '削除')}
         </Button>
       </div>
-      <QuestSelect entry={entry} candidates={candidates} onChange={onChange} />
+      <QuestSelect entry={entry} candidates={candidates} plannedLaps={plannedLaps} onChange={onChange} />
       <BondStateInputs entry={entry} growth={servant?.bondGrowth} onChange={onChange} />
       {errors.length > 0 && (
         <ul className="flex flex-col gap-1 text-xs" role="alert" style={{ color: 'var(--red, #c0392b)' }}>
@@ -287,7 +325,7 @@ export function BondServantCard({
           ))}
         </ul>
       )}
-      {result && <EstimateResult result={result} teapotEnabled={teapotEnabled} />}
+      {result && <EstimateResult result={result} teapotEnabled={teapotEnabled} planned={plannedLaps.get(entry.questId)} />}
     </div>
   )
 }

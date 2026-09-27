@@ -128,13 +128,14 @@ function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServa
               candidates={candidates}
               estimate={estimate}
               teapotEnabled={tracker.state.teapot.enabled}
+              plannedLaps={tracker.plannedLaps}
               onChange={tracker.updateEntry}
               onRemove={() => tracker.removeEntry(estimate.entry.servantId)}
             />
           ))}
         </TabsContent>
         <TabsContent value="estimate">
-          <BondEstimateTable summary={tracker.summary} questsById={tracker.questsById} />
+          <BondEstimateTable summary={tracker.summary} questsById={tracker.questsById} plannedLaps={tracker.plannedLaps} />
         </TabsContent>
       </Tabs>
     </div>

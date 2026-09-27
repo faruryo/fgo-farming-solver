@@ -2,8 +2,10 @@ import { useMemo } from 'react'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useDrops } from '../../hooks/use-drops'
 import { useLocalStorage } from '../../hooks/use-local-storage'
+import { useRecentResult } from '../../hooks/use-recent-result'
 import { estimateEntry } from '../../lib/bond/entry-estimate'
 import { bondIncrement, groupByQuest } from '../../lib/bond/estimate'
+import { plannedLapsByQuest } from '../../lib/bond/plan'
 import { bondQuestCandidates } from '../../lib/bond/quest-candidates'
 import {
   defaultBondQuestId,
@@ -50,6 +52,8 @@ export const useBondTracker = (servants: MaterialCatalogServant[] | undefined) =
   const [state, setState] = useLocalStorage<BondTrackerState>(STORAGE_KEYS.BOND_TRACKER, INITIAL_STATE, {
     onGet: parseBondTrackerState,
   })
+  const { result: recentResult } = useRecentResult()
+  const plannedLaps = useMemo(() => plannedLapsByQuest(recentResult), [recentResult])
   const servantsById = useMemo(() => new Map(servants?.map(s => [s.id, s]) ?? []), [servants])
   const questsById = useMemo(() => new Map(drops.quests.map(q => [q.id, q])), [drops.quests])
   const candidatesByClass = useMemo(
@@ -82,5 +86,5 @@ export const useBondTracker = (servants: MaterialCatalogServant[] | undefined) =
   const actions = useBondActions(setState)
   const addServant = (servant: MaterialCatalogServant) =>
     actions.addEntry(newBondEntry(servant, defaultBondQuestId(candidatesByClass.get(servant.className) ?? []) ?? ''))
-  return { state, cards, summary, questsById, isLoading: drops.isLoading, addServant, ...actions }
+  return { state, cards, summary, questsById, plannedLaps, isLoading: drops.isLoading, addServant, ...actions }
 }

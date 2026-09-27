@@ -693,6 +693,8 @@
     }
   },
   "bond": {
+    "ap-campaign": "AP discount",
+    "ap-campaign-ratio": "AP {{fraction}}",
     "back-to-dashboard": "Back to dashboard",
     "bond-per-ap-rate": "{{bond}} bond / {{ap}} AP = {{rate}}/AP",
     "catalog-load-error": "Could not load servant data.",
@@ -708,6 +710,11 @@
     "observed-teapot-run": "Value from a run with a Teapot",
     "per-run": "Bond per run",
     "per-run-estimated": "Bond per run (estimated)",
+    "plan-achieved": "Reached within planned {{planned}} runs",
+    "plan-laps": "Planned",
+    "plan-option": "Planned {{count}} runs",
+    "plan-over": "Over plan",
+    "plan-split": "Within plan {{inPlan}} runs ({{bond}} bond) / over plan {{over}} runs",
     "pods-count": "{{count}}",
     "quest": "Farming quest",
     "quest-filter": "Filter quests by name (by efficiency)",

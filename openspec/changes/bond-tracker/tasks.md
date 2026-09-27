@@ -35,3 +35,11 @@
 - [x] 5.1 `pnpm run lint:ratchet`、`pnpm run type-check`、`pnpm vitest run` がすべて通ることを確認する
 - [x] 5.2 375px 幅を含む実画面で、サーヴァント登録から見積もり表示、リロード後の復元までを通して確認する
 - [x] 5.3 `openspec validate bond-tracker --strict` が通ることを確認する
+
+## 6. 周回予定の連携とAPキャンペーン表示
+
+- [x] 6.1 `lib/bond/plan.ts` に `plannedLapsByQuest`(Result / BothResult は lap 側、結果なし・空は空 Map)と `splitByPlan`(残り周回 = N、< N、> N、予定なし)を実装し、テストで確認する
+- [x] 6.2 `apCampaignLabel` を実装し、1/2・比率にならない割引・キャンペーンなしをテストで確認する
+- [x] 6.3 `useRecentResult` の結果から予定周回数を絆トラッカーに渡し、候補に「周回予定 N周」とAPキャンペーン表示を併記する(順位は変えない)
+- [x] 6.4 カードの見積もりに予定内/予定超過/予定内で達成を、見積もりタブのクエスト別集計に予定周回数と予定超過の周回数を表示する。ja/en の `bond` namespace に文言を追加する
+- [x] 6.5 `openspec validate bond-tracker --strict`、`pnpm run lint:ratchet`、`pnpm run type-check`、`pnpm vitest run`、`pnpm run audit:duplicates` を確認する

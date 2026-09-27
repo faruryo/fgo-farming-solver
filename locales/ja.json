@@ -616,6 +616,8 @@
     }
   },
   "bond": {
+    "ap-campaign": "AP割引",
+    "ap-campaign-ratio": "AP{{fraction}}",
     "back-to-dashboard": "ダッシュボードへ戻る",
     "bond-per-ap-rate": "絆{{bond}} / {{ap}}AP = {{rate}}/AP",
     "catalog-load-error": "サーヴァントデータを読み込めません。",
@@ -631,6 +633,11 @@
     "observed-teapot-run": "ティーポットを使った周回の値",
     "per-run": "1周の獲得絆",
     "per-run-estimated": "1周の獲得絆(推定)",
+    "plan-achieved": "周回予定 {{planned}}周の予定内で達成",
+    "plan-laps": "周回予定",
+    "plan-option": "周回予定 {{count}}周",
+    "plan-over": "予定超過",
+    "plan-split": "予定内 {{inPlan}}周(絆{{bond}}) / 予定超過 {{over}}周",
     "pods-count": "{{count}}個",
     "quest": "周回クエスト",
     "quest-filter": "クエスト名で絞り込み(効率順)",
