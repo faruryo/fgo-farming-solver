@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { BondQuestCandidate } from './quest-candidates'
-import { defaultBondQuestId, parseBondTrackerState, reconcileEntry, type BondTrackerEntry } from './state'
+import {
+  defaultBondQuestId,
+  filterQuestCandidates,
+  parseBondTrackerState,
+  reconcileEntry,
+  withCurrentLevel,
+  type BondTrackerEntry,
+} from './state'
 
 const ENTRY: BondTrackerEntry = {
   servantId: 100100,
@@ -85,5 +92,30 @@ describe('reconcileEntry', () => {
   it('never defaults to an unconfirmed-class candidate', () => {
     expect(defaultBondQuestId(candidates)).toBe('q2')
     expect(defaultBondQuestId([candidate('extra', true)])).toBeUndefined()
+  })
+})
+
+describe('withCurrentLevel', () => {
+  const growth = [1000, 3000, 6000]
+  it('resets remainingToNext to the full increment for the new level', () => {
+    const next = withCurrentLevel({ ...ENTRY, currentLevel: 0, remainingToNext: 5, targetLevel: 1 }, 1, growth)
+    expect(next).toMatchObject({ currentLevel: 1, remainingToNext: 2000, targetLevel: 2 })
+  })
+  it('keeps the input when bond growth is missing', () => {
+    expect(withCurrentLevel(ENTRY, 13, undefined)).toMatchObject({ currentLevel: 13, remainingToNext: 100000 })
+  })
+})
+
+describe('filterQuestCandidates', () => {
+  const c = (id: string, area: string, name: string) =>
+    ({ quest: { id, area, name }, effectiveAp: 40, unconfirmedClass: false }) as unknown as BondQuestCandidate
+  const list = [c('a', '冬木', '炎上汚染都市'), c('b', 'オケアノス', '海域'), c('c', '冬木', '大橋')]
+  it('keeps efficiency rank and order while filtering', () => {
+    expect(filterQuestCandidates(list, '冬木', 'b').map(x => [x.candidate.quest.id, x.rank])).toEqual([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ])
+    expect(filterQuestCandidates(list, '大橋', 'a').map(x => x.rank)).toEqual([1, 3])
   })
 })

@@ -10,7 +10,7 @@ import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import type { BondTrackerState } from '../../lib/bond/state'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 import { BondEstimateTable } from './estimate-table'
-import { BondServantCard } from './servant-card'
+import { BondServantCard, ClassIcon } from './servant-card'
 import { useBondTracker } from './use-bond-tracker'
 
 const SEARCH_LIMIT = 20
@@ -84,7 +84,10 @@ function ServantSearch({
                   setQuery('')
                 }}
               >
-                <span>{s.name}</span>
+                <span className="flex items-center gap-1">
+                  <ClassIcon servant={s} size={18} />
+                  {s.name}
+                </span>
                 {registered.has(s.id) && <span className="text-xs">{t('registered', '登録済み')}</span>}
               </button>
             </li>

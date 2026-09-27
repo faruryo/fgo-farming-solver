@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -8,13 +9,14 @@ import { Input } from '@/components/ui/input'
 import type { Quest } from '../../interfaces/fgodrop'
 import type { EntryEstimate } from '../../lib/bond/entry-estimate'
 import {
-  bondIncrement,
   MAX_CURRENT_BOND_LEVEL,
   MAX_TARGET_BOND_LEVEL,
   type BondInputError,
 } from '../../lib/bond/estimate'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
-import type { BondTrackerEntry } from '../../lib/bond/state'
+import { filterQuestCandidates, withCurrentLevel, type BondTrackerEntry } from '../../lib/bond/state'
+import { getClassName } from '../../lib/class-names'
+import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 
 const levels = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
@@ -60,6 +62,13 @@ function Stat({ label, value }: Readonly<{ label: string; value: string }>) {
   )
 }
 
+export function ClassIcon({ servant, size }: Readonly<{ servant: MaterialCatalogServant; size: number }>) {
+  const { i18n } = useTranslation()
+  const url = getClassIconUrl(servant.className, servant.rarity)
+  const alt = getClassName(servant.className, i18n.language)
+  return url ? <Image src={url} alt={alt} title={alt} width={size} height={size} className="shrink-0" /> : null
+}
+
 type EntryChange = (entry: BondTrackerEntry) => void
 
 function QuestSelect({
@@ -68,24 +77,37 @@ function QuestSelect({
   onChange,
 }: Readonly<{ entry: BondTrackerEntry; candidates: BondQuestCandidate[]; onChange: EntryChange }>) {
   const { t } = useTranslation('bond')
+  const [keyword, setKeyword] = useState('')
   const id = `bond-${entry.servantId}-quest`
   return (
-    <label className="flex flex-col gap-1 text-xs" htmlFor={id}>
-      {t('quest', '周回クエスト')}
+    <div className="flex flex-col gap-1 text-xs">
+      <label htmlFor={id}>{t('quest', '周回クエスト')}</label>
+      <Input
+        type="search"
+        value={keyword}
+        onChange={e => setKeyword(e.target.value)}
+        placeholder={t('quest-filter', 'クエスト名で絞り込み(効率順)')}
+        aria-label={t('quest-filter', 'クエスト名で絞り込み(効率順)')}
+        aria-controls={id}
+      />
       <select
         id={id}
         className="c-global-dd w-full text-left"
         value={entry.questId}
         onChange={e => onChange({ ...entry, questId: e.target.value })}
       >
-        {candidates.map(c => (
+        {filterQuestCandidates(candidates, keyword, entry.questId).map(({ candidate: c, rank }) => (
           <option key={c.quest.id} value={c.quest.id}>
-            {questLabel(c.quest)} ({t('bond-per-ap', '絆{{bond}} / {{ap}}AP', { bond: c.quest.bondPoints, ap: c.effectiveAp })})
+            {rank}. {questLabel(c.quest)} ({t('bond-per-ap-rate', '絆{{bond}} / {{ap}}AP = {{rate}}/AP', {
+              bond: c.quest.bondPoints,
+              ap: c.effectiveAp,
+              rate: ((c.quest.bondPoints as number) / c.effectiveAp).toFixed(1),
+            })})
             {c.unconfirmedClass ? ` ${t('unconfirmed-class', '※対象クラス未確認')}` : ''}
           </option>
         ))}
       </select>
-    </label>
+    </div>
   )
 }
 
@@ -150,14 +172,7 @@ function BondStateInputs({
           value={entry.currentLevel}
           from={0}
           to={MAX_CURRENT_BOND_LEVEL}
-          onChange={currentLevel =>
-            onChange({
-              ...entry,
-              currentLevel,
-              remainingToNext: bondIncrement(growth, currentLevel) ?? entry.remainingToNext,
-              targetLevel: Math.max(entry.targetLevel, currentLevel + 1),
-            })
-          }
+          onChange={currentLevel => onChange(withCurrentLevel(entry, currentLevel, growth))}
         />
         <CountInput
           id={id('remaining')}
@@ -253,7 +268,10 @@ export function BondServantCard({
     <div className="c-card flex flex-col gap-3 p-3" data-testid={`bond-card-${entry.servantId}`}>
       <div className="flex items-center gap-3">
         {servant?.face ? <Image src={servant.face} alt={name} width={48} height={48} className="rounded" /> : null}
-        <div className="min-w-0 flex-1 font-semibold">{name}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-1 font-semibold">
+          {servant && <ClassIcon servant={servant} size={20} />}
+          {name}
+        </div>
         <Button variant="ghost" size="sm" onClick={onRemove}>
           {t('remove', '削除')}
         </Button>

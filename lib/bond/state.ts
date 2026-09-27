@@ -1,4 +1,4 @@
-import { MAX_CURRENT_BOND_LEVEL, MAX_TARGET_BOND_LEVEL } from './estimate'
+import { bondIncrement, MAX_CURRENT_BOND_LEVEL, MAX_TARGET_BOND_LEVEL } from './estimate'
 import type { BondQuestCandidate } from './quest-candidates'
 
 export type BondTrackerEntry = {
@@ -80,4 +80,31 @@ export const reconcileEntry = (
     entry: questId === entry.questId ? entry : { ...entry, questId },
     needsRemeasure: !questIds.has(entry.measuredQuestId),
   }
+}
+
+/** 現在Lvを変えたら「次のLvまで」をそのLvの必要増分(満額)に戻す。絆データが無ければ入力値を残す。 */
+export const withCurrentLevel = (
+  entry: BondTrackerEntry,
+  currentLevel: number,
+  growth: readonly number[] | undefined,
+): BondTrackerEntry => ({
+  ...entry,
+  currentLevel,
+  remainingToNext: bondIncrement(growth, currentLevel) ?? entry.remainingToNext,
+  targetLevel: Math.max(entry.targetLevel, currentLevel + 1),
+})
+
+/** 候補を効率順位付きで名前・エリアの部分一致で絞る。選択中の候補は常に残す。 */
+export const filterQuestCandidates = (
+  candidates: readonly BondQuestCandidate[],
+  keyword: string,
+  selectedId: string,
+): { candidate: BondQuestCandidate; rank: number }[] => {
+  const k = keyword.trim()
+  return candidates
+    .map((candidate, i) => ({ candidate, rank: i + 1 }))
+    .filter(
+      ({ candidate: { quest } }) =>
+        !k || quest.id === selectedId || `${quest.area} ${quest.name}`.includes(k),
+    )
 }

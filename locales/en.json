@@ -694,7 +694,7 @@
   },
   "bond": {
     "back-to-dashboard": "Back to dashboard",
-    "bond-per-ap": "{{bond}} bond / {{ap}} AP",
+    "bond-per-ap-rate": "{{bond}} bond / {{ap}} AP = {{rate}}/AP",
     "catalog-load-error": "Could not load servant data.",
     "catalog-retry": "Retry",
     "current-level": "Current bond Lv",
@@ -710,6 +710,7 @@
     "per-run-estimated": "Bond per run (estimated)",
     "pods-count": "{{count}}",
     "quest": "Farming quest",
+    "quest-filter": "Filter quests by name (by efficiency)",
     "range-error-between": "{{field}} is out of range ({{min}}–{{max}})",
     "range-error-min": "{{field}} is out of range ({{min}} or more)",
     "registered": "Added",
