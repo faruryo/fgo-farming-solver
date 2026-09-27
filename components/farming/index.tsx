@@ -154,7 +154,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       setIsLoading.on()
       try {
         const query = inputToQuery({ itemCounts, checkedQuests })
-        const isPublic = status === 'unauthenticated' ? true : defaultPublic
+        const isPublic = status === 'authenticated' ? defaultPublic : true
         const params = new URLSearchParams({
           ...query,
           fields: 'id',
@@ -284,6 +284,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
                   type="submit"
                   disabled={
                     isLoading ||
+                    status === 'loading' ||
                     !hasSubmittableItems(itemsQuery) ||
                     !hasSelectedQuests(checkedQuests)
                   }

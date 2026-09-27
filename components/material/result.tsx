@@ -17,7 +17,8 @@ import { EnrichedItem } from '../../lib/get-items'
 import { Quest } from '../../interfaces/fgodrop'
 import { groupBy } from '../../utils/group-by'
 import { buffer, computeFiniteTarget } from '../../lib/quest-efficiency'
-import { submitSolve } from '../../lib/farming/submit-solve'
+import { useSession } from 'next-auth/react'
+import { parseStoredDefaultPublic, submitSolve } from '../../lib/farming/submit-solve'
 import {
   buildSolveParams,
   toStockItemLike,
@@ -387,6 +388,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     ],
   )
 
+  const { status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
 
   const goSolver = useCallback(async () => {
@@ -394,6 +396,13 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
 
     setIsLoading(true)
     try {
+      const isPublic =
+        status === 'authenticated'
+          ? parseStoredDefaultPublic(
+              localStorage.getItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC),
+            )
+          : true
+      solveParams.set('isPublic', String(isPublic))
       await submitSolve(solveParams, router)
     } catch (e) {
       // submitSolve が reject するのは fetch 自体の失敗時のみ(不正レスポンスは
@@ -403,7 +412,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     } finally {
       setIsLoading(false)
     }
-  }, [solveParams, router])
+  }, [solveParams, router, status])
 
   const displayedItems =
     filterMode === 'short'
@@ -766,7 +775,12 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
           <button
             className="c-farming-btn"
             onClick={() => void goSolver()}
-            disabled={isLoading || needsItemTarget || needsQuestSelection}
+            disabled={
+              isLoading ||
+              needsItemTarget ||
+              needsQuestSelection ||
+              status === 'loading'
+            }
           >
             <span className="c-farming-btn-en">SOLVE FARMING ROUTE</span>
             <span className="c-farming-btn-jp">周回数を求める</span>

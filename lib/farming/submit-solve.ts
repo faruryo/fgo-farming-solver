@@ -41,8 +41,7 @@ export const submitSolve = async (
   router: { push: (url: string) => void }
 ): Promise<void> => {
   if (!params.has('isPublic')) {
-    const stored = localStorage.getItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC)
-    params.set('isPublic', String(parseStoredDefaultPublic(stored)))
+    params.set('isPublic', 'true')
   }
   const url = `/api/solve?${params.toString()}`
   const res = await fetch(url)

@@ -92,22 +92,8 @@ describe('submitSolve', () => {
     window.removeEventListener('ls-sync', onSync)
   })
 
-  it('respects stored defaultPublic when param is omitted', async () => {
+  it('defaults isPublic=true when param is omitted, even if defaultPublic=false is in localStorage', async () => {
     localStorage.setItem('farming/defaultPublic', 'false')
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ id: 'abc-123', isPublic: false }),
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
-    await submitSolve(params, router)
-
-    expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=false')
-  })
-
-  it('falls back to isPublic=true when stored defaultPublic is not a boolean', async () => {
-    localStorage.setItem('farming/defaultPublic', '"false"')
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),

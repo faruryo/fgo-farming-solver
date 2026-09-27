@@ -127,15 +127,12 @@ describe('/farming direct access (5.4 regression)', () => {
     expect(url.searchParams.get('isPublic')).toBe('false')
   })
 
-  it('submits stored defaultPublic=false even when session status is loading', async () => {
+  it('disables submit when session status is loading', async () => {
     localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, 'false')
     mockSession.mockReturnValue({
       data: null,
       status: 'loading',
     })
-    const fetchMock = stubFetch()
-    const user = userEvent.setup()
-
     render(<Index items={items} quests={quests} />)
 
     const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
@@ -148,8 +145,30 @@ describe('/farming direct access (5.4 regression)', () => {
       screen.queryByText(/ログインしていない場合、結果は常に公開されます/)
     ).not.toBeInTheDocument()
 
+    const submitBtn = screen.getByRole('button', { name: /周回数を求める/ })
+    expect(submitBtn).toBeDisabled()
+  })
+
+  it('submits isPublic=true when unauthenticated even if stored defaultPublic is false', async () => {
+    localStorage.setItem(STORAGE_KEYS.FARMING_RESULT_DEFAULT_PUBLIC, 'false')
+    mockSession.mockReturnValue({
+      data: null,
+      status: 'unauthenticated',
+    })
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const toggle = screen.getByRole('switch', { name: /結果を公開する/ })
+    expect(toggle).toBeChecked()
+    expect(toggle).toHaveAttribute('aria-disabled', 'true')
+    expect(
+      screen.getByText(/ログインしていない場合、結果は常に公開されます/)
+    ).toBeInTheDocument()
+
     const url = await inputItemCountAndSolve(user, fetchMock)
-    expect(url.searchParams.get('isPublic')).toBe('false')
+    expect(url.searchParams.get('isPublic')).toBe('true')
   })
 
   it('falls back to defaultPublic=true when stored value is non-boolean like "\\"false\\""', async () => {

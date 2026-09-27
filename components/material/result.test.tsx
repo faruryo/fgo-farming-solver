@@ -32,6 +32,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
+const mockSession = vi.fn().mockReturnValue({ data: null, status: 'unauthenticated' })
+vi.mock('next-auth/react', () => ({
+  useSession: () => mockSession(),
+}))
+
 vi.mock('../common/StockTargetSettings', () => ({
   StockTargetSettings: () => <div>stock-target-settings</div>,
 }))
@@ -283,5 +288,46 @@ describe('goSolver — recovers from a failed submission', () => {
     await waitFor(() => expect(button).not.toBeDisabled())
 
     errorSpy.mockRestore()
+  })
+})
+
+describe('goSolver — result visibility', () => {
+  beforeEach(() => {
+    mockSession.mockReturnValue({ data: null, status: 'unauthenticated' })
+  })
+
+  it('submits isPublic=true when unauthenticated even if defaultPublic=false is in localStorage', async () => {
+    setLocalStorage('efficiency/stockEnabled', false)
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
+    localStorage.setItem('farming/defaultPublic', 'false')
+
+    const url = await submitAndReadUrl()
+    expect(url.searchParams.get('isPublic')).toBe('true')
+  })
+
+  it('submits isPublic=false when authenticated and defaultPublic=false is in localStorage', async () => {
+    mockSession.mockReturnValue({
+      data: { user: { id: 'user-1' } },
+      status: 'authenticated',
+    })
+    setLocalStorage('efficiency/stockEnabled', false)
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
+    localStorage.setItem('farming/defaultPublic', 'false')
+
+    const url = await submitAndReadUrl()
+    expect(url.searchParams.get('isPublic')).toBe('false')
+  })
+
+  it('disables solve button while session status is loading', async () => {
+    mockSession.mockReturnValue({ data: null, status: 'loading' })
+    setLocalStorage('efficiency/stockEnabled', false)
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
+
+    render(<Result items={items} quests={quests} />)
+    const button = await submitButton()
+    expect(button).toBeDisabled()
   })
 })
