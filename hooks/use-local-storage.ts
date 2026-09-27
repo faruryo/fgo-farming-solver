@@ -61,10 +61,14 @@ export const useLocalStorage = <T>(
       }
       const json = localStorage.getItem(key)
       if (json) {
-        let obj = JSON.parse(json) as T
-        if (options?.onGet) obj = options.onGet(obj)
-        if (JSON.stringify(obj) !== JSON.stringify(stateRef.current)) {
-          setState(obj)
+        try {
+          let obj = JSON.parse(json) as T
+          if (options?.onGet) obj = options.onGet(obj)
+          if (JSON.stringify(obj) !== JSON.stringify(stateRef.current)) {
+            setState(obj)
+          }
+        } catch (e) {
+          console.error(e)
         }
       }
     }
