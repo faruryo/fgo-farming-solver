@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,7 @@ function ServantSearch({
                 }}
               >
                 <span className="flex items-center gap-1">
+                  {s.face ? <Image src={s.face} alt="" width={28} height={28} className="rounded" /> : null}
                   <ClassIcon servant={s} size={18} />
                   {s.name}
                 </span>
