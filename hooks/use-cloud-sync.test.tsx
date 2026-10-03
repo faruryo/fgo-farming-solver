@@ -655,4 +655,98 @@ describe('useCloudSync shrink guard', () => {
     expect(result.current.pendingShrink).not.toBeNull()
     expect(postCalls()).toHaveLength(0)
   })
+
+  // フックは常駐(sync-engine)・ナビ・/cloud と複数箇所でマウントされる。debounce が
+  // インスタンスごとだと、1回の編集でマウント数だけ POST/GET が飛ぶ(#76)。
+  describe('autosave across multiple mounted instances', () => {
+    const setupSyncedLocal = () => {
+      localStorage.setItem('fgo_auto_sync_enabled', 'true')
+      Object.entries(cloudPayload.storage).forEach(([k, v]) => localStorage.setItem(k, v))
+      localStorage.setItem(
+        'fgo_sync_metadata',
+        JSON.stringify({
+          updatedAt: CLOUD_UPDATED_AT,
+          deviceId: 'mobile-device',
+          lastSyncedAt: CLOUD_UPDATED_AT,
+        }),
+      )
+    }
+
+    const renderInstances = async (count: number) => {
+      const useCloudSyncFresh = await loadUseCloudSync()
+      const hooks = Array.from({ length: count }, () => renderHook(() => useCloudSyncFresh()))
+      await waitFor(() => {
+        hooks.forEach(({ result }) => expect(result.current.cloudData).not.toBeNull())
+      })
+      return hooks
+    }
+
+    // 実時間で5秒待たずに debounce を満了させる。waitFor は実タイマーで動くので戻す。
+    const elapseDebounce = async () => {
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+
+    it('sends one POST and one refetch per edit regardless of mounted instances', async () => {
+      setupSyncedLocal()
+      await renderInstances(3)
+      const getsAfterMount = getCalls().length
+
+      await elapseDebounce()
+
+      await waitFor(() => {
+        expect(postCalls()).toHaveLength(1)
+        expect(getCalls()).toHaveLength(getsAfterMount + 1)
+      })
+    })
+
+    // ドロワー内のインスタンスは閉じるとアンマウントされる。予約後に閉じても、
+    // 残っている常駐インスタンスが保存する。
+    it('keeps the pending autosave when a transient instance unmounts', async () => {
+      setupSyncedLocal()
+      const [, drawer] = await renderInstances(2)
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        drawer.unmount()
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      await waitFor(() => {
+        expect(postCalls()).toHaveLength(1)
+      })
+    })
+
+    it('drops the pending autosave once auto-sync is turned off', async () => {
+      setupSyncedLocal()
+      const [{ result }] = await renderInstances(2)
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        act(() => {
+          result.current.toggleAutoSync()
+        })
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      expect(postCalls()).toHaveLength(0)
+    })
+  })
 })

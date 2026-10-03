@@ -47,6 +47,25 @@ export const LOCAL_METADATA_KEY = STORAGE_KEYS.LOCAL_METADATA
 let isApplyingCloudData = false
 let lastCloudFetchAt: number | null = null
 
+// autosave の debounce も同じ理由でモジュールに1本だけ持つ。インスタンスごとに
+// 持つと、変更イベントのたびにマウント数だけ POST/GET が飛ぶ(#76)。
+// 発火時はマウント中のインスタンスの最新 handleSave を1つだけ呼ぶ。予約した
+// インスタンス自身を呼ぶと、ドロワーのように閉じれば消えるインスタンスが予約した
+// 保存が、閉じた時点で失われる。
+let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null
+const autoSavers = new Set<{ current: () => Promise<void> }>()
+
+const scheduleAutoSave = () => {
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+  autoSaveTimeout = setTimeout(() => {
+    autoSaveTimeout = null
+    // 予約後に OFF にされた場合(別インスタンス・別タブを含む)は保存しない
+    if (localStorage.getItem(AUTO_SYNC_KEY) !== 'true') return
+    const saver = autoSavers.values().next().value
+    if (saver) void saver.current()
+  }, 5000)
+}
+
 // 縮小ガードで止めた保存。ダイアログの提示と autosave の抑止に使う。
 export type PendingShrink = {
   // 保存しようとした規模
@@ -99,7 +118,6 @@ const [isSaving, setIsSaving] = useState(false)
   // pendingShrink を見ていると遷移先が素通しになる(保留中なのに「同期は正常です」)。
   const [blockedShrinkState, setBlockedShrinkState] = useState<PendingShrink | null>(null)
 
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   // handleSave から同期的に読む最新のクラウド内容。state を handleSave の deps に
   // 入れると、変更リスナーの effect が張り直されて cleanup が武装済みの autosave
   // タイマーを取り消してしまう(再スケジュールされない)ため ref で持つ。
@@ -392,6 +410,23 @@ const [isSaving, setIsSaving] = useState(false)
     }
   }, [session, fetchCloudData, hasConflict, autoSyncEnabled, getLocalMetadata])
 
+  // autosave の発火時に呼ばれる最新の handleSave をモジュールへ登録する
+  const autoSaveRef = useRef(() => handleSave())
+  useEffect(() => {
+    autoSaveRef.current = () => handleSave()
+  }, [handleSave])
+  useEffect(() => {
+    const saver = autoSaveRef
+    autoSavers.add(saver)
+    return () => {
+      autoSavers.delete(saver)
+      if (autoSavers.size === 0 && autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout)
+        autoSaveTimeout = null
+      }
+    }
+  }, [])
+
   // クラウドの内容をこの端末へ引き下ろす。ローカルが clean になり、以後の判定は
   // 自然に通る。解除は無条件に行う: ref が無いときに解除を飛ばすと、リロードする
   // まで autosave が止まったままになる。
@@ -453,12 +488,7 @@ const [isSaving, setIsSaving] = useState(false)
         return
       }
 
-      if (autoSyncEnabled) {
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-        saveTimeoutRef.current = setTimeout(() => {
-          void handleSave()
-        }, 5000)
-      }
+      if (autoSyncEnabled) scheduleAutoSave()
     }
 
     window.addEventListener('localStorageUpdated', listener)
@@ -467,9 +497,8 @@ const [isSaving, setIsSaving] = useState(false)
     return () => {
       window.removeEventListener('localStorageUpdated', listener)
       window.removeEventListener('ls-sync', listener)
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
-  }, [autoSyncEnabled, handleSave, getLocalMetadata])
+  }, [autoSyncEnabled, getLocalMetadata])
 
   const localStats = getStats(
     Object.fromEntries(KEYS.map(k => [k, typeof window !== 'undefined' ? localStorage.getItem(k) : null])),
