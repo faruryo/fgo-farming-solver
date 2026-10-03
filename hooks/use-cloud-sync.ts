@@ -56,6 +56,27 @@ let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null
 const CLOUD_FETCHED_EVENT = 'fgo-cloud-fetched'
 const autoSavers = new Set<{ current: () => Promise<void> }>()
 
+const cancelAutoSave = () => {
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+  autoSaveTimeout = null
+}
+
+// 取得結果を全インスタンスへ配る際の新旧判定。並行する GET(マウント時・再開時・
+// 保存後)は開始順に完了するとは限らないため、後から始めた取得を配った後に
+// 返ってきた古い応答は配らず、配り済みの最新を返す。配ると全インスタンスの
+// 縮小ガードとコンフリクト判定が古いクラウドへ巻き戻る。
+let cloudFetchSeq = 0
+let publishedFetchSeq = 0
+let publishedCloudData: CloudData | null = null
+
+const publishCloudData = (seq: number, parsed: CloudData): CloudData => {
+  if (seq < publishedFetchSeq && publishedCloudData) return publishedCloudData
+  publishedFetchSeq = seq
+  publishedCloudData = parsed
+  window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
+  return parsed
+}
+
 const scheduleAutoSave = () => {
   if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
   autoSaveTimeout = setTimeout(() => {
@@ -162,6 +183,10 @@ const [isSaving, setIsSaving] = useState(false)
     const syncVal = () => {
       const val = localStorage.getItem(AUTO_SYNC_KEY)
       setAutoSyncEnabled(val === 'true')
+      // OFF にしたら予約済みの autosave も捨てる。発火時の判定だけだと、5秒以内に
+      // ON へ戻されたとき OFF 前の予約が保存してしまう。別タブでの OFF も
+      // storage イベントでここを通る。
+      if (val !== 'true') cancelAutoSave()
     }
     syncVal()
 
@@ -177,12 +202,6 @@ const [isSaving, setIsSaving] = useState(false)
     const newVal = !autoSyncEnabled
     setAutoSyncEnabled(newVal)
     localStorage.setItem(AUTO_SYNC_KEY, String(newVal))
-    // OFF にしたら予約済みの autosave も捨てる。発火時の判定だけだと、5秒以内に
-    // ON へ戻されたとき OFF 前の予約が保存してしまう。
-    if (!newVal && autoSaveTimeout) {
-      clearTimeout(autoSaveTimeout)
-      autoSaveTimeout = null
-    }
     // Dispatch custom event for same-window sync
     window.dispatchEvent(new Event('fgo-auto-sync-update'))
   }
@@ -255,13 +274,13 @@ const [isSaving, setIsSaving] = useState(false)
     // Recorded synchronously at entry so a same-tick burst (multiple hook
     // instances reacting to one resume) merges into a single GET.
     lastCloudFetchAt = Date.now()
+    const seq = ++cloudFetchSeq
     if (session == null) {
       if (process.env.NODE_ENV === 'development') {
         const mock = localStorage.getItem(MOCK_CLOUD_KEY)
         if (mock) {
           const parsed = JSON.parse(mock) as unknown as CloudData
-          window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
-          return parsed
+          return publishCloudData(seq, parsed)
         }
       }
       return null
@@ -271,9 +290,7 @@ const [isSaving, setIsSaving] = useState(false)
       const res = await fetch(`/api/cloud`, { credentials: 'include' })
       if (res.status === 200) {
         const rawData = await res.json()
-        const parsed: CloudData = normalizeCloudResponse(rawData)
-        window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
-        return parsed
+        return publishCloudData(seq, normalizeCloudResponse(rawData))
       }
     } catch (e) {
       console.error('Failed to fetch cloud data', e)
@@ -437,10 +454,7 @@ const [isSaving, setIsSaving] = useState(false)
     autoSavers.add(saver)
     return () => {
       autoSavers.delete(saver)
-      if (autoSavers.size === 0 && autoSaveTimeout) {
-        clearTimeout(autoSaveTimeout)
-        autoSaveTimeout = null
-      }
+      if (autoSavers.size === 0) cancelAutoSave()
     }
   }, [])
 

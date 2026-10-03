@@ -778,5 +778,70 @@ describe('useCloudSync shrink guard', () => {
 
       expect(postCalls()).toHaveLength(0)
     })
+
+    // 別タブで OFF にされた場合も同じ。予約側のタブは storage イベントでしか知らない。
+    it('drops the pending autosave when another tab turns auto-sync off and back on', async () => {
+      setupSyncedLocal()
+      await renderInstances(2)
+      const setAutoSyncFromOtherTab = (value: string) => {
+        localStorage.setItem('fgo_auto_sync_enabled', value)
+        window.dispatchEvent(new StorageEvent('storage', { key: 'fgo_auto_sync_enabled' }))
+      }
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        act(() => setAutoSyncFromOtherTab('false'))
+        act(() => setAutoSyncFromOtherTab('true'))
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    // 取得結果は全インスタンスへ配るので、先に始めた取得が後から返ってくると全員が
+    // 古いクラウドへ巻き戻り、縮小ガードとコンフリクト判定が古い内容を基準にする。
+    it('does not roll instances back to a slower, older GET response', async () => {
+      setupSyncedLocal()
+      const hooks = await renderInstances(2)
+      const NEWER_UPDATED_AT = '2026-07-26T00:00:00.000Z'
+      const older = cloudPayload
+      const newer = {
+        ...cloudPayload,
+        metadata: { updatedAt: NEWER_UPDATED_AT, deviceId: 'desktop-device' },
+      }
+      let releaseOlder!: () => void
+      const olderGate = new Promise<void>((resolve) => {
+        releaseOlder = resolve
+      })
+      let gets = 0
+      fetchMock = vi.fn(async () => {
+        gets += 1
+        if (gets === 1) {
+          await olderGate
+          return { ok: true, status: 200, json: async () => older }
+        }
+        return { ok: true, status: 200, json: async () => newer }
+      })
+      vi.stubGlobal('fetch', fetchMock)
+
+      let slowFetch!: Promise<unknown>
+      await act(async () => {
+        slowFetch = hooks[0].result.current.fetchCloudData()
+        await hooks[1].result.current.fetchCloudData()
+      })
+      await act(async () => {
+        releaseOlder()
+        await slowFetch
+      })
+
+      hooks.forEach(({ result }) =>
+        expect(result.current.cloudData?.metadata.updatedAt).toBe(NEWER_UPDATED_AT),
+      )
+    })
   })
 })
