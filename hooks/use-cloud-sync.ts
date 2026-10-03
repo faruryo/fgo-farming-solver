@@ -53,6 +53,7 @@ let lastCloudFetchAt: number | null = null
 // インスタンス自身を呼ぶと、ドロワーのように閉じれば消えるインスタンスが予約した
 // 保存が、閉じた時点で失われる。
 let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null
+const CLOUD_FETCHED_EVENT = 'fgo-cloud-fetched'
 const autoSavers = new Set<{ current: () => Promise<void> }>()
 
 const scheduleAutoSave = () => {
@@ -176,6 +177,12 @@ const [isSaving, setIsSaving] = useState(false)
     const newVal = !autoSyncEnabled
     setAutoSyncEnabled(newVal)
     localStorage.setItem(AUTO_SYNC_KEY, String(newVal))
+    // OFF にしたら予約済みの autosave も捨てる。発火時の判定だけだと、5秒以内に
+    // ON へ戻されたとき OFF 前の予約が保存してしまう。
+    if (!newVal && autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout)
+      autoSaveTimeout = null
+    }
     // Dispatch custom event for same-window sync
     window.dispatchEvent(new Event('fgo-auto-sync-update'))
   }
@@ -227,6 +234,20 @@ const [isSaving, setIsSaving] = useState(false)
     return action
   }, [autoSyncEnabled, applyData, getLocalMetadata])
 
+  // 取得結果は全インスタンスへ配る。保存とその後の GET は1インスタンスしか行わない
+  // ので、配らないと他インスタンスの cloudDataRef が古いまま残り、保存担当が
+  // 交代した後の縮小ガードが古いクラウドと比べてしまう(#76)。
+  useEffect(() => {
+    const onFetched = (e: Event) => {
+      const parsed = (e as CustomEvent<CloudData>).detail
+      cloudDataRef.current = parsed
+      setCloudData(parsed)
+      checkConflict(parsed)
+    }
+    window.addEventListener(CLOUD_FETCHED_EVENT, onFetched)
+    return () => window.removeEventListener(CLOUD_FETCHED_EVENT, onFetched)
+  }, [checkConflict])
+
   // 取得した内容を返す。setCloudData は同じレンダーの `cloudData` を更新しないため、
   // 縮小ガードのように「今取った値」で判定したい呼び出し側が戻り値で受け取れるように
   // する(既存の呼び出し側は戻り値を無視するので影響しない)。
@@ -239,9 +260,7 @@ const [isSaving, setIsSaving] = useState(false)
         const mock = localStorage.getItem(MOCK_CLOUD_KEY)
         if (mock) {
           const parsed = JSON.parse(mock) as unknown as CloudData
-          cloudDataRef.current = parsed
-          setCloudData(parsed)
-          checkConflict(parsed)
+          window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
           return parsed
         }
       }
@@ -253,16 +272,14 @@ const [isSaving, setIsSaving] = useState(false)
       if (res.status === 200) {
         const rawData = await res.json()
         const parsed: CloudData = normalizeCloudResponse(rawData)
-        cloudDataRef.current = parsed
-        setCloudData(parsed)
-        checkConflict(parsed)
+        window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
         return parsed
       }
     } catch (e) {
       console.error('Failed to fetch cloud data', e)
     }
     return null
-  }, [session, checkConflict])
+  }, [session])
 
   useEffect(() => {
     void getItems(i18n.language)

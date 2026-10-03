@@ -696,7 +696,7 @@ describe('useCloudSync shrink guard', () => {
 
     it('sends one POST and one refetch per edit regardless of mounted instances', async () => {
       setupSyncedLocal()
-      await renderInstances(3)
+      const hooks = await renderInstances(3)
       const getsAfterMount = getCalls().length
 
       await elapseDebounce()
@@ -704,6 +704,13 @@ describe('useCloudSync shrink guard', () => {
       await waitFor(() => {
         expect(postCalls()).toHaveLength(1)
         expect(getCalls()).toHaveLength(getsAfterMount + 1)
+      })
+      // 保存しなかったインスタンスも保存後のクラウドを持つ。古いままだと保存担当が
+      // 交代した後の縮小ガードが古いクラウドと比べる。
+      await waitFor(() => {
+        hooks.forEach(({ result }) =>
+          expect(result.current.cloudData?.metadata.updatedAt).not.toBe(CLOUD_UPDATED_AT),
+        )
       })
     })
 
@@ -736,6 +743,29 @@ describe('useCloudSync shrink guard', () => {
       vi.useFakeTimers()
       try {
         editMaterial()
+        act(() => {
+          result.current.toggleAutoSync()
+        })
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    it('drops the pending autosave even if auto-sync is turned back on before it fires', async () => {
+      setupSyncedLocal()
+      const [{ result }] = await renderInstances(2)
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        act(() => {
+          result.current.toggleAutoSync()
+        })
         act(() => {
           result.current.toggleAutoSync()
         })
