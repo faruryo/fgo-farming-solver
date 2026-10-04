@@ -71,6 +71,27 @@ describe('updateMaterialCatalog', () => {
   })
 
   it.each([
+    ['names the bonus event from basic_event', async () => ({ status: 200 as const, value: [{ id: 80627, name: 'ハロウィン' }], validator: {} }), 'ハロウィン'],
+    ['keeps updating when basic_event cannot be read', async () => { throw new Error('boom') }, undefined],
+  ])('%s', async (_label, eventResponse, expectedName) => {
+    const withBonus = {
+      ...servant, ...makeCompleteMaterials(), bondGrowth: [1000],
+      extraPassive: [{
+        extraPassive: [{ eventId: 80627, startedAt: 0, endedAt: 1_800_000_000 }],
+        functions: [{ funcType: 'servantFriendshipUp', buffs: [], svals: [{ RateCount: 200 }] }],
+      }],
+    }
+    const fetchSource = vi.fn(async (url: string) => {
+      if (url === 'events') return eventResponse()
+      if (url === 'servants') return { status: 200 as const, value: [withBonus], validator: { etag: 'servant-v2' } }
+      return { status: 304 as const, validator: {} }
+    })
+    const result = await updateMaterialCatalog({ previous, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2 })
+    expect(result.catalog?.servants[0].eventBonuses?.[0]?.eventName).toBe(expectedName)
+    expect(result.catalog?.servants[0].eventBonuses?.[0]?.bond).toBe(20)
+  })
+
+  it.each([
     ['without bondGrowth', previous, {}],
     ['with bondGrowth', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }, { etag: 'servant-v1' }],
     ['with bondGrowth but built before eventBonuses', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000], eventBonuses: undefined }] }, {}],

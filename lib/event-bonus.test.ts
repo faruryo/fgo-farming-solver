@@ -21,6 +21,14 @@ describe('extractEventBonuses', () => {
     ], NOW)).toEqual([{ eventId: 80627, startedAt: NOW - 60, endedAt: NOW + 100, damage: 100, bond: 20 }])
   })
 
+  it('attaches the event name when known', () => {
+    expect(extractEventBonuses(
+      [skill([{ eventId: 80627, endedAt: NOW + 100 }], [bond(200)])],
+      NOW,
+      new Map([[80627, 'くたばれ！ パンプキンファーム・スローター']])
+    )).toEqual([{ eventId: 80627, eventName: 'くたばれ！ パンプキンファーム・スローター', startedAt: NOW - 60, endedAt: NOW + 100, bond: 20 }])
+  })
+
   it('unions the windows when one event has conditions with different periods', () => {
     expect(extractEventBonuses([
       skill([{ eventId: 80507, endedAt: NOW + 500 }, { eventId: 80507, endedAt: NOW + 100 }], [bond(200)]),

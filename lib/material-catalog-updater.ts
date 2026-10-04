@@ -40,6 +40,27 @@ const parseItems = (value: unknown): Item[] => {
   return value as Item[]
 }
 
+const isNamedEvent = (e: unknown): e is { id: number; name: string } => {
+  if (!e || typeof e !== 'object') return false
+  const { id, name } = e as { id?: unknown; name?: unknown }
+  return typeof id === 'number' && typeof name === 'string'
+}
+
+// イベント名はボーナスの見出しにだけ使う。取れなくてもカタログ更新は止めない（画面はイベント ID で出す）。
+const fetchEventNames = async (
+  fetchSource: ConditionalFetch,
+  eventUrl: string | undefined
+): Promise<Map<number, string>> => {
+  if (!eventUrl) return new Map()
+  try {
+    const { value } = await fetchSource(eventUrl, {})
+    if (!Array.isArray(value)) return new Map()
+    return new Map(value.filter(isNamedEvent).map(e => [e.id, e.name]))
+  } catch {
+    return new Map()
+  }
+}
+
 const existingOrThrow = (previous: MaterialCatalogV1 | null): MaterialCatalogV1 => {
   if (!previous) throw new Error('Atlas returned 304 but no previous Material Catalog exists')
   return previous
@@ -88,12 +109,14 @@ export const updateMaterialCatalog = async ({
   fetchSource,
   servantUrl,
   itemUrl,
+  eventUrl,
   now,
 }: {
   previous: MaterialCatalogV1 | null
   fetchSource: ConditionalFetch
   servantUrl: string
   itemUrl: string
+  eventUrl?: string
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
   const [servantsResponse, initialItemsResponse] = await Promise.all([
@@ -111,6 +134,7 @@ export const updateMaterialCatalog = async ({
       ? await fetchSource(itemUrl, {})
       : initialItemsResponse
   const items = itemSection(itemsResponse, previous, materials)
+  const eventNames = servantsResponse.status === 200 ? await fetchEventNames(fetchSource, eventUrl) : undefined
   const candidate = buildMaterialCatalog({
     servants,
     materials,
@@ -120,6 +144,7 @@ export const updateMaterialCatalog = async ({
       niceItem: validatorFor(itemsResponse, previous?.sources.niceItem ?? {}),
     },
     updatedAt: now(),
+    eventNames,
   })
   const validation = validateMaterialCatalog(candidate, previous ?? undefined)
   if (!validation.ok) throw new Error(`Refusing Material Catalog update: ${validation.reason}`)

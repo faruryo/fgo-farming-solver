@@ -315,7 +315,7 @@ describe('Index - event bonus filter', () => {
     await user.selectOptions(select(), 'all')
     expect(shown()).toEqual(['サーヴァントB', 'サーヴァントC', 'サーヴァントD'])
 
-    await user.selectOptions(select(), '0:20')
+    await user.selectOptions(select(), '80627:0:20')
     expect(shown()).toEqual(['サーヴァントD'])
 
     await user.selectOptions(select(), 'all')
@@ -330,5 +330,55 @@ describe('Index - event bonus filter', () => {
     const ended = makeMaterialCatalogServant({ id: 2, collectionNo: 2, name: 'サーヴァントB', eventBonuses: bonus(30, 20, now - 1) })
     render(<Index servants={[servant, ended]} materials={allMaterials} items={items} />)
     expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
+  })
+
+  it('separates concurrent events under their names so same-rate groups are not merged', async () => {
+    const user = userEvent.setup()
+    const allQuests = { eventId: 80513, eventName: '期間限定で第1弾～第9弾で召喚可能となったイベント限定サーヴァントはすべてのクエストで攻撃威力50%アップ！', startedAt: now - 60, endedAt: now + 3600, damage: 50 }
+    const mainEvent = (damage: number) => ({ eventId: 80511, eventName: '育て！ マイ・リトル・ドラゴン\n～鱗ある者たちの見る幻想～', startedAt: now - 30, endedAt: now + 3600, damage, bond: 20 })
+    const b = makeMaterialCatalogServant({ id: 2, collectionNo: 2, name: 'サーヴァントB', eventBonuses: [mainEvent(50), allQuests] })
+    const c = makeMaterialCatalogServant({ id: 3, collectionNo: 3, name: 'サーヴァントC', eventBonuses: [allQuests] })
+    const d = makeMaterialCatalogServant({ id: 4, collectionNo: 4, name: 'サーヴァントD', eventBonuses: [mainEvent(30)] })
+    render(<Index servants={[servant, b, c, d]} materials={allMaterials} items={items} />)
+
+    expect([...select().querySelectorAll('optgroup')].map(g => g.label)).toEqual([
+      '期間限定で第1弾～第9弾で召喚可能となったイベン…',
+      '育て！ マイ・リトル・ドラゴン',
+    ])
+    expect([...select().querySelectorAll('option')].map(o => o.textContent)).toEqual([
+      'イベント対象',
+      'ボーナス対象すべて（3）',
+      'このイベントの対象すべて（2）',
+      '特攻50%（2）',
+      'このイベントの対象すべて（2）',
+      '特攻50%・絆+20%（1）',
+      '特攻30%・絆+20%（1）',
+    ])
+
+    await user.selectOptions(select(), 'event:80511')
+    expect(shown()).toEqual(['サーヴァントB', 'サーヴァントD'])
+    await user.selectOptions(select(), '80513:50:0')
+    expect(shown()).toEqual(['サーヴァントB', 'サーヴァントC'])
+  })
+
+  it('rebuilds the options when a bonus period starts or ends while the page stays open', () => {
+    vi.useFakeTimers()
+    try {
+      const start = Math.floor(Date.now() / 1000)
+      const later = makeMaterialCatalogServant({
+        id: 2, collectionNo: 2, name: 'サーヴァントB',
+        eventBonuses: [{ eventId: 80627, startedAt: start + 60, endedAt: start + 120, damage: 30, bond: 20 }],
+      })
+      render(<Index servants={[servant, later]} materials={allMaterials} items={items} />)
+      expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
+
+      act(() => { vi.advanceTimersByTime(60_000) })
+      expect(screen.getByRole('combobox', { name: 'イベント対象' })).toBeInTheDocument()
+
+      act(() => { vi.advanceTimersByTime(60_000) })
+      expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

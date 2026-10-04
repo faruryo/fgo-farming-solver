@@ -80,12 +80,14 @@ export const buildMaterialCatalog = ({
   items,
   sources,
   updatedAt,
+  eventNames,
 }: {
   servants: Array<NiceServant | MaterialCatalogServant>
   materials: MaterialsForServants
   items: Array<Item | MaterialCatalogItem>
   sources: MaterialCatalogV1['sources']
   updatedAt: number
+  eventNames?: ReadonlyMap<number, string>
 }): MaterialCatalogV1 => ({
   schemaVersion: MATERIAL_CATALOG_SCHEMA_VERSION,
   updatedAt,
@@ -103,7 +105,7 @@ export const buildMaterialCatalog = ({
       : {}),
     eventBonuses:
       'extraAssets' in servant
-        ? extractEventBonuses(servant.extraPassive, Math.floor(updatedAt / 1000))
+        ? extractEventBonuses(servant.extraPassive, Math.floor(updatedAt / 1000), eventNames)
         : servant.eventBonuses ?? [],
   })),
   materials,
