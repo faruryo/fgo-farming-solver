@@ -15,6 +15,7 @@ import {
   buildEventDrops,
   runEventSolver,
   reverseCalcBoxes,
+  computeTotalNeed,
   computeShortfall,
   computeRosterImpact,
 } from './event-plan'
@@ -340,6 +341,35 @@ const buildTestChaldea = (): {
 
   return { chaldeaState, materialsForServants }
 }
+
+describe('computeTotalNeed', () => {
+  it('素材と QP（atlasId=1）を所持数を引かずに集計する', () => {
+    const { chaldeaState, materialsForServants } = buildTestChaldea()
+    const need = computeTotalNeed(chaldeaState, materialsForServants)
+    expect(need.get(6001)).toBe(10)
+    expect(need.get(1)).toBe(100000)
+  })
+
+  it('disabled サーヴァントは除外される', () => {
+    const { chaldeaState, materialsForServants } = buildTestChaldea()
+    chaldeaState['1'].disabled = true
+    expect(computeTotalNeed(chaldeaState, materialsForServants).size).toBe(0)
+  })
+
+  it('disabled ターゲットは除外される', () => {
+    const { chaldeaState, materialsForServants } = buildTestChaldea()
+    chaldeaState['1'].targets.ascension.disabled = true
+    expect(computeTotalNeed(chaldeaState, materialsForServants).size).toBe(0)
+  })
+
+  it("'all' キーは除外される", () => {
+    const { chaldeaState, materialsForServants } = buildTestChaldea()
+    chaldeaState['all'] = chaldeaState['1']
+    materialsForServants['all'] = materialsForServants['1']
+    const need = computeTotalNeed(chaldeaState, materialsForServants)
+    expect(need.get(6001)).toBe(10)
+  })
+})
 
 describe('computeShortfall', () => {
   it('必要素材から所持数を差し引いた不足を返す', () => {

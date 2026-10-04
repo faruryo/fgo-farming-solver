@@ -2,12 +2,12 @@
 
 ## 1. レジストリと一覧合成（純粋関数）
 
-- [ ] 1.1 `data/event-features.ts` に `EVENT_FEATURES`（80614: `craft`、表示用 `meta` は必須プロパティとして Atlas basic_event の名前「カルデア南海大決戦！ ～マジムンアイランドに謎の巨人の影を見た～」・startedAt=1786532400・endedAt=1788321599）を追加する。検証: 型チェックが通り、`meta` を欠いたエントリが型レベルで禁止されること。
-- [ ] 1.2 `lib/event-features.ts` に `featuresFor(id, hasKvBox)`、`mergeEventList(kvEvents, registry)`（KV meta 優先・features 和集合・ID 重複なし）、`latestCraftEventId()` を実装する。検証: `lib/event-features.test.ts` のケース表（KV のみ／レジストリのみ／両方／どちらも無し、registry meta の started < ended）が通り、優先順位を反転させると赤くなることを一度確認する。
+- [x] 1.1 `data/event-features.ts` に `EVENT_FEATURES`（80614: `craft`、表示用 `meta` は必須プロパティとして Atlas basic_event の名前「カルデア南海大決戦！ ～マジムンアイランドに謎の巨人の影を見た～」・startedAt=1786532400・endedAt=1788321599）を追加する。検証: 型チェックが通り、`meta` を欠いたエントリが型レベルで禁止されること。
+- [x] 1.2 `lib/event-features.ts` に `featuresFor(id, hasKvBox)`、`mergeEventList(kvEvents, registry)`（KV meta 優先・features 和集合・ID 重複なし）、`latestCraftEventId()` を実装する。検証: `lib/event-features.test.ts` のケース表（KV のみ／レジストリのみ／両方／どちらも無し、registry meta の started < ended）が通り、優先順位を反転させると赤くなることを一度確認する。
 
 ## 2. need 源の共通化
 
-- [ ] 2.1 `lib/event-plan.ts` の `computeShortfall` から総必要数の集計を `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う。検証: 既存 `lib/event-plan.test.ts` が無変更で通る＋`computeTotalNeed` の単体ケース（disabled サーヴァント／disabled ターゲット除外）を追加。
+- [x] 2.1 `lib/event-plan.ts` の `computeShortfall` から総必要数の集計を `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う。検証: 既存 `lib/event-plan.test.ts` が無変更で通る＋`computeTotalNeed` の単体ケース（disabled サーヴァント／disabled ターゲット除外）を追加。
 - [ ] 2.2 `hooks/use-roster-need.ts` に、ドロップデータに依存しない形で、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得 ID 完全性確認（部分欠落ガード）・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。また `hooks/use-farming-purpose.ts` のマウント時自動書き込みを撤廃しつつ、旧キー（`QUEST_EFFICIENCY_SHORTAGE_ONLY`, `STOCK_ENABLED`）が残る端末では `migrateFarmingPurpose` による旧設定のメモリ上復元を維持し、明示選択時のみ保存する。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末および旧キー保持端末でナビやフックを呼び出しても `localStorage.setItem` が呼ばれずに正しく `purpose` が解決されること、一部サーヴァントの素材取得欠落時に計算を中断する単体テストを追加。
 
 ## 3. イベントページ（ハブ）
