@@ -11,7 +11,7 @@
 // shortage recovery callback directly instead of rendering the real Sonner
 // toast tree (which lives outside this component, at the layout level).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Index } from './index'
 import { makeMaterialCatalogServant, makeItem, makeMaterials } from './test-fixtures'
@@ -377,6 +377,26 @@ describe('Index - event bonus filter', () => {
 
       act(() => { vi.advanceTimersByTime(60_000) })
       expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('falls back to no filter when the selected "all" outlives the last event', () => {
+    vi.useFakeTimers()
+    try {
+      const start = Math.floor(Date.now() / 1000)
+      const ending = makeMaterialCatalogServant({
+        id: 2, collectionNo: 2, name: 'サーヴァントB',
+        eventBonuses: [{ eventId: 80627, startedAt: start - 60, endedAt: start + 60, damage: 30, bond: 20 }],
+      })
+      render(<Index servants={[servant, ending]} materials={allMaterials} items={items} />)
+      fireEvent.change(select(), { target: { value: 'all' } })
+      expect(shown()).toEqual(['サーヴァントB'])
+
+      act(() => { vi.advanceTimersByTime(60_000) })
+      expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
+      expect(shown()).toEqual(['サーヴァントA', 'サーヴァントB'])
     } finally {
       vi.useRealTimers()
     }

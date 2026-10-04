@@ -181,6 +181,7 @@
     "event-bonus-separator": "・",
     "event-bonus-event-all": "このイベントの対象すべて（{{count}}）",
     "event-bonus-event-id": "イベント {{id}}",
+    "event-bonus-event-name-truncated": "{{name}}…",
     "owned-card-gesture-hint": "タップ:+1 ／ 右クリック・長押し:-1",
     "tracking-mode-tooltip": "ON 時、現在値を変更すると所持数を自動で増減します。",
     "advisor-tab-ticket": "毎月の交換券・配布",

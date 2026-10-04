@@ -56,7 +56,8 @@ export const Index = ({
   }, [servants, nowSec])
   const eventBonusIdsByValue = useMemo(() => {
     const byValue = new Map<string, Set<number>>()
-    byValue.set('all', new Set(activeEvents.flatMap(e => [...e.servantIds])))
+    // 開催中が無いときに空の 'all' を残すと、選んだまま終了した画面で全騎が消えて解除もできなくなる。
+    if (activeEvents.length > 0) byValue.set('all', new Set(activeEvents.flatMap(e => [...e.servantIds])))
     for (const e of activeEvents) {
       byValue.set(`event:${e.eventId}`, e.servantIds)
       for (const g of e.groups) byValue.set(g.key, g.servantIds)
@@ -73,7 +74,7 @@ export const Index = ({
   const eventLabel = (e: ActiveEventBonuses) => {
     const name = e.eventName?.split('\n')[0]
     if (!name) return t('event-bonus-event-id', 'イベント {{id}}', { id: e.eventId })
-    return name.length > 24 ? `${name.slice(0, 24)}…` : name
+    return name.length > 24 ? t('event-bonus-event-name-truncated', '{{name}}…', { name: name.slice(0, 24) }) : name
   }
   const eventBonusOptions = (e: ActiveEventBonuses) => e.groups.map(g => (
     <option key={g.key} value={g.key}>

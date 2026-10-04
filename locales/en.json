@@ -239,6 +239,7 @@
     "event-bonus-separator": ", ",
     "event-bonus-event-all": "All in this event ({{count}})",
     "event-bonus-event-id": "Event {{id}}",
+    "event-bonus-event-name-truncated": "{{name}}...",
     "owned-card-gesture-hint": "Tap: +1 / Right-click or long-press: -1",
     "tracking-mode-tooltip": "When ON, changing the current value automatically adjusts your item stock.",
     "advisor-tab-ticket": "Monthly Ticket / Exchange",
