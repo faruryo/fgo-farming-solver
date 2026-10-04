@@ -11,6 +11,7 @@ import {
   metadataAfterApply,
   metadataAfterSave,
   normalizeLocalMetadata,
+  shouldPublishFetchResult,
   shouldRefetchOnResume,
   LocalMetadata,
 } from './decision'
@@ -295,5 +296,17 @@ describe('metadata transitions', () => {
     expect(
       decideSyncAction(saved, { updatedAt: at(5000), deviceId: 'device-a' })
     ).toBe('none')
+  })
+})
+
+describe('shouldPublishFetchResult', () => {
+  it.each([
+    { case: 'nothing published yet', seq: 1, published: null, expected: true },
+    { case: 'started after the published fetch', seq: 3, published: 2, expected: true },
+    { case: 'next fetch right after the published one', seq: 2, published: 1, expected: true },
+    { case: 'started before the published fetch (late, stale)', seq: 1, published: 2, expected: false },
+    { case: 'same fetch published twice', seq: 2, published: 2, expected: false },
+  ])('$case → $expected', ({ seq, published, expected }) => {
+    expect(shouldPublishFetchResult(seq, published)).toBe(expected)
   })
 })

@@ -88,6 +88,13 @@ export const shouldRefetchOnResume = (
   cooldownMs: number = RESUME_REFETCH_COOLDOWN_MS
 ): boolean => lastFetchedAt == null || now - lastFetchedAt >= cooldownMs
 
+// 並行する GET は開始順に完了するとは限らないため、新旧は完了順でなく開始番号で
+// 決める。publishedSeq が null はまだ何も配っていない状態。
+export const shouldPublishFetchResult = (
+  seq: number,
+  publishedSeq: number | null
+): boolean => publishedSeq == null || seq > publishedSeq
+
 export type ResumeEventContext = {
   visibilityState?: 'visible' | 'hidden'
   persisted?: boolean
