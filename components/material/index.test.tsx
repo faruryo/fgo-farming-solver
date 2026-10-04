@@ -388,7 +388,10 @@ describe('Index - event bonus filter', () => {
       const start = Math.floor(Date.now() / 1000)
       const ending = makeMaterialCatalogServant({
         id: 2, collectionNo: 2, name: 'サーヴァントB',
-        eventBonuses: [{ eventId: 80627, startedAt: start - 60, endedAt: start + 60, damage: 30, bond: 20 }],
+        eventBonuses: [
+          { eventId: 80627, startedAt: start - 60, endedAt: start + 60, damage: 30, bond: 20 },
+          { eventId: 80628, startedAt: start + 120, endedAt: start + 600, bond: 20 },
+        ],
       })
       render(<Index servants={[servant, ending]} materials={allMaterials} items={items} />)
       fireEvent.change(select(), { target: { value: 'all' } })
@@ -396,6 +399,10 @@ describe('Index - event bonus filter', () => {
 
       act(() => { vi.advanceTimersByTime(60_000) })
       expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
+      expect(shown()).toEqual(['サーヴァントA', 'サーヴァントB'])
+
+      act(() => { vi.advanceTimersByTime(60_000) })
+      expect(select()).toHaveValue('')
       expect(shown()).toEqual(['サーヴァントA', 'サーヴァントB'])
     } finally {
       vi.useRealTimers()

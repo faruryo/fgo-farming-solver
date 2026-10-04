@@ -64,7 +64,8 @@ export const Index = ({
     }
     return byValue
   }, [activeEvents])
-  // 境界をまたいで選んでいた選択肢が消えたら、指定なしとして扱う。
+  // 境界をまたいで選んでいた選択肢が消えたら、指定なしに戻す。値を残すと、後で同じ値の選択肢が現れたとき勝手に効き直す。
+  if (eventBonusFilter && !eventBonusIdsByValue.has(eventBonusFilter)) setEventBonusFilter('')
   const eventBonusIds = eventBonusIdsByValue.get(eventBonusFilter)
   const activeEventBonusFilter = eventBonusIds ? eventBonusFilter : ''
   const eventBonusLabel = (g: Pick<EventBonusGroup, 'damage' | 'bond'>) => [
