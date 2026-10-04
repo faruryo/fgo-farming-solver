@@ -141,7 +141,11 @@ export const updateMaterialCatalog = async ({
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
   const events = await fetchEvents(fetchSource, eventUrl)
-  const servantValidator = bonusEventStartedSince(events, previous, Math.floor(now() / 1000)) ? {} : servantValidatorFor(previous)
+  // basic_event が読めない回は開始を判定できないので取り直す。304 のまま items だけ更新すると updatedAt が進み、
+  // その間に始まったイベントを次回以降の判定で見落とす。
+  const refetchServants = eventUrl !== undefined &&
+    (events === undefined || bonusEventStartedSince(events, previous, Math.floor(now() / 1000)))
+  const servantValidator = refetchServants ? {} : servantValidatorFor(previous)
   const [servantsResponse, initialItemsResponse] = await Promise.all([
     fetchSource(servantUrl, servantValidator),
     fetchSource(itemUrl, previous?.sources.niceItem ?? {}),

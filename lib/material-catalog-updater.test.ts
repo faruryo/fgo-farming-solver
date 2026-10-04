@@ -105,12 +105,14 @@ describe('updateMaterialCatalog', () => {
   it.each([
     ['an eventQuest started after the last build', 'eventQuest', {}],
     ['only a campaign started after the last build', 'questCampaign', { etag: 'servant-v1' }],
+    ['basic_event cannot be read, so a start cannot be ruled out', null, {}],
   ])('refetches nice_servant unconditionally only when %s', async (_label, type, expectedValidator) => {
     const prev = { ...previous, updatedAt: 1_000_000, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }
-    const fetchSource = vi.fn<(url: string, validator: SourceValidator) => Promise<{ status: 200 | 304; value?: unknown; validator: SourceValidator }>>(async url =>
-      url === 'events'
-        ? { status: 200 as const, value: [{ id: 80627, name: 'ハロウィン', type, startedAt: 1_500 }], validator: {} }
-        : { status: 304 as const, validator: {} })
+    const fetchSource = vi.fn<(url: string, validator: SourceValidator) => Promise<{ status: 200 | 304; value?: unknown; validator: SourceValidator }>>(async url => {
+      if (url !== 'events') return { status: 304 as const, validator: {} }
+      if (type === null) throw new Error('boom')
+      return { status: 200 as const, value: [{ id: 80627, name: 'ハロウィン', type, startedAt: 1_500 }], validator: {} }
+    })
     await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2_000_000 })
     expect(fetchSource).toHaveBeenCalledWith('servants', expectedValidator)
   })
