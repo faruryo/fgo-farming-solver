@@ -70,23 +70,34 @@ describe('updateMaterialCatalog', () => {
     expect(fetchSource).toHaveBeenNthCalledWith(3, 'items', {})
   })
 
+  const servantWithBonus = {
+    ...servant, ...makeCompleteMaterials(), bondGrowth: [1000],
+    extraPassive: [{
+      extraPassive: [{ eventId: 80627, startedAt: 0, endedAt: 1_800_000_000 }],
+      functions: [{ funcType: 'servantFriendshipUp', buffs: [], svals: [{ RateCount: 200 }] }],
+    }],
+  }
+  const eventsOk = async () => ({ status: 200 as const, value: [{ id: 80627, name: 'ハロウィン' }], validator: {} })
+  const eventsDown = async (): Promise<never> => { throw new Error('boom') }
+  const previousNamed = {
+    ...previous,
+    servants: [{
+      ...previous.servants[0], bondGrowth: [1000],
+      eventBonuses: [{ eventId: 80627, eventName: 'ハロウィン', startedAt: 0, endedAt: 1_800_000_000, bond: 20 }],
+    }],
+  }
+
   it.each([
-    ['names the bonus event from basic_event', async () => ({ status: 200 as const, value: [{ id: 80627, name: 'ハロウィン' }], validator: {} }), 'ハロウィン'],
-    ['keeps updating when basic_event cannot be read', async () => { throw new Error('boom') }, undefined],
-  ])('%s', async (_label, eventResponse, expectedName) => {
-    const withBonus = {
-      ...servant, ...makeCompleteMaterials(), bondGrowth: [1000],
-      extraPassive: [{
-        extraPassive: [{ eventId: 80627, startedAt: 0, endedAt: 1_800_000_000 }],
-        functions: [{ funcType: 'servantFriendshipUp', buffs: [], svals: [{ RateCount: 200 }] }],
-      }],
-    }
+    ['names the bonus event from basic_event', previous, eventsOk, 'ハロウィン'],
+    ['keeps updating when basic_event cannot be read', previous, eventsDown, undefined],
+    ['keeps the previous event names when basic_event cannot be read', previousNamed, eventsDown, 'ハロウィン'],
+  ])('%s', async (_label, prev, eventResponse, expectedName) => {
     const fetchSource = vi.fn(async (url: string) => {
       if (url === 'events') return eventResponse()
-      if (url === 'servants') return { status: 200 as const, value: [withBonus], validator: { etag: 'servant-v2' } }
+      if (url === 'servants') return { status: 200 as const, value: [servantWithBonus], validator: { etag: 'servant-v2' } }
       return { status: 304 as const, validator: {} }
     })
-    const result = await updateMaterialCatalog({ previous, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2 })
+    const result = await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2 })
     expect(result.catalog?.servants[0].eventBonuses?.[0]?.eventName).toBe(expectedName)
     expect(result.catalog?.servants[0].eventBonuses?.[0]?.bond).toBe(20)
   })
@@ -102,25 +113,6 @@ describe('updateMaterialCatalog', () => {
         : { status: 304 as const, validator: {} })
     await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2_000_000 })
     expect(fetchSource).toHaveBeenCalledWith('servants', expectedValidator)
-  })
-
-  it('keeps the previous event names when basic_event cannot be read', async () => {
-    const named = { eventId: 80627, eventName: 'ハロウィン', startedAt: 0, endedAt: 1_800_000_000, bond: 20 }
-    const prev = { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000], eventBonuses: [named] }] }
-    const withBonus = {
-      ...servant, ...makeCompleteMaterials(), bondGrowth: [1000],
-      extraPassive: [{
-        extraPassive: [{ eventId: 80627, startedAt: 0, endedAt: 1_800_000_000 }],
-        functions: [{ funcType: 'servantFriendshipUp', buffs: [], svals: [{ RateCount: 200 }] }],
-      }],
-    }
-    const fetchSource = vi.fn(async (url: string) => {
-      if (url === 'events') throw new Error('boom')
-      if (url === 'servants') return { status: 200 as const, value: [withBonus], validator: { etag: 'servant-v2' } }
-      return { status: 304 as const, validator: {} }
-    })
-    const result = await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2 })
-    expect(result.catalog?.servants[0].eventBonuses?.[0]?.eventName).toBe('ハロウィン')
   })
 
   it.each([
