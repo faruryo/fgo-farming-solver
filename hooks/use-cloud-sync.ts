@@ -17,6 +17,7 @@ import {
   metadataAfterApply,
   metadataAfterSave,
   normalizeLocalMetadata,
+  shouldPublishFetchResult,
   shouldRefetchOnResume,
 } from '../lib/cloud-sync/decision'
 import {
@@ -61,16 +62,14 @@ const cancelAutoSave = () => {
   autoSaveTimeout = null
 }
 
-// 取得結果を全インスタンスへ配る際の新旧判定。並行する GET(マウント時・再開時・
-// 保存後)は開始順に完了するとは限らないため、後から始めた取得を配った後に
-// 返ってきた古い応答は配らず、配り済みの最新を返す。配ると全インスタンスの
-// 縮小ガードとコンフリクト判定が古いクラウドへ巻き戻る。
+// 古い応答は配らず、配り済みの最新を返す。配ると全インスタンスの縮小ガードと
+// コンフリクト判定が古いクラウドへ巻き戻る。
 let cloudFetchSeq = 0
-let publishedFetchSeq = 0
+let publishedFetchSeq: number | null = null
 let publishedCloudData: CloudData | null = null
 
 const publishCloudData = (seq: number, parsed: CloudData): CloudData => {
-  if (seq < publishedFetchSeq && publishedCloudData) return publishedCloudData
+  if (!shouldPublishFetchResult(seq, publishedFetchSeq)) return publishedCloudData ?? parsed
   publishedFetchSeq = seq
   publishedCloudData = parsed
   window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
