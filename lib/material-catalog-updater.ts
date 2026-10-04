@@ -40,25 +40,46 @@ const parseItems = (value: unknown): Item[] => {
   return value as Item[]
 }
 
-const isNamedEvent = (e: unknown): e is { id: number; name: string } => {
+type BasicEventEntry = { id: number; name: string; type?: unknown; startedAt?: unknown }
+
+const isNamedEvent = (e: unknown): e is BasicEventEntry => {
   if (!e || typeof e !== 'object') return false
   const { id, name } = e as { id?: unknown; name?: unknown }
   return typeof id === 'number' && typeof name === 'string'
 }
 
-// イベント名はボーナスの見出しにだけ使う。取れなくてもカタログ更新は止めない（画面はイベント ID で出す）。
-const fetchEventNames = async (
+// basic_event はイベント名と「ボーナスが始まったか」の判定にだけ使う。取れなくてもカタログ更新は止めない。
+const fetchEvents = async (
   fetchSource: ConditionalFetch,
   eventUrl: string | undefined
-): Promise<Map<number, string>> => {
-  if (!eventUrl) return new Map()
+): Promise<BasicEventEntry[] | undefined> => {
+  if (!eventUrl) return undefined
   try {
     const { value } = await fetchSource(eventUrl, {})
-    if (!Array.isArray(value)) return new Map()
-    return new Map(value.filter(isNamedEvent).map(e => [e.id, e.name]))
+    return Array.isArray(value) ? value.filter(isNamedEvent) : undefined
   } catch {
-    return new Map()
+    return undefined
   }
+}
+
+const previousEventNames = (previous: MaterialCatalogV1 | null): Map<number, string> =>
+  new Map(
+    (previous?.servants ?? []).flatMap(servant =>
+      (servant.eventBonuses ?? []).flatMap(b => (b.eventName ? [[b.eventId, b.eventName] as const] : [])))
+  )
+
+// 開始前のボーナスはカタログに載せないため、イベント開始では nice_servant が変わらず 304 のまま載らない。
+// 前回の更新後に eventQuest（特攻・絆ボーナスを持つ型）が始まったら条件なしで取り直す。
+// ponytail: ボーナスの無い eventQuest が始まるとカタログが変わらず updatedAt も進まないので、次に変わるまで毎回取り直す。CI なので許容。
+const bonusEventStartedSince = (
+  events: BasicEventEntry[] | undefined,
+  previous: MaterialCatalogV1 | null,
+  nowSec: number
+): boolean => {
+  if (!previous || !events) return false
+  const builtAt = Math.floor(previous.updatedAt / 1000)
+  return events.some(e =>
+    e.type === 'eventQuest' && typeof e.startedAt === 'number' && e.startedAt > builtAt && e.startedAt <= nowSec)
 }
 
 const existingOrThrow = (previous: MaterialCatalogV1 | null): MaterialCatalogV1 => {
@@ -119,8 +140,10 @@ export const updateMaterialCatalog = async ({
   eventUrl?: string
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
+  const events = await fetchEvents(fetchSource, eventUrl)
+  const servantValidator = bonusEventStartedSince(events, previous, Math.floor(now() / 1000)) ? {} : servantValidatorFor(previous)
   const [servantsResponse, initialItemsResponse] = await Promise.all([
-    fetchSource(servantUrl, servantValidatorFor(previous)),
+    fetchSource(servantUrl, servantValidator),
     fetchSource(itemUrl, previous?.sources.niceItem ?? {}),
   ])
   if (servantsResponse.status === 304 && initialItemsResponse.status === 304) {
@@ -134,7 +157,8 @@ export const updateMaterialCatalog = async ({
       ? await fetchSource(itemUrl, {})
       : initialItemsResponse
   const items = itemSection(itemsResponse, previous, materials)
-  const eventNames = servantsResponse.status === 200 ? await fetchEventNames(fetchSource, eventUrl) : undefined
+  // 取れなかったときは前回の名前を引き継ぐ（空にすると、次に nice_servant が変わるまでイベント ID 表示に固定される）。
+  const eventNames = events ? new Map(events.map(e => [e.id, e.name])) : previousEventNames(previous)
   const candidate = buildMaterialCatalog({
     servants,
     materials,

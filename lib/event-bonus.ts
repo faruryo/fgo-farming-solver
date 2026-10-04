@@ -49,7 +49,10 @@ const mergeBonus = (
   }
 }
 
-/** 期間限定イベントの特攻・絆ボーナスを、イベントごとに最大値でまとめる。終了済み・恒常のものは捨てる。 */
+/**
+ * 期間限定イベントの特攻・絆ボーナスを、イベントごとに最大値でまとめる。終了済み・恒常のものは捨てる。
+ * 開始前のものも捨てる。Atlas には告知前のイベントが先に入ることがあり、公開カタログへ出すと未公開情報になる。
+ */
 export const extractEventBonuses = (
   skills: NiceExtraPassiveSkill[] = [],
   nowSec: number,
@@ -60,7 +63,7 @@ export const extractEventBonuses = (
     const bonus = bonusOf(skill)
     if (!bonus.damage && !bonus.bond) continue
     for (const { eventId, startedAt, endedAt } of skill.extraPassive) {
-      if (!eventId || endedAt >= PERMANENT_SENTINEL || endedAt <= nowSec) continue
+      if (!eventId || endedAt >= PERMANENT_SENTINEL || endedAt <= nowSec || startedAt > nowSec) continue
       byEvent.set(eventId, mergeBonus(byEvent.get(eventId), bonus, { eventId, startedAt, endedAt }, eventNames.get(eventId)))
     }
   }

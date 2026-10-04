@@ -35,6 +35,12 @@ describe('extractEventBonuses', () => {
     ], NOW)).toEqual([{ eventId: 80507, startedAt: NOW - 60, endedAt: NOW + 500, bond: 20 }])
   })
 
+  it('drops bonuses that have not started yet so unannounced events stay out of the public catalog', () => {
+    expect(extractEventBonuses([
+      skill([{ eventId: 80700, startedAt: NOW + 1, endedAt: NOW + 100 }], [damage(300), bond(200)]),
+    ], NOW)).toEqual([])
+  })
+
   it('drops permanent (sentinel), ended, non-event and non-bonus passives', () => {
     expect(extractEventBonuses([
       skill([{ eventId: 80593, endedAt: 1893423600 }], [damage(300)]),

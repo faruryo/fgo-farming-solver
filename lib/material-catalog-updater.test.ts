@@ -92,6 +92,38 @@ describe('updateMaterialCatalog', () => {
   })
 
   it.each([
+    ['an eventQuest started after the last build', 'eventQuest', {}],
+    ['only a campaign started after the last build', 'questCampaign', { etag: 'servant-v1' }],
+  ])('refetches nice_servant unconditionally only when %s', async (_label, type, expectedValidator) => {
+    const prev = { ...previous, updatedAt: 1_000_000, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }
+    const fetchSource = vi.fn<(url: string, validator: SourceValidator) => Promise<{ status: 200 | 304; value?: unknown; validator: SourceValidator }>>(async url =>
+      url === 'events'
+        ? { status: 200 as const, value: [{ id: 80627, name: 'ハロウィン', type, startedAt: 1_500 }], validator: {} }
+        : { status: 304 as const, validator: {} })
+    await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2_000_000 })
+    expect(fetchSource).toHaveBeenCalledWith('servants', expectedValidator)
+  })
+
+  it('keeps the previous event names when basic_event cannot be read', async () => {
+    const named = { eventId: 80627, eventName: 'ハロウィン', startedAt: 0, endedAt: 1_800_000_000, bond: 20 }
+    const prev = { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000], eventBonuses: [named] }] }
+    const withBonus = {
+      ...servant, ...makeCompleteMaterials(), bondGrowth: [1000],
+      extraPassive: [{
+        extraPassive: [{ eventId: 80627, startedAt: 0, endedAt: 1_800_000_000 }],
+        functions: [{ funcType: 'servantFriendshipUp', buffs: [], svals: [{ RateCount: 200 }] }],
+      }],
+    }
+    const fetchSource = vi.fn(async (url: string) => {
+      if (url === 'events') throw new Error('boom')
+      if (url === 'servants') return { status: 200 as const, value: [withBonus], validator: { etag: 'servant-v2' } }
+      return { status: 304 as const, validator: {} }
+    })
+    const result = await updateMaterialCatalog({ previous: prev, fetchSource, servantUrl: 'servants', itemUrl: 'items', eventUrl: 'events', now: () => 2 })
+    expect(result.catalog?.servants[0].eventBonuses?.[0]?.eventName).toBe('ハロウィン')
+  })
+
+  it.each([
     ['without bondGrowth', previous, {}],
     ['with bondGrowth', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }, { etag: 'servant-v1' }],
     ['with bondGrowth but built before eventBonuses', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000], eventBonuses: undefined }] }, {}],
