@@ -29,7 +29,7 @@
 ### D1. 静的機能レジストリ（`data/event-features.ts`）
 イベント ID ごとに利用可能な機能（`features: ('box' | 'craft')[]`）と、KV 未保持時の表示用メタ（`summary: { name, startedAt, endedAt }`）を定義する。
 - 型: `Record<number, { features: EventFeature[]; meta?: { name: string; startedAt: number; endedAt: number } }>`
-- 80614（水着2026）は `features: ['craft']`、meta は Atlas basic_event の値を静的定義（名前: `カルデア・サマーアドベンチャー` 等、会期は JST unix 秒）。
+- 80614（水着2026）は `features: ['craft']`、meta は Atlas basic_event の値を静的定義（名前: `カルデア南海大決戦！ ～マジムンアイランドに謎の巨人の影を見た～`、会期は JST unix 秒: `startedAt: 1786532400`, `endedAt: 1788321599`）。
 - 理由: KV のスキーマ変更やバッチ改修（#115）を待たずに、現行コードだけで水着2026のイベントページを成立させる。
 - 公開データ境界: メタデータは Atlas API / ゲーム内で公開済みの値のみを用い、未公開・解析データは含めない。
 
@@ -49,12 +49,12 @@
 `computeShortfall` の前半（ChaldeaState × materialsForServants → 総必要数）を純粋関数 `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う形にする（挙動は不変、既存テストで担保）。`EventCraftSection` は
 1. ロスター有無の判定と `getMaterialsForServantIds` の取得（`EventPlannerClient` と同じ）
 2. `computeTotalNeed` → atlasId 文字列キーの `amounts`
-3. `useStockTarget()` の `stockBuffer`・`purpose` と `useDrops()` で `buildNeedByApiItemId(amounts, possession, drops, stockBuffer, purpose)`
+3. 副作用なし読み取りで解決した `stockBuffer`・`purpose` と `useDrops()` で `buildNeedByApiItemId(amounts, possession, drops, stockBuffer, purpose)`
 4. `EventCraftAdvisor` に `fullNeed`・`stockEnabled` を渡す。
 
 このとき以下の不変条件と境界を厳守する：
-- **読み取り専用（副作用なし）**: ロスター（`ChaldeaState`）および所持数の取得は `useLocalStorage` の初期値書き込み副作用を避け、未設定時でも `localStorage.setItem` を一切呼ばない読み取り専用（`readStoredJson` 等）とし、新規端末や未同期状態でもクラウド同期対象データを汚染・書き換えしない。
-- **素材取得失敗・ローディングの防護**: `getMaterialsForServantIds` がロード中の間は配分計算を開始せずローディング表示とし、取得失敗やデータ欠落時は誤って過少・不足ゼロでの配分を計算・表示させず、エラー案内を表示する。
+- **読み取り専用（副作用なし）**: ロスター（`ChaldeaState`）および所持数に加え、周回目的（`farmingPurpose`）やストック目標（`stockBuffer`, `surplusThreshold`）の取得でも `useLocalStorage` の初期値書き込み副作用を避ける。純粋な読み取り関数（`readStockTargetReadOnly`）を用いてメモリ上でのみデフォルト値・移行値を解決し、未設定端末やクラウド復元前の端末で `localStorage.setItem` を一切呼ばず、クラウド同期対象キーを書き換え・汚染しない。
+- **素材取得失敗・部分欠落（partial failure）の防護**: `getMaterialsForServantIds` は個別サーヴァントの失敗時に該当 ID を除外した部分結果を返す仕様であるため、要求した `enabledServantIds` の全件が取得結果に含まれているか完全性（integrity）を確認する。取得中（loading）は配分計算を開始せずローディング表示とし、1件でも欠落がある場合（部分欠落）または全件取得失敗時は、過少な不足数での誤計算を防ぐため配分計算を行わずエラー案内と再試行導線を表示する。
 - **周回目的 `all` のフォールバックと表示**: `purpose === 'all'` の場合は `buildNeedByApiItemId` の仕様に従い有限目標を `training`（育成）としてフォールバック計算し、UI 上でも現行と同様に `FarmingPurposeSelector` の横に「配布評価は今の育成を使用」（`common:farming-purpose-advisor-fallback`）を表示する。
 
 ロスター取得と素材読み取り部分は `EventPlannerClient` と重複するため、副作用のない小さなフック `useRosterNeed()` に寄せ、両セクションで使う。
@@ -65,7 +65,10 @@
 `AdvisorTab` とタブ UI・`EventCraftAdvisor` の描画を削除し、交換券・配布の本体の上に `/events/80614` へのリンク（`Link`、i18n）を置く。リンク先は `EVENT_FEATURES` から `craft` を持つ最新イベントを引く（`latestCraftEventId()`）。`STORAGE_KEYS.MATERIAL_ADVISOR_TAB` はクラウド同期対象ではない（`lib/cloud-sync` から参照なし）。定数ごと削除し、端末に残った値は読まれずに放置される。
 
 ### D6. ダッシュボード導線
-`EventSection` の導線表示条件は、ハブ（`/events/[id]`）で実際に機能を提供できる条件（KV `event_data_json` に取り込み済みのロトイベント ID セットに含まれるか、または静的レジストリ `EVENT_FEATURES` に登録されていること）と完全に一致させる。Atlas 側の `hasLottery` フラグが立っていても KV 未取り込みかつレジストリ未登録のイベントには導線を出さず、リンク遷移先で `EventDataMissing` が露出する不整合を防ぐ。導線ラベルは「ボックス計画」から「イベントページ」に変える。
+ダッシュボード（`app/page.tsx` および `EventSection`）において、ハブ（`/events/[id]`）で実際に機能を提供できる条件（KV `event_data_json` に取り込み済みのロトイベント ID 集合に含まれるか、または静的レジストリ `EVENT_FEATURES` に登録されていること）を満たすイベントにのみ「イベントページ」への導線を表示する。
+- 伝搬経路: `/api/dashboard-meta`（または `app/page.tsx`）から KV 取り込み済みイベント ID 集合（`availableLotteryEventIds: number[]`）を返し、`EventSection` に渡す。
+- 判定条件: `availableLotteryEventIds.includes(event.id) || featuresFor(event.id).length > 0`
+- Atlas 側の `hasLottery` フラグが立っていても KV 未取り込みかつレジストリ未登録のイベントには導線を出さず、リンク遷移先で `EventDataMissing` が露出する不整合を防ぐ。導線ラベルは「ボックス計画」から「イベントページ」に変える。
 
 ### D7. 名称
 ナビ `{ ja: 'イベント', en: 'Events' }`、一覧ヘッダー `イベント一覧 / Events`、説明文をボックス限定でない文言に変える。i18n キーは既存キーの値を変えるのではなく新キー（`event-list-title` 等、kebab-case）を追加し、`ja.json`/`en.json` 両方に入れる。
@@ -76,8 +79,8 @@
 - [レジストリ meta の手書き誤り] → 80614 の値は Atlas basic_event の値をそのまま使い、テストで会期の大小関係（started < ended）を確認する。
 - [`EventPlannerClient` の分割で挙動が変わる] → 計算部は動かさず、ヘッダー JSX の移動だけに留める。既存の `lib/event-plan.test.ts` と画面の実機確認で担保する。
 - [料理作成の Worker がイベントページの bundle に入る] → 既存と同じ遅延生成（`new Worker(new URL(...))`）のままなので初期表示への影響は小さい。
-- [未同期端末でのロスター読み取り副作用] → `useLocalStorage` を使わず純粋な読み取り（read-only）に徹し、初期値書き込みによるデータ汚染を防ぐ。
-- [素材データ取得失敗時の誤配分] → 取得失敗・欠落時に過少計算を行わない防御ガードを設ける。
+- [未同期端末での設定読み取り副作用] → `useLocalStorage` を使わず純粋な読み取り（`readStockTargetReadOnly`）に徹し、初期値書き込みによるデータ汚染を防ぐ。
+- [素材データ取得失敗・部分欠落時の誤配分] → `enabledServantIds` 全件の完全性検証を行い、部分欠落時に過少計算を行わない防御ガードを設ける。
 
 ## Migration Plan
 

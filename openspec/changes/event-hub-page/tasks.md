@@ -2,24 +2,24 @@
 
 ## 1. レジストリと一覧合成（純粋関数）
 
-- [ ] 1.1 `data/event-features.ts` に `EVENT_FEATURES`（80614: `craft`、meta は Atlas basic_event の名前・startedAt=1786532400・endedAt=1788321599）を追加する。検証: 型チェックが通る。
+- [ ] 1.1 `data/event-features.ts` に `EVENT_FEATURES`（80614: `craft`、meta は Atlas basic_event の名前「カルデア南海大決戦！ ～マジムンアイランドに謎の巨人の影を見た～」・startedAt=1786532400・endedAt=1788321599）を追加する。検証: 型チェックが通る。
 - [ ] 1.2 `lib/event-features.ts` に `featuresFor(id, hasKvBox)`、`mergeEventList(kvEvents, registry)`（KV meta 優先・features 和集合・ID 重複なし）、`latestCraftEventId()` を実装する。検証: `lib/event-features.test.ts` のケース表（KV のみ／レジストリのみ／両方／どちらも無し、registry meta の started < ended）が通り、優先順位を反転させると赤くなることを一度確認する。
 
 ## 2. need 源の共通化
 
 - [ ] 2.1 `lib/event-plan.ts` の `computeShortfall` から総必要数の集計を `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う。検証: 既存 `lib/event-plan.test.ts` が無変更で通る＋`computeTotalNeed` の単体ケース（disabled サーヴァント／disabled ターゲット除外）を追加。
-- [ ] 2.2 `hooks/use-roster-need.ts` に、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得中/失敗ステータス管理・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末で `localStorage.setItem` が呼ばれないことの単体テストを追加。
+- [ ] 2.2 `hooks/use-roster-need.ts` および `lib/stock-target.ts` に、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・設定値解決（`readStockTargetReadOnly`）・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得 ID 完全性確認（部分欠落ガード）・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末で `localStorage.setItem` が呼ばれないこと、および一部サーヴァントの素材取得が欠落した際に部分欠落エラーとして計算を中断する単体テストを追加。
 
 ## 3. イベントページ（ハブ）
 
 - [ ] 3.1 `components/events/EventHubClient.tsx` を新設し、`EventPlannerClient` からヘッダー（戻る導線・名前・会期・状態バッジ）を移す。`EventPlannerClient` はボックス計画セクションの中身だけにする。検証: KV モックのボックスイベントで画面が変更前と同じ入力・結果を出す。
-- [ ] 3.2 `components/events/EventCraftSection.tsx` を新設し、`useRosterNeed` → `buildNeedByApiItemId`（`useStockTarget`・`useDrops`）で `fullNeed` を作って `EventCraftAdvisor` に渡す。ロスター未設定時は配分計算せず `/material` への導線付き案内、素材取得中はローディング表示、素材取得失敗時は過少計算を防ぐエラー案内を表示し、`purpose === 'all'` 時は育成フォールバック注記を出す。検証: コンポーネントテストでロスター有／無・取得中・取得失敗・allフォールバックの表示分岐を確認する。
+- [ ] 3.2 `components/events/EventCraftSection.tsx` を新設し、`useRosterNeed` → `buildNeedByApiItemId`（`readStockTargetReadOnly`・`useDrops`）で `fullNeed` を作って `EventCraftAdvisor` に渡す。ロスター未設定時は配分計算せず `/material` への導線付き案内、素材取得中はローディング表示、素材取得失敗または部分欠落時は過少計算を防ぐエラー案内を表示し、`purpose === 'all'` 時は育成フォールバック注記を出す。検証: コンポーネントテストでロスター有／無・取得中・部分欠落エラー・allフォールバックの表示分岐を確認する。
 - [ ] 3.3 `app/events/[id]/page.tsx` を、KV とレジストリの両方を引いて `EventHubClient` を描画する形にする（どちらも無ければ `EventDataMissing`、`craft` があれば `getItems()` を渡す）。検証: `/events/80614`・KV モックのボックスイベント・存在しない ID の3通りをローカルで開いて確認する。
 
 ## 4. 一覧・導線・名称
 
 - [ ] 4.1 `app/events/page.tsx` で `mergeEventList` の結果を `EventListClient` に渡し、一覧に機能バッジ（ボックス計画／料理作成）を出す。検証: ローカルで 80614 が終了済みに並び、モックのボックスイベントと重複なく出る。
-- [ ] 4.2 `components/dashboard/EventSection.tsx` の導線条件をハブの機能提供可能条件（KV ロトデータ存在 or レジストリ登録）と一致させ、ラベルを「イベントページ」にする。検証: `EventSection.test.tsx` に KV ロトあり・craft 登録・KV 未取り込み・機能なしイベントのケースを追加し、条件を外すと赤くなることを確認する。
+- [ ] 4.2 ダッシュボードへの KV 取り込み済みイベント ID 集合の伝搬経路（`/api/dashboard-meta` または `app/page.tsx` での取得）を実装し、`components/dashboard/EventSection.tsx` の導線条件を「KV ロトデータ存在 または レジストリ登録」と一致させ、ラベルを「イベントページ」にする。検証: `EventSection.test.tsx` に KV ロトあり・craft 登録・KV 未取り込み・機能なしイベントのケースを追加し、条件を外すと赤くなることを確認する。
 - [ ] 4.3 ナビ（`components/common/nav.tsx`）を「イベント / Events」に、一覧ヘッダーと説明文を新しい i18n キーで書き換える。キーは `locales/ja.json` と `locales/en.json` に同時追加し、`t('key', '日本語フォールバック')` 形式にする。検証: `pnpm run lint:ratchet` と目視。
 
 ## 5. 素材選択アドバイザーからの移設
