@@ -76,6 +76,7 @@ describe('Material Catalog', () => {
       collectionNo: 1,
       rarity: 5,
       face: 'face.png',
+      eventBonuses: [],
     })
     expect(JSON.stringify(catalog)).not.toContain('charaGraph')
   })

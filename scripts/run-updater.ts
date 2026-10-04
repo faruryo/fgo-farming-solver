@@ -92,6 +92,7 @@ async function main() {
     put: kvPut,
     servantUrl: getUrl('nice_servant', 'ja'),
     itemUrl: getUrl('nice_item', 'ja'),
+    eventUrl: getUrl('basic_event', 'ja'),
   })
   failed ||= materialCatalog.failed
 

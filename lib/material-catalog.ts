@@ -5,6 +5,7 @@ import type {
   NiceServant,
 } from '../interfaces/atlas-academy'
 import type { MaterialsForServants, ReducedMaterials } from './get-materials'
+import { extractEventBonuses, type ServantEventBonus } from './event-bonus'
 
 export const MATERIAL_CATALOG_KEY = 'material_catalog_v1'
 export const MATERIAL_CATALOG_SCHEMA_VERSION = 1 as const
@@ -15,7 +16,7 @@ export type SourceValidator = { etag?: string; lastModified?: string }
 export type MaterialCatalogServant = Pick<
   NiceServant,
   'id' | 'name' | 'className' | 'collectionNo' | 'rarity'
-> & { face: string | null; bondGrowth?: number[] }
+> & { face: string | null; bondGrowth?: number[]; eventBonuses?: ServantEventBonus[] }
 
 export type MaterialCatalogItem = Pick<Item, 'id' | 'name' | 'icon'>
 
@@ -79,12 +80,14 @@ export const buildMaterialCatalog = ({
   items,
   sources,
   updatedAt,
+  eventNames,
 }: {
   servants: Array<NiceServant | MaterialCatalogServant>
   materials: MaterialsForServants
   items: Array<Item | MaterialCatalogItem>
   sources: MaterialCatalogV1['sources']
   updatedAt: number
+  eventNames?: ReadonlyMap<number, string>
 }): MaterialCatalogV1 => ({
   schemaVersion: MATERIAL_CATALOG_SCHEMA_VERSION,
   updatedAt,
@@ -100,6 +103,10 @@ export const buildMaterialCatalog = ({
     ...(isValidBondGrowth(servant.bondGrowth)
       ? { bondGrowth: [...servant.bondGrowth] }
       : {}),
+    eventBonuses:
+      'extraAssets' in servant
+        ? extractEventBonuses(servant.extraPassive, Math.floor(updatedAt / 1000), eventNames)
+        : servant.eventBonuses ?? [],
   })),
   materials,
   items: items.map(({ id, name, icon }) => ({ id, name, icon })),

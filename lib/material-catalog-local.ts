@@ -8,10 +8,11 @@ import { buildMaterialCatalog, materialCatalogItemIds, validateMaterialCatalog, 
 // next dev only: Atlas の既存filesystem cacheを使い、production のKV欠落を
 // upstream fetchで隠さない。route側がfilesystem可否を先に検査する。
 export const loadLocalMaterialCatalog = async (now = Date.now()): Promise<MaterialCatalogV1> => {
-  const [servants, materials, allItems] = await Promise.all([
+  const [servants, materials, allItems, events] = await Promise.all([
     getNiceServants('ja', true),
     getMaterialsForServants(),
     fetchJsonWithCache<Item[]>(getUrl('nice_item', 'ja')),
+    fetchJsonWithCache<{ id: number; name: string }[]>(getUrl('basic_event', 'ja')).catch(() => []),
   ])
   const materialItemIds = materialCatalogItemIds(materials)
   const catalog = buildMaterialCatalog({
@@ -20,6 +21,7 @@ export const loadLocalMaterialCatalog = async (now = Date.now()): Promise<Materi
     items: allItems.filter(item => materialItemIds.has(item.id) || ['qp', 'skillLvUp', 'tdLvUp'].includes(item.type)),
     sources: { niceServant: {}, niceItem: {} },
     updatedAt: now,
+    eventNames: new Map(events.map(e => [e.id, e.name])),
   })
   const validation = validateMaterialCatalog(catalog)
   if (!validation.ok) throw new Error(`Invalid local Material Catalog: ${validation.reason}`)

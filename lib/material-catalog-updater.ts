@@ -40,6 +40,48 @@ const parseItems = (value: unknown): Item[] => {
   return value as Item[]
 }
 
+type BasicEventEntry = { id: number; name: string; type?: unknown; startedAt?: unknown }
+
+const isNamedEvent = (e: unknown): e is BasicEventEntry => {
+  if (!e || typeof e !== 'object') return false
+  const { id, name } = e as { id?: unknown; name?: unknown }
+  return typeof id === 'number' && typeof name === 'string'
+}
+
+// basic_event はイベント名と「ボーナスが始まったか」の判定にだけ使う。取れなくてもカタログ更新は止めない。
+const fetchEvents = async (
+  fetchSource: ConditionalFetch,
+  eventUrl: string | undefined
+): Promise<BasicEventEntry[] | undefined> => {
+  if (!eventUrl) return undefined
+  try {
+    const { value } = await fetchSource(eventUrl, {})
+    return Array.isArray(value) ? value.filter(isNamedEvent) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const previousEventNames = (previous: MaterialCatalogV1 | null): Map<number, string> =>
+  new Map(
+    (previous?.servants ?? []).flatMap(servant =>
+      (servant.eventBonuses ?? []).flatMap(b => (b.eventName ? [[b.eventId, b.eventName] as const] : [])))
+  )
+
+// 開始前のボーナスはカタログに載せないため、イベント開始では nice_servant が変わらず 304 のまま載らない。
+// 前回の更新後に eventQuest（特攻・絆ボーナスを持つ型）が始まったら条件なしで取り直す。
+// ponytail: ボーナスの無い eventQuest が始まるとカタログが変わらず updatedAt も進まないので、次に変わるまで毎回取り直す。CI なので許容。
+const bonusEventStartedSince = (
+  events: BasicEventEntry[] | undefined,
+  previous: MaterialCatalogV1 | null,
+  nowSec: number
+): boolean => {
+  if (!previous || !events) return false
+  const builtAt = Math.floor(previous.updatedAt / 1000)
+  return events.some(e =>
+    e.type === 'eventQuest' && typeof e.startedAt === 'number' && e.startedAt > builtAt && e.startedAt <= nowSec)
+}
+
 const existingOrThrow = (previous: MaterialCatalogV1 | null): MaterialCatalogV1 => {
   if (!previous) throw new Error('Atlas returned 304 but no previous Material Catalog exists')
   return previous
@@ -74,26 +116,38 @@ const materialItemsAreKnown = (materials: MaterialsForServants, items: MaterialC
   return [...materialCatalogItemIds(materials)].every(itemId => knownItemIds.has(itemId))
 }
 
-// bondGrowth を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
+// bondGrowth・eventBonuses を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
 // 一部の欠落は Atlas 側の通常状態なので、全騎が持たないときだけ取り直す。
+// eventBonuses は開催中のボーナスが無いと空配列になるため、値でなく項目の有無で見る。
 const servantValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
-  previous?.servants.some(servant => servant.bondGrowth) ? previous.sources.niceServant : {}
+  previous?.servants.some(servant => servant.bondGrowth) &&
+  previous.servants.some(servant => servant.eventBonuses !== undefined)
+    ? previous.sources.niceServant
+    : {}
 
 export const updateMaterialCatalog = async ({
   previous,
   fetchSource,
   servantUrl,
   itemUrl,
+  eventUrl,
   now,
 }: {
   previous: MaterialCatalogV1 | null
   fetchSource: ConditionalFetch
   servantUrl: string
   itemUrl: string
+  eventUrl?: string
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
+  const events = await fetchEvents(fetchSource, eventUrl)
+  // basic_event が読めない回は開始を判定できないので取り直す。304 のまま items だけ更新すると updatedAt が進み、
+  // その間に始まったイベントを次回以降の判定で見落とす。
+  const refetchServants = eventUrl !== undefined &&
+    (events === undefined || bonusEventStartedSince(events, previous, Math.floor(now() / 1000)))
+  const servantValidator = refetchServants ? {} : servantValidatorFor(previous)
   const [servantsResponse, initialItemsResponse] = await Promise.all([
-    fetchSource(servantUrl, servantValidatorFor(previous)),
+    fetchSource(servantUrl, servantValidator),
     fetchSource(itemUrl, previous?.sources.niceItem ?? {}),
   ])
   if (servantsResponse.status === 304 && initialItemsResponse.status === 304) {
@@ -107,6 +161,8 @@ export const updateMaterialCatalog = async ({
       ? await fetchSource(itemUrl, {})
       : initialItemsResponse
   const items = itemSection(itemsResponse, previous, materials)
+  // 取れなかったときは前回の名前を引き継ぐ（空にすると、次に nice_servant が変わるまでイベント ID 表示に固定される）。
+  const eventNames = events ? new Map(events.map(e => [e.id, e.name])) : previousEventNames(previous)
   const candidate = buildMaterialCatalog({
     servants,
     materials,
@@ -116,6 +172,7 @@ export const updateMaterialCatalog = async ({
       niceItem: validatorFor(itemsResponse, previous?.sources.niceItem ?? {}),
     },
     updatedAt: now(),
+    eventNames,
   })
   const validation = validateMaterialCatalog(candidate, previous ?? undefined)
   if (!validation.ok) throw new Error(`Refusing Material Catalog update: ${validation.reason}`)

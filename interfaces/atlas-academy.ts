@@ -48,7 +48,18 @@ export type NiceServant = Servant &
   MaterialsRecord & {
     /** 絆Lvごとの累積必要ポイント(index 0 が Lv1 到達に必要な累積値)。 */
     bondGrowth?: number[]
+    extraPassive?: NiceExtraPassiveSkill[]
   }
+
+/** イベント特攻・絆ボーナスなど、期間やイベントに紐づく追加パッシブ。必要な項目だけ型を付ける。 */
+export type NiceExtraPassiveSkill = {
+  extraPassive: { eventId: number; startedAt: number; endedAt: number }[]
+  functions: {
+    funcType: string
+    buffs: { type: string }[]
+    svals: { Value?: number; RateCount?: number }[]
+  }[]
+}
 
 export type Materials = {
   [key: string]: {

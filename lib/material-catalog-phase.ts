@@ -9,6 +9,7 @@ export const runMaterialCatalogPhase = async ({
   fetchSource = fetch,
   servantUrl,
   itemUrl,
+  eventUrl,
   now = Date.now,
   logger = console,
 }: {
@@ -17,6 +18,7 @@ export const runMaterialCatalogPhase = async ({
   fetchSource?: typeof fetch
   servantUrl: string
   itemUrl: string
+  eventUrl?: string
   now?: () => number
   logger?: Logger
 }): Promise<{ failed: boolean }> => {
@@ -27,6 +29,7 @@ export const runMaterialCatalogPhase = async ({
       previous,
       servantUrl,
       itemUrl,
+      eventUrl,
       now,
       fetchSource: async (url, validator) => {
         const response = await fetchSource(url, { headers: conditionalRequestHeaders(validator) })
