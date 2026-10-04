@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -47,6 +47,47 @@ export const LOCAL_METADATA_KEY = STORAGE_KEYS.LOCAL_METADATA
 let isApplyingCloudData = false
 let lastCloudFetchAt: number | null = null
 
+// autosave の debounce も同じ理由でモジュールに1本だけ持つ。インスタンスごとに
+// 持つと、変更イベントのたびにマウント数だけ POST/GET が飛ぶ(#76)。
+// 発火時はマウント中のインスタンスの最新 handleSave を1つだけ呼ぶ。予約した
+// インスタンス自身を呼ぶと、ドロワーのように閉じれば消えるインスタンスが予約した
+// 保存が、閉じた時点で失われる。
+let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null
+const CLOUD_FETCHED_EVENT = 'fgo-cloud-fetched'
+const autoSavers = new Set<{ current: () => Promise<void> }>()
+
+const cancelAutoSave = () => {
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+  autoSaveTimeout = null
+}
+
+// 取得結果を全インスタンスへ配る際の新旧判定。並行する GET(マウント時・再開時・
+// 保存後)は開始順に完了するとは限らないため、後から始めた取得を配った後に
+// 返ってきた古い応答は配らず、配り済みの最新を返す。配ると全インスタンスの
+// 縮小ガードとコンフリクト判定が古いクラウドへ巻き戻る。
+let cloudFetchSeq = 0
+let publishedFetchSeq = 0
+let publishedCloudData: CloudData | null = null
+
+const publishCloudData = (seq: number, parsed: CloudData): CloudData => {
+  if (seq < publishedFetchSeq && publishedCloudData) return publishedCloudData
+  publishedFetchSeq = seq
+  publishedCloudData = parsed
+  window.dispatchEvent(new CustomEvent(CLOUD_FETCHED_EVENT, { detail: parsed }))
+  return parsed
+}
+
+const scheduleAutoSave = () => {
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+  autoSaveTimeout = setTimeout(() => {
+    autoSaveTimeout = null
+    // 予約後に OFF にされた場合(別インスタンス・別タブを含む)は保存しない
+    if (localStorage.getItem(AUTO_SYNC_KEY) !== 'true') return
+    const saver = autoSavers.values().next().value
+    if (saver) void saver.current()
+  }, 5000)
+}
+
 // 縮小ガードで止めた保存。ダイアログの提示と autosave の抑止に使う。
 export type PendingShrink = {
   // 保存しようとした規模
@@ -80,13 +121,34 @@ const setPendingShrink = (next: PendingShrink | null) => {
   notifyShrinkChange()
 }
 
+// 保存状態もモジュールで1つ。自動保存は1インスタンスだけが行うので、インスタンス
+// state のままだとナビや /cloud に保存中・失敗が伝わらず、失敗しても同期済みに
+// 見える。
+type SaveState = { isSaving: boolean; saveStatus: false | true | 'failed' }
+const INITIAL_SAVE_STATE: SaveState = { isSaving: false, saveStatus: false }
+let saveState = INITIAL_SAVE_STATE
+const SAVE_STATE_EVENT = 'fgo-save-state-update'
+
+const setSaveState = (patch: Partial<SaveState>) => {
+  saveState = { ...saveState, ...patch }
+  window.dispatchEvent(new Event(SAVE_STATE_EVENT))
+}
+
+const subscribeSaveState = (onChange: () => void) => {
+  window.addEventListener(SAVE_STATE_EVENT, onChange)
+  return () => window.removeEventListener(SAVE_STATE_EVENT, onChange)
+}
+
 export const useCloudSync = () => {
   const { data: session } = useSession()
   const { i18n } = useTranslation('common')
   const router = useRouter()
-const [isSaving, setIsSaving] = useState(false)
+  const { isSaving, saveStatus } = useSyncExternalStore(
+    subscribeSaveState,
+    () => saveState,
+    () => INITIAL_SAVE_STATE,
+  )
   const [isLoading, setIsLoading] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<false | true | 'failed'>(false)
   const [cloudData, setCloudData] = useState<CloudData | null>(null)
   const [items, setItems] = useState<EnrichedItem[]>([])
   const [isInitializing, setIsInitializing] = useState(true)
@@ -99,7 +161,6 @@ const [isSaving, setIsSaving] = useState(false)
   // pendingShrink を見ていると遷移先が素通しになる(保留中なのに「同期は正常です」)。
   const [blockedShrinkState, setBlockedShrinkState] = useState<PendingShrink | null>(null)
 
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   // handleSave から同期的に読む最新のクラウド内容。state を handleSave の deps に
   // 入れると、変更リスナーの effect が張り直されて cleanup が武装済みの autosave
   // タイマーを取り消してしまう(再スケジュールされない)ため ref で持つ。
@@ -143,6 +204,10 @@ const [isSaving, setIsSaving] = useState(false)
     const syncVal = () => {
       const val = localStorage.getItem(AUTO_SYNC_KEY)
       setAutoSyncEnabled(val === 'true')
+      // OFF にしたら予約済みの autosave も捨てる。発火時の判定だけだと、5秒以内に
+      // ON へ戻されたとき OFF 前の予約が保存してしまう。別タブでの OFF も
+      // storage イベントでここを通る。
+      if (val !== 'true') cancelAutoSave()
     }
     syncVal()
 
@@ -209,6 +274,20 @@ const [isSaving, setIsSaving] = useState(false)
     return action
   }, [autoSyncEnabled, applyData, getLocalMetadata])
 
+  // 取得結果は全インスタンスへ配る。保存とその後の GET は1インスタンスしか行わない
+  // ので、配らないと他インスタンスの cloudDataRef が古いまま残り、保存担当が
+  // 交代した後の縮小ガードが古いクラウドと比べてしまう(#76)。
+  useEffect(() => {
+    const onFetched = (e: Event) => {
+      const parsed = (e as CustomEvent<CloudData>).detail
+      cloudDataRef.current = parsed
+      setCloudData(parsed)
+      checkConflict(parsed)
+    }
+    window.addEventListener(CLOUD_FETCHED_EVENT, onFetched)
+    return () => window.removeEventListener(CLOUD_FETCHED_EVENT, onFetched)
+  }, [checkConflict])
+
   // 取得した内容を返す。setCloudData は同じレンダーの `cloudData` を更新しないため、
   // 縮小ガードのように「今取った値」で判定したい呼び出し側が戻り値で受け取れるように
   // する(既存の呼び出し側は戻り値を無視するので影響しない)。
@@ -216,15 +295,13 @@ const [isSaving, setIsSaving] = useState(false)
     // Recorded synchronously at entry so a same-tick burst (multiple hook
     // instances reacting to one resume) merges into a single GET.
     lastCloudFetchAt = Date.now()
+    const seq = ++cloudFetchSeq
     if (session == null) {
       if (process.env.NODE_ENV === 'development') {
         const mock = localStorage.getItem(MOCK_CLOUD_KEY)
         if (mock) {
           const parsed = JSON.parse(mock) as unknown as CloudData
-          cloudDataRef.current = parsed
-          setCloudData(parsed)
-          checkConflict(parsed)
-          return parsed
+          return publishCloudData(seq, parsed)
         }
       }
       return null
@@ -234,17 +311,13 @@ const [isSaving, setIsSaving] = useState(false)
       const res = await fetch(`/api/cloud`, { credentials: 'include' })
       if (res.status === 200) {
         const rawData = await res.json()
-        const parsed: CloudData = normalizeCloudResponse(rawData)
-        cloudDataRef.current = parsed
-        setCloudData(parsed)
-        checkConflict(parsed)
-        return parsed
+        return publishCloudData(seq, normalizeCloudResponse(rawData))
       }
     } catch (e) {
       console.error('Failed to fetch cloud data', e)
     }
     return null
-  }, [session, checkConflict])
+  }, [session])
 
   useEffect(() => {
     void getItems(i18n.language)
@@ -295,8 +368,7 @@ const [isSaving, setIsSaving] = useState(false)
       return
     }
 
-    setIsSaving(true)
-    setSaveStatus(false)
+    setSaveState({ isSaving: true, saveStatus: false })
     try {
       const entries = KEYS.map((key) => [key, localStorage.getItem(key)] as const)
       const dataObj = Object.fromEntries(entries.filter(([, value]) => value !== null)) as Record<string, string>
@@ -327,7 +399,7 @@ const [isSaving, setIsSaving] = useState(false)
         if (cloud == null) {
           if (session != null) {
             console.warn('Cloud save aborted: cloud state is unknown')
-            setSaveStatus('failed')
+            setSaveState({ saveStatus: 'failed' })
             return
           }
         } else {
@@ -336,7 +408,7 @@ const [isSaving, setIsSaving] = useState(false)
             // 送ろうとしている内容が読めない。何を上書きするのか分からないまま
             // 保存はしない。
             console.warn('Cloud save aborted: payload could not be measured')
-            setSaveStatus('failed')
+            setSaveState({ saveStatus: 'failed' })
             return
           }
           // クラウド側が読めない場合は件数の比較を諦め、キー欠落だけで判定する。
@@ -380,17 +452,31 @@ const [isSaving, setIsSaving] = useState(false)
       }
 
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newMeta))
-      setSaveStatus(true)
+      setSaveState({ saveStatus: true })
       setHasConflict(false)
       setIsDivergent(false)
       await fetchCloudData()
     } catch (e) {
       console.error(e)
-      setSaveStatus('failed')
+      setSaveState({ saveStatus: 'failed' })
     } finally {
-      setIsSaving(false)
+      setSaveState({ isSaving: false })
     }
   }, [session, fetchCloudData, hasConflict, autoSyncEnabled, getLocalMetadata])
+
+  // autosave の発火時に呼ばれる最新の handleSave をモジュールへ登録する
+  const autoSaveRef = useRef(() => handleSave())
+  useEffect(() => {
+    autoSaveRef.current = () => handleSave()
+  }, [handleSave])
+  useEffect(() => {
+    const saver = autoSaveRef
+    autoSavers.add(saver)
+    return () => {
+      autoSavers.delete(saver)
+      if (autoSavers.size === 0) cancelAutoSave()
+    }
+  }, [])
 
   // クラウドの内容をこの端末へ引き下ろす。ローカルが clean になり、以後の判定は
   // 自然に通る。解除は無条件に行う: ref が無いときに解除を飛ばすと、リロードする
@@ -453,12 +539,7 @@ const [isSaving, setIsSaving] = useState(false)
         return
       }
 
-      if (autoSyncEnabled) {
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-        saveTimeoutRef.current = setTimeout(() => {
-          void handleSave()
-        }, 5000)
-      }
+      if (autoSyncEnabled) scheduleAutoSave()
     }
 
     window.addEventListener('localStorageUpdated', listener)
@@ -467,9 +548,8 @@ const [isSaving, setIsSaving] = useState(false)
     return () => {
       window.removeEventListener('localStorageUpdated', listener)
       window.removeEventListener('ls-sync', listener)
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
-  }, [autoSyncEnabled, handleSave, getLocalMetadata])
+  }, [autoSyncEnabled, getLocalMetadata])
 
   const localStats = getStats(
     Object.fromEntries(KEYS.map(k => [k, typeof window !== 'undefined' ? localStorage.getItem(k) : null])),
