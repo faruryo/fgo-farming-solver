@@ -45,10 +45,11 @@ applyTo: "app/**/*.tsx,components/**/*.tsx"
   4. ツールチップ/ホバー UI は `browser-use hover` で実表示を確認
   5. 必要なら `browser-use screenshot --full` を撮ってユーザーに共有
 - **dev server はエージェントが自分の作業ツリーから起動する**: `pnpm dev -p <ポート>` で起動してよい（worktree を含む）。ユーザーが別に動かしている dev server とぶつけないため、次を守る。
-  - **BLOCKER**: 3000 / 3001 は使わない（ユーザーが使っている可能性がある）。起動前に `lsof -nP -iTCP:<ポート> -sTCP:LISTEN` で空きを確かめる。`-p` を指定した `next dev` は埋まったポートから別ポートへずれず、起動に失敗する。その場合は別の空きポートを選び直し、起動ログの Ready を確認する。
+  - **BLOCKER**: 3000 / 3001 は使わない（ユーザーが使っている可能性がある）。起動前に `lsof -nP -iTCP:<ポート> -sTCP:LISTEN` で空きを確かめる（`lsof` が無い環境では `node -e "require('net').createServer().once('error',()=>process.exit(1)).listen(+process.argv[1],()=>process.exit(0))" <ポート>` の終了コード 0 で空きとみなす）。`-p` を指定した `next dev` は埋まったポートから別ポートへずれず、起動に失敗する。その場合は別の空きポートを選び直し、起動ログの Ready を確認する。
   - worktree には `.env.local` が無い。本体チェックアウトの `.env.local` をコピーかシンボリックリンクで置く。**コミットしない**（gitignore 済み。秘密は `.dev.vars` に書かない）。
-  - 開いたサーバーがこの作業ツリーのコードを配信していることを確かめてから確認する。`pnpm` → `next dev` → 子プロセスと分かれるので、起動した親の PID ではなく、`lsof -nP -iTCP:<ポート> -sTCP:LISTEN -t` で得た待受 PID の cwd（`lsof -a -p <待受PID> -d cwd`）が自分の作業ツリーを指すことを見る。
-  - **BLOCKER**: 確認が終わったら、自分が起動した dev server（起動した親の PID と上の待受 PID）だけを止め、`lsof -nP -iTCP:<ポート> -sTCP:LISTEN` で待受が消えたことを確かめる。自分が起動していない dev server は停止・再起動しない。
+  - 開いたサーバーがこの作業ツリーのコードを配信していることを確かめてから確認する。`pnpm` → `next dev` → 子プロセスと分かれるので、起動した親の PID ではなく、`lsof -nP -iTCP:<ポート> -sTCP:LISTEN -t` で得た待受 PID の cwd（`lsof -a -p <待受PID> -d cwd`）が自分の作業ツリーを指すことを見る。`lsof` が無い Linux では `ss -ltnp 'sport = :<ポート>'` で待受 PID を得て `readlink /proc/<待受PID>/cwd` を見る。どちらも無ければ、起動前に空きを確かめたポートで自分の起動ログに Ready が出たことをもって代える。
+  - **BLOCKER**: 確認が終わったら、自分が起動した dev server（起動した親の PID と上の待受 PID）だけを止め、`lsof -nP -iTCP:<ポート> -sTCP:LISTEN`（無ければ上の `node -e` が 0 を返すこと）で待受が消えたことを確かめる。自分が起動していない dev server は停止・再起動しない。
+  - どの手段でも空き・配信元・停止を確かめられない環境では、dev server を起動せず、ブラウザ実機確認ができなかったことと理由を報告して止まる。
 - **WARNING**: 検証で値がズレた・描画されない場合は「動いたつもり」で完了報告しない。原因を直してから再検証する。
 
 ## ナビゲーション導線（オーファンページ禁止）
