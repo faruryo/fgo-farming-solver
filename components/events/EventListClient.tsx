@@ -13,7 +13,7 @@ interface Props {
   updatedAt: number
 }
 
-const formatDate = (unixSec: number): string => {
+export const formatDate = (unixSec: number): string => {
   const d = new Date(unixSec * 1000)
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 }

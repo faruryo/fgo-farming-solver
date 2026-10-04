@@ -1,10 +1,7 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaChevronLeft } from 'react-icons/fa'
-import { Link } from '../common/link'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -220,63 +217,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     [totalAp, maxAp, goldenFruitOwned],
   )
 
-  const [clientNowSec, setClientNowSec] = useState(0)
-  useEffect(() => { setClientNowSec(Math.floor(Date.now() / 1000)) }, [])
-  const isActive = clientNowSec > 0 && event.startedAt <= clientNowSec && event.endedAt >= clientNowSec
-  const isEnded = clientNowSec > 0 && event.endedAt < clientNowSec
-
   return (
-    <div className="c-page">
-      <div className="c-page-inner">
-        <div className="flex flex-col gap-6">
-
-          {/* Header */}
-          <div className="c-page-header">
-            <div className="flex flex-col gap-2">
-              <Link
-                href="/events"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: 'var(--text3)',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                <FaChevronLeft size={11} /> {t('イベント一覧へ戻る')}
-              </Link>
-              <div className="flex flex-col">
-                <div className="c-page-en">EVENT PLANNER</div>
-                <h1 className="c-page-title">{event.name}</h1>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {isActive && (
-                  <Badge variant="destructive" className="text-[10px]">
-                    {t('開催中')}
-                  </Badge>
-                )}
-                {isEnded && (
-                  <Badge variant="outline" className="text-[10px]">
-                    {t('終了')}
-                  </Badge>
-                )}
-                {!isActive && !isEnded && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    {t('開催予定')}
-                  </Badge>
-                )}
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  {t('箱数', { count: maxBoxes })}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  {event.currency.name}
-                </span>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Input panel */}
             <div className="lg:col-span-1 flex flex-col gap-4">
@@ -607,8 +548,5 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
               )}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
   )
 }

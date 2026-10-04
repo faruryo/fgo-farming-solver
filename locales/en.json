@@ -567,7 +567,15 @@
     "周回ドロップ見込み": "Farming drops (estimated)",
     "確定ドロップ内訳注記": "Box rewards and farming drops are shown separately. Coverage uses the combined total.",
     "交換所": "Shop",
-    "必要通貨N": "{{count}} currency"
+    "必要通貨N": "{{count}} currency",
+    "event-craft-section-title": "Cooking",
+    "event-craft-section-description": "Calculated from your training roster's shortfall (required − owned).",
+    "event-craft-roster-empty": "Set servants to train to calculate the cooking allocation from your material shortfall.",
+    "event-craft-roster-link": "Set training targets",
+    "event-craft-loading": "Loading data...",
+    "event-craft-drops-error": "Could not load drop data. Please reload.",
+    "event-craft-data-missing": "Drop data is missing for some needed materials, so runs cannot be calculated correctly. Please reload later.",
+    "event-craft-reload": "Reload"
   },
   "todo": {
     "TODO管理": "TODO Management",

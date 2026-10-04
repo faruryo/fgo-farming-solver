@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { EVENT_FEATURES } from '../data/event-features'
 import type { EventFeatureEntry } from '../data/event-features'
 import type { EventPlannerEvent } from './master-data/types'
-import { featuresFor, mergeEventList, latestCraftEventId } from './event-features'
+import { featuresFor, mergeEventList, latestCraftEventId, resolveEventSummary } from './event-features'
 
 const kv = (id: number, name: string, startedAt = 100, endedAt = 200): EventPlannerEvent =>
   ({ id, name, startedAt, endedAt }) as EventPlannerEvent
@@ -63,6 +63,18 @@ describe('mergeEventList', () => {
 
   it('KV 内の同一 ID は 1 件にまとめる', () => {
     expect(mergeEventList([kv(1, 'a'), kv(1, 'b')], {})).toHaveLength(1)
+  })
+})
+
+describe('resolveEventSummary', () => {
+  const registry = { 3: reg(['craft']) }
+  it.each([
+    ['KV のみ', 1, kv(1, 'KV'), { id: 1, name: 'KV', startedAt: 100, endedAt: 200 }],
+    ['レジストリのみ', 3, null, { id: 3, name: 'REG', startedAt: 10, endedAt: 20 }],
+    ['両方: KV 優先', 3, kv(3, 'KV'), { id: 3, name: 'KV', startedAt: 100, endedAt: 200 }],
+    ['どちらも無し', 9, null, undefined],
+  ] as const)('%s', (_label, id, kvEvent, expected) => {
+    expect(resolveEventSummary(id, kvEvent, registry)).toEqual(expected)
   })
 })
 

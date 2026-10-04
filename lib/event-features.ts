@@ -49,6 +49,20 @@ export const mergeEventList = (
   return merged
 }
 
+/** イベントページのヘッダー用。KV があれば KV の名前・会期、無ければレジストリ meta（mergeEventList と同じ優先順位）。 */
+export const resolveEventSummary = (
+  id: number,
+  kvEvent: EventPlannerEvent | null | undefined,
+  registry: Registry = EVENT_FEATURES,
+): EventSummary | undefined => {
+  if (kvEvent) {
+    const { name, startedAt, endedAt } = kvEvent
+    return { id, name, startedAt, endedAt }
+  }
+  const entry: EventFeatureEntry | undefined = Reflect.get(registry, id)
+  return entry && { id, ...entry.meta }
+}
+
 export const latestCraftEventId = (registry: Registry = EVENT_FEATURES): number | undefined => {
   let best: { id: number; endedAt: number } | undefined
   for (const [key, { features, meta }] of Object.entries(registry)) {

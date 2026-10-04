@@ -490,7 +490,15 @@
     "周回ドロップ見込み": "周回ドロップ見込み（推定）",
     "確定ドロップ内訳注記": "確定報酬と周回ドロップは分離表示しています。需要充足は両者の合算で判定します。",
     "交換所": "交換所",
-    "必要通貨N": "{{count}} 通貨"
+    "必要通貨N": "{{count}} 通貨",
+    "event-craft-section-title": "料理作成",
+    "event-craft-section-description": "育成ロスターの不足（必要数 − 所持数）で計算します。",
+    "event-craft-roster-empty": "育成対象のサーヴァントを設定すると、不足素材から料理の配分を計算できます。",
+    "event-craft-roster-link": "育成対象を設定する",
+    "event-craft-loading": "データを読み込み中...",
+    "event-craft-drops-error": "ドロップデータを取得できませんでした。再読み込みしてください。",
+    "event-craft-data-missing": "不足素材の一部でドロップデータが欠けているため、周回数を正しく計算できません。時間をおいて再読み込みしてください。",
+    "event-craft-reload": "再読み込み"
   },
   "todo": {
     "TODO管理": "TODO管理",
