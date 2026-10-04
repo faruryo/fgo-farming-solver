@@ -8,12 +8,12 @@
 ## 2. need 源の共通化
 
 - [ ] 2.1 `lib/event-plan.ts` の `computeShortfall` から総必要数の集計を `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う。検証: 既存 `lib/event-plan.test.ts` が無変更で通る＋`computeTotalNeed` の単体ケース（disabled サーヴァント／disabled ターゲット除外）を追加。
-- [ ] 2.2 `hooks/use-roster-need.ts` および `lib/stock-target.ts` に、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・設定値解決（`readStockTargetReadOnly`）・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得 ID 完全性確認（部分欠落ガード）・ドロップ素材存在確認・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末で `localStorage.setItem` が呼ばれないこと、一部サーヴァントの素材取得欠落またはドロップ素材欠落時に計算を中断する単体テストを追加。
+- [ ] 2.2 `hooks/use-roster-need.ts` に、ドロップデータに依存しない形で、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得 ID 完全性確認（部分欠落ガード）・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。また `hooks/use-farming-purpose.ts` のマウント時自動書き込みを撤廃し明示選択時のみ保存する改修を行う。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末でナビやフックを呼び出しても `localStorage.setItem` が呼ばれないこと、一部サーヴァントの素材取得欠落時に計算を中断する単体テストを追加。
 
 ## 3. イベントページ（ハブ）
 
-- [ ] 3.1 `components/events/EventHubClient.tsx` を新設し、`EventPlannerClient` からヘッダー（戻る導線・名前・会期・状態バッジ）を移す。`EventPlannerClient` はボックス計画セクションの中身だけにする。検証: KV モックのボックスイベントで画面が変更前と同じ入力・結果を出す。
-- [ ] 3.2 `components/events/EventCraftSection.tsx` を新設し、`useRosterNeed` → `buildNeedByApiItemId`（`readStockTargetReadOnly`・`useDrops`）で `fullNeed` を作って `EventCraftAdvisor` に渡す。`FarmingPurposeSelector` をマウント時自動書き込みのない制御モード（明示選択時のみ保存）で使用する。ロスター未設定時は配分計算せず `/material` への導線付き案内、素材取得中・ドロップ未ロード時はローディング表示、素材取得失敗・部分欠落・ドロップ欠落時は過少計算を防ぐエラー案内を表示し、`purpose === 'all'` 時は育成フォールバック注記を出す。検証: コンポーネントテストでロスター有／無・取得中・部分欠落エラー・allフォールバックの表示分岐を確認し、画面マウント時に `localStorage.setItem` が呼ばれないことを確認する。
+- [ ] 3.1 `components/events/EventHubClient.tsx` を新設し、`EventPlannerClient` からヘッダー（戻る導線・名前・会期・状態バッジ）を移す。`EventPlannerClient` はボックス計画セクションの中身だけにする（所持数キー `STORAGE_KEYS.ITEMS` は無変更）。検証: KV モックのボックスイベントで画面が変更前と同じ入力・結果を出す。
+- [ ] 3.2 `components/events/EventCraftSection.tsx` を新設し、`useRosterNeed` → 実所持数 `STORAGE_KEYS.POSSESSION` 読み取り → `buildNeedByApiItemId`（`readStockTargetReadOnly`・`useDrops`）で `fullNeed` を作って `EventCraftAdvisor` に渡す。ロスター未設定時は配分計算せず `/material` への導線付き案内、素材取得中・`drops.isLoading === true` 時はローディング表示、素材取得失敗・部分欠落・ドロップ取得完了後（`drops.isLoading === false`）の料理対象素材カタログ欠落時は過少計算を防ぐエラー案内を表示し、`purpose === 'all'` 時は育成フォールバック注記を出す。検証: 単体テストで実所持数 `STORAGE_KEYS.POSSESSION` が使われること（周回目標との乖離テスト）、QP がドロップ照合から除外されること、ドロップ失敗時に永続ローディングにならずエラーになること、および画面マウント時に `localStorage.setItem` が呼ばれないことを確認する。
 - [ ] 3.3 `app/events/[id]/page.tsx` を、KV とレジストリの両方を引いて `EventHubClient` を描画する形にする（どちらも無ければ `EventDataMissing`、`craft` があれば `getItems()` を渡す）。検証: `/events/80614`・KV モックのボックスイベント・存在しない ID の3通りをローカルで開いて確認する。
 
 ## 4. 一覧・導線・名称
