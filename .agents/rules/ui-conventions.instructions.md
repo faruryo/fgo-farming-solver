@@ -37,14 +37,18 @@ applyTo: "app/**/*.tsx,components/**/*.tsx"
 
 ## UI動作確認（ブラウザ実機検証を毎回行う）
 
-- **BLOCKER**: `app/**` `components/**` の UI を変更したら、type-check / テストだけで完了とせず、**毎回ブラウザ実機で動作確認すること**（ユーザーから都度依頼されなくても必須）。`browser-use`（Chrome DevTools 相当の自動操作）で `http://localhost:3000` の該当画面を開き、変更点の挙動・連動・永続・i18n 表示を確認する。
+- **BLOCKER**: `app/**` `components/**` の UI を変更したら、type-check / テストだけで完了とせず、**毎回ブラウザ実機で動作確認すること**（ユーザーから都度依頼されなくても必須）。`browser-use`（Chrome DevTools 相当の自動操作）で、自分が起動した dev server（下記）の該当画面を開き、変更点の挙動・連動・永続・i18n 表示を確認する。
 - **検証の型**（最低限）:
-  1. `browser-use open http://localhost:3000/<対象パス>` → `browser-use state` で要素確認
+  1. `browser-use open http://localhost:<自分のポート>/<対象パス>` → `browser-use state` で要素確認
   2. 入力を変えて連動値を `browser-use eval` で取得し、期待値と一致するか確認
   3. localStorage 永続が絡む変更はリロード後の保持も確認
   4. ツールチップ/ホバー UI は `browser-use hover` で実表示を確認
   5. 必要なら `browser-use screenshot --full` を撮ってユーザーに共有
-- **dev server はユーザー管理**: Claude は `pnpm dev` を起動・再起動しない。`curl` でポート（既定 3000）疎通を確認し、落ちていれば「`! pnpm dev` で起動して」と促してから検証する。
+- **dev server はエージェントが自分の作業ツリーから起動する**: `pnpm dev -p <ポート>` で起動してよい（worktree を含む）。ユーザーが別に動かしている dev server とぶつけないため、次を守る。
+  - **BLOCKER**: 3000 / 3001 は使わない（ユーザーが使っている可能性がある）。起動前に `lsof -nP -iTCP:<ポート> -sTCP:LISTEN` で空きを確かめる。Next.js は指定ポートが埋まっていると別ポートへずれることがあるので、実際の URL は起動ログで確認する。
+  - worktree には `.env.local` が無い。本体チェックアウトの `.env.local` をコピーかシンボリックリンクで置く。**コミットしない**（gitignore 済み。秘密は `.dev.vars` に書かない）。
+  - 開いたサーバーがこの作業ツリーのコードを配信していることを確かめてから確認する（例: `lsof -p <PID> | grep cwd` が自分の作業ツリーを指す、変更箇所が画面に出ている）。
+  - **BLOCKER**: 確認が終わったら、自分が起動したプロセス（起動時に PID を控える）だけを止める。自分が起動していない dev server は停止・再起動しない。
 - **WARNING**: 検証で値がズレた・描画されない場合は「動いたつもり」で完了報告しない。原因を直してから再検証する。
 
 ## ナビゲーション導線（オーファンページ禁止）
