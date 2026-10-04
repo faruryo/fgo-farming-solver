@@ -53,13 +53,16 @@
 4. `EventCraftAdvisor` に `fullNeed`・`stockEnabled` を渡す。
 
 このとき以下の不変条件と境界を厳守する：
-- **読み取り専用（副作用なし）**: ロスター（`ChaldeaState`）および所持数に加え、周回目的（`farmingPurpose`）やストック目標（`stockBuffer`, `surplusThreshold`）の取得でも `useLocalStorage` の初期値書き込み副作用を避ける。純粋な読み取り関数（`readStockTargetReadOnly`）を用いてメモリ上でのみデフォルト値・移行値を解決し、未設定端末やクラウド復元前の端末で `localStorage.setItem` を一切呼ばず、クラウド同期対象キーを書き換え・汚染しない。
-- **素材取得失敗・部分欠落（partial failure）の防護**: `getMaterialsForServantIds` は個別サーヴァントの失敗時に該当 ID を除外した部分結果を返す仕様であるため、要求した `enabledServantIds` の全件が取得結果に含まれているか完全性（integrity）を確認する。取得中（loading）は配分計算を開始せずローディング表示とし、1件でも欠落がある場合（部分欠落）または全件取得失敗時は、過少な不足数での誤計算を防ぐため配分計算を行わずエラー案内と再試行導線を表示する。
+- **読み取り専用（副作用なし）**: ロスター（`ChaldeaState`）および所持数に加え、周回目的（`farmingPurpose`）やストック目標（`stockBuffer`, `surplusThreshold`）の取得でも `useLocalStorage` の初期値書き込み副作用を避ける。純粋な読み取り関数（`readStockTargetReadOnly`）を用いてメモリ上でのみデフォルト値・移行値を解決する。また、周回目的選択 UI（`FarmingPurposeSelector`）もマウント時の自動初期化書き込みを抑止した制御モード（または遅延書き込み）とし、未設定端末やクラウド復元前の端末で閲覧するだけで `localStorage.setItem` が走ることを防ぎ、クラウド同期対象キーを書き換え・汚染しない。ユーザーが明示的に目的を切り替えた場合のみ保存を行う。
+- **素材取得失敗・部分欠落（partial failure）およびドロップデータの防護**:
+  1. `getMaterialsForServantIds` は個別サーヴァントの失敗時に該当 ID を除外した部分結果を返す仕様であるため、要求した `enabledServantIds` の全件が取得結果に含まれているか完全性（integrity）を確認する。
+  2. `buildNeedByApiItemId` は `drops.items` に存在する素材のみを不足数へ変換するため、`drops` がロード中または `drops.items` が空・欠落している間は配分計算を開始せずローディング表示とする。
+  3. サーヴァント素材の欠落（部分欠落）またはドロップ素材カタログとの照合不整合が検知された場合は、過少な不足数での誤計算を防ぐため配分計算を行わずエラー案内と再試行導線を表示する。
 - **周回目的 `all` のフォールバックと表示**: `purpose === 'all'` の場合は `buildNeedByApiItemId` の仕様に従い有限目標を `training`（育成）としてフォールバック計算し、UI 上でも現行と同様に `FarmingPurposeSelector` の横に「配布評価は今の育成を使用」（`common:farming-purpose-advisor-fallback`）を表示する。
 
 ロスター取得と素材読み取り部分は `EventPlannerClient` と重複するため、副作用のない小さなフック `useRosterNeed()` に寄せ、両セクションで使う。
 - 代替案: `/material/result` の `amounts` を URL や localStorage で受け渡す → 結果画面を経由しないと使えなくなる。ボックス計画と need 源が揃わない。
-- 差分: `/material/result` は「今の計算画面の対象」、イベントページは「永続ロスター」が need 源になる。通常は同じ ChaldeaState なので一致するが、共有 URL 由来の計算結果を見ている場合は異なり得る。ボックス計画と同じ定義に揃えることを優先する。
+- 差分: `/material/result` は「今の計算画面の対象」、イベントページは「永続ロスター」が need 源になる。同一の入力データに対しては既存と全く同一のアルゴリズム・算出結果を維持するが、共有 URL 等により計算画面と永続ロスターが乖離している場合は入力自体が異なるため算出結果が変わり得る。ボックス計画と同じ定義に揃えることを優先する。
 
 ### D5. 素材選択アドバイザーのタブを外す
 `AdvisorTab` とタブ UI・`EventCraftAdvisor` の描画を削除し、交換券・配布の本体の上に `/events/80614` へのリンク（`Link`、i18n）を置く。リンク先は `EVENT_FEATURES` から `craft` を持つ最新イベントを引く（`latestCraftEventId()`）。`STORAGE_KEYS.MATERIAL_ADVISOR_TAB` はクラウド同期対象ではない（`lib/cloud-sync` から参照なし）。定数ごと削除し、端末に残った値は読まれずに放置される。
@@ -75,12 +78,12 @@
 
 ## Risks / Trade-offs
 
-- [need 源の変更で `/material/result` と料理配分の結果が変わり得る] → D4 の差分を料理作成セクションの説明文で「育成ロスターの不足で計算」と明示する。
+- [need 源の変更で `/material/result` と料理配分の結果が変わり得る] → 入力元が異なる（永続ロスター）ことによる差分であり、料理作成セクションの説明文で「育成ロスターの不足で計算」と明示する。同一入力に対する計算アルゴリズム自体の同一性は維持する。
 - [レジストリ meta の手書き誤り] → 80614 の値は Atlas basic_event の値をそのまま使い、テストで会期の大小関係（started < ended）を確認する。
 - [`EventPlannerClient` の分割で挙動が変わる] → 計算部は動かさず、ヘッダー JSX の移動だけに留める。既存の `lib/event-plan.test.ts` と画面の実機確認で担保する。
 - [料理作成の Worker がイベントページの bundle に入る] → 既存と同じ遅延生成（`new Worker(new URL(...))`）のままなので初期表示への影響は小さい。
-- [未同期端末での設定読み取り副作用] → `useLocalStorage` を使わず純粋な読み取り（`readStockTargetReadOnly`）に徹し、初期値書き込みによるデータ汚染を防ぐ。
-- [素材データ取得失敗・部分欠落時の誤配分] → `enabledServantIds` 全件の完全性検証を行い、部分欠落時に過少計算を行わない防御ガードを設ける。
+- [未同期端末での設定読み取り副作用] → `readStockTargetReadOnly` およびセレクタの遅延書き込みにより、閲覧時の自動保存副作用を排除しクラウド同期データを汚染しない。
+- [素材データ取得失敗・部分欠落およびドロップ欠落時の誤配分] → `enabledServantIds` 全件の完全性検証とドロップ素材検証を行い、部分欠落時に過少計算を行わない防御ガードを設ける。
 
 ## Migration Plan
 
