@@ -41,8 +41,9 @@ export const extractEventBonuses = (skills: NiceExtraPassiveSkill[] = [], nowSec
       const bond = maxOf(prev?.bond, bonus.bond)
       byEvent.set(eventId, {
         eventId,
-        startedAt,
-        endedAt,
+        // 同じイベントでも条件ごとに期間が違うことがある（80507 など）。和の期間にする。
+        startedAt: Math.min(prev?.startedAt ?? startedAt, startedAt),
+        endedAt: Math.max(prev?.endedAt ?? endedAt, endedAt),
         ...(damage ? { damage } : {}),
         ...(bond ? { bond } : {}),
       })
@@ -61,8 +62,8 @@ export const groupActiveEventBonuses = (
 ): EventBonusGroup[] => {
   const groups = new Map<string, EventBonusGroup>()
   for (const servant of servants) {
-    for (const b of servant.eventBonuses ?? []) {
-      if (b.startedAt > nowSec || b.endedAt <= nowSec) continue
+    for (const b of Array.isArray(servant.eventBonuses) ? servant.eventBonuses : []) {
+      if (!b || b.startedAt > nowSec || b.endedAt <= nowSec) continue
       const damage = b.damage ?? 0
       const bond = b.bond ?? 0
       const key = `${damage}:${bond}`

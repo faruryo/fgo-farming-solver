@@ -21,6 +21,12 @@ describe('extractEventBonuses', () => {
     ], NOW)).toEqual([{ eventId: 80627, startedAt: NOW - 60, endedAt: NOW + 100, damage: 100, bond: 20 }])
   })
 
+  it('unions the windows when one event has conditions with different periods', () => {
+    expect(extractEventBonuses([
+      skill([{ eventId: 80507, endedAt: NOW + 500 }, { eventId: 80507, endedAt: NOW + 100 }], [bond(200)]),
+    ], NOW)).toEqual([{ eventId: 80507, startedAt: NOW - 60, endedAt: NOW + 500, bond: 20 }])
+  })
+
   it('drops permanent (sentinel), ended, non-event and non-bonus passives', () => {
     expect(extractEventBonuses([
       skill([{ eventId: 80593, endedAt: 1893423600 }], [damage(300)]),
