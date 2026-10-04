@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -121,13 +121,34 @@ const setPendingShrink = (next: PendingShrink | null) => {
   notifyShrinkChange()
 }
 
+// 保存状態もモジュールで1つ。自動保存は1インスタンスだけが行うので、インスタンス
+// state のままだとナビや /cloud に保存中・失敗が伝わらず、失敗しても同期済みに
+// 見える。
+type SaveState = { isSaving: boolean; saveStatus: false | true | 'failed' }
+const INITIAL_SAVE_STATE: SaveState = { isSaving: false, saveStatus: false }
+let saveState = INITIAL_SAVE_STATE
+const SAVE_STATE_EVENT = 'fgo-save-state-update'
+
+const setSaveState = (patch: Partial<SaveState>) => {
+  saveState = { ...saveState, ...patch }
+  window.dispatchEvent(new Event(SAVE_STATE_EVENT))
+}
+
+const subscribeSaveState = (onChange: () => void) => {
+  window.addEventListener(SAVE_STATE_EVENT, onChange)
+  return () => window.removeEventListener(SAVE_STATE_EVENT, onChange)
+}
+
 export const useCloudSync = () => {
   const { data: session } = useSession()
   const { i18n } = useTranslation('common')
   const router = useRouter()
-const [isSaving, setIsSaving] = useState(false)
+  const { isSaving, saveStatus } = useSyncExternalStore(
+    subscribeSaveState,
+    () => saveState,
+    () => INITIAL_SAVE_STATE,
+  )
   const [isLoading, setIsLoading] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<false | true | 'failed'>(false)
   const [cloudData, setCloudData] = useState<CloudData | null>(null)
   const [items, setItems] = useState<EnrichedItem[]>([])
   const [isInitializing, setIsInitializing] = useState(true)
@@ -347,8 +368,7 @@ const [isSaving, setIsSaving] = useState(false)
       return
     }
 
-    setIsSaving(true)
-    setSaveStatus(false)
+    setSaveState({ isSaving: true, saveStatus: false })
     try {
       const entries = KEYS.map((key) => [key, localStorage.getItem(key)] as const)
       const dataObj = Object.fromEntries(entries.filter(([, value]) => value !== null)) as Record<string, string>
@@ -379,7 +399,7 @@ const [isSaving, setIsSaving] = useState(false)
         if (cloud == null) {
           if (session != null) {
             console.warn('Cloud save aborted: cloud state is unknown')
-            setSaveStatus('failed')
+            setSaveState({ saveStatus: 'failed' })
             return
           }
         } else {
@@ -388,7 +408,7 @@ const [isSaving, setIsSaving] = useState(false)
             // 送ろうとしている内容が読めない。何を上書きするのか分からないまま
             // 保存はしない。
             console.warn('Cloud save aborted: payload could not be measured')
-            setSaveStatus('failed')
+            setSaveState({ saveStatus: 'failed' })
             return
           }
           // クラウド側が読めない場合は件数の比較を諦め、キー欠落だけで判定する。
@@ -432,15 +452,15 @@ const [isSaving, setIsSaving] = useState(false)
       }
 
       localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(newMeta))
-      setSaveStatus(true)
+      setSaveState({ saveStatus: true })
       setHasConflict(false)
       setIsDivergent(false)
       await fetchCloudData()
     } catch (e) {
       console.error(e)
-      setSaveStatus('failed')
+      setSaveState({ saveStatus: 'failed' })
     } finally {
-      setIsSaving(false)
+      setSaveState({ isSaving: false })
     }
   }, [session, fetchCloudData, hasConflict, autoSyncEnabled, getLocalMetadata])
 

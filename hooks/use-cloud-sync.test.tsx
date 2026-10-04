@@ -843,5 +843,28 @@ describe('useCloudSync shrink guard', () => {
         expect(result.current.cloudData?.metadata.updatedAt).toBe(NEWER_UPDATED_AT),
       )
     })
+
+    // 自動保存は1インスタンスだけが行う。保存状態を共有しないと、ナビや /cloud には
+    // 失敗が伝わらず同期済みに見える。
+    it('shares the autosave failure with instances that did not save', async () => {
+      setupSyncedLocal()
+      const hooks = await renderInstances(2)
+      fetchMock = vi.fn(async (_url: string, init?: { method?: string }) =>
+        init?.method === 'POST'
+          ? { ok: false, status: 500 }
+          : { ok: true, status: 200, json: async () => cloudPayload },
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      await elapseDebounce()
+
+      await waitFor(() => {
+        hooks.forEach(({ result }) => {
+          expect(result.current.saveStatus).toBe('failed')
+          expect(result.current.isSaving).toBe(false)
+        })
+      })
+      expect(postCalls()).toHaveLength(1)
+    })
   })
 })
