@@ -27,8 +27,9 @@
 ## Decisions
 
 ### D1. 静的機能レジストリ（`data/event-features.ts`）
-イベント ID ごとに利用可能な機能（`features: ('box' | 'craft')[]`）と、KV 未保持時の表示用メタ（`summary: { name, startedAt, endedAt }`）を定義する。
-- 型: `Record<number, { features: EventFeature[]; meta?: { name: string; startedAt: number; endedAt: number } }>`
+イベント ID ごとに利用可能な機能（`features: ('box' | 'craft')[]`）と表示用メタ（`meta: { name: string; startedAt: number; endedAt: number }`）を定義する。
+- 型: `Record<number, { features: EventFeature[]; meta: { name: string; startedAt: number; endedAt: number } }>`
+- 静的レジストリ単独でイベントが成立する主要ユースケース（KV 未保持イベント）を満たすため、`meta` はオプショナルではなく必須プロパティとする。
 - 80614（水着2026）は `features: ['craft']`、meta は Atlas basic_event の値を静的定義（名前: `カルデア南海大決戦！ ～マジムンアイランドに謎の巨人の影を見た～`、会期は JST unix 秒: `startedAt: 1786532400`, `endedAt: 1788321599`）。
 - 理由: KV のスキーマ変更やバッチ改修（#115）を待たずに、現行コードだけで水着2026のイベントページを成立させる。
 - 公開データ境界: メタデータは Atlas API / ゲーム内で公開済みの値のみを用い、未公開・解析データは含めない。
@@ -60,14 +61,18 @@
 2. 所持数として実所持数 `STORAGE_KEYS.POSSESSION`（`'posession'`）を副作用なしで読み取る（ボックス計画が読む周回目標 `STORAGE_KEYS.ITEMS` とは分離）。
 3. ドロップデータ `useDrops()` の状態を検証する：
    - `drops.isLoading` が true の間はローディング表示。
-   - `drops.isLoading` が false で `drops.items` が空、または料理対象素材（レシピ対象素材集合）が `drops.items` に見つからない場合は、過少計算を防ぐため配分計算を行わずエラー案内と再試行導線を表示する（全必要数の QP 等を除外し、照合対象を料理対象素材に限定）。
+   - `drops.isLoading` が false で `drops.items` が空、または正の need（need > 0）に関与するカタログ・ドロップ率・クエストデータに欠落がある場合は、削減周回/APの過大評価を防ぐため配分計算を行わずエラー案内と再試行導線を表示する。
 4. 設定値（`stockBuffer`, `purpose`）を副作用なし読み取り（`readStockTargetReadOnly`）で解決し、`buildNeedByApiItemId(amounts, possession, drops, stockBuffer, purpose)` を呼ぶ。
    - `purpose === 'all'` の場合は `training`（育成）としてフォールバック計算し、UI に `common:farming-purpose-advisor-fallback`（「配布評価は今の育成を使用」）を表示する。
 5. `EventCraftAdvisor` に `fullNeed`・`stockEnabled` を渡す。
 
 不変条件と境界の厳守：
-- **読み取り専用（副作用なし）**: 未設定端末でページやナビを表示するだけで `localStorage.setItem` が走ることを根絶するため、`useFarmingPurpose` フックおよびセレクタのマウント時自動初期化書き込みを廃止し、未設定時はデフォルト値（`'training'`）をメモリ上だけで扱い、ユーザーが明示的に目的を切り替えた時のみ `localStorage.setItem` を実行する（遅延保存）。所持数・ストック目標・ロスターの読み取りもすべて副作用なしとする。
-- **入力源による差異と計算アルゴリズムの同一性**: 同一の入力データに対しては既存と全く同一のアルゴリズム・算出結果を維持するが、料理作成は永続ロスターと実所持数（`STORAGE_KEYS.POSSESSION`）を need 源とするため、共有 URL や周回画面の一時入力とは結果が異なり得る。この差分はセクション説明文で「育成ロスターの不足で計算」と明示する。
+- **読み取り専用（副作用なし）と旧設定の移行維持**:
+  未設定端末でページやナビを表示するだけで `localStorage.setItem` が走ることを防ぐため、`useFarmingPurpose` フックおよびセレクタのマウント時自動初期化書き込みを廃止する。ただし、`STORAGE_KEYS.FARMING_PURPOSE` が未保存で旧キー（`STORAGE_KEYS.QUEST_EFFICIENCY_SHORTAGE_ONLY`, `STORAGE_KEYS.STOCK_ENABLED`）が残る端末では、`migrateFarmingPurpose` による旧設定の復元（`all` / `reserve` / `training`）をメモリ上で純粋に解決する移行経路を維持する。旧キーも無い場合にのみデフォルト値 `'training'` とする。ユーザーが明示的に目的を切り替えた場合のみ `localStorage.setItem` を実行する（遅延保存）。所持数・ストック目標・ロスターの読み取りもすべて副作用なしとする。
+- **全ソルバー入力に関与する完全性検証**:
+  料理作成アドバイザーはアカウント全体の残余周回とドロップ率から限界削減量（シャドウプライス）を評価するため、料理対象素材だけでなく、正の need を持つ素材に関与するカタログ・レート・クエスト情報の完全性を配分開始前に検証し、欠落時は計算を停止してエラー案内を表示する。
+- **入力源による差異と計算アルゴリズムの同一性**:
+  同一の入力データに対しては既存と全く同一のアルゴリズム・算出結果を維持するが、料理作成は永続ロスターと実所持数（`STORAGE_KEYS.POSSESSION`）を need 源とするため、共有 URL や周回画面の一時入力とは結果が異なり得る。この差分はセクション説明文で「育成ロスターの不足で計算」と明示する。
 
 ### D5. 素材選択アドバイザーのタブを外す
 `AdvisorTab` とタブ UI・`EventCraftAdvisor` の描画を削除し、交換券・配布の本体の上に `/events/80614` へのリンク（`Link`、i18n）を置く。リンク先は `EVENT_FEATURES` から `craft` を持つ最新イベントを引く（`latestCraftEventId()`）。`STORAGE_KEYS.MATERIAL_ADVISOR_TAB` はクラウド同期対象ではない（`lib/cloud-sync` から参照なし）。定数ごと削除し、端末に残った値は読まれずに放置される。
@@ -87,8 +92,8 @@
 - [レジストリ meta の手書き誤り] → 80614 の値は Atlas basic_event の値をそのまま使い、テストで会期の大小関係（started < ended）を確認する。
 - [`EventPlannerClient` の分割で挙動が変わる] → 計算部は動かさず、ヘッダー JSX の移動だけに留める。既存の `lib/event-plan.test.ts` と画面の実機確認で担保する。
 - [料理作成の Worker がイベントページの bundle に入る] → 既存と同じ遅延生成（`new Worker(new URL(...))`）のままなので初期表示への影響は小さい。
-- [未同期端末での設定読み取り副作用] → `readStockTargetReadOnly` およびセレクタ・フックの遅延書き込みにより、閲覧時の自動保存副作用を排除しクラウド同期データを汚染しない。
-- [素材データ取得失敗・部分欠落およびドロップ欠落時の誤配分] → `enabledServantIds` 全件の完全性検証と、料理対象素材に限定したドロップカタログ照合を行い、欠落時に過少計算を行わない防御ガードを設ける。ボックス計画はドロップ依存から分離して安全を維持する。
+- [未同期端末での設定読み取り副作用と旧設定復元] → `readStockTargetReadOnly` およびセレクタ・フックの遅延書き込みにより、閲覧時の自動保存副作用を排除しつつ、旧キーからの read-only な移行復元を維持する。
+- [ソルバー入力データの部分欠落時の誤配分] → `enabledServantIds` 全件の完全性検証と、正の need に関与するドロップカタログ・レートの整合性を検証し、欠落時に過大・過少計算を行わない防御ガードを設ける。ボックス計画はドロップ依存から分離して安全を維持する。
 
 ## Migration Plan
 
