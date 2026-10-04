@@ -11,6 +11,7 @@ import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
 import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
+import { groupActiveEventBonuses, type EventBonusGroup } from '../../lib/event-bonus'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
@@ -41,6 +42,19 @@ export const Index = ({
   const [selClass, setSelClass] = useState<ClassId>('all')
   const [selRarities, setSelRarities] = useState<number[]>([])
   const [servantFilter, setServantFilter] = useState<'all' | 'hide-unowned' | 'only-unowned' | 'hide-done' | 'only-done'>('all')
+  // '' は指定なし、'all' はボーナス対象すべて、それ以外は EventBonusGroup.key。
+  const [eventBonusFilter, setEventBonusFilter] = useState('')
+  const eventBonusGroups = useMemo(() => groupActiveEventBonuses(servants), [servants])
+  const eventBonusIds = useMemo(() => {
+    const groups = eventBonusFilter === 'all'
+      ? eventBonusGroups
+      : eventBonusGroups.filter(g => g.key === eventBonusFilter)
+    return new Set(groups.flatMap(g => [...g.servantIds]))
+  }, [eventBonusGroups, eventBonusFilter])
+  const eventBonusLabel = (g: Pick<EventBonusGroup, 'damage' | 'bond'>) => [
+    g.damage ? t('event-bonus-damage', '特攻{{value}}%', { value: g.damage }) : null,
+    g.bond ? t('event-bonus-bond', '絆+{{value}}%', { value: g.bond }) : null,
+  ].filter(Boolean).join('・')
   type ServantSortMode = 'collectionNo' | 'new' | 'rarity-desc' | 'rarity-asc'
   const [sortMode, setSortMode] = useState<ServantSortMode>('collectionNo')
   const [showGlobal, setShowGlobal] = useState(false)
@@ -130,6 +144,7 @@ export const Index = ({
         if (selClass !== targetClass) return false
       }
       if (selRarities.length > 0 && !selRarities.includes(Number(s.rarity))) return false
+      if (eventBonusFilter && !eventBonusIds.has(s.id)) return false
       const st = chaldeaState[s.id]
       const unowned = st?.disabled ?? true
       if (servantFilter === 'hide-unowned' && unowned) return false
@@ -145,7 +160,7 @@ export const Index = ({
       }
       return true
     }),
-    [servants, selClass, selRarities, servantFilter, chaldeaState, gtAsc, gtSkill, gtAppend]
+    [servants, selClass, selRarities, eventBonusFilter, eventBonusIds, servantFilter, chaldeaState, gtAsc, gtSkill, gtAppend]
   )
 
   const sorted = useMemo(() => {
@@ -190,6 +205,7 @@ export const Index = ({
         setSelClass('all')
         setSelRarities([])
         setServantFilter('all')
+        setEventBonusFilter('')
         setSortMode('collectionNo')
         return // Effect will re-run after state update
       }
@@ -483,6 +499,26 @@ export const Index = ({
           </div>
 
           <div className="c-filter-right">
+            {eventBonusGroups.length > 0 && (
+              <select
+                className={`c-filter-select${eventBonusFilter ? ' active' : ''}`}
+                aria-label={t('event-bonus-filter', 'イベント対象')}
+                value={eventBonusFilter}
+                onChange={e => setEventBonusFilter(e.target.value)}
+              >
+                <option value="">{t('event-bonus-filter', 'イベント対象')}</option>
+                <option value="all">
+                  {t('event-bonus-all', 'ボーナス対象すべて（{{count}}）', {
+                    count: new Set(eventBonusGroups.flatMap(g => [...g.servantIds])).size,
+                  })}
+                </option>
+                {eventBonusGroups.map(g => (
+                  <option key={g.key} value={g.key}>
+                    {t('event-bonus-option', '{{label}}（{{count}}）', { label: eventBonusLabel(g), count: g.servantIds.size })}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               className={`c-filter-select${sortMode !== 'collectionNo' ? ' active' : ''}`}
               value={sortMode}

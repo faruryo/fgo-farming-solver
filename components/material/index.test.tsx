@@ -21,7 +21,12 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }) }))
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+      fallback.replace(/{{(\w+)}}/g, (_, name: string) => String(new Map(Object.entries(params ?? {})).get(name))),
+  }),
+}))
 
 const showTrackingToast = vi.fn<(p: ShowTrackingToastParams) => void>()
 const showBlockedToast = vi.fn<(p: ShowBlockedToastParams) => void>()
@@ -280,5 +285,50 @@ describe('Index - permanent gesture hint', () => {
 
     expect(screen.getByText('条件に一致するサーヴァントはいません')).toBeInTheDocument()
     expect(screen.queryByText(hintText)).not.toBeInTheDocument()
+  })
+})
+
+describe('Index - event bonus filter', () => {
+  const now = Math.floor(Date.now() / 1000)
+  const bonus = (damage: number | undefined, bond: number, endedAt = now + 3600) =>
+    [{ eventId: 80627, startedAt: now - 60, endedAt, ...(damage ? { damage } : {}), bond }]
+  const servantB = makeMaterialCatalogServant({ id: 2, collectionNo: 2, name: 'サーヴァントB', rarity: 4, eventBonuses: bonus(30, 20) })
+  const servantC = makeMaterialCatalogServant({ id: 3, collectionNo: 3, name: 'サーヴァントC', rarity: 5, eventBonuses: bonus(100, 50) })
+  const servantD = makeMaterialCatalogServant({ id: 4, collectionNo: 4, name: 'サーヴァントD', rarity: 5, eventBonuses: bonus(undefined, 20) })
+  const allMaterials = { ...materials, '2': makeMaterials(), '3': makeMaterials(), '4': makeMaterials() }
+  const select = () => screen.getByRole('combobox', { name: 'イベント対象' })
+  const shown = () => ['サーヴァントA', 'サーヴァントB', 'サーヴァントC', 'サーヴァントD'].filter(name => screen.queryByText(name))
+
+  it('builds options from the active bonus groups and narrows the list, combined with the rarity filter', async () => {
+    const user = userEvent.setup()
+    render(<Index servants={[servant, servantB, servantC, servantD]} materials={allMaterials} items={items} />)
+
+    expect([...select().querySelectorAll('option')].map(o => o.textContent)).toEqual([
+      'イベント対象',
+      'ボーナス対象すべて（3）',
+      '特攻100%・絆+50%（1）',
+      '特攻30%・絆+20%（1）',
+      '絆+20%（1）',
+    ])
+    expect(shown()).toEqual(['サーヴァントA', 'サーヴァントB', 'サーヴァントC', 'サーヴァントD'])
+
+    await user.selectOptions(select(), 'all')
+    expect(shown()).toEqual(['サーヴァントB', 'サーヴァントC', 'サーヴァントD'])
+
+    await user.selectOptions(select(), '0:20')
+    expect(shown()).toEqual(['サーヴァントD'])
+
+    await user.selectOptions(select(), 'all')
+    await user.click(screen.getByRole('button', { name: '★★★★★' }))
+    expect(shown()).toEqual(['サーヴァントC', 'サーヴァントD'])
+
+    await user.selectOptions(select(), '')
+    expect(shown()).toEqual(['サーヴァントA', 'サーヴァントC', 'サーヴァントD'])
+  })
+
+  it('hides the select when no servant has an active event bonus', () => {
+    const ended = makeMaterialCatalogServant({ id: 2, collectionNo: 2, name: 'サーヴァントB', eventBonuses: bonus(30, 20, now - 1) })
+    render(<Index servants={[servant, ended]} materials={allMaterials} items={items} />)
+    expect(screen.queryByRole('combobox', { name: 'イベント対象' })).not.toBeInTheDocument()
   })
 })

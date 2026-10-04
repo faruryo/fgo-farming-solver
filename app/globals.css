@@ -216,7 +216,7 @@ body {
 .c-rarity-btn:hover { border-color: var(--border2); color: var(--text2); }
 .c-rarity-btn.active { border-color: var(--gold-dim); color: var(--gold); background: rgba(154,114,36,0.07); }
 
-.c-filter-right { margin-left: auto; display: flex; gap: 6px; }
+.c-filter-right { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
 .c-hide-toggle {
   background: var(--panel); border: 1px solid var(--border);
   color: var(--text2); cursor: pointer; font-family: var(--sans); font-size: 11px;

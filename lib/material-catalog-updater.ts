@@ -74,10 +74,14 @@ const materialItemsAreKnown = (materials: MaterialsForServants, items: MaterialC
   return [...materialCatalogItemIds(materials)].every(itemId => knownItemIds.has(itemId))
 }
 
-// bondGrowth を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
+// bondGrowth・eventBonuses を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
 // 一部の欠落は Atlas 側の通常状態なので、全騎が持たないときだけ取り直す。
+// eventBonuses は開催中のボーナスが無いと空配列になるため、値でなく項目の有無で見る。
 const servantValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
-  previous?.servants.some(servant => servant.bondGrowth) ? previous.sources.niceServant : {}
+  previous?.servants.some(servant => servant.bondGrowth) &&
+  previous.servants.some(servant => servant.eventBonuses !== undefined)
+    ? previous.sources.niceServant
+    : {}
 
 export const updateMaterialCatalog = async ({
   previous,

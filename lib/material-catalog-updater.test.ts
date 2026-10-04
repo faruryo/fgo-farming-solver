@@ -73,7 +73,8 @@ describe('updateMaterialCatalog', () => {
   it.each([
     ['without bondGrowth', previous, {}],
     ['with bondGrowth', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }, { etag: 'servant-v1' }],
-  ])('refetches nice_servant unconditionally only when the previous catalog has no bondGrowth (%s)', async (_label, prev, expectedValidator) => {
+    ['with bondGrowth but built before eventBonuses', { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000], eventBonuses: undefined }] }, {}],
+  ])('refetches nice_servant unconditionally only when the previous catalog lacks bondGrowth or eventBonuses (%s)', async (_label, prev, expectedValidator) => {
     const fetchSource = vi.fn(async (url: string, validator: SourceValidator) => {
       if (url === 'servants' && !validator.etag) {
         return { status: 200 as const, value: [{ ...servant, ...makeCompleteMaterials(), bondGrowth: [1000, 3000] }], validator: { etag: 'servant-v1' } }
