@@ -59,7 +59,7 @@ build.log
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/openspec-*/
-# verify はコミット前に Claude Code が実行する検証 skill(Claude Code 2.1.286 以降)
+# 組み込みの /verify が書き残す手順(.claude/skills/verify/SKILL.md)をコミットするため
 !.claude/skills/verify/
 .codex/
 .agent/
