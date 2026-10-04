@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 import {
   isFarmingPurpose,
@@ -9,36 +9,37 @@ import {
 } from '../lib/farming-purpose'
 import { useLocalStorage } from './use-local-storage'
 
-const readBoolean = (key: string, fallback: boolean): boolean => {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw == null ? fallback : JSON.parse(raw) === true
-  } catch {
-    return fallback
-  }
-}
-
 export const useFarmingPurpose = () => {
-  const [purpose, setPurpose] = useLocalStorage<FarmingPurpose>(
+  // 表示だけで書き込まないよう、未保存(null)の端末では旧キーから復元した目的をメモリ上だけで使う。
+  const [stored, setStored] = useLocalStorage<FarmingPurpose | null>(
     STORAGE_KEYS.FARMING_PURPOSE,
-    'training',
-    { onGet: (value) => (isFarmingPurpose(value) ? value : 'training') },
+    null,
+    {
+      onGet: (value) => (isFarmingPurpose(value) ? value : 'training'),
+      lazyWrite: true,
+    },
+  )
+  const [legacyShortageOnly] = useLocalStorage<unknown>(
+    STORAGE_KEYS.QUEST_EFFICIENCY_SHORTAGE_ONLY,
+    null,
+    { lazyWrite: true },
+  )
+  const [legacyStock] = useLocalStorage<unknown>(
+    STORAGE_KEYS.STOCK_ENABLED,
+    null,
+    { lazyWrite: true },
   )
 
-  useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEYS.FARMING_PURPOSE) != null) return
-    setPurpose(
-      migrateFarmingPurpose(
-        null,
-        !readBoolean(STORAGE_KEYS.QUEST_EFFICIENCY_SHORTAGE_ONLY, true),
-        readBoolean(STORAGE_KEYS.STOCK_ENABLED, false),
-      ),
+  const setPurpose = useCallback(
+    (next: FarmingPurpose) => setStored(next),
+    [setStored],
+  )
+  const purpose =
+    stored ??
+    migrateFarmingPurpose(
+      null,
+      legacyShortageOnly !== null && legacyShortageOnly !== true,
+      legacyStock === true,
     )
-  }, [setPurpose])
-
-  const updatePurpose = useCallback(
-    (next: FarmingPurpose) => setPurpose(next),
-    [setPurpose],
-  )
-  return { purpose, setPurpose: updatePurpose }
+  return { purpose, setPurpose }
 }

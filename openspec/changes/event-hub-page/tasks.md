@@ -8,7 +8,7 @@
 ## 2. need 源の共通化
 
 - [x] 2.1 `lib/event-plan.ts` の `computeShortfall` から総必要数の集計を `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う。検証: 既存 `lib/event-plan.test.ts` が無変更で通る＋`computeTotalNeed` の単体ケース（disabled サーヴァント／disabled ターゲット除外）を追加。
-- [ ] 2.2 `hooks/use-roster-need.ts` に、ドロップデータに依存しない形で、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得 ID 完全性確認（部分欠落ガード）・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。また `hooks/use-farming-purpose.ts` のマウント時自動書き込みを撤廃しつつ、旧キー（`QUEST_EFFICIENCY_SHORTAGE_ONLY`, `STOCK_ENABLED`）が残る端末では `migrateFarmingPurpose` による旧設定のメモリ上復元を維持し、明示選択時のみ保存する。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末および旧キー保持端末でナビやフックを呼び出しても `localStorage.setItem` が呼ばれずに正しく `purpose` が解決されること、一部サーヴァントの素材取得欠落時に計算を中断する単体テストを追加。
+- [x] 2.2 `hooks/use-roster-need.ts` に、ドロップデータに依存しない形で、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得 ID 完全性確認（部分欠落ガード）・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。また `hooks/use-farming-purpose.ts` のマウント時自動書き込みを撤廃しつつ、旧キー（`QUEST_EFFICIENCY_SHORTAGE_ONLY`, `STOCK_ENABLED`）が残る端末では `migrateFarmingPurpose` による旧設定のメモリ上復元を維持し、明示選択時のみ保存する。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末および旧キー保持端末でナビやフックを呼び出しても `localStorage.setItem` が呼ばれずに正しく `purpose` が解決されること、一部サーヴァントの素材取得欠落時に計算を中断する単体テストを追加。
 
 ## 3. イベントページ（ハブ）
 

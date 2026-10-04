@@ -518,6 +518,7 @@
     "逆算結果説明": "Minimum boxes needed: {{boxes}}",
     "ロスター未設定時の説明": "Set training goals in the servant list to reverse-calculate target boxes from your material shortfall. When not logged in, use \"By Desired Items\" or \"Box Count\".",
     "素材データ読み込み中": "Loading material data...",
+    "素材データ取得失敗": "Some servant material data could not be loaded. Please reload later.",
     "目標箱数": "Target boxes",
     "箱数": "{{count}} boxes total",
     "箱": "boxes",

@@ -24,7 +24,7 @@ import {
   type SurplusThreshold,
 } from '../lib/quest-efficiency'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
-import { isFarmingPurpose } from '../lib/farming-purpose'
+import { migrateFarmingPurpose } from '../lib/farming-purpose'
 
 const readJson = <T>(key: string): T | null => {
   if (typeof window === 'undefined') return null
@@ -37,17 +37,22 @@ const readJson = <T>(key: string): T | null => {
   }
 }
 
+// useFarmingPurpose は旧キーからの復元結果を保存しないため、ここでも同じ移行で解決する。
+const resolvePurpose = (stockEnabled: boolean) => {
+  const shortageOnly = readJson<unknown>(STORAGE_KEYS.QUEST_EFFICIENCY_SHORTAGE_ONLY)
+  return migrateFarmingPurpose(
+    readJson<unknown>(STORAGE_KEYS.FARMING_PURPOSE),
+    shortageOnly !== null && shortageOnly !== true,
+    stockEnabled === true,
+  )
+}
+
 const buildCurrentState = (totalAp: number | null) => ({
   chaldea: readJson<ChaldeaState>(STORAGE_KEYS.MATERIAL),
   itemCounts: readJson<Record<string, string | number>>(STORAGE_KEYS.ITEMS),
   checkedQuests: readJson<string[]>(STORAGE_KEYS.QUESTS),
   totalAp,
 })
-
-const resolvePurpose = (stored: unknown, stockEnabled: boolean) => {
-  if (isFarmingPurpose(stored)) return stored
-  return stockEnabled ? 'reserve' : 'training'
-}
 
 export type UseProgressReport = {
   current: PeriodSummary | null
@@ -131,6 +136,10 @@ export const useProgressReport = (
     typeof window !== 'undefined'
       ? localStorage.getItem(STORAGE_KEYS.FARMING_PURPOSE)
       : null
+  const rawShortageOnly =
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.QUEST_EFFICIENCY_SHORTAGE_ONLY)
+      : null
   const rawStockBuffer =
     typeof window !== 'undefined'
       ? localStorage.getItem(STORAGE_KEYS.STOCK_BUFFER)
@@ -149,8 +158,7 @@ export const useProgressReport = (
       readJson<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT) ?? {}
     const selectedQuestIds = readJson<string[]>(STORAGE_KEYS.QUESTS) ?? []
     const stockEnabled = readJson<boolean>(STORAGE_KEYS.STOCK_ENABLED) ?? false
-    const storedPurpose = readJson<unknown>(STORAGE_KEYS.FARMING_PURPOSE)
-    const purpose = resolvePurpose(storedPurpose, stockEnabled)
+    const purpose = resolvePurpose(stockEnabled)
     const rawStockBuffer = readJson<PartialStockBuffer>(STORAGE_KEYS.STOCK_BUFFER)
     const legacySurplusThreshold = readJson<SurplusThreshold>(STORAGE_KEYS.SURPLUS_THRESHOLD)
     const stockBuffer = resolveStockBuffer(rawStockBuffer, legacySurplusThreshold)
@@ -215,6 +223,7 @@ export const useProgressReport = (
     rawQuests,
     rawStockEnabled,
     rawPurpose,
+    rawShortageOnly,
     rawStockBuffer,
     rawSurplusThreshold,
   ])

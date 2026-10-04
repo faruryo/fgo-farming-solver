@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import {
@@ -24,8 +23,7 @@ import {
   type RosterImpactResult,
   type EventSolverResult,
 } from '../../lib/event-plan'
-import type { MaterialsForServants } from '../../lib/get-materials'
-import { getMaterialsForServantIds } from '../../lib/get-materials'
+import { useRosterNeed } from '../../hooks/use-roster-need'
 import { EventPlanResultCard } from './EventPlanResultCard'
 import { useMasterLevel } from '../../hooks/use-master-level'
 import { MAX_MASTER_LEVEL } from '../../lib/master-profile/max-ap'
@@ -63,10 +61,11 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const { t } = useTranslation('events')
 
   // ── Roster (read-only) ───────────────────────────────────────────────────────
-  const [chaldeaState] = useLocalStorage<ChaldeaState>(STORAGE_KEYS.MATERIAL, {})
+  const rosterNeed = useRosterNeed()
   const [possessionRaw] = useLocalStorage<Record<string, string | number>>(
     STORAGE_KEYS.ITEMS,
-    {}
+    {},
+    { lazyWrite: true }
   )
 
   // Normalize possession to Record<string, number>
@@ -78,15 +77,8 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     return out
   }, [possessionRaw])
 
-  // Enabled servant IDs (ignore 'all' key and disabled servants)
-  const enabledServantIds = useMemo<number[]>(() => {
-    return Object.entries(chaldeaState)
-      .filter(([id, s]) => id !== 'all' && !s.disabled)
-      .map(([id]) => Number(id))
-      .filter(Boolean)
-  }, [chaldeaState])
-
-  const hasRoster = enabledServantIds.length > 0
+  const hasRoster = rosterNeed.status !== 'empty'
+  const materialsLoading = rosterNeed.status === 'loading'
 
   // ── Mode ────────────────────────────────────────────────────────────────────
   const [inputMode, setInputMode] = useState<InputMode>(hasRoster ? 'roster' : 'boxes')
@@ -113,19 +105,6 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     }
     return m
   }, [itemDemandInput])
-
-  // ── Server data (materials for servants) ────────────────────────────────────
-  const [materialsForServants, setMaterialsForServants] = useState<MaterialsForServants>({})
-  const [materialsLoading, setMaterialsLoading] = useState(false)
-
-  useEffect(() => {
-    if (!hasRoster) return
-    setMaterialsLoading(true)
-    getMaterialsForServantIds(enabledServantIds)
-      .then(setMaterialsForServants)
-      .catch(console.error)
-      .finally(() => setMaterialsLoading(false))
-  }, [hasRoster, enabledServantIds.join(',')])
 
   // ── Derived: effective drop override ─────────────────────────────────────────
   const hasAtlasDrops = event.farmingNodes.some(n => n.drops.length > 0)
@@ -169,10 +148,9 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
 
   // 不足素材(育成ロスター)。roster モードでのみ算出。
   const shortfall = useMemo<Map<number, number>>(() => {
-    if (inputMode !== 'roster' || !hasRoster || materialsLoading) return new Map()
-    if (Object.keys(materialsForServants).length === 0) return new Map()
-    return computeShortfall(chaldeaState, materialsForServants, possession)
-  }, [inputMode, hasRoster, materialsLoading, materialsForServants, chaldeaState, possession])
+    if (inputMode !== 'roster' || rosterNeed.status !== 'ready') return new Map()
+    return computeShortfall(rosterNeed.chaldeaState, rosterNeed.materialsForServants, possession)
+  }, [inputMode, rosterNeed, possession])
 
   // 交換所配分(全モード共通)。
   //  - roster: 不足素材 − ボックス確定報酬 を交換所に充当(limitNum で打ち切り)。
@@ -197,15 +175,15 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
 
   // 育成インパクト: 実際の交換所配分を反映して充当率を算出。
   const rosterImpact = useMemo<RosterImpactResult | null>(() => {
-    if (inputMode !== 'roster' || shortfall.size === 0) return null
+    if (inputMode !== 'roster' || shortfall.size === 0 || rosterNeed.status !== 'ready') return null
     return computeRosterImpact(
-      chaldeaState,
-      materialsForServants,
+      rosterNeed.chaldeaState,
+      rosterNeed.materialsForServants,
       possession,
       boxLayer,
       shopAllocation
     )
-  }, [inputMode, shortfall.size, chaldeaState, materialsForServants, possession, boxLayer, shopAllocation])
+  }, [inputMode, shortfall.size, rosterNeed, possession, boxLayer, shopAllocation])
 
   const solverResult = useMemo<EventSolverResult | null>(() => {
     const currencyDemand = boxLayer.remainingCurrency
@@ -346,6 +324,11 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 {inputMode === 'roster' && materialsLoading && (
                   <p className="text-xs" style={{ color: 'var(--text3)' }}>
                     {t('素材データ読み込み中')}
+                  </p>
+                )}
+                {inputMode === 'roster' && rosterNeed.status === 'error' && (
+                  <p className="text-xs" style={{ color: 'var(--red)' }}>
+                    {t('素材データ取得失敗')}
                   </p>
                 )}
               </div>
