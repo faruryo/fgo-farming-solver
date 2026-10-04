@@ -8,18 +8,18 @@
 ## 2. need 源の共通化
 
 - [ ] 2.1 `lib/event-plan.ts` の `computeShortfall` から総必要数の集計を `computeTotalNeed` として切り出し、`computeShortfall` はそれを使う。検証: 既存 `lib/event-plan.test.ts` が無変更で通る＋`computeTotalNeed` の単体ケース（disabled サーヴァント／disabled ターゲット除外）を追加。
-- [ ] 2.2 `hooks/use-roster-need.ts` に、永続ロスターの読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になる。
+- [ ] 2.2 `hooks/use-roster-need.ts` に、副作用なし（read-only、`localStorage.setItem` を呼ばない）での永続ロスター読み取り・有効サーヴァント抽出・`getMaterialsForServantIds` 取得・取得中/失敗ステータス管理・`computeTotalNeed` を行うフックを作り、`EventPlannerClient` の同等処理を置き換える。検証: ボックス計画の育成インパクト表示がローカルで変更前と同じ値になること、未設定端末で `localStorage.setItem` が呼ばれないことの単体テストを追加。
 
 ## 3. イベントページ（ハブ）
 
 - [ ] 3.1 `components/events/EventHubClient.tsx` を新設し、`EventPlannerClient` からヘッダー（戻る導線・名前・会期・状態バッジ）を移す。`EventPlannerClient` はボックス計画セクションの中身だけにする。検証: KV モックのボックスイベントで画面が変更前と同じ入力・結果を出す。
-- [ ] 3.2 `components/events/EventCraftSection.tsx` を新設し、`useRosterNeed` → `buildNeedByApiItemId`（`useStockTarget`・`useDrops`）で `fullNeed` を作って `EventCraftAdvisor` に渡す。ロスター未設定時は配分計算せず、`/material` への導線付きの案内を出す。検証: コンポーネントテストでロスター有／無の表示分岐を確認する。
+- [ ] 3.2 `components/events/EventCraftSection.tsx` を新設し、`useRosterNeed` → `buildNeedByApiItemId`（`useStockTarget`・`useDrops`）で `fullNeed` を作って `EventCraftAdvisor` に渡す。ロスター未設定時は配分計算せず `/material` への導線付き案内、素材取得中はローディング表示、素材取得失敗時は過少計算を防ぐエラー案内を表示し、`purpose === 'all'` 時は育成フォールバック注記を出す。検証: コンポーネントテストでロスター有／無・取得中・取得失敗・allフォールバックの表示分岐を確認する。
 - [ ] 3.3 `app/events/[id]/page.tsx` を、KV とレジストリの両方を引いて `EventHubClient` を描画する形にする（どちらも無ければ `EventDataMissing`、`craft` があれば `getItems()` を渡す）。検証: `/events/80614`・KV モックのボックスイベント・存在しない ID の3通りをローカルで開いて確認する。
 
 ## 4. 一覧・導線・名称
 
 - [ ] 4.1 `app/events/page.tsx` で `mergeEventList` の結果を `EventListClient` に渡し、一覧に機能バッジ（ボックス計画／料理作成）を出す。検証: ローカルで 80614 が終了済みに並び、モックのボックスイベントと重複なく出る。
-- [ ] 4.2 `components/dashboard/EventSection.tsx` の導線条件を `hasLottery || craft 登録` にし、ラベルを「イベントページ」にする。検証: `EventSection.test.tsx` に craft 登録イベント・機能なしイベントのケースを追加し、条件を外すと赤くなることを確認する。
+- [ ] 4.2 `components/dashboard/EventSection.tsx` の導線条件をハブの機能提供可能条件（KV ロトデータ存在 or レジストリ登録）と一致させ、ラベルを「イベントページ」にする。検証: `EventSection.test.tsx` に KV ロトあり・craft 登録・KV 未取り込み・機能なしイベントのケースを追加し、条件を外すと赤くなることを確認する。
 - [ ] 4.3 ナビ（`components/common/nav.tsx`）を「イベント / Events」に、一覧ヘッダーと説明文を新しい i18n キーで書き換える。キーは `locales/ja.json` と `locales/en.json` に同時追加し、`t('key', '日本語フォールバック')` 形式にする。検証: `pnpm run lint:ratchet` と目視。
 
 ## 5. 素材選択アドバイザーからの移設
