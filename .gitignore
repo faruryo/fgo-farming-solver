@@ -59,6 +59,8 @@ build.log
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/openspec-*/
+# 組み込みの /verify が書き残す手順(.claude/skills/verify/SKILL.md)をコミットするため
+!.claude/skills/verify/
 .codex/
 .agent/
 .antigravitycli/
