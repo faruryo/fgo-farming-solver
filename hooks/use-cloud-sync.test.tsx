@@ -655,4 +655,216 @@ describe('useCloudSync shrink guard', () => {
     expect(result.current.pendingShrink).not.toBeNull()
     expect(postCalls()).toHaveLength(0)
   })
+
+  // フックは常駐(sync-engine)・ナビ・/cloud と複数箇所でマウントされる。debounce が
+  // インスタンスごとだと、1回の編集でマウント数だけ POST/GET が飛ぶ(#76)。
+  describe('autosave across multiple mounted instances', () => {
+    const setupSyncedLocal = () => {
+      localStorage.setItem('fgo_auto_sync_enabled', 'true')
+      Object.entries(cloudPayload.storage).forEach(([k, v]) => localStorage.setItem(k, v))
+      localStorage.setItem(
+        'fgo_sync_metadata',
+        JSON.stringify({
+          updatedAt: CLOUD_UPDATED_AT,
+          deviceId: 'mobile-device',
+          lastSyncedAt: CLOUD_UPDATED_AT,
+        }),
+      )
+    }
+
+    const renderInstances = async (count: number) => {
+      const useCloudSyncFresh = await loadUseCloudSync()
+      const hooks = Array.from({ length: count }, () => renderHook(() => useCloudSyncFresh()))
+      await waitFor(() => {
+        hooks.forEach(({ result }) => expect(result.current.cloudData).not.toBeNull())
+      })
+      return hooks
+    }
+
+    // 実時間で5秒待たずに debounce を満了させる。waitFor は実タイマーで動くので戻す。
+    const elapseDebounce = async () => {
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+
+    it('sends one POST and one refetch per edit regardless of mounted instances', async () => {
+      setupSyncedLocal()
+      const hooks = await renderInstances(3)
+      const getsAfterMount = getCalls().length
+
+      await elapseDebounce()
+
+      await waitFor(() => {
+        expect(postCalls()).toHaveLength(1)
+        expect(getCalls()).toHaveLength(getsAfterMount + 1)
+      })
+      // 保存しなかったインスタンスも保存後のクラウドを持つ。古いままだと保存担当が
+      // 交代した後の縮小ガードが古いクラウドと比べる。
+      await waitFor(() => {
+        hooks.forEach(({ result }) =>
+          expect(result.current.cloudData?.metadata.updatedAt).not.toBe(CLOUD_UPDATED_AT),
+        )
+      })
+    })
+
+    // ドロワー内のインスタンスは閉じるとアンマウントされる。予約後に閉じても、
+    // 残っている常駐インスタンスが保存する。
+    it('keeps the pending autosave when a transient instance unmounts', async () => {
+      setupSyncedLocal()
+      const [, drawer] = await renderInstances(2)
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        drawer.unmount()
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      await waitFor(() => {
+        expect(postCalls()).toHaveLength(1)
+      })
+    })
+
+    it('drops the pending autosave once auto-sync is turned off', async () => {
+      setupSyncedLocal()
+      const [{ result }] = await renderInstances(2)
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        act(() => {
+          result.current.toggleAutoSync()
+        })
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    it('drops the pending autosave even if auto-sync is turned back on before it fires', async () => {
+      setupSyncedLocal()
+      const [{ result }] = await renderInstances(2)
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        act(() => {
+          result.current.toggleAutoSync()
+        })
+        act(() => {
+          result.current.toggleAutoSync()
+        })
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    // 別タブで OFF にされた場合も同じ。予約側のタブは storage イベントでしか知らない。
+    it('drops the pending autosave when another tab turns auto-sync off and back on', async () => {
+      setupSyncedLocal()
+      await renderInstances(2)
+      const setAutoSyncFromOtherTab = (value: string) => {
+        localStorage.setItem('fgo_auto_sync_enabled', value)
+        window.dispatchEvent(new StorageEvent('storage', { key: 'fgo_auto_sync_enabled' }))
+      }
+
+      vi.useFakeTimers()
+      try {
+        editMaterial()
+        act(() => setAutoSyncFromOtherTab('false'))
+        act(() => setAutoSyncFromOtherTab('true'))
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    // 取得結果は全インスタンスへ配るので、先に始めた取得が後から返ってくると全員が
+    // 古いクラウドへ巻き戻り、縮小ガードとコンフリクト判定が古い内容を基準にする。
+    it('does not roll instances back to a slower, older GET response', async () => {
+      setupSyncedLocal()
+      const hooks = await renderInstances(2)
+      const NEWER_UPDATED_AT = '2026-07-26T00:00:00.000Z'
+      const older = cloudPayload
+      const newer = {
+        ...cloudPayload,
+        metadata: { updatedAt: NEWER_UPDATED_AT, deviceId: 'desktop-device' },
+      }
+      let releaseOlder!: () => void
+      const olderGate = new Promise<void>((resolve) => {
+        releaseOlder = resolve
+      })
+      let gets = 0
+      fetchMock = vi.fn(async () => {
+        gets += 1
+        if (gets === 1) {
+          await olderGate
+          return { ok: true, status: 200, json: async () => older }
+        }
+        return { ok: true, status: 200, json: async () => newer }
+      })
+      vi.stubGlobal('fetch', fetchMock)
+
+      let slowFetch!: Promise<unknown>
+      await act(async () => {
+        slowFetch = hooks[0].result.current.fetchCloudData()
+        await hooks[1].result.current.fetchCloudData()
+      })
+      await act(async () => {
+        releaseOlder()
+        await slowFetch
+      })
+
+      hooks.forEach(({ result }) =>
+        expect(result.current.cloudData?.metadata.updatedAt).toBe(NEWER_UPDATED_AT),
+      )
+    })
+
+    // 自動保存は1インスタンスだけが行う。保存状態を共有しないと、ナビや /cloud には
+    // 失敗が伝わらず同期済みに見える。
+    it('shares the autosave failure with instances that did not save', async () => {
+      setupSyncedLocal()
+      const hooks = await renderInstances(2)
+      fetchMock = vi.fn(async (_url: string, init?: { method?: string }) =>
+        init?.method === 'POST'
+          ? { ok: false, status: 500 }
+          : { ok: true, status: 200, json: async () => cloudPayload },
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      await elapseDebounce()
+
+      await waitFor(() => {
+        hooks.forEach(({ result }) => {
+          expect(result.current.saveStatus).toBe('failed')
+          expect(result.current.isSaving).toBe(false)
+        })
+      })
+      expect(postCalls()).toHaveLength(1)
+    })
+  })
 })
