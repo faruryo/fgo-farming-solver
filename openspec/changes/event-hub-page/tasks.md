@@ -25,10 +25,10 @@
 ## 5. 素材選択アドバイザーからの移設
 
 - [x] 5.1 `components/material/material-selection-advisor.tsx` からタブ UI・`AdvisorTab`・`EventCraftAdvisor` 描画を削除し、`latestCraftEventId()` のイベントページへのリンクを置く。`STORAGE_KEYS.MATERIAL_ADVISOR_TAB` を削除する。不要になった `advisor-tab-*` の i18n キーを整理する。検証: `material-selection-advisor.test.tsx` を更新（タブが無いこと・リンクが出ること・旧タブ値 `summer-2026` が保存されていてもクラッシュしないこと）。
-- [ ] 5.2 料理作成の localStorage（`material/event-craft-advisor-config`）がイベントページで復元されることを確認する。検証: ローカルで `/material/result` 時代の入力が残った状態から `/events/80614` を開いて食材数とパターンが復元される。
+- [x] 5.2 料理作成の localStorage（`material/event-craft-advisor-config`）がイベントページで復元されることを確認する。検証: ローカルで `/material/result` 時代の入力が残った状態から `/events/80614` を開いて食材数とパターンが復元される。
 
 ## 6. 全体確認
 
-- [ ] 6.1 `pnpm run type-check`・`pnpm test`・`pnpm run lint:ratchet` が通る。
-- [ ] 6.2 ブラウザ実機確認（`pnpm dev`）: `/events`、`/events/80614`、ボックスイベント詳細、ダッシュボード導線、`/material/result` のリンクを、375px 幅とデスクトップで確認する。料理作成の計算が完了しパターンカードが出ること。
-- [ ] 6.3 `openspec validate event-hub-page --strict` が通る。
+- [x] 6.1 `pnpm run type-check`・`pnpm test`・`pnpm run lint:ratchet` が通る。
+- [x] 6.2 ブラウザ実機確認（`pnpm dev`）: `/events`、`/events/80614`、ボックスイベント詳細、ダッシュボード導線、`/material/result` のリンクを、375px 幅とデスクトップで確認する。料理作成の計算が完了しパターンカードが出ること。
+- [x] 6.3 `openspec validate event-hub-page --strict` が通る。
