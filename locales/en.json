@@ -242,9 +242,7 @@
     "event-bonus-event-name-truncated": "{{name}}...",
     "owned-card-gesture-hint": "Tap: +1 / Right-click or long-press: -1",
     "tracking-mode-tooltip": "When ON, changing the current value automatically adjusts your item stock.",
-    "advisor-tab-ticket": "Monthly Ticket / Exchange",
-    "advisor-tab-summer-2026": "Summer 2026 Cooking",
-    "advisor-tab-selector": "Advisor Switcher",
+    "advisor-craft-event-link": "Summer 2026 cooking is on the event page",
     "advisor-owned": "Owned {{n}}",
     "advisor-required": "Required {{n}}",
     "advisor-shortage": "Short {{n}}",
@@ -401,7 +399,7 @@
     "強化・育成": "Enhance & Train",
     "その他": "Other",
     "ストーム・ポッド消費なし期間中": "Storm Pod Free Period",
-    "ロト計画": "Box Plan",
+    "event-page-link": "Event Page",
     "期限間近のタスク": "Upcoming Tasks"
   },
   "quests": {
@@ -494,8 +492,10 @@
     "import-review-decrease-badge": "Decreased by {{count}}"
   },
   "events": {
-    "ロトイベント一覧": "Lottery Events",
-    "イベント一覧説明": "Plan your box lottery runs: calculate currency needed, boxes to open, and farming laps.",
+    "event-list-title": "Events",
+    "event-list-description": "Open per-event planning tools such as box lottery plans and cooking.",
+    "event-feature-box": "Box Plan",
+    "event-feature-craft": "Cooking",
     "ロト計画": "Box Plan",
     "開催中": "Active",
     "開催予定": "Upcoming",

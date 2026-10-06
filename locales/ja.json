@@ -184,9 +184,7 @@
     "event-bonus-event-name-truncated": "{{name}}…",
     "owned-card-gesture-hint": "タップ:+1 ／ 右クリック・長押し:-1",
     "tracking-mode-tooltip": "ON 時、現在値を変更すると所持数を自動で増減します。",
-    "advisor-tab-ticket": "毎月の交換券・配布",
-    "advisor-tab-summer-2026": "水着2026 料理作成",
-    "advisor-tab-selector": "アドバイザー切り替え",
+    "advisor-craft-event-link": "水着2026の料理作成はイベントページへ",
     "advisor-owned": "所持 {{n}}",
     "advisor-required": "必要 {{n}}",
     "advisor-shortage": "不足 {{n}}",
@@ -324,7 +322,7 @@
     "強化・育成": "強化・育成",
     "その他": "その他",
     "ストーム・ポッド消費なし期間中": "ストーム・ポッド消費なし期間中",
-    "ロト計画": "ボックス計画",
+    "event-page-link": "イベントページ",
     "期限間近のタスク": "期限間近のタスク"
   },
   "quests": {
@@ -417,8 +415,10 @@
     "import-review-decrease-badge": "{{count}}個減少"
   },
   "events": {
-    "ロトイベント一覧": "ボックスイベント一覧",
-    "イベント一覧説明": "ボックスイベントの通貨・箱数・周回計画を算出します。",
+    "event-list-title": "イベント一覧",
+    "event-list-description": "イベントごとのボックス計画・料理作成などの計画ツールを開きます。",
+    "event-feature-box": "ボックス計画",
+    "event-feature-craft": "料理作成",
     "ロト計画": "ボックス計画",
     "開催中": "開催中",
     "開催予定": "開催予定",

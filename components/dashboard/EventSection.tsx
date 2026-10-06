@@ -8,6 +8,7 @@ import { DashboardEvent } from '../../lib/master-data/types'
 import { formatDuration } from '../../lib/format-duration'
 import { Link } from '../common/link'
 import { FaBox } from 'react-icons/fa'
+import { featuresFor } from '../../lib/event-features'
 import { CheckCircle2, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -16,12 +17,17 @@ import type { TodoTask } from '../../types/todo'
 
 interface EventSectionProps {
   events: DashboardEvent[]
+  /** KV event_data_json に取り込み済みのロト型イベント ID。hasLottery は Atlas 由来で KV 取り込みと一致しないため導線判定に使わない。 */
+  availableLotteryEventIds?: number[]
 }
+
+const NO_IDS: number[] = []
 
 const EventCard: React.FC<{
   event: DashboardEvent
   isCompleted: boolean
-}> = ({ event, isCompleted }) => {
+  hasEventPage: boolean
+}> = ({ event, isCompleted, hasEventPage }) => {
   const { t } = useTranslation(['dashboard'])
   if (!event.banner) return null
 
@@ -81,7 +87,7 @@ const EventCard: React.FC<{
                 )}
               </div>
             )}
-            {event.hasLottery && (
+            {hasEventPage && (
               <Link
                 href={`/events/${event.id}`}
                 style={{
@@ -99,7 +105,7 @@ const EventCard: React.FC<{
                 }}
               >
                 <FaBox size={9} />
-                {t('ロト計画')}
+                {t('event-page-link', 'イベントページ')}
               </Link>
             )}
           </div>
@@ -109,7 +115,7 @@ const EventCard: React.FC<{
   )
 }
 
-export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
+export const EventSection: React.FC<EventSectionProps> = ({ events, availableLotteryEventIds = NO_IDS }) => {
   const { t } = useTranslation(['dashboard'])
   const [hideCompleted, setHideCompleted] = useLocalStorage<boolean>(
     STORAGE_KEYS.DASHBOARD_HIDE_COMPLETED_EVENTS,
@@ -117,6 +123,9 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
   )
   const [expandedCompleted, setExpandedCompleted] = useState(false)
   const [todoState] = useLocalStorage<TodoTask[]>(STORAGE_KEYS.TODO_STATE, [])
+
+  const lotteryIds = useMemo(() => new Set(availableLotteryEventIds), [availableLotteryEventIds])
+  const hasEventPage = (id: number) => lotteryIds.has(id) || featuresFor(id, false).length > 0
 
   const bannerEvents = useMemo(() => events.filter(e => Boolean(e.banner)), [events])
 
@@ -171,6 +180,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
           key={event.id}
           event={event}
           isCompleted={Boolean(completedMap.get(event.id))}
+          hasEventPage={hasEventPage(event.id)}
         />
       ))}
 
@@ -195,6 +205,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events }) => {
               key={event.id}
               event={event}
               isCompleted={true}
+              hasEventPage={hasEventPage(event.id)}
             />
           ))}
         </div>

@@ -6,10 +6,10 @@ import { FaChevronRight, FaBox } from 'react-icons/fa'
 import { Link } from '../common/link'
 import { PageHeader } from '../common/page-header'
 import { Badge } from '@/components/ui/badge'
-import type { EventPlannerEvent } from '../../lib/master-data/types'
+import type { EventSummaryWithFeatures } from '../../lib/event-features'
 
 interface Props {
-  events: EventPlannerEvent[]
+  events: EventSummaryWithFeatures[]
   updatedAt: number
 }
 
@@ -39,9 +39,9 @@ export const EventListClient: React.FC<Props> = ({ events }) => {
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-6">
-          <PageHeader backLabel={t('ダッシュボードへ戻る')} en="EVENT PLANNER" title={t('ロトイベント一覧')}>
+          <PageHeader backLabel={t('ダッシュボードへ戻る')} en="EVENT PLANNER" title={t('event-list-title', 'イベント一覧')}>
             <p className="text-sm" style={{ color: 'var(--text3)' }}>
-              {t('イベント一覧説明')}
+              {t('event-list-description', 'イベントごとのボックス計画・料理作成などの計画ツールを開きます。')}
             </p>
           </PageHeader>
 
@@ -91,7 +91,7 @@ export const EventListClient: React.FC<Props> = ({ events }) => {
 
 interface GroupProps {
   title: string
-  events: EventPlannerEvent[]
+  events: EventSummaryWithFeatures[]
   nowSec: number
   statusVariant: 'active' | 'ended' | 'upcoming'
 }
@@ -115,8 +115,22 @@ const EventGroup: React.FC<GroupProps> = ({ title, events, nowSec, statusVariant
   </div>
 )
 
+const FeatureBadges: React.FC<{ features: EventSummaryWithFeatures['features'] }> = ({ features }) => {
+  const { t } = useTranslation('events')
+  if (features.length === 0) return null
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {features.map(feature => (
+        <Badge key={feature} variant="outline" className="text-[10px]">
+          {feature === 'box' ? t('event-feature-box', 'ボックス計画') : t('event-feature-craft', '料理作成')}
+        </Badge>
+      ))}
+    </div>
+  )
+}
+
 interface CardProps {
-  event: EventPlannerEvent
+  event: EventSummaryWithFeatures
   nowSec: number
   statusVariant: 'active' | 'ended' | 'upcoming'
 }
@@ -129,10 +143,7 @@ const EventCard: React.FC<CardProps> = ({ event, nowSec, statusVariant }) => {
       : null
 
   return (
-    <Link
-      href={`/events/${event.id}`}
-      style={{ textDecoration: 'none' }}
-    >
+    <Link href={`/events/${event.id}`} style={{ textDecoration: 'none' }}>
       <div
         className="u-fgo-card rounded-md px-4 py-3 flex items-center justify-between gap-3 transition-transform duration-150 hover:-translate-y-0.5 cursor-pointer"
         style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
@@ -151,6 +162,7 @@ const EventCard: React.FC<CardProps> = ({ event, nowSec, statusVariant }) => {
             <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
               {formatDate(event.startedAt)} 〜 {formatDate(event.endedAt)}
             </p>
+            <FeatureBadges features={event.features} />
           </div>
         </div>
 

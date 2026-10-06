@@ -18,13 +18,13 @@
 
 ## 4. 一覧・導線・名称
 
-- [ ] 4.1 `app/events/page.tsx` で `mergeEventList` の結果を `EventListClient` に渡し、一覧に機能バッジ（ボックス計画／料理作成）を出す。検証: ローカルで 80614 が終了済みに並び、モックのボックスイベントと重複なく出る。
-- [ ] 4.2 ダッシュボードへの KV 取り込み済みイベント ID 集合の伝搬経路（`/api/dashboard-meta` または `app/page.tsx` での取得）を実装し、`components/dashboard/EventSection.tsx` の導線条件を「KV ロトデータ存在 または レジストリ登録」と一致させ、ラベルを「イベントページ」にする。検証: `EventSection.test.tsx` に KV ロトあり・craft 登録・KV 未取り込み・機能なしイベントのケースを追加し、条件を外すと赤くなることを確認する。
-- [ ] 4.3 ナビ（`components/common/nav.tsx`）を「イベント / Events」に、一覧ヘッダーと説明文を新しい i18n キーで書き換える。キーは `locales/ja.json` と `locales/en.json` に同時追加し、`t('key', '日本語フォールバック')` 形式にする。検証: `pnpm run lint:ratchet` と目視。
+- [x] 4.1 `app/events/page.tsx` で `mergeEventList` の結果を `EventListClient` に渡し、一覧に機能バッジ（ボックス計画／料理作成）を出す。検証: ローカルで 80614 が終了済みに並び、モックのボックスイベントと重複なく出る。
+- [x] 4.2 ダッシュボードへの KV 取り込み済みイベント ID 集合の伝搬経路（`/api/dashboard-meta` または `app/page.tsx` での取得）を実装し、`components/dashboard/EventSection.tsx` の導線条件を「KV ロトデータ存在 または レジストリ登録」と一致させ、ラベルを「イベントページ」にする。検証: `EventSection.test.tsx` に KV ロトあり・craft 登録・KV 未取り込み・機能なしイベントのケースを追加し、条件を外すと赤くなることを確認する。
+- [x] 4.3 ナビ（`components/common/nav.tsx`）を「イベント / Events」に、一覧ヘッダーと説明文を新しい i18n キーで書き換える。キーは `locales/ja.json` と `locales/en.json` に同時追加し、`t('key', '日本語フォールバック')` 形式にする。検証: `pnpm run lint:ratchet` と目視。
 
 ## 5. 素材選択アドバイザーからの移設
 
-- [ ] 5.1 `components/material/material-selection-advisor.tsx` からタブ UI・`AdvisorTab`・`EventCraftAdvisor` 描画を削除し、`latestCraftEventId()` のイベントページへのリンクを置く。`STORAGE_KEYS.MATERIAL_ADVISOR_TAB` を削除する。不要になった `advisor-tab-*` の i18n キーを整理する。検証: `material-selection-advisor.test.tsx` を更新（タブが無いこと・リンクが出ること・旧タブ値 `summer-2026` が保存されていてもクラッシュしないこと）。
+- [x] 5.1 `components/material/material-selection-advisor.tsx` からタブ UI・`AdvisorTab`・`EventCraftAdvisor` 描画を削除し、`latestCraftEventId()` のイベントページへのリンクを置く。`STORAGE_KEYS.MATERIAL_ADVISOR_TAB` を削除する。不要になった `advisor-tab-*` の i18n キーを整理する。検証: `material-selection-advisor.test.tsx` を更新（タブが無いこと・リンクが出ること・旧タブ値 `summer-2026` が保存されていてもクラッシュしないこと）。
 - [ ] 5.2 料理作成の localStorage（`material/event-craft-advisor-config`）がイベントページで復元されることを確認する。検証: ローカルで `/material/result` 時代の入力が残った状態から `/events/80614` を開いて食材数とパターンが復元される。
 
 ## 6. 全体確認

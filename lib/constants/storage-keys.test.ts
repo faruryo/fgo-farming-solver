@@ -51,9 +51,6 @@ describe('storage-keys', () => {
     expect(STORAGE_KEYS.MATERIAL_SELECTION_ADVISOR).toBe(
       'material/selection-advisor-config',
     )
-    expect(STORAGE_KEYS.MATERIAL_ADVISOR_TAB).toBe(
-      'material/advisor-active-tab',
-    )
     expect(STORAGE_KEYS.EVENT_CRAFT_ADVISOR).toBe(
       'material/event-craft-advisor-config',
     )

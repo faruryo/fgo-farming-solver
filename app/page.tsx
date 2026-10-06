@@ -149,7 +149,10 @@ export default function HomePage() {
                 <motion.div variants={item}>
                   <FarmingWizard />
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start mt-8">
-                    <EventSection events={dashboardMeta?.events || []} />
+                    <EventSection
+                      events={dashboardMeta?.events || []}
+                      availableLotteryEventIds={dashboardMeta?.availableLotteryEventIds}
+                    />
                     <CampaignSection events={dashboardMeta?.events || []} />
                   </div>
                 </motion.div>
