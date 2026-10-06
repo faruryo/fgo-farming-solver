@@ -18,6 +18,11 @@ const DROP_BACKGROUNDS = new Set(['bronze', 'silver', 'gold'])
 // フリクエで周回できず、過去イベントの特殊再臨素材は 500 以上でカタログ外が正当。
 const MAX_FARMABLE_PRIORITY = 298
 
+const isFarmableClass = (atlas: AtlasItemLike | undefined): boolean =>
+  atlas?.type === 'skillLvUp' &&
+  DROP_BACKGROUNDS.has(atlas.background) &&
+  (atlas.priority ?? 0) <= MAX_FARMABLE_PRIORITY
+
 /**
  * 実効不足が正になる atlasId。`buildNeedByApiItemId` と同じ定義を Atlas 側
  * (drops カタログに無い素材も含む)で評価する。
@@ -47,8 +52,8 @@ export const positiveNeedAtlasIds = (
 /**
  * 欠落した atlasId を返す(空なら完全)。
  * (a) ドロップ周回対象クラス(skillLvUp・銅銀金・priority 298 以下)なのに drops カタログに無い。
- * (b) カタログにあるが有効なドロップ行(drop_rate > 0 かつ既知クエスト)が無く、
- *     同 category の他アイテムには有る。カテゴリごと恒常ドロップ無し(QP・ピース等)は正当。
+ * (b) カタログにあるが有効なドロップ行(drop_rate > 0 かつ既知クエスト)が無い。周回対象クラスは
+ *     常に欠落。それ以外は同 category の他アイテムには有る場合のみ欠落(カテゴリごと恒常ドロップ無しは正当)。
  */
 export const findMissingCraftData = (
   drops: Pick<Drops, 'items' | 'quests' | 'drop_rates'>,
@@ -72,18 +77,15 @@ export const findMissingCraftData = (
   const missing: number[] = []
   for (const atlasId of needAtlasIds) {
     const dropItem = dropByAtlasId.get(atlasId)
+    const farmable = isFarmableClass(atlasById.get(atlasId))
     if (!dropItem) {
-      const atlas = atlasById.get(atlasId)
-      if (
-        atlas?.type === 'skillLvUp' &&
-        DROP_BACKGROUNDS.has(atlas.background) &&
-        (atlas.priority ?? 0) <= MAX_FARMABLE_PRIORITY
-      ) {
-        missing.push(atlasId)
-      }
+      if (farmable) missing.push(atlasId)
       continue
     }
-    if (!ratedIds.has(dropItem.id) && ratedCategories.has(dropItem.category)) missing.push(atlasId)
+    if (ratedIds.has(dropItem.id)) continue
+    // 周回対象クラスはカテゴリを問わず必ずドロップ率を持つ。それ以外(ピース等)はカテゴリごと
+    // 恒常ドロップ無しが正当なので、同カテゴリの他素材にだけ有る場合に限り欠落とみなす。
+    if (farmable || ratedCategories.has(dropItem.category)) missing.push(atlasId)
   }
   return missing
 }
