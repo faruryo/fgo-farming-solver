@@ -1,6 +1,6 @@
 ---
 name: verify
-description: fgo-farming-solver の変更を、dev server を自分で起動してブラウザ実画面で確かめる手順。UI（app/**, components/**）や /api の変更を実機で検証するときに使う。
+description: fgo-farming-solver の変更を、dev server を自分で起動してブラウザ実画面で確かめる手順。UI（app/**, components/**）や /api の変更を実機で検証するときに使う。UI や /api を変えたら、コミットの前に必ず使う（docs やテストだけの変更は除く）。
 ---
 
 # fgo-farming-solver の実機検証
