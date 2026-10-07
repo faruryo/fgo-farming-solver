@@ -77,9 +77,12 @@ export const findMissingCraftData = (
   const missing: number[] = []
   for (const atlasId of needAtlasIds) {
     const dropItem = dropByAtlasId.get(atlasId)
-    const farmable = isFarmableClass(atlasById.get(atlasId))
+    const atlas = atlasById.get(atlasId)
+    const farmable = isFarmableClass(atlas)
     if (!dropItem) {
-      if (farmable) missing.push(atlasId)
+      // Atlas 一覧はキャッシュ経由、サーヴァント素材は都度取得なので、新素材は一覧より先に need に現れうる。
+      // 分類できない素材は黙って need から落とさず欠落として止める。
+      if (!atlas || farmable) missing.push(atlasId)
       continue
     }
     if (ratedIds.has(dropItem.id)) continue
