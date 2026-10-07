@@ -39,7 +39,7 @@ export const EventListClient: React.FC<Props> = ({ events }) => {
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-6">
-          <PageHeader backLabel={t('ダッシュボードへ戻る')} en="EVENT PLANNER" title={t('event-list-title', 'イベント一覧')}>
+          <PageHeader backLabel={t('ダッシュボードへ戻る')} en={t('event-planner-eyebrow', 'EVENT PLANNER')} title={t('event-list-title', 'イベント一覧')}>
             <p className="text-sm" style={{ color: 'var(--text3)' }}>
               {t('event-list-description', 'イベントごとのボックス計画・料理作成などの計画ツールを開きます。')}
             </p>

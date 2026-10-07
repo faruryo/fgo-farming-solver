@@ -54,7 +54,7 @@ const Header: React.FC<{ summary: EventSummary; box?: EventPlannerEvent }> = ({ 
           <FaChevronLeft size={11} /> {t('イベント一覧へ戻る')}
         </Link>
         <div className="flex flex-col">
-          <div className="c-page-en">EVENT PLANNER</div>
+          <div className="c-page-en">{t('event-planner-eyebrow', 'EVENT PLANNER')}</div>
           <h1 className="c-page-title">{summary.name}</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

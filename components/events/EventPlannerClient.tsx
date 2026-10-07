@@ -269,7 +269,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 )}
                 {inputMode === 'roster' && rosterNeed.status === 'error' && (
                   <p className="text-xs" style={{ color: 'var(--red)' }}>
-                    {t('素材データ取得失敗')}
+                    {t('event-roster-material-error', '育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。')}
                   </p>
                 )}
               </div>

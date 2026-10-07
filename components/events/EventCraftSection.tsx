@@ -59,7 +59,7 @@ const BlockedNotice: React.FC<{ view: BlockedView }> = ({ view }) => {
       </Notice>
     )
   }
-  if (view === 'roster-error') return <Notice error>{t('素材データ取得失敗')}</Notice>
+  if (view === 'roster-error') return <Notice error>{t('event-roster-material-error', '育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。')}</Notice>
   if (view === 'loading') return <Notice>{t('event-craft-loading', 'データを読み込み中...')}</Notice>
   return (
     <Notice error>
