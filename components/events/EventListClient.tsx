@@ -13,9 +13,12 @@ interface Props {
   updatedAt: number
 }
 
+const JST_OFFSET_SEC = 9 * 60 * 60
+
+// SSR(Workers は UTC)とブラウザで日付がずれて hydration が食い違わないよう、ゲームの会期表記に合わせて JST 固定にする。
 export const formatDate = (unixSec: number): string => {
-  const d = new Date(unixSec * 1000)
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+  const d = new Date((unixSec + JST_OFFSET_SEC) * 1000)
+  return `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`
 }
 
 export const EventListClient: React.FC<Props> = ({ events }) => {
