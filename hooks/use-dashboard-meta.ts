@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { DashboardMeta } from '../lib/master-data/types'
 
+export type DashboardMetaResponse = DashboardMeta & { availableLotteryEventIds?: number[] }
+
 export const useDashboardMeta = () => {
-  const [data, setData] = useState<DashboardMeta | null>(null)
+  const [data, setData] = useState<DashboardMetaResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -14,7 +16,7 @@ export const useDashboardMeta = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard meta')
         }
-        const json: DashboardMeta = await response.json()
+        const json: DashboardMetaResponse = await response.json()
         setData(json)
       } catch (e) {
         setError(e instanceof Error ? e : new Error('Unknown error'))

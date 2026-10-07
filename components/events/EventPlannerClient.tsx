@@ -1,15 +1,11 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaChevronLeft } from 'react-icons/fa'
-import { Link } from '../common/link'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { useLocalStorage } from '../../hooks/use-local-storage'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import {
@@ -24,8 +20,7 @@ import {
   type RosterImpactResult,
   type EventSolverResult,
 } from '../../lib/event-plan'
-import type { MaterialsForServants } from '../../lib/get-materials'
-import { getMaterialsForServantIds } from '../../lib/get-materials'
+import { useRosterNeed } from '../../hooks/use-roster-need'
 import { EventPlanResultCard } from './EventPlanResultCard'
 import { useMasterLevel } from '../../hooks/use-master-level'
 import { MAX_MASTER_LEVEL } from '../../lib/master-profile/max-ap'
@@ -63,10 +58,11 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const { t } = useTranslation('events')
 
   // ── Roster (read-only) ───────────────────────────────────────────────────────
-  const [chaldeaState] = useLocalStorage<ChaldeaState>(STORAGE_KEYS.MATERIAL, {})
+  const rosterNeed = useRosterNeed()
   const [possessionRaw] = useLocalStorage<Record<string, string | number>>(
     STORAGE_KEYS.ITEMS,
-    {}
+    {},
+    { lazyWrite: true }
   )
 
   // Normalize possession to Record<string, number>
@@ -78,15 +74,8 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     return out
   }, [possessionRaw])
 
-  // Enabled servant IDs (ignore 'all' key and disabled servants)
-  const enabledServantIds = useMemo<number[]>(() => {
-    return Object.entries(chaldeaState)
-      .filter(([id, s]) => id !== 'all' && !s.disabled)
-      .map(([id]) => Number(id))
-      .filter(Boolean)
-  }, [chaldeaState])
-
-  const hasRoster = enabledServantIds.length > 0
+  const hasRoster = rosterNeed.status !== 'empty'
+  const materialsLoading = rosterNeed.status === 'loading'
 
   // ── Mode ────────────────────────────────────────────────────────────────────
   const [inputMode, setInputMode] = useState<InputMode>(hasRoster ? 'roster' : 'boxes')
@@ -113,19 +102,6 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     }
     return m
   }, [itemDemandInput])
-
-  // ── Server data (materials for servants) ────────────────────────────────────
-  const [materialsForServants, setMaterialsForServants] = useState<MaterialsForServants>({})
-  const [materialsLoading, setMaterialsLoading] = useState(false)
-
-  useEffect(() => {
-    if (!hasRoster) return
-    setMaterialsLoading(true)
-    getMaterialsForServantIds(enabledServantIds)
-      .then(setMaterialsForServants)
-      .catch(console.error)
-      .finally(() => setMaterialsLoading(false))
-  }, [hasRoster, enabledServantIds.join(',')])
 
   // ── Derived: effective drop override ─────────────────────────────────────────
   const hasAtlasDrops = event.farmingNodes.some(n => n.drops.length > 0)
@@ -169,10 +145,9 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
 
   // 不足素材(育成ロスター)。roster モードでのみ算出。
   const shortfall = useMemo<Map<number, number>>(() => {
-    if (inputMode !== 'roster' || !hasRoster || materialsLoading) return new Map()
-    if (Object.keys(materialsForServants).length === 0) return new Map()
-    return computeShortfall(chaldeaState, materialsForServants, possession)
-  }, [inputMode, hasRoster, materialsLoading, materialsForServants, chaldeaState, possession])
+    if (inputMode !== 'roster' || rosterNeed.status !== 'ready') return new Map()
+    return computeShortfall(rosterNeed.chaldeaState, rosterNeed.materialsForServants, possession)
+  }, [inputMode, rosterNeed, possession])
 
   // 交換所配分(全モード共通)。
   //  - roster: 不足素材 − ボックス確定報酬 を交換所に充当(limitNum で打ち切り)。
@@ -197,15 +172,15 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
 
   // 育成インパクト: 実際の交換所配分を反映して充当率を算出。
   const rosterImpact = useMemo<RosterImpactResult | null>(() => {
-    if (inputMode !== 'roster' || shortfall.size === 0) return null
+    if (inputMode !== 'roster' || shortfall.size === 0 || rosterNeed.status !== 'ready') return null
     return computeRosterImpact(
-      chaldeaState,
-      materialsForServants,
+      rosterNeed.chaldeaState,
+      rosterNeed.materialsForServants,
       possession,
       boxLayer,
       shopAllocation
     )
-  }, [inputMode, shortfall.size, chaldeaState, materialsForServants, possession, boxLayer, shopAllocation])
+  }, [inputMode, shortfall.size, rosterNeed, possession, boxLayer, shopAllocation])
 
   const solverResult = useMemo<EventSolverResult | null>(() => {
     const currencyDemand = boxLayer.remainingCurrency
@@ -242,63 +217,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     [totalAp, maxAp, goldenFruitOwned],
   )
 
-  const [clientNowSec, setClientNowSec] = useState(0)
-  useEffect(() => { setClientNowSec(Math.floor(Date.now() / 1000)) }, [])
-  const isActive = clientNowSec > 0 && event.startedAt <= clientNowSec && event.endedAt >= clientNowSec
-  const isEnded = clientNowSec > 0 && event.endedAt < clientNowSec
-
   return (
-    <div className="c-page">
-      <div className="c-page-inner">
-        <div className="flex flex-col gap-6">
-
-          {/* Header */}
-          <div className="c-page-header">
-            <div className="flex flex-col gap-2">
-              <Link
-                href="/events"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: 'var(--text3)',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                <FaChevronLeft size={11} /> {t('イベント一覧へ戻る')}
-              </Link>
-              <div className="flex flex-col">
-                <div className="c-page-en">EVENT PLANNER</div>
-                <h1 className="c-page-title">{event.name}</h1>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {isActive && (
-                  <Badge variant="destructive" className="text-[10px]">
-                    {t('開催中')}
-                  </Badge>
-                )}
-                {isEnded && (
-                  <Badge variant="outline" className="text-[10px]">
-                    {t('終了')}
-                  </Badge>
-                )}
-                {!isActive && !isEnded && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    {t('開催予定')}
-                  </Badge>
-                )}
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  {t('箱数', { count: maxBoxes })}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  {event.currency.name}
-                </span>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Input panel */}
             <div className="lg:col-span-1 flex flex-col gap-4">
@@ -346,6 +265,11 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 {inputMode === 'roster' && materialsLoading && (
                   <p className="text-xs" style={{ color: 'var(--text3)' }}>
                     {t('素材データ読み込み中')}
+                  </p>
+                )}
+                {inputMode === 'roster' && rosterNeed.status === 'error' && (
+                  <p className="text-xs" style={{ color: 'var(--red)' }}>
+                    {t('event-roster-material-error', '育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。')}
                   </p>
                 )}
               </div>
@@ -624,8 +548,5 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
               )}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
   )
 }

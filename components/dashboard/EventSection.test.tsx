@@ -121,4 +121,29 @@ describe('EventSection', () => {
     // Verify todoState is completely untouched (read-only)
     expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.TODO_STATE) ?? '[]')).toEqual(initialTodoState)
   })
+  describe('event page link', () => {
+    const linkEvent = (id: number, hasLottery: boolean): DashboardEvent => ({ ...mockEvents[0], id, name: `E${id}`, hasLottery })
+    const expectLink = (id: number) =>
+      expect(screen.getByRole('link', { name: 'イベントページ' })).toHaveAttribute('href', `/events/${id}`)
+
+    it('links an event whose lottery data is in KV', () => {
+      render(<EventSection events={[linkEvent(90001, false)]} availableLotteryEventIds={[90001]} />)
+      expectLink(90001)
+    })
+
+    it('links a craft-registered event without KV lottery data', () => {
+      render(<EventSection events={[linkEvent(80614, false)]} availableLotteryEventIds={[]} />)
+      expectLink(80614)
+    })
+
+    it('does not link a hasLottery event that is neither in KV nor registered', () => {
+      render(<EventSection events={[linkEvent(90002, true)]} availableLotteryEventIds={[90001]} />)
+      expect(screen.queryByRole('link', { name: 'イベントページ' })).not.toBeInTheDocument()
+    })
+
+    it('does not link an event without features', () => {
+      render(<EventSection events={[linkEvent(90003, false)]} />)
+      expect(screen.queryByRole('link', { name: 'イベントページ' })).not.toBeInTheDocument()
+    })
+  })
 })

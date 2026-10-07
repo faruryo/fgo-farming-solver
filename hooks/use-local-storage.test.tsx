@@ -228,3 +228,57 @@ describe('useLocalStorage + mergeChaldeaState integration (material state)', () 
     expect(finalStored['1'].targets.skill.ranges.map((r) => r.start)).toEqual([9, 10, 9])
   })
 })
+
+describe('useLocalStorage lazyWrite', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.restoreAllMocks()
+  })
+
+  it('does not persist the default on mount, but persists and syncs user edits', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    const onSync = vi.fn()
+    window.addEventListener('ls-sync', onSync)
+
+    const { result } = renderHook(() =>
+      useLocalStorage('test/lazy', { count: 0 }, { lazyWrite: true }),
+    )
+    await new Promise((r) => setTimeout(r, 0))
+    expect(setItem).not.toHaveBeenCalled()
+
+    const setter = result.current[1]
+    act(() => {
+      result.current[1]({ count: 1 })
+    })
+    await waitFor(() => {
+      expect(localStorage.getItem('test/lazy')).toBe('{"count":1}')
+    })
+    expect(onSync).toHaveBeenCalledTimes(1)
+    expect(result.current[1]).toBe(setter)
+
+    window.removeEventListener('ls-sync', onSync)
+  })
+
+  it('does not write values synced from another instance, even via onGet', async () => {
+    const onGet = (v: { count: number; migrated?: boolean }) => ({ ...v, migrated: true })
+    const { result } = renderHook(() =>
+      useLocalStorage<{ count: number; migrated?: boolean }>(
+        'test/lazy-sync',
+        { count: 0 },
+        { lazyWrite: true, onGet },
+      ),
+    )
+    await new Promise((r) => setTimeout(r, 0))
+
+    localStorage.setItem('test/lazy-sync', '{"count":5}')
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    act(() => {
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'test/lazy-sync' } }))
+    })
+
+    await waitFor(() => expect(result.current[0]).toEqual({ count: 5, migrated: true }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(setItem).not.toHaveBeenCalled()
+    expect(localStorage.getItem('test/lazy-sync')).toBe('{"count":5}')
+  })
+})

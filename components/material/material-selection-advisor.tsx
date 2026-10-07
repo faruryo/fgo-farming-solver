@@ -40,9 +40,8 @@ import {
 import { Info } from 'lucide-react'
 
 import { useTranslation } from 'react-i18next'
-import { EventCraftAdvisor } from './event-craft-advisor'
-
-export type AdvisorTab = 'ticket' | 'summer-2026'
+import { Link } from '../common/link'
+import { latestCraftEventId } from '../../lib/event-features'
 
 export type MaterialSelectionAdvisorProps = {
   /** 全選択可能アイテム(Atlas Academy)。 */
@@ -64,6 +63,8 @@ type AdvisorConfig = {
 
 const STORAGE_KEY = STORAGE_KEYS.MATERIAL_SELECTION_ADVISOR
 const DEFAULT_CONFIG: AdvisorConfig = { candidateIds: [], total: 0, mode: 'ap' }
+
+const CRAFT_EVENT_ID = latestCraftEventId()
 
 const unit = (mode: DenominatorMode) => (mode === 'ap' ? 'AP' : '周回')
 
@@ -125,10 +126,6 @@ export const MaterialSelectionAdvisor = ({
   possession,
 }: MaterialSelectionAdvisorProps) => {
   const { t } = useTranslation('material')
-  const [activeTab, setActiveTab] = useLocalStorage<AdvisorTab>(
-    STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-    'ticket',
-  )
   const [config, setConfig] = useLocalStorage<AdvisorConfig>(
     STORAGE_KEY,
     DEFAULT_CONFIG,
@@ -418,374 +415,338 @@ export const MaterialSelectionAdvisor = ({
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-4">
-        {/* タブ切り替え */}
-        <div
-          className="c-seg self-start"
-          role="tablist"
-          aria-label={t('advisor-tab-selector', 'アドバイザー切り替え')}
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'ticket'}
-            className={`c-seg-btn ${activeTab === 'ticket' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ticket')}
+        {CRAFT_EVENT_ID !== undefined && (
+          <Link
+            href={`/events/${CRAFT_EVENT_ID}`}
+            className="self-start"
+            style={{ color: 'var(--gold)', fontSize: 12 }}
           >
-            {t('advisor-tab-ticket', '毎月の交換券・配布')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'summer-2026'}
-            className={`c-seg-btn ${activeTab === 'summer-2026' ? 'active' : ''}`}
-            onClick={() => setActiveTab('summer-2026')}
-          >
-            {t('advisor-tab-summer-2026', '水着2026 料理作成')}
-          </button>
-        </div>
-
-        {activeTab === 'summer-2026' ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <FarmingPurposeSelector compact />
-              {purpose === 'all' && (
-                <span style={{ color: 'var(--text3)', fontSize: 11 }}>
-                  {t(
-                    'common:farming-purpose-advisor-fallback',
-                    '配布評価は今の育成を使用',
-                  )}
-                </span>
-              )}
-            </div>
-            <EventCraftAdvisor
-              items={items}
-              fullNeed={fullNeed}
-              stockEnabled={stockEnabled}
-            />
-          </div>
-        ) : (
-          <>
-            {/* モード切替・総数入力 */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <FarmingPurposeSelector compact />
-              <div className="flex items-center gap-2 text-sm">
-                <span
-                  style={{
-                    color:
-                      config.mode === 'ap' ? 'var(--gold)' : 'var(--text3)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {t('event-craft-ap-mode', 'AP節約優先')}
-                </span>
-                <Switch
-                  checked={config.mode === 'turn'}
-                  onCheckedChange={(c) => setMode(c ? 'turn' : 'ap')}
-                  aria-label={t('mode-switch', '最適化モード切り替え')}
-                />
-                <span
-                  style={{
-                    color:
-                      config.mode === 'turn' ? 'var(--gold)' : 'var(--text3)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {t('event-craft-turn-mode', '周回数節約優先')}
-                </span>
-                {purpose === 'reserve' && (
-                  <span
-                    style={{
-                      color: 'var(--gold)',
-                      fontWeight: 600,
-                      fontSize: 11,
-                    }}
-                  >
-                    {t('event-craft-stock-eval', 'ストック込みで評価中')}
-                  </span>
-                )}
-                {purpose === 'all' && (
-                  <span style={{ color: 'var(--text3)', fontSize: 11 }}>
-                    {t(
-                      'common:farming-purpose-advisor-fallback',
-                      '配布評価は今の育成を使用',
-                    )}
-                  </span>
-                )}
-              </div>
-              <label
-                className="flex items-center gap-2 text-sm"
-                style={{ color: 'var(--text2)' }}
-              >
-                獲得可能総数
-                <Input
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  className="w-24"
-                  value={config.total === 0 ? '' : config.total}
-                  placeholder="0"
-                  onChange={(e) => setTotal(Number(e.target.value))}
-                />
-              </label>
-            </div>
-
-            {/* マシュのアドバイス */}
-            <ServantPraise message={advice} size={44} />
-
-            {/* 候補スロット */}
-            {rows.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {rows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2"
-                    style={{
-                      background: 'var(--panel2)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {row.item.icon ? (
-                      <Image
-                        src={getItemIconUrl(row.item.icon)}
-                        alt={row.item.name}
-                        width={36}
-                        height={36}
-                        className="flex-shrink-0 rounded"
-                      />
-                    ) : (
-                      <div
-                        className="h-9 w-9 flex-shrink-0 rounded"
-                        style={{ background: 'var(--border)' }}
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className="truncate text-sm font-semibold"
-                          style={{ color: 'var(--text)' }}
-                        >
-                          {row.item.name}
-                        </span>
-                        {row.allocated > 0 ? (
-                          <span
-                            className="flex-shrink-0 rounded px-2 py-0.5 text-xs font-bold"
-                            style={{
-                              background: 'var(--accent)',
-                              color: 'var(--gold)',
-                            }}
-                          >
-                            推奨 +{row.allocated}
-                          </span>
-                        ) : row.noDropData ? (
-                          <span
-                            className="flex-shrink-0 text-xs"
-                            style={{ color: 'var(--text3)' }}
-                          >
-                            対象外
-                          </span>
-                        ) : row.byproduct ? (
-                          <span
-                            className="flex flex-shrink-0 items-center gap-1 text-xs"
-                            style={{ color: 'var(--steel)' }}
-                          >
-                            交換の効果なし
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <button
-                                    type="button"
-                                    aria-label="詳しい説明"
-                                    className="inline-flex items-center justify-center rounded-full outline-none"
-                                    style={{ color: 'var(--steel)' }}
-                                  />
-                                }
-                              >
-                                <Info className="h-3.5 w-3.5" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[15rem] text-left">
-                                他の不足素材を集める周回で自然にドロップするため、交換でもらっても総周回数は変わりません。交換枠は他の素材に回すのがおすすめです。
-                              </TooltipContent>
-                            </Tooltip>
-                          </span>
-                        ) : (
-                          <span
-                            className="flex-shrink-0 text-xs"
-                            style={{ color: 'var(--text3)' }}
-                          >
-                            {row.deficiency === 0 ? '不足なし' : '推奨 0'}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1">
-                        <ProgressBar row={row} />
-                      </div>
-                      <div
-                        className="mt-1 flex flex-wrap gap-x-3 text-xs"
-                        style={{ color: 'var(--text2)' }}
-                      >
-                        <span>
-                          {t('advisor-owned', '所持 {{n}}', { n: row.owned })}
-                        </span>
-                        <span>
-                          {t('advisor-required', '必要 {{n}}', {
-                            n: row.required,
-                          })}
-                        </span>
-                        {row.stockBuffer > 0 && (
-                          <span style={{ color: 'var(--text3)' }}>
-                            {t(
-                              'advisor-required-buffer-note-purpose',
-                              '(育成 {{training}} / 在庫基準 {{buffer}} の大きい方)',
-                              {
-                                training: row.trainingRequired,
-                                buffer: row.stockBuffer,
-                              },
-                            )}
-                          </span>
-                        )}
-                        {row.stillShort > 0 && (
-                          <span style={{ color: 'var(--red)' }}>
-                            {t('advisor-shortage', '不足 {{n}}', {
-                              n: row.stillShort,
-                            })}
-                          </span>
-                        )}
-                        {row.noDropData ? (
-                          <span style={{ color: 'var(--text3)' }}>
-                            フリクエ恒常ドロップ無し
-                          </span>
-                        ) : row.byproduct ? (
-                          <span style={{ color: 'var(--steel)' }}>
-                            他素材の周回で自然に揃う(削減 0)
-                          </span>
-                        ) : row.deficiency > 0 ? (
-                          <span>
-                            約 {fmt(row.valuePerCopy)} {unit(config.mode)}/個
-                            削減
-                          </span>
-                        ) : null}
-                        {row.saved > 0 && (
-                          <span style={{ color: 'var(--green)' }}>
-                            −{fmt(row.saved)} {unit(config.mode)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label={`${row.item.name} を削除`}
-                      onClick={() => removeCandidate(row.id)}
-                      className="flex-shrink-0 rounded p-1 text-lg leading-none transition-colors hover:bg-[var(--accent)]"
-                      style={{ color: 'var(--text3)' }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {t(
+              'advisor-craft-event-link',
+              '水着2026の料理作成はイベントページへ',
             )}
+          </Link>
+        )}
 
-            {/* 追加ドロップダウン・リセット */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Popover
-                open={pickerOpen}
-                onOpenChange={(open) => {
-                  setPickerOpen(open)
-                  if (!open) setQuery('')
+        {/* モード切替・総数入力 */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FarmingPurposeSelector compact />
+          <div className="flex items-center gap-2 text-sm">
+            <span
+              style={{
+                color:
+                  config.mode === 'ap' ? 'var(--gold)' : 'var(--text3)',
+                fontWeight: 600,
+              }}
+            >
+              {t('event-craft-ap-mode', 'AP節約優先')}
+            </span>
+            <Switch
+              checked={config.mode === 'turn'}
+              onCheckedChange={(c) => setMode(c ? 'turn' : 'ap')}
+              aria-label={t('mode-switch', '最適化モード切り替え')}
+            />
+            <span
+              style={{
+                color:
+                  config.mode === 'turn' ? 'var(--gold)' : 'var(--text3)',
+                fontWeight: 600,
+              }}
+            >
+              {t('event-craft-turn-mode', '周回数節約優先')}
+            </span>
+            {purpose === 'reserve' && (
+              <span
+                style={{
+                  color: 'var(--gold)',
+                  fontWeight: 600,
+                  fontSize: 11,
                 }}
               >
-                <PopoverTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={addableItems.length === 0}
-                      aria-label="候補素材を追加"
-                    />
-                  }
-                >
-                  + 候補素材を追加
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-64 gap-2 p-2">
-                  <Input
-                    ref={searchInputRef}
-                    type="search"
-                    value={query}
-                    placeholder="素材名で検索…"
-                    onChange={(e) => setQuery(e.target.value)}
-                    aria-label="素材名で検索"
+                {t('event-craft-stock-eval', 'ストック込みで評価中')}
+              </span>
+            )}
+            {purpose === 'all' && (
+              <span style={{ color: 'var(--text3)', fontSize: 11 }}>
+                {t(
+                  'common:farming-purpose-advisor-fallback',
+                  '配布評価は今の育成を使用',
+                )}
+              </span>
+            )}
+          </div>
+          <label
+            className="flex items-center gap-2 text-sm"
+            style={{ color: 'var(--text2)' }}
+          >
+            獲得可能総数
+            <Input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              className="w-24"
+              value={config.total === 0 ? '' : config.total}
+              placeholder="0"
+              onChange={(e) => setTotal(Number(e.target.value))}
+            />
+          </label>
+        </div>
+
+        {/* マシュのアドバイス */}
+        <ServantPraise message={advice} size={44} />
+
+        {/* 候補スロット */}
+        {rows.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {rows.map((row) => (
+              <div
+                key={row.id}
+                className="flex items-center gap-3 rounded-lg px-3 py-2"
+                style={{
+                  background: 'var(--panel2)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                {row.item.icon ? (
+                  <Image
+                    src={getItemIconUrl(row.item.icon)}
+                    alt={row.item.name}
+                    width={36}
+                    height={36}
+                    className="flex-shrink-0 rounded"
                   />
-                  <div className="flex max-h-64 flex-col overflow-y-auto">
-                    {filteredAddable.length === 0 ? (
-                      <div
-                        className="px-2 py-3 text-center text-xs"
+                ) : (
+                  <div
+                    className="h-9 w-9 flex-shrink-0 rounded"
+                    style={{ background: 'var(--border)' }}
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className="truncate text-sm font-semibold"
+                      style={{ color: 'var(--text)' }}
+                    >
+                      {row.item.name}
+                    </span>
+                    {row.allocated > 0 ? (
+                      <span
+                        className="flex-shrink-0 rounded px-2 py-0.5 text-xs font-bold"
+                        style={{
+                          background: 'var(--accent)',
+                          color: 'var(--gold)',
+                        }}
+                      >
+                        推奨 +{row.allocated}
+                      </span>
+                    ) : row.noDropData ? (
+                      <span
+                        className="flex-shrink-0 text-xs"
                         style={{ color: 'var(--text3)' }}
                       >
-                        該当する素材がありません
-                      </div>
-                    ) : (
-                      filteredAddable.map(({ it, id, deficiency }) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => {
-                            addCandidate(id)
-                            setPickerOpen(false)
-                            setQuery('')
-                          }}
-                          className="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-[var(--accent)]"
-                        >
-                          {it.icon ? (
-                            <Image
-                              src={getItemIconUrl(it.icon)}
-                              alt=""
-                              width={24}
-                              height={24}
-                              className="flex-shrink-0 rounded"
-                            />
-                          ) : (
-                            <span
-                              className="h-6 w-6 flex-shrink-0 rounded"
-                              style={{ background: 'var(--border)' }}
-                            />
-                          )}
-                          <span
-                            className="min-w-0 flex-1 truncate"
-                            style={{ color: 'var(--text)' }}
+                        対象外
+                      </span>
+                    ) : row.byproduct ? (
+                      <span
+                        className="flex flex-shrink-0 items-center gap-1 text-xs"
+                        style={{ color: 'var(--steel)' }}
+                      >
+                        交換の効果なし
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <button
+                                type="button"
+                                aria-label="詳しい説明"
+                                className="inline-flex items-center justify-center rounded-full outline-none"
+                                style={{ color: 'var(--steel)' }}
+                              />
+                            }
                           >
-                            {it.name}
-                          </span>
-                          {deficiency > 0 && (
-                            <span
-                              className="flex-shrink-0 text-xs"
-                              style={{ color: 'var(--red)' }}
-                            >
-                              不足 {deficiency}
-                            </span>
-                          )}
-                        </button>
-                      ))
+                            <Info className="h-3.5 w-3.5" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[15rem] text-left">
+                            他の不足素材を集める周回で自然にドロップするため、交換でもらっても総周回数は変わりません。交換枠は他の素材に回すのがおすすめです。
+                          </TooltipContent>
+                        </Tooltip>
+                      </span>
+                    ) : (
+                      <span
+                        className="flex-shrink-0 text-xs"
+                        style={{ color: 'var(--text3)' }}
+                      >
+                        {row.deficiency === 0 ? '不足なし' : '推奨 0'}
+                      </span>
                     )}
                   </div>
-                </PopoverContent>
-              </Popover>
-              {(config.candidateIds.length > 0 || config.total > 0) && (
-                <Button type="button" variant="ghost" size="sm" onClick={reset}>
-                  リセット
-                </Button>
-              )}
-              {totalSaved > 0 && (
-                <span
-                  className="ml-auto text-sm font-semibold"
-                  style={{ color: 'var(--green)' }}
+                  <div className="mt-1">
+                    <ProgressBar row={row} />
+                  </div>
+                  <div
+                    className="mt-1 flex flex-wrap gap-x-3 text-xs"
+                    style={{ color: 'var(--text2)' }}
+                  >
+                    <span>
+                      {t('advisor-owned', '所持 {{n}}', { n: row.owned })}
+                    </span>
+                    <span>
+                      {t('advisor-required', '必要 {{n}}', {
+                        n: row.required,
+                      })}
+                    </span>
+                    {row.stockBuffer > 0 && (
+                      <span style={{ color: 'var(--text3)' }}>
+                        {t(
+                          'advisor-required-buffer-note-purpose',
+                          '(育成 {{training}} / 在庫基準 {{buffer}} の大きい方)',
+                          {
+                            training: row.trainingRequired,
+                            buffer: row.stockBuffer,
+                          },
+                        )}
+                      </span>
+                    )}
+                    {row.stillShort > 0 && (
+                      <span style={{ color: 'var(--red)' }}>
+                        {t('advisor-shortage', '不足 {{n}}', {
+                          n: row.stillShort,
+                        })}
+                      </span>
+                    )}
+                    {row.noDropData ? (
+                      <span style={{ color: 'var(--text3)' }}>
+                        フリクエ恒常ドロップ無し
+                      </span>
+                    ) : row.byproduct ? (
+                      <span style={{ color: 'var(--steel)' }}>
+                        他素材の周回で自然に揃う(削減 0)
+                      </span>
+                    ) : row.deficiency > 0 ? (
+                      <span>
+                        約 {fmt(row.valuePerCopy)} {unit(config.mode)}/個
+                        削減
+                      </span>
+                    ) : null}
+                    {row.saved > 0 && (
+                      <span style={{ color: 'var(--green)' }}>
+                        −{fmt(row.saved)} {unit(config.mode)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`${row.item.name} を削除`}
+                  onClick={() => removeCandidate(row.id)}
+                  className="flex-shrink-0 rounded p-1 text-lg leading-none transition-colors hover:bg-[var(--accent)]"
+                  style={{ color: 'var(--text3)' }}
                 >
-                  合計 −{fmt(totalSaved)} {unit(config.mode)} 節約
-                </span>
-              )}
-            </div>
-          </>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         )}
+
+        {/* 追加ドロップダウン・リセット */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Popover
+            open={pickerOpen}
+            onOpenChange={(open) => {
+              setPickerOpen(open)
+              if (!open) setQuery('')
+            }}
+          >
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={addableItems.length === 0}
+                  aria-label="候補素材を追加"
+                />
+              }
+            >
+              + 候補素材を追加
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 gap-2 p-2">
+              <Input
+                ref={searchInputRef}
+                type="search"
+                value={query}
+                placeholder="素材名で検索…"
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="素材名で検索"
+              />
+              <div className="flex max-h-64 flex-col overflow-y-auto">
+                {filteredAddable.length === 0 ? (
+                  <div
+                    className="px-2 py-3 text-center text-xs"
+                    style={{ color: 'var(--text3)' }}
+                  >
+                    該当する素材がありません
+                  </div>
+                ) : (
+                  filteredAddable.map(({ it, id, deficiency }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        addCandidate(id)
+                        setPickerOpen(false)
+                        setQuery('')
+                      }}
+                      className="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-[var(--accent)]"
+                    >
+                      {it.icon ? (
+                        <Image
+                          src={getItemIconUrl(it.icon)}
+                          alt=""
+                          width={24}
+                          height={24}
+                          className="flex-shrink-0 rounded"
+                        />
+                      ) : (
+                        <span
+                          className="h-6 w-6 flex-shrink-0 rounded"
+                          style={{ background: 'var(--border)' }}
+                        />
+                      )}
+                      <span
+                        className="min-w-0 flex-1 truncate"
+                        style={{ color: 'var(--text)' }}
+                      >
+                        {it.name}
+                      </span>
+                      {deficiency > 0 && (
+                        <span
+                          className="flex-shrink-0 text-xs"
+                          style={{ color: 'var(--red)' }}
+                        >
+                          不足 {deficiency}
+                        </span>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          {(config.candidateIds.length > 0 || config.total > 0) && (
+            <Button type="button" variant="ghost" size="sm" onClick={reset}>
+              リセット
+            </Button>
+          )}
+          {totalSaved > 0 && (
+            <span
+              className="ml-auto text-sm font-semibold"
+              style={{ color: 'var(--green)' }}
+            >
+              合計 −{fmt(totalSaved)} {unit(config.mode)} 節約
+            </span>
+          )}
+        </div>
       </div>
     </TooltipProvider>
   )

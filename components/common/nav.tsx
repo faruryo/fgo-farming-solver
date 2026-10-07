@@ -111,7 +111,7 @@ export const menuGroups: MenuGroup[] = [
       {
         href: '/events',
         icon: Gift,
-        label: { ja: 'ボックスイベント', en: 'Box Events' },
+        label: { ja: 'イベント', en: 'Events' },
       },
       {
         href: '/farming/history',

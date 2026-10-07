@@ -1,5 +1,7 @@
 import { getEventById } from '../../../lib/get-events'
-import { EventPlannerClient } from '../../../components/events/EventPlannerClient'
+import { getItems } from '../../../lib/get-items'
+import { featuresFor, resolveEventSummary } from '../../../lib/event-features'
+import { EventHubClient } from '../../../components/events/EventHubClient'
 import { EventDataMissing } from '../../../components/events/EventDataMissing'
 
 export const dynamic = 'force-dynamic'
@@ -16,11 +18,22 @@ export default async function EventDetailPage({ params }: Props) {
     return <EventDataMissing />
   }
 
-  const event = await getEventById(eventId)
+  const kvEvent = await getEventById(eventId)
+  const summary = resolveEventSummary(eventId, kvEvent)
 
-  if (!event) {
+  if (!summary) {
     return <EventDataMissing eventId={eventId} />
   }
 
-  return <EventPlannerClient event={event} />
+  const features = featuresFor(eventId, !!kvEvent)
+  const items = features.includes('craft') ? await getItems('ja') : undefined
+
+  return (
+    <EventHubClient
+      summary={summary}
+      boxEvent={kvEvent ?? undefined}
+      items={items}
+      features={features}
+    />
+  )
 }

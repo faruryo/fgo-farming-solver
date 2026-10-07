@@ -21,11 +21,12 @@ export const useStockTarget = () => {
   const { purpose, setPurpose } = useFarmingPurpose()
   const [rawStockBuffer, setRawStockBuffer] = useLocalStorage<
     Partial<StockBuffer>
-  >(STORAGE_KEYS.STOCK_BUFFER, {})
+  >(STORAGE_KEYS.STOCK_BUFFER, {}, { lazyWrite: true })
   // 旧キー。新規には書き込まないが、ストック目標未設定ユーザーの移行元として読み続ける。
   const [surplusThreshold] = useLocalStorage<SurplusThreshold>(
     STORAGE_KEYS.SURPLUS_THRESHOLD,
     DEFAULT_SURPLUS_THRESHOLD,
+    { lazyWrite: true },
   )
   const stockBuffer = useMemo(
     () =>

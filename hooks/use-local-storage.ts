@@ -1,4 +1,11 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react'
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 export const useLocalStorage = <T>(
   key: string,
@@ -6,6 +13,9 @@ export const useLocalStorage = <T>(
   options?: {
     onGet?: (item: T) => T
     useInitial?: boolean
+    // 読むだけの画面が未設定端末へ初期値や onGet 変換結果を書き込まないよう、
+    // 返した setter が呼ばれるまで保存しない。
+    lazyWrite?: boolean
   }
 ): [T, Dispatch<SetStateAction<T>>] => {
   // Always initialize with initialState to avoid SSR/hydration mismatch.
@@ -17,6 +27,8 @@ export const useLocalStorage = <T>(
 
   const stateRef = useRef(state)
   stateRef.current = state
+  const editedRef = useRef(false)
+  const lazyWrite = options?.lazyWrite
 
   // Sync from localStorage after mount (client-only, runs after hydration)
   useEffect(() => {
@@ -39,6 +51,7 @@ export const useLocalStorage = <T>(
   // overwriting stored values with initialState on first render)
   useEffect(() => {
     if (!isInitialized || options?.useInitial) return
+    if (lazyWrite && !editedRef.current) return
     const json = JSON.stringify(state)
     const oldJson = localStorage.getItem(key)
     if (json !== oldJson) {
@@ -46,11 +59,11 @@ export const useLocalStorage = <T>(
       // Persisting a missing key's default value is initialization, not a user
       // edit. Reporting it as dirty can turn a fresh device's safe cloud restore
       // into a false conflict. Later writes still emit the normal sync signal.
-      if (oldJson !== null) {
+      if (oldJson !== null || lazyWrite) {
         window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key } }))
       }
     }
-  }, [key, state, isInitialized, options?.useInitial])
+  }, [key, state, isInitialized, options?.useInitial, lazyWrite])
 
   // Listen for updates from other components/tabs
   useEffect(() => {
@@ -80,5 +93,10 @@ export const useLocalStorage = <T>(
     }
   }, [key, options?.onGet, options?.useInitial])
 
-  return [state, setState]
+  const setEditedState = useCallback<Dispatch<SetStateAction<T>>>((value) => {
+    editedRef.current = true
+    setState(value)
+  }, [])
+
+  return [state, lazyWrite ? setEditedState : setState]
 }

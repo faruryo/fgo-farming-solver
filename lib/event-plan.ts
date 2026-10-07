@@ -447,12 +447,10 @@ export const reverseCalcBoxes = (
  */
 export type ShortfallMap = Map<number, number>
 
-export const computeShortfall = (
+export const computeTotalNeed = (
   chaldeaState: ChaldeaState,
   materialsForServants: MaterialsForServants,
-  possessionCounts: Record<string, number>,
-): ShortfallMap => {
-  // 全育成目標の必要素材合計を atlasId キーで集計する
+): Map<number, number> => {
   const totalNeed = new Map<number, number>()
 
   for (const [servantIdStr, servantState] of Object.entries(chaldeaState)) {
@@ -492,6 +490,16 @@ export const computeShortfall = (
       }
     }
   }
+
+  return totalNeed
+}
+
+export const computeShortfall = (
+  chaldeaState: ChaldeaState,
+  materialsForServants: MaterialsForServants,
+  possessionCounts: Record<string, number>,
+): ShortfallMap => {
+  const totalNeed = computeTotalNeed(chaldeaState, materialsForServants)
 
   // 所持数を差し引いて不足マップを生成
   const shortfall: ShortfallMap = new Map()

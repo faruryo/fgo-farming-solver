@@ -1,16 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MaterialSelectionAdvisor } from './material-selection-advisor'
-import { INGREDIENT_COMMIT_DELAY_MS } from './event-craft-advisor'
+import { latestCraftEventId } from '../../lib/event-features'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { Item } from '../../interfaces/atlas-academy'
 import { Drops } from '../../lib/get-drops'
@@ -109,34 +101,6 @@ const mockItems: Item[] = [
   },
 ]
 
-const renderSummer2026Advisor = (
-  amounts: Record<string, number> = { '6533': 1 },
-  possession: Record<string, number> = { '6533': 0 },
-) => {
-  localStorage.setItem(
-    STORAGE_KEYS.MATERIAL_ADVISOR_TAB,
-    JSON.stringify('summer-2026'),
-  )
-  return render(
-    <MaterialSelectionAdvisor
-      items={mockItems}
-      amounts={amounts}
-      possession={possession}
-    />,
-  )
-}
-
-const commitIngredients = (meat: string, vegetable: string) => {
-  const inputs = screen.getAllByRole('spinbutton')
-  vi.useFakeTimers()
-  fireEvent.change(inputs[1], { target: { value: meat } })
-  fireEvent.change(inputs[2], { target: { value: vegetable } })
-  act(() => {
-    vi.advanceTimersByTime(INGREDIENT_COMMIT_DELAY_MS)
-  })
-  vi.useRealTimers()
-}
-
 describe('MaterialSelectionAdvisor Component', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -147,8 +111,32 @@ describe('MaterialSelectionAdvisor Component', () => {
     vi.useRealTimers()
   })
 
-  it('renders tab switcher and switches between ticket advisor and event craft advisor', async () => {
-    const user = userEvent.setup()
+  it('renders only the ticket advisor with a link to the craft event page (no tabs)', () => {
+    render(
+      <MaterialSelectionAdvisor
+        items={mockItems}
+        amounts={{ '6533': 10 }}
+        possession={{ '6533': 0 }}
+      />,
+    )
+
+    expect(screen.getByText('獲得可能総数')).toBeInTheDocument()
+    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.queryByRole('tab')).toBeNull()
+    expect(screen.queryByText('イベント食材所持数')).toBeNull()
+
+    const link = screen.getByRole('link', {
+      name: '水着2026の料理作成はイベントページへ',
+    })
+    expect(link).toHaveAttribute('href', `/events/${latestCraftEventId()}`)
+    expect(latestCraftEventId()).toBeDefined()
+  })
+
+  it('ignores a legacy summer-2026 tab value left in localStorage', () => {
+    localStorage.setItem(
+      'material/advisor-active-tab',
+      JSON.stringify('summer-2026'),
+    )
 
     render(
       <MaterialSelectionAdvisor
@@ -158,32 +146,11 @@ describe('MaterialSelectionAdvisor Component', () => {
       />,
     )
 
-    // Initial tab is ticket advisor
-    expect(screen.getByText('毎月の交換券・配布')).toBeInTheDocument()
-    expect(screen.getByText('水着2026 料理作成')).toBeInTheDocument()
     expect(screen.getByText('獲得可能総数')).toBeInTheDocument()
-
-    // Switch to summer 2026 cooking tab
-    await user.click(screen.getByText('水着2026 料理作成'))
-
-    expect(screen.getByText('イベント食材所持数')).toBeInTheDocument()
-    expect(screen.getByText('うちなー海鮮盛り')).toBeInTheDocument()
-    expect(screen.getByText('うちなーお肉盛り')).toBeInTheDocument()
-    expect(screen.getByText('うちなー野菜盛り')).toBeInTheDocument()
-    expect(screen.getByText('周回を減らす')).toBeInTheDocument()
-    expect(screen.queryByText('食材を使い切る')).toBeNull()
-
-    // Persisted tab in localStorage
-    expect(localStorage.getItem(STORAGE_KEYS.MATERIAL_ADVISOR_TAB)).toBe(
+    expect(screen.queryByText('イベント食材所持数')).toBeNull()
+    expect(localStorage.getItem('material/advisor-active-tab')).toBe(
       JSON.stringify('summer-2026'),
     )
-  })
-
-  it('shows all-mode fallback on the summer 2026 advisor tab', () => {
-    localStorage.setItem(STORAGE_KEYS.FARMING_PURPOSE, JSON.stringify('all'))
-    renderSummer2026Advisor()
-
-    expect(screen.getByText('配布評価は今の育成を使用')).toBeInTheDocument()
   })
 
   it('shows effective required (training + stock buffer) and its breakdown when stock target is ON', async () => {
@@ -218,80 +185,6 @@ describe('MaterialSelectionAdvisor Component', () => {
       expect(
         screen.getByText(`(育成 100 / 在庫基準 ${bronzeBuffer} の大きい方)`),
       ).toBeInTheDocument()
-    })
-  })
-
-  it('calculates event craft allocation when ingredients are entered', async () => {
-    renderSummer2026Advisor({ '6533': 5 }, { '6533': 0 })
-
-    // Initially 0 ingredients
-    expect(screen.getByText(/お持ちのイベント食材数/)).toBeInTheDocument()
-    commitIngredients('60', '120')
-
-    await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(
-        within(runsCard).getByText('ゴーヤーチャンプルー'),
-      ).toBeInTheDocument()
-      expect(within(runsCard).getByText('3個')).toBeInTheDocument()
-      expect(
-        screen.getByText(
-          /ゴーヤーチャンプルー3個を作成するのが最も効率的です、先輩。/,
-        ),
-      ).toBeInTheDocument()
-    })
-  })
-
-  it('does not display exhaust pattern card in pattern selection', async () => {
-    renderSummer2026Advisor()
-    commitIngredients('80', '160')
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: '周回を減らす' }),
-      ).toBeInTheDocument()
-      expect(screen.queryByRole('radio', { name: '食材を使い切る' })).toBeNull()
-    })
-  })
-
-  it('renders target material names using translation keys in recipe cards', async () => {
-    renderSummer2026Advisor()
-    commitIngredients('60', '120')
-
-    await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getByText('(宵哭きの鉄杭)')).toBeInTheDocument()
-      expect(
-        within(runsCard).getByText('ゴーヤーチャンプルー'),
-      ).toBeInTheDocument()
-    })
-  })
-
-  it('renders loading message when drop data is loading', () => {
-    currentMockDrops = { ...mockDrops, isLoading: true }
-    renderSummer2026Advisor()
-
-    expect(
-      screen.getByText('ドロップデータを読み込み中です、先輩...'),
-    ).toBeInTheDocument()
-  })
-
-  it('renders unavailable message when quests are empty', () => {
-    currentMockDrops = { ...mockDrops, isLoading: false, quests: [] }
-    renderSummer2026Advisor()
-
-    expect(
-      screen.getByText(/ドロップデータを取得できませんでした/),
-    ).toBeInTheDocument()
-  })
-
-  it('renders deficit savings formatted with unit', async () => {
-    renderSummer2026Advisor()
-    commitIngredients('60', '120')
-
-    await waitFor(() => {
-      const runsCard = screen.getByRole('radio', { name: '周回を減らす' })
-      expect(within(runsCard).getAllByText('−1 周').length).toBeGreaterThan(0)
     })
   })
 })

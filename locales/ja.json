@@ -184,9 +184,7 @@
     "event-bonus-event-name-truncated": "{{name}}…",
     "owned-card-gesture-hint": "タップ:+1 ／ 右クリック・長押し:-1",
     "tracking-mode-tooltip": "ON 時、現在値を変更すると所持数を自動で増減します。",
-    "advisor-tab-ticket": "毎月の交換券・配布",
-    "advisor-tab-summer-2026": "水着2026 料理作成",
-    "advisor-tab-selector": "アドバイザー切り替え",
+    "advisor-craft-event-link": "水着2026の料理作成はイベントページへ",
     "advisor-owned": "所持 {{n}}",
     "advisor-required": "必要 {{n}}",
     "advisor-shortage": "不足 {{n}}",
@@ -324,7 +322,7 @@
     "強化・育成": "強化・育成",
     "その他": "その他",
     "ストーム・ポッド消費なし期間中": "ストーム・ポッド消費なし期間中",
-    "ロト計画": "ボックス計画",
+    "event-page-link": "イベントページ",
     "期限間近のタスク": "期限間近のタスク"
   },
   "quests": {
@@ -417,8 +415,10 @@
     "import-review-decrease-badge": "{{count}}個減少"
   },
   "events": {
-    "ロトイベント一覧": "ボックスイベント一覧",
-    "イベント一覧説明": "ボックスイベントの通貨・箱数・周回計画を算出します。",
+    "event-list-title": "イベント一覧",
+    "event-list-description": "イベントごとのボックス計画・料理作成などの計画ツールを開きます。",
+    "event-feature-box": "ボックス計画",
+    "event-feature-craft": "料理作成",
     "ロト計画": "ボックス計画",
     "開催中": "開催中",
     "開催予定": "開催予定",
@@ -441,6 +441,8 @@
     "逆算結果説明": "必要最小箱数: {{boxes}} 箱",
     "ロスター未設定時の説明": "サーヴァント一覧で育成ゴールを設定すると、不足素材から箱数目標を逆算できます。未ログイン時は「欲しい素材で指定」「箱数直接指定」が使えます。",
     "素材データ読み込み中": "育成素材データを読み込み中...",
+    "event-roster-material-error": "育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。",
+    "event-planner-eyebrow": "EVENT PLANNER",
     "目標箱数": "目標箱数",
     "箱数": "全{{count}}箱",
     "箱": "箱",
@@ -489,7 +491,15 @@
     "周回ドロップ見込み": "周回ドロップ見込み（推定）",
     "確定ドロップ内訳注記": "確定報酬と周回ドロップは分離表示しています。需要充足は両者の合算で判定します。",
     "交換所": "交換所",
-    "必要通貨N": "{{count}} 通貨"
+    "必要通貨N": "{{count}} 通貨",
+    "event-craft-section-title": "料理作成",
+    "event-craft-section-description": "育成ロスターの不足（必要数 − 所持数）で計算します。",
+    "event-craft-roster-empty": "育成対象のサーヴァントを設定すると、不足素材から料理の配分を計算できます。",
+    "event-craft-roster-link": "育成対象を設定する",
+    "event-craft-loading": "データを読み込み中...",
+    "event-craft-drops-error": "ドロップデータを取得できませんでした。再読み込みしてください。",
+    "event-craft-data-missing": "不足素材の一部でドロップデータが欠けているため、周回数を正しく計算できません。時間をおいて再読み込みしてください。",
+    "event-craft-reload": "再読み込み"
   },
   "todo": {
     "TODO管理": "TODO管理",
