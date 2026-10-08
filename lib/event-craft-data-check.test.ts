@@ -4,6 +4,7 @@ import {
   auditFarmableCraftGaps,
   findMissingCraftData,
   formatFarmableCraftAudit,
+  parseCraftAuditInputs,
   positiveNeedAtlasIds,
 } from './event-craft-data-check'
 import { DEFAULT_STOCK_BUFFER } from './quest-efficiency'
@@ -91,6 +92,15 @@ describe('auditFarmableCraftGaps', () => {
     } as unknown as Drops
     const report = formatFarmableCraftAudit(auditFarmableCraftGaps(covered, coveredItems))
     expect(report).toEqual({ exitCode: 0, text: 'gaps=0' })
+  })
+
+  it('Atlas 素材が空なら入力不正で、点検成功にしない', () => {
+    const dropsJson = {
+      items: [{ id: '01', atlasId: 6516, category: '銅素材', largeCategory: '強化素材' }],
+      quests: [{ id: 'Q1' }],
+      drop_rates: [{ quest_id: 'Q1', item_id: '01', drop_rate: 0.5 }],
+    }
+    expect(parseCraftAuditInputs(dropsJson, [])).toBeNull()
   })
 })
 

@@ -193,7 +193,7 @@ export const parseCraftAuditInputs = (
   const questRows = unknownRows(dropsValue.quests)
   const rateRows = unknownRows(dropsValue.drop_rates)
   const atlasRows = unknownRows(itemsValue)
-  if (!dropItems || !questRows || !rateRows || !atlasRows) return null
+  if (!dropItems || !questRows || !rateRows || !atlasRows || atlasRows.length === 0) return null
   const items = mapRows(atlasRows, parseNamedAtlasItem)
   const parsedItems = mapRows(dropItems, parseDropItem)
   const quests = mapRows(questRows, parseQuest)

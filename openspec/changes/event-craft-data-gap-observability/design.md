@@ -46,13 +46,13 @@ Workers Logs は `$workers.event.request.path` がこのパスの行、または
 
 クライアントは、ソートした `atlasId:reason` の署名が前回と違うときだけ送る。再描画では送らない。
 
-リクエストは `gaps` 配列だけを受け取る。未知フィールドは捨て、生ボディはログに出さない。`atlasId` は整数、`reason` は2値、件数上限は40、ボディ上限は4KB。外れたら 400 で、ログは出さない。認証は付けない。料理作成は未ログインでも使え、止まった事実の大半は anonymous 側に出る。
+リクエストは `gaps` 配列だけを受け取る。未知フィールドは捨て、生ボディはログに出さない。`atlasId` は整数、`reason` は2値、件数上限は40、ボディ上限は4KB。読みは 4KB を超えた時点で打ち切る。外れたら 400 で、ログは出さない。認証は付けない。料理作成は未ログインでも使え、止まった事実の大半は anonymous 側に出る。
 
 別案: Analytics Engine。保持は長いが binding が増え、今回の「ログから集計」を超える。別案: D1。本番データ保護の対象になり、所持に近い情報を置く動機が残る。
 
 ### 3. 突き合わせは読み取り専用スクリプトの一回実行
 
-`scripts/audit-craft-drop-coverage.ts` は、ローカルの drops JSON と Atlas 素材 JSON を読み、周回対象（`skillLvUp`・銅銀金・priority 298 以下）の全件を `findMissingCraftData` に渡す。stdout に id・名前・reason を出し、1件でもあれば exit 1。
+`scripts/audit-craft-drop-coverage.ts` は、ローカルの drops JSON と Atlas 素材 JSON を読み、周回対象（`skillLvUp`・銅銀金・priority 298 以下）の全件を `findMissingCraftData` に渡す。stdout に id・名前・reason を出し、1件でもあれば exit 1。Atlas 素材配列が空なら入力不正（exit 2）とし、取得失敗の空ファイルを点検成功にしない。
 
 本番の確認は `wrangler kv key get all_drops_json --remote` の読み取りと、公開の Atlas `nice_item` で行う。KV へは書かない。cron worker には置かない（CPU 10ms 制約）。結果の一覧は PR または issue コメントに残し、リポジトリへ本番 JSON をコミットしない。
 

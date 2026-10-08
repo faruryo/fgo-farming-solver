@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CRAFT_DATA_GAP_BODY_LIMIT,
   CRAFT_DATA_GAP_LIMIT,
   formatCraftDataGapLog,
   parseCraftDataGaps,
   readCraftDataGapRequest,
+  readLimitedUtf8,
 } from './event-craft-data-gap-log'
 
 const valid = (count: number) => ({
@@ -50,5 +52,19 @@ describe('parseCraftDataGaps', () => {
       ok: true,
       log: { event: 'craft_data_gap', count: 1, absent: [6518], unrated: [] },
     })
+  })
+
+  it('4KB を超えたチャンク以降は読まない', async () => {
+    let pulled = 0
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = new Uint8Array(1024)
+        pulled += chunk.byteLength
+        controller.enqueue(chunk)
+        if (pulled >= CRAFT_DATA_GAP_BODY_LIMIT * 2) controller.close()
+      },
+    })
+    await expect(readLimitedUtf8(stream, CRAFT_DATA_GAP_BODY_LIMIT)).resolves.toBeNull()
+    expect(pulled).toBe(CRAFT_DATA_GAP_BODY_LIMIT + 1024)
   })
 })
