@@ -82,24 +82,19 @@ const postGapBatches = async (gaps: CraftDataGap[]): Promise<boolean> => {
 
 const useReportCraftDataGaps = (gaps: CraftDataGap[]) => {
   const gapSignature = craftDataGapSignature(gaps)
-  const loggedSignature = useRef<string | null>(null)
   const sendingSignature = useRef<string | null>(null)
   const epoch = useRef(0)
   useEffect(() => {
     if (!gapSignature) {
       epoch.current += 1
-      loggedSignature.current = null
       sendingSignature.current = null
       return
     }
-    if (loggedSignature.current === gapSignature || sendingSignature.current === gapSignature) return
+    if (sendingSignature.current === gapSignature) return
     const generation = epoch.current + 1
     epoch.current = generation
     sendingSignature.current = gapSignature
     void postGapBatches(gapPayload(gapSignature))
-      .then((ok) => {
-        if (ok && epoch.current === generation) loggedSignature.current = gapSignature
-      })
       .catch(() => {})
       .finally(() => {
         if (epoch.current === generation && sendingSignature.current === gapSignature) sendingSignature.current = null

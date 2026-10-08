@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { type ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { EventCraftSection } from './EventCraftSection'
@@ -79,14 +80,23 @@ const ready = (need: Record<number, number>): RosterNeed => ({
   totalNeed: new Map(Object.entries(need).map(([k, v]) => [Number(k), v])),
 })
 
-const stubDrops = (drops: Drops | Error) => {
+const stubDrops = (drops: Drops | Error, holdGapAt?: number) => {
   requests.length = 0
+  let gapCount = 0
+  let releaseHeld = () => {}
+  const held = new Promise<void>((resolve) => {
+    releaseHeld = resolve
+  })
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = requestUrl(input)
       requests.push({ url, body: typeof init?.body === 'string' ? init.body : undefined })
       if (url.includes('/api/event-craft-data-gap')) {
+        gapCount += 1
+        if (holdGapAt !== undefined && gapCount === holdGapAt) {
+          return held.then(() => ({ ok: true, status: 204 }))
+        }
         return Promise.resolve({ ok: true, status: 204 })
       }
       return drops instanceof Error
@@ -94,9 +104,21 @@ const stubDrops = (drops: Drops | Error) => {
         : Promise.resolve({ ok: true, json: () => Promise.resolve(drops) })
     }),
   )
+  return { release: () => releaseHeld(), held }
 }
 
 const setLs = (key: string, value: unknown) => localStorage.setItem(key, JSON.stringify(value))
+
+const showAbsentGap = async () => {
+  await screen.findByText('英雄の証はドロップ表にありません')
+  await waitFor(() => expect(gapPosts()).toHaveLength(1))
+}
+
+const clearAbsentGap = async (rerender: (ui: ReactElement) => void) => {
+  rosterMock = ready({ 6516: 10 })
+  rerender(<EventCraftSection items={items} />)
+  await screen.findByTestId('advisor')
+}
 
 describe('EventCraftSection', () => {
   beforeEach(() => {
@@ -167,36 +189,13 @@ describe('EventCraftSection', () => {
 
   it('送信完了が欠落消去より遅いとき、戻った同じ組を再送する', async () => {
     rosterMock = ready({ 6518: 1 })
-    const drops = { ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] }
-    let releaseFirst = () => {}
-    const firstHeld = new Promise<void>((resolve) => {
-      releaseFirst = resolve
-    })
-    let gapCount = 0
-    requests.length = 0
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = requestUrl(input)
-        requests.push({ url, body: typeof init?.body === 'string' ? init.body : undefined })
-        if (url.includes('/api/event-craft-data-gap')) {
-          gapCount += 1
-          if (gapCount === 1) return firstHeld.then(() => ({ ok: true, status: 204 }))
-          return Promise.resolve({ ok: true, status: 204 })
-        }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(drops) })
-      }),
-    )
+    const { release, held } = stubDrops({ ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] }, 1)
     const { rerender } = render(<EventCraftSection items={items} />)
-    await screen.findByText('英雄の証はドロップ表にありません')
-    await waitFor(() => expect(gapPosts()).toHaveLength(1))
-
-    rosterMock = ready({ 6516: 10 })
-    rerender(<EventCraftSection items={items} />)
-    await screen.findByTestId('advisor')
-    releaseFirst()
+    await showAbsentGap()
+    await clearAbsentGap(rerender)
+    release()
     await act(async () => {
-      await firstHeld
+      await held
     })
 
     rosterMock = ready({ 6518: 1 })
@@ -209,18 +208,36 @@ describe('EventCraftSection', () => {
     rosterMock = ready({ 6518: 1 })
     stubDrops({ ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] })
     const { rerender } = render(<EventCraftSection items={items} />)
-    await screen.findByText('英雄の証はドロップ表にありません')
-    await waitFor(() => expect(gapPosts()).toHaveLength(1))
-
-    rosterMock = ready({ 6516: 10 })
-    rerender(<EventCraftSection items={items} />)
-    await screen.findByTestId('advisor')
+    await showAbsentGap()
+    await clearAbsentGap(rerender)
     expect(gapPosts()).toHaveLength(1)
 
     rosterMock = ready({ 6518: 1 })
     rerender(<EventCraftSection items={items} />)
     await screen.findByText('英雄の証はドロップ表にありません')
     await waitFor(() => expect(gapPosts()).toHaveLength(2))
+  })
+
+  it('記録済みの組へ戻るとき、進行中の別送信を無効にして再送する', async () => {
+    rosterMock = ready({ 6518: 1 })
+    const { release, held } = stubDrops({ ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] }, 2)
+    const { rerender } = render(<EventCraftSection items={items} />)
+    await showAbsentGap()
+
+    rosterMock = ready({ 6517: 5 })
+    rerender(<EventCraftSection items={items} />)
+    await screen.findByText('世界樹の種はドロップ表にありますが、ドロップするクエストがありません')
+    await waitFor(() => expect(gapPosts()).toHaveLength(2))
+
+    rosterMock = ready({ 6518: 1 })
+    rerender(<EventCraftSection items={items} />)
+    await screen.findByText('英雄の証はドロップ表にありません')
+    await waitFor(() => expect(gapPosts()).toHaveLength(3))
+    release()
+    await act(async () => {
+      await held
+    })
+    expect(gapPosts()).toHaveLength(3)
   })
 
   it('同じ欠落の再描画ではログを1回、組が変わると2回目を送る', async () => {
