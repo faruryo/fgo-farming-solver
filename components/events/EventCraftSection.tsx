@@ -85,7 +85,12 @@ const useReportCraftDataGaps = (gaps: CraftDataGap[]) => {
   const loggedSignature = useRef<string | null>(null)
   const sendingSignature = useRef<string | null>(null)
   useEffect(() => {
-    if (!gapSignature || loggedSignature.current === gapSignature || sendingSignature.current === gapSignature) return
+    if (!gapSignature) {
+      loggedSignature.current = null
+      sendingSignature.current = null
+      return
+    }
+    if (loggedSignature.current === gapSignature || sendingSignature.current === gapSignature) return
     sendingSignature.current = gapSignature
     void postGapBatches(gapPayload(gapSignature))
       .then((ok) => {

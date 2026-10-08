@@ -165,6 +165,24 @@ describe('EventCraftSection', () => {
     expect(gapPosts()).toHaveLength(2)
   })
 
+  it('欠落が消えてから同じ組が戻ると再送する', async () => {
+    rosterMock = ready({ 6518: 1 })
+    stubDrops({ ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] })
+    const { rerender } = render(<EventCraftSection items={items} />)
+    await screen.findByText('英雄の証はドロップ表にありません')
+    await waitFor(() => expect(gapPosts()).toHaveLength(1))
+
+    rosterMock = ready({ 6516: 10 })
+    rerender(<EventCraftSection items={items} />)
+    await screen.findByTestId('advisor')
+    expect(gapPosts()).toHaveLength(1)
+
+    rosterMock = ready({ 6518: 1 })
+    rerender(<EventCraftSection items={items} />)
+    await screen.findByText('英雄の証はドロップ表にありません')
+    await waitFor(() => expect(gapPosts()).toHaveLength(2))
+  })
+
   it('同じ欠落の再描画ではログを1回、組が変わると2回目を送る', async () => {
     rosterMock = ready({ 6518: 1 })
     stubDrops({ ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] })
