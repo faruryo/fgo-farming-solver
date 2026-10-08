@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '../common/link'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,8 @@ import { useDrops } from '../../hooks/use-drops'
 import { useStockTarget } from '../../hooks/use-stock-target'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { buildNeedByApiItemId } from '../../lib/quest-efficiency'
-import { findMissingCraftData, positiveNeedAtlasIds } from '../../lib/event-craft-data-check'
+import { findMissingCraftData, positiveNeedAtlasIds, type CraftDataGap } from '../../lib/event-craft-data-check'
+import { craftDataGapBatches, craftDataGapSignature } from '../../lib/event-craft-data-gap-log'
 import type { EnrichedItem } from '../../lib/get-items'
 
 interface Props {
@@ -47,7 +48,70 @@ const Notice: React.FC<{ error?: boolean; children: React.ReactNode }> = ({ erro
   </div>
 )
 
-const BlockedNotice: React.FC<{ view: BlockedView }> = ({ view }) => {
+const gapLabel = (
+  t: (key: string, fallback: string, options?: Record<string, unknown>) => string,
+  gap: CraftDataGap,
+  items: EnrichedItem[],
+): string => {
+  const resolved = items.find((item) => item.id === gap.atlasId)?.name
+  const name = resolved
+    ? resolved
+    : t('event-craft-data-gap-id', 'ID {{id}}', { id: gap.atlasId })
+  return gap.reason === 'absent'
+    ? t('event-craft-data-gap-absent', '{{name}}はドロップ表にありません', { name })
+    : t('event-craft-data-gap-unrated', '{{name}}はドロップ表にありますが、ドロップするクエストがありません', { name })
+}
+
+const gapPayload = (signature: string): CraftDataGap[] =>
+  signature.split(',').map((part) => {
+    const [id, reason] = part.split(':')
+    return { atlasId: Number(id), reason: reason === 'unrated' ? 'unrated' : 'absent' }
+  })
+
+const postGapBatches = async (gaps: CraftDataGap[]): Promise<boolean> => {
+  for (const batch of craftDataGapBatches(gaps)) {
+    const res = await fetch('/api/event-craft-data-gap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gaps: batch }),
+    })
+    if (!res.ok) return false
+  }
+  return true
+}
+
+const useReportCraftDataGaps = (gaps: CraftDataGap[]) => {
+  const gapSignature = craftDataGapSignature(gaps)
+  const loggedSignature = useRef<string | null>(null)
+  const sendingSignature = useRef<string | null>(null)
+  const epoch = useRef(0)
+  useEffect(() => {
+    if (!gapSignature) {
+      epoch.current += 1
+      loggedSignature.current = null
+      sendingSignature.current = null
+      return
+    }
+    if (loggedSignature.current === gapSignature || sendingSignature.current === gapSignature) return
+    const generation = epoch.current + 1
+    epoch.current = generation
+    sendingSignature.current = gapSignature
+    void postGapBatches(gapPayload(gapSignature))
+      .then((ok) => {
+        if (ok && epoch.current === generation) loggedSignature.current = gapSignature
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (epoch.current === generation && sendingSignature.current === gapSignature) sendingSignature.current = null
+      })
+  }, [gapSignature])
+}
+
+const BlockedNotice: React.FC<{ view: BlockedView; gaps: CraftDataGap[]; items: EnrichedItem[] }> = ({
+  view,
+  gaps,
+  items,
+}) => {
   const { t } = useTranslation('events')
   if (view === 'empty') {
     return (
@@ -71,6 +135,13 @@ const BlockedNotice: React.FC<{ view: BlockedView }> = ({ view }) => {
               '不足素材の一部でドロップデータが欠けているため、周回数を正しく計算できません。時間をおいて再読み込みしてください。',
             )}
       </p>
+      {view === 'data-missing' && (
+        <ul className="flex flex-col gap-1">
+          {gaps.map((gap) => (
+            <li key={`${gap.atlasId}:${gap.reason}`}>{gapLabel(t, gap, items)}</li>
+          ))}
+        </ul>
+      )}
       <Button size="sm" variant="outline" className="self-start" onClick={() => window.location.reload()}>
         {t('event-craft-reload', '再読み込み')}
       </Button>
@@ -96,13 +167,20 @@ export const EventCraftSection: React.FC<Props> = ({ items }) => {
   const dropsEmpty =
     drops.items.length === 0 || drops.quests.length === 0 || drops.drop_rates.length === 0
 
-  const fullNeed = useMemo(() => {
-    if (rosterNeed.status !== 'ready' || drops.isLoading || dropsEmpty) return null
+  const dataGaps = useMemo(() => {
+    if (rosterNeed.status !== 'ready' || drops.isLoading || dropsEmpty) return []
     const amounts = toAmounts(rosterNeed.totalNeed)
     const needIds = positiveNeedAtlasIds(items, amounts, possession, stockBuffer, finitePurpose)
-    if (findMissingCraftData(drops, needIds, items).length > 0) return null
-    return buildNeedByApiItemId(amounts, possession, drops, stockBuffer, finitePurpose)
+    return findMissingCraftData(drops, needIds, items)
   }, [rosterNeed, drops, dropsEmpty, items, possession, stockBuffer, finitePurpose])
+
+  const fullNeed = useMemo(() => {
+    if (rosterNeed.status !== 'ready' || drops.isLoading || dropsEmpty || dataGaps.length > 0) return null
+    const amounts = toAmounts(rosterNeed.totalNeed)
+    return buildNeedByApiItemId(amounts, possession, drops, stockBuffer, finitePurpose)
+  }, [rosterNeed, drops, dropsEmpty, dataGaps.length, possession, stockBuffer, finitePurpose])
+
+  useReportCraftDataGaps(dataGaps)
 
   const blocked = resolveBlockedView(rosterNeed.status, drops.isLoading, dropsEmpty, !!fullNeed)
 
@@ -112,7 +190,7 @@ export const EventCraftSection: React.FC<Props> = ({ items }) => {
         {t('event-craft-section-description', '育成ロスターの不足（必要数 − 所持数）で計算します。')}
       </p>
       {blocked || !fullNeed ? (
-        <BlockedNotice view={blocked ?? 'data-missing'} />
+        <BlockedNotice view={blocked ?? 'data-missing'} gaps={dataGaps} items={items} />
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">
