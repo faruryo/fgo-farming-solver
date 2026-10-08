@@ -1,0 +1,5 @@
+{
+  "items": [{ "id": "01", "atlasId": 6516, "category": "銅素材" }],
+  "quests": [{ "id": "Q1" }],
+  "drop_rates": [{ "quest_id": "Q1", "item_id": "01", "drop_rate": 0.4 }]
+}

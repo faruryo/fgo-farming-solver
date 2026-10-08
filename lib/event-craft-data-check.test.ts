@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import type { Drops } from './get-drops'
-import { findMissingCraftData, positiveNeedAtlasIds } from './event-craft-data-check'
+import {
+  auditFarmableCraftGaps,
+  findMissingCraftData,
+  formatFarmableCraftAudit,
+  positiveNeedAtlasIds,
+} from './event-craft-data-check'
 import { DEFAULT_STOCK_BUFFER } from './quest-efficiency'
 
 const atlas = (
@@ -47,18 +52,45 @@ const drops = {
 describe('findMissingCraftData', () => {
   it.each([
     ['完全（レートあり）', [6516], []],
-    ['(a) 対象クラスのカタログ欠落', [6518], [6518]],
+    ['(a) 対象クラスのカタログ欠落', [6518], [{ atlasId: 6518, reason: 'absent' }]],
     ['(a) 除外: QP はカタログ外でも正当', [1], []],
     ['(a) 除外: tdLvUp は対象クラス外', [9000], []],
     ['(a) 除外: 伝承結晶(priority 299)は周回対象外', [6999], []],
-    ['(a) Atlas 一覧にも drops にも無い素材は分類できないので欠落', [6666], [6666]],
+    ['(a) Atlas 一覧にも drops にも無い素材は分類できないので欠落', [6666], [{ atlasId: 6666, reason: 'absent' }]],
     ['(a) 除外: 過去イベントの特殊再臨素材(priority 500 以上)', [5000], []],
-    ['(b) 同カテゴリ内の一部欠落（rate 0・未知クエストのみ）', [6517], [6517]],
+    ['(b) 同カテゴリ内の一部欠落（rate 0・未知クエストのみ）', [6517], [{ atlasId: 6517, reason: 'unrated' }]],
     ['(b) 除外: カテゴリ全滅（ピース）', [7001, 7002], []],
-    ['(b) 周回対象クラスはカテゴリ全体でレート欠落でも欠落（他カテゴリにはレートあり）', [6601, 6602], [6601, 6602]],
-    ['複数欠落', [6516, 6517, 6518], [6517, 6518]],
+    ['(b) 周回対象クラスはカテゴリ全体でレート欠落でも欠落（他カテゴリにはレートあり）', [6601, 6602], [
+      { atlasId: 6601, reason: 'unrated' },
+      { atlasId: 6602, reason: 'unrated' },
+    ]],
+    ['複数欠落', [6516, 6517, 6518], [
+      { atlasId: 6517, reason: 'unrated' },
+      { atlasId: 6518, reason: 'absent' },
+    ]],
   ] as const)('%s', (_label, need, expected) => {
     expect(findMissingCraftData(drops, need, items)).toEqual(expected)
+  })
+})
+
+describe('auditFarmableCraftGaps', () => {
+  it('周回対象の穴だけを出し、穴があれば exit 1', () => {
+    const report = formatFarmableCraftAudit(auditFarmableCraftGaps(drops, items))
+    expect(report.exitCode).toBe(1)
+    expect(report.text).toContain('6518\t\tabsent')
+    expect(report.text).not.toContain('6999')
+    expect(report.text).not.toContain('7001')
+  })
+
+  it('周回対象がすべてレートを持てば exit 0', () => {
+    const coveredItems = [atlas(6516, 'skillLvUp', 'bronze')]
+    const covered = {
+      items: [{ id: '01', atlasId: 6516, category: '銅素材' }],
+      quests: [{ id: 'Q1' }],
+      drop_rates: [{ quest_id: 'Q1', item_id: '01', drop_rate: 0.5 }],
+    } as unknown as Drops
+    const report = formatFarmableCraftAudit(auditFarmableCraftGaps(covered, coveredItems))
+    expect(report).toEqual({ exitCode: 0, text: 'gaps=0' })
   })
 })
 

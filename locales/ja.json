@@ -499,6 +499,9 @@
     "event-craft-loading": "データを読み込み中...",
     "event-craft-drops-error": "ドロップデータを取得できませんでした。再読み込みしてください。",
     "event-craft-data-missing": "不足素材の一部でドロップデータが欠けているため、周回数を正しく計算できません。時間をおいて再読み込みしてください。",
+    "event-craft-data-gap-absent": "{{name}}はドロップ表にありません",
+    "event-craft-data-gap-unrated": "{{name}}はドロップ表にありますが、ドロップするクエストがありません",
+    "event-craft-data-gap-id": "ID {{id}}",
     "event-craft-reload": "再読み込み"
   },
   "todo": {

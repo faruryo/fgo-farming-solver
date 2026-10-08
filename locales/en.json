@@ -576,6 +576,9 @@
     "event-craft-loading": "Loading data...",
     "event-craft-drops-error": "Could not load drop data. Please reload.",
     "event-craft-data-missing": "Drop data is missing for some needed materials, so runs cannot be calculated correctly. Please reload later.",
+    "event-craft-data-gap-absent": "{{name}} is not in the drop table",
+    "event-craft-data-gap-unrated": "{{name}} is in the drop table, but no quest drops it",
+    "event-craft-data-gap-id": "ID {{id}}",
     "event-craft-reload": "Reload"
   },
   "todo": {
