@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CRAFT_DATA_GAP_BODY_LIMIT,
   CRAFT_DATA_GAP_LIMIT,
+  craftDataGapBatches,
   formatCraftDataGapLog,
   parseCraftDataGaps,
   readCraftDataGapRequest,
@@ -33,6 +34,16 @@ describe('parseCraftDataGaps', () => {
     expect(JSON.stringify(log)).not.toContain('userId')
     expect(JSON.stringify(log)).not.toContain('possession')
     expect(JSON.stringify(log)).not.toContain('owned')
+  })
+
+  it('41件は40件と1件に分ける', () => {
+    const gaps = Array.from({ length: CRAFT_DATA_GAP_LIMIT + 1 }, (_, i) => ({
+      atlasId: i + 1,
+      reason: 'absent' as const,
+    }))
+    const batches = craftDataGapBatches(gaps)
+    expect(batches.map((batch) => batch.length)).toEqual([CRAFT_DATA_GAP_LIMIT, 1])
+    expect(batches.flat()).toEqual(gaps)
   })
 
   it('40件は受け、41件と不正 reason は拒む', () => {

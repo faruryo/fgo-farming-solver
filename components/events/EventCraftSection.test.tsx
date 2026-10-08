@@ -56,7 +56,7 @@ const items = [
   { id: 6518, name: '英雄の証', type: 'skillLvUp', background: 'bronze', category: '銅素材', largeCategory: '強化素材' },
 ] as EnrichedItem[]
 
-const requests: { url: string }[] = []
+const requests: { url: string; body?: string }[] = []
 const gapPosts = () => requests.filter((request) => request.url.includes('/api/event-craft-data-gap'))
 
 const baseDrops: Drops = {
@@ -83,9 +83,9 @@ const stubDrops = (drops: Drops | Error) => {
   requests.length = 0
   vi.stubGlobal(
     'fetch',
-    vi.fn((input: RequestInfo | URL) => {
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = requestUrl(input)
-      requests.push({ url })
+      requests.push({ url, body: typeof init?.body === 'string' ? init.body : undefined })
       if (url.includes('/api/event-craft-data-gap')) {
         return Promise.resolve({ ok: true, status: 204 })
       }
@@ -146,6 +146,23 @@ describe('EventCraftSection', () => {
     stubDrops(baseDrops)
     render(<EventCraftSection items={items} />)
     expect(await screen.findByText('ID 6666はドロップ表にありません')).toBeTruthy()
+  })
+
+  it('41件の欠落は40件以下のリクエストに分け、再描画では増やさない', async () => {
+    const need: Record<number, number> = {}
+    for (let index = 0; index < 41; index += 1) need[8000 + index] = 1
+    rosterMock = ready(need)
+    stubDrops(baseDrops)
+    const { rerender } = render(<EventCraftSection items={items} />)
+    await waitFor(() => expect(gapPosts()).toHaveLength(2))
+    const counts = gapPosts().map((post) => {
+      const body: unknown = JSON.parse(post.body ?? '')
+      if (!body || typeof body !== 'object' || !('gaps' in body) || !Array.isArray(body.gaps)) return 0
+      return body.gaps.length
+    })
+    expect(counts).toEqual([40, 1])
+    rerender(<EventCraftSection items={items} />)
+    expect(gapPosts()).toHaveLength(2)
   })
 
   it('同じ欠落の再描画ではログを1回、組が変わると2回目を送る', async () => {

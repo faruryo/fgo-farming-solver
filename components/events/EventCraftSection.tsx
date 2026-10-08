@@ -13,7 +13,7 @@ import { useStockTarget } from '../../hooks/use-stock-target'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { buildNeedByApiItemId } from '../../lib/quest-efficiency'
 import { findMissingCraftData, positiveNeedAtlasIds, type CraftDataGap } from '../../lib/event-craft-data-check'
-import { craftDataGapSignature } from '../../lib/event-craft-data-gap-log'
+import { craftDataGapBatches, craftDataGapSignature } from '../../lib/event-craft-data-gap-log'
 import type { EnrichedItem } from '../../lib/get-items'
 
 interface Props {
@@ -62,21 +62,39 @@ const gapLabel = (
     : t('event-craft-data-gap-unrated', '{{name}}はドロップ表にありますが、ドロップするクエストがありません', { name })
 }
 
+const gapPayload = (signature: string): CraftDataGap[] =>
+  signature.split(',').map((part) => {
+    const [id, reason] = part.split(':')
+    return { atlasId: Number(id), reason: reason === 'unrated' ? 'unrated' : 'absent' }
+  })
+
+const postGapBatches = async (gaps: CraftDataGap[]): Promise<boolean> => {
+  for (const batch of craftDataGapBatches(gaps)) {
+    const res = await fetch('/api/event-craft-data-gap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gaps: batch }),
+    })
+    if (!res.ok) return false
+  }
+  return true
+}
+
 const useReportCraftDataGaps = (gaps: CraftDataGap[]) => {
   const gapSignature = craftDataGapSignature(gaps)
   const loggedSignature = useRef<string | null>(null)
+  const sendingSignature = useRef<string | null>(null)
   useEffect(() => {
-    if (!gapSignature || loggedSignature.current === gapSignature) return
-    loggedSignature.current = gapSignature
-    const payload = gapSignature.split(',').map((part) => {
-      const [id, reason] = part.split(':')
-      return { atlasId: Number(id), reason }
-    })
-    void fetch('/api/event-craft-data-gap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gaps: payload }),
-    }).catch(() => {})
+    if (!gapSignature || loggedSignature.current === gapSignature || sendingSignature.current === gapSignature) return
+    sendingSignature.current = gapSignature
+    void postGapBatches(gapPayload(gapSignature))
+      .then((ok) => {
+        if (ok) loggedSignature.current = gapSignature
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (sendingSignature.current === gapSignature) sendingSignature.current = null
+      })
   }, [gapSignature])
 }
 

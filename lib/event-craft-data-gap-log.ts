@@ -21,6 +21,19 @@ const compareGaps = (a: CraftDataGap, b: CraftDataGap): number => {
 export const craftDataGapSignature = (gaps: readonly CraftDataGap[]): string =>
   [...gaps].sort(compareGaps).map((gap) => `${gap.atlasId}:${gap.reason}`).join(',')
 
+/** 1リクエストの上限に収まるよう分ける。空は送らない。 */
+export const craftDataGapBatches = (
+  gaps: readonly CraftDataGap[],
+  limit = CRAFT_DATA_GAP_LIMIT,
+): CraftDataGap[][] => {
+  if (gaps.length === 0 || limit <= 0) return []
+  const batches: CraftDataGap[][] = []
+  for (let index = 0; index < gaps.length; index += limit) {
+    batches.push(gaps.slice(index, index + limit))
+  }
+  return batches
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
