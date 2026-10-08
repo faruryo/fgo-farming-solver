@@ -102,6 +102,28 @@ describe('auditFarmableCraftGaps', () => {
     }
     expect(parseCraftAuditInputs(dropsJson, [])).toBeNull()
   })
+
+  it('type や priority が欠けた Atlas 行は入力不正', () => {
+    const dropsJson = {
+      items: [{ id: '01', atlasId: 6516, category: '銅素材', largeCategory: '強化素材' }],
+      quests: [{ id: 'Q1' }],
+      drop_rates: [{ quest_id: 'Q1', item_id: '01', drop_rate: 0.5 }],
+    }
+    const incomplete = [{ id: 6516, background: 'bronze' }]
+    expect(parseCraftAuditInputs(dropsJson, incomplete)).toBeNull()
+    const complete = [{ id: 6516, type: 'skillLvUp', background: 'bronze', priority: 200, name: '剣の輝石' }]
+    expect(parseCraftAuditInputs(dropsJson, complete)?.items).toEqual([
+      {
+        id: 6516,
+        name: '剣の輝石',
+        type: 'skillLvUp',
+        background: 'bronze',
+        category: '',
+        largeCategory: '',
+        priority: 200,
+      },
+    ])
+  })
 })
 
 describe('positiveNeedAtlasIds', () => {

@@ -15,7 +15,7 @@
 
 ## 4. 本番ドロップ表の一回点検
 
-- [x] 4.1 `scripts/audit-craft-drop-coverage.ts` を追加する。引数の drops JSON と Atlas 素材 JSON を読み、周回対象（`skillLvUp`・銅銀金・priority 298 以下）の全件を `findMissingCraftData` に渡し、id・名前・reason を stdout に出す。1件でもあれば exit 1、ゼロなら exit 0。Atlas 素材配列が空なら exit 2。KV へは書かない。検証: 穴ありフィクスチャで exit 1 かつ該当行が出ること、穴なしで exit 0 になること、空の Atlas 配列は拒否すること。穴ありを exit 0 にするとテストが赤くなること。
+- [x] 4.1 `scripts/audit-craft-drop-coverage.ts` を追加する。引数の drops JSON と Atlas 素材 JSON を読み、周回対象（`skillLvUp`・銅銀金・priority 298 以下）の全件を `findMissingCraftData` に渡し、id・名前・reason を stdout に出す。1件でもあれば exit 1、ゼロなら exit 0。Atlas 素材配列が空、または `type` や `priority` が欠けた行なら exit 2。KV へは書かない。検証: 穴ありフィクスチャで exit 1 かつ該当行が出ること、穴なしで exit 0 になること、空の Atlas 配列は拒否すること。穴ありを exit 0 にするとテストが赤くなること。
 - [x] 4.2 本番 `all_drops_json` を `wrangler kv key get --remote` の読み取りだけで取得し、公開 Atlas `nice_item` と突き合わせてスクリプトを1回実行する。結果（ゼロ、または id・名前・reason の一覧）を PR または issue #120 のコメントに残す。本番 JSON はリポジトリにコミットしない。検証: 実行コマンド、exit code、一覧がコメントに残っていること。
 
 ## 5. 全体確認

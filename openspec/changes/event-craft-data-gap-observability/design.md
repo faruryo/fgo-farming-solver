@@ -52,7 +52,7 @@ Workers Logs は `$workers.event.request.path` がこのパスの行、または
 
 ### 3. 突き合わせは読み取り専用スクリプトの一回実行
 
-`scripts/audit-craft-drop-coverage.ts` は、ローカルの drops JSON と Atlas 素材 JSON を読み、周回対象（`skillLvUp`・銅銀金・priority 298 以下）の全件を `findMissingCraftData` に渡す。stdout に id・名前・reason を出し、1件でもあれば exit 1。Atlas 素材配列が空なら入力不正（exit 2）とし、取得失敗の空ファイルを点検成功にしない。
+`scripts/audit-craft-drop-coverage.ts` は、ローカルの drops JSON と Atlas 素材 JSON を読み、周回対象（`skillLvUp`・銅銀金・priority 298 以下）の全件を `findMissingCraftData` に渡す。stdout に id・名前・reason を出し、1件でもあれば exit 1。Atlas 素材配列が空、または行に `id`・`type`・`background`・`priority` が無いなら入力不正（exit 2）とし、取得失敗や項目欠落を点検成功にしない。
 
 本番の確認は `wrangler kv key get all_drops_json --remote` の読み取りと、公開の Atlas `nice_item` で行う。KV へは書かない。cron worker には置かない（CPU 10ms 制約）。結果の一覧は PR または issue コメントに残し、リポジトリへ本番 JSON をコミットしない。
 

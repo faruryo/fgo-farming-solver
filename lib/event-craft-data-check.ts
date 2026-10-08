@@ -148,15 +148,18 @@ const mapRows = <T>(rows: readonly unknown[], map: (row: Record<string, unknown>
 }
 
 const parseNamedAtlasItem = (row: Record<string, unknown>): NamedAtlasItem | null => {
-  if (typeof row.id !== 'number' || !isBackground(row.background)) return null
+  const type = asString(row.type)
+  if (typeof row.id !== 'number' || !type || !isBackground(row.background) || typeof row.priority !== 'number') {
+    return null
+  }
   return {
     id: row.id,
     name: asString(row.name) ?? undefined,
-    type: asString(row.type) ?? '',
+    type,
     background: row.background,
     category: asString(row.category) ?? '',
     largeCategory: asString(row.largeCategory) ?? '',
-    priority: typeof row.priority === 'number' ? row.priority : 0,
+    priority: row.priority,
   }
 }
 
