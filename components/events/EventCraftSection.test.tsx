@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { EventCraftSection } from './EventCraftSection'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { __resetDropsCacheForTest } from '../../hooks/use-drops'
@@ -163,6 +163,46 @@ describe('EventCraftSection', () => {
     expect(counts).toEqual([40, 1])
     rerender(<EventCraftSection items={items} />)
     expect(gapPosts()).toHaveLength(2)
+  })
+
+  it('送信完了が欠落消去より遅いとき、戻った同じ組を再送する', async () => {
+    rosterMock = ready({ 6518: 1 })
+    const drops = { ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] }
+    let releaseFirst = () => {}
+    const firstHeld = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    let gapCount = 0
+    requests.length = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = requestUrl(input)
+        requests.push({ url, body: typeof init?.body === 'string' ? init.body : undefined })
+        if (url.includes('/api/event-craft-data-gap')) {
+          gapCount += 1
+          if (gapCount === 1) return firstHeld.then(() => ({ ok: true, status: 204 }))
+          return Promise.resolve({ ok: true, status: 204 })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(drops) })
+      }),
+    )
+    const { rerender } = render(<EventCraftSection items={items} />)
+    await screen.findByText('英雄の証はドロップ表にありません')
+    await waitFor(() => expect(gapPosts()).toHaveLength(1))
+
+    rosterMock = ready({ 6516: 10 })
+    rerender(<EventCraftSection items={items} />)
+    await screen.findByTestId('advisor')
+    releaseFirst()
+    await act(async () => {
+      await firstHeld
+    })
+
+    rosterMock = ready({ 6518: 1 })
+    rerender(<EventCraftSection items={items} />)
+    await screen.findByText('英雄の証はドロップ表にありません')
+    await waitFor(() => expect(gapPosts()).toHaveLength(2))
   })
 
   it('欠落が消えてから同じ組が戻ると再送する', async () => {
