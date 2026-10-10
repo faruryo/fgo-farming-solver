@@ -34,6 +34,13 @@ describe('normalizeItemName', () => {
     expect(normalizeItemName('術モ')).toBe('キャスターモニュメント')
   })
 
+  it('maps half-width kana abbreviations the same as full-width ones', () => {
+    expect(normalizeItemName('ｶｹﾗ')).toBe('煌星のカケラ')
+    expect(normalizeItemName('ｴｰﾃﾙ')).toBe('エーテル収光体')
+    expect(normalizeItemName('ｴｰﾃﾙ')).toBe(normalizeItemName('エーテル'))
+    expect(normalizeItemName('ｶｹﾗ')).toBe(normalizeItemName('カケラ'))
+  })
+
   it('returns same name if no mapping found', () => {
     expect(normalizeItemName('未知の素材')).toBe('未知の素材')
   })
@@ -334,6 +341,128 @@ describe('fetchAndTransformData', () => {
     const q2 = data.quests.find(q => q.name === '〔アサシン〕 Ⅱ')
     expect(q1?.aaQuestId).toBe(94150501)
     expect(q2?.aaQuestId).toBe(94150502)
+  })
+})
+
+const mockRun = (aaItems: unknown[], csv: string) => {
+  vi.mocked(fetch)
+    .mockResolvedValueOnce({ json: () => Promise.resolve(aaItems) } as Response)
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+    .mockResolvedValueOnce({ text: () => Promise.resolve(csv) } as Response)
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) } as Response)
+}
+
+describe('fetchAndTransformData half-width kana headers', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  const proof = { id: 6503, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 }
+  const lantern = { id: 6511, name: 'ゴーストランタン', type: 'skillLvUp', background: 'silver', priority: 260 }
+  const lens = { id: 6551, name: '神彩のレンズ', type: 'skillLvUp', background: 'gold', priority: 290 }
+  const ether = { id: 6556, name: 'エーテル収光体', type: 'skillLvUp', background: 'silver', priority: 253 }
+  const shard = { id: 6544, name: '煌星のカケラ', type: 'skillLvUp', background: 'gold', priority: 285 }
+
+  it('keeps the ｶｹﾗ column and its drop rates', async () => {
+    mockRun([proof, shard], `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材,金素材
+,,AP,データ数,証,ｶｹﾗ
+エリア1,クエストA,20,100,50,3
+`)
+    const data = await fetchAndTransformData()
+
+    const item = data.items.find(i => i.atlasId === 6544)
+    expect(item).toMatchObject({ atlasId: 6544, shortName: 'ｶｹﾗ' })
+    expect(data.drop_rates.find(dr => dr.item_id === item?.id)?.drop_rate).toBeCloseTo(0.03)
+  })
+
+  it('falls back to substring match on the full-width form of an unlisted half-width header', async () => {
+    const crystal = { id: 6599, name: '星のクリスタル', type: 'skillLvUp', background: 'silver', priority: 290 }
+    mockRun([proof, crystal], `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材,銀素材
+,,AP,データ数,証,ｸﾘｽﾀﾙ
+エリア1,クエストA,20,100,50,4
+`)
+    const data = await fetchAndTransformData()
+
+    expect(data.items.find(i => i.atlasId === 6599)).toMatchObject({ shortName: 'ｸﾘｽﾀﾙ' })
+  })
+
+  it('keeps existing short item IDs and gives the newly matched items unique IDs', async () => {
+    mockRun([proof, lantern, lens], `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材,銀素材,金素材
+,,AP,データ数,証,ﾗﾝﾀﾝ,ﾚﾝｽﾞ
+エリア1,クエストA,20,100,50,10,2
+`)
+    const previous = await fetchAndTransformData()
+
+    mockRun([proof, lantern, lens, ether, shard], `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材,銀素材,金素材,銀素材,金素材
+,,AP,データ数,証,ﾗﾝﾀﾝ,ﾚﾝｽﾞ,ｴｰﾃﾙ,ｶｹﾗ
+エリア1,クエストA,20,100,50,10,2,5,3
+`)
+    const data = await fetchAndTransformData({ previous })
+
+    const idOf = (d: typeof data, atlasId: number) => d.items.find(i => i.atlasId === atlasId)?.id
+    for (const atlasId of [6503, 6511, 6551]) {
+      expect(idOf(data, atlasId)).toBe(idOf(previous, atlasId))
+    }
+    const newIds = [idOf(data, 6556), idOf(data, 6544)]
+    expect(newIds.every(id => typeof id === 'string' && id.length > 0)).toBe(true)
+    const allIds = data.items.map(i => i.id)
+    expect(new Set(allIds).size).toBe(allIds.length)
+  })
+})
+
+describe('fetchAndTransformData farmable item audit', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  const annotations = (warn: { mock: { calls: unknown[][] } }) =>
+    warn.mock.calls.map(c => String(c[0])).filter(s => s.startsWith('::warning'))
+
+  const proof = { id: 6503, name: '英雄の証', type: 'skillLvUp', background: 'bronze', priority: 200 }
+  const shard = { id: 6544, name: '煌星のカケラ', type: 'skillLvUp', background: 'gold', priority: 285 }
+  const csv = `周回あたりのドロップ率（％）,,
+エリア,クエスト名,,,銅素材
+,,AP,データ数,証
+エリア1,クエストA,20,100,50
+`
+
+  it('warns with Atlas ID and name when a farmable item has no column', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockRun([proof, shard], csv)
+    const data = await fetchAndTransformData()
+
+    expect(annotations(warn)).toEqual([
+      '::warning title=farmable items missing from drops::6544 煌星のカケラ absent',
+    ])
+    expect(data.items).toHaveLength(1)
+    warn.mockRestore()
+  })
+
+  it('does not warn when every farmable item has drop rates', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockRun([proof], csv)
+    const data = await fetchAndTransformData()
+
+    expect(annotations(warn)).toEqual([])
+    expect(data.items).toHaveLength(1)
+    warn.mockRestore()
+  })
+
+  it('warns once that the audit was skipped when Atlas has an unknown background', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const odd = { id: 9999, name: '謎の素材', type: 'skillLvUp', background: 'platinum', priority: 250 }
+    mockRun([proof, shard, odd], csv)
+    const data = await fetchAndTransformData()
+
+    const lines = annotations(warn)
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toMatch(/^::warning::.*skipped/)
+    expect(data.items).toHaveLength(1)
+    warn.mockRestore()
   })
 })
 

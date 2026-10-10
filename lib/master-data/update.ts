@@ -7,6 +7,7 @@ import { normalizeItemName, getCategory } from './item-naming'
 import { loadNiceWarQuests, type NiceWarCache, type NiceWarQuest } from './nice-war-source'
 import { fetchActiveEvents, extractApCampaigns, type AtlasEvent } from './atlas-events'
 import { filterCandidateQuests } from './quest-selection'
+import { auditFarmableCraftGaps, parseCraftAuditInputs } from '../event-craft-data-check'
 import type {
   Item,
   Quest,
@@ -45,8 +46,9 @@ export function matchSheetItemColumns(
     // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
     // Exclude eventItem and high-priority items (priority > 9900 = events, > 399 = non-farmable)
     if (!aaItem) {
+      const nfkcShortName = shortName.normalize('NFKC')
       aaItem = aaItems.find(i =>
-        i.name.includes(shortName) &&
+        i.name.includes(nfkcShortName) &&
         (i.type === 'material' || i.type === 'skill' || i.type === 'qp' || i.type === 'skillLvUp') &&
         i.priority < 400
       )
@@ -307,12 +309,27 @@ export async function fetchAndTransformData(
     console.warn('Failed to populate wave counts:', e)
   }
 
-  return {
+  const result: MasterData = {
     items: items,
     quests: finalQuests,
     drop_rates: filtered_drop_rates,
     campaigns,
     id_registry: registry,
+  }
+  warnFarmableItemGaps(result, aaItems)
+  return result
+}
+
+// 周回対象素材が drops から落ちていたら更新ジョブの annotation に出す。
+// Atlas 実装からシート列追加までの間も更新を続けるため、書き込みは止めない。
+function warnFarmableItemGaps(data: MasterData, aaItems: unknown): void {
+  const parsed = parseCraftAuditInputs(data, aaItems)
+  if (!parsed) {
+    console.warn('::warning::farmable item audit skipped: Atlas items or drops could not be parsed')
+    return
+  }
+  for (const gap of auditFarmableCraftGaps(parsed.drops, parsed.items)) {
+    console.warn(`::warning title=farmable items missing from drops::${gap.atlasId} ${gap.name} ${gap.reason}`)
   }
 }
 

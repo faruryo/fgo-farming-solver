@@ -11,4 +11,16 @@ describe('matchSheetItemColumns (2026-10-11 sheet)', () => {
   it('maps every header column to the recorded Atlas item', () => {
     expect(columns).toEqual(expected)
   })
+
+  it('maps every farmable item to exactly one column', () => {
+    const farmable = niceItems.filter(i =>
+      i.type === 'skillLvUp' &&
+      ['bronze', 'silver', 'gold'].includes(i.background) &&
+      i.priority <= 298
+    )
+    expect(farmable.length).toBeGreaterThan(0)
+    const columnCount = (atlasId: number) => columns.filter(c => c.atlasId === atlasId).length
+    const counts = Object.fromEntries(farmable.map(i => [`${i.id} ${i.name}`, columnCount(i.id)]))
+    expect(counts).toEqual(Object.fromEntries(farmable.map(i => [`${i.id} ${i.name}`, 1])))
+  })
 })
