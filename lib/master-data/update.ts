@@ -19,6 +19,43 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQerC77YrlI1w
 
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority' | 'icon'> & { type: string }
 
+export type SheetItemColumn = {
+  column: number
+  shortName: string
+  atlasId: number | null
+}
+
+/**
+ * シート見出しの素材略称を列ごとに Atlas 素材へ結び付ける。
+ * 同じ素材に結び付く列が複数あっても、すべての列を返す。
+ */
+export function matchSheetItemColumns(
+  header: string[],
+  aaItems: Pick<AAItem, 'id' | 'name' | 'type' | 'priority'>[]
+): SheetItemColumn[] {
+  return header.map((shortName, column) => {
+    if (!shortName || shortName === 'AP' || shortName === 'データ数') {
+      return { column, shortName, atlasId: null }
+    }
+
+    // Try to find matching AA item
+    const fullName = normalizeItemName(shortName)
+    let aaItem = aaItems.find(i => i.name === fullName)
+
+    // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
+    // Exclude eventItem and high-priority items (priority > 9900 = events, > 399 = non-farmable)
+    if (!aaItem) {
+      aaItem = aaItems.find(i =>
+        i.name.includes(shortName) &&
+        (i.type === 'material' || i.type === 'skill' || i.type === 'qp' || i.type === 'skillLvUp') &&
+        i.priority < 400
+      )
+    }
+
+    return { column, shortName, atlasId: aaItem?.id ?? null }
+  })
+}
+
 export interface FetchAndTransformDataOptions {
   events?: AtlasEvent[]
   waveCountSeed?: Map<number, number>
@@ -81,23 +118,9 @@ export async function fetchAndTransformData(
 
   // Create item mapping
   const itemMap = new Map<string, string>()
-  for (const shortName of itemNamesInHeader) {
-    if (!shortName || shortName === 'AP' || shortName === 'データ数') continue
-    
-    // Try to find matching AA item
-    const fullName = normalizeItemName(shortName)
-    let aaItem = aaItems.find(i => i.name === fullName)
-    
-    // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
-    // Exclude eventItem and high-priority items (priority > 9900 = events, > 399 = non-farmable)
-    if (!aaItem) {
-      aaItem = aaItems.find(i =>
-        i.name.includes(shortName) &&
-        (i.type === 'material' || i.type === 'skill' || i.type === 'qp' || i.type === 'skillLvUp') &&
-        i.priority < 400
-      )
-    }
-
+  const aaItemById = new Map(aaItems.map(i => [i.id, i]))
+  for (const { shortName, atlasId } of matchSheetItemColumns(itemNamesInHeader, aaItems)) {
+    const aaItem = atlasId === null ? undefined : aaItemById.get(atlasId)
     if (aaItem) {
       // atlasId がレジストリ登録済みなら再利用、新規は getLocalItems() と同じ
       // filtered+sorted リストでの位置ベース候補（衝突時は intercept 空間内 max+1）。

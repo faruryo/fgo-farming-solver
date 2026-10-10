@@ -2,8 +2,8 @@
 
 ## 1. 実シートの全見出しで、修正前の対応表を固定する（コード修正より先に行う）
 
-- [ ] 1.1 `fetchAndTransformData` の見出しごとの照合ループ（`normalizeItemName` → 完全一致 → 部分一致）を、挙動を変えずに `lib/master-data/update.ts` から export する純関数 `matchSheetItemColumns(header: string[], aaItems)` に切り出す。戻り値は列ごとの `{ column, shortName, atlasId | null }` で、同じ素材に結び付いた2列目も落とさない。`fetchAndTransformData` はこの戻り値から従来どおり items と itemMap を作る。検証: 既存の `lib/master-data` のテストが変更なしで通ること。
-- [ ] 1.2 （fixture 2件 `sheet-header-2026-10-11.json` と `nice-item-2026-10-11.json` は取得・コミット済み。再取得せずそのまま使い、expected の生成とテストの追加だけを行う）2026-10-11 の公開シートの見出し行（CSV の index 2 の5列目以降）を `lib/master-data/__fixtures__/sheet-header-2026-10-11.json` に、Atlas JP `nice_item.json` の全行を `id` / `name` / `type` / `priority` / `background` の5項目に絞ったものを `lib/master-data/__fixtures__/nice-item-2026-10-11.json` に保存する。両 fixture を `matchSheetItemColumns` に通した結果を `lib/master-data/__fixtures__/sheet-item-columns.expected.json` に記録し、`lib/master-data/sheet-item-columns.test.ts` で結果が expected と一致することを確かめる。この時点では修正前のコードで記録するので、`ｶｹﾗ` と `ｴｰﾃﾙ` は `atlasId: null` になる。検証: テストが通り、expected の任意の1列の atlasId を書き換えると赤くなること。
+- [x] 1.1 `fetchAndTransformData` の見出しごとの照合ループ（`normalizeItemName` → 完全一致 → 部分一致）を、挙動を変えずに `lib/master-data/update.ts` から export する純関数 `matchSheetItemColumns(header: string[], aaItems)` に切り出す。戻り値は列ごとの `{ column, shortName, atlasId | null }` で、同じ素材に結び付いた2列目も落とさない。`fetchAndTransformData` はこの戻り値から従来どおり items と itemMap を作る。検証: 既存の `lib/master-data` のテストが変更なしで通ること。
+- [x] 1.2 （fixture 2件 `sheet-header-2026-10-11.json` と `nice-item-2026-10-11.json` は取得・コミット済み。再取得せずそのまま使い、expected の生成とテストの追加だけを行う）2026-10-11 の公開シートの見出し行（CSV の index 2 の5列目以降）を `lib/master-data/__fixtures__/sheet-header-2026-10-11.json` に、Atlas JP `nice_item.json` の全行を `id` / `name` / `type` / `priority` / `background` の5項目に絞ったものを `lib/master-data/__fixtures__/nice-item-2026-10-11.json` に保存する。両 fixture を `matchSheetItemColumns` に通した結果を `lib/master-data/__fixtures__/sheet-item-columns.expected.json` に記録し、`lib/master-data/sheet-item-columns.test.ts` で結果が expected と一致することを確かめる。この時点では修正前のコードで記録するので、`ｶｹﾗ` と `ｴｰﾃﾙ` は `atlasId: null` になる。検証: テストが通り、expected の任意の1列の atlasId を書き換えると赤くなること。
 
 ## 2. 略称の全角・半角を揃える
 
