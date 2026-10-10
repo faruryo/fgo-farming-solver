@@ -3,7 +3,7 @@
 ## 1. 実シートの全見出しで、修正前の対応表を固定する（コード修正より先に行う）
 
 - [ ] 1.1 `fetchAndTransformData` の見出しごとの照合ループ（`normalizeItemName` → 完全一致 → 部分一致）を、挙動を変えずに `lib/master-data/update.ts` から export する純関数 `matchSheetItemColumns(header: string[], aaItems)` に切り出す。戻り値は列ごとの `{ column, shortName, atlasId | null }` で、同じ素材に結び付いた2列目も落とさない。`fetchAndTransformData` はこの戻り値から従来どおり items と itemMap を作る。検証: 既存の `lib/master-data` のテストが変更なしで通ること。
-- [ ] 1.2 2026-10-11 の公開シートの見出し行（CSV の index 2 の5列目以降）を `lib/master-data/__fixtures__/sheet-header-2026-10-11.json` に、Atlas JP `nice_item.json` の全行を `id` / `name` / `type` / `priority` / `background` の5項目に絞ったものを `lib/master-data/__fixtures__/nice-item-2026-10-11.json` に保存する。両 fixture を `matchSheetItemColumns` に通した結果を `lib/master-data/__fixtures__/sheet-item-columns.expected.json` に記録し、`lib/master-data/sheet-item-columns.test.ts` で結果が expected と一致することを確かめる。この時点では修正前のコードで記録するので、`ｶｹﾗ` と `ｴｰﾃﾙ` は `atlasId: null` になる。検証: テストが通り、expected の任意の1列の atlasId を書き換えると赤くなること。
+- [ ] 1.2 （fixture 2件 `sheet-header-2026-10-11.json` と `nice-item-2026-10-11.json` は取得・コミット済み。再取得せずそのまま使い、expected の生成とテストの追加だけを行う）2026-10-11 の公開シートの見出し行（CSV の index 2 の5列目以降）を `lib/master-data/__fixtures__/sheet-header-2026-10-11.json` に、Atlas JP `nice_item.json` の全行を `id` / `name` / `type` / `priority` / `background` の5項目に絞ったものを `lib/master-data/__fixtures__/nice-item-2026-10-11.json` に保存する。両 fixture を `matchSheetItemColumns` に通した結果を `lib/master-data/__fixtures__/sheet-item-columns.expected.json` に記録し、`lib/master-data/sheet-item-columns.test.ts` で結果が expected と一致することを確かめる。この時点では修正前のコードで記録するので、`ｶｹﾗ` と `ｴｰﾃﾙ` は `atlasId: null` になる。検証: テストが通り、expected の任意の1列の atlasId を書き換えると赤くなること。
 
 ## 2. 略称の全角・半角を揃える
 
@@ -19,9 +19,11 @@
 ## 4. 全体確認
 
 - [ ] 4.1 `pnpm run type-check`、`pnpm vitest run lib/master-data lib/event-craft-data-check.test.ts`、`pnpm run lint:ratchet` が通る。`stable-ids.test.ts` と `regression.test.ts` が変更なしで通り、既存素材の短縮IDが動かないこと。
-- [ ] 4.2 ローカルで公開シートと Atlas JP を相手に `fetchAndTransformData({})` を1回走らせ、戻り値を JSON でスクラッチディレクトリに保存する使い捨てスクリプトを書く（リポジトリには置かない。KV へも `mocks/` へも書かない）。`https://api.atlasacademy.io/export/JP/nice_item.json` も同じディレクトリに保存し、`pnpm exec tsx scripts/audit-craft-drop-coverage.ts <保存した drops.json> <保存した nice_item.json>` が `gaps=0` / exit 0 になること。実行中に周回対象欠落の warning が出ないこと。
+- [ ] 4.2 （手動・Worker 対象外。ネットワークが要るため人が実施する）ローカルで公開シートと Atlas JP を相手に `fetchAndTransformData({})` を1回走らせ、戻り値を JSON でスクラッチディレクトリに保存する使い捨てスクリプトを書く（リポジトリには置かない。KV へも `mocks/` へも書かない）。`https://api.atlasacademy.io/export/JP/nice_item.json` も同じディレクトリに保存し、`pnpm exec tsx scripts/audit-craft-drop-coverage.ts <保存した drops.json> <保存した nice_item.json>` が `gaps=0` / exit 0 になること。実行中に周回対象欠落の warning が出ないこと。
 
 ## 5. 本番反映の確認（マージ後）
+
+（手動・Worker 対象外。マージ後に人が実施する。Worker は workflow_dispatch・wrangler・本番 KV に触れないこと）
 
 - [ ] 5.1 `update-master-data` を workflow_dispatch で1回走らせ、KV 書き込み成功のログと、周回対象欠落の warning が無いことを確かめる。
 - [ ] 5.2 本番 `all_drops_json` を `pnpm exec wrangler kv key get all_drops_json --binding MASTER_DATA --remote` の読み取りだけで取得してファイルに保存し、公開 Atlas `nice_item.json` と一緒に点検スクリプトにかけて `gaps=0` / exit 0 を確かめる。実行コマンドと結果を #120 にコメントする。本番 JSON はコミットしない。
