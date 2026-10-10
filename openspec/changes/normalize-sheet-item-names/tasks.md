@@ -13,7 +13,7 @@
 
 ## 3. 周回対象の欠落を更新ログに出す
 
-- [x] 3.1 `fetchAndTransformData` の末尾で、組み上がった items / quests / drop_rates と取得済みの Atlas 素材を `parseCraftAuditInputs` → `auditFarmableCraftGaps` → `formatFarmableCraftAudit` に通す。欠落があれば `::warning title=farmable items missing from drops::<atlasId> <name> <reason>` を欠落1件につき1行 `console.warn` する。`parseCraftAuditInputs` が null なら点検できなかった旨を `::warning::` で1行出す。どちらでも戻り値と例外の有無は変えない。検証: `update.test.ts` で、周回対象の Atlas 素材に対応する列が CSV に無いとき warning に Atlas ID と名前が出ること、全素材がそろうときは warning が出ないこと、Atlas モックに未知の `background` の行を混ぜると点検不能の warning が1件だけ出ること、いずれでも `fetchAndTransformData` が例外を投げず MasterData を返すこと。warning 条件を常に偽にするとテストが赤くなること。
+- [x] 3.1 `fetchAndTransformData` の末尾で、組み上がった items / quests / drop_rates と取得済みの Atlas 素材を `parseCraftAuditInputs` → `auditFarmableCraftGaps` に通す。欠落があれば `::warning title=farmable items missing from drops::<atlasId> <name> <reason>` を欠落1件につき1行 `console.warn` する。`parseCraftAuditInputs` が null なら点検できなかった旨を `::warning::` で1行出す。どちらでも戻り値と例外の有無は変えない。検証: `update.test.ts` で、周回対象の Atlas 素材に対応する列が CSV に無いとき warning に Atlas ID と名前が出ること、全素材がそろうときは warning が出ないこと、Atlas モックに未知の `background` の行を混ぜると点検不能の warning が1件だけ出ること、いずれでも `fetchAndTransformData` が例外を投げず MasterData を返すこと。warning 条件を常に偽にするとテストが赤くなること。
 - [x] 3.2 `openspec/specs/master-data/spec.md` の更新は archive に任せる。`openspec validate normalize-sheet-item-names --strict` が通ること。
 
 ## 4. 全体確認

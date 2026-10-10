@@ -48,7 +48,7 @@ NFKC 後の `エーテル` は部分一致で `エーテル収光体` に当た�
 
 ### 3. 欠落は warning で出し、書き込みは止めない
 
-`fetchAndTransformData` の末尾で、組み上がった items / quests / drop_rates と取得済みの `aaItems` を `parseCraftAuditInputs` → `auditFarmableCraftGaps` → `formatFarmableCraftAudit` に通す。欠落が1件以上あれば `console.warn` に `::warning title=farmable items missing from drops::` を付けて1行ずつ出す。GitHub Actions はこれを実行サマリの annotation として表示する。判定は #120 の点検スクリプトと同じ関数を使うので、点検と更新ジョブで欠落の定義がずれない。
+`fetchAndTransformData` の末尾で、組み上がった items / quests / drop_rates と取得済みの `aaItems` を `parseCraftAuditInputs` → `auditFarmableCraftGaps` に通す。欠落が1件以上あれば `console.warn` に `::warning title=farmable items missing from drops::` を付けて1行ずつ出す。GitHub Actions はこれを実行サマリの annotation として表示する。`formatFarmableCraftAudit` は `gaps=N` の見出し行とタブ区切りの本文を返す点検スクリプト向けの整形なので使わず、欠落1件を annotation の1行に直接整形する。判定は #120 の点検スクリプトと同じ関数を使うので、点検と更新ジョブで欠落の定義がずれない。
 
 書き込みを止めない理由: Atlas は新素材を実装と同時に載せるが、シートに列が足されるのは数日から数週間あとになる。その間ずっと書き込みを止めると、ほかの素材やクエストのドロップ率まで古いまま凍る。
 
