@@ -59,12 +59,22 @@ NFKC 後の `エーテル` は部分一致で `エーテル収光体` に当た�
 
 ### 4. 本番での確認は既存の点検スクリプトを再実行する
 
-マージ後、`update-master-data` の次回実行（main の schedule、または workflow_dispatch）で KV が更新される。そのあと `wrangler kv key get all_drops_json --binding MASTER_DATA --remote` で読み取り、公開の `https://api.atlasacademy.io/export/JP/nice_item.json` と一緒に`scripts/audit-craft-drop-coverage.ts` にかけて `gaps=0` / exit 0 を確かめ、#120 に結果を書く。
+マージ後、`update-master-data` の次回実行（main の schedule、または workflow_dispatch）で KV が更新される。そのあと `wrangler kv key get all_drops_json --binding MASTER_DATA --remote` で読み取り、公開の `https://api.atlasacademy.io/export/JP/nice_item.json` と一緒に `scripts/audit-craft-drop-coverage.ts` にかけて `gaps=0` / exit 0 を確かめ、#120 に結果を書く。
+
+### 5. 実シートの全見出しを fixture にし、列ごとの対応表を固定する
+
+個別ケースの単体テストでは、NFKC 化がほかの列の変換を変えていないことを示せない。そこで 2026-10-11 の公開シートの見出し行と、Atlas JP `nice_item` を5項目（id / name / type / priority / background）に絞った全行を fixture にする。その全列について「列 → atlasId」の対応表を expected として固定する。
+
+- expected は**コードを直す前に**記録する（tasks 1.2）。修正後の expected の差分が `ｶｹﾗ` と `ｴｰﾃﾙ` の2列だけなら、ほかの全列で退行が無いことを差分そのもので示せる。
+- 同じテストで、周回対象素材がそれぞれちょうど1列に結び付くことも検査する。抜けと重複を、その時点のシートについて CI で毎回確かめられる。
+- 今の `fetchAndTransformData` の出力（items）は、同じ素材に結び付いた2列目を落とすので、列単位の対応を復元できない。そのため照合ループを、挙動を変えずに純関数 `matchSheetItemColumns` として切り出し、それをテストする。fetch のモックも要らなくなる。
+- 代替案: 略称表の全キーで半角と全角の結果が一致することを回すループテスト。表に無い列と部分一致の経路を見られないので採らない。fixture には実際の半角列（8列）がすべて含まれる。
+- fixture はシートと Atlas の更新に追従しない。将来の列追加や表記の揺れは、Decision 3 の warning と本番点検で拾う。fixture の更新は、シートの構造が変わったときに別途行う。
 
 ## Risks / Trade-offs
 
-- [新しい2素材が solver の対象に加わる] → 既存素材の短縮IDは id_registry で固定されるので、保存済みの所持数・目標・周回結果の参照は変わらない。新素材には `assignItemId` が新規IDを振る。2素材を含まない前回ペイロードを `previous` に渡し、既存IDが変わらず新IDが重複しないことをテストで確かめる（tasks 1.2）。
-- [NFKC で別の列が同じ素材に結び付く] → シートに `ｶｹﾗ` と `カケラ` の両列があると、同じ素材とクエストにドロップ率が2行できる。欠落 warning は正の率があるので鳴らず、この重複は検出できない。2026-10-11 の公開シートで、NFKC により表記が変わる見出しは14列（半角カナ素材8列と礼装列6列）で、新たな重複は生じない（`凸2` の重複は元のシートにある）。同じ素材に複数列が結び付く問題は部分一致でも以前から起こりうるので、本変更では扱わない。
+- [新しい2素材が solver の対象に加わる] → 既存素材の短縮IDは id_registry で固定されるので、保存済みの所持数・目標・周回結果の参照は変わらない。新素材には `assignItemId` が新規IDを振る。2素材を含まない前回ペイロードを `previous` に渡し、既存IDが変わらず新IDが重複しないことをテストで確かめる（tasks 2.2）。
+- [NFKC で別の列が同じ素材に結び付く] → シートに `ｶｹﾗ` と `カケラ` の両列があると、同じ素材とクエストにドロップ率が2行できる。欠落 warning は正の率があるので鳴らず、この重複は検出できない。2026-10-11 の公開シートで、NFKC により表記が変わる見出しは14列（半角カナ素材8列と礼装列6列）で、新たな重複は生じない（`凸2` の重複は元のシートにある）。2026-10-11 のシートについては Decision 5 のテストで、周回対象素材がちょうど1列に結び付くことを CI で確かめる。将来のシートで起きる重複は、部分一致でも以前から起こりうる問題なので、更新ジョブの warning では扱わない。
 - [新素材の実装直後は毎回 warning が出る] → 意図した挙動。シートに列が足されれば消える。止まらないことがむしろ要件。
 - [annotation に気付かない] → 本変更は「気付ける場所を作る」までに留める。ログと #120 の点検手順の両方で確認できる状態にする。
 
