@@ -63,7 +63,13 @@ const NAME_OVERRIDES: Record<string, string> = {
   '卵': '真理の卵',
   'ｷｭｰﾌﾞ': 'ユニバーサルキューブ',
   'ﾚﾝｽﾞ': '神彩のレンズ',
+  'エーテル': 'エーテル収光体',
 }
+
+// シートの見出しは全角・半角が列ごとに揺れるので、キーを NFKC に揃えて引く。
+const NAME_OVERRIDES_NFKC = new Map(
+  Object.entries(NAME_OVERRIDES).map(([k, v]) => [k.normalize('NFKC'), v])
+)
 
 const CLASS_MAP: Record<string, string> = {
   '剣': 'セイバー',
@@ -88,8 +94,9 @@ const WEAPON_NAME_SUFFIXES: Record<string, string> = {
 }
 
 // Special normalization for class items
-export function normalizeItemName(shortName: string): string {
-  const override = Reflect.get(NAME_OVERRIDES, shortName) as string | undefined
+export function normalizeItemName(rawShortName: string): string {
+  const shortName = rawShortName.normalize('NFKC')
+  const override = NAME_OVERRIDES_NFKC.get(shortName)
   if (override) return override
 
   for (const [s, fullSuffix] of Object.entries(CLASS_NAME_SUFFIXES)) {

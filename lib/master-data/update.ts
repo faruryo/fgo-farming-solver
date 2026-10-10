@@ -7,6 +7,7 @@ import { normalizeItemName, getCategory } from './item-naming'
 import { loadNiceWarQuests, type NiceWarCache, type NiceWarQuest } from './nice-war-source'
 import { fetchActiveEvents, extractApCampaigns, type AtlasEvent } from './atlas-events'
 import { filterCandidateQuests } from './quest-selection'
+import { auditFarmableCraftGaps, parseCraftAuditInputs } from '../event-craft-data-check'
 import type {
   Item,
   Quest,
@@ -18,6 +19,44 @@ import type {
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQerC77YrlI1wQaJHUlDl3VBNh3zx6YDWbF8syDM3DsoG3npubnlG68VY9GlYwRAiP5RCOqQEHZoF4c/pub?gid=1085791724&output=csv'
 
 type AAItem = Pick<AtlasItem, 'id' | 'name' | 'background' | 'priority' | 'icon'> & { type: string }
+
+export type SheetItemColumn = {
+  column: number
+  shortName: string
+  atlasId: number | null
+}
+
+/**
+ * シート見出しの素材略称を列ごとに Atlas 素材へ結び付ける。
+ * 同じ素材に結び付く列が複数あっても、すべての列を返す。
+ */
+export function matchSheetItemColumns(
+  header: string[],
+  aaItems: Pick<AAItem, 'id' | 'name' | 'type' | 'priority'>[]
+): SheetItemColumn[] {
+  return header.map((shortName, column) => {
+    if (!shortName || shortName === 'AP' || shortName === 'データ数') {
+      return { column, shortName, atlasId: null }
+    }
+
+    // Try to find matching AA item
+    const fullName = normalizeItemName(shortName)
+    let aaItem = aaItems.find(i => i.name === fullName)
+
+    // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
+    // Exclude eventItem and high-priority items (priority > 9900 = events, > 399 = non-farmable)
+    if (!aaItem) {
+      const nfkcShortName = shortName.normalize('NFKC')
+      aaItem = aaItems.find(i =>
+        i.name.includes(nfkcShortName) &&
+        (i.type === 'material' || i.type === 'skill' || i.type === 'qp' || i.type === 'skillLvUp') &&
+        i.priority < 400
+      )
+    }
+
+    return { column, shortName, atlasId: aaItem?.id ?? null }
+  })
+}
 
 export interface FetchAndTransformDataOptions {
   events?: AtlasEvent[]
@@ -81,23 +120,9 @@ export async function fetchAndTransformData(
 
   // Create item mapping
   const itemMap = new Map<string, string>()
-  for (const shortName of itemNamesInHeader) {
-    if (!shortName || shortName === 'AP' || shortName === 'データ数') continue
-    
-    // Try to find matching AA item
-    const fullName = normalizeItemName(shortName)
-    let aaItem = aaItems.find(i => i.name === fullName)
-    
-    // If not found, try substring match (e.g. "蹄鉄" in "隕蹄鉄")
-    // Exclude eventItem and high-priority items (priority > 9900 = events, > 399 = non-farmable)
-    if (!aaItem) {
-      aaItem = aaItems.find(i =>
-        i.name.includes(shortName) &&
-        (i.type === 'material' || i.type === 'skill' || i.type === 'qp' || i.type === 'skillLvUp') &&
-        i.priority < 400
-      )
-    }
-
+  const aaItemById = new Map(aaItems.map(i => [i.id, i]))
+  for (const { shortName, atlasId } of matchSheetItemColumns(itemNamesInHeader, aaItems)) {
+    const aaItem = atlasId === null ? undefined : aaItemById.get(atlasId)
     if (aaItem) {
       // atlasId がレジストリ登録済みなら再利用、新規は getLocalItems() と同じ
       // filtered+sorted リストでの位置ベース候補（衝突時は intercept 空間内 max+1）。
@@ -284,12 +309,29 @@ export async function fetchAndTransformData(
     console.warn('Failed to populate wave counts:', e)
   }
 
-  return {
+  const result: MasterData = {
     items: items,
     quests: finalQuests,
     drop_rates: filtered_drop_rates,
     campaigns,
     id_registry: registry,
+  }
+  warnFarmableItemGaps(result, aaItems)
+  return result
+}
+
+// 周回対象素材が drops から落ちていたら更新ジョブの annotation に出す。
+// Atlas 実装からシート列追加までの間も更新を続けるため、書き込みは止めない。
+function warnFarmableItemGaps(data: MasterData, aaItems: unknown): void {
+  const parsed = parseCraftAuditInputs(data, aaItems)
+  if (!parsed) {
+    console.warn('::warning::farmable item audit skipped: Atlas items or drops could not be parsed')
+    return
+  }
+  for (const gap of auditFarmableCraftGaps(parsed.drops, parsed.items)) {
+    // 素材名は Atlas 由来なので、改行で別のワークフローコマンドを作れないよう Actions の規則でエスケープする。
+    const name = gap.name.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
+    console.warn(`::warning title=farmable items missing from drops::${gap.atlasId} ${name} ${gap.reason}`)
   }
 }
 
