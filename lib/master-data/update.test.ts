@@ -442,6 +442,18 @@ describe('fetchAndTransformData farmable item audit', () => {
     warn.mockRestore()
   })
 
+  it('escapes Atlas item names so they cannot start another workflow command', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const injected = { ...shard, name: '100%素材\r\n::error::偽' }
+    mockRun([proof, injected], csv)
+    await fetchAndTransformData()
+
+    expect(annotations(warn)).toEqual([
+      '::warning title=farmable items missing from drops::6544 100%25素材%0D%0A::error::偽 absent',
+    ])
+    warn.mockRestore()
+  })
+
   it('does not warn when every farmable item has drop rates', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     mockRun([proof], csv)

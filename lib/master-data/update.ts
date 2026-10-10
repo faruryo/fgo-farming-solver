@@ -329,7 +329,9 @@ function warnFarmableItemGaps(data: MasterData, aaItems: unknown): void {
     return
   }
   for (const gap of auditFarmableCraftGaps(parsed.drops, parsed.items)) {
-    console.warn(`::warning title=farmable items missing from drops::${gap.atlasId} ${gap.name} ${gap.reason}`)
+    // 素材名は Atlas 由来なので、改行で別のワークフローコマンドを作れないよう Actions の規則でエスケープする。
+    const name = gap.name.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
+    console.warn(`::warning title=farmable items missing from drops::${gap.atlasId} ${name} ${gap.reason}`)
   }
 }
 
