@@ -35,7 +35,7 @@ updater の呼び出し元は `scripts/run-updater.ts`（GitHub Actions、2時�
 
 `normalizeItemName` の入口で `shortName.normalize('NFKC')` を取り、静的テーブルもキーを NFKC にした Map として引く。テーブルの既存キーは書き換えずに残す。これで `ｶｹﾗ` は既存の `カケラ` エントリに当たり、`ﾗﾝﾀﾝ` などの半角キーも従来どおり当たる。静的テーブルにもパターン変換にも当たらないときは、NFKC 後の略称を返す。
 
-`update.ts` の部分一致フォールバックは、生の `shortName` でなく `normalizeItemName` の戻り値で引く。items に保存する `shortName` はシートの生の表記のままにする（短縮IDのレジストリや表示は `shortName` に依存しないが、変える理由も無い）。
+`update.ts` の部分一致フォールバックは、生の `shortName` でなく `shortName.normalize('NFKC')` で引く。`normalizeItemName` の戻り値（静的テーブルの正式名称）で引くと、静的テーブルの正式名称が Atlas に無かったとき、従来は略称で拾えていた列を落とす。全角の見出しでは NFKC が恒等なので、フォールバックの結果は従来と変わらない。items に保存する `shortName` はシートの生の表記のままにする（短縮IDのレジストリや表示は `shortName` に依存しないが、変える理由も無い）。
 
 - 代替案A: 静的テーブルに `ｶｹﾗ` と `ｴｰﾃﾙ` の半角キーを足すだけ。差分は2行で済むが、シート側が別の列を半角にしたら同じ欠落がまた起きる。テーブルの全角・半角混在も解消しない。
 - 代替案B: テーブルの全キーを全角に書き換える。NFKC で引くなら書き換えは不要で、差分が増えるだけ。
@@ -55,16 +55,16 @@ NFKC 後の `エーテル` は部分一致で `エーテル収光体` に当た�
 - 代替案: `validateMasterData` に入れて書き込みを拒否する。上記の理由で採らない。
 - 代替案: Discord などへ通知する。新素材の実装直後は数日間毎回鳴るため、通知疲れのほうが大きい。必要になったら別 change で足す。
 
-`parseCraftAuditInputs` は Atlas の行に未知の `background` などがあると null を返す。そのときは点検をせずに `::warning::` で「点検を実行できなかった」と1行出し、処理は続ける。黙って点検を飛ばすと、この警告自体が効かなくなるため。
+`parseCraftAuditInputs` は、Atlas のどれか1行に未知の `background` があったり、`type` や `priority` が欠けていたりすると null を返す。2026-10-11 の Atlas JP `nice_item` は全行が既知の5種の `background`（zero / bronze / silver / gold / questClearQPReward）で、null にはならない。null のときは素材ごとの一覧を出せないので、`::warning::` で「点検を実行できなかった」と1行出して処理を続ける。黙って点検を飛ばすと、この警告自体が効かなくなるため。spec にもこの例外をシナリオとして書く。無関係な行に耐えるパーサへの作り替えは、点検スクリプトと判定がずれるので行わない。
 
 ### 4. 本番での確認は既存の点検スクリプトを再実行する
 
-マージ後、`update-master-data` の次回実行（main の schedule、または workflow_dispatch）で KV が更新される。そのあと #120 と同じ手順で `wrangler kv key get all_drops_json --remote` を読み取り、`scripts/audit-craft-drop-coverage.ts` にかけて `gaps=0` / exit 0 を確かめ、#120 に結果を書く。
+マージ後、`update-master-data` の次回実行（main の schedule、または workflow_dispatch）で KV が更新される。そのあと `wrangler kv key get all_drops_json --binding MASTER_DATA --remote` で読み取り、公開の `https://api.atlasacademy.io/export/JP/nice_item.json` と一緒に`scripts/audit-craft-drop-coverage.ts` にかけて `gaps=0` / exit 0 を確かめ、#120 に結果を書く。
 
 ## Risks / Trade-offs
 
-- [新しい2素材が solver の対象に加わる] → 既存素材の短縮IDは id_registry で固定されるので、保存済みの所持数・目標・周回結果の参照は変わらない。新素材には `assignItemId` が新規IDを振る。モック再生成後の `stable-ids` / `regression` テストで既存IDが動かないことを確かめる。
-- [NFKC で別の略称同士が同じ文字列に潰れる] → 2026-10-11 の公開シートで、NFKC により表記が変わる見出しは14列（半角カナ素材8列と礼装列6列）。新たな重複は生じない（`凸2` の重複は元のシートにある）。シートが変わったときの衝突は Decision 3 の warning で拾える。
+- [新しい2素材が solver の対象に加わる] → 既存素材の短縮IDは id_registry で固定されるので、保存済みの所持数・目標・周回結果の参照は変わらない。新素材には `assignItemId` が新規IDを振る。2素材を含まない前回ペイロードを `previous` に渡し、既存IDが変わらず新IDが重複しないことをテストで確かめる（tasks 1.2）。
+- [NFKC で別の列が同じ素材に結び付く] → シートに `ｶｹﾗ` と `カケラ` の両列があると、同じ素材とクエストにドロップ率が2行できる。欠落 warning は正の率があるので鳴らず、この重複は検出できない。2026-10-11 の公開シートで、NFKC により表記が変わる見出しは14列（半角カナ素材8列と礼装列6列）で、新たな重複は生じない（`凸2` の重複は元のシートにある）。同じ素材に複数列が結び付く問題は部分一致でも以前から起こりうるので、本変更では扱わない。
 - [新素材の実装直後は毎回 warning が出る] → 意図した挙動。シートに列が足されれば消える。止まらないことがむしろ要件。
 - [annotation に気付かない] → 本変更は「気付ける場所を作る」までに留める。ログと #120 の点検手順の両方で確認できる状態にする。
 

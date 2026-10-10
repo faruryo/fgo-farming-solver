@@ -24,8 +24,7 @@
 ## Impact
 
 - `lib/master-data/item-naming.ts`（`normalizeItemName` の入力正規化と静的テーブル）
-- `lib/master-data/update.ts`（部分一致フォールバックも正規化後の略称で引く）
-- `scripts/run-updater.ts`（周回対象の欠落を warning で出す。`lib/event-craft-data-check.ts` の `auditFarmableCraftGaps` を再利用）
+- `lib/master-data/update.ts`（部分一致フォールバックも NFKC 後の略称で引く。周回対象の欠落を warning で出す。判定は `lib/event-craft-data-check.ts` の `auditFarmableCraftGaps` を再利用）
 - `lib/master-data/update.test.ts`
 - 本番データへの効果: 次回の `update-master-data` 実行で items に2素材が加わり、対応する drop_rates も載る。既存素材の短縮IDは id_registry により変わらない。新しい2素材には新しい短縮IDが振られる。
 - 周回ソルバーの対象素材が2つ増える。料理作成の欠落判定の条件は変えない。
