@@ -25,5 +25,5 @@
 
 （手動・Worker 対象外。マージ後に人が実施する。Worker は workflow_dispatch・wrangler・本番 KV に触れないこと）
 
-- [ ] 5.1 `update-master-data` を workflow_dispatch で1回走らせ、KV 書き込み成功のログと、周回対象欠落の warning が無いことを確かめる。
-- [ ] 5.2 本番 `all_drops_json` を `pnpm exec wrangler kv key get all_drops_json --binding MASTER_DATA --remote` の読み取りだけで取得してファイルに保存し、公開 Atlas `nice_item.json` と一緒に点検スクリプトにかけて `gaps=0` / exit 0 を確かめる。実行コマンドと結果を #120 にコメントする。本番 JSON はコミットしない。
+- [x] 5.1 `update-master-data` を workflow_dispatch で1回走らせ、KV 書き込み成功のログと、周回対象欠落の warning が無いことを確かめる。
+- [x] 5.2 本番 `all_drops_json` を `pnpm exec wrangler kv key get all_drops_json --binding MASTER_DATA --remote` の読み取りだけで取得してファイルに保存し、公開 Atlas `nice_item.json` と一緒に点検スクリプトにかけて `gaps=0` / exit 0 を確かめる。実行コマンドと結果を #120 にコメントする。本番 JSON はコミットしない。
