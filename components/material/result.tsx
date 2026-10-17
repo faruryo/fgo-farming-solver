@@ -18,10 +18,7 @@ import { Quest } from '../../interfaces/fgodrop'
 import { groupBy } from '../../utils/group-by'
 import { buffer, computeFiniteTarget } from '../../lib/quest-efficiency'
 import { useSession } from 'next-auth/react'
-import {
-  parseStoredDefaultPublic,
-  submitSolve,
-} from '../../lib/farming/submit-solve'
+import { parseStoredDefaultPublic, submitSolve } from '../../lib/farming/submit-solve'
 import {
   buildSolveParams,
   toStockItemLike,
