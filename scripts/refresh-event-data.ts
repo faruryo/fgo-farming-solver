@@ -1,5 +1,5 @@
 /**
- * 開催中＋直近終了のロト（ボックス）型イベントデータを Atlas Academy から取得し、
+ * 開催中＋直近終了のロト（ボックス）型・交換所イベントデータを Atlas Academy から取得し、
  * コンパクト化して KV 投入用ファイル (`event_data_json`) に書き出す。
  *
  * 背景: Cloudflare Workers 無料プランは CPU 10ms 超で kill されるため、
@@ -19,7 +19,8 @@
  *   - 開催中 (now < endedAt) または終了後 30 日以内を対象。
  *   - 環境変数 `BACKFILL_SINCE`（ISO 日付 or Unix 秒）があれば、下限を
  *     `endedAt > BACKFILL_SINCE` に切り替えて過去ロトを一括バックフィルする。
- *   - `nice_event/{eventId}` の lotteries[] が空のものはロト型でないためスキップ。
+ *   - `nice_event/{eventId}` の lotteries[] と交換所がどちらも空のものはスキップ。
+ *     lotteries[] が空で交換所があるものは、ロトを空にして交換所イベントとして取り込む。
  *
  * 蓄積マージ思想（全置換しない）:
  *   - 既存イベントは id をキーに温存し、今回フェッチ分で upsert（新優先）。
@@ -40,13 +41,14 @@ import {
   parseBackfillSince,
   parseExistingEvents,
 } from '../lib/refresh-event-data-merge'
+import { compactShop, decideEventImport } from '../lib/refresh-event-data-compact'
+import type { AtlasShopItem, ItemMap } from '../lib/refresh-event-data-compact'
 import type {
   EventCurrency,
   EventData,
   EventFarmingNode,
   EventLotteryBox,
   EventPlannerEvent,
-  EventShopItem,
 } from '../lib/master-data/types'
 
 // ── 設定 ─────────────────────────────────────────────────────────────
@@ -85,19 +87,6 @@ interface AtlasLottery {
   /** false のとき最終箱が無限ループ（廃課金勢は箱種類数を超えて回せる）。 */
   limited?: boolean
   boxes: AtlasBox[]
-}
-
-interface AtlasShopItem {
-  purchaseType: string
-  payType: string
-  targetIds: number[]
-  setNum: number
-  limitNum: number
-  cost: {
-    item: { id: number }
-    amount: number
-  }
-  gifts?: unknown[]
 }
 
 interface AtlasQuest {
@@ -204,7 +193,7 @@ interface AtlasItemEntry {
 }
 
 /** Atlas nice_item（全件、日本語）を取得して Map<id, {name, icon}> を返す */
-async function fetchItemMap(): Promise<Map<number, { name: string; icon: string }>> {
+async function fetchItemMap(): Promise<ItemMap> {
   const items = await fetchJson<AtlasItemEntry[]>(`${origin}/export/${region}/nice_item.json`)
   const map = new Map<number, { name: string; icon: string }>()
   for (const item of items) {
@@ -218,7 +207,7 @@ async function fetchItemMap(): Promise<Map<number, { name: string; icon: string 
 /** AtlasLottery → EventLotteryBox[] の変換（boxIndex でグルーピング） */
 function compactLotteries(
   lottery: AtlasLottery,
-  itemMap: Map<number, { name: string; icon: string }>,
+  itemMap: ItemMap,
 ): EventLotteryBox[] {
   const { cost, boxes } = lottery
   const boxIndices = [...new Set(boxes.map(b => b.boxIndex))].sort((a, b) => a - b)
@@ -270,35 +259,10 @@ function compactLotteries(
   })
 }
 
-/** AtlasShopItem[] → EventShopItem[] の変換 */
-function compactShop(
-  shop: AtlasShopItem[],
-  itemMap: Map<number, { name: string; icon: string }>,
-): EventShopItem[] {
-  return shop
-    .filter(s => s.purchaseType === 'item' && s.payType === 'eventItem')
-    .flatMap(s => {
-      // gifts が空のときは targetIds × setNum で報酬を決定（Phase 0 確認済み）
-      if (!s.targetIds || s.targetIds.length === 0) return []
-      return s.targetIds.map(itemId => {
-        const meta = itemMap.get(itemId)
-        return {
-          itemId,
-          qty: s.setNum ?? 1,
-          costItemId: s.cost.item.id,
-          costAmount: s.cost.amount,
-          limitNum: s.limitNum ?? 0,
-          name: meta?.name ?? '',
-          ...(meta?.icon ? { icon: meta.icon } : {}),
-        }
-      })
-    })
-}
-
 /** AtlasWar + drop データ → EventFarmingNode[] の変換 */
 async function compactFarmingNodes(
   warIds: number[],
-  itemMap: Map<number, { name: string; icon: string }>,
+  itemMap: ItemMap,
 ): Promise<EventFarmingNode[]> {
   const nodes: EventFarmingNode[] = []
 
@@ -424,12 +388,6 @@ async function main() {
     }
     const event = validated.data
 
-    // ロト型でないイベント（lotteries が空）はスキップ
-    if (event.lotteries.length === 0) {
-      console.log(`  skip: no lotteries (not a box event)`)
-      continue
-    }
-
     // lotteries のバリデーション
     const validLotteries: AtlasLottery[] = []
     for (let i = 0; i < event.lotteries.length; i++) {
@@ -440,8 +398,30 @@ async function main() {
       }
       validLotteries.push(vl.data)
     }
-    if (validLotteries.length === 0) {
-      console.warn(`  skip: all lotteries failed validation`)
+
+    const shop = compactShop(event.shop, itemMap)
+
+    const decision = decideEventImport(event.lotteries.length, validLotteries.length, shop, itemMap)
+    if (decision.kind === 'skip') {
+      console.log(`  skip: ${decision.reason}`)
+      continue
+    }
+
+    if (decision.kind === 'shop') {
+      const farmingNodes = await compactFarmingNodes(event.warIds, itemMap)
+      results.push({
+        id: event.id,
+        name: event.name,
+        type: event.type,
+        startedAt: event.startedAt,
+        endedAt: event.endedAt,
+        currency: decision.currency,
+        unlimitedBoxes: decision.unlimitedBoxes,
+        lotteries: decision.lotteries,
+        shop,
+        farmingNodes,
+      })
+      console.log(`  ok (shop only): ${shop.length} shop items, ${farmingNodes.length} farming nodes`)
       continue
     }
 
@@ -456,8 +436,6 @@ async function main() {
     // ロトの全 boxIndex を結合して lotteries に格納
     // 複数ロトがある場合は最初の1つのみ対応（MVP スコープ）
     const lotteries = compactLotteries(firstLot, itemMap)
-
-    const shop = compactShop(event.shop, itemMap)
 
     const farmingNodes = await compactFarmingNodes(event.warIds, itemMap)
 

@@ -1,7 +1,7 @@
 /**
  * lib/event-features.ts
  *
- * イベント機能レジストリ（data/event-features.ts）と KV のロト型イベントを合成する純粋関数群。
+ * イベント機能レジストリ（data/event-features.ts）と KV のイベント（ロト・交換所）を合成する純粋関数群。
  */
 
 import { EVENT_FEATURES } from '../data/event-features'
@@ -14,13 +14,18 @@ export type EventSummaryWithFeatures = EventSummary & { features: EventFeature[]
 
 type Registry = Record<number, EventFeatureEntry>
 
-/** レジストリの features と、KV にロト型データがあるときの 'box' の和集合（box が先、重複なし）。 */
+/**
+ * KV のイベントのロトが1件以上なら 'box'、交換所が1件以上なら 'shop' と、
+ * レジストリの features の和集合（box が先、重複なし）。
+ */
 export const featuresFor = (
   id: number,
-  hasKvBox: boolean,
+  kvEvent: Pick<EventPlannerEvent, 'lotteries' | 'shop'> | null | undefined,
   registry: Registry = EVENT_FEATURES,
 ): EventFeature[] => {
-  const features = new Set<EventFeature>(hasKvBox ? ['box'] : [])
+  const features = new Set<EventFeature>()
+  if (kvEvent && kvEvent.lotteries.length > 0) features.add('box')
+  if (kvEvent && kvEvent.shop.length > 0) features.add('shop')
   const entry: EventFeatureEntry | undefined = Reflect.get(registry, id)
   for (const f of entry?.features ?? []) features.add(f)
   return [...features]
@@ -36,15 +41,16 @@ export const mergeEventList = (
 ): EventSummaryWithFeatures[] => {
   const merged: EventSummaryWithFeatures[] = []
   const seen = new Set<number>()
-  for (const { id, name, startedAt, endedAt } of kvEvents) {
+  for (const kvEvent of kvEvents) {
+    const { id, name, startedAt, endedAt } = kvEvent
     if (seen.has(id)) continue
     seen.add(id)
-    merged.push({ id, name, startedAt, endedAt, features: featuresFor(id, true, registry) })
+    merged.push({ id, name, startedAt, endedAt, features: featuresFor(id, kvEvent, registry) })
   }
   for (const [key, { meta }] of Object.entries(registry)) {
     const id = Number(key)
     if (seen.has(id)) continue
-    merged.push({ id, ...meta, features: featuresFor(id, false, registry) })
+    merged.push({ id, ...meta, features: featuresFor(id, undefined, registry) })
   }
   return merged
 }
