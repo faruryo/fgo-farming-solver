@@ -102,4 +102,10 @@ describe('EventHubClient', () => {
 
     expect(screen.queryByRole('heading', { name: '交換所' })).not.toBeInTheDocument()
   })
+
+  it('KV のイベントの交換所が空なら交換所一覧を出さない', () => {
+    render(<EventHubClient summary={summary} boxEvent={event({ shop: [] })} features={['shop']} />)
+
+    expect(screen.queryByRole('heading', { name: '交換所' })).not.toBeInTheDocument()
+  })
 })

@@ -24,8 +24,8 @@ export const featuresFor = (
   registry: Registry = EVENT_FEATURES,
 ): EventFeature[] => {
   const features = new Set<EventFeature>()
-  if (kvEvent && kvEvent.lotteries.length > 0) features.add('box')
-  if (kvEvent && kvEvent.shop.length > 0) features.add('shop')
+  if ((kvEvent?.lotteries?.length ?? 0) > 0) features.add('box')
+  if ((kvEvent?.shop?.length ?? 0) > 0) features.add('shop')
   const entry: EventFeatureEntry | undefined = Reflect.get(registry, id)
   for (const f of entry?.features ?? []) features.add(f)
   return [...features]
