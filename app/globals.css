@@ -530,6 +530,10 @@ body {
 
 /* ===== RESULT ACTIONS ===== */
 .c-result-actions { display: flex; gap: 8px; align-items: center; }
+@media (max-width: 640px) {
+  .c-page-header { flex-wrap: wrap; gap: 12px; }
+  .c-result-actions { flex-wrap: wrap; }
+}
 .c-back-btn {
   background: var(--panel2); border: 1px solid var(--border2); color: var(--steel);
   cursor: pointer; font-family: var(--sans); font-size: 12px; padding: 8px 16px; transition: all 0.15s;
