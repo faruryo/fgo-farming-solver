@@ -21,7 +21,7 @@ issue に挙がった `events/EventPlannerClient.tsx` の見出しは、#119（�
 - 既存の4ページ（bond・quests・todo・イベント一覧）の呼び出しを変えずに済む props の足し方にする
 
 **Non-Goals:**
-- issue に挙がっていない見出しのコピー（ダッシュボード・計算履歴・素材計算の2ファイル）の置き換え
+- issue に挙がっていない見出しのコピー（`app/page.tsx`・`app/farming/history/page.tsx`・`components/material/index.tsx`・`components/material/result.tsx` の4ファイル）の置き換え
 - 見出しの見た目の変更
 - jscpd の閾値の変更
 
@@ -41,9 +41,9 @@ issue に挙がった `events/EventPlannerClient.tsx` の見出しは、#119（�
 
 ### 見出しのコピーが無くなったことの確かめ方
 
-jscpd では検出されない（Context の実測）ので、置き換えた10ファイルに `c-page-en` と `c-page-title` が残っていないことを grep で確かめる。
+jscpd では検出されない（Context の実測）ので、置き換えた10ファイルに `c-page-header`・`c-page-en`・`c-page-title` の文字列が残っていないこと（外側の `.c-page-header` を残すと見出しの下線と余白が二重になる）と、各ファイルが `PageHeader` を import していることを grep で確かめる。
 
 ## Risks / Trade-offs
 
-- [`farming/result.tsx` の見出しの行のクラスが既存の `.c-page-header` と競合する] → 今と同じクラスの並びを `.c-page-header` に足すだけにし、計算結果のページを狭い幅でも確かめる
+- [`farming/result.tsx` の見出しの行のクラスの効き方] → `app/globals.css` は Tailwind v4 で、`.c-page-header` は layer の外にあるため utilities に勝つ。今も `items-center` は効かず `align-items: flex-end` で揃い、効いているのは `flex-wrap` と `gap-3` だけである。同じクラスを足せば同じ見た目になるので、揃え方を直さない
 - [#144（イベントの交換所一覧）が `EventHubClient.tsx` を変える] → 実装はその時点の main から始める。`Header` の中身だけを置き換えるので、#144 の変更（ページ本体への交換所一覧の追加）とは触る箇所が重ならない
