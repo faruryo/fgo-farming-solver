@@ -125,7 +125,7 @@ export const EventSection: React.FC<EventSectionProps> = ({ events, availableLot
   const [todoState] = useLocalStorage<TodoTask[]>(STORAGE_KEYS.TODO_STATE, [])
 
   const lotteryIds = useMemo(() => new Set(availableLotteryEventIds), [availableLotteryEventIds])
-  const hasEventPage = (id: number) => lotteryIds.has(id) || featuresFor(id, false).length > 0
+  const hasEventPage = (id: number) => lotteryIds.has(id) || featuresFor(id, undefined).length > 0
 
   const bannerEvents = useMemo(() => events.filter(e => Boolean(e.banner)), [events])
 
