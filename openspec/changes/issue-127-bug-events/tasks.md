@@ -15,6 +15,6 @@
 
 ## 4. 確認
 
-- [ ] 4.1 `pnpm run type-check` と `pnpm run lint:ratchet` が通ることを確かめる <!-- verify-only -->
-- [ ] 4.2 取り込みスクリプトを KV に書かずにファイル出力だけで実行し（`BACKFILL_SINCE` を `80632` の開始より前にする）、`80632` が出力に入り、交換所の各エントリーに対価の通貨名が入ることを確かめる（Atlas への通信が要る） <!-- verify-only -->
+- [x] 4.1 `pnpm run type-check` と `pnpm run lint:ratchet` が通ることを確かめる <!-- verify-only -->
+- [x] 4.2 取り込みスクリプトを KV に書かずにファイル出力だけで実行し（`BACKFILL_SINCE` を `80632` の開始より前にする）、`80632` が出力に入り、交換所の各エントリーに対価の通貨名が入ることを確かめる（Atlas への通信が要る） <!-- verify-only -->
 - [ ] 4.3 4.2 の出力を手元の KV（`wrangler dev` のローカル）に入れ、`/events`・`/events/80632`・ダッシュボードの開催中イベントのカードを、375px 幅を含めてブラウザで確かめる。ロトのあるイベントのページが変わらないことも確かめる <!-- verify-only -->
