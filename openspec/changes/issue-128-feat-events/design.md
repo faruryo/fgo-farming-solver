@@ -2,7 +2,7 @@
 
 ## Context
 
-#127 の実装で、ロトの無い交換所イベントは KV に `lotteries: []` で入り、イベントページ（`EventHubClient`）は `EventShopList` で交換所を通貨ごとに一覧するだけになっている。周回の計算は箱計画用で、`allocateShop` は対価を1つの合計（`totalCurrencyUsed`）にまとめ、`buildEventDrops` は `event.currency`（1種類）だけを需要にする。ソルバー（`lib/solver.ts` の `solve`）は品目ごとに `min` の制約を持つ LP なので、通貨ごとに制約を置けば、1周で複数の通貨が落ちる場合もそのまま扱える（動機は proposal.md の Why）。
+#127 の実装で、ロトの無い交換所イベントは KV に `lotteries: []` で入り、イベントページ（`EventHubClient`）は `EventShopList` で交換所を通貨ごとに一覧するだけになっている。周回の計算は箱計画用で、`allocateShop` は対価を1つの合計（`totalCurrencyUsed`）にまとめ、`buildEventDrops` は `currencyDemand` で `event.currency`（1種類）を需要にし、第3引数 `extraItemDemand: Map<atlasId, number>` で任意の品目を LP の `min` の制約にできる。ソルバー（`lib/solver.ts` の `solve`）は品目ごとに `min` の制約を持つ LP なので、通貨ごとに制約を置けば、1周で複数の通貨が落ちる場合もそのまま扱える（動機は proposal.md の Why）。
 
 ## Goals / Non-Goals
 
@@ -22,7 +22,9 @@
 
 ### 1. 通貨ごとの需要を1つの LP に渡す
 
-`buildEventDrops` に、通貨ごとの需要（`Map<costItemId, number>`）を受け取る形を足し、各通貨を `items` の制約にする。ドロップ統計（`farmingNodes[].drops`）には通貨のドロップも入っているので、クエストの変数に各通貨の `perRun` が付き、LP が同時に満たす周回を選ぶ。既存の呼び出し（箱計画の `currencyDemand: number`）は今の形のまま動かし、ボックス計画の結果は変えない（既存テストが変わらず通ることで確かめる）。
+既存の `runEventSolver(event, 0, needByCostItemId)` のように、通貨ごとの必要量を `extraItemDemand` に渡す。新しい引数の形は足さない。ドロップ統計（`farmingNodes[].drops`）には通貨のドロップも入っているので、クエストの変数に各通貨の `perRun` が付き、LP が同時に満たす周回を選ぶ。箱計画の呼び出しは変えないので、ボックス計画の結果は変わらない。
+
+どの周回クエストのドロップにも現れない通貨は、`solve` が制約にせず `skipped_items` に入れるだけで LP は解かれる。そのまま出すと、その通貨を満たしていない周回を「すべて満たす」と見せてしまう。`skipped_items` に入った通貨は、周回では集められない通貨として別に表示し、残りの通貨だけの周回の内訳と分けて示す。すべての通貨が入ったときは周回の内訳を出さない。
 
 採らなかった案: 通貨ごとに別々に LP を解いて足す。1周で3種類が落ちるイベントでは周回を3重に数え、AP を大きく見積もる（#131 の調査でも指摘した点）。
 

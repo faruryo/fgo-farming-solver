@@ -22,7 +22,7 @@
 
 ## Impact
 
-- `lib/event-plan.ts`（通貨ごとの需要を受け取る形のソルバーへの渡し方を足す。既存の関数の結果は変えない）、`lib/event-shop-summary.ts`
+- `lib/event-plan.ts`（既存の `runEventSolver` の `extraItemDemand` に通貨ごとの必要量を渡し、周回では集められない通貨を分ける。既存の関数の結果は変えない）、`lib/event-shop-summary.ts`
 - `components/events/EventHubClient.tsx`（ロトの無い交換所イベントのセクション）、新しい周回計画の部品
 - `locales` の events の文言
 - 各ユニットテストと、画面の確認（375px と desktop）
