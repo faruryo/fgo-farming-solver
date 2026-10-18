@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: 状態スナップショットの保存
-システムは、ユーザーの保存操作およびソルバー実行時にユーザーの localStorage 全体（`material` を含む `KEYS`）を D1 の `state_snapshots` テーブルへ保存しなければならない (SHALL)。material を欠く部分的なスナップショットで、material を含む既存スナップショットを上書きしてはならない (SHALL NOT)。スナップショットはユーザー単位で保存するので、未ログインのユーザーのソルバー実行ではスナップショットの保存を送信してはならない (SHALL NOT)。
+システムは、ユーザーの保存操作およびソルバー実行時にユーザーの localStorage 全体（`material` を含む `KEYS`）を D1 の `state_snapshots` テーブルへ保存しなければならない (SHALL)。material を欠く部分的なスナップショットで、material を含む既存スナップショットを上書きしてはならない (SHALL NOT)。スナップショットはユーザー単位で保存するので、未ログインのユーザー、およびログイン状態の確認が終わっていないユーザーのソルバー実行では、スナップショットの保存を送信してはならない (SHALL NOT)。
 
 #### Scenario: クラウド同期時のスナップショット保存
 - **WHEN** `/api/cloud` への POST が成功したとき
