@@ -1,6 +1,6 @@
 ## Context
 
-本番のマスターデータ用ストア（`MASTER_DATA`、`306bbe…`）に書くのは5つのワークフローで、キーごとに書く条件が違う。
+本番のマスターデータ用ストア（`MASTER_DATA`、`306bbe…`）に書くのは4つのワークフロー（`update-master-data.yml`・`update-rarity-tables.yml`・`refresh-event-data.yml`・`refresh-nice-war.yml`）で、キーごとに書く条件が違う。
 
 | キー | 書く処理 | 書き方 | 書く条件 |
 |---|---|---|---|
