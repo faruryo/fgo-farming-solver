@@ -15,7 +15,22 @@ const FIXED_NOW = new Date('2026-06-10T12:00:00+09:00')
 test.use({ timezoneId: 'Asia/Tokyo' })
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(FIXED_NOW)
+  // Shift Date only. page.clock (setFixedTime and setSystemTime alike) also takes over the timing that
+  // framer-motion uses, and the dashboard fades then sometimes stayed at opacity 0.
+  await page.addInitScript((fixedNow) => {
+    const RealDate = Date
+    const offset = fixedNow - RealDate.now()
+    class ShiftedDate extends RealDate {
+      constructor(...args: unknown[]) {
+        if (args.length === 0) super(RealDate.now() + offset)
+        else super(...(args as ConstructorParameters<typeof Date>))
+      }
+      static now() {
+        return RealDate.now() + offset
+      }
+    }
+    window.Date = ShiftedDate as DateConstructor
+  }, FIXED_NOW.getTime())
   await page.addInitScript(() => {
     Math.random = () => 0.5
   })
@@ -42,11 +57,15 @@ for (const { name, path, waitFor } of pages) {
     // Lazy images below the fold otherwise start loading while the full-page shot is taken.
     await page.evaluate(() => document.querySelectorAll('img').forEach((img) => { img.loading = 'eager' }))
     await page.waitForFunction(() => [...document.images].every((img) => img.complete))
-    // framer-motion staggers the dashboard sections in with inline opacity, and toHaveScreenshot
-    // treats the still frames before a late section starts as stable, so wait until they finish.
-    await page
-      .waitForFunction(() => [...document.querySelectorAll<HTMLElement>('[style*="opacity"]')].every((el) => el.style.opacity === '1'), null, { timeout: 5000 })
-      .catch(() => {})
+    if (name === 'dashboard') {
+      // framer-motion staggers the dashboard sections in with inline opacity, and toHaveScreenshot
+      // treats the still frames before a late section has finished as stable, so wait for every one to reach 1.
+      await page.waitForFunction(
+        () => [...document.querySelectorAll<HTMLElement>('[style*="opacity"]')].every((el) => el.style.opacity === '1'),
+        null,
+        { timeout: 10000 },
+      )
+    }
     await expect(page).toHaveScreenshot(`${name}.png`, {
       fullPage: true,
       threshold: 0.1,
