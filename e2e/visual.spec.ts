@@ -7,7 +7,14 @@ import { test, expect } from '@playwright/test'
 const [progressScenario] = JSON.parse(readFileSync(resolve(__dirname, '../mocks/progress.json'), 'utf8')) as Record<string, unknown>[]
 const { _scenario, ...progressMock } = progressScenario
 
+// Task-list deadlines, campaign/gacha countdowns and the recommended quests depend on the clock.
+// 2026-06-10 12:00 JST is inside every campaign and summon in the local master data.
+const FIXED_NOW = new Date('2026-06-10T12:00:00+09:00')
+
+test.use({ timezoneId: 'Asia/Tokyo' })
+
 test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(FIXED_NOW)
   await page.addInitScript(() => {
     Math.random = () => 0.5
   })
