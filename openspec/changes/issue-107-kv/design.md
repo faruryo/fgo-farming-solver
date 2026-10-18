@@ -1,13 +1,15 @@
 ## Context
 
-本番のマスターデータ用ストア（`MASTER_DATA`、`306bbe…`）に書くのは4つの処理である。
+本番のマスターデータ用ストア（`MASTER_DATA`、`306bbe…`）に書くのは5つのワークフローで、キーごとに書く条件が違う。
 
-| 処理 | 書き方 | 値が変わらないとき |
-|---|---|---|
-| `update-master-data.yml` → `scripts/run-updater.ts` | `scripts/kv-rest.ts`（Cloudflare REST API、namespace は定数） | 毎回書く |
-| 同じワークフロー → `scripts/run-rarity-updater.ts` | `kv-rest.ts` | 入力の指紋が同じなら書かない |
-| `refresh-event-data.yml` | `wrangler kv key put` | 結果が同じなら書かない |
-| `refresh-nice-war.yml` | `wrangler kv key put` | 毎回書く |
+| キー | 書く処理 | 書き方 | 書く条件 |
+|---|---|---|---|
+| `material_catalog_v1` | `update-master-data.yml` → `scripts/run-updater.ts` | `scripts/kv-rest.ts`（Cloudflare REST API、namespace は定数） | ETag 付きの取得で値が変わったときだけ（`lib/material-catalog-phase.ts`） |
+| `all_drops_json`・`dashboard_meta` | 同上 | 同上 | 検証に通ったときだけ |
+| `servants_list` | 同上 | 同上 | 毎回 |
+| `nice_war_aaquests` | 同上（キャッシュが空のとき）、`refresh-nice-war.yml` | `kv-rest.ts`、`wrangler kv key put` | 取り直したとき、毎回 |
+| `rarity_ap_tables`・`rarity_ap_tables_fp` | `update-master-data.yml` → `scripts/run-rarity-updater.ts`、手動の `update-rarity-tables.yml` | `kv-rest.ts` | 入力の指紋が変わったときだけ |
+| `event_data_json` | `refresh-event-data.yml` | `wrangler kv key put` | 結果が変わったときだけ |
 
 プレビュー用のストア（`wrangler.toml` の `[[previews.kv_namespaces]]` の `MASTER_DATA`、`9d4d9c…`）には誰も書かない。アプリ（`app/`・`lib/`）は `MASTER_DATA` を読むだけで、書かない。アプリが読むキーは `all_drops_json`・`dashboard_meta`・`event_data_json`・`material_catalog_v1`・`rarity_ap_tables`・`servants_list` の6つで、`nice_war_aaquests` と `rarity_ap_tables_fp` は更新処理だけが使う。
 
@@ -30,7 +32,7 @@
 
 `update-master-data.yml` の最後の段で、新しいスクリプトが、アプリが読む6つのキーを本番のストアから読み、プレビュー用のストアの値と違うものだけを書く。2時間ごとの定期更新のたびに、本番にある値がプレビューへ写る。この段は、前の段が失敗しても（キャンセル・未実行を除き）走らせる。本番に入っている値はその時点の正しい値なので、写してよい。
 
-各処理の書き込みのたびに両方へ書く形にしないのは、値が変わらないと書かない処理（rarity・event data）があり、プレビュー用にキーが無いまま埋まらないためである。本番から写す形なら、どの処理が書いたかに関係なく、プレビューは本番と同じ値に揃う。`event_data_json` は別のワークフロー（`refresh-event-data.yml`）が書くが、次の定期更新（2時間以内）でプレビューへ写る。プレビュー用には、この遅れで足りる。
+各処理の書き込みのたびに両方へ書く形にしないのは、多くのキーが値の変わったときにしか書かれず、プレビュー用にキーが無いまま埋まらないためである。#107 の発端の `material_catalog_v1` は、Atlas のデータが更新されない回には書かれないので、両方へ書く形ではプレビュー用にいつまでも入らない。本番から写す形なら、どの処理が書いたかに関係なく、プレビューは本番と同じ値に揃う。`event_data_json`（`refresh-event-data.yml`）と、手動の `update-rarity-tables.yml` が書いた `rarity_ap_tables` は、次の定期更新（2時間以内）でプレビューへ写る。プレビュー用には、この遅れで足りる。
 
 採らなかった案:
 - プレビューのデプロイ時に本番から写す（issue の案 2）: プレビューのビルド環境に、本番のストアを読める資格情報を置くことになる。`preview-isolation` の「プレビューは本番に到達しない」の趣旨とぶつかる
@@ -39,9 +41,9 @@
 
 ### 書き込み先はプレビューの設定から読み、本番なら書かない
 
-写す先の namespace は、`wrangler.toml` の `[[previews.kv_namespaces]]` の `MASTER_DATA` の `id` から読む（スクリプトに ID を重ねて書かない）。その値が、本番の `MASTER_DATA` の ID（`kv-rest.ts` の定数）か、`wrangler.toml` のトップレベルの KV・D1 の ID のどれかと一致したら、何も書かずに非0で終わる。読み元は `kv-rest.ts` の定数の本番の ID に固定する。
+写す先の namespace は、`wrangler.toml` の `[[previews.kv_namespaces]]` の `MASTER_DATA` の `id` から読む（スクリプトに ID を重ねて書かない）。解析は既存のガードと同じ `smol-toml` で行う。本番の ID の集合は、`scripts/preview-binding-guard.ts` が固定で持つ `KNOWN_PRODUCTION_IDS`（本番の MASTER_DATA・クラウド同期ストア・D1・Worker 名。ブランチ側で `wrangler.toml` を書き換えても基準が動かない）に、`wrangler.toml` のトップレベルの KV・D1 の ID を足したものとし、ガードと同じにする。写す先がこの集合に入っていたら、何も書かずに非0で終わる。読み元は `kv-rest.ts` の定数の本番の ID に固定する。
 
-`kv-rest.ts` には、namespace を引数に取る読み書きの関数を足し、今の `kvGet`・`kvPut` は本番の namespace でそれを呼ぶ形にする。`DRY_RUN=1` では今と同じく書かない。
+`kv-rest.ts` には、namespace を引数に取る読み書きの関数を足し、今の `kvGet`・`kvPut` は本番の namespace でそれを呼ぶ形にする。`DRY_RUN=1` では、namespace 付きの関数も通信しない（読みは登録されたローカルのファイルか null、書きはログだけ）。ローカルのファイルはキー名で引くので、DRY_RUN では本番とプレビュー用が同じ値を読み、書くキーは出ない。DRY_RUN で確かめられるのは、通信しないことと、写す先と扱うキーの決まり方までである。
 
 ### 失敗の扱い
 
