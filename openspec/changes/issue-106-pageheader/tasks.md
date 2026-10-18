@@ -14,7 +14,7 @@
 ## 4. issue に挙がっていなかった見出し
 
 - [x] 4.1 `components/material/result.tsx` の見出しを `PageHeader` に置き換え、`.c-result-actions` の要素をタイトルの右側の要素として渡す。`components/material/index.tsx` の見出しを `PageHeader` に置き換え、クラススコア目標設定へのリンクの行を（`mt-1.5` を外して）タイトルの下に積む要素として、`.c-stats` をタイトルの右側の要素として渡す。2ファイルに `c-page-header`・`c-page-en`・`c-page-title` の文字列が残っておらず、各ファイルが `PageHeader` を import していることを grep で確かめ、`pnpm vitest run` が通ることで確かめる
-- [x] 4.2 `app/page.tsx`（ダッシュボード）の見出しを `PageHeader` に置き換え、素材計算などへのボタンの行をタイトルの下に積む要素として渡す。登場のアニメーションは、クラスを持たない `motion.div`（今と同じ `initial`・`animate`）で `PageHeader` を包んで残す。`app/farming/history/page.tsx` の見出しを `PageHeader` に置き換え、履歴のアイコンと文言を `inline-flex items-center gap-3` の要素で包んでタイトルとして渡す（英字ラベルの `letterSpacing` の指定は落とす）。2ファイルに `c-page-header`・`c-page-en`・`c-page-title` の文字列が残っておらず、各ファイルが `PageHeader` を import していることを grep で確かめ、`pnpm vitest run` が通ることで確かめる
+- [x] 4.2 `app/page.tsx`（ダッシュボード）の見出しを `PageHeader` に置き換え、素材計算などへのボタンの行をタイトルの下に積む要素として渡す。登場のアニメーションは、クラスを持たない `motion.div`（今と同じ `initial`・`animate`）で `PageHeader` を包んで残す。`app/farming/history/page.tsx` の見出しを `PageHeader` に置き換え、履歴のアイコンと文言を `flex items-center gap-3` の要素で包んでタイトルとして渡す（英字ラベルの `letterSpacing` の指定は落とす）。2ファイルに `c-page-header`・`c-page-en`・`c-page-title` の文字列が残っておらず、各ファイルが `PageHeader` を import していることを grep で確かめ、`pnpm vitest run` が通ることで確かめる
 
 ## 5. 確認
 

@@ -233,7 +233,7 @@ export default function HistoryPage() {
           <PageHeader
             en="FARMING HISTORY"
             title={
-              <span className="inline-flex items-center gap-3">
+              <span className="flex items-center gap-3">
                 <FaHistory style={{ color: 'var(--gold)' }} />
                 {t('common:計算履歴')}
               </span>
