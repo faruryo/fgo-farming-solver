@@ -6,6 +6,7 @@ import { Item } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
 import { ItemLink } from '../common/item-link'
+import { PageHeader } from '../common/page-header'
 
 export type ItemIndexProps = {
   items: Localized<Item>[]
@@ -27,12 +28,7 @@ export const Index = ({ items }: ItemIndexProps) => {
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">ITEM LIST</div>
-            <h1 className="c-page-title">{t('アイテム一覧')}</h1>
-          </div>
-        </div>
+        <PageHeader en="ITEM LIST" title={t('アイテム一覧')} />
 
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-x-6 gap-y-10">
           {itemGroup.map(([largeCategory, itemGroups]) => (

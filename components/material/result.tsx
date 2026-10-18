@@ -28,6 +28,7 @@ import { useClassScore } from '../../hooks/use-class-score'
 import { sumClassScoreMaterials } from '../../lib/class-score/sum'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { CollapsibleSection } from '../common/collapsible-section'
+import { PageHeader } from '../common/page-header'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
@@ -517,119 +518,119 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
       )}
       <div className="c-page">
         <div className="c-page-inner">
-          <div className="c-page-header">
-            <div>
-              <div className="c-page-en">REQUIRED MATERIALS</div>
-              <h1 className="c-page-title">アイテム必要数</h1>
-            </div>
-            <div className="c-result-actions">
-              {totalShort > 0 && (
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--red)',
-                    fontWeight: 600,
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  不足 {totalShort}種
-                </span>
-              )}
-              {totalStockShort > 0 && (
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--gold2)',
-                    fontWeight: 600,
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  ストック不足 {totalStockShort}種
-                </span>
-              )}
-              {totalShort === 0 && totalStockShort === 0 && totalMet > 0 && (
-                <span
-                  style={{ fontSize: 12, color: '#60c890', fontWeight: 600 }}
-                >
-                  充足 {totalMet}種
-                </span>
-              )}
-              <div className="c-seg" role="group" aria-label="表示フィルタ">
+          <PageHeader
+            en="REQUIRED MATERIALS"
+            title="アイテム必要数"
+            aside={
+              <div className="c-result-actions">
+                {totalShort > 0 && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--red)',
+                      fontWeight: 600,
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    不足 {totalShort}種
+                  </span>
+                )}
+                {totalStockShort > 0 && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--gold2)',
+                      fontWeight: 600,
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    ストック不足 {totalStockShort}種
+                  </span>
+                )}
+                {totalShort === 0 && totalStockShort === 0 && totalMet > 0 && (
+                  <span
+                    style={{ fontSize: 12, color: '#60c890', fontWeight: 600 }}
+                  >
+                    充足 {totalMet}種
+                  </span>
+                )}
+                <div className="c-seg" role="group" aria-label="表示フィルタ">
+                  <button
+                    type="button"
+                    className={`c-seg-btn${filterMode === 'all' ? ' active' : ''}`}
+                    onClick={() => setFilterMode('all')}
+                  >
+                    全て
+                  </button>
+                  <button
+                    type="button"
+                    className={`c-seg-btn${filterMode === 'short' ? ' active' : ''}`}
+                    onClick={() => setFilterMode('short')}
+                  >
+                    {stockEnabled ? '不足' : '不足のみ'}
+                  </button>
+                </div>
+                <FarmingPurposeSelector compact />
+                {purpose === 'all' && (
+                  <span className="text-xs" style={{ color: 'var(--text3)' }}>
+                    {t(
+                      'common:farming-purpose-solver-fallback',
+                      '周回計算は今の育成を使用',
+                    )}
+                  </span>
+                )}
                 <button
                   type="button"
-                  className={`c-seg-btn${filterMode === 'all' ? ' active' : ''}`}
-                  onClick={() => setFilterMode('all')}
+                  className="c-back-btn"
+                  onClick={() => setImportOpen(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                 >
-                  全て
+                  <ImageUp size={14} />
+                  スクショから取り込む
                 </button>
                 <button
                   type="button"
-                  className={`c-seg-btn${filterMode === 'short' ? ' active' : ''}`}
-                  onClick={() => setFilterMode('short')}
+                  className="c-back-btn"
+                  style={
+                    stockEnabled
+                      ? { color: 'var(--gold2)', borderColor: 'var(--gold-dim)' }
+                      : undefined
+                  }
+                  onClick={() => setStockOpen(true)}
                 >
-                  {stockEnabled ? '不足' : '不足のみ'}
+                  ⚙ {t('common:inventory-baseline-settings', '在庫基準')}
                 </button>
+                <Dialog open={stockOpen} onOpenChange={setStockOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {t(
+                          'common:inventory-baseline-settings',
+                          '在庫基準の設定',
+                        )}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <StockTargetSettings />
+                  </DialogContent>
+                </Dialog>
+                <PossessionImportDialog
+                  open={importOpen}
+                  onOpenChange={setImportOpen}
+                  items={importItems}
+                  possession={possession}
+                  onConfirm={(updates) =>
+                    setPossession((prev) => ({ ...prev, ...updates }))
+                  }
+                />
+                <Link href="/material/class-score" className="c-back-btn">
+                  {t('class-score-settings-link', 'クラススコア設定')}
+                </Link>
+                <Link href="/material" className="c-back-btn">
+                  ← 設定に戻る
+                </Link>
               </div>
-              <FarmingPurposeSelector compact />
-              {purpose === 'all' && (
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  {t(
-                    'common:farming-purpose-solver-fallback',
-                    '周回計算は今の育成を使用',
-                  )}
-                </span>
-              )}
-              <button
-                type="button"
-                className="c-back-btn"
-                onClick={() => setImportOpen(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-              >
-                <ImageUp size={14} />
-                スクショから取り込む
-              </button>
-              <button
-                type="button"
-                className="c-back-btn"
-                style={
-                  stockEnabled
-                    ? { color: 'var(--gold2)', borderColor: 'var(--gold-dim)' }
-                    : undefined
-                }
-                onClick={() => setStockOpen(true)}
-              >
-                ⚙ {t('common:inventory-baseline-settings', '在庫基準')}
-              </button>
-              <Dialog open={stockOpen} onOpenChange={setStockOpen}>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {t(
-                        'common:inventory-baseline-settings',
-                        '在庫基準の設定',
-                      )}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <StockTargetSettings />
-                </DialogContent>
-              </Dialog>
-              <PossessionImportDialog
-                open={importOpen}
-                onOpenChange={setImportOpen}
-                items={importItems}
-                possession={possession}
-                onConfirm={(updates) =>
-                  setPossession((prev) => ({ ...prev, ...updates }))
-                }
-              />
-              <Link href="/material/class-score" className="c-back-btn">
-                {t('class-score-settings-link', 'クラススコア設定')}
-              </Link>
-              <Link href="/material" className="c-back-btn">
-                ← 設定に戻る
-              </Link>
-            </div>
-          </div>
+            }
+          />
 
           {displayedItems.length === 0 ? (
             <div className="c-empty">

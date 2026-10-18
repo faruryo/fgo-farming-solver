@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSession } from 'next-auth/react'
 import { Link } from '../../../components/common/link'
+import { PageHeader } from '../../../components/common/page-header'
 import { motion } from 'framer-motion'
 import { Loader2, Trash2 } from 'lucide-react'
 import { FaExternalLinkAlt, FaHistory } from 'react-icons/fa'
@@ -140,15 +141,15 @@ const groupByBatch = (history: HistoryItem[]): GroupedHistoryItem[] => {
 const HistoryTitle: React.FC = () => {
   const { t } = useTranslation(['common'])
   return (
-    <div className="flex justify-between items-center">
-      <div className="flex flex-col">
-        <div className="c-page-en" style={{ letterSpacing: '0.2em' }}>FARMING HISTORY</div>
-        <h1 className="c-page-title flex items-center gap-3">
+    <PageHeader
+      en="FARMING HISTORY"
+      title={
+        <span className="flex items-center gap-3">
           <FaHistory style={{ color: 'var(--gold)' }} />
           {t('common:計算履歴')}
-        </h1>
-      </div>
-    </div>
+        </span>
+      }
+    />
   )
 }
 

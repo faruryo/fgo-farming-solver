@@ -2,8 +2,7 @@
 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaChevronLeft } from 'react-icons/fa'
-import { Link } from '../common/link'
+import { PageHeader } from '../common/page-header'
 
 interface Props {
   eventId?: number
@@ -16,28 +15,7 @@ export const EventDataMissing: React.FC<Props> = ({ eventId }) => {
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-6">
-          <div className="c-page-header">
-            <div className="flex flex-col gap-2">
-              <Link
-                href="/events"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: 'var(--text3)',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                <FaChevronLeft size={11} /> {t('イベント一覧へ戻る')}
-              </Link>
-              <div className="flex flex-col">
-                <div className="c-page-en">EVENT PLANNER</div>
-                <h1 className="c-page-title">{t('ロト計画')}</h1>
-              </div>
-            </div>
-          </div>
+          <PageHeader backLabel={t('イベント一覧へ戻る')} backHref="/events" en="EVENT PLANNER" title={t('ロト計画')} />
 
           <div
             className="rounded-lg p-8 text-center"

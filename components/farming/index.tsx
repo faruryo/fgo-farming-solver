@@ -19,6 +19,7 @@ import { hasSelectedQuests, hasSubmittableItems, submitSolve } from '../../lib/f
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { groupBy } from '../../utils/group-by'
 import { CheckboxTree } from '../common/checkbox-tree'
+import { PageHeader } from '../common/page-header'
 import { ItemFieldset } from './item-fieldset'
 import { ResetAlertDialog } from './reset-alert-dialog'
 
@@ -202,12 +203,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
       )}
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">FARMING SOLVER</div>
-            <h1 className="c-page-title">{t('周回効率計算')}</h1>
-          </div>
-        </div>
+        <PageHeader en="FARMING SOLVER" title={t('周回効率計算')} />
 
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col gap-8 pb-28">
