@@ -758,33 +758,35 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
         </div>
 
         <div className="c-farming-footer">
-          <div className="c-summary-row">
-            <div className="c-summary-item">
-              <div
-                className={`c-summary-num${totalShort > 0 ? ' short' : ' ok'}`}
-              >
-                {totalShort}
+          <div className="flex items-center gap-6">
+            <div className="c-summary-row">
+              <div className="c-summary-item">
+                <div
+                  className={`c-summary-num${totalShort > 0 ? ' short' : ' ok'}`}
+                >
+                  {totalShort}
+                </div>
+                <div className="c-summary-label">不足種類</div>
               </div>
-              <div className="c-summary-label">不足種類</div>
+              <div className="c-summary-item">
+                <div className="c-summary-num ok">{totalMet}</div>
+                <div className="c-summary-label">充足種類</div>
+              </div>
             </div>
-            <div className="c-summary-item">
-              <div className="c-summary-num ok">{totalMet}</div>
-              <div className="c-summary-label">充足種類</div>
-            </div>
+            <button
+              className="c-farming-btn"
+              onClick={() => void goSolver()}
+              disabled={
+                isLoading ||
+                needsItemTarget ||
+                needsQuestSelection ||
+                status === 'loading'
+              }
+            >
+              <span className="c-farming-btn-en">SOLVE FARMING ROUTE</span>
+              <span className="c-farming-btn-jp">周回数を求める</span>
+            </button>
           </div>
-          <button
-            className="c-farming-btn"
-            onClick={() => void goSolver()}
-            disabled={
-              isLoading ||
-              needsItemTarget ||
-              needsQuestSelection ||
-              status === 'loading'
-            }
-          >
-            <span className="c-farming-btn-en">SOLVE FARMING ROUTE</span>
-            <span className="c-farming-btn-jp">周回数を求める</span>
-          </button>
         </div>
       </div>
     </>
