@@ -112,6 +112,10 @@ export interface EventShopItem {
   name?: string
   /** アイテムアイコン URL（UI 表示用。オプショナル）。 */
   icon?: string
+  /** 対価の通貨の表示名（旧 KV データには無い）。 */
+  costName?: string
+  /** 対価の通貨のアイコン URL（旧 KV データには無い）。 */
+  costIcon?: string
 }
 
 /**
@@ -133,7 +137,7 @@ export interface EventFarmingNode {
 
 /**
  * コンパクト化されたイベントデータ（KV `event_data_json` の1エントリー）。
- * ロト（ボックス）型イベントのみを対象とする。
+ * ロト（ボックス）型イベントと、ロトの無い交換所イベント（lotteries が空）を対象とする。
  */
 export interface EventPlannerEvent {
   /** Atlas Academy event id。 */
@@ -145,7 +149,10 @@ export interface EventPlannerEvent {
   startedAt: number
   /** 開催終了 Unix timestamp（秒）。 */
   endedAt: number
-  /** ロトで使用するイベント通貨。 */
+  /**
+   * ロトで使用するイベント通貨。
+   * ロトの無いイベントでは交換所の最初のエントリーの対価の通貨（箱計画では使わない）。
+   */
   currency: EventCurrency
   /**
    * 最終箱が無限ループするか（Atlas lottery.limited === false）。

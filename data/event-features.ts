@@ -4,7 +4,7 @@
  * 載せるのはゲーム内・Atlas Academy で公開済みの値のみ。
  */
 
-export type EventFeature = 'box' | 'craft'
+export type EventFeature = 'box' | 'shop' | 'craft'
 
 export interface EventFeatureEntry {
   features: EventFeature[]
