@@ -2,7 +2,7 @@
 
 ## 1. ソルバー実行後のスナップショット保存
 
-- [ ] 1.1 `lib/farming/submit-solve.ts` の送信処理が、呼び出し側からログインしているかを必須の引数で受け取り（渡し忘れを型エラーにするため既定値を付けない）、ログインしていなければ `saveProgressSnapshot()` を呼ばないようにする。`components/farming/index.tsx` と `components/material/result.tsx` は `useSession` の `status === 'authenticated'` を渡す。`lib/farming/submit-solve.test.ts` に、未ログインでは保存が呼ばれず結果ページへ遷移すること、ログインでは呼ばれることのテストを足す。`components/farming/index.test.tsx` と `components/material/result.test.tsx`（どちらも `useSession` と `saveProgressSnapshot` をモック済み）に、`unauthenticated` では送信後に保存が呼ばれず、`authenticated` では呼ばれることを足す。`pnpm vitest run lib/farming components/farming components/material` が通る
+- [ ] 1.1 `lib/farming/submit-solve.ts` の送信処理が、呼び出し側からログインしているかを必須の引数で受け取り（渡し忘れを型エラーにするため既定値を付けない）、ログインしていなければ `saveProgressSnapshot()` を呼ばないようにする。`components/farming/index.tsx` と `components/material/result.tsx` は `useSession` の `status === 'authenticated'` を渡す。ログイン状態の確認中に送信ボタンを無効にする今の動き（farming-history の「認証状態読み込み中の周回計算送信抑止」）は変えない。`lib/farming/submit-solve.test.ts` に、未ログインでは保存が呼ばれず結果ページへ遷移すること、ログインでは呼ばれることのテストを足す。`components/farming/index.test.tsx` と `components/material/result.test.tsx`（どちらも `useSession` と `saveProgressSnapshot` をモック済み）に、`unauthenticated` では送信後に保存が呼ばれず、`authenticated` では呼ばれることを足す。`pnpm vitest run lib/farming components/farming components/material` が通る
 
 ## 2. 計算履歴の取得
 
