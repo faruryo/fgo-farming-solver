@@ -11,6 +11,7 @@ const { _scenario, ...progressMock } = progressScenario
 // 2026-06-10 12:00 JST is inside every campaign and summon in the local master data.
 const FIXED_NOW = new Date('2026-06-10T12:00:00+09:00')
 
+// Server renders still use the real clock, so pages like farming hit a hydration mismatch and re-render on the client with this time.
 test.use({ timezoneId: 'Asia/Tokyo' })
 
 test.beforeEach(async ({ page }) => {
@@ -38,9 +39,18 @@ for (const { name, path, waitFor } of pages) {
     if (waitFor) {
       await page.waitForSelector(waitFor, { timeout: 15000 }).catch(() => {})
     }
+    // Lazy images below the fold otherwise start loading while the full-page shot is taken.
+    await page.evaluate(() => document.querySelectorAll('img').forEach((img) => { img.loading = 'eager' }))
+    await page.waitForFunction(() => [...document.images].every((img) => img.complete))
+    // framer-motion staggers the dashboard sections in with inline opacity, and toHaveScreenshot
+    // treats the still frames before a late section starts as stable, so wait until they finish.
+    await page
+      .waitForFunction(() => [...document.querySelectorAll<HTMLElement>('[style*="opacity"]')].every((el) => el.style.opacity === '1'), null, { timeout: 5000 })
+      .catch(() => {})
     await expect(page).toHaveScreenshot(`${name}.png`, {
       fullPage: true,
       threshold: 0.1,
+      stylePath: resolve(__dirname, 'screenshot.css'),
     })
   })
 }
