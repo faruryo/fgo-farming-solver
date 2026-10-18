@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { saveProgressSnapshot } from '../progress/snapshot-client'
 import { hasSelectedQuests, hasSubmittableItems, parseStoredDefaultPublic, submitSolve } from './submit-solve'
 
 vi.mock('../progress/snapshot-client', () => ({
@@ -64,6 +65,7 @@ describe('submitSolve', () => {
   beforeEach(() => {
     localStorage.clear()
     push.mockClear()
+    vi.mocked(saveProgressSnapshot).mockClear()
   })
 
   afterEach(() => {
@@ -80,16 +82,32 @@ describe('submitSolve', () => {
     window.addEventListener('ls-sync', onSync)
 
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
-    await submitSolve(params, router)
+    await submitSolve(params, router, true)
 
     expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=true')
     expect(localStorage.getItem('farming/results')).toBe('/farming/results/abc-123')
     expect(onSync).toHaveBeenCalledTimes(1)
     const event = onSync.mock.calls[0][0] as CustomEvent<{ key?: string }>
     expect(event.detail?.key).toBe('farming/results')
+    expect(saveProgressSnapshot).toHaveBeenCalledTimes(1)
     expect(push).toHaveBeenCalledWith('/farming/results/abc-123')
 
     window.removeEventListener('ls-sync', onSync)
+  })
+
+  it('does not save a progress snapshot when unauthenticated, but still navigates to the result page', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: 'abc-123', isPublic: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
+    await submitSolve(params, router, false)
+
+    expect(saveProgressSnapshot).not.toHaveBeenCalled()
+    expect(localStorage.getItem('farming/results')).toBe('/farming/results/abc-123')
+    expect(push).toHaveBeenCalledWith('/farming/results/abc-123')
   })
 
   it('defaults isPublic=true when param is omitted, even if defaultPublic=false is in localStorage', async () => {
@@ -101,7 +119,7 @@ describe('submitSolve', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
-    await submitSolve(params, router)
+    await submitSolve(params, router, true)
 
     expect(fetchMock).toHaveBeenCalledWith('/api/solve?items=1a%3A3&fields=id&isPublic=true')
   })
@@ -114,7 +132,7 @@ describe('submitSolve', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
-    await submitSolve(params, router)
+    await submitSolve(params, router, true)
 
     expect(localStorage.getItem('farming/results')).toBeNull()
     expect(push).toHaveBeenCalledWith('/500')
@@ -128,7 +146,7 @@ describe('submitSolve', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const params = new URLSearchParams({ items: '1a:3', fields: 'id' })
-    await submitSolve(params, router)
+    await submitSolve(params, router, true)
 
     expect(push).toHaveBeenCalledWith('/500')
   })
@@ -142,7 +160,7 @@ describe('submitSolve', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const params = new URLSearchParams({ items: '1a:3', fields: 'id', isPublic: 'false' })
-    await submitSolve(params, router)
+    await submitSolve(params, router, true)
 
     expect(localStorage.getItem('farming/results')).toBeNull()
     expect(push).toHaveBeenCalledWith('/500')
@@ -157,7 +175,7 @@ describe('submitSolve', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const params = new URLSearchParams({ items: '1a:3', fields: 'id', isPublic: 'false' })
-    await submitSolve(params, router)
+    await submitSolve(params, router, true)
 
     expect(localStorage.getItem('farming/results')).toBeNull()
     expect(push).toHaveBeenCalledWith('/500')

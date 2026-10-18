@@ -35,10 +35,12 @@ export const parseStoredDefaultPublic = (stored: string | null): boolean => {
  * 結果ページへ遷移する。`/farming`(手入力)・`/material/result`(直接送信)の両方から
  * 共有される送信 I/O 境界。バリデーション（送信可否の判断）は `hasSubmittableItems` /
  * `hasSelectedQuests` として呼び出し側で行い、ここでは行わない。
+ * スナップショットはユーザー単位で保存するため、`isAuthenticated` が false なら保存しない。
  */
 export const submitSolve = async (
   params: URLSearchParams,
-  router: { push: (url: string) => void }
+  router: { push: (url: string) => void },
+  isAuthenticated: boolean
 ): Promise<void> => {
   if (!params.has('isPublic')) {
     params.set('isPublic', 'true')
@@ -66,7 +68,7 @@ export const submitSolve = async (
     )
     // Persist a full-state progress snapshot (incl. material) for this run.
     // Fire-and-forget so it never blocks navigation to the result page.
-    void saveProgressSnapshot()
+    if (isAuthenticated) void saveProgressSnapshot()
     router.push(resultUrl)
   } else {
     router.push('/500')

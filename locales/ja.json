@@ -155,7 +155,9 @@
     "farming-result-status-public": "公開中",
     "farming-result-status-private": "非公開",
     "farming-result-visibility-toggle-aria": "公開・非公開の切り替え",
-    "farming-result-visibility-update-error": "公開設定の更新に失敗しました"
+    "farming-result-visibility-update-error": "公開設定の更新に失敗しました",
+    "farming-history-login-required": "計算履歴はログインすると使えます。ログインすると、周回計算の結果がアカウントに記録され、ここで一覧と推移を確認できます。",
+    "farming-history-login-link": "ログインする"
   },
   "items": {
     "title": "{{name}}のドロップ"

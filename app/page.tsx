@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Package } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useSession } from 'next-auth/react'
 import { useDashboardMeta } from '../hooks/use-dashboard-meta'
 import { useDrops } from '../hooks/use-drops'
 import { PossessionModal } from '../components/common/PossessionModal'
@@ -38,6 +39,9 @@ export default function HomePage() {
   const { data: dashboardMeta, isLoading } = useDashboardMeta()
   const { items: dropItems, isLoading: dropsLoading } = useDrops()
   const [possessionModalOpen, setPossessionModalOpen] = useState(false)
+  // 計算履歴はログインユーザーだけのもの。確認中・未ログインでは導線もグラフも出さない。
+  const { status } = useSession()
+  const isAuthenticated = status === 'authenticated'
 
   return (
     <div className="c-page">
@@ -124,9 +128,11 @@ export default function HomePage() {
                   <Link href="/quests" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
                     クエスト効率
                   </Link>
-                  <Link href="/farming/history" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
-                    計算履歴
-                  </Link>
+                  {isAuthenticated && (
+                    <Link href="/farming/history" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
+                      計算履歴
+                    </Link>
+                  )}
                   <Link href="/servants" style={{ fontSize: '12px', color: 'var(--text3)', textDecoration: 'none', fontWeight: 500 }}>
                     サーヴァント
                   </Link>
@@ -164,9 +170,11 @@ export default function HomePage() {
                 </div>
 
                 {/* History Graph */}
-                <motion.div variants={item}>
-                  <HistoryGraph />
-                </motion.div>
+                {isAuthenticated && (
+                  <motion.div variants={item}>
+                    <HistoryGraph />
+                  </motion.div>
+                )}
 
                 {/* Progress (moved below history graph for better visual balance) */}
                 <motion.div variants={item}>

@@ -8,6 +8,11 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }))
 
+const mockSession = vi.fn().mockReturnValue({ data: null, status: 'unauthenticated' })
+vi.mock('next-auth/react', () => ({
+  useSession: () => mockSession(),
+}))
+
 vi.mock('../dashboard/HistoryGraph', () => ({
   HistoryGraph: () => <div data-testid="history-graph">HistoryGraph</div>,
 }))
@@ -57,10 +62,31 @@ const defaultProps: PageProps = {
 describe('components/farming/result Page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSession.mockReturnValue({ data: null, status: 'unauthenticated' })
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('hides the history button and graph when unauthenticated', () => {
+    render(<Page {...defaultProps} />)
+    expect(screen.queryByRole('link', { name: '計算履歴' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('history-graph')).not.toBeInTheDocument()
+  })
+
+  it('hides the history button and graph while the session is being checked', () => {
+    mockSession.mockReturnValue({ data: null, status: 'loading' })
+    render(<Page {...defaultProps} />)
+    expect(screen.queryByRole('link', { name: '計算履歴' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('history-graph')).not.toBeInTheDocument()
+  })
+
+  it('renders the history button and graph when authenticated', () => {
+    mockSession.mockReturnValue({ data: { user: { id: 'u1' } }, status: 'authenticated' })
+    render(<Page {...defaultProps} />)
+    expect(screen.getByRole('link', { name: '計算履歴' })).toHaveAttribute('href', '/farming/history')
+    expect(screen.getByTestId('history-graph')).toBeInTheDocument()
   })
 
   it('renders TweetIntent when isPublic is true', () => {
