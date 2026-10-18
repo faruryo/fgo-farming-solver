@@ -4,8 +4,17 @@ import type { EventFeatureEntry } from '../data/event-features'
 import type { EventPlannerEvent } from './master-data/types'
 import { featuresFor, mergeEventList, latestCraftEventId, resolveEventSummary } from './event-features'
 
-const kv = (id: number, name: string, startedAt = 100, endedAt = 200): EventPlannerEvent =>
-  ({ id, name, startedAt, endedAt }) as EventPlannerEvent
+const lotteries = [{ boxIndex: 0, costPerBox: 1, contents: [], rareRewards: [] }]
+const shop = [{ itemId: 1, qty: 1, costItemId: 2, costAmount: 1, limitNum: 1 }]
+
+const kv = (
+  id: number,
+  name: string,
+  { box = true, withShop = false }: { box?: boolean; withShop?: boolean } = {},
+  startedAt = 100,
+  endedAt = 200,
+): EventPlannerEvent =>
+  ({ id, name, startedAt, endedAt, lotteries: box ? lotteries : [], shop: withShop ? shop : [] }) as Partial<EventPlannerEvent> as EventPlannerEvent
 
 const reg = (features: EventFeatureEntry['features'], name = 'REG', startedAt = 10, endedAt = 20): EventFeatureEntry => ({
   features,
@@ -27,13 +36,17 @@ describe('EVENT_FEATURES', () => {
 describe('featuresFor', () => {
   const registry = { 1: reg(['craft']), 2: reg(['box', 'craft']) }
   it.each([
-    ['KV box のみ', 9, true, ['box']],
-    ['レジストリのみ', 1, false, ['craft']],
-    ['両方（box が先）', 1, true, ['box', 'craft']],
-    ['重複なし', 2, true, ['box', 'craft']],
-    ['どちらも無し', 9, false, []],
-  ] as const)('%s', (_label, id, hasKvBox, expected) => {
-    expect(featuresFor(id, hasKvBox, registry)).toEqual(expected)
+    ['KV ロトのみ', 9, kv(9, 'k'), ['box']],
+    ['KV 交換所のみ', 9, kv(9, 'k', { box: false, withShop: true }), ['shop']],
+    ['KV ロトと交換所（box が先）', 9, kv(9, 'k', { withShop: true }), ['box', 'shop']],
+    ['KV なしレジストリのみ', 1, undefined, ['craft']],
+    ['KV 交換所とレジストリ', 1, kv(1, 'k', { box: false, withShop: true }), ['shop', 'craft']],
+    ['KV とレジストリ（box が先）', 1, kv(1, 'k'), ['box', 'craft']],
+    ['重複なし', 2, kv(2, 'k'), ['box', 'craft']],
+    ['KV にロトも交換所も無い', 9, kv(9, 'k', { box: false }), []],
+    ['どちらも無し', 9, null, []],
+  ] as const)('%s', (_label, id, kvEvent, expected) => {
+    expect(featuresFor(id, kvEvent, registry)).toEqual(expected)
   })
 })
 
@@ -47,6 +60,12 @@ describe('mergeEventList', () => {
   it('レジストリのみ: registry meta から組み立てる', () => {
     expect(mergeEventList([], { 2: reg(['craft']) })).toEqual([
       { id: 2, name: 'REG', startedAt: 10, endedAt: 20, features: ['craft'] },
+    ])
+  })
+
+  it('KV の交換所のみのイベント: shop 付き', () => {
+    expect(mergeEventList([kv(4, 'SHOP', { box: false, withShop: true })], {})).toEqual([
+      { id: 4, name: 'SHOP', startedAt: 100, endedAt: 200, features: ['shop'] },
     ])
   })
 

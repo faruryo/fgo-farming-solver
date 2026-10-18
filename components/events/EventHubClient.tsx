@@ -11,6 +11,7 @@ import type { EventPlannerEvent } from '../../lib/master-data/types'
 import type { EnrichedItem } from '../../lib/get-items'
 import { EventPlannerClient } from './EventPlannerClient'
 import { EventCraftSection } from './EventCraftSection'
+import { EventShopList } from './EventShopList'
 import { formatDate } from './EventListClient'
 
 interface Props {
@@ -88,6 +89,11 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
   const { t } = useTranslation('events')
   const box = features.includes('box') ? boxEvent : undefined
   const craftItems = features.includes('craft') ? items : undefined
+  // ロトのあるイベントは箱計画の中で交換所を扱うので、一覧はロトの無いイベントだけに出す。
+  const shopOnly =
+    features.includes('shop') && !features.includes('box') && boxEvent && boxEvent.shop.length > 0
+      ? boxEvent.shop
+      : undefined
 
   return (
     <div className="c-page">
@@ -99,6 +105,13 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
             <section className="flex flex-col gap-4">
               <SectionTitle>{t('ロト計画')}</SectionTitle>
               <EventPlannerClient event={box} />
+            </section>
+          )}
+
+          {shopOnly && (
+            <section className="flex flex-col gap-4">
+              <SectionTitle>{t('event-shop-section-title', '交換所')}</SectionTitle>
+              <EventShopList shop={shopOnly} />
             </section>
           )}
 
