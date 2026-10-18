@@ -14,7 +14,7 @@
 - [x] 3.1 `components/common/nav.tsx` の「計算履歴」の項目を、`status === 'authenticated'` のときだけ出す。`components/common/nav.test.tsx` を足し、未ログイン・確認中では項目が無く、ログインでは有ることを `pnpm vitest run components/common/nav.test.tsx` で確かめる
 - [x] 3.2 `components/farming/result.tsx` の「計算履歴」ボタンと推移グラフ（`HistoryGraph`）を、`status === 'authenticated'` のときだけ描画する。`components/farming/result.test.tsx` に `next-auth/react` のモックを既存のテスト（`components/farming/index.test.tsx`）と同じ形で足し（無いと `useSession` が例外を投げて既存のテストが落ちる）、未ログインでは両方が描画されないこと、ログインでは描画されることを足す。`pnpm vitest run components/farming/result.test.tsx` が通る
 - [x] 3.3 `app/page.tsx`（ダッシュボード）の「計算履歴」リンクと推移グラフを、`status === 'authenticated'` のときだけ描画する。`app/page.test.tsx` を足し、未ログインではリンクとグラフが描画されず、ログインでは描画されることを `pnpm vitest run app/page.test.tsx` で確かめる
-- [ ] 3.4 `pnpm vitest run`、`pnpm lint`、`pnpm lint:ratchet` が通ることを確かめる <!-- verify-only -->
+- [x] 3.4 `pnpm vitest run`、`pnpm lint`、`pnpm lint:ratchet` が通ることを確かめる <!-- verify-only -->
 
 ## 4. 見た目の確認
 
