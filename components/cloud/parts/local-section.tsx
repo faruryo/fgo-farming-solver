@@ -67,9 +67,9 @@ export const LocalSection = ({ exportLocal }: LocalSectionProps) => {
 
         <p className="text-sm" style={{ color: 'var(--text2)' }}>{t('local-backup-description')}</p>
 
-        <div className="flex gap-4 w-full">
+        <div className="flex flex-col sm:flex-row gap-4 w-full">
           <Button
-            className="flex-1 h-11 text-sm"
+            className="sm:flex-1 h-11 text-sm"
             variant="outline"
             style={{ borderColor: 'rgba(74,104,136,0.4)', color: 'var(--text)' }}
             onClick={exportLocal}
@@ -82,7 +82,7 @@ export const LocalSection = ({ exportLocal }: LocalSectionProps) => {
             {t('export-to-file')}
           </Button>
 
-          <div style={{ flex: 1, position: 'relative' }}>
+          <div className="relative sm:flex-1">
             <Button
               className="w-full h-11 text-sm"
               variant="outline"
