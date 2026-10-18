@@ -45,4 +45,13 @@ describe('EventListClient', () => {
     expect(both.getByText('料理作成')).toBeInTheDocument()
     expect(cardOf('両方')).toHaveAttribute('href', '/events/3')
   })
+
+  it('shows the shop badge for a shop event', () => {
+    render(<EventListClient updatedAt={0} events={[ended(4, '交換所のみ', ['shop'])]} />)
+
+    const shop = within(cardOf('交換所のみ'))
+    expect(shop.getByText('交換所')).toBeInTheDocument()
+    expect(shop.queryByText('料理作成')).not.toBeInTheDocument()
+    expect(shop.queryByText('ボックス計画')).not.toBeInTheDocument()
+  })
 })
