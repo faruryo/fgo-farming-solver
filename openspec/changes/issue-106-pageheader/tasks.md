@@ -18,5 +18,5 @@
 
 ## 5. 確認
 
-- [ ] 5.1 `pnpm run type-check` と `pnpm run lint:ratchet` が通ることを確かめる <!-- verify-only -->
+- [x] 5.1 `pnpm run type-check` と `pnpm run lint:ratchet` が通ることを確かめる <!-- verify-only -->
 - [ ] 5.2 置き換えの前（main）と後で、`/`・`/servants`・`/servants/<id>`・`/items`・`/items/<id>`・`/cloud`・`/farming`・計算結果のページ（ログインした本人の結果で、公開設定が出る状態）・`/farming/history`・`/material`・アイテム必要数のページ・ドキュメントのページ・`/events/<id>`（データあり・データ未取得）の見出しを、375px 幅を含めてブラウザで撮り、見出しの見た目が同じこと（計算履歴は下線・余白だけが変わること、素材計算はクラススコアへのリンクの行が 2px 下がるだけのこと）を確かめる。あわせて `pnpm exec playwright test e2e/visual.spec.ts` を実行し、main でも差分が出るページ（ベースラインが古いもの）は main との比較を正とする <!-- verify-only -->
