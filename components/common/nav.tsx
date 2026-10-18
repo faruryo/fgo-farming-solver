@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCloudSync } from '../../hooks/use-cloud-sync'
@@ -44,6 +45,8 @@ type MenuItem = {
   href: string
   icon: LucideIcon
   label: { ja: string; en: string }
+  /** ログインユーザーにだけ出す項目（確認中・未ログインでは出さない）。 */
+  requiresAuth?: boolean
 }
 
 type MenuGroup = {
@@ -117,6 +120,7 @@ export const menuGroups: MenuGroup[] = [
         href: '/farming/history',
         icon: History,
         label: { ja: '計算履歴', en: 'History' },
+        requiresAuth: true,
       },
       {
         href: '/todo',
@@ -394,6 +398,8 @@ export const Nav = () => {
   const { i18n } = useTranslation()
   const locale = i18n.language as 'en' | 'ja'
   const pathname = usePathname()
+  const { status } = useSession()
+  const isAuthenticated = status === 'authenticated'
   const allItems = menuGroups.flatMap((g) => g.items)
 
   return (
@@ -423,15 +429,17 @@ export const Nav = () => {
                   <div className="px-5 pt-5 pb-2 text-[11px] tracking-[0.15em] font-bold uppercase" style={{ color: GOLD }}>
                     {title}
                   </div>
-                  {items.map(({ href, icon, label }) => (
-                    <NavItem
-                      key={href}
-                      href={href}
-                      icon={icon}
-                      label={label[locale ?? 'ja']}
-                      isActive={isActiveHref(href, pathname, allItems)}
-                    />
-                  ))}
+                  {items
+                    .filter((i) => isAuthenticated || !i.requiresAuth)
+                    .map(({ href, icon, label }) => (
+                      <NavItem
+                        key={href}
+                        href={href}
+                        icon={icon}
+                        label={label[locale ?? 'ja']}
+                        isActive={isActiveHref(href, pathname, allItems)}
+                      />
+                    ))}
                 </div>
               </React.Fragment>
             ))}

@@ -50,6 +50,7 @@ vi.mock('../../lib/progress/snapshot-client', () => ({
   saveProgressSnapshot: vi.fn().mockResolvedValue(undefined),
 }))
 
+import { saveProgressSnapshot } from '../../lib/progress/snapshot-client'
 import { Result } from './result'
 
 // gold, largeCategory 強化素材(normal group) → DEFAULT_STOCK_BUFFER.normal.gold = 60
@@ -106,6 +107,7 @@ const submitAndReadUrl = async () => {
 beforeEach(() => {
   localStorage.clear()
   push.mockClear()
+  vi.mocked(saveProgressSnapshot).mockClear()
 })
 
 afterEach(() => {
@@ -329,5 +331,36 @@ describe('goSolver — result visibility', () => {
     render(<Result items={items} quests={quests} />)
     const button = await submitButton()
     expect(button).toBeDisabled()
+  })
+})
+
+describe('goSolver — progress snapshot', () => {
+  const solveSuccessfully = async () => {
+    setLocalStorage('efficiency/stockEnabled', false)
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', {})
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: 'solve-1', isPublic: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<Result items={items} quests={quests} />)
+    await userEvent.click(await submitButton())
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/farming/results/solve-1'))
+  }
+
+  it('does not save a snapshot when unauthenticated', async () => {
+    mockSession.mockReturnValue({ data: null, status: 'unauthenticated' })
+    await solveSuccessfully()
+    expect(saveProgressSnapshot).not.toHaveBeenCalled()
+  })
+
+  it('saves a snapshot when authenticated', async () => {
+    mockSession.mockReturnValue({
+      data: { user: { id: 'user-1' } },
+      status: 'authenticated',
+    })
+    await solveSuccessfully()
+    expect(saveProgressSnapshot).toHaveBeenCalledTimes(1)
   })
 })
