@@ -12,6 +12,7 @@ import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
 import { Link } from '../common/link'
+import { PageHeader } from '../common/page-header'
 import { ServantStars } from '../common/ServantStars'
 
 const BEAST_CLASSES = new Set<ClassName>(['beast', 'beastEresh', 'unBeastOlgaMarie'])
@@ -33,12 +34,7 @@ export const Index = ({ servants, locale = 'ja' }: ServantIndexProps) => {
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">SERVANT LIST</div>
-            <h1 className="c-page-title">{t('サーヴァント一覧')}</h1>
-          </div>
-        </div>
+        <PageHeader en="SERVANT LIST" title={t('サーヴァント一覧')} />
 
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-x-6 gap-y-10">
           {servantGroups.map(([className, servantGroups]) => (

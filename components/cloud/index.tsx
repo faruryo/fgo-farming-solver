@@ -8,6 +8,7 @@ import { signOut } from 'next-auth/react'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AuthButton } from '../common/auth-button'
+import { PageHeader } from '../common/page-header'
 import { getStats } from './parts/stats-logic'
 import { ComparisonView } from './parts/comparison-view'
 import { ShrinkDiff } from './parts/shrink-diff'
@@ -156,12 +157,7 @@ const Cloud = () => {
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">DATA MANAGEMENT</div>
-            <h1 className="c-page-title">{t('クラウドセーブ')} & {t('local-backup-title')}</h1>
-          </div>
-        </div>
+        <PageHeader en="DATA MANAGEMENT" title={<>{t('クラウドセーブ')} & {t('local-backup-title')}</>} />
 
         <div className="flex flex-col items-center gap-8 py-8">
           {/* Cloud Sync Section */}

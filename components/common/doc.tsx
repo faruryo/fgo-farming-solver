@@ -3,6 +3,7 @@
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Head } from './head'
+import { PageHeader } from './page-header'
 
 export type PageProps = {
   title: string
@@ -54,12 +55,7 @@ const components = {
 const Page = ({ title, md }: PageProps) => (
   <div className="c-page">
     <div className="c-page-inner">
-      <div className="c-page-header">
-        <div>
-          <div className="c-page-en">DOCUMENTATION</div>
-          <h1 className="c-page-title">{title}</h1>
-        </div>
-      </div>
+      <PageHeader en="DOCUMENTATION" title={title} />
       <div className="c-card p-10" style={{ background: 'var(--panel2)' }}>
         <Head title={title} />
         <div className="markdown-body">

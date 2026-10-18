@@ -4,6 +4,7 @@ import React, { useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFarmingResult } from '../../hooks/use-farming-result'
 import { Link } from '../common/link'
+import { PageHeader } from '../common/page-header'
 import { QuestTable } from './quest-table'
 import { TweetIntent } from './tweet-intent'
 import { ResultAccordion } from './result-accordion'
@@ -225,29 +226,32 @@ const ResultHeader = ({
 }) => {
   const { t } = useTranslation(['farming', 'common'])
   return (
-    <div className="c-page-header flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <div className="c-page-en">RESULT</div>
-        <h1 className="c-page-title">
+    <PageHeader
+      className="flex flex-wrap items-center justify-between gap-3"
+      en="RESULT"
+      title={
+        <>
           {t('計算結果')}
           {formattedDate && (
             <span className="text-xs font-normal text-muted-foreground ml-3" style={{ opacity: 0.8 }}>
               (計算日時: {formattedDate})
             </span>
           )}
-        </h1>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        {isOwner && (
-          <ResultVisibilityControl
-            isPublic={isPublic}
-            onVisibilityChange={onVisibilityChange}
-            isUpdating={isUpdating}
-          />
-        )}
-        <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
-      </div>
-    </div>
+        </>
+      }
+      aside={
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {isOwner && (
+            <ResultVisibilityControl
+              isPublic={isPublic}
+              onVisibilityChange={onVisibilityChange}
+              isUpdating={isUpdating}
+            />
+          )}
+          <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
+        </div>
+      }
+    />
   )
 }
 

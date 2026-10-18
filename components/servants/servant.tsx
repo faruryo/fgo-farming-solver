@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
+import { PageHeader } from '../common/page-header'
 import { MaterialList } from './material-list'
 import { useTranslation } from 'react-i18next'
 import { NiceServant, Item, Materials } from '../../interfaces/atlas-academy'
@@ -36,34 +37,34 @@ export const Page = ({
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">SERVANT DETAIL</div>
-            <h1 className="c-page-title">{title}</h1>
-          </div>
-          <div className="c-stats">
-            <div className="c-stat">
-              <div className="c-stat-num"><ServantStars rarity={servant.rarity} /></div>
-              <div className="c-stat-label">STARS</div>
+        <PageHeader
+          en="SERVANT DETAIL"
+          title={title}
+          aside={
+            <div className="c-stats">
+              <div className="c-stat">
+                <div className="c-stat-num"><ServantStars rarity={servant.rarity} /></div>
+                <div className="c-stat-label">STARS</div>
+              </div>
+              <div className="c-stat">
+                {classIconUrl ? (
+                  <Image
+                    src={classIconUrl}
+                    alt={getClassName(servant.className, locale)}
+                    width={32}
+                    height={32}
+                    style={{ objectFit: 'contain' }}
+                  />
+                ) : (
+                  <div className="c-stat-num" style={{ fontSize: '14px' }}>
+                    {getClassName(servant.className, locale)}
+                  </div>
+                )}
+                <div className="c-stat-label">CLASS</div>
+              </div>
             </div>
-            <div className="c-stat">
-              {classIconUrl ? (
-                <Image
-                  src={classIconUrl}
-                  alt={getClassName(servant.className, locale)}
-                  width={32}
-                  height={32}
-                  style={{ objectFit: 'contain' }}
-                />
-              ) : (
-                <div className="c-stat-num" style={{ fontSize: '14px' }}>
-                  {getClassName(servant.className, locale)}
-                </div>
-              )}
-              <div className="c-stat-label">CLASS</div>
-            </div>
-          </div>
-        </div>
+          }
+        />
 
         <div className="flex flex-col items-center gap-6 mb-8">
           <Breadcrumb className="self-start">

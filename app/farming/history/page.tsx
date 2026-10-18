@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '../../../components/common/link'
+import { PageHeader } from '../../../components/common/page-header'
 import { motion } from 'framer-motion'
 import { Loader2, Trash2 } from 'lucide-react'
 import { FaExternalLinkAlt, FaHistory } from 'react-icons/fa'
@@ -229,15 +230,15 @@ export default function HistoryPage() {
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-8">
-          <div className="flex justify-between items-center">
-            <div className="flex flex-col">
-              <div className="c-page-en" style={{ letterSpacing: '0.2em' }}>FARMING HISTORY</div>
-              <h1 className="c-page-title flex items-center gap-3">
+          <PageHeader
+            en="FARMING HISTORY"
+            title={
+              <span className="inline-flex items-center gap-3">
                 <FaHistory style={{ color: 'var(--gold)' }} />
                 {t('common:計算履歴')}
-              </h1>
-            </div>
-          </div>
+              </span>
+            }
+          />
 
           {groupedHistory.length > 1 && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
