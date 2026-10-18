@@ -7,7 +7,7 @@
 ## 2. 計算履歴の取得
 
 - [ ] 2.1 `hooks/use-recent-result.ts` が、`status === 'authenticated'` のときだけ `GET /api/farming/history` を呼ぶようにする。`status === 'loading'` の間は、`localStorage` の結果 URL からの読み込みも含めて何も取得せず `loading: true` を返し、確認が終わってから一度だけ読む（FarmingWizard などが確認中に件数 0 で表示されて消えるのを防ぐ）。確認後の `localStorage` の結果 URL からの読み込みは、ログイン状態に関係なく行う。`hooks/use-recent-result.test.ts` を足し（`next-auth/react` は既存のテストと同じ形でモックする）、確認中は何も取得せず `loading` が true のままであること、未ログインでは履歴の取得が送られず結果 URL からの読み込みだけが行われること、ログインでは履歴を取得することを `pnpm vitest run hooks/use-recent-result.test.ts` で確かめる
-- [ ] 2.2 `app/farming/history/page.tsx` が、未ログインでは計算履歴を取得せず、計算履歴はログインすると使えることと `/cloud` へのリンクを表示するようにする。確認中は取得しない。案内の文言は `locales/ja.json` と英語の翻訳に足す。`app/farming/history/page.test.tsx` を足し、未ログインで取得が送られず案内とリンクが出ること、ログインで取得することを `pnpm vitest run app/farming/history` で確かめる
+- [ ] 2.2 `app/farming/history/page.tsx` が、未ログインでは計算履歴を取得せず、計算履歴はログインすると使えることと `/cloud` へのリンクを表示するようにする。確認中は取得しない。案内の文言は `t('<key>', '<日本語フォールバック>')` で出し、キーを `locales/ja.json` と `locales/en.json` の両方に足す。`app/farming/history/page.test.tsx` を足し、未ログインで取得が送られず案内とリンクが出ること、ログインで取得することを `pnpm vitest run app/farming/history` で確かめる
 
 ## 3. 計算履歴への導線と推移グラフ
 
@@ -19,3 +19,4 @@
 ## 4. 見た目の確認
 
 - [ ] 4.1 Playwright の見た目のテスト（`e2e/visual.spec.ts`）を手元で走らせ、ダッシュボードの差分が次の5つだけであることを確かめる: 「計算履歴」リンクの消失、推移グラフの消失、FarmingWizard の表示、NearGoalSection と RecommendedQuest が直近の結果なしの表示になること（開発環境では履歴と結果のモックが未ログインでも返っていたため） <!-- verify-only -->
+- [ ] 4.2 変更した4画面（ナビゲーション、周回結果画面、ダッシュボード、計算履歴ページ）を、375px 幅と desktop 幅のブラウザ実画面で、未ログイン・ログイン状態の確認中・ログインの3つの状態について確かめる。見るのは、確認中に「計算履歴」の導線と推移グラフが出ず、確認後にちらつかずに状態どおりの表示へ移ること、375px 幅のナビゲーションメニューで「計算履歴」の項目が未ログインでは無くログインでは有ること、未ログインの周回結果画面にボタンとグラフが無いこと、未ログインで計算履歴ページを開くと案内と `/cloud` へのリンクが出ること、ログインでは4画面ともこれまでどおり表示されること（fgo の AGENTS.md の UI 実画面確認の規則） <!-- verify-only -->
