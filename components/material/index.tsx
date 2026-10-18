@@ -17,6 +17,7 @@ import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { ServantCard } from './servant-card'
+import { PageHeader } from '../common/page-header'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -297,35 +298,36 @@ export const Index = ({
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">MATERIAL CALCULATOR</div>
-            <h1 className="c-page-title">育成素材計算機</h1>
-            <div className="flex items-center gap-3 mt-1.5">
-              <Link
-                href="/material/class-score"
-                className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1 bg-primary/10 px-2.5 py-1 rounded-full transition-colors"
-              >
-                <span>{t('class-score-link', 'クラススコア目標設定')}</span>
-                <span>→</span>
-              </Link>
+        <PageHeader
+          en="MATERIAL CALCULATOR"
+          title="育成素材計算機"
+          aside={
+            <div className="c-stats">
+              <div className="c-stat">
+                <div className="c-stat-num">{ownedCount}</div>
+                <div className="c-stat-label">所持</div>
+              </div>
+              <div className="c-stat">
+                <div className="c-stat-num green">{doneCount}</div>
+                <div className="c-stat-label">育成完了</div>
+              </div>
+              <div className="c-stat">
+                <div className="c-stat-num">{servants.length}</div>
+                <div className="c-stat-label">総数</div>
+              </div>
             </div>
+          }
+        >
+          <div className="flex items-center gap-3">
+            <Link
+              href="/material/class-score"
+              className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1 bg-primary/10 px-2.5 py-1 rounded-full transition-colors"
+            >
+              <span>{t('class-score-link', 'クラススコア目標設定')}</span>
+              <span>→</span>
+            </Link>
           </div>
-          <div className="c-stats">
-            <div className="c-stat">
-              <div className="c-stat-num">{ownedCount}</div>
-              <div className="c-stat-label">所持</div>
-            </div>
-            <div className="c-stat">
-              <div className="c-stat-num green">{doneCount}</div>
-              <div className="c-stat-label">育成完了</div>
-            </div>
-            <div className="c-stat">
-              <div className="c-stat-num">{servants.length}</div>
-              <div className="c-stat-label">総数</div>
-            </div>
-          </div>
-        </div>
+        </PageHeader>
 
         {/* Global target panel */}
         <div className="c-global-panel">

@@ -8,6 +8,7 @@ import { Localized } from '../../lib/get-local-items'
 import { groupBy } from '../../utils/group-by'
 import { orderBy } from '../../utils/order-by'
 import { BreadcrumbLink } from '../common/breadcrumb-link'
+import { PageHeader } from '../common/page-header'
 import { DropRateStyleRadio } from './drop-rate-style-radio'
 import { DropTable } from './drop-table'
 import { useTranslation } from 'react-i18next'
@@ -66,12 +67,7 @@ export const Page = ({ id, items, quests, dropRates }: ItemProps) => {
   return (
     <div className="c-page">
       <div className="c-page-inner">
-        <div className="c-page-header">
-          <div>
-            <div className="c-page-en">ITEM DETAIL</div>
-            <h1 className="c-page-title">{title}</h1>
-          </div>
-        </div>
+        <PageHeader en="ITEM DETAIL" title={title} />
 
         <div className="flex flex-col gap-8">
           <Breadcrumb>

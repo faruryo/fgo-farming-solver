@@ -2,8 +2,7 @@
 
 import React, { useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaChevronLeft } from 'react-icons/fa'
-import { Link } from '../common/link'
+import { PageHeader } from '../common/page-header'
 import { Badge } from '@/components/ui/badge'
 import type { EventFeature } from '../../data/event-features'
 import type { EventSummary } from '../../lib/event-features'
@@ -38,44 +37,29 @@ const StatusBadge: React.FC<{ summary: EventSummary }> = ({ summary }) => {
 const Header: React.FC<{ summary: EventSummary; box?: EventPlannerEvent }> = ({ summary, box }) => {
   const { t } = useTranslation('events')
   return (
-    <div className="c-page-header">
-      <div className="flex flex-col gap-2">
-        <Link
-          href="/events"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '12px',
-            color: 'var(--text3)',
-            textDecoration: 'none',
-            fontWeight: 500,
-          }}
-        >
-          <FaChevronLeft size={11} /> {t('イベント一覧へ戻る')}
-        </Link>
-        <div className="flex flex-col">
-          <div className="c-page-en">{t('event-planner-eyebrow', 'EVENT PLANNER')}</div>
-          <h1 className="c-page-title">{summary.name}</h1>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <StatusBadge summary={summary} />
-          <span className="text-xs" style={{ color: 'var(--text3)' }}>
-            {formatDate(summary.startedAt)} 〜 {formatDate(summary.endedAt)}
-          </span>
-          {box && (
-            <>
-              <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                {t('箱数', { count: box.lotteries.length })}
-              </span>
-              <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                {box.currency.name}
-              </span>
-            </>
-          )}
-        </div>
+    <PageHeader
+      backLabel={t('イベント一覧へ戻る')}
+      backHref="/events"
+      en={t('event-planner-eyebrow', 'EVENT PLANNER')}
+      title={summary.name}
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        <StatusBadge summary={summary} />
+        <span className="text-xs" style={{ color: 'var(--text3)' }}>
+          {formatDate(summary.startedAt)} 〜 {formatDate(summary.endedAt)}
+        </span>
+        {box && (
+          <>
+            <span className="text-xs" style={{ color: 'var(--text3)' }}>
+              {t('箱数', { count: box.lotteries.length })}
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text3)' }}>
+              {box.currency.name}
+            </span>
+          </>
+        )}
       </div>
-    </div>
+    </PageHeader>
   )
 }
 

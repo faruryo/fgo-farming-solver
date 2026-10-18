@@ -18,6 +18,7 @@ import { HistoryGraph } from '../components/dashboard/HistoryGraph'
 import { NearGoalSection } from '../components/dashboard/NearGoalSection'
 import { TodoWidget } from '../components/todo/TodoWidget'
 import { Link } from '../components/common/link'
+import { PageHeader } from '../components/common/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const container = {
@@ -48,13 +49,8 @@ export default function HomePage() {
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="c-page-header"
           >
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-col">
-                <div className="c-page-en">MASTER TERMINAL</div>
-                <h1 className="c-page-title">{t('FGO周回ダッシュボード')}</h1>
-              </div>
+            <PageHeader en="MASTER TERMINAL" title={t('FGO周回ダッシュボード')}>
               <div className="flex gap-2 flex-wrap items-center">
                 <Link
                   href="/material"
@@ -132,7 +128,7 @@ export default function HomePage() {
                   </Link>
                 </div>
               </div>
-            </div>
+            </PageHeader>
           </motion.div>
 
           <TodoWidget />
