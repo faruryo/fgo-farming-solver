@@ -25,7 +25,7 @@ export default async function EventDetailPage({ params }: Props) {
     return <EventDataMissing eventId={eventId} />
   }
 
-  const features = featuresFor(eventId, !!kvEvent)
+  const features = featuresFor(eventId, kvEvent)
   const items = features.includes('craft') ? await getItems('ja') : undefined
 
   return (

@@ -121,11 +121,21 @@ const EventGroup: React.FC<GroupProps> = ({ title, events, nowSec, statusVariant
 const FeatureBadges: React.FC<{ features: EventSummaryWithFeatures['features'] }> = ({ features }) => {
   const { t } = useTranslation('events')
   if (features.length === 0) return null
+  const label = (feature: EventSummaryWithFeatures['features'][number]) => {
+    switch (feature) {
+      case 'box':
+        return t('event-feature-box', 'ボックス計画')
+      case 'shop':
+        return t('event-feature-shop', '交換所')
+      case 'craft':
+        return t('event-feature-craft', '料理作成')
+    }
+  }
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {features.map(feature => (
         <Badge key={feature} variant="outline" className="text-[10px]">
-          {feature === 'box' ? t('event-feature-box', 'ボックス計画') : t('event-feature-craft', '料理作成')}
+          {label(feature)}
         </Badge>
       ))}
     </div>

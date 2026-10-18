@@ -4,7 +4,14 @@ import EventDetailPage from './page'
 import { EventHubClient } from '../../../components/events/EventHubClient'
 import { EventDataMissing } from '../../../components/events/EventDataMissing'
 
-const boxEvent = { id: 80586, name: 'BOX', startedAt: 1, endedAt: 2 }
+const boxEvent = {
+  id: 80586,
+  name: 'BOX',
+  startedAt: 1,
+  endedAt: 2,
+  lotteries: [{ boxIndex: 0, costPerBox: 1, contents: [], rareRewards: [] }],
+  shop: [],
+}
 vi.mock('../../../lib/get-events', () => ({
   getEventById: async (id: number) => (id === boxEvent.id ? boxEvent : null),
 }))
