@@ -203,7 +203,9 @@
     "farming-result-status-public": "Public",
     "farming-result-status-private": "Private",
     "farming-result-visibility-toggle-aria": "Toggle public / private visibility",
-    "farming-result-visibility-update-error": "Failed to update visibility settings"
+    "farming-result-visibility-update-error": "Failed to update visibility settings",
+    "farming-history-login-required": "Calculation history is available after you log in. Once logged in, your farming results are recorded to your account and you can review them and their trend here.",
+    "farming-history-login-link": "Log in"
   },
   "items": {
     "アイテム一覧": "Item List",

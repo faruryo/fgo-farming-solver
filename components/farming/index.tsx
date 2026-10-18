@@ -161,7 +161,7 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
           fields: 'id',
           isPublic: String(isPublic),
         })
-        await submitSolve(params, router)
+        await submitSolve(params, router, status === 'authenticated')
       } catch (e) {
         console.error('[farming] solve submission failed:', e)
       } finally {

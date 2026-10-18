@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSession } from 'next-auth/react'
 import { Link } from '../../../components/common/link'
 import { PageHeader } from '../../../components/common/page-header'
 import { motion } from 'framer-motion'
@@ -137,8 +138,24 @@ const groupByBatch = (history: HistoryItem[]): GroupedHistoryItem[] => {
   return result
 }
 
+const HistoryTitle: React.FC = () => {
+  const { t } = useTranslation(['common'])
+  return (
+    <PageHeader
+      en="FARMING HISTORY"
+      title={
+        <span className="flex items-center gap-3">
+          <FaHistory style={{ color: 'var(--gold)' }} />
+          {t('common:計算履歴')}
+        </span>
+      }
+    />
+  )
+}
+
 export default function HistoryPage() {
   const { t } = useTranslation(['farming', 'common', 'dashboard'])
+  const { status } = useSession()
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmItem, setConfirmItem] = useState<GroupedHistoryItem | null>(null)
@@ -207,15 +224,40 @@ export default function HistoryPage() {
     }
   }
 
+  // 計算履歴はログインユーザーだけのもの。確認中・未ログインでは取得しない。
   useEffect(() => {
+    if (status !== 'authenticated') return
     fetch('/api/farming/history')
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHistory(data) })
       .catch(err => console.error(err))
       .finally(() => setLoading(false))
-  }, [])
+  }, [status])
 
-  if (loading) {
+  if (status === 'unauthenticated') {
+    return (
+      <div className="c-page">
+        <div className="c-page-inner">
+          <div className="flex flex-col gap-8">
+            <HistoryTitle />
+            <div className="c-card flex flex-col items-center gap-4 p-8 text-center">
+              <p className="text-sm" style={{ color: 'var(--text2)' }}>
+                {t(
+                  'farming-history-login-required',
+                  '計算履歴はログインすると使えます。ログインすると、周回計算の結果がアカウントに記録され、ここで一覧と推移を確認できます。',
+                )}
+              </p>
+              <Link href="/cloud" className="c-back-btn">
+                {t('farming-history-login-link', 'ログインする')}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'loading' || loading) {
     return (
       <div className="c-page">
         <div className="c-page-inner flex flex-col items-center justify-center gap-4 py-20">
@@ -230,15 +272,7 @@ export default function HistoryPage() {
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-8">
-          <PageHeader
-            en="FARMING HISTORY"
-            title={
-              <span className="flex items-center gap-3">
-                <FaHistory style={{ color: 'var(--gold)' }} />
-                {t('common:計算履歴')}
-              </span>
-            }
-          />
+          <HistoryTitle />
 
           {groupedHistory.length > 1 && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>

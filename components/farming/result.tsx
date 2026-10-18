@@ -2,6 +2,7 @@
 
 import React, { useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSession } from 'next-auth/react'
 import { useFarmingResult } from '../../hooks/use-farming-result'
 import { Link } from '../common/link'
 import { PageHeader } from '../common/page-header'
@@ -217,12 +218,14 @@ const ResultHeader = ({
   isPublic,
   onVisibilityChange,
   isUpdating,
+  showHistoryLink,
 }: {
   formattedDate: string
   isOwner?: boolean
   isPublic: boolean
   onVisibilityChange: (next: boolean) => void
   isUpdating: boolean
+  showHistoryLink: boolean
 }) => {
   const { t } = useTranslation(['farming', 'common'])
   return (
@@ -248,7 +251,9 @@ const ResultHeader = ({
               isUpdating={isUpdating}
             />
           )}
-          <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
+          {showHistoryLink && (
+            <Link href="/farming/history" className="c-back-btn">{t('計算履歴')}</Link>
+          )}
         </div>
       }
     />
@@ -361,6 +366,9 @@ export const Page = ({
   const { t } = useTranslation(['farming', 'common'])
   const isMounted = useIsMounted()
   const formattedDate = isMounted ? formatDate(createdAt) : ''
+  // 計算履歴はログインユーザーだけのもの。確認中・未ログインでは導線もグラフも出さない。
+  const { status } = useSession()
+  const isAuthenticated = status === 'authenticated'
   const {
     isPublic: isPublicState,
     isUpdating,
@@ -376,6 +384,7 @@ export const Page = ({
           isPublic={isPublicState}
           onVisibilityChange={handleVisibilityChange}
           isUpdating={isUpdating}
+          showHistoryLink={isAuthenticated}
         />
 
         {legacyResult ? (
@@ -390,9 +399,11 @@ export const Page = ({
           />
         )}
 
-        <div className="mt-12">
-          <HistoryGraph />
-        </div>
+        {isAuthenticated && (
+          <div className="mt-12">
+            <HistoryGraph />
+          </div>
+        )}
 
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <Link href="/farming/manual" className="c-back-btn">{t('戻って条件を調整する')}</Link>
