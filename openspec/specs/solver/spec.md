@@ -2,7 +2,9 @@
 
 ## Purpose
 ユーザーが設定した必要素材数に基づき、数学的な最適化手法を用いて、最も効率的なクエストの組み合わせ（周回計画）を算出する機能。
+
 ## Requirements
+
 ### Requirement: 最適化計算の実行
 システムは、線形計画法を用いてユーザーの目的に対する最適な周回計画を算出しなければならない (SHALL)。
 
@@ -106,60 +108,6 @@
 - **WHEN** クエストに `addedAt` が存在しないとき（機能導入前からの既存クエスト）
 - **THEN** バッジは表示されず、エラーにもならない。
 
-### Requirement: 周回目標取り込みの余剰ストック追従
-
-システムは育成計算機の結果画面(`/material/result`)から周回ソルバーへ不足分を取り込む導線において、**目標A(必要分) `max(0, 必要数 − 所持)` と、`stockEnabled=ON` のとき目標B(ストック込み) `effectiveDeficiency` の双方を算出し、`/farming` を経由せず `/api/solve` へ直接送信する** SHALL。目標A・Bは 必要数・所持の双方を持つ `/material/result` 側(`goSolver`)で算出 SHALL。`buffer(item)`・`stockBuffer`・レアリティ判定はクエスト効率と同一の値・関数を共有 SHALL。`stockEnabled=OFF`、または目標Bが目標Aと一致するときは目標Bを送信せず目標Aのみで計算する。2目標で計算・保存した目標B行には `stockIncluded=true` を付与する。直接送信には、`/material/result` 上で選択された周回対象クエスト(`material`capabilityの「育成計算機結果画面での周回対象クエスト選択」要件)も含める SHALL。
-
-#### Scenario: 取り込みは目標Aと目標Bを直接送信する
-- **WHEN** `stockEnabled=ON` で`/material/result`から周回ソルバーへ送信し、目標Bが目標Aと異なるとき
-- **THEN** 目標A(`max(0, 必要数 − 所持)`)と目標B(`effectiveDeficiency`)の双方が`/farming`を経由せず`/api/solve`へ直接渡される。
-
-#### Scenario: stockEnabled=OFF は目標Aのみを送信する
-- **WHEN** `stockEnabled=OFF` で`/material/result`から周回ソルバーへ送信するとき
-- **THEN** 目標Aのみが送信され、目標Bは送信されない。
-
-#### Scenario: クエスト効率の重み判定と一致
-- **WHEN** 同じ `stockBuffer`・所持数・育成必要数で目標Bを導出する
-- **THEN** 目標Bの個数は、クエスト効率がストック込み実効目標で不足と判定する量と整合する。
-
-#### Scenario: ストック込み計算のフラグ付与
-- **WHEN** `stockEnabled=ON` で2目標計算して保存する
-- **THEN** 目標B行の計算パラメータに `stockIncluded=true` が記録される。
-
-#### Scenario: 送信には選択中の周回対象クエストが含まれる
-- **WHEN** `/material/result`で一部のクエストを除外した状態で送信するとき
-- **THEN** `/api/solve`への送信には除外後の周回対象クエストが含まれ、除外したクエストは計算対象から外れる。
-
-#### Scenario: 目標Aが0件でも目標Bが1件以上あれば送信できる
-- **WHEN** すべての素材が「必要数 ≤ 所持 < 必要数+buffer(item)」(stock-only、目標Aは0件だが目標Bは1件以上)であるとき
-- **THEN** 送信は目標Aの件数だけでブロックされず、目標Bが1件以上あれば送信できる。
-- **THEN** このとき目標Bを唯一の `items` として単独送信する(`itemsStock` は付けず2目標バッチにしない)。目標Aが空のまま2目標バッチ送信すると、`/api/solve` が目標A行(0件・0AP)を着地先(`id`)として返してしまうため。
-- **THEN** この単独送信経路では `stockIncluded=true` は付与されない(付与は2目標バッチ保存時のみの契約であり、本changeはこの契約を変更しない)。結果画面の「ストック込み」バッジはこのケースでは表示されない。
-
-#### Scenario: /farmingへの直接アクセスは影響を受けない
-- **WHEN** ユーザーが`/material/result`を経由せず`/farming`を直接開き、個数を手入力して送信するとき
-- **THEN** 従来どおり`/farming`のフォームから`/api/solve`が呼ばれ、挙動に変化はない。この経路では目標B(ストック込み)は発生しない。
-
-### Requirement: 2目標(必要分/ストック込み)の同時計算
-
-システムは育成計算機(`goSolver`)からの周回計算において、**目標A(必要分)と目標B(必要分+バッファー)を同時に解いて両方を保存**しなければならない (SHALL)。目標A個数は各素材 `max(0, 必要数 − 所持)`、目標B個数は各素材 `effectiveDeficiency = max(0, 必要数 + buffer(item) − 所持)`(`lib/quest-efficiency.ts` の共有純関数)とする。両者とも 必要数・所持の双方を持つ取り込み元(`goSolver`)で算出 SHALL。これにより「必要数 ≤ 所持 < 必要数+buffer」の素材(base は充足だがストック分は不足=stock-only 素材)も目標Bに含まれる。目標Bは目標Aを包含する(B ⊇ A)。目標A・Bはそれぞれ `solveBoth`(AP最小・周回数最小)で解かれる。
-
-#### Scenario: 2目標の同時計算と保存
-- **WHEN** `stockEnabled=ON` かつ少なくとも1素材で `buffer(item)` により目標Bの個数が目標Aより増えるとき
-- **THEN** 目標A(必要分)と目標B(必要分+バッファー)の双方が同一リクエスト内で計算され、両方が計算履歴に保存される。
-
-#### Scenario: 目標Bが目標Aと一致する場合は単一計算
-- **WHEN** `stockEnabled=OFF` のとき、または全素材で目標Bの実効個数が目標Aと等しい(バッファーの増分が実効ゼロ)とき
-- **THEN** 目標Bは保存されず、目標Aのみが従来どおり単一の計算結果として保存される。
-
-#### Scenario: 目標Bは取り込み元で effectiveDeficiency として算出
-- **WHEN** 目標Bの個数を決定するとき
-- **THEN** 各素材の目標B個数は `effectiveDeficiency = max(0, 必要数 + buffer(item) − 所持)` として算出され、`buffer(item)`・`stockBuffer` 値・レアリティ判定はクエスト効率と同一の純関数・値を共有する。
-
-#### Scenario: stock-only 素材も目標Bに含まれる
-- **WHEN** ある素材が `必要数 ≤ 所持 < 必要数 + buffer(item)`(目標Aでは不足ゼロだがストック分は不足)であるとき
-- **THEN** その素材は目標Aには現れず(個数0で除外)、目標Bには `必要数 + buffer(item) − 所持` の個数で含まれる。
-
 ### Requirement: 2目標結果の進捗アンカー
 
 システムは2目標計算において、進捗KPI・ダッシュボード・「あと何周」等の集計の基準(アンカー)を**目標A(必要分)**としなければならない (SHALL)。目標B(ストック込み)は比較・上乗せ表示のための補助であり、進捗の分母を膨らませてはならない (SHALL NOT)。
@@ -167,6 +115,32 @@
 #### Scenario: 進捗は必要分をアンカーにする
 - **WHEN** 2目標で計算・保存した結果から進捗スナップショットやKPIを算出するとき
 - **THEN** 目標A(`stockIncluded=false`・nominal AP)の結果が基準として用いられ、目標Bは進捗の分母に含まれない。
+
+### Requirement: 周回目的に応じた育成計算結果の取り込み
+
+システムは育成計算結果から周回ソルバーへ不足分を取り込む際、「今の育成を進める」では各素材を `max(0, required - owned)`、「新規サーヴァントに備える」では `max(0, max(required, buffer) - owned)` として計算しなければならない (SHALL)。`buffer` はクエスト効率と同じカテゴリ・レアリティ別在庫基準を使わなければならない (SHALL)。
+
+「素材全体の効率を見る」は有限の必要数を持たないため、ソルバーへ全素材の架空目標を生成してはならない (SHALL NOT)。この場合は登録済み育成必要数による `training` の不足を送信し、その旨を送信操作の近くに表示しなければならない (SHALL)。
+
+#### Scenario: 今の育成を計算する
+
+- **WHEN** `training` で育成計算結果を周回計算へ送信する
+- **THEN** 育成必要数に対する不足だけが送信される
+
+#### Scenario: 新規サーヴァントへの備えを計算する
+
+- **WHEN** `reserve` で育成計算結果を周回計算へ送信する
+- **THEN** `max(required, buffer)` に対する不足が送信され、育成必要数とバッファーは加算されない
+
+#### Scenario: 素材全体から架空目標を作らない
+
+- **WHEN** `all` で育成計算結果を周回計算へ送信する
+- **THEN** 登録済み育成必要数による不足だけが送信され、「周回計算は今の育成を使用」と表示される
+
+#### Scenario: 手入力ソルバーは影響を受けない
+
+- **WHEN** ユーザーが育成計算結果を経由せず個数を手入力する
+- **THEN** 入力された個数をそのまま目標として計算する
 
 ## Constraints
 - **計算アルゴリズム**: 単体法 (Simplex Method) を用いた線形計画法を使用すること。
