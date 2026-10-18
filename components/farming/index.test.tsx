@@ -16,6 +16,7 @@ import {
   submitButton,
 } from '../../lib/farming/solve-request-test-utils'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { saveProgressSnapshot } from '../../lib/progress/snapshot-client'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
@@ -56,6 +57,7 @@ beforeEach(() => {
   localStorage.clear()
   push.mockClear()
   replace.mockClear()
+  vi.mocked(saveProgressSnapshot).mockClear()
 })
 
 afterEach(() => {
@@ -179,5 +181,41 @@ describe('/farming direct access (5.4 regression)', () => {
 
     const url = await inputItemCountAndSolve(user, fetchMock)
     expect(url.searchParams.get('isPublic')).toBe('true')
+  })
+
+  describe('progress snapshot after a successful solve', () => {
+    const stubSuccessfulSolve = () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ id: 'solve-1', isPublic: true }),
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+
+    it('does not save a snapshot when unauthenticated', async () => {
+      mockSession.mockReturnValue({ data: null, status: 'unauthenticated' })
+      const fetchMock = stubSuccessfulSolve()
+      const user = userEvent.setup()
+      render(<Index items={items} quests={quests} />)
+
+      await inputItemCountAndSolve(user, fetchMock)
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/farming/results/solve-1'))
+      expect(saveProgressSnapshot).not.toHaveBeenCalled()
+    })
+
+    it('saves a snapshot when authenticated', async () => {
+      mockSession.mockReturnValue({
+        data: { user: { id: 'test-user', name: 'Tester' } },
+        status: 'authenticated',
+      })
+      const fetchMock = stubSuccessfulSolve()
+      const user = userEvent.setup()
+      render(<Index items={items} quests={quests} />)
+
+      await inputItemCountAndSolve(user, fetchMock)
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/farming/results/solve-1'))
+      expect(saveProgressSnapshot).toHaveBeenCalledTimes(1)
+    })
   })
 })
