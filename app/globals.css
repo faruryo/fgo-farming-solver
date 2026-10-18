@@ -133,6 +133,9 @@ body {
   display: flex; align-items: flex-end; justify-content: space-between;
   padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--border); position: relative;
 }
+@media (max-width: 640px) {
+  .c-page-header { flex-wrap: wrap; gap: 12px; }
+}
 .c-page-header::after {
   content: ''; position: absolute; bottom: -1px; left: 0; width: 100px; height: 2px; background: var(--gold);
 }
@@ -530,6 +533,9 @@ body {
 
 /* ===== RESULT ACTIONS ===== */
 .c-result-actions { display: flex; gap: 8px; align-items: center; }
+@media (max-width: 640px) {
+  .c-result-actions { flex-wrap: wrap; }
+}
 .c-back-btn {
   background: var(--panel2); border: 1px solid var(--border2); color: var(--steel);
   cursor: pointer; font-family: var(--sans); font-size: 12px; padding: 8px 16px; transition: all 0.15s;
