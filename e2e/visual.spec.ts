@@ -1,4 +1,18 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { test, expect } from '@playwright/test'
+
+// The dev /api/progress mock rotates its scenarios every 3 seconds and Mash's line is
+// picked with Math.random, so the dashboard differed between runs of the same commit (#149).
+const [progressScenario] = JSON.parse(readFileSync(resolve('mocks/progress.json'), 'utf8')) as Record<string, unknown>[]
+const { _scenario, ...progressMock } = progressScenario
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5
+  })
+  await page.route('**/api/progress', (route) => route.fulfill({ json: progressMock }))
+})
 
 const pages = [
   { name: 'dashboard', path: '/' },
