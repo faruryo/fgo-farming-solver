@@ -1,0 +1,4 @@
+/* The Next.js dev overlay badge counts console errors (farming has an expected hydration mismatch: its server render uses the real clock). */
+nextjs-portal {
+  display: none !important;
+}
