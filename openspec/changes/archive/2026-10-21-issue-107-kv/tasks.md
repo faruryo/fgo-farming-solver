@@ -13,8 +13,8 @@
 
 ## 3. 確認
 
-- [ ] 3.1 `pnpm run type-check`・`pnpm run lint:ratchet`・`pnpm run check:preview-bindings` が通ることを確かめる <!-- verify-only -->
-- [ ] 3.2 `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を設定せずに `DRY_RUN=1` で 2.3 のスクリプトを実行し、通信せずに 0 で終わり、写す先が `wrangler.toml` のプレビュー用の ID（`9d4d9c…`）と出て、6つのキーがどれも「本番に値が無い」として飛ばされるログが出ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm run type-check`・`pnpm run lint:ratchet`・`pnpm run check:preview-bindings` が通ることを確かめる <!-- verify-only -->
+- [x] 3.2 `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を設定せずに `DRY_RUN=1` で 2.3 のスクリプトを実行し、通信せずに 0 で終わり、写す先が `wrangler.toml` のプレビュー用の ID（`9d4d9c…`）と出て、6つのキーがどれも「本番に値が無い」として飛ばされるログが出ることを確かめる <!-- verify-only -->
 
 
 ## Auditor Feedback
