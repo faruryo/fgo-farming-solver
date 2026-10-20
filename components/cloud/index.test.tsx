@@ -263,3 +263,23 @@ describe('Cloud page (shrink guard pending state)', () => {
     ).toBeInTheDocument()
   })
 })
+
+describe('Cloud page (stacked action buttons on phone width)', () => {
+  beforeEach(() => {
+    useCloudSync.mockReset()
+  })
+
+  // 縦に並ぶ行で flex-1 が効くと、ボタンの高さが潰れる (#151)
+  it.each([
+    ['shrink guard', () => syncState(blocked()), 'このまま保存する'],
+    ['conflict', () => syncState({ hasConflict: true }), 'クラウドを強制上書き'],
+  ])('keeps the %s buttons full height when they stack', (_state, state, secondLabel) => {
+    useCloudSync.mockReturnValue(state())
+    render(<Cloud />)
+    for (const name of ['読み込み', secondLabel]) {
+      const classes = screen.getByRole('button', { name }).className.split(' ')
+      expect(classes).not.toContain('flex-1')
+      expect(classes).toEqual(expect.arrayContaining(['sm:flex-1', 'h-11']))
+    }
+  })
+})
