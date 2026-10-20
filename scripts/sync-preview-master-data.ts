@@ -7,10 +7,18 @@ import { readFileSync } from 'node:fs'
 import { kvGet, kvGetIn, kvPutIn } from './kv-rest'
 import { syncPreviewMasterData } from './preview-master-data-sync'
 
-const code = await syncPreviewMasterData({
-  toml: readFileSync('wrangler.toml', 'utf8'),
-  getProduction: kvGet,
-  getPreview: kvGetIn,
-  putPreview: kvPutIn,
-})
-process.exit(code)
+async function main(): Promise<number> {
+  return syncPreviewMasterData({
+    toml: readFileSync('wrangler.toml', 'utf8'),
+    getProduction: kvGet,
+    getPreview: kvGetIn,
+    putPreview: kvPutIn,
+  })
+}
+
+main()
+  .then(code => process.exit(code))
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
+  })
