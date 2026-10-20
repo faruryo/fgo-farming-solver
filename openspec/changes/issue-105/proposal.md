@@ -23,6 +23,6 @@
 ## Impact
 
 - `lib/bond/estimate.ts`（`groupByQuest` の `pods`）、`lib/bond/entry-estimate.ts`（`pods`）、`lib/bond/progress.ts`（定数の共有）
-- `lib/bond/state.ts`（切り替えの保存と復元）、`components/bond/index.tsx`（切り替えの表示）
+- `lib/bond/state.ts`（切り替えの保存と復元）、`components/bond/index.tsx`（切り替えの表示）、`locales/ja.json`・`locales/en.json`（切り替えのラベルと注記の文言）
 - `components/bond/use-bond-tracker.ts`（`useDashboardMeta` と `usePodFreeQuests` の取り込み）、`components/bond/servant-card.tsx`（候補の印、ポッド数の表示）、`components/bond/estimate-table.tsx`（無料と数えた周回の注記）
 - 各ユニットテストと、画面の確認（375px と desktop）
