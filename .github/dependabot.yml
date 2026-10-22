@@ -2,6 +2,12 @@ version: 2
 
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      # composite action の中の uses は "/" では探されないため、ディレクトリを明示する
+      - /.github/actions/setup-node
     schedule:
       interval: weekly
+    # cooldown は security updates には効かない（security updates はリポジトリ設定で有効にしたときだけ届く）
+    cooldown:
+      default-days: 7
