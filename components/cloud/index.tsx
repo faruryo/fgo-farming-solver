@@ -323,7 +323,7 @@ const Cloud = () => {
 
                       <div className="flex flex-col sm:flex-row gap-3 w-full">
                         <Button
-                          className="flex-1 h-11 text-sm"
+                          className="sm:flex-1 h-11 text-sm"
                           variant="outline"
                           style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold)' }}
                           onClick={resolveShrinkByRestore}
@@ -331,7 +331,7 @@ const Cloud = () => {
                           {t('読み込み')}
                         </Button>
                         <Button
-                          className="flex-1 h-11 text-sm"
+                          className="sm:flex-1 h-11 text-sm"
                           variant="destructive"
                           onClick={() => void resolveShrinkByForce()}
                           disabled={isSaving}
@@ -344,7 +344,7 @@ const Cloud = () => {
                   ) : hasConflict ? (
                     <div className="flex flex-col sm:flex-row gap-3 w-full">
                       <Button
-                        className="flex-1 h-11 text-sm"
+                        className="sm:flex-1 h-11 text-sm"
                         variant="outline"
                         style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold)' }}
                         onClick={handleLoad}
@@ -354,7 +354,7 @@ const Cloud = () => {
                         {t('読み込み')}
                       </Button>
                       <Button
-                        className="flex-1 h-11 text-sm"
+                        className="sm:flex-1 h-11 text-sm"
                         variant="destructive"
                         onClick={handleManualSave}
                         disabled={isSaving || saveStatus === true}

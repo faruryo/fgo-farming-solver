@@ -1,0 +1,22 @@
+name: Setup Node.js
+description: Node 24.x のうち、セキュリティリリースか公開日が7日以上前の最新版を入れる
+runs:
+  using: composite
+  steps:
+    - id: pick
+      shell: bash
+      run: |
+        # セキュリティ修正は即日入れ、それ以外のリリースは7日待つ
+        major=24
+        cutoff=$(date -u -d '7 days ago' +%F)
+        if version=$(curl -fsSL --retry 3 --max-time 30 https://nodejs.org/dist/index.json | jq -er --arg major "$major" --arg cutoff "$cutoff" -f "$GITHUB_ACTION_PATH/pick-version.jq"); then
+          echo "Node v$version を使う"
+        else
+          echo "::warning::Node の版を nodejs.org から決められなかったため、ランナーにある $major.x を使う"
+          version=$major
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        node-version: ${{ steps.pick.outputs.version }}
+        cache: pnpm

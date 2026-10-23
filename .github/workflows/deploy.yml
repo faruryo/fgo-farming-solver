@@ -34,10 +34,7 @@ jobs:
         with:
           version: 10
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version: 24
-          cache: pnpm
+      - uses: ./.github/actions/setup-node
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -77,10 +74,7 @@ jobs:
         with:
           version: 10
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version: 24
-          cache: pnpm
+      - uses: ./.github/actions/setup-node
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -121,10 +115,7 @@ jobs:
           version: 10
 
       - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version: 24
-          cache: pnpm
+        uses: ./.github/actions/setup-node
 
       - name: Download build artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
