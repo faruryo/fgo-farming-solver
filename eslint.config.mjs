@@ -211,4 +211,12 @@ export default defineConfig([
       'react-hooks/error-boundaries': 'off',
     },
   },
+  {
+    // jq has no node_modules binary; the test runs the setup-node composite
+    // action's jq filter with the PATH jq, as the CI runner does.
+    files: ['scripts/pick-node-version.test.ts'],
+    rules: {
+      'sonarjs/no-os-command-from-path': 'off',
+    },
+  },
 ])
