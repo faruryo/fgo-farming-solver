@@ -51,3 +51,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # 本番に今ある値をプレビュー用の MASTER_DATA へ写す(値が違うキーだけ)。
+      # 前の段が失敗しても本番に入っている値は正しいので、rarity の段と同じ条件で走らせる。
+      - name: Sync master data to preview KV
+        if: always() && steps.master.conclusion != 'skipped' && steps.master.conclusion != 'cancelled'
+        run: pnpm exec tsx scripts/sync-preview-master-data.ts
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
