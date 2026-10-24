@@ -1,0 +1,29 @@
+[
+  {
+    "key": "event_rewards:80586",
+    "value": {
+      "pointRewards": [
+        { "point": 1000, "gifts": [{ "objType": "item", "itemId": 102, "num": 1, "name": "赤銅の果実", "icon": "https://static.atlasacademy.io/JP/Items/102.png" }] },
+        { "point": 50000, "gifts": [{ "objType": "commandCode", "itemId": 8400990, "num": 1 }] }
+      ],
+      "missions": [
+        {
+          "id": 8058601,
+          "dispNo": 1,
+          "type": "event",
+          "name": "イベントのクエストを3回クリアせよ",
+          "gifts": [{ "objType": "item", "itemId": 6503, "num": 1, "name": "英雄の証", "icon": "https://static.atlasacademy.io/JP/Items/6503.png" }],
+          "conds": [
+            {
+              "condType": "missionConditionDetail",
+              "targetIds": [80586001],
+              "targetNum": 3,
+              "details": [{ "missionCondType": 10, "targetIds": [94100101, 94100102] }]
+            }
+          ]
+        }
+      ],
+      "updatedAt": 1767225600
+    }
+  }
+]
