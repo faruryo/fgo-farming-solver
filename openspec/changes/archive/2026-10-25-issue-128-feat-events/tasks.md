@@ -11,8 +11,8 @@
 
 ## 3. 品質ゲート
 
-- [ ] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
 
 ## 4. 画面の確認
 
-- [ ] 4.1 `pnpm dev`（`--webpack` は付けない）で、確認のときだけ `mocks/events.json` に既存のイベント（例: 80549、通貨3種類）のロトを空にした複製を別の ID で足して（commit しない）、そのイベントページを 375px と desktop の幅で開き、回数の入力・上限まで選ぶ・所持数・必要量・周回の内訳・注記が表示され、375px で横スクロールが出ないことを確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
+- [x] 4.1 `pnpm dev`（`--webpack` は付けない）で、確認のときだけ `mocks/events.json` に既存のイベント（例: 80549、通貨3種類）のロトを空にした複製を別の ID で足して（commit しない）、そのイベントページを 375px と desktop の幅で開き、回数の入力・上限まで選ぶ・所持数・必要量・周回の内訳・注記が表示され、375px で横スクロールが出ないことを確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
