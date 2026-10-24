@@ -13,6 +13,10 @@
  *     （省略時は既存なし＝従来の全置換相当）。
  *   後続の `wrangler kv key put event_data_json --path <出力パス>` で KV へ投入する
  *   (.github/workflows/refresh-event-data.yml 参照)。
+ *   環境変数 `EVENT_REWARDS_OUT`（任意）: 取り込んだイベントのポイント報酬・ミッション・
+ *     ポイントの品目を、イベントごとのキー `event_rewards:<id>` の
+ *     `wrangler kv bulk put` 用ファイル（[{ key, value }]）として書く。
+ *     event_data_json に変化が無い日も書く。整形できなかったイベントは入れない（KV の前の値を残す）。
  *
  * 対象イベント:
  *   - Atlas `basic_event.json` から type='eventQuest' のイベントを取得。
@@ -41,8 +45,22 @@ import {
   parseBackfillSince,
   parseExistingEvents,
 } from '../lib/refresh-event-data-merge'
-import { compactShop, decideEventImport } from '../lib/refresh-event-data-compact'
-import type { AtlasShopItem, ItemMap } from '../lib/refresh-event-data-compact'
+import {
+  buildEventRewardsRows,
+  compactMissions,
+  compactPointRewards,
+  compactShop,
+  decideEventImport,
+  findPointItemId,
+  tryCompact,
+} from '../lib/refresh-event-data-compact'
+import type {
+  AtlasMission,
+  AtlasPointReward,
+  AtlasShopItem,
+  EventRewardsEntry,
+  ItemMap,
+} from '../lib/refresh-event-data-compact'
 import type {
   EventCurrency,
   EventData,
@@ -129,6 +147,10 @@ interface AtlasEvent {
   warIds: number[]
   lotteries: AtlasLottery[]
   shop: AtlasShopItem[]
+  /** ポイント報酬（無いときは取れなかった扱いで event_rewards を書かない）。 */
+  rewards?: AtlasPointReward[]
+  /** ミッション（同上）。 */
+  missions?: AtlasMission[]
 }
 
 // ── バリデーション ─────────────────────────────────────────────────────
@@ -150,7 +172,15 @@ function validateAtlasEvent(raw: unknown): { ok: true; data: AtlasEvent } | { ok
   if (!Array.isArray(r.lotteries)) return { ok: false, reason: 'missing lotteries array' }
   if (!Array.isArray(r.shop)) return { ok: false, reason: 'missing shop array' }
   if (!Array.isArray(r.warIds)) return { ok: false, reason: 'missing warIds array' }
-  return { ok: true, data: raw as AtlasEvent }
+  // rewards / missions は任意。配列でなければ無し扱いにし、イベント自体は捨てない。
+  return {
+    ok: true,
+    data: {
+      ...(raw as AtlasEvent),
+      rewards: Array.isArray(r.rewards) ? (r.rewards as AtlasPointReward[]) : undefined,
+      missions: Array.isArray(r.missions) ? (r.missions as AtlasMission[]) : undefined,
+    },
+  }
 }
 
 /**
@@ -190,14 +220,15 @@ interface AtlasItemEntry {
   id: number
   name: string
   icon: string
+  type: string
 }
 
-/** Atlas nice_item（全件、日本語）を取得して Map<id, {name, icon}> を返す */
+/** Atlas nice_item（全件、日本語）を取得して Map<id, {name, icon, type}> を返す */
 async function fetchItemMap(): Promise<ItemMap> {
   const items = await fetchJson<AtlasItemEntry[]>(`${origin}/export/${region}/nice_item.json`)
-  const map = new Map<number, { name: string; icon: string }>()
+  const map: ItemMap = new Map()
   for (const item of items) {
-    map.set(item.id, { name: item.name, icon: item.icon })
+    map.set(item.id, { name: item.name, icon: item.icon, type: item.type })
   }
   return map
 }
@@ -317,11 +348,37 @@ async function compactFarmingNodes(
   return nodes
 }
 
+/**
+ * ポイント報酬・ミッション・ポイントの品目を整形する。
+ * 失敗したものは undefined にしてログに出す（イベントの取り込みは続ける）。
+ */
+function compactEventRewards(
+  event: AtlasEvent,
+  farmingNodes: EventFarmingNode[],
+  itemMap: ItemMap,
+): EventRewardsEntry {
+  const pointRewards = tryCompact(event.rewards, r => compactPointRewards(r, itemMap))
+  const missions = tryCompact(event.missions, m => compactMissions(m, itemMap))
+  const pointItemId = tryCompact(farmingNodes, n => findPointItemId(n, itemMap))
+  if (pointRewards === undefined) console.warn(`  point rewards unavailable for event ${event.id}`)
+  if (missions === undefined) console.warn(`  missions unavailable for event ${event.id}`)
+  console.log(
+    `  rewards: ${pointRewards?.length ?? '-'} point rewards, ${missions?.length ?? '-'} missions, ` +
+    `point item ${pointItemId ?? '-'}`
+  )
+  return { eventId: event.id, pointRewards, missions, pointItemId }
+}
+
+function writeOut(path: string, data: string): void {
+  writeFileSync(path, data)
+}
+
 // ── メイン ────────────────────────────────────────────────────────────
 
 async function main() {
   const outPath = process.argv[2] ?? './event_data.json'
   const existingPath = process.argv[3]
+  const rewardsOutPath = process.env.EVENT_REWARDS_OUT
   const nowSec = Math.floor(Date.now() / 1000)
   const graceSec = ENDED_GRACE_DAYS * 24 * 60 * 60
 
@@ -370,6 +427,7 @@ async function main() {
   )
 
   const results: EventPlannerEvent[] = []
+  const rewardsEntries: EventRewardsEntry[] = []
 
   for (const [idx, basic] of targets.entries()) {
     console.log(`\n[${idx + 1}/${targets.length}] Processing event ${basic.id} "${basic.name}"...`)
@@ -421,6 +479,7 @@ async function main() {
         shop,
         farmingNodes,
       })
+      rewardsEntries.push(compactEventRewards(event, farmingNodes, itemMap))
       console.log(`  ok (shop only): ${shop.length} shop items, ${farmingNodes.length} farming nodes`)
       continue
     }
@@ -453,6 +512,7 @@ async function main() {
       shop,
       farmingNodes,
     })
+    rewardsEntries.push(compactEventRewards(event, farmingNodes, itemMap))
 
     console.log(
       `  ok: ${lotteries.length} boxes, ${shop.length} shop items, ${farmingNodes.length} farming nodes`
@@ -463,6 +523,18 @@ async function main() {
   // 空書きで壊さないよう失敗扱いにする（毎日の cron でも本当の異常は赤くする）。
   if (basicEvents.length === 0) {
     throw new Error('Refusing to write: basic_event.json was empty (likely upstream issue)')
+  }
+
+  // ポイント報酬・ミッションはイベントごとのキーなのでマージ不要。event_data_json 側の
+  // 途中終了（変化なし・0件）に関係なく書く。
+  if (rewardsOutPath) {
+    const rows = buildEventRewardsRows(rewardsEntries, nowSec)
+    writeOut(rewardsOutPath, JSON.stringify(rows))
+    console.log(
+      `Wrote ${rows.length} event_rewards row(s) to ${rewardsOutPath} ` +
+      `(${rewardsEntries.length - rows.length} skipped) ` +
+      `[${rows.map(r => r.key + '=' + r.value.length + 'B').join(', ')}]`
+    )
   }
 
   // 蓄積マージ: 既存 + 今回フェッチを id upsert（過去イベントは温存）。
@@ -491,7 +563,7 @@ async function main() {
     updatedAt: nowSec,
   }
 
-  writeFileSync(outPath, JSON.stringify(output))
+  writeOut(outPath, JSON.stringify(output))
   console.log(
     `\nWrote ${merged.length} event(s) to ${outPath} ` +
     `(${results.length} fetched, +${merged.length - existingEvents.length} net new, ` +

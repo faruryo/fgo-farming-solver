@@ -6,11 +6,13 @@
  * 「常にボックスイベント開催中」に見せるため最新イベントの会期を now 基準へシフトする。
  */
 
-import type { EventData, EventPlannerEvent } from './master-data/types'
+import type { EventData, EventPlannerEvent, EventRewards } from './master-data/types'
 import { kvGetJson, readLocalJson } from './data-source'
 
 const EVENT_DATA_KEY = 'event_data_json'
 const MOCK_PATH = 'mocks/events.json'
+/** ローカル開発用。bulk put と同じ [{ key, value }] の形（value はオブジェクトのまま）。 */
+const REWARDS_MOCK_PATH = 'mocks/event-rewards.json'
 
 const EMPTY: EventData = { events: [], updatedAt: 0 }
 
@@ -73,4 +75,17 @@ export const getActiveEvents = async (nowSec?: number): Promise<EventPlannerEven
 export const getEventById = async (id: number): Promise<EventPlannerEvent | null> => {
   const { events } = await getEvents()
   return events.find(e => e.id === id) ?? null
+}
+
+/**
+ * イベントごとの KV キー `event_rewards:<id>` からポイント報酬・ミッションを読む。
+ * イベントページだけが呼ぶ（一覧・ダッシュボードは event_data_json だけを読む）。
+ * キーが無いイベント（取り込み前の過去イベントなど）は undefined。
+ */
+export const getEventRewards = async (eventId: number): Promise<EventRewards | undefined> => {
+  const key = `event_rewards:${eventId}`
+  const fromKv = await kvGetJson<EventRewards>(key)
+  if (fromKv) return fromKv
+  const fromMock = await readLocalJson<{ key: string; value: EventRewards }[]>(REWARDS_MOCK_PATH)
+  return fromMock?.find(r => r.key === key)?.value
 }

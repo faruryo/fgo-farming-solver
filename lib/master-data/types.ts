@@ -181,6 +181,56 @@ export interface EventData {
   updatedAt: number
 }
 
+/**
+ * ポイント報酬・ミッション報酬の1品目。
+ * objType は Atlas gift の type（item / servant / commandCode 等）。名前とアイコンはアイテムのみ。
+ */
+export interface EventGift {
+  objType: string
+  itemId: number
+  num: number
+  name?: string
+  icon?: string
+}
+
+/** ポイント報酬の1段（累計ポイントの昇順で並ぶ）。 */
+export interface EventPointReward {
+  /** 必要な累計ポイント。 */
+  point: number
+  gifts: EventGift[]
+}
+
+/** ミッション（表示順で並ぶ）。 */
+export interface EventMission {
+  id: number
+  dispNo: number
+  /** Atlas mission type（event 等）。 */
+  type: string
+  /** 表示名。 */
+  name: string
+  gifts: EventGift[]
+  /** 達成の条件（missionProgressType が clear のものだけ）の要点。 */
+  conds: {
+    condType: string
+    targetIds: number[]
+    targetNum: number
+    details?: { missionCondType: number; targetIds: number[] }[]
+  }[]
+}
+
+/**
+ * KV `event_rewards:<イベント ID>` の値。
+ * イベントページだけが読む（一覧・ダッシュボード・通知は読まない）。
+ */
+export interface EventRewards {
+  pointRewards: EventPointReward[]
+  missions: EventMission[]
+  /** イベントポイントの品目 ID（周回ドロップに eventPoint が無ければ無し）。 */
+  pointItemId?: number
+  /** 書き出した Unix timestamp（秒）。 */
+  updatedAt: number
+}
+
 export interface DashboardCampaignInfo {
   target: string
   calcType: string
