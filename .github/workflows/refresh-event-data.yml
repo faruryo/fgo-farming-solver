@@ -85,6 +85,8 @@ jobs:
         # backfill_since は run: に直書きせず env 経由で渡す（command injection 回避）。
         env:
           BACKFILL_SINCE: ${{ inputs.backfill_since }}
+          # イベントごとの event_rewards:<id> の bulk put 用ファイル（event_data_json に変化が無い日も書かれる）。
+          EVENT_REWARDS_OUT: event_rewards.json
         run: |
           # existing.json があれば第2引数として渡し蓄積マージ（無ければ既存なし）。
           if [ -f existing.json ]; then
@@ -108,6 +110,24 @@ jobs:
           --path event_data.json
           --namespace-id 306bbe537e9d4907809f82468df500e4
           --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # ポイント報酬・ミッションはイベントごとのキーに書く（既存の取得・マージは不要）。
+      # event_data_json の put とは別ステップなので、ここが失敗しても event_data_json は進む。
+      # 整形できなかったイベントはファイルに入らず、KV の前の値が残る。
+      # event_data_json の put の有無・成否に関係なく書く（build がスキップ・失敗したときは書かない）。
+      - name: Put event rewards into KV
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && hashFiles('event_rewards.json') != '' }}
+        run: |
+          if [ "$(jq 'length' event_rewards.json)" -gt 0 ]; then
+            pnpm exec wrangler kv bulk put event_rewards.json \
+              --namespace-id 306bbe537e9d4907809f82468df500e4 \
+              --remote
+          else
+            echo "No event_rewards rows; skipping bulk put."
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
