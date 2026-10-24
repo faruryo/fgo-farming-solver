@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { EventHubClient } from './EventHubClient'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 
@@ -95,6 +95,68 @@ describe('EventHubClient', () => {
     expect(screen.getByTestId('box-planner')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '交換所' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '武蔵うどん' })).not.toBeInTheDocument()
+  })
+
+  it('ロトの無い交換所イベントで回数を選ぶと必要量と周回の内訳が出る', () => {
+    const shopEvent = event({
+      shop: [
+        shopEntry(1, 94001, { costName: '武蔵うどん' }),
+        shopEntry(2, 94001, { costName: '武蔵うどん', limitNum: 0 }),
+      ],
+      farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
+    })
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    expect(screen.getByText('周回は不要です。')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '上限まで選ぶ' }))
+    expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
+    expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(0)
+
+    fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '9' } })
+    expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
+    fireEvent.change(screen.getByLabelText('素材2 の交換回数'), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText('武蔵うどん の所持数'), { target: { value: '60' } })
+
+    expect(screen.getByText('選んだ交換 210')).toBeInTheDocument()
+    expect(screen.getByText('必要量 150')).toBeInTheDocument()
+    expect(screen.getByText('15 周')).toBeInTheDocument()
+    expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+    expect(screen.getByText('武蔵うどん: 見込み 150（必要量 150）')).toBeInTheDocument()
+    expect(screen.getByText('ドロップはイベントのボーナス（礼装・サーヴァント）を含まない統計値です。')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('武蔵うどん の所持数'), { target: { value: '1000' } })
+    expect(screen.getByText('必要量 0')).toBeInTheDocument()
+    expect(screen.getByText('周回は不要です。')).toBeInTheDocument()
+  })
+
+  it('ドロップの統計が無いときは必要量を出し、周回の代わりに出せない旨を出す', () => {
+    const shopEvent = event({
+      shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })],
+      farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [] }],
+    })
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '2' } })
+
+    expect(screen.getByText('必要量 60')).toBeInTheDocument()
+    expect(screen.getByText('ドロップの統計がまだ無いため、周回を出せません。')).toBeInTheDocument()
+    expect(screen.queryByText(/^合計 /)).not.toBeInTheDocument()
+  })
+
+  it('周回では落ちない通貨があるときは通貨名と集められない旨を出し、残りの通貨で周回を出す', () => {
+    const shopEvent = event({
+      shop: [shopEntry(1, 94001, { costName: '武蔵うどん' }), shopEntry(2, 94002, { costName: '江戸むすび' })],
+      farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
+    })
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('素材2 の交換回数'), { target: { value: '1' } })
+
+    expect(screen.getByText('江戸むすび は周回では集められません。')).toBeInTheDocument()
+    expect(screen.getByText('合計 3 周・AP 120')).toBeInTheDocument()
+    expect(screen.queryByText(/^江戸むすび: 見込み/)).not.toBeInTheDocument()
   })
 
   it('KV に交換所のデータが無ければ交換所一覧を出さない', () => {
