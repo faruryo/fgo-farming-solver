@@ -13,8 +13,8 @@
 
 ## 3. 品質ゲート
 
-- [ ] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
 
 ## 4. 実データでの確認
 
-- [ ] 4.1 手元でスクリプトを、既存の KV を渡さず、出力と `EVENT_REWARDS_OUT` を worktree の外の一時ファイルにして実行し（Atlas への読み取りの通信だけ。本番の KV には書かない）、bulk put 用の出力に 80627（ポイント報酬180件・ポイントの品目 94160904）と 80632（ミッション100件）の行があること、イベントあたりの値の大きさ、`event_data_json` 用の出力の `events`（`updatedAt` を除く）が同じ日に main で実行したものと同じことを確かめ、結果を実装 PR に載せる <!-- verify-only -->
+- [x] 4.1 手元でスクリプトを、既存の KV を渡さず、出力と `EVENT_REWARDS_OUT` を worktree の外の一時ファイルにして実行し（Atlas への読み取りの通信だけ。本番の KV には書かない）、bulk put 用の出力に 80627（ポイント報酬180件・ポイントの品目 94160904）と 80632（ミッション100件）の行があること、イベントあたりの値の大きさ、`event_data_json` 用の出力の `events`（`updatedAt` を除く）が同じ日に main で実行したものと同じことを確かめ、結果を実装 PR に載せる <!-- verify-only -->
