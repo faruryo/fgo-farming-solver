@@ -7,11 +7,11 @@
 ロトの無い交換所イベントでは、`app/events/[id]/page.tsx`（サーバー）が KV のイベントを読み、`components/events/EventHubClient.tsx`（`'use client'`）が `EventShopList` を出す。育成計画と所持数は、どちらもブラウザの localStorage にあり、クライアントの部品から読める。サーバーや D1 を新しく読む必要は無い。
 
 - 育成計画: `hooks/use-roster-need.ts` の `useRosterNeed()`。`STORAGE_KEYS.MATERIAL` の育成対象から `getMaterialsForServantIds` で素材を取り、`computeTotalNeed` で素材ごとの総必要数（atlasId → 個数）を返す。状態は `empty`（育成対象なし）・`loading`・`error`（一部の取得に失敗）・`ready` の4つ。localStorage には書かない
-- 所持数: `useLocalStorage(STORAGE_KEYS.ITEMS, {}, { lazyWrite: true })`。値は atlasId の文字列 → 個数（文字列のこともある）
+- 所持数: `useLocalStorage(STORAGE_KEYS.POSSESSION, {}, { lazyWrite: true })`。所持数のページ（`PossessionModal` など）が保存する実所持数で、atlasId の文字列 → 個数（`number | undefined`）。`STORAGE_KEYS.ITEMS` は周回目標で、キーも drops の `item.id` と体系が違う。箱計画（`EventPlannerClient`）は既存の挙動を保つために `ITEMS` を読んでいるが（`openspec/specs/event-planner/spec.md`）、`EventCraftSection` は `POSSESSION` を読んでおり（event-hub-page の design で実所持数と周回目標を分けると決めた）、この change はそちらに合わせる
 - 箱計画（`EventPlannerClient` の roster モード）は、この2つから `computeShortfall`（必要数 − 所持数、0 以下は除く）を出している。`EventCraftSection` も `useRosterNeed` を使い、`empty` のときに「育成対象を設定する」（`/material`）のリンクを出している
 - 交換所の品目の `itemId` は atlasId で、`computeShortfall` のキーと同じ ID 体系（`computeRosterImpact` が `shopItem.itemId` で突き合わせている）
 
-`useRosterNeed` は `EventHubClient` の下では `EventPlannerClient` と `EventCraftSection` からしか呼ばれていない。`EventShopList` で呼んでも、取得は育成対象の ID の組ごとに1回で、同じ画面に箱計画は出ない（交換所だけのイベントでは `EventPlannerClient` を出さない）。
+`useRosterNeed` は、hook を呼ぶ部品ごとに `getMaterialsForServantIds` で素材を取得する（`lib/get-materials.ts` にキャッシュは無い）。交換所だけのイベントでは `EventPlannerClient` は出ないが、`isShopOnlyEvent` は craft との組み合わせを除外しないので、shop と craft が両方あるイベントでは `EventShopList` と `EventCraftSection` が二重に取得する。今のレジストリ（`data/event-features.ts`）に該当するイベントは無いので、この change では取得を共有せず、許容する。
 
 ### 今の交換所の画面（#168・#176 の後）
 
@@ -35,7 +35,7 @@
 
 ### 1. 不足は `computeShortfall` と同じ定義で、`EventShopList` で求める
 
-`EventShopList` で `useRosterNeed()` と所持数（`STORAGE_KEYS.ITEMS`、`lazyWrite: true`）を読む。`ready` のときだけ、`computeShortfall` と同じ「総必要数 − 所持数（0 未満は 0）」を求める。`useRosterNeed` が返す `totalNeed` をそのまま使い、所持数を引くだけの純粋関数を `lib/event-shop-summary.ts` に置く。`computeShortfall` を呼ぶと総必要数を作り直すため、使わない。品目の状態は、総必要数が 0 なら「育成計画で使わない」、不足が 0 なら「足りている」、それ以外は「あと N 個」とする。礼装・サーヴァントは総必要数に現れないので、「育成計画で使わない」になる。所持数の正規化は `EventPlannerClient` と同じく `Number(v) || 0` とする。
+`EventShopList` で `useRosterNeed()` と所持数（`STORAGE_KEYS.POSSESSION`、`lazyWrite: true`）を読む。`ready` のときだけ、`computeShortfall` と同じ「総必要数 − 所持数（0 未満は 0）」を求める。`useRosterNeed` が返す `totalNeed` をそのまま使い、所持数を引くだけの純粋関数を `lib/event-shop-summary.ts` に置く。`computeShortfall` を呼ぶと総必要数を作り直すため、使わない。品目の状態は、総必要数が 0 なら「育成計画で使わない」、不足が 0 なら「足りている」、それ以外は「あと N 個」とする。礼装・サーヴァントは総必要数に現れないので、「育成計画で使わない」になる。QP（atlasId 1）は `computeTotalNeed` が総必要数に足しているが、交換所の QP の品目で育成計画の QP を埋める使い方は想定せず、桁も他の素材と合わないので、対象から外す。QP の品目にはラベルを出さず、要るものだけ交換では 0 回にし、要約に数えない。所持数の正規化は `EventPlannerClient` と同じく `Number(v) || 0` とする。
 
 ### 2. 要る分の回数は新しい純粋関数で出し、`allocateShop` は使わない
 
@@ -64,6 +64,7 @@
 
 ## Risks / Trade-offs
 
+- [同じ素材が通貨の違う複数の品目にあるとき、交換所の元の順に割り当てるので、対価の安い品目が後回しになり、周回数が最小にならないことがある] → 交換所で埋まるか・埋まらないかの判定は変わらない。最小の周回にはしないと決めて、利用者は回数を手で変えられる
 - [#176 と同じ `EventShopList.tsx` の上部の操作と品目の行に触れる] → 実装（ops-graph）は #176 のマージ後に main から始める
 - [周回で落ちる素材を数えないので、要る分を多めに交換させる] → Non-Goals に書き、別 issue にする。要約の文言は「交換所で埋まる」とし、周回のドロップを含むと読めないようにする
 - [育成計画の素材の取得は通信が要る] → `useRosterNeed` の既存の取得をそのまま使う。失敗しても交換所の既存の機能は使える（決定 5）

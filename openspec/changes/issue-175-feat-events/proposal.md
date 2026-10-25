@@ -23,7 +23,7 @@
 
 ## Impact
 
-- `components/events/EventShopList.tsx`: 育成計画（`useRosterNeed`）と所持数（`STORAGE_KEYS.ITEMS`）を読み、品目の行に要る・要らないを出し、上部の操作に「要るものだけ交換」を足す
+- `components/events/EventShopList.tsx`: 育成計画（`useRosterNeed`）と所持数（`STORAGE_KEYS.POSSESSION`）を読み、品目の行に要る・要らないを出し、上部の操作に「要るものだけ交換」を足す
 - `lib/event-shop-summary.ts`: 品目ごとの不足と、要る分だけの交換回数を出す純粋関数
 - `locales/ja.json`・`locales/en.json`
 - #176（交換所の区切りの線と「効率の良いところまで交換」を消す）と同じ画面に触れるので、実装は #176 のマージ後に main から始める
