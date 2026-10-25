@@ -32,6 +32,16 @@ export const featuresFor = (
 }
 
 /**
+ * ロトの無い交換所イベントか。ロトのあるイベントは箱計画の中で交換所を扱うので、
+ * features に shop があり box が無く、交換所が1件以上のときだけ真。
+ */
+export const isShopOnlyEvent = (
+  features: readonly EventFeature[],
+  kvEvent: EventPlannerEvent | null | undefined,
+): kvEvent is EventPlannerEvent =>
+  features.includes('shop') && !features.includes('box') && (kvEvent?.shop.length ?? 0) > 0
+
+/**
  * KV イベントとレジストリ登録イベントの和集合を ID 重複なしで返す。
  * 同一 ID は KV の名前・会期を優先する。並び順は変えない（KV 順 → レジストリのみ分）。
  */

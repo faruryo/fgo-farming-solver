@@ -65,7 +65,7 @@ describe('EventHubClient', () => {
     render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
 
     expect(screen.queryByTestId('box-planner')).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '交換所' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '交換所の周回計算' })).toBeInTheDocument()
 
     const udon = screen.getByRole('heading', { name: '武蔵うどん' }).closest('div.rounded-md') as HTMLElement
     expect(within(udon).getByText('全交換 350')).toBeInTheDocument()
@@ -93,7 +93,7 @@ describe('EventHubClient', () => {
     render(<EventHubClient summary={summary} boxEvent={boxEvent} features={['box', 'shop']} />)
 
     expect(screen.getByTestId('box-planner')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: '交換所' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '武蔵うどん' })).not.toBeInTheDocument()
   })
 
@@ -109,7 +109,7 @@ describe('EventHubClient', () => {
 
     expect(screen.getByText('周回は不要です。')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '上限まで選ぶ' }))
+    fireEvent.click(screen.getByRole('button', { name: '在庫上限まですべて交換する数を入れる' }))
     expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
     expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(0)
 
@@ -162,12 +162,158 @@ describe('EventHubClient', () => {
   it('KV に交換所のデータが無ければ交換所一覧を出さない', () => {
     render(<EventHubClient summary={summary} features={['shop', 'craft']} />)
 
-    expect(screen.queryByRole('heading', { name: '交換所' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
   })
 
   it('KV のイベントの交換所が空なら交換所一覧を出さない', () => {
     render(<EventHubClient summary={summary} boxEvent={event({ shop: [] })} features={['shop']} />)
 
-    expect(screen.queryByRole('heading', { name: '交換所' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
+  })
+
+  it('ロトの無い交換所イベントでは見出しの下に目的の説明を出し、ロトのあるイベントの見出しは変えない', () => {
+    const { unmount } = render(
+      <EventHubClient summary={summary} boxEvent={event({ shop: [shopEntry(1, 94001)] })} features={['shop']} />,
+    )
+    expect(screen.getByRole('heading', { name: '交換所の周回計算' })).toBeInTheDocument()
+    expect(
+      screen.getByText('交換したい品目の数を入れると、必要な通貨の数と、集めるのに要る周回数・AP を計算します'),
+    ).toBeInTheDocument()
+    unmount()
+
+    const boxEvent = event({
+      lotteries: [{ boxIndex: 0, costPerBox: 100, contents: [], rareRewards: [] }],
+      shop: [shopEntry(1, 94001)],
+    })
+    render(<EventHubClient summary={summary} boxEvent={boxEvent} features={['box', 'shop']} />)
+    expect(screen.getByRole('heading', { name: 'ロト計画' })).toBeInTheDocument()
+    expect(screen.queryByText(/^交換したい品目の数を入れると/)).not.toBeInTheDocument()
+  })
+
+  it('「在庫上限まですべて交換する数を入れる」を押すと、交換所の上部の1行に合計の周回数と AP が出る', () => {
+    const shopEvent = event({
+      shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })],
+      farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
+    })
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    const line = screen.getByTestId('shop-plan-summary')
+    const card = cardOf('武蔵うどん')
+    expect(line.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(line).toHaveTextContent('周回の合計: 不要')
+
+    fireEvent.click(screen.getByRole('button', { name: '在庫上限まですべて交換する数を入れる' }))
+    expect(line).toHaveTextContent('周回の合計 15 周・AP 600')
+    expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+  })
+
+  it('ドロップの統計が無いときは上部の1行にもその旨を短く出す', () => {
+    const shopEvent = event({
+      shop: [shopEntry(1, 94001)],
+      farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [] }],
+    })
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '1' } })
+    expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計: ドロップの統計なし')
+  })
+
+  describe('効率順の並び', () => {
+    const farmingNodes = [
+      { questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }, { itemId: 94002, perRun: 10 }] },
+    ]
+
+    it('AP 換算値の無い品目を元の順で前に、AP 換算値のある品目を効率の高い順に順位付きで並べ、区切りを効率順の中に出す', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(1, 94001, { costName: '武蔵うどん', qty: 2, costAmount: 30 }),
+          shopEntry(9, 94001, { costName: '武蔵うどん' }),
+          shopEntry(2, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10 }),
+          shopEntry(3, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 8 }),
+          shopEntry(8, 94001, { costName: '武蔵うどん' }),
+        ],
+        farmingNodes,
+      })
+      // 基準は 40 ÷ 10 = 4。効率は 素材1: 2×60÷30=4（基準と等しい）、素材2: 100÷10=10、素材3: 9÷8=1.125。
+      render(
+        <EventHubClient
+          summary={summary}
+          boxEvent={shopEvent}
+          features={['shop']}
+          shopApPrices={{ 1: 60, 2: 100, 3: 9 }}
+        />,
+      )
+
+      expect(bodyRows(cardOf('武蔵うどん'))).toEqual([
+        'AP 換算なし',
+        '|素材9|',
+        '|素材8|',
+        '効率順',
+        '1|素材2|10',
+        '2|素材1|4',
+        'ここまで交換すれば効率が良い （基準 1個 4 AP）',
+        '3|素材3|1.13',
+      ])
+    })
+
+    it('全品目に AP 換算値の無いカードでは見出しも順位も区切りも出さず、元の順に並べる', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(1, 94001, { costName: '武蔵うどん' }),
+          shopEntry(7, 94002, { costName: '江戸むすび' }),
+          shopEntry(6, 94002, { costName: '江戸むすび' }),
+        ],
+        farmingNodes,
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} shopApPrices={{ 1: 60 }} />)
+
+      const musubi = cardOf('江戸むすび')
+      expect(bodyRows(musubi)).toEqual(['|素材7|', '|素材6|'])
+      expect(within(musubi).queryByTestId('shop-cutoff')).not.toBeInTheDocument()
+      expect(within(cardOf('武蔵うどん')).queryByText('AP 換算なし')).not.toBeInTheDocument()
+    })
+
+    it('並べ替えた後も交換回数は品目に付いたままで、その通貨の必要量だけがその品目の対価 × 回数だけ増える', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 30 }),
+          shopEntry(2, 94002, { costName: '江戸むすび', costAmount: 20 }),
+          shopEntry(3, 94001, { costName: '武蔵うどん', costAmount: 30 }),
+          shopEntry(4, 94002, { costName: '江戸むすび', costAmount: 7 }),
+          shopEntry(5, 94002, { costName: '江戸むすび', costAmount: 20 }),
+        ],
+        farmingNodes,
+      })
+      render(
+        <EventHubClient
+          summary={summary}
+          boxEvent={shopEvent}
+          features={['shop']}
+          shopApPrices={{ 1: 10, 2: 10, 4: 100, 5: 10 }}
+        />,
+      )
+      const musubi = cardOf('江戸むすび')
+      const udon = cardOf('武蔵うどん')
+      expect(bodyRows(musubi)[0]).toBe('1|素材4|28.57')
+
+      fireEvent.change(screen.getByLabelText('素材4 の交換回数'), { target: { value: '3' } })
+
+      expect(screen.getByLabelText('素材4 の交換回数')).toHaveValue(3)
+      for (const id of [1, 2, 3, 5]) expect(screen.getByLabelText(`素材${id} の交換回数`)).toHaveValue(0)
+      expect(within(musubi).getByText('必要量 21')).toBeInTheDocument()
+      expect(within(udon).getByText('必要量 0')).toBeInTheDocument()
+    })
   })
 })
+
+const cardOf = (currency: string) =>
+  screen.getByRole('heading', { name: currency }).closest('div.rounded-md') as HTMLElement
+
+/** カードの表の行を「順位|品目名|効率」か、見出し・区切りの行の文言にする。 */
+const bodyRows = (card: HTMLElement) =>
+  Array.from(card.querySelectorAll<HTMLTableRowElement>('tbody tr')).map(tr => {
+    const input = tr.querySelector('input')
+    if (!input) return tr.textContent
+    const name = input.getAttribute('aria-label')?.replace(' の交換回数', '')
+    return `${tr.cells[0]?.textContent}|${name}|${tr.cells[6]?.textContent}`
+  })
