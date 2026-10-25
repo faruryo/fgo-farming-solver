@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import ja from '../../locales/ja.json'
 import { EventPlannerClient } from './EventPlannerClient'
 import { EventPlanResultCard } from './EventPlanResultCard'
@@ -101,5 +101,18 @@ describe('箱計画の AP 予算', () => {
     expect(within(breakdown).getByText('¥238')).toBeInTheDocument()
     expect(breakdown.querySelector('.grid')?.children).toHaveLength(3)
     expect(screen.queryByText('回復の回数')).not.toBeInTheDocument()
+  })
+
+  it('箱計画の画面で所持黄金の果実を変えると、内訳がその値に追いつく', async () => {
+    localStorage.setItem('masterLevel', '157')
+    localStorage.setItem('events/goldenFruit', '3')
+    render(<EventPlannerClient event={boxEvent} />)
+    await screen.findByText('最大AP 144')
+
+    fireEvent.change(screen.getByDisplayValue('3'), { target: { value: '5' } })
+
+    const breakdown = breakdownOf()
+    expect(await within(breakdown).findByText('所持 5')).toBeInTheDocument()
+    expect(within(breakdown).getByText('¥119')).toBeInTheDocument()
   })
 })
