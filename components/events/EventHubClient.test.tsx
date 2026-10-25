@@ -409,7 +409,7 @@ describe('EventHubClient', () => {
 const cardOf = (currency: string) =>
   screen.getByRole('heading', { name: currency }).closest('div.rounded-md') as HTMLElement
 
-/** カードの表の行を「順位|品目名|効率」か、見出し・区切りの行の文言にする。 */
+/** カードの表の行を「順位|品目名|効率」か、見出しの行の文言にする。 */
 const bodyRows = (card: HTMLElement) =>
   Array.from(card.querySelectorAll<HTMLTableRowElement>('tbody tr')).map(tr => {
     const input = tr.querySelector('input')
