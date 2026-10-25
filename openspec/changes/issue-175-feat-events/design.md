@@ -8,7 +8,7 @@
 
 - 育成計画: `hooks/use-roster-need.ts` の `useRosterNeed()`。`STORAGE_KEYS.MATERIAL` の育成対象から `getMaterialsForServantIds` で素材を取り、`computeTotalNeed` で素材ごとの総必要数（atlasId → 個数）を返す。状態は `empty`（育成対象なし）・`loading`・`error`（一部の取得に失敗）・`ready` の4つ。localStorage には書かない
 - 所持数: `useLocalStorage(STORAGE_KEYS.POSSESSION, {}, { lazyWrite: true })`。所持数のページ（`PossessionModal` など）が保存する実所持数で、atlasId の文字列 → 個数（`number | undefined`）。`STORAGE_KEYS.ITEMS` は周回目標で、キーも drops の `item.id` と体系が違う。箱計画（`EventPlannerClient`）は既存の挙動を保つために `ITEMS` を読んでいるが（`openspec/specs/event-planner/spec.md`）、`EventCraftSection` は `POSSESSION` を読んでおり（event-hub-page の design で実所持数と周回目標を分けると決めた）、この change はそちらに合わせる
-- 箱計画（`EventPlannerClient` の roster モード）は、この2つから `computeShortfall`（必要数 − 所持数、0 以下は除く）を出している。`EventCraftSection` も `useRosterNeed` を使い、`empty` のときに「育成対象を設定する」（`/material`）のリンクを出している
+- 箱計画（`EventPlannerClient` の roster モード）は、`useRosterNeed` と `ITEMS` から `computeShortfall`（必要数 − 所持数、0 以下は除く）を出している。`EventCraftSection` も `useRosterNeed` を使い、`empty` のときに「育成対象を設定する」（`/material`）のリンクを出している
 - 交換所の品目の `itemId` は atlasId で、`computeShortfall` のキーと同じ ID 体系（`computeRosterImpact` が `shopItem.itemId` で突き合わせている）
 
 `useRosterNeed` は、hook を呼ぶ部品ごとに `getMaterialsForServantIds` で素材を取得する（`lib/get-materials.ts` にキャッシュは無い）。交換所だけのイベントでは `EventPlannerClient` は出ないが、`isShopOnlyEvent` は craft との組み合わせを除外しないので、shop と craft が両方あるイベントでは `EventShopList` と `EventCraftSection` が二重に取得する。今のレジストリ（`data/event-features.ts`）に該当するイベントは無いので、この change では取得を共有せず、許容する。
