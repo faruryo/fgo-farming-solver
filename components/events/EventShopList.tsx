@@ -436,7 +436,7 @@ const BulkSelect: React.FC<{ canSelectEfficient: boolean; onSelectAll: () => voi
       <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
         {t(
           'event-shop-select-hint',
-          'すべての通貨で在庫上限まで回数を入れます（上限の無い品目は除く。効率の良いところまでは区切りより上の品目だけで、ほかの品目の回数はそのまま）',
+          '在庫上限まで入れます。上限なしの品目（と効率の良いところまででは区切りより下）はそのまま',
         )}
       </p>
     </div>
