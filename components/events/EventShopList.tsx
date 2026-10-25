@@ -417,6 +417,32 @@ const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp
 
 const NO_AP_PRICES: Readonly<Record<number, number>> = {}
 
+const BulkSelect: React.FC<{ canSelectEfficient: boolean; onSelectAll: () => void; onSelectEfficient: () => void }> = ({
+  canSelectEfficient,
+  onSelectAll,
+  onSelectEfficient,
+}) => {
+  const { t } = useTranslation('events')
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={onSelectAll}>
+          {t('event-shop-select-all-currencies', '全部交換')}
+        </Button>
+        <Button size="sm" variant="outline" disabled={!canSelectEfficient} onClick={onSelectEfficient}>
+          {t('event-shop-select-efficient', '効率の良いところまで交換')}
+        </Button>
+      </div>
+      <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
+        {t(
+          'event-shop-select-hint',
+          'すべての通貨で在庫上限まで回数を入れます（上限の無い品目は除く。効率の良いところまでは区切りより上の品目だけで、ほかの品目の回数はそのまま）',
+        )}
+      </p>
+    </div>
+  )
+}
+
 /**
  * 交換所の品目を対価の通貨ごとにまとめて回数を選ばせ、通貨ごとの必要量と、それを満たす周回の内訳を出す。
  * 選んだ回数と所持数は画面を開いている間だけ持つ。
@@ -425,7 +451,6 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
   event,
   apPrices = NO_AP_PRICES,
 }) => {
-  const { t } = useTranslation('events')
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
   const thresholds = useMemo(() => currencyApThresholds(event.farmingNodes), [event.farmingNodes])
@@ -436,30 +461,20 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
     () => planShopCurrencies(event, new Map(needs.map(n => [n.costItemId, n.need]))),
     [event, needs],
   )
+  // 区切りの線がどの通貨にも無ければ、「効率の良いところまで交換」は押しても何も変わらないので無効にする。
+  const hasCutoff = useMemo(
+    () => groups.some(g => (orderShopByEfficiency(g, apPrices, thresholds.get(g.costItemId)).cutoff ?? 0) > 0),
+    [groups, apPrices, thresholds],
+  )
 
   return (
     <div className="flex flex-col gap-4">
       <PlanSummary plan={plan} />
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))}>
-            {t('event-shop-select-all-currencies', '全部交換')}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setCounts(prev => selectEfficientUpToLimit(shop, prev, apPrices, thresholds))}
-          >
-            {t('event-shop-select-efficient', '効率の良いところまで交換')}
-          </Button>
-        </div>
-        <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
-          {t(
-            'event-shop-select-hint',
-            'すべての通貨で在庫上限まで回数を入れます（上限の無い品目は除く。効率の良いところまでは区切りより上の品目だけ）',
-          )}
-        </p>
-      </div>
+      <BulkSelect
+        canSelectEfficient={hasCutoff}
+        onSelectAll={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))}
+        onSelectEfficient={() => setCounts(prev => selectEfficientUpToLimit(shop, prev, apPrices, thresholds))}
+      />
       {groups.map(group => (
         <CurrencyGroupCard
           key={group.costItemId}

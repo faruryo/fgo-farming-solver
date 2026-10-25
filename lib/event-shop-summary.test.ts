@@ -245,6 +245,13 @@ describe('selectEfficientUpToLimit', () => {
     expect(next.has(2)).toBe(false)
   })
 
+  it('2つ目の通貨の品目にも、交換所の配列全体の添字で回数を入れる', () => {
+    // 通貨10 と通貨20 を交互に並べ、通貨20 の区切りより上の品目を配列の途中（添字1）と末尾（添字3）に置く。
+    const mixed = [entry(1, 10, 10, 5), entry(7, 20, 10, 6), entry(3, 10, 10, 4), entry(8, 20, 10, 8)]
+    const next = selectEfficientUpToLimit(mixed, new Map(), { 1: 100, 3: 10, 7: 100, 8: 50 }, new Map([[10, 4], [20, 4]]))
+    expect([...next.entries()].sort((a, b) => a[0] - b[0])).toEqual([[0, 5], [1, 6], [3, 8]])
+  })
+
   it('AP 換算値の無い品目・在庫上限の無い品目・基準の無い通貨の品目は変えない', () => {
     const next = selectEfficientUpToLimit(shop, new Map([[3, 1], [4, 9]]), apPrices, thresholds)
     expect(next.get(3)).toBe(1)

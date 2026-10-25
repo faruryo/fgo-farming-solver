@@ -349,6 +349,16 @@ describe('EventHubClient', () => {
       expect(within(cardOf('武蔵うどん')).getByText('必要量 50')).toBeInTheDocument()
       expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計 5 周・AP 200')
     })
+
+    it('区切りの線がどの通貨にも無いときはボタンを押せない', () => {
+      const shopEvent = event({
+        shop: [shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 })],
+        farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+      expect(screen.getByRole('button', { name: '効率の良いところまで交換' })).toBeDisabled()
+    })
   })
 
   describe('効率順の並び', () => {
