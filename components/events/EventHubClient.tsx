@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../common/page-header'
 import { Badge } from '@/components/ui/badge'
 import type { EventFeature } from '../../data/event-features'
-import type { EventSummary } from '../../lib/event-features'
+import { isShopOnlyEvent, type EventSummary } from '../../lib/event-features'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import type { EnrichedItem } from '../../lib/get-items'
 import { EventPlannerClient } from './EventPlannerClient'
@@ -18,6 +18,8 @@ interface Props {
   boxEvent?: EventPlannerEvent
   items?: EnrichedItem[]
   features: EventFeature[]
+  /** 交換所の品目の atlasId → 素材1個の AP 換算値。 */
+  shopApPrices?: Readonly<Record<number, number>>
 }
 
 const noopSubscribe = () => () => {}
@@ -69,15 +71,11 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </h2>
 )
 
-export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, features }) => {
+export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, features, shopApPrices }) => {
   const { t } = useTranslation('events')
   const box = features.includes('box') ? boxEvent : undefined
   const craftItems = features.includes('craft') ? items : undefined
-  // ロトのあるイベントは箱計画の中で交換所を扱うので、一覧はロトの無いイベントだけに出す。
-  const shopOnly =
-    features.includes('shop') && !features.includes('box') && boxEvent && boxEvent.shop.length > 0
-      ? boxEvent
-      : undefined
+  const shopOnly = isShopOnlyEvent(features, boxEvent) ? boxEvent : undefined
 
   return (
     <div className="c-page">
@@ -94,8 +92,16 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
 
           {shopOnly && (
             <section className="flex flex-col gap-4">
-              <SectionTitle>{t('event-shop-section-title', '交換所')}</SectionTitle>
-              <EventShopList event={shopOnly} />
+              <div className="flex flex-col gap-1">
+                <SectionTitle>{t('event-shop-section-title', '交換所の周回計算')}</SectionTitle>
+                <p className="text-xs" style={{ color: 'var(--text2)' }}>
+                  {t(
+                    'event-shop-section-description',
+                    '交換したい品目の数を入れると、必要な通貨の数と、集めるのに要る周回数・AP を計算します',
+                  )}
+                </p>
+              </div>
+              <EventShopList event={shopOnly} apPrices={shopApPrices} />
             </section>
           )}
 
