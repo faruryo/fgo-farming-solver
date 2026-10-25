@@ -2,7 +2,7 @@
 
 ## 1. データ
 
-- [ ] 1.1 `lib/master-data/types.ts` の `EventFarmingNode` のドロップに、1周あたりのドロップ回数の任意の項目を足し、`scripts/refresh-event-data.ts` のドロップの取り込みで `dropCount / runs` を4桁に丸めて書く（design の決定 1。`perRun` の式と丸めは変えない）。取り込みの変換を純粋関数として `lib/refresh-event-data-compact.ts` に置くか、既存の変換のテストの形に合わせ、runs 100・dropCount 500・num 3 で `perRun` 15・回数 5 になること、runs 0 のドロップを除く既存の振る舞いが変わらないことをユニットテストにする
+- [ ] 1.1 `lib/master-data/types.ts` の `EventFarmingNode` のドロップに、1周あたりのドロップ回数の任意の項目を足し、`scripts/refresh-event-data.ts` のドロップの取り込みで `dropCount / runs` を4桁に丸めて書く（design の決定 1。`perRun` の式と丸めは変えない）。今の変換は fetch と同じループの中にあるので、Atlas のドロップの配列から取り込むドロップの配列を返す純粋関数として `lib/refresh-event-data-compact.ts` に出し、`scripts/refresh-event-data.ts` から呼ぶ。`lib/refresh-event-data-compact.test.ts` に、runs 100・dropCount 500・num 3 で `perRun` 15・回数 5 になること、runs 0 のドロップを除く既存の振る舞いが変わらないことをユニットテストにする
 
 ## 2. 計算
 
@@ -11,14 +11,17 @@
   - 回数を持たないドロップは素の値のままで、その品目が反映できなかった品目に入る。ボーナスが0の品目は入らない
   - ボーナスが空か全部0のとき、`planShopCurrencies` の結果がボーナスを通さないときと同じになる
   - 必要量 300、素の 10.0・回数 5.0 のクエスト1つ、N 2 で、周回の内訳が 15 周になり、見込み獲得量が 300 以上になる
+  - 返したイベントの `farmingNodes` を `currencyApThresholds` に渡すと、AP 40・素の 10.0・回数 5.0・N 2 の通貨の基準が 4 から 2 になる。ボーナスが全部0なら基準は通さないときと同じ
 
 ## 3. 画面
 
-- [ ] 3.1 `app/events/[id]/page.tsx` で、ロトの無い交換所イベントのときだけ `getEventRewards` の `pointItemId` を読み、`EventHubClient` を通して `EventShopList` に渡す（design の決定 3）。`components/events/EventShopList.tsx` に、ボーナスの入力のカード（通貨ごととポイントの品目、0 以上の整数に直す）、クエストごとのボーナス込みの1周の獲得量の表、注記の切り替え、反映できない品目の表示を足し、周回計算に 2.1 の関数を通したイベントを渡す（design の決定 4）。入力は保存しない。`components/events/EventHubClient.test.tsx` に次を足す
+- [ ] 3.1 `app/events/[id]/page.tsx` で、ロトの無い交換所イベントのときだけ `getEventRewards` の `pointItemId` を読み、`EventHubClient` を通して `EventShopList` に渡す（design の決定 3）。`components/events/EventShopList.tsx` に、ボーナスの入力のカード（通貨ごととポイントの品目、0 以上の整数に直す）、クエストごとのボーナス込みの1周の獲得量の表、注記の切り替え、反映できない品目の表示を足し、周回計算と区切りの基準（`currencyApThresholds`）に 2.1 の関数を通したイベントを渡す（design の決定 2・4）。入力は保存しない。`components/events/EventHubClient.test.tsx` に次を足す
   - ポイントの品目があるときは通貨とポイントの欄が、無いときは通貨の欄だけが、初期値 0 で出る
   - ボーナスを入れると1周の獲得量の表の値と、周回の内訳の周回数が変わり、注記がボーナスを含む旨に変わる
   - 回数を持たないドロップだけのイベントでボーナスを入れると、反映できない旨が出て、周回の内訳が素の値のままである
   - -3 と 2.5 を入れると 0 と 2 として扱われる
+  - 通貨もポイントも落ちないクエストは表に出ない。ボーナスを入れた品目の列には素の値との差（例: `+10.0`）が出る。値は小数1桁
+  - ボーナスを入れると、通貨のカードの区切りの基準と位置が変わる
   - 文言は `locales` の events（ja と en）に足す
   - #162・#165・#134 の既存の表示とテストは保つ
 
@@ -30,4 +33,4 @@
 
 - [ ] 5.1 `pnpm dev`（`--webpack` は付けない）で画面を確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
   - 準備: 確認のときだけ `mocks/events.json` に、既存のイベント（例: 80549、通貨3種類）のロトを空にし、各ドロップに1周あたりのドロップ回数を足した複製を別の ID で足す（commit しない）
-  - そのイベントページを 375px と desktop の幅で開き、ボーナスの欄に値を入れると1周の獲得量の表と周回の内訳の周回数が減り、注記が変わること、375px でページに横スクロールが出ないことを確かめる
+  - そのイベントページを 375px と desktop の幅で開き、ボーナスの欄に値を入れると1周の獲得量の表と周回の内訳の周回数が減り、区切りの基準が下がり、注記が変わること、375px でページに横スクロールが出ないことを確かめる
