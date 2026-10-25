@@ -428,21 +428,23 @@ const BulkSelect: React.FC<{ canSelectEfficient: boolean; onSelectAll: () => voi
 }) => {
   const { t } = useTranslation('events')
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col items-start gap-0.5">
         <Button size="sm" variant="outline" onClick={onSelectAll}>
           {t('event-shop-select-all-currencies', '全部交換')}
         </Button>
+        <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+          {t('event-shop-select-all-hint', '上限のある品目をすべて上限まで')}
+        </span>
+      </div>
+      <div className="flex flex-col items-start gap-0.5">
         <Button size="sm" variant="outline" disabled={!canSelectEfficient} onClick={onSelectEfficient}>
           {t('event-shop-select-efficient', '効率の良いところまで交換')}
         </Button>
+        <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+          {t('event-shop-select-efficient-hint', '線より上の品目だけ上限まで')}
+        </span>
       </div>
-      <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t(
-          'event-shop-select-hint',
-          '在庫上限まで入れます。上限なしの品目（と効率の良いところまででは区切りより下）はそのまま',
-        )}
-      </p>
     </div>
   )
 }
