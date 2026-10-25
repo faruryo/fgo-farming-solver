@@ -1,29 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import ja from '../../locales/ja.json'
 import { EventPlannerClient } from './EventPlannerClient'
 import { EventPlanResultCard } from './EventPlanResultCard'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import { allocateShop, calcBoxLayer, runEventSolver } from '../../lib/event-plan'
 import { computeApBudget } from '../../lib/ap-budget'
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string | Record<string, unknown>, options?: Record<string, unknown>) => {
-      const translated: unknown = Reflect.get(ja.events, key)
-      const untranslated = typeof fallback === 'string' ? fallback : key
-      const template = typeof translated === 'string' ? translated : untranslated
-      const vars = typeof fallback === 'object' ? fallback : options
-      return vars
-        ? template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name: string) => {
-            const value: unknown = Reflect.get(vars, name)
-            return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
-          })
-        : template
-    },
-  }),
-}))
+vi.mock('react-i18next', async () => (await import('./events-i18n-test-utils')).eventsTranslationMock())
 
 // 1箱 250 通貨、1周 AP40 で 10 個落ちる → 25 周・AP 1,000。
 const boxEvent: EventPlannerEvent = {
