@@ -2,24 +2,24 @@
 
 ## 1. 計算
 
-- [ ] 1.1 `lib/event-shop-summary.ts` に、交換所と今の交換回数から、全通貨の在庫上限のある品目を在庫上限にした交換回数を返す純粋関数を足す（design の決定 1。各通貨に `selectAllUpToLimit` を当てる）。`lib/event-shop-summary.test.ts` に次を確かめるテストを足す
+- [x] 1.1 `lib/event-shop-summary.ts` に、交換所と今の交換回数から、全通貨の在庫上限のある品目を在庫上限にした交換回数を返す純粋関数を足す（design の決定 1。各通貨に `selectAllUpToLimit` を当てる）。`lib/event-shop-summary.test.ts` に次を確かめるテストを足す
   - 2通貨の在庫上限のある品目がすべて在庫上限になる
   - 在庫上限の無い品目の回数は入れた値のまま変わらない
   - 結果の交換回数の鍵は交換所の配列全体の添字で、通貨ごとに1つずつ `selectAllUpToLimit` を当てた結果と同じになる
 
 ## 2. 画面
 
-- [ ] 2.0 切り出しの前に、今の箱計画の AP 予算の表示を固定するテストを足す（design の決定 2。今は `EventPlannerClient` と `EventPlanResultCard` を描画するテストが無い）。`EventPlanResultCard` と `EventPlannerClient` の AP 予算の部分を描画し、次を確かめる。テストの前後で `localStorage.clear()` を呼ぶ
+- [x] 2.0 切り出しの前に、今の箱計画の AP 予算の表示を固定するテストを足す（design の決定 2。今は `EventPlannerClient` と `EventPlanResultCard` を描画するテストが無い）。`EventPlanResultCard` と `EventPlannerClient` の AP 予算の部分を描画し、次を確かめる。テストの前後で `localStorage.clear()` を呼ぶ
   - 内訳は黄金の果実消費・必要聖晶石・課金額目安の3項目で、回復の回数は出ない
   - 合計 AP が 0 のときは内訳が出ない
   - 「最大AP基準」「所持N」の文言と値が出る
   - マスターレベルと所持黄金の果実の入力欄がある
-- [ ] 2.1 `EventPlannerClient` の「AP予算」の入力欄（マスターレベル、所持黄金の果実）と、`EventPlanResultCard` の「AP予算内訳」の表示を、`components/events/` の部品に切り出す。箱計画をそれに置き換え、表示と振る舞いは変えない（design の決定 2）
+- [x] 2.1 `EventPlannerClient` の「AP予算」の入力欄（マスターレベル、所持黄金の果実）と、`EventPlanResultCard` の「AP予算内訳」の表示を、`components/events/` の部品に切り出す。箱計画をそれに置き換え、表示と振る舞いは変えない（design の決定 2）
   - 2.0 のテストが、変更なしで通ったままであること
   - 内訳の部品は、回復の回数を出すかを引数で切り替える。箱計画では出さない
   - 部品のテストで、マスターレベルと黄金の果実の入力が保存先の値を変えることを確かめる。入力欄の部品を2つ描画するか、一度アンマウントして描画し直し、片方で変えた所持数がもう片方にも同じ値で出ることを確かめる（箱計画と交換所で値を共有することの確認）。テストの前後で `localStorage.clear()` を呼ぶ
   - 内訳が `computeApBudget` の結果どおりであることも確かめる（合計 AP 1,000・最大 AP 144（マスターレベル 157）・所持 3 で、回復 7・黄金の果実 3・聖晶石 4・課金額 238 円）
-- [ ] 2.2 `components/events/EventShopList.tsx` に、交換所のセクションの上部の全部交換のボタン（1.1 の関数を使う）と、周回の内訳の下の AP 予算（2.1 の部品）を足す（design の決定 1・2・3）。`components/events/EventHubClient.test.tsx` に次を足す
+- [x] 2.2 `components/events/EventShopList.tsx` に、交換所のセクションの上部の全部交換のボタン（1.1 の関数を使う）と、周回の内訳の下の AP 予算（2.1 の部品）を足す（design の決定 1・2・3）。`components/events/EventHubClient.test.tsx` に次を足す
   - ボタンを押すと2通貨の在庫上限のある品目がすべて在庫上限になり、在庫上限の無い品目の回数が変わらない
   - 周回の合計 AP に対する回復の回数・黄金の果実・聖晶石が出る
   - 周回が不要なとき・ドロップの統計が無いときは AP 予算が出ない
