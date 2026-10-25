@@ -211,7 +211,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   console.log(`  fetch ${url}`)
   const res = await fetch(url)
   if (!res.ok) throw new Error(`fetch ${url} failed: ${res.status}`)
-  return res.json() as Promise<T>
+  return res.json()
 }
 
 // ── アイテム名マップ ─────────────────────────────────────────────────

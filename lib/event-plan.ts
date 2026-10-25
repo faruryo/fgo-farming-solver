@@ -345,6 +345,42 @@ export const runEventSolver = (
   return { result, dropSource }
 }
 
+export type ShopCurrencyPlan =
+  /** 必要量のある通貨が無い（周回は不要）。 */
+  | { status: 'none' }
+  /** 周回クエストにドロップの統計が無い。 */
+  | { status: 'no-drops' }
+  /**
+   * `result` は周回で集められる通貨だけを満たす周回の内訳。`unfarmable` は周回では集められない通貨の
+   * atlasId。すべて集められないときは `result` が null。
+   */
+  | { status: 'planned'; result: Result | null; unfarmable: number[] }
+
+/**
+ * 通貨の必要量（atlasId → 個数）を1つの LP で同時に満たす周回を求める。
+ * 1周で複数の通貨が落ちるクエストは、それぞれの通貨の制約に同時に効く。
+ */
+export const planShopCurrencies = (
+  event: EventPlannerEvent,
+  currencyNeed: Map<number, number>,
+): ShopCurrencyPlan => {
+  const demand = new Map([...currencyNeed].filter(([, qty]) => qty > 0))
+  if (demand.size === 0) return { status: 'none' }
+  if (!event.farmingNodes.some((n) => n.drops.length > 0)) return { status: 'no-drops' }
+  return splitUnfarmable(runEventSolver(event, 0, demand).result)
+}
+
+/** ソルバーの結果から、周回では集められない通貨（`skipped_items`）を周回の内訳と分ける。 */
+export const splitUnfarmable = (
+  result: Result,
+): Extract<ShopCurrencyPlan, { status: 'planned' }> => {
+  const skipped = new Set(result.skipped_items ?? [])
+  const unfarmable = [...skipped].map(Number)
+  const items = result.items.filter((item) => !skipped.has(item.id))
+  if (items.length === 0) return { status: 'planned', result: null, unfarmable }
+  return { status: 'planned', result: { ...result, items }, unfarmable }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Task 12 — 逆算（欲しいアイテム数 → 最小箱数）
 // ─────────────────────────────────────────────────────────────────────────────

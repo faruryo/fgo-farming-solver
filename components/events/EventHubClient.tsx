@@ -76,7 +76,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
   // ロトのあるイベントは箱計画の中で交換所を扱うので、一覧はロトの無いイベントだけに出す。
   const shopOnly =
     features.includes('shop') && !features.includes('box') && boxEvent && boxEvent.shop.length > 0
-      ? boxEvent.shop
+      ? boxEvent
       : undefined
 
   return (
@@ -95,7 +95,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
           {shopOnly && (
             <section className="flex flex-col gap-4">
               <SectionTitle>{t('event-shop-section-title', '交換所')}</SectionTitle>
-              <EventShopList shop={shopOnly} />
+              <EventShopList event={shopOnly} />
             </section>
           )}
 
