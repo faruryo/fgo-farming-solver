@@ -440,7 +440,6 @@
     "event-shop-cutoff": "ここより上は、フリークエストで集めるより交換が得",
     "event-shop-cutoff-threshold": "通貨1個 ≈ {{value}} AP（イベントのクエストで集めた場合）",
     "event-shop-count-label": "{{name}} の交換回数",
-    "event-shop-select-all": "在庫上限まですべて交換する数を入れる",
     "event-shop-select-all-currencies": "全部交換",
     "event-shop-select-efficient": "効率の良いところまで交換",
     "event-shop-select-all-hint": "上限のある品目をすべて上限まで",

@@ -517,7 +517,6 @@
     "event-shop-cutoff": "Above this line, exchanging beats farming free quests",
     "event-shop-cutoff-threshold": "1 currency ≈ {{value}} AP (farmed in the event quests)",
     "event-shop-count-label": "Exchange count for {{name}}",
-    "event-shop-select-all": "Fill in counts to exchange everything up to stock",
     "event-shop-select-all-currencies": "Exchange all",
     "event-shop-select-efficient": "Exchange the efficient ones",
     "event-shop-select-all-hint": "Every item with a limit, up to its limit",

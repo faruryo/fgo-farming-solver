@@ -15,7 +15,6 @@ import {
   orderShopByEfficiency,
   selectAllCurrenciesUpToLimit,
   selectEfficientUpToLimit,
-  selectAllUpToLimit,
   type RankedShopItem,
   type ShopCurrencyGroup,
   type ShopCurrencyNeed,
@@ -161,7 +160,6 @@ interface CurrencyGroupCardProps {
   need?: ShopCurrencyNeed
   owned: number
   onCountChange: (index: number, count: number) => void
-  onSelectAll: () => void
   onOwnedChange: (owned: number) => void
 }
 
@@ -169,20 +167,13 @@ const CurrencyGroupCard: React.FC<CurrencyGroupCardProps> = ({
   group,
   need,
   owned,
-  onSelectAll,
   onOwnedChange,
   ...tableProps
 }) => (
   <div className="rounded-md flex flex-col" style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}>
     <CurrencyHeader group={group} />
     <ShopTable group={group} {...tableProps} />
-    <CurrencyFooter
-      group={group}
-      need={need}
-      owned={owned}
-      onSelectAll={onSelectAll}
-      onOwnedChange={onOwnedChange}
-    />
+    <CurrencyFooter group={group} need={need} owned={owned} onOwnedChange={onOwnedChange} />
   </div>
 )
 
@@ -241,8 +232,8 @@ const ShopTable: React.FC<
 }
 
 const CurrencyFooter: React.FC<
-  Pick<CurrencyGroupCardProps, 'group' | 'need' | 'owned' | 'onSelectAll' | 'onOwnedChange'>
-> = ({ group, need, owned, onSelectAll, onOwnedChange }) => {
+  Pick<CurrencyGroupCardProps, 'group' | 'need' | 'owned' | 'onOwnedChange'>
+> = ({ group, need, owned, onOwnedChange }) => {
   const { t } = useTranslation('events')
   const label = useCurrencyLabel()
   return (
@@ -250,9 +241,6 @@ const CurrencyFooter: React.FC<
       className="flex items-center justify-between gap-x-4 gap-y-2 flex-wrap px-4 py-3 text-xs"
       style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}
     >
-      <Button size="sm" variant="outline" className="text-xs" onClick={onSelectAll}>
-        {t('event-shop-select-all', '在庫上限まですべて交換する数を入れる')}
-      </Button>
       <label className="flex items-center gap-2">
         <span>{t('event-shop-owned', '所持数')}</span>
         <Input
@@ -492,7 +480,6 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
           need={needs.find(n => n.costItemId === group.costItemId)}
           owned={owned.get(group.costItemId) ?? 0}
           onCountChange={(index, count) => setCounts(prev => new Map(prev).set(index, count))}
-          onSelectAll={() => setCounts(prev => selectAllUpToLimit(shop, prev, group.costItemId))}
           onOwnedChange={value => setOwned(prev => new Map(prev).set(group.costItemId, value))}
         />
       ))}

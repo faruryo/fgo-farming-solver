@@ -112,7 +112,7 @@ describe('EventHubClient', () => {
 
     expect(screen.getByText('周回は不要です。')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '在庫上限まですべて交換する数を入れる' }))
+    fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
     expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
     expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(0)
 
@@ -207,7 +207,7 @@ describe('EventHubClient', () => {
     expect(screen.queryByText(/^交換したい品目の数を入れると/)).not.toBeInTheDocument()
   })
 
-  it('「在庫上限まですべて交換する数を入れる」を押すと、交換所の上部の1行に合計の周回数と AP が出る', () => {
+  it('「全部交換」を押すと、交換所の上部の1行に合計の周回数と AP が出る', () => {
     const shopEvent = event({
       shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })],
       farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
@@ -219,7 +219,7 @@ describe('EventHubClient', () => {
     expect(line.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(line).toHaveTextContent('周回の合計: 不要')
 
-    fireEvent.click(screen.getByRole('button', { name: '在庫上限まですべて交換する数を入れる' }))
+    fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
     expect(line).toHaveTextContent('周回の合計 15 周・AP 600')
     expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
   })
