@@ -140,8 +140,12 @@ const CutoffRow: React.FC<{ threshold: number }> = ({ threshold }) => {
   return (
     <tr data-testid="shop-cutoff" style={{ borderTop: '2px solid var(--gold)' }}>
       <td colSpan={COLUMN_COUNT} className="px-3 py-1.5 text-[11px]" style={{ color: 'var(--gold)' }}>
-        <span className="font-semibold">{t('event-shop-cutoff', 'ここまで交換すれば効率が良い')}</span>{' '}
-        <span>{t('event-shop-cutoff-threshold', '（基準 1個 {{value}} AP）', { value: formatEfficiency(threshold) })}</span>
+        <span className="font-semibold">{t('event-shop-cutoff', 'ここより上は、フリークエストで集めるより交換が得')}</span>{' '}
+        <span>
+          {t('event-shop-cutoff-threshold', '通貨1個 ≈ {{value}} AP（イベントのクエストで集めた場合）', {
+            value: formatEfficiency(threshold),
+          })}
+        </span>
       </td>
     </tr>
   )
@@ -217,7 +221,7 @@ const ShopTable: React.FC<
           <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '1回の個数')}</th>
           <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '在庫上限')}</th>
           <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '1回の対価')}</th>
-          <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', '効率')}</th>
+          <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', '通貨1個で何 AP 分')}</th>
         </tr>
       </thead>
       <tbody>
