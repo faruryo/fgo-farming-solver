@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { EVENT_FEATURES } from '../data/event-features'
 import type { EventFeatureEntry } from '../data/event-features'
 import type { EventPlannerEvent } from './master-data/types'
-import { featuresFor, mergeEventList, latestCraftEventId, resolveEventSummary } from './event-features'
+import { featuresFor, isShopOnlyEvent, mergeEventList, latestCraftEventId, resolveEventSummary } from './event-features'
 
 const lotteries = [{ boxIndex: 0, costPerBox: 1, contents: [], rareRewards: [] }]
 const shop = [{ itemId: 1, qty: 1, costItemId: 2, costAmount: 1, limitNum: 1 }]
@@ -114,5 +114,17 @@ describe('latestCraftEventId', () => {
 
   it('既定レジストリでは 80614', () => {
     expect(latestCraftEventId()).toBe(80614)
+  })
+})
+
+describe('isShopOnlyEvent', () => {
+  it.each([
+    ['shop のみで交換所あり', ['shop'], kv(1, 'A', { box: false, withShop: true }), true],
+    ['box もある', ['box', 'shop'], kv(1, 'A', { withShop: true }), false],
+    ['交換所が空', ['shop'], kv(1, 'A', { box: false }), false],
+    ['KV が無い', ['shop', 'craft'], undefined, false],
+    ['shop が無い', ['craft'], kv(1, 'A', { box: false, withShop: true }), false],
+  ] as const)('%s → %s', (_label, features, event, expected) => {
+    expect(isShopOnlyEvent(features, event)).toBe(expected)
   })
 })

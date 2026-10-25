@@ -3,7 +3,10 @@ import type { EventShopItem } from './master-data/types'
 import {
   clampExchangeCount,
   computeShopCurrencyNeeds,
+  currencyApThresholds,
+  formatEfficiency,
   groupShopByCurrency,
+  orderShopByEfficiency,
   selectAllUpToLimit,
 } from './event-shop-summary'
 
@@ -94,5 +97,102 @@ describe('selectAllUpToLimit', () => {
     expect(next.get(1) ?? 0).toBe(0)
     expect(next.get(2)).toBe(1)
     expect(next.get(3)).toBe(4)
+  })
+})
+
+describe('orderShopByEfficiency', () => {
+  const priced = (itemId: number, costAmount: number, qty = 1) => entry(itemId, 10, costAmount, 5, { qty })
+
+  it('効率は qty × AP 換算値 ÷ costAmount', () => {
+    const items = [priced(1, 5, 2)]
+    const { ranked } = orderShopByEfficiency({ items }, { 1: 50 })
+    expect(ranked).toEqual([{ item: items[0], rank: 1, efficiency: 20 }])
+  })
+
+  it('効率の高い順に1からの順位を付け、同じ効率は元の順を保つ。品目は配列の要素の参照のまま', () => {
+    const items = [priced(1, 1), priced(2, 1), priced(3, 1), priced(4, 1)]
+    const { unpriced, ranked } = orderShopByEfficiency({ items }, { 1: 20, 2: 35, 3: 10, 4: 20 })
+    expect(unpriced).toEqual([])
+    expect(ranked.map(r => [r.item.itemId, r.rank])).toEqual([[2, 1], [1, 2], [4, 3], [3, 4]])
+    expect(ranked[0]?.item).toBe(items[1])
+  })
+
+  it('AP 換算値の無い品目と costAmount が 0 の品目は元の順で unpriced に入る', () => {
+    const items = [priced(1, 1), entry(9, 10, 1, 1), priced(2, 0), entry(8, 10, 1, 1)]
+    const { unpriced, ranked } = orderShopByEfficiency({ items }, { 1: 10, 2: 10 })
+    expect(unpriced).toEqual([items[1], items[2], items[3]])
+    expect(ranked.map(r => r.item)).toEqual([items[0]])
+  })
+
+  it('AP 換算値のある品目が無ければ順位も区切りも返さない', () => {
+    const items = [entry(9, 10, 1, 1), entry(8, 10, 1, 1)]
+    expect(orderShopByEfficiency({ items }, {}, 1.2)).toEqual({ unpriced: items, ranked: [], cutoff: undefined })
+  })
+
+  it('区切りは基準以上と未満の間。基準と等しい品目は上', () => {
+    const items = [priced(1, 1), priced(2, 1), priced(3, 1), priced(4, 1)]
+    const order = orderShopByEfficiency({ items }, { 1: 0.8, 2: 20, 3: 5, 4: 1.2 }, 1.2)
+    expect(order.ranked.map(r => r.efficiency)).toEqual([20, 5, 1.2, 0.8])
+    expect(order.cutoff).toBe(3)
+  })
+
+  it('全品目が基準以上なら最後、全品目が基準未満なら最初', () => {
+    const items = [priced(1, 1), priced(2, 1)]
+    expect(orderShopByEfficiency({ items }, { 1: 5, 2: 3 }, 1).cutoff).toBe(2)
+    expect(orderShopByEfficiency({ items }, { 1: 0.5, 2: 0.3 }, 1).cutoff).toBe(0)
+  })
+
+  it('基準が無ければ区切りを返さない', () => {
+    expect(orderShopByEfficiency({ items: [priced(1, 1)] }, { 1: 5 }).cutoff).toBeUndefined()
+  })
+
+  it('効率と基準は丸める前の値で比べる', () => {
+    // 効率 1.064 と基準 1.0645 は表示ではどちらも 1.06 だが、効率が基準未満なので区切りの下。
+    const order = orderShopByEfficiency({ items: [priced(1, 1000)] }, { 1: 1064 }, 1.0645)
+    expect(formatEfficiency(order.ranked[0]?.efficiency ?? 0)).toBe(formatEfficiency(1.0645))
+    expect(order.cutoff).toBe(0)
+  })
+
+  it('同じ itemId で対価の違う品目を別々に扱う', () => {
+    const items = [priced(1, 10), priced(1, 2)]
+    const { ranked } = orderShopByEfficiency({ items }, { 1: 10 })
+    expect(ranked.map(r => [r.item, r.efficiency])).toEqual([[items[1], 5], [items[0], 1]])
+  })
+})
+
+describe('currencyApThresholds', () => {
+  const node = (questId: number, ap: number, drops: [number, number][]) => ({
+    questId,
+    name: `q${questId}`,
+    ap,
+    drops: drops.map(([itemId, perRun]) => ({ itemId, perRun })),
+  })
+
+  it('通貨ごとに ap ÷ perRun の最小を出し、1周の AP を通貨ごとに分けない', () => {
+    const thresholds = currencyApThresholds([
+      node(1, 40, [[10, 30], [11, 20]]),
+      node(2, 40, [[10, 40], [11, 10]]),
+    ])
+    expect(thresholds.get(10)).toBe(1)
+    expect(thresholds.get(11)).toBe(2)
+  })
+
+  it('ap か perRun が 0 のクエストは使わず、どこにも落ちない通貨は基準が出ない', () => {
+    const thresholds = currencyApThresholds([
+      node(1, 0, [[10, 100]]),
+      node(2, 40, [[10, 20], [11, 0]]),
+    ])
+    expect(thresholds.get(10)).toBe(2)
+    expect(thresholds.has(11)).toBe(false)
+    expect(thresholds.has(12)).toBe(false)
+  })
+})
+
+describe('formatEfficiency', () => {
+  it('小数2桁までにし、末尾の0は出さない', () => {
+    expect(formatEfficiency(20)).toBe('20')
+    expect(formatEfficiency(1.2)).toBe('1.2')
+    expect(formatEfficiency(1.0645)).toBe('1.06')
+    expect(formatEfficiency(1.0649)).toBe('1.06')
   })
 })

@@ -1,10 +1,27 @@
 import { getEventById } from '../../../lib/get-events'
 import { getItems } from '../../../lib/get-items'
-import { featuresFor, resolveEventSummary } from '../../../lib/event-features'
+import { getDrops } from '../../../lib/get-drops'
+import { resolveUnitPrices } from '../../../lib/progress/lap-value'
+import { featuresFor, isShopOnlyEvent, resolveEventSummary } from '../../../lib/event-features'
+import type { EventShopItem } from '../../../lib/master-data/types'
 import { EventHubClient } from '../../../components/events/EventHubClient'
 import { EventDataMissing } from '../../../components/events/EventDataMissing'
 
 export const dynamic = 'force-dynamic'
+
+/** 交換所の品目の分だけ、atlasId → 素材1個の AP 換算値を出す。ドロップ表が読めなければ空。 */
+const loadShopApPrices = async (shop: EventShopItem[]): Promise<Record<number, number>> => {
+  try {
+    const prices = resolveUnitPrices(await getDrops(), [])
+    const entries = shop.flatMap(({ itemId }) => {
+      const price = prices.get(String(itemId))
+      return price ? [[itemId, price.apPrice] as const] : []
+    })
+    return Object.fromEntries(entries)
+  } catch {
+    return {}
+  }
+}
 
 interface Props {
   params: Promise<{ id: string }>
@@ -27,6 +44,7 @@ export default async function EventDetailPage({ params }: Props) {
 
   const features = featuresFor(eventId, kvEvent)
   const items = features.includes('craft') ? await getItems('ja') : undefined
+  const shopApPrices = isShopOnlyEvent(features, kvEvent) ? await loadShopApPrices(kvEvent.shop) : undefined
 
   return (
     <EventHubClient
@@ -34,6 +52,7 @@ export default async function EventDetailPage({ params }: Props) {
       boxEvent={kvEvent ?? undefined}
       items={items}
       features={features}
+      shopApPrices={shopApPrices}
     />
   )
 }
