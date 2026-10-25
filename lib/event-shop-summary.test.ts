@@ -7,6 +7,8 @@ import {
   formatEfficiency,
   groupShopByCurrency,
   orderShopByEfficiency,
+  selectAllCurrenciesUpToLimit,
+  selectEfficientUpToLimit,
   selectAllUpToLimit,
 } from './event-shop-summary'
 
@@ -97,6 +99,31 @@ describe('selectAllUpToLimit', () => {
     expect(next.get(1) ?? 0).toBe(0)
     expect(next.get(2)).toBe(1)
     expect(next.get(3)).toBe(4)
+  })
+})
+
+describe('selectAllCurrenciesUpToLimit', () => {
+  const shop = [entry(1, 10, 20, 5), entry(2, 11, 5, 10), entry(3, 10, 1, 0), entry(4, 11, 100, 2), entry(5, 11, 3, 0)]
+
+  it('2通貨の在庫上限のある品目をすべて上限にする', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map([[0, 1]]))
+    expect(next.get(0)).toBe(5)
+    expect(next.get(1)).toBe(10)
+    expect(next.get(3)).toBe(2)
+  })
+
+  it('在庫上限の無い品目の回数は入れた値のまま', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map([[2, 3]]))
+    expect(next.get(2)).toBe(3)
+    expect(next.has(4)).toBe(false)
+  })
+
+  it('鍵は交換所の配列全体の添字で、通貨ごとに selectAllUpToLimit を当てた結果と同じ', () => {
+    const counts = new Map([[2, 3], [4, 7], [1, 4]])
+    const expected = selectAllUpToLimit(shop, selectAllUpToLimit(shop, counts, 10), 11)
+    const next = selectAllCurrenciesUpToLimit(shop, counts)
+    expect(next).toEqual(expected)
+    expect([...next.keys()].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4])
   })
 })
 
@@ -194,5 +221,41 @@ describe('formatEfficiency', () => {
     expect(formatEfficiency(1.2)).toBe('1.2')
     expect(formatEfficiency(1.0645)).toBe('1.06')
     expect(formatEfficiency(1.0649)).toBe('1.06')
+  })
+})
+
+describe('selectEfficientUpToLimit', () => {
+  // 通貨10: 基準 4。素材1 効率 10（上限5）、素材2 効率 4（基準と等しい、上限3）、素材3 効率 1（区切りの下）、
+  // 素材4 AP 換算値なし（上限2）、素材5 効率 20 だが上限なし。通貨11: 基準なし、素材6 効率 50。
+  const shop = [
+    entry(1, 10, 10, 5),
+    entry(2, 10, 10, 3),
+    entry(3, 10, 10, 4),
+    entry(4, 10, 10, 2),
+    entry(5, 10, 5, 0),
+    entry(6, 11, 2, 7),
+  ]
+  const apPrices = { 1: 100, 2: 40, 3: 10, 5: 100, 6: 100 }
+  const thresholds = new Map([[10, 4]])
+
+  it('区切りより上（基準以上）の在庫上限のある品目だけを上限にする', () => {
+    const next = selectEfficientUpToLimit(shop, new Map(), apPrices, thresholds)
+    expect(next.get(0)).toBe(5)
+    expect(next.get(1)).toBe(3)
+    expect(next.has(2)).toBe(false)
+  })
+
+  it('2つ目の通貨の品目にも、交換所の配列全体の添字で回数を入れる', () => {
+    // 通貨10 と通貨20 を交互に並べ、通貨20 の区切りより上の品目を配列の途中（添字1）と末尾（添字3）に置く。
+    const mixed = [entry(1, 10, 10, 5), entry(7, 20, 10, 6), entry(3, 10, 10, 4), entry(8, 20, 10, 8)]
+    const next = selectEfficientUpToLimit(mixed, new Map(), { 1: 100, 3: 10, 7: 100, 8: 50 }, new Map([[10, 4], [20, 4]]))
+    expect([...next.entries()].sort((a, b) => a[0] - b[0])).toEqual([[0, 5], [1, 6], [3, 8]])
+  })
+
+  it('AP 換算値の無い品目・在庫上限の無い品目・基準の無い通貨の品目は変えない', () => {
+    const next = selectEfficientUpToLimit(shop, new Map([[3, 1], [4, 9]]), apPrices, thresholds)
+    expect(next.get(3)).toBe(1)
+    expect(next.get(4)).toBe(9)
+    expect(next.has(5)).toBe(false)
   })
 })

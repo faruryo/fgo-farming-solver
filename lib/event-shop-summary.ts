@@ -81,6 +81,18 @@ export const selectAllUpToLimit = (
   return next
 }
 
+/** 交換所のすべての通貨で、在庫上限のある品目をすべて上限の回数にした回数を返す。上限の無い品目は変えない。 */
+export const selectAllCurrenciesUpToLimit = (
+  shop: EventShopItem[],
+  counts: ShopExchangeCounts,
+): Map<number, number> => {
+  let next = new Map(counts)
+  for (const costItemId of new Set(shop.map(item => item.costItemId))) {
+    next = selectAllUpToLimit(shop, next, costItemId)
+  }
+  return next
+}
+
 export interface RankedShopItem {
   item: EventShopItem
   /** 1からの順位。 */
@@ -141,6 +153,26 @@ export const currencyApThresholds = (farmingNodes: EventFarmingNode[]): Map<numb
     }
   }
   return thresholds
+}
+
+/**
+ * すべての通貨で、区切りより上（効率が基準以上）の品目を在庫上限の回数にした回数を返す。
+ * AP 換算値の無い品目・在庫上限の無い品目・区切りの下の品目、基準の無い通貨の品目は変えない。
+ */
+export const selectEfficientUpToLimit = (
+  shop: EventShopItem[],
+  counts: ShopExchangeCounts,
+  apPrices: Readonly<Record<number, number>>,
+  thresholds: ReadonlyMap<number, number>,
+): Map<number, number> => {
+  const next = new Map(counts)
+  for (const group of groupShopByCurrency(shop)) {
+    const { ranked, cutoff } = orderShopByEfficiency(group, apPrices, thresholds.get(group.costItemId))
+    for (const { item } of ranked.slice(0, cutoff ?? 0)) {
+      if (item.limitNum > 0) next.set(shop.indexOf(item), item.limitNum)
+    }
+  }
+  return next
 }
 
 /** 効率と基準の表示。小数2桁までにし、末尾の0は出さない。 */

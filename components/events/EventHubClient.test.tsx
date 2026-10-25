@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { EventHubClient } from './EventHubClient'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
@@ -54,6 +54,9 @@ const event = (overrides: Partial<EventPlannerEvent>): EventPlannerEvent => ({
 const summary = { id: 80632, name: 'テストイベント', startedAt: 1000, endedAt: 2000 }
 
 describe('EventHubClient', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
   it('ロトの無い交換所イベントでは交換所一覧を通貨ごとに出し、ボックス計画は出さない', () => {
     const shopEvent = event({
       shop: [
@@ -109,7 +112,7 @@ describe('EventHubClient', () => {
 
     expect(screen.getByText('周回は不要です。')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '在庫上限まですべて交換する数を入れる' }))
+    fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
     expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
     expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(0)
 
@@ -204,7 +207,7 @@ describe('EventHubClient', () => {
     expect(screen.queryByText(/^交換したい品目の数を入れると/)).not.toBeInTheDocument()
   })
 
-  it('「在庫上限まですべて交換する数を入れる」を押すと、交換所の上部の1行に合計の周回数と AP が出る', () => {
+  it('「全部交換」を押すと、交換所の上部の1行に合計の周回数と AP が出る', () => {
     const shopEvent = event({
       shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })],
       farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
@@ -216,7 +219,7 @@ describe('EventHubClient', () => {
     expect(line.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(line).toHaveTextContent('周回の合計: 不要')
 
-    fireEvent.click(screen.getByRole('button', { name: '在庫上限まですべて交換する数を入れる' }))
+    fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
     expect(line).toHaveTextContent('周回の合計 15 周・AP 600')
     expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
   })
@@ -230,6 +233,132 @@ describe('EventHubClient', () => {
 
     fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '1' } })
     expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計: ドロップの統計なし')
+  })
+
+  describe('全部交換と AP 予算', () => {
+    const node = { questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }
+    const farmingNodes = [node]
+    const statValue = (label: string) =>
+      within(screen.getByTestId('shop-ap-budget')).getByText(label).nextElementSibling?.textContent
+
+    it('全部交換を押すと2通貨の在庫上限のある品目がすべて在庫上限になり、在庫上限の無い品目の回数は変わらない', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 }),
+          shopEntry(2, 94002, { costName: '江戸むすび', costAmount: 10, limitNum: 10 }),
+          shopEntry(3, 94001, { costName: '武蔵うどん', costAmount: 1, limitNum: 0 }),
+        ],
+        farmingNodes: [
+          { questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }, { itemId: 94002, perRun: 10 }] },
+        ],
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+      fireEvent.change(screen.getByLabelText('素材3 の交換回数'), { target: { value: '3' } })
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+
+      expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(10)
+      expect(screen.getByLabelText('素材3 の交換回数')).toHaveValue(3)
+      expect(within(cardOf('武蔵うどん')).getByText('必要量 53')).toBeInTheDocument()
+      expect(within(cardOf('江戸むすび')).getByText('必要量 100')).toBeInTheDocument()
+      expect(screen.getByText('合計 10 周・AP 400')).toBeInTheDocument()
+    })
+
+    it('周回の合計 AP に対する回復の回数・黄金の果実・聖晶石・課金額を、箱計画と同じ保存先の値で出す', () => {
+      localStorage.setItem('masterLevel', '157')
+      const shopEvent = event({
+        shop: [shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 50, limitNum: 5 })],
+        farmingNodes,
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+      expect(screen.queryByTestId('shop-ap-budget')).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+      expect(screen.getByText('合計 25 周・AP 1,000')).toBeInTheDocument()
+
+      fireEvent.change(screen.getByLabelText('所持黄金の果実'), { target: { value: '3' } })
+      expect(localStorage.getItem('events/goldenFruit')).toBe('3')
+
+      expect(statValue('回復の回数')).toBe('7')
+      expect(statValue('黄金の果実')).toBe('3')
+      expect(statValue('必要聖晶石')).toBe('4')
+      expect(statValue('課金額目安')).toBe('¥238')
+      expect(screen.queryByText('周回で集められる通貨の分の AP で計算しています。')).not.toBeInTheDocument()
+    })
+
+    it('周回が不要なとき・ドロップの統計が無いときは AP 予算を出さない', () => {
+      const { unmount } = render(
+        <EventHubClient summary={summary} boxEvent={event({ shop: [shopEntry(1, 94001)], farmingNodes })} features={['shop']} />,
+      )
+      expect(screen.getByText('周回は不要です。')).toBeInTheDocument()
+      expect(screen.queryByTestId('shop-ap-budget')).not.toBeInTheDocument()
+      unmount()
+
+      const noDrops = event({ shop: [shopEntry(1, 94001)], farmingNodes: [{ ...node, drops: [] }] })
+      render(<EventHubClient summary={summary} boxEvent={noDrops} features={['shop']} />)
+      fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '2' } })
+      expect(screen.getByText('ドロップの統計がまだ無いため、周回を出せません。')).toBeInTheDocument()
+      expect(screen.queryByTestId('shop-ap-budget')).not.toBeInTheDocument()
+    })
+
+    it('周回では集められない通貨があるときは、集められる通貨の分の AP で出し、その旨を AP 予算の近くに出す', () => {
+      const shopEvent = event({
+        shop: [shopEntry(1, 94001, { costName: '武蔵うどん' }), shopEntry(2, 94002, { costName: '江戸むすび' })],
+        farmingNodes,
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+      fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '1' } })
+      fireEvent.change(screen.getByLabelText('素材2 の交換回数'), { target: { value: '1' } })
+
+      const budget = screen.getByTestId('shop-ap-budget')
+      expect(within(budget).getByText('周回で集められる通貨の分の AP で計算しています。')).toBeInTheDocument()
+      // 既定のマスターレベル 200（最大 AP 152）で AP 120 → 回復 1 回。
+      expect(statValue('回復の回数')).toBe('1')
+    })
+  })
+
+  describe('効率の良いところまで交換', () => {
+    it('区切りより上の品目だけを在庫上限まで入れ、AP 換算値の無い品目・在庫上限の無い品目は 0 のまま', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 }),
+          shopEntry(2, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 4 }),
+          shopEntry(3, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 2 }),
+          shopEntry(4, 94001, { costName: '武蔵うどん', costAmount: 5, limitNum: 0 }),
+        ],
+        farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
+      })
+      // 基準は 40 ÷ 10 = 4。効率は 素材1: 100÷10=10、素材2: 10÷10=1（区切りの下）、素材4: 100÷5=20（上限なし）。素材3 は AP 換算値なし。
+      render(
+        <EventHubClient
+          summary={summary}
+          boxEvent={shopEvent}
+          features={['shop']}
+          shopApPrices={{ 1: 100, 2: 10, 4: 100 }}
+        />,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: '効率の良いところまで交換' }))
+
+      expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材3 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材4 の交換回数')).toHaveValue(0)
+      expect(within(cardOf('武蔵うどん')).getByText('必要量 50')).toBeInTheDocument()
+      expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計 5 周・AP 200')
+    })
+
+    it('区切りの線がどの通貨にも無いときはボタンを押せない', () => {
+      const shopEvent = event({
+        shop: [shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 })],
+        farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+      expect(screen.getByRole('button', { name: '効率の良いところまで交換' })).toBeDisabled()
+    })
   })
 
   describe('効率順の並び', () => {
@@ -265,7 +394,7 @@ describe('EventHubClient', () => {
         '効率順',
         '1|素材2|10',
         '2|素材1|4',
-        'ここまで交換すれば効率が良い （基準 1個 4 AP）',
+        'ここより上は、フリークエストで集めるより交換が得 通貨1個 ≈ 4 AP（イベントのクエストで集めた場合）',
         '3|素材3|1.13',
       ])
     })
