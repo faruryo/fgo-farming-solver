@@ -14,6 +14,7 @@ import {
   groupShopByCurrency,
   orderShopByEfficiency,
   selectAllCurrenciesUpToLimit,
+  selectEfficientUpToLimit,
   selectAllUpToLimit,
   type RankedShopItem,
   type ShopCurrencyGroup,
@@ -439,15 +440,25 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
   return (
     <div className="flex flex-col gap-4">
       <PlanSummary plan={plan} />
-      <div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="text-xs whitespace-normal h-auto"
-          onClick={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))}
-        >
-          {t('event-shop-select-all-currencies', 'すべての通貨で、在庫上限まですべて交換する数を入れる')}
-        </Button>
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))}>
+            {t('event-shop-select-all-currencies', '全部交換')}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCounts(prev => selectEfficientUpToLimit(shop, prev, apPrices, thresholds))}
+          >
+            {t('event-shop-select-efficient', '効率の良いところまで交換')}
+          </Button>
+        </div>
+        <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
+          {t(
+            'event-shop-select-hint',
+            'すべての通貨で在庫上限まで回数を入れます（上限の無い品目は除く。効率の良いところまでは区切りより上の品目だけ）',
+          )}
+        </p>
       </div>
       {groups.map(group => (
         <CurrencyGroupCard

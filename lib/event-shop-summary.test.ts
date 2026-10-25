@@ -8,6 +8,7 @@ import {
   groupShopByCurrency,
   orderShopByEfficiency,
   selectAllCurrenciesUpToLimit,
+  selectEfficientUpToLimit,
   selectAllUpToLimit,
 } from './event-shop-summary'
 
@@ -220,5 +221,34 @@ describe('formatEfficiency', () => {
     expect(formatEfficiency(1.2)).toBe('1.2')
     expect(formatEfficiency(1.0645)).toBe('1.06')
     expect(formatEfficiency(1.0649)).toBe('1.06')
+  })
+})
+
+describe('selectEfficientUpToLimit', () => {
+  // 通貨10: 基準 4。素材1 効率 10（上限5）、素材2 効率 4（基準と等しい、上限3）、素材3 効率 1（区切りの下）、
+  // 素材4 AP 換算値なし（上限2）、素材5 効率 20 だが上限なし。通貨11: 基準なし、素材6 効率 50。
+  const shop = [
+    entry(1, 10, 10, 5),
+    entry(2, 10, 10, 3),
+    entry(3, 10, 10, 4),
+    entry(4, 10, 10, 2),
+    entry(5, 10, 5, 0),
+    entry(6, 11, 2, 7),
+  ]
+  const apPrices = { 1: 100, 2: 40, 3: 10, 5: 100, 6: 100 }
+  const thresholds = new Map([[10, 4]])
+
+  it('区切りより上（基準以上）の在庫上限のある品目だけを上限にする', () => {
+    const next = selectEfficientUpToLimit(shop, new Map(), apPrices, thresholds)
+    expect(next.get(0)).toBe(5)
+    expect(next.get(1)).toBe(3)
+    expect(next.has(2)).toBe(false)
+  })
+
+  it('AP 換算値の無い品目・在庫上限の無い品目・基準の無い通貨の品目は変えない', () => {
+    const next = selectEfficientUpToLimit(shop, new Map([[3, 1], [4, 9]]), apPrices, thresholds)
+    expect(next.get(3)).toBe(1)
+    expect(next.get(4)).toBe(9)
+    expect(next.has(5)).toBe(false)
   })
 })
