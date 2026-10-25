@@ -30,11 +30,11 @@
 
 ## 3. 品質ゲート
 
-- [ ] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
 
 ## 4. 画面の確認
 
-- [ ] 4.1 `pnpm dev`（`--webpack` は付けない）で画面を確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
+- [x] 4.1 `pnpm dev`（`--webpack` は付けない）で画面を確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
   - 準備: 確認のときだけ `mocks/events.json` に、既存のイベント（例: 80549、通貨3種類）のロトを空にした複製を別の ID で足す（commit しない）
   - そのイベントページを 375px と desktop の幅で開き、全部交換のボタンで全通貨が在庫上限になり、周回の合計と交換所の AP 予算（回復の回数・黄金の果実・聖晶石・課金額）が出ること、375px で横スクロールが出ないことを確かめる
   - 箱のあるイベント（例: mocks の既存のロトのあるイベント）を開き、箱計画の AP 予算の入力欄と内訳（3項目のまま、回復の回数は出ない）の見た目と値が変わっていないことも確かめる
