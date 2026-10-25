@@ -13,6 +13,7 @@ import {
   formatEfficiency,
   groupShopByCurrency,
   orderShopByEfficiency,
+  selectAllCurrenciesUpToLimit,
   selectAllUpToLimit,
   type RankedShopItem,
   type ShopCurrencyGroup,
@@ -21,6 +22,8 @@ import {
 } from '../../lib/event-shop-summary'
 import { planShopCurrencies, type ShopCurrencyPlan } from '../../lib/event-plan'
 import type { Result } from '../../interfaces/api'
+import { computeApBudget } from '../../lib/ap-budget'
+import { ApBudgetBreakdown, ApBudgetInputs, useApBudgetProfile } from './ApBudget'
 
 const Icon: React.FC<{ src?: string }> = ({ src }) =>
   src ? <Image src={src} alt="" width={20} height={20} className="w-5 h-5 object-contain flex-shrink-0" /> : null
@@ -390,6 +393,27 @@ const PlanBreakdown: React.FC<{ result: Result; needs: ShopCurrencyNeed[]; nameO
   )
 }
 
+/** 周回の合計 AP を回復するのに要る数（箱計画と同じ規則・同じ保存先の値）。 */
+const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp, partial }) => {
+  const { t } = useTranslation('events')
+  const { maxAp, goldenFruitOwned } = useApBudgetProfile()
+  const apBudget = useMemo(() => computeApBudget(totalAp, maxAp, goldenFruitOwned), [totalAp, maxAp, goldenFruitOwned])
+  return (
+    <div data-testid="shop-ap-budget" className="flex flex-col gap-4">
+      <div
+        className="rounded-md flex flex-col gap-2 px-4 py-3"
+        style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+      >
+        <ApBudgetBreakdown apBudget={apBudget} showRestores />
+        {partial && (
+          <Message>{t('event-shop-ap-budget-partial', '周回で集められる通貨の分の AP で計算しています。')}</Message>
+        )}
+      </div>
+      <ApBudgetInputs />
+    </div>
+  )
+}
+
 const NO_AP_PRICES: Readonly<Record<number, number>> = {}
 
 /**
@@ -400,6 +424,7 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
   event,
   apPrices = NO_AP_PRICES,
 }) => {
+  const { t } = useTranslation('events')
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
   const thresholds = useMemo(() => currencyApThresholds(event.farmingNodes), [event.farmingNodes])
@@ -414,6 +439,16 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
   return (
     <div className="flex flex-col gap-4">
       <PlanSummary plan={plan} />
+      <div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs whitespace-normal h-auto"
+          onClick={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))}
+        >
+          {t('event-shop-select-all-currencies', 'すべての通貨で、在庫上限まですべて交換する数を入れる')}
+        </Button>
+      </div>
       {groups.map(group => (
         <CurrencyGroupCard
           key={group.costItemId}
@@ -430,6 +465,9 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
         />
       ))}
       <FarmingPlan plan={plan} groups={groups} needs={needs} />
+      {plan.status === 'planned' && plan.result && plan.result.total_ap > 0 && (
+        <ShopApBudget totalAp={plan.result.total_ap} partial={plan.unfarmable.length > 0} />
+      )}
     </div>
   )
 }

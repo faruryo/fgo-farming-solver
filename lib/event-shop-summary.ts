@@ -81,6 +81,18 @@ export const selectAllUpToLimit = (
   return next
 }
 
+/** 交換所のすべての通貨で、在庫上限のある品目をすべて上限の回数にした回数を返す。上限の無い品目は変えない。 */
+export const selectAllCurrenciesUpToLimit = (
+  shop: EventShopItem[],
+  counts: ShopExchangeCounts,
+): Map<number, number> => {
+  let next = new Map(counts)
+  for (const costItemId of new Set(shop.map(item => item.costItemId))) {
+    next = selectAllUpToLimit(shop, next, costItemId)
+  }
+  return next
+}
+
 export interface RankedShopItem {
   item: EventShopItem
   /** 1からの順位。 */

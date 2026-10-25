@@ -2,10 +2,8 @@
 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import type {
   BoxLayerResult,
@@ -13,6 +11,7 @@ import type {
   EventSolverResult,
 } from '../../lib/event-plan'
 import type { ApBudget } from '../../lib/ap-budget'
+import { ApBudgetBreakdown, StatBlock } from './ApBudget'
 
 interface Props {
   event: EventPlannerEvent
@@ -22,22 +21,6 @@ interface Props {
   apBudget: ApBudget
   dropSource: 'atlas' | 'manual' | 'none'
 }
-
-const StatBlock: React.FC<{ label: string; value: React.ReactNode; sub?: string }> = ({ label, value, sub }) => (
-  <div className="flex flex-col gap-0.5">
-    <p className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text3)' }}>
-      {label}
-    </p>
-    <p className="text-xl font-bold" style={{ color: 'var(--text1)' }}>
-      {value}
-    </p>
-    {sub && (
-      <p className="text-[10px]" style={{ color: 'var(--text3)' }}>
-        {sub}
-      </p>
-    )}
-  </div>
-)
 
 export const EventPlanResultCard: React.FC<Props> = ({
   event,
@@ -115,36 +98,7 @@ export const EventPlanResultCard: React.FC<Props> = ({
       {totalAp > 0 && (
         <>
           <Separator />
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1.5">
-              <p className="text-xs font-semibold" style={{ color: 'var(--text3)' }}>
-                {t('AP予算内訳')}
-              </p>
-              <Tooltip>
-                <TooltipTrigger className="flex-shrink-0 cursor-default" style={{ color: 'var(--text3)' }}>
-                  <Info size={13} />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[260px] text-left leading-relaxed">
-                  {t('課金額換算説明')}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <StatBlock
-                label={t('黄金の果実消費')}
-                value={apBudget.goldenFruitUsed.toLocaleString()}
-                sub={t('所持N', { count: apBudget.goldenFruitOwned })}
-              />
-              <StatBlock
-                label={t('必要聖晶石')}
-                value={apBudget.quartzCount.toLocaleString()}
-              />
-              <StatBlock
-                label={t('課金額目安')}
-                value={`¥${apBudget.yen.toLocaleString()}`}
-              />
-            </div>
-          </div>
+          <ApBudgetBreakdown apBudget={apBudget} />
         </>
       )}
 
