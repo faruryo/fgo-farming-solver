@@ -7,6 +7,7 @@ import {
   formatEfficiency,
   groupShopByCurrency,
   orderShopByEfficiency,
+  selectAllCurrenciesUpToLimit,
   selectAllUpToLimit,
 } from './event-shop-summary'
 
@@ -97,6 +98,31 @@ describe('selectAllUpToLimit', () => {
     expect(next.get(1) ?? 0).toBe(0)
     expect(next.get(2)).toBe(1)
     expect(next.get(3)).toBe(4)
+  })
+})
+
+describe('selectAllCurrenciesUpToLimit', () => {
+  const shop = [entry(1, 10, 20, 5), entry(2, 11, 5, 10), entry(3, 10, 1, 0), entry(4, 11, 100, 2), entry(5, 11, 3, 0)]
+
+  it('2通貨の在庫上限のある品目をすべて上限にする', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map([[0, 1]]))
+    expect(next.get(0)).toBe(5)
+    expect(next.get(1)).toBe(10)
+    expect(next.get(3)).toBe(2)
+  })
+
+  it('在庫上限の無い品目の回数は入れた値のまま', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map([[2, 3]]))
+    expect(next.get(2)).toBe(3)
+    expect(next.has(4)).toBe(false)
+  })
+
+  it('鍵は交換所の配列全体の添字で、通貨ごとに selectAllUpToLimit を当てた結果と同じ', () => {
+    const counts = new Map([[2, 3], [4, 7], [1, 4]])
+    const expected = selectAllUpToLimit(shop, selectAllUpToLimit(shop, counts, 10), 11)
+    const next = selectAllCurrenciesUpToLimit(shop, counts)
+    expect(next).toEqual(expected)
+    expect([...next.keys()].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4])
   })
 })
 
