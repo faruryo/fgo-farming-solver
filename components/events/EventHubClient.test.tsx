@@ -157,6 +157,20 @@ describe('EventHubClient', () => {
     expect(screen.getByText('江戸むすび は周回では集められません。')).toBeInTheDocument()
     expect(screen.getByText('合計 3 周・AP 120')).toBeInTheDocument()
     expect(screen.queryByText(/^江戸むすび: 見込み/)).not.toBeInTheDocument()
+    expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent(
+      '周回の合計 3 周・AP 120 （一部の通貨は周回で集められません）',
+    )
+  })
+
+  it('どの通貨も周回で落ちないときは上部の1行にその旨を出す', () => {
+    const shopEvent = event({
+      shop: [shopEntry(1, 94001)],
+      farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 6001, perRun: 1 }] }],
+    })
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value: '1' } })
+    expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計: 周回で集められる通貨なし')
   })
 
   it('KV に交換所のデータが無ければ交換所一覧を出さない', () => {

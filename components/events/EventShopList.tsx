@@ -279,10 +279,13 @@ const PlanSummary: React.FC<{ plan: ShopCurrencyPlan }> = ({ plan }) => {
     if (plan.status === 'none') return t('event-shop-summary-none', '周回の合計: 不要')
     if (plan.status === 'no-drops') return t('event-shop-summary-no-drops', '周回の合計: ドロップの統計なし')
     if (!plan.result) return t('event-shop-summary-unfarmable', '周回の合計: 周回で集められる通貨なし')
-    return t('event-shop-summary-total', '周回の合計 {{laps}} 周・AP {{ap}}', {
+    const total = t('event-shop-summary-total', '周回の合計 {{laps}} 周・AP {{ap}}', {
       laps: plan.result.total_lap.toLocaleString(),
       ap: plan.result.total_ap.toLocaleString(),
     })
+    return plan.unfarmable.length > 0
+      ? `${total} ${t('event-shop-summary-partial', '（一部の通貨は周回で集められません）')}`
+      : total
   })()
   return (
     <p

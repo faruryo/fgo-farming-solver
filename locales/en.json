@@ -537,6 +537,7 @@
     "event-shop-summary-none": "Farming total: none needed",
     "event-shop-summary-no-drops": "Farming total: no drop statistics",
     "event-shop-summary-unfarmable": "Farming total: no currency can be farmed",
+    "event-shop-summary-partial": "(some currencies cannot be farmed)",
     "ロト計画": "Box Plan",
     "開催中": "Active",
     "開催予定": "Upcoming",

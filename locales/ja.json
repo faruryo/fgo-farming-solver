@@ -460,6 +460,7 @@
     "event-shop-summary-none": "周回の合計: 不要",
     "event-shop-summary-no-drops": "周回の合計: ドロップの統計なし",
     "event-shop-summary-unfarmable": "周回の合計: 周回で集められる通貨なし",
+    "event-shop-summary-partial": "（一部の通貨は周回で集められません）",
     "ロト計画": "ボックス計画",
     "開催中": "開催中",
     "開催予定": "開催予定",
