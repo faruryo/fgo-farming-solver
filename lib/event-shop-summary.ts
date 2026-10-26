@@ -1,7 +1,7 @@
 /**
  * 交換所のエントリーを対価の通貨ごとにまとめ、通貨ごとの全交換に要る合計を出す純粋関数。
  */
-import type { EventFarmingNode, EventShopItem } from './master-data/types'
+import type { EventShopItem } from './master-data/types'
 
 export interface ShopCurrencyGroup {
   costItemId: number
@@ -81,6 +81,18 @@ export const selectAllUpToLimit = (
   return next
 }
 
+/** 交換所のすべての通貨で、在庫上限のある品目をすべて上限の回数にした回数を返す。上限の無い品目は変えない。 */
+export const selectAllCurrenciesUpToLimit = (
+  shop: EventShopItem[],
+  counts: ShopExchangeCounts,
+): Map<number, number> => {
+  let next = new Map(counts)
+  for (const costItemId of new Set(shop.map(item => item.costItemId))) {
+    next = selectAllUpToLimit(shop, next, costItemId)
+  }
+  return next
+}
+
 export interface RankedShopItem {
   item: EventShopItem
   /** 1からの順位。 */
@@ -94,18 +106,15 @@ export interface ShopEfficiencyOrder {
   unpriced: EventShopItem[]
   /** AP 換算値のある品目（効率の高い順、同じ効率は元の順）。 */
   ranked: RankedShopItem[]
-  /** `ranked` のうち区切りより上にある品目の数。区切りを出さないときは undefined。 */
-  cutoff?: number
 }
 
 /**
- * 通貨のグループの品目を、AP 換算値の無い品目（元の順）と効率順の品目に分け、基準による区切りの位置を出す。
- * `apPrices` は atlasId → 素材1個の AP 換算値。基準以上の効率の品目を区切りの上に置く。
+ * 通貨のグループの品目を、AP 換算値の無い品目（元の順）と効率順の品目に分ける。
+ * `apPrices` は atlasId → 素材1個の AP 換算値。
  */
 export const orderShopByEfficiency = (
   group: Pick<ShopCurrencyGroup, 'items'>,
   apPrices: Readonly<Record<number, number>>,
-  threshold?: number,
 ): ShopEfficiencyOrder => {
   const prices = new Map(Object.entries(apPrices).map(([id, price]) => [Number(id), price]))
   const unpriced: EventShopItem[] = []
@@ -118,30 +127,8 @@ export const orderShopByEfficiency = (
   // Array.prototype.sort は安定ソートなので、同じ効率の品目は元の順のまま。
   priced.sort((a, b) => b.efficiency - a.efficiency)
   const ranked = priced.map((entry, i) => ({ ...entry, rank: i + 1 }))
-  const cutoff =
-    threshold === undefined || ranked.length === 0
-      ? undefined
-      : ranked.filter(r => r.efficiency >= threshold).length
-  return { unpriced, ranked, cutoff }
+  return { unpriced, ranked }
 }
 
-/**
- * 通貨ごとの区切りの基準（その通貨1個を周回で集めるのに要る最小の AP）。
- * AP とドロップ数がどちらも正の周回クエストの `ap ÷ perRun` の最小。1周の AP は通貨ごとに分けない。
- */
-export const currencyApThresholds = (farmingNodes: EventFarmingNode[]): Map<number, number> => {
-  const thresholds = new Map<number, number>()
-  for (const node of farmingNodes) {
-    if (node.ap <= 0) continue
-    for (const drop of node.drops) {
-      if (drop.perRun <= 0) continue
-      const apPerCurrency = node.ap / drop.perRun
-      const current = thresholds.get(drop.itemId)
-      if (current === undefined || apPerCurrency < current) thresholds.set(drop.itemId, apPerCurrency)
-    }
-  }
-  return thresholds
-}
-
-/** 効率と基準の表示。小数2桁までにし、末尾の0は出さない。 */
+/** 効率の表示。小数2桁までにし、末尾の0は出さない。 */
 export const formatEfficiency = (value: number): string => String(Math.round(value * 100) / 100)

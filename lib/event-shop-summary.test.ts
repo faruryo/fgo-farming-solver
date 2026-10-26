@@ -3,10 +3,10 @@ import type { EventShopItem } from './master-data/types'
 import {
   clampExchangeCount,
   computeShopCurrencyNeeds,
-  currencyApThresholds,
   formatEfficiency,
   groupShopByCurrency,
   orderShopByEfficiency,
+  selectAllCurrenciesUpToLimit,
   selectAllUpToLimit,
 } from './event-shop-summary'
 
@@ -100,6 +100,31 @@ describe('selectAllUpToLimit', () => {
   })
 })
 
+describe('selectAllCurrenciesUpToLimit', () => {
+  const shop = [entry(1, 10, 20, 5), entry(2, 11, 5, 10), entry(3, 10, 1, 0), entry(4, 11, 100, 2), entry(5, 11, 3, 0)]
+
+  it('2通貨の在庫上限のある品目をすべて上限にする', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map([[0, 1]]))
+    expect(next.get(0)).toBe(5)
+    expect(next.get(1)).toBe(10)
+    expect(next.get(3)).toBe(2)
+  })
+
+  it('在庫上限の無い品目の回数は入れた値のまま', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map([[2, 3]]))
+    expect(next.get(2)).toBe(3)
+    expect(next.has(4)).toBe(false)
+  })
+
+  it('鍵は交換所の配列全体の添字で、通貨ごとに selectAllUpToLimit を当てた結果と同じ', () => {
+    const counts = new Map([[2, 3], [4, 7], [1, 4]])
+    const expected = selectAllUpToLimit(shop, selectAllUpToLimit(shop, counts, 10), 11)
+    const next = selectAllCurrenciesUpToLimit(shop, counts)
+    expect(next).toEqual(expected)
+    expect([...next.keys()].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4])
+  })
+})
+
 describe('orderShopByEfficiency', () => {
   const priced = (itemId: number, costAmount: number, qty = 1) => entry(itemId, 10, costAmount, 5, { qty })
 
@@ -124,67 +149,15 @@ describe('orderShopByEfficiency', () => {
     expect(ranked.map(r => r.item)).toEqual([items[0]])
   })
 
-  it('AP 換算値のある品目が無ければ順位も区切りも返さない', () => {
+  it('AP 換算値のある品目が無ければ順位を返さない', () => {
     const items = [entry(9, 10, 1, 1), entry(8, 10, 1, 1)]
-    expect(orderShopByEfficiency({ items }, {}, 1.2)).toEqual({ unpriced: items, ranked: [], cutoff: undefined })
-  })
-
-  it('区切りは基準以上と未満の間。基準と等しい品目は上', () => {
-    const items = [priced(1, 1), priced(2, 1), priced(3, 1), priced(4, 1)]
-    const order = orderShopByEfficiency({ items }, { 1: 0.8, 2: 20, 3: 5, 4: 1.2 }, 1.2)
-    expect(order.ranked.map(r => r.efficiency)).toEqual([20, 5, 1.2, 0.8])
-    expect(order.cutoff).toBe(3)
-  })
-
-  it('全品目が基準以上なら最後、全品目が基準未満なら最初', () => {
-    const items = [priced(1, 1), priced(2, 1)]
-    expect(orderShopByEfficiency({ items }, { 1: 5, 2: 3 }, 1).cutoff).toBe(2)
-    expect(orderShopByEfficiency({ items }, { 1: 0.5, 2: 0.3 }, 1).cutoff).toBe(0)
-  })
-
-  it('基準が無ければ区切りを返さない', () => {
-    expect(orderShopByEfficiency({ items: [priced(1, 1)] }, { 1: 5 }).cutoff).toBeUndefined()
-  })
-
-  it('効率と基準は丸める前の値で比べる', () => {
-    // 効率 1.064 と基準 1.0645 は表示ではどちらも 1.06 だが、効率が基準未満なので区切りの下。
-    const order = orderShopByEfficiency({ items: [priced(1, 1000)] }, { 1: 1064 }, 1.0645)
-    expect(formatEfficiency(order.ranked[0]?.efficiency ?? 0)).toBe(formatEfficiency(1.0645))
-    expect(order.cutoff).toBe(0)
+    expect(orderShopByEfficiency({ items }, {})).toEqual({ unpriced: items, ranked: [] })
   })
 
   it('同じ itemId で対価の違う品目を別々に扱う', () => {
     const items = [priced(1, 10), priced(1, 2)]
     const { ranked } = orderShopByEfficiency({ items }, { 1: 10 })
     expect(ranked.map(r => [r.item, r.efficiency])).toEqual([[items[1], 5], [items[0], 1]])
-  })
-})
-
-describe('currencyApThresholds', () => {
-  const node = (questId: number, ap: number, drops: [number, number][]) => ({
-    questId,
-    name: `q${questId}`,
-    ap,
-    drops: drops.map(([itemId, perRun]) => ({ itemId, perRun })),
-  })
-
-  it('通貨ごとに ap ÷ perRun の最小を出し、1周の AP を通貨ごとに分けない', () => {
-    const thresholds = currencyApThresholds([
-      node(1, 40, [[10, 30], [11, 20]]),
-      node(2, 40, [[10, 40], [11, 10]]),
-    ])
-    expect(thresholds.get(10)).toBe(1)
-    expect(thresholds.get(11)).toBe(2)
-  })
-
-  it('ap か perRun が 0 のクエストは使わず、どこにも落ちない通貨は基準が出ない', () => {
-    const thresholds = currencyApThresholds([
-      node(1, 0, [[10, 100]]),
-      node(2, 40, [[10, 20], [11, 0]]),
-    ])
-    expect(thresholds.get(10)).toBe(2)
-    expect(thresholds.has(11)).toBe(false)
-    expect(thresholds.has(12)).toBe(false)
   })
 })
 

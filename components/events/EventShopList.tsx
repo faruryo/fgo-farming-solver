@@ -9,11 +9,10 @@ import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/typ
 import {
   clampExchangeCount,
   computeShopCurrencyNeeds,
-  currencyApThresholds,
   formatEfficiency,
   groupShopByCurrency,
   orderShopByEfficiency,
-  selectAllUpToLimit,
+  selectAllCurrenciesUpToLimit,
   type RankedShopItem,
   type ShopCurrencyGroup,
   type ShopCurrencyNeed,
@@ -21,6 +20,8 @@ import {
 } from '../../lib/event-shop-summary'
 import { planShopCurrencies, type ShopCurrencyPlan } from '../../lib/event-plan'
 import type { Result } from '../../interfaces/api'
+import { computeApBudget } from '../../lib/ap-budget'
+import { ApBudgetBreakdown, ApBudgetInputs, useApBudgetProfile } from './ApBudget'
 
 const Icon: React.FC<{ src?: string }> = ({ src }) =>
   src ? <Image src={src} alt="" width={20} height={20} className="w-5 h-5 object-contain flex-shrink-0" /> : null
@@ -33,7 +34,7 @@ const toCount = (value: string): number => {
 const useCurrencyLabel = () => {
   const { t } = useTranslation('events')
   return (group: Pick<ShopCurrencyGroup, 'costItemId' | 'costName'>) =>
-    group.costName || t('event-shop-currency-id', 'ID {{id}}', { id: group.costItemId })
+    group.costName || t('event-shop-currency-id', '名前不明のアイテム（ID {{id}}）', { id: group.costItemId })
 }
 
 const CurrencyHeader: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {
@@ -66,22 +67,16 @@ interface ShopRowProps {
   item: EventShopItem
   /** 効率順の品目の順位と効率。AP 換算値の無い品目は undefined。 */
   ranked?: Pick<RankedShopItem, 'rank' | 'efficiency'>
-  /** 区切りより上の品目か。 */
-  efficient?: boolean
   count: number
   onCountChange: (count: number) => void
 }
 
-const ShopRow: React.FC<ShopRowProps> = ({ item, ranked, efficient, count, onCountChange }) => {
+const ShopRow: React.FC<ShopRowProps> = ({ item, ranked, count, onCountChange }) => {
   const { t } = useTranslation('events')
   const name = item.name || `#${item.itemId}`
   return (
     <tr
-      style={{
-        borderTop: '1px solid var(--border)',
-        color: 'var(--text2)',
-        ...(efficient ? { background: 'var(--accent)' } : {}),
-      }}
+      style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}
     >
       <td className="text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
         {ranked?.rank}
@@ -108,10 +103,7 @@ const ShopRow: React.FC<ShopRowProps> = ({ item, ranked, efficient, count, onCou
         {item.limitNum > 0 ? item.limitNum.toLocaleString() : t('event-shop-unlimited', '上限なし')}
       </td>
       <td className="text-right px-1 py-1.5 whitespace-nowrap">{item.costAmount.toLocaleString()}</td>
-      <td
-        className={`text-right pl-1 pr-3 py-1.5 whitespace-nowrap tabular-nums${efficient ? ' font-semibold' : ''}`}
-        style={{ color: efficient ? 'var(--gold)' : 'var(--text3)' }}
-      >
+      <td className="text-right pl-1 pr-3 py-1.5 whitespace-nowrap tabular-nums" style={{ color: 'var(--text2)' }}>
         {ranked && formatEfficiency(ranked.efficiency)}
       </td>
     </tr>
@@ -131,29 +123,14 @@ const GroupLabelRow: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   </tr>
 )
 
-const CutoffRow: React.FC<{ threshold: number }> = ({ threshold }) => {
-  const { t } = useTranslation('events')
-  return (
-    <tr data-testid="shop-cutoff" style={{ borderTop: '2px solid var(--gold)' }}>
-      <td colSpan={COLUMN_COUNT} className="px-3 py-1.5 text-[11px]" style={{ color: 'var(--gold)' }}>
-        <span className="font-semibold">{t('event-shop-cutoff', 'ここまで交換すれば効率が良い')}</span>{' '}
-        <span>{t('event-shop-cutoff-threshold', '（基準 1個 {{value}} AP）', { value: formatEfficiency(threshold) })}</span>
-      </td>
-    </tr>
-  )
-}
-
 interface CurrencyGroupCardProps {
   group: ShopCurrencyGroup
   apPrices: Readonly<Record<number, number>>
-  /** その通貨1個を周回で集めるのに要る最小の AP。周回で落ちない通貨は undefined。 */
-  threshold?: number
   indexOf: (item: EventShopItem) => number
   counts: ShopExchangeCounts
   need?: ShopCurrencyNeed
   owned: number
   onCountChange: (index: number, count: number) => void
-  onSelectAll: () => void
   onOwnedChange: (owned: number) => void
 }
 
@@ -161,47 +138,35 @@ const CurrencyGroupCard: React.FC<CurrencyGroupCardProps> = ({
   group,
   need,
   owned,
-  onSelectAll,
   onOwnedChange,
   ...tableProps
 }) => (
   <div className="rounded-md flex flex-col" style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}>
     <CurrencyHeader group={group} />
     <ShopTable group={group} {...tableProps} />
-    <CurrencyFooter
-      group={group}
-      need={need}
-      owned={owned}
-      onSelectAll={onSelectAll}
-      onOwnedChange={onOwnedChange}
-    />
+    <CurrencyFooter group={group} need={need} owned={owned} onOwnedChange={onOwnedChange} />
   </div>
 )
 
 const ShopTable: React.FC<
-  Pick<CurrencyGroupCardProps, 'group' | 'apPrices' | 'threshold' | 'indexOf' | 'counts' | 'onCountChange'>
-> = ({ group, apPrices, threshold, indexOf, counts, onCountChange }) => {
+  Pick<CurrencyGroupCardProps, 'group' | 'apPrices' | 'indexOf' | 'counts' | 'onCountChange'>
+> = ({ group, apPrices, indexOf, counts, onCountChange }) => {
   const { t } = useTranslation('events')
-  const { unpriced, ranked, cutoff } = useMemo(
-    () => orderShopByEfficiency(group, apPrices, threshold),
-    [group, apPrices, threshold],
-  )
+  const { unpriced, ranked } = useMemo(() => orderShopByEfficiency(group, apPrices), [group, apPrices])
   const showLabels = unpriced.length > 0 && ranked.length > 0
   // 交換回数は交換所の配列全体の添字で品目に結び付ける（並べ替えた後の位置や通貨内の添字は使わない）。
-  const row = (item: EventShopItem, rankedItem?: RankedShopItem, efficient?: boolean) => {
+  const row = (item: EventShopItem, rankedItem?: RankedShopItem) => {
     const index = indexOf(item)
     return (
       <ShopRow
         key={index}
         item={item}
         ranked={rankedItem}
-        efficient={efficient}
         count={counts.get(index) ?? 0}
         onCountChange={count => onCountChange(index, count)}
       />
     )
   }
-  const cutoffRow = threshold !== undefined && <CutoffRow key="cutoff" threshold={threshold} />
 
   return (
     <table className="w-full text-xs">
@@ -213,28 +178,22 @@ const ShopTable: React.FC<
           <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '1回の個数')}</th>
           <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '在庫上限')}</th>
           <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '1回の対価')}</th>
-          <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', '効率')}</th>
+          <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', '通貨1個で何 AP 分')}</th>
         </tr>
       </thead>
       <tbody>
         {showLabels && <GroupLabelRow>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>}
         {unpriced.map(item => row(item))}
         {showLabels && <GroupLabelRow>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
-        {ranked.map((r, i) => (
-          <React.Fragment key={indexOf(r.item)}>
-            {i === cutoff && cutoffRow}
-            {row(r.item, r, cutoff !== undefined && i < cutoff)}
-          </React.Fragment>
-        ))}
-        {cutoff !== undefined && cutoff === ranked.length && cutoffRow}
+        {ranked.map(r => row(r.item, r))}
       </tbody>
     </table>
   )
 }
 
 const CurrencyFooter: React.FC<
-  Pick<CurrencyGroupCardProps, 'group' | 'need' | 'owned' | 'onSelectAll' | 'onOwnedChange'>
-> = ({ group, need, owned, onSelectAll, onOwnedChange }) => {
+  Pick<CurrencyGroupCardProps, 'group' | 'need' | 'owned' | 'onOwnedChange'>
+> = ({ group, need, owned, onOwnedChange }) => {
   const { t } = useTranslation('events')
   const label = useCurrencyLabel()
   return (
@@ -242,9 +201,6 @@ const CurrencyFooter: React.FC<
       className="flex items-center justify-between gap-x-4 gap-y-2 flex-wrap px-4 py-3 text-xs"
       style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}
     >
-      <Button size="sm" variant="outline" className="text-xs" onClick={onSelectAll}>
-        {t('event-shop-select-all', '在庫上限まですべて交換する数を入れる')}
-      </Button>
       <label className="flex items-center gap-2">
         <span>{t('event-shop-owned', '所持数')}</span>
         <Input
@@ -390,7 +346,42 @@ const PlanBreakdown: React.FC<{ result: Result; needs: ShopCurrencyNeed[]; nameO
   )
 }
 
+/** 周回の合計 AP を回復するのに要る数（箱計画と同じ規則・同じ保存先の値）。 */
+const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp, partial }) => {
+  const { t } = useTranslation('events')
+  const { maxAp, goldenFruitOwned } = useApBudgetProfile()
+  const apBudget = useMemo(() => computeApBudget(totalAp, maxAp, goldenFruitOwned), [totalAp, maxAp, goldenFruitOwned])
+  return (
+    <div data-testid="shop-ap-budget" className="flex flex-col gap-4">
+      <div
+        className="rounded-md flex flex-col gap-2 px-4 py-3"
+        style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+      >
+        <ApBudgetBreakdown apBudget={apBudget} showRestores />
+        {partial && (
+          <Message>{t('event-shop-ap-budget-partial', '周回で集められる通貨の分の AP で計算しています。')}</Message>
+        )}
+      </div>
+      <ApBudgetInputs />
+    </div>
+  )
+}
+
 const NO_AP_PRICES: Readonly<Record<number, number>> = {}
+
+const SelectAll: React.FC<{ onSelectAll: () => void }> = ({ onSelectAll }) => {
+  const { t } = useTranslation('events')
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <Button size="sm" variant="outline" onClick={onSelectAll}>
+        {t('event-shop-select-all-currencies', '全部交換')}
+      </Button>
+      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+        {t('event-shop-select-all-hint', '上限のある品目をすべて上限まで')}
+      </span>
+    </div>
+  )
+}
 
 /**
  * 交換所の品目を対価の通貨ごとにまとめて回数を選ばせ、通貨ごとの必要量と、それを満たす周回の内訳を出す。
@@ -402,7 +393,6 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
 }) => {
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
-  const thresholds = useMemo(() => currencyApThresholds(event.farmingNodes), [event.farmingNodes])
   const [counts, setCounts] = useState<ShopExchangeCounts>(() => new Map())
   const [owned, setOwned] = useState<ReadonlyMap<number, number>>(() => new Map())
   const needs = useMemo(() => computeShopCurrencyNeeds(shop, counts, owned), [shop, counts, owned])
@@ -414,22 +404,24 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
   return (
     <div className="flex flex-col gap-4">
       <PlanSummary plan={plan} />
+      <SelectAll onSelectAll={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} />
       {groups.map(group => (
         <CurrencyGroupCard
           key={group.costItemId}
           group={group}
           apPrices={apPrices}
-          threshold={thresholds.get(group.costItemId)}
           indexOf={item => shop.indexOf(item)}
           counts={counts}
           need={needs.find(n => n.costItemId === group.costItemId)}
           owned={owned.get(group.costItemId) ?? 0}
           onCountChange={(index, count) => setCounts(prev => new Map(prev).set(index, count))}
-          onSelectAll={() => setCounts(prev => selectAllUpToLimit(shop, prev, group.costItemId))}
           onOwnedChange={value => setOwned(prev => new Map(prev).set(group.costItemId, value))}
         />
       ))}
       <FarmingPlan plan={plan} groups={groups} needs={needs} />
+      {plan.status === 'planned' && plan.result && plan.result.total_ap > 0 && (
+        <ShopApBudget totalAp={plan.result.total_ap} partial={plan.unfarmable.length > 0} />
+      )}
     </div>
   )
 }
