@@ -56,7 +56,7 @@ const gapLabel = (
   const resolved = items.find((item) => item.id === gap.atlasId)?.name
   const name = resolved
     ? resolved
-    : t('event-craft-data-gap-id', 'ID {{id}}', { id: gap.atlasId })
+    : t('event-craft-data-gap-id', '名前不明のアイテム（ID {{id}}）', { id: gap.atlasId })
   return gap.reason === 'absent'
     ? t('event-craft-data-gap-absent', '{{name}}はドロップ表にありません', { name })
     : t('event-craft-data-gap-unrated', '{{name}}はドロップ表にありますが、ドロップするクエストがありません', { name })

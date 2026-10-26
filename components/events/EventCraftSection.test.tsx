@@ -163,11 +163,11 @@ describe('EventCraftSection', () => {
     expect(screen.queryByTestId('advisor')).toBeNull()
   })
 
-  it('名前の無い素材は数値 ID で示す', async () => {
+  it('名前の無い素材は、名前不明のアイテムであることと数値 ID で示す', async () => {
     rosterMock = ready({ 6666: 1 })
     stubDrops(baseDrops)
     render(<EventCraftSection items={items} />)
-    expect(await screen.findByText('ID 6666はドロップ表にありません')).toBeTruthy()
+    expect(await screen.findByText('名前不明のアイテム（ID 6666）はドロップ表にありません')).toBeTruthy()
   })
 
   it('41件の欠落は40件以下のリクエストに分け、再描画では増やさない', async () => {
