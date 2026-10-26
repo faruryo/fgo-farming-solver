@@ -3,6 +3,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { EventHubClient } from './EventHubClient'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
+import type { RosterNeed } from '../../hooks/use-roster-need'
+import type { MaterialCatalogV1 } from '../../lib/material-catalog'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+
+type CatalogState = { catalog: MaterialCatalogV1 | null; failed: boolean; reload: () => void }
+
+const mocks = vi.hoisted(() => ({
+  // undefined のときは実フック（未設定の育成計画 → empty）を使う。
+  roster: undefined as RosterNeed | undefined,
+  catalog: undefined as CatalogState | undefined,
+  useMaterialCatalog: vi.fn(),
+}))
+
+vi.mock('../../hooks/use-roster-need', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../hooks/use-roster-need')>()
+  return { ...actual, useRosterNeed: () => mocks.roster ?? actual.useRosterNeed() }
+})
+
+vi.mock('../../hooks/use-material-catalog', () => ({
+  useMaterialCatalog: () => {
+    mocks.useMaterialCatalog()
+    return mocks.catalog
+  },
+}))
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -402,6 +426,230 @@ describe('EventHubClient', () => {
       for (const id of [1, 2, 3, 5]) expect(screen.getByLabelText(`素材${id} の交換回数`)).toHaveValue(0)
       expect(within(musubi).getByText('必要量 21')).toBeInTheDocument()
       expect(within(udon).getByText('必要量 0')).toBeInTheDocument()
+    })
+  })
+
+  describe('育成計画から見た要る・要らない', () => {
+    const reload = vi.fn()
+    // 育成計画で扱う素材は 6516〜6519（6518 は今の必要数 0）。4001（呼符）と 94100（他のイベントアイテム）は扱わない。
+    const catalog = {
+      schemaVersion: 1,
+      updatedAt: 1,
+      servants: [],
+      items: [],
+      sources: {},
+      materials: {
+        100: {
+          skillMaterials: {
+            1: { items: [6516, 6517, 6518, 6519].map(id => ({ item: { id }, amount: 1 })), qp: 0 },
+          },
+        },
+      },
+    } as unknown as MaterialCatalogV1
+    const readyCatalog: CatalogState = { catalog, failed: false, reload }
+    const ready = (need: Record<number, number>): RosterNeed => ({
+      status: 'ready',
+      chaldeaState: {},
+      materialsForServants: {},
+      totalNeed: new Map(Object.entries(need).map(([k, v]) => [Number(k), v])),
+    })
+    const setLs = (key: string, value: unknown) => localStorage.setItem(key, JSON.stringify(value))
+    const possession = { 6516: 25, 6517: 40 }
+
+    const shop = [
+      shopEntry(6516, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 10 }),
+      shopEntry(6517, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 10 }),
+      shopEntry(6518, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 10 }),
+      shopEntry(6519, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 10 }),
+      shopEntry(4001, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 5 }),
+      shopEntry(94100, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 0 }),
+    ]
+    const farmingNodes = [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }]
+    const renderShop = (overrides: Partial<EventPlannerEvent> = {}) =>
+      render(
+        <EventHubClient summary={summary} boxEvent={event({ shop, farmingNodes, ...overrides })} features={['shop']} />,
+      )
+    const cellOf = (name: string) => screen.getByLabelText(`${name} の交換回数`).closest('tr')?.cells[1] as HTMLElement
+    const toggleOf = (name: string) => screen.getByRole('radiogroup', { name: `${name} は要るか` })
+    const shortfallButton = () => screen.getByRole('button', { name: '不足素材のみ' })
+
+    beforeEach(() => {
+      mocks.roster = ready({ 6516: 30, 6517: 30, 6519: 15 })
+      mocks.catalog = readyCatalog
+      mocks.useMaterialCatalog.mockClear()
+      reload.mockClear()
+      setLs(STORAGE_KEYS.POSSESSION, possession)
+    })
+    afterEach(() => {
+      mocks.roster = undefined
+    })
+
+    it('品目に「あと N 個」「足りている（交換不要）」「使わない」「計画の対象外」が出る', () => {
+      renderShop()
+
+      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6517')).getByText('足りている（交換不要）')).toBeInTheDocument()
+      expect(within(cellOf('素材6518')).getByText('使わない')).toBeInTheDocument()
+      expect(within(cellOf('素材4001')).getByText('計画の対象外')).toBeInTheDocument()
+      expect(within(cellOf('素材94100')).getByText('計画の対象外')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).queryByRole('radiogroup')).not.toBeInTheDocument()
+    })
+
+    it('計画の対象外の品目の切り替えは初期値「要らない」で、「要る」にしても交換回数は変わらない', () => {
+      renderShop()
+
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要らない' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).not.toBeChecked()
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).toBeChecked()
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
+    })
+
+    it('「要る」は描き直しても残り、交換回数は 0 から始まる', () => {
+      const { unmount } = renderShop()
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(shortfallButton())
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+      unmount()
+
+      renderShop()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).toBeChecked()
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
+    })
+
+    it('別のイベントでも保存した「要る」を使い、「要らない」に戻すと保存からその品目が消える', () => {
+      const { unmount } = renderShop()
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要る' }))
+      unmount()
+
+      renderShop({ id: 80700, shop: [shopEntry(4001, 94002, { costName: '江戸むすび', qty: 1, limitNum: 3 })] })
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).toBeChecked()
+
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要らない' }))
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
+        94100: true,
+      })
+    })
+
+    it('選んだことの無い端末では、開いただけで要る・要らないの保存を作らない', () => {
+      renderShop()
+      expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
+    })
+
+    it('不足素材のみで不足の分と「要る」の在庫上限を入れ、周回の内訳を出し、その後も回数を変えられる', () => {
+      renderShop()
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要る' }))
+      expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
+
+      fireEvent.click(shortfallButton())
+
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材6517 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材6518 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材6519 の交換回数')).toHaveValue(10)
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(0)
+      expect(within(cellOf('素材94100')).getByText('上限なし: 回数を入れてください')).toBeInTheDocument()
+      expect(screen.getByText('必要量 200')).toBeInTheDocument()
+      expect(screen.getByText('合計 20 周・AP 800')).toBeInTheDocument()
+
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要らない' }))
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+
+      fireEvent.change(screen.getByLabelText('素材94100 の交換回数'), { target: { value: '3' } })
+      fireEvent.change(screen.getByLabelText('素材6516 の交換回数'), { target: { value: '1' } })
+      expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(3)
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(1)
+      expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
+
+      fireEvent.click(shortfallButton())
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
+      expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+    })
+
+    it('在庫上限で埋まらない素材に「交換所では N 個足りない」を出し、要約の数が合う', () => {
+      renderShop()
+
+      expect(within(cellOf('素材6519')).getByText('交換所では 5 個足りない')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).queryByText(/交換所では/)).not.toBeInTheDocument()
+      expect(screen.getByText('育成計画の不足 2 素材のうち、交換所で埋まるのは 1 素材')).toBeInTheDocument()
+    })
+
+    it('育成計画が未設定なら、ラベル・切り替え・要約を出さず、不足素材のみを押せず、設定のリンクを出す', () => {
+      mocks.roster = { status: 'empty' }
+      renderShop()
+
+      expect(screen.queryByText('あと 5 個')).not.toBeInTheDocument()
+      expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('shop-shortfall-summary')).not.toBeInTheDocument()
+      expect(shortfallButton()).toBeDisabled()
+      expect(screen.getByRole('link', { name: '育成対象を設定する' })).toHaveAttribute('href', '/material')
+
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(10)
+      expect(mocks.useMaterialCatalog).not.toHaveBeenCalled()
+    })
+
+    it('育成計画の読み込みに失敗したとき・読み込み中は、不足素材のみを押せない', () => {
+      mocks.roster = { status: 'error' }
+      const { unmount } = renderShop()
+      expect(
+        screen.getByText('育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('あと 5 個')).not.toBeInTheDocument()
+      expect(shortfallButton()).toBeDisabled()
+      unmount()
+
+      mocks.roster = { status: 'loading' }
+      renderShop()
+      expect(screen.getByText('育成計画を読み込み中...')).toBeInTheDocument()
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(shortfallButton()).toBeDisabled()
+    })
+
+    it('素材の一覧を読み込めないと、必要数のある品目のラベルだけを出し、見分けられないことと再読み込みを出す', () => {
+      mocks.catalog = { catalog: null, failed: true, reload }
+      renderShop()
+
+      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6517')).getByText('足りている（交換不要）')).toBeInTheDocument()
+      expect(screen.queryByText('使わない')).not.toBeInTheDocument()
+      expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(
+        screen.getByText('素材の一覧を読み込めず、計画の対象外の品目を見分けられません。'),
+      ).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '再読み込み' }))
+      expect(reload).toHaveBeenCalled()
+
+      fireEvent.click(shortfallButton())
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(5)
+    })
+
+    it('素材の一覧を読み込み中は、必要数 0 の品目にラベルと切り替えを出さず、見分けられない旨も出さない', () => {
+      mocks.catalog = { catalog: null, failed: false, reload }
+      renderShop()
+
+      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(screen.queryByText('使わない')).not.toBeInTheDocument()
+      expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(screen.queryByText(/見分けられません/)).not.toBeInTheDocument()
+    })
+
+    it('所持数は POSSESSION から読み、ITEMS の値は使わず、POSSESSION を書き換えない', () => {
+      setLs(STORAGE_KEYS.ITEMS, { 6516: 0, 6517: 0, 6519: 15 })
+      const before = localStorage.getItem(STORAGE_KEYS.POSSESSION)
+      renderShop()
+
+      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6517')).getByText('足りている（交換不要）')).toBeInTheDocument()
+      expect(within(cellOf('素材6519')).getByText('あと 15 個')).toBeInTheDocument()
+      fireEvent.click(shortfallButton())
+      expect(localStorage.getItem(STORAGE_KEYS.POSSESSION)).toBe(before)
     })
   })
 })
