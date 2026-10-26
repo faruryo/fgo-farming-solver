@@ -319,54 +319,12 @@ describe('EventHubClient', () => {
     })
   })
 
-  describe('効率の良いところまで交換', () => {
-    it('区切りより上の品目だけを在庫上限まで入れ、AP 換算値の無い品目・在庫上限の無い品目は 0 のまま', () => {
-      const shopEvent = event({
-        shop: [
-          shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 }),
-          shopEntry(2, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 4 }),
-          shopEntry(3, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 2 }),
-          shopEntry(4, 94001, { costName: '武蔵うどん', costAmount: 5, limitNum: 0 }),
-        ],
-        farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
-      })
-      // 基準は 40 ÷ 10 = 4。効率は 素材1: 100÷10=10、素材2: 10÷10=1（区切りの下）、素材4: 100÷5=20（上限なし）。素材3 は AP 換算値なし。
-      render(
-        <EventHubClient
-          summary={summary}
-          boxEvent={shopEvent}
-          features={['shop']}
-          shopApPrices={{ 1: 100, 2: 10, 4: 100 }}
-        />,
-      )
-
-      fireEvent.click(screen.getByRole('button', { name: '効率の良いところまで交換' }))
-
-      expect(screen.getByLabelText('素材1 の交換回数')).toHaveValue(5)
-      expect(screen.getByLabelText('素材2 の交換回数')).toHaveValue(0)
-      expect(screen.getByLabelText('素材3 の交換回数')).toHaveValue(0)
-      expect(screen.getByLabelText('素材4 の交換回数')).toHaveValue(0)
-      expect(within(cardOf('武蔵うどん')).getByText('必要量 50')).toBeInTheDocument()
-      expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計 5 周・AP 200')
-    })
-
-    it('区切りの線がどの通貨にも無いときはボタンを押せない', () => {
-      const shopEvent = event({
-        shop: [shopEntry(1, 94001, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 })],
-        farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
-      })
-      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
-
-      expect(screen.getByRole('button', { name: '効率の良いところまで交換' })).toBeDisabled()
-    })
-  })
-
   describe('効率順の並び', () => {
     const farmingNodes = [
       { questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }, { itemId: 94002, perRun: 10 }] },
     ]
 
-    it('AP 換算値の無い品目を元の順で前に、AP 換算値のある品目を効率の高い順に順位付きで並べ、区切りを効率順の中に出す', () => {
+    it('AP 換算値の無い品目を元の順で前に、AP 換算値のある品目を効率の高い順に順位付きで並べる。区切りの線は出さない', () => {
       const shopEvent = event({
         shop: [
           shopEntry(1, 94001, { costName: '武蔵うどん', qty: 2, costAmount: 30 }),
@@ -377,7 +335,7 @@ describe('EventHubClient', () => {
         ],
         farmingNodes,
       })
-      // 基準は 40 ÷ 10 = 4。効率は 素材1: 2×60÷30=4（基準と等しい）、素材2: 100÷10=10、素材3: 9÷8=1.125。
+      // 効率は 素材1: 2×60÷30=4、素材2: 100÷10=10、素材3: 9÷8=1.125。
       render(
         <EventHubClient
           summary={summary}
@@ -394,12 +352,12 @@ describe('EventHubClient', () => {
         '効率順',
         '1|素材2|10',
         '2|素材1|4',
-        'ここより上は、フリークエストで集めるより交換が得 通貨1個 ≈ 4 AP（イベントのクエストで集めた場合）',
         '3|素材3|1.13',
       ])
+      expect(screen.queryByRole('button', { name: '効率の良いところまで交換' })).not.toBeInTheDocument()
     })
 
-    it('全品目に AP 換算値の無いカードでは見出しも順位も区切りも出さず、元の順に並べる', () => {
+    it('全品目に AP 換算値の無いカードでは見出しも順位も出さず、元の順に並べる', () => {
       const shopEvent = event({
         shop: [
           shopEntry(1, 94001, { costName: '武蔵うどん' }),
@@ -412,7 +370,6 @@ describe('EventHubClient', () => {
 
       const musubi = cardOf('江戸むすび')
       expect(bodyRows(musubi)).toEqual(['|素材7|', '|素材6|'])
-      expect(within(musubi).queryByTestId('shop-cutoff')).not.toBeInTheDocument()
       expect(within(cardOf('武蔵うどん')).queryByText('AP 換算なし')).not.toBeInTheDocument()
     })
 
@@ -452,7 +409,7 @@ describe('EventHubClient', () => {
 const cardOf = (currency: string) =>
   screen.getByRole('heading', { name: currency }).closest('div.rounded-md') as HTMLElement
 
-/** カードの表の行を「順位|品目名|効率」か、見出し・区切りの行の文言にする。 */
+/** カードの表の行を「順位|品目名|効率」か、見出しの行の文言にする。 */
 const bodyRows = (card: HTMLElement) =>
   Array.from(card.querySelectorAll<HTMLTableRowElement>('tbody tr')).map(tr => {
     const input = tr.querySelector('input')
