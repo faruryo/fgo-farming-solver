@@ -80,7 +80,7 @@ QP（atlasId 1）は `computeTotalNeed` が総必要数に足しているが、�
 
 - 1回の個数（`qty`）が 0 以下の品目: 割り当ての対象から外し、0 回にする（`compactShop` は `setNum ?? 1` で作るので、Atlas の `setNum` が 0 なら `qty` も 0 になり、割ると回数が無限大になるため）
 - 不足のある素材: 交換所の元の順に品目を見て、まだ埋まっていない不足を `qty` で割って切り上げ、`limitNum > 0` なら `limitNum` で打ち切り、得る個数を差し引く（同じ素材の品目が複数あるときも元の順。オーナー判断 2026-10-26）
-- 「要る」の計画の対象外の品目: `limitNum > 0` なら `limitNum`。`limitNum` が 0（在庫上限なし）なら 0 回にし、回数を手で入れるよう品目の行に示す。上限の無い品目（呼符・種火など）に入れる数は、育成計画から決まらないため
+- 「要る」の計画の対象外の品目: 保存した「要る」の集合のうち、今の判定（決定 2）で「計画の対象外」になった品目だけを「要る」として扱う。素材カタログが読み込み中・失敗で状態が出ない品目、「使わない」になった品目（素材カタログの更新で育成計画で扱う素材に加わったなど）、必要数が 1 以上の品目（不足の分の規則を優先する）は、保存に「要る」が残っていても「要る」として扱わない。保存した値は消さない。`limitNum > 0` なら `limitNum`。`limitNum` が 0（在庫上限なし）なら 0 回にし、回数を手で入れるよう品目の行に示す。上限の無い品目（呼符・種火など）に入れる数は、育成計画から決まらないため
 - それ以外: 0 回
 
 採らなかった案: 箱計画の `allocateShop` を使う。`allocateShop` は品目ごとに同じ需要を丸ごと当てるので、同じ素材の品目が複数あると二重に数える。また `limitNum` が 0（在庫上限なし）の品目を `Math.min(..., 0)` で 0 回にしてしまう。直すと箱計画の結果が変わるので、この change では触れない。
@@ -103,11 +103,12 @@ QP（atlasId 1）は `computeTotalNeed` が総必要数に足しているが、�
 
 - キー: `lib/constants/storage-keys.ts` の `STORAGE_KEYS` に `EVENTS_SHOP_WANTED_ITEMS: 'events/shopWantedItems'` を足す。置き場所は、同じ交換所の画面の `EVENTS_GOLDEN_FRUIT`（`'events/goldenFruit'`）と同じ「Local/UI-only state」の区画にする
 - 値: atlasId の文字列 → `true` の Record。「要る」にした品目だけを持ち、「要らない」に戻したらキーを消す。持っていない品目は「要らない」（まだ選んでいない品目の初期値）
-- 読み書き: `hooks/use-local-storage.ts` の `useLocalStorage(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, {})`。切り替えは利用者の操作なので書き込む（`lazyWrite` は付けない。`lazyWrite` は読むだけの画面が未設定の端末に初期値を書かないための指定で、ここでは操作のたびに書く）
-- 不足素材のみ（決定 3）には、「要る」の品目を atlasId の集合で渡す。交換所に同じ品目が複数並ぶときは、どの品目も「要る」として扱う
+- 読み書き: `hooks/use-local-storage.ts` の `useLocalStorage(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, {}, { lazyWrite: true })`。`lazyWrite` を付けると、表示しただけでは `{}` を書かず、切り替え（setter）を呼んだ後は変更のたびに書く。交換所の画面を開いただけで、選んだことの無い端末にキーを作らないため
+- 不足素材のみ（決定 3）には、保存した「要る」の atlasId の集合を、今「計画の対象外」と判定された品目に絞ってから渡す。保存はイベントをまたいで期限なく残るので、今は計画の対象外でない atlasId が集合に残りうるため。交換所に同じ品目が複数並ぶときは、どの品目も「要る」として扱う
 - 交換回数は今までどおり保存しない（`useState`）。開き直したとき「要る」なのに回数が 0 の品目が並ぶが、不足素材のみを押せば入る
 
 クラウド同期（`CLOUD_SYNC_KEYS`）には入れない。コードで確かめたこと:
+- 同期の対象外のキーは、書いても同期の状態を変えない。`hooks/use-cloud-sync.ts` は `ls-sync` の `detail.key` が `isCloudSyncKey` でなければ、未同期の印（dirty）も自動保存も立てない（allowlist）。切り替えのたびに `ls-sync` が出ても同期は動かない
 - 同期の対象は、育成計画（`MATERIAL`）・所持数（`POSSESSION`）・周回目標（`ITEMS`）・マスターレベル（`MASTER_LEVEL`）など、`STORAGE_KEYS` の「Sync-targeted core user state」の区画の22キーで、`hooks/use-cloud-sync.ts` が `CLOUD_SYNC_KEYS` をそのまま使う
 - イベントの画面で既に保存している黄金の果実の所持数（`EVENTS_GOLDEN_FRUIT`）は同期の対象に入っていない。交換所の画面の保存はこれにそろえる
 - 同期に足すと、クラウドの snapshot の形が変わり、`lib/cloud-sync/` の縮みの検査と差分の表示の扱いも見直しが要る。この change の範囲を超えるので、端末ごとの保存にとどめ、複数の端末で使いたい要望が出たら別 issue で同期に足す
