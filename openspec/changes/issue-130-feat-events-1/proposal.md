@@ -18,7 +18,7 @@
 - `event-drop-bonus`: ロトの無い交換所イベントで、利用者が入れた「1ドロップにつき +N」のボーナスから、1周あたりの通貨とイベントポイントの獲得量を出し、交換所の周回計算に反映する
 
 ### Modified Capabilities
-（なし。交換所の周回計算の既存の要件（`event-planner` の #128 の要件、#134 の `event-shop-ap-budget`）は書き換えず、ボーナスを入れたときの振る舞いを新しい capability に足す。`event-planner` は未 archive の change `issue-127-bug-events` が、`event-shop-ap-budget` は change `issue-134-feat-events-ap` が持っているため）
+（なし。交換所の周回計算の既存の要件（`event-planner` の #128 の要件、#134 の `event-shop-ap-budget`）は書き換えず、ボーナスを入れたときの振る舞いを新しい capability に足す。`event-planner` は未 archive の change `issue-127-bug-events` が持つ capability で、その change が archive されるまで同じ capability に delta を足さない。既存の要件「ドロップの統計にイベントのボーナス（礼装・サーヴァント）が含まれないことを示す」は文言にサーヴァントを含むが、示す中身（統計はボーナスを含まない）は保ったまま注記の文言だけを礼装に直すので、要件とは食い違わない。要件の文の「サーヴァント」を直すのは issue-127 の archive の後に回す。また `event-shop-ap-budget` は #134 の要件のまま変えない）
 
 ## Impact
 
