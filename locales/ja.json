@@ -424,7 +424,7 @@
     "event-feature-shop": "交換所",
     "event-shop-section-title": "交換所の周回計算",
     "event-shop-section-description": "交換したい品目の数を入れると、必要な通貨の数と、集めるのに要る周回数・AP を計算します",
-    "event-shop-currency-id": "ID {{id}}",
+    "event-shop-currency-id": "名前不明のアイテム（ID {{id}}）",
     "event-shop-total": "全交換 {{total}}",
     "event-shop-unlimited-count": "＋上限なし {{count}} 品目",
     "event-shop-unlimited": "上限なし",
@@ -562,7 +562,7 @@
     "event-craft-data-missing": "不足素材の一部でドロップデータが欠けているため、周回数を正しく計算できません。時間をおいて再読み込みしてください。",
     "event-craft-data-gap-absent": "{{name}}はドロップ表にありません",
     "event-craft-data-gap-unrated": "{{name}}はドロップ表にありますが、ドロップするクエストがありません",
-    "event-craft-data-gap-id": "ID {{id}}",
+    "event-craft-data-gap-id": "名前不明のアイテム（ID {{id}}）",
     "event-craft-reload": "再読み込み"
   },
   "todo": {
@@ -727,6 +727,8 @@
     "plan-option": "周回予定 {{count}}周",
     "plan-over": "予定超過",
     "plan-split": "予定内 {{inPlan}}周(絆{{bond}}) / 予定超過 {{over}}周",
+    "pod-free-note": "ポッド無料期間に自然回復で回せる{{count}}周を0個と数えています（{{until}}まで）",
+    "pod-free-note-apples": "ポッド無料期間中の{{count}}周をすべて0個と数えています（{{until}}まで）",
     "pods-count": "{{count}}個",
     "progress-unavailable": "入力を確認してください",
     "quest": "周回クエスト",
@@ -754,6 +756,7 @@
     "teapot-stock": "ティーポット所持数",
     "title": "絆トラッカー",
     "total": "合計",
-    "unconfirmed-class": "※対象クラス未確認"
+    "unconfirmed-class": "※対象クラス未確認",
+    "use-apples": "りんご・石を使う"
   }
 }

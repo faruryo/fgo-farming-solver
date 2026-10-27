@@ -501,7 +501,7 @@
     "event-feature-shop": "Shop",
     "event-shop-section-title": "Shop farming calculator",
     "event-shop-section-description": "Enter how many of each item you want to exchange to calculate the currency you need and the runs / AP to collect it",
-    "event-shop-currency-id": "ID {{id}}",
+    "event-shop-currency-id": "Unknown item (ID {{id}})",
     "event-shop-total": "Total for all: {{total}}",
     "event-shop-unlimited-count": "+ {{count}} unlimited item(s)",
     "event-shop-unlimited": "Unlimited",
@@ -639,7 +639,7 @@
     "event-craft-data-missing": "Drop data is missing for some needed materials, so runs cannot be calculated correctly. Please reload later.",
     "event-craft-data-gap-absent": "{{name}} is not in the drop table",
     "event-craft-data-gap-unrated": "{{name}} is in the drop table, but no quest drops it",
-    "event-craft-data-gap-id": "ID {{id}}",
+    "event-craft-data-gap-id": "Unknown item (ID {{id}})",
     "event-craft-reload": "Reload"
   },
   "todo": {
@@ -804,6 +804,8 @@
     "plan-option": "Planned {{count}} runs",
     "plan-over": "Over plan",
     "plan-split": "Within plan {{inPlan}} runs ({{bond}} bond) / over plan {{over}} runs",
+    "pod-free-note": "{{count}} runs you can do with natural AP recovery during the pod-free period are counted as 0 pods (until {{until}})",
+    "pod-free-note-apples": "All {{count}} runs during the pod-free period are counted as 0 pods (until {{until}})",
     "pods-count": "{{count}}",
     "progress-unavailable": "Check the inputs",
     "quest": "Farming quest",
@@ -831,6 +833,7 @@
     "teapot-stock": "Teapots owned",
     "title": "Bond Tracker",
     "total": "Total",
-    "unconfirmed-class": "* class restriction unconfirmed"
+    "unconfirmed-class": "* class restriction unconfirmed",
+    "use-apples": "Use apples / Saint Quartz"
   }
 }

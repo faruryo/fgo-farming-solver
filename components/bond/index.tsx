@@ -19,21 +19,28 @@ const SEARCH_LIMIT = 20
 function TeapotSettings({
   teapot,
   onChange,
-}: Readonly<{ teapot: BondTrackerState['teapot']; onChange: (teapot: Partial<BondTrackerState['teapot']>) => void }>) {
+  useApples,
+  onUseApplesChange,
+}: Readonly<{
+  teapot: BondTrackerState['teapot']
+  onChange: (teapot: Partial<BondTrackerState['teapot']>) => void
+  useApples: boolean
+  onUseApplesChange: (useApples: boolean) => void
+}>) {
   const { t } = useTranslation('bond')
   return (
     <div className="c-card flex flex-col gap-2 p-3 text-sm">
-      <label className="flex items-center justify-between gap-3">
-        <span>{t('teapot-enabled', 'ティーポットを使う')}</span>
+      <label className="flex w-fit items-center gap-3">
         <Switch
           checked={teapot.enabled}
           onCheckedChange={enabled => onChange({ enabled })}
           aria-label={t('teapot-enabled', 'ティーポットを使う')}
         />
+        <span>{t('teapot-enabled', 'ティーポットを使う')}</span>
       </label>
       {teapot.enabled && (
         <>
-          <label className="flex items-center justify-between gap-3" htmlFor="bond-teapot-stock">
+          <label className="flex w-fit items-center gap-3" htmlFor="bond-teapot-stock">
             <span>{t('teapot-stock', 'ティーポット所持数')}</span>
             <Input
               id="bond-teapot-stock"
@@ -50,6 +57,14 @@ function TeapotSettings({
           </p>
         </>
       )}
+      <label className="flex w-fit items-center gap-3">
+        <Switch
+          checked={useApples}
+          onCheckedChange={onUseApplesChange}
+          aria-label={t('use-apples', 'りんご・石を使う')}
+        />
+        <span>{t('use-apples', 'りんご・石を使う')}</span>
+      </label>
     </div>
   )
 }
@@ -106,7 +121,12 @@ function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServa
   if (tracker.isLoading) return <p>{t('loading', '読み込んでいます…')}</p>
   return (
     <div className="flex flex-col gap-4">
-      <TeapotSettings teapot={tracker.state.teapot} onChange={tracker.setTeapot} />
+      <TeapotSettings
+        teapot={tracker.state.teapot}
+        onChange={tracker.setTeapot}
+        useApples={tracker.state.useApples}
+        onUseApplesChange={tracker.setUseApples}
+      />
       <Tabs defaultValue="input">
         <TabsList>
           <TabsTrigger value="input">{t('tab-input', '入力')}</TabsTrigger>
@@ -131,13 +151,20 @@ function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServa
               estimate={estimate}
               teapotEnabled={tracker.state.teapot.enabled}
               plannedLaps={tracker.plannedLaps}
+              podFreeQuestIds={tracker.podFreeQuestIds}
               onChange={tracker.updateEntry}
               onRemove={() => tracker.removeEntry(estimate.entry.servantId)}
             />
           ))}
         </TabsContent>
         <TabsContent value="estimate">
-          <BondEstimateTable summary={tracker.summary} cards={tracker.cards} questsById={tracker.questsById} plannedLaps={tracker.plannedLaps} />
+          <BondEstimateTable
+            summary={tracker.summary}
+            cards={tracker.cards}
+            questsById={tracker.questsById}
+            plannedLaps={tracker.plannedLaps}
+            useApples={tracker.state.useApples}
+          />
         </TabsContent>
       </Tabs>
     </div>

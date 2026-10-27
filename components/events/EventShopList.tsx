@@ -46,7 +46,7 @@ const toCount = (value: string): number => {
 const useCurrencyLabel = () => {
   const { t } = useTranslation('events')
   return (group: Pick<ShopCurrencyGroup, 'costItemId' | 'costName'>) =>
-    group.costName || t('event-shop-currency-id', 'ID {{id}}', { id: group.costItemId })
+    group.costName || t('event-shop-currency-id', '名前不明のアイテム（ID {{id}}）', { id: group.costItemId })
 }
 
 const CurrencyHeader: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {

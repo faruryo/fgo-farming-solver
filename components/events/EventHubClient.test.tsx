@@ -106,10 +106,10 @@ describe('EventHubClient', () => {
     expect(within(musubi).getByText('上限なし')).toBeInTheDocument()
   })
 
-  it('通貨名を持たない古いデータでは通貨の ID を見出しに出す', () => {
+  it('通貨名を持たないデータでは、名前不明のアイテムであることと ID を見出しに出す', () => {
     render(<EventHubClient summary={summary} boxEvent={event({ shop: [shopEntry(1, 94001)] })} features={['shop']} />)
 
-    expect(screen.getByRole('heading', { name: 'ID 94001' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '名前不明のアイテム（ID 94001）' })).toBeInTheDocument()
   })
 
   it('ロトのあるイベントではボックス計画を出し、交換所一覧は出さない', () => {
