@@ -17,8 +17,8 @@
 
 ## 3. 品質ゲート
 
-- [ ] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check`が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check`が通ることを確かめる <!-- verify-only -->
 
 ## 4. 画面の確認
 
-- [ ] 4.1 `pnpm dev`（`--webpack` は付けない）で絆トラッカーを開き、確認のときだけ `mocks/dashboard.json` の `podFreePeriods` に、現在を含み冠位研鑽戦を対象にした期間を足して（commit しない）、375px と desktop の幅で、候補にポッド無料の印が付くこと、ポッド数が無料と数えた分だけ減ること、注記が出ること、「りんご・石を使う」をオンにすると期間中のポッドが0個になり注記が変わり必要APは変わらないこと、期間を外すと元の表示に戻ることを確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
+- [x] 4.1 `pnpm dev`（`--webpack` は付けない）で絆トラッカーを開き、確認のときだけ `mocks/dashboard.json` の `podFreePeriods` に、現在を含み冠位研鑽戦を対象にした期間を足して（commit しない）、375px と desktop の幅で、候補にポッド無料の印が付くこと、ポッド数が無料と数えた分だけ減ること、注記が出ること、「りんご・石を使う」をオンにすると期間中のポッドが0個になり注記が変わり必要APは変わらないこと、期間を外すと元の表示に戻ることを確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
