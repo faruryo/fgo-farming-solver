@@ -1,12 +1,15 @@
 import { useMemo } from 'react'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
+import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { useDrops } from '../../hooks/use-drops'
 import { useLocalStorage } from '../../hooks/use-local-storage'
+import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { estimateEntry } from '../../lib/bond/entry-estimate'
 import { bondIncrement, groupByQuest } from '../../lib/bond/estimate'
 import { plannedLapsByQuest } from '../../lib/bond/plan'
+import { podFreeEndsAtByQuest } from '../../lib/bond/pod-free'
 import { bondQuestCandidates } from '../../lib/bond/quest-candidates'
 import {
   defaultBondQuestId,
@@ -34,6 +37,7 @@ const useBondActions = (
     setState(prev => ({ ...prev, entries: prev.entries.filter(e => e.servantId !== servantId) })),
   setTeapot: (teapot: Partial<BondTrackerState['teapot']>) =>
     setState(prev => ({ ...prev, teapot: { ...prev.teapot, ...teapot } })),
+  setUseApples: (useApples: boolean) => setState(prev => ({ ...prev, useApples })),
 })
 
 export const newBondEntry = (servant: MaterialCatalogServant, questId: string): BondTrackerEntry => ({
@@ -49,7 +53,10 @@ export const newBondEntry = (servant: MaterialCatalogServant, questId: string): 
 
 export const useBondTracker = (servants: MaterialCatalogServant[] | undefined) => {
   const drops = useDrops()
-  const { activeCampaigns } = useActiveCampaigns(drops.campaigns)
+  const { activeCampaigns, nowSec } = useActiveCampaigns(drops.campaigns)
+  const { data: dashboardMeta } = useDashboardMeta()
+  const podFreePeriods = dashboardMeta?.podFreePeriods
+  const { questIds: podFreeQuestIds } = usePodFreeQuests(podFreePeriods, nowSec)
   const [state, setState] = useLocalStorage<BondTrackerState>(STORAGE_KEYS.BOND_TRACKER, INITIAL_STATE, {
     onGet: parseBondTrackerState,
   })
@@ -64,15 +71,19 @@ export const useBondTracker = (servants: MaterialCatalogServant[] | undefined) =
     [drops.quests, activeCampaigns],
   )
   const teapotStock = state.teapot.enabled ? state.teapot.stock : null
+  const podFree = useMemo(
+    () => ({ podFreeEndsAt: podFreeEndsAtByQuest(podFreePeriods, nowSec), nowSec, useApples: state.useApples }),
+    [podFreePeriods, nowSec, state.useApples],
+  )
   const cards = useMemo(
     () =>
       state.entries.map(entry => {
         const servant = servantsById.get(entry.servantId)
         const candidates = (servant && candidatesByClass.get(servant.className)) || []
-        const estimate = estimateEntry({ entry, growth: servant?.bondGrowth, candidates, questsById, teapotStock })
+        const estimate = estimateEntry({ entry, growth: servant?.bondGrowth, candidates, questsById, teapotStock, podFree })
         return { servant, candidates, estimate }
       }),
-    [state.entries, servantsById, candidatesByClass, questsById, teapotStock],
+    [state.entries, servantsById, candidatesByClass, questsById, teapotStock, podFree],
   )
   const summary = useMemo(
     () =>
@@ -83,11 +94,12 @@ export const useBondTracker = (servants: MaterialCatalogServant[] | undefined) =
           effectiveAp: estimate.candidate?.effectiveAp ?? 0,
           runs: estimate.result?.runs.runs ?? null,
         })),
+        podFree,
       ),
-    [cards],
+    [cards, podFree],
   )
   const actions = useBondActions(setState)
   const addServant = (servant: MaterialCatalogServant) =>
     actions.addEntry(newBondEntry(servant, defaultBondQuestId(candidatesByClass.get(servant.className) ?? []) ?? ''))
-  return { state, cards, summary, questsById, plannedLaps, isLoading: drops.isLoading, addServant, ...actions }
+  return { state, cards, summary, questsById, plannedLaps, podFreeQuestIds, isLoading: drops.isLoading, addServant, ...actions }
 }

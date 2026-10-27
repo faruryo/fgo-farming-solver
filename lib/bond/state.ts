@@ -15,11 +15,14 @@ export type BondTrackerEntry = {
 export type BondTrackerState = {
   entries: BondTrackerEntry[]
   teapot: { enabled: boolean; stock: number }
+  /** りんご・石を使う: ポッド無料期間中の周回をすべて無料と数える。 */
+  useApples: boolean
 }
 
 export const emptyBondTrackerState = (): BondTrackerState => ({
   entries: [],
   teapot: { enabled: false, stock: 0 },
+  useApples: false,
 })
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -47,6 +50,9 @@ export const parseBondTrackerState = (value: unknown): BondTrackerState => {
   const { entries, teapot } = value
   if (!entries.every(isEntry) || typeof teapot.enabled !== 'boolean' || !isIntegerIn(teapot.stock, 0))
     return emptyBondTrackerState()
+  // 切り替えを足す前の保存値には無いので、無ければオフとして読む
+  const useApples = value.useApples === undefined ? false : value.useApples
+  if (typeof useApples !== 'boolean') return emptyBondTrackerState()
   if (new Set(entries.map(entry => entry.servantId)).size !== entries.length)
     return emptyBondTrackerState()
   return {
@@ -61,6 +67,7 @@ export const parseBondTrackerState = (value: unknown): BondTrackerState => {
       measuredQuestId: entry.measuredQuestId,
     })),
     teapot: { enabled: teapot.enabled, stock: teapot.stock },
+    useApples,
   }
 }
 

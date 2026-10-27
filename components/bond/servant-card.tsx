@@ -92,7 +92,8 @@ function QuestOption({
   candidate: c,
   rank,
   planned,
-}: Readonly<{ candidate: BondQuestCandidate; rank?: number; planned: number | undefined }>) {
+  podFree,
+}: Readonly<{ candidate: BondQuestCandidate; rank?: number; planned: number | undefined; podFree: boolean }>) {
   const { t } = useTranslation('bond')
   return (
     <div className="flex w-full min-w-0 items-center gap-2 text-left">
@@ -108,6 +109,7 @@ function QuestOption({
           ap={c.effectiveAp}
           originalAp={c.quest.ap}
           consumesPod={questConsumesPod(c.quest.area)}
+          podFree={podFree}
         />
         {(planned || c.unconfirmedClass) && (
           <div className="flex flex-wrap items-center gap-1 pl-10">
@@ -131,11 +133,13 @@ function QuestSelect({
   entry,
   candidates,
   plannedLaps,
+  podFreeQuestIds,
   onChange,
 }: Readonly<{
   entry: BondTrackerEntry
   candidates: BondQuestCandidate[]
   plannedLaps: ReadonlyMap<string, number>
+  podFreeQuestIds: ReadonlySet<string>
   onChange: EntryChange
 }>) {
   const { t } = useTranslation('bond')
@@ -162,7 +166,7 @@ function QuestSelect({
           render={<Button variant="outline" className="h-auto w-full justify-between gap-2 py-1.5" />}
         >
           {selected ? (
-            <QuestOption candidate={selected} planned={plannedLaps.get(selected.quest.id)} />
+            <QuestOption candidate={selected} planned={plannedLaps.get(selected.quest.id)} podFree={podFreeQuestIds.has(selected.quest.id)} />
           ) : (
             <span style={{ color: 'var(--text3)' }}>{t('quest-placeholder', 'クエストを選択')}</span>
           )}
@@ -173,7 +177,7 @@ function QuestSelect({
           <ComboboxList>
             {(i: (typeof items)[number]) => (
               <ComboboxItem key={i.candidate.quest.id} value={i}>
-                <QuestOption candidate={i.candidate} rank={i.rank} planned={plannedLaps.get(i.candidate.quest.id)} />
+                <QuestOption candidate={i.candidate} rank={i.rank} planned={plannedLaps.get(i.candidate.quest.id)} podFree={podFreeQuestIds.has(i.candidate.quest.id)} />
               </ComboboxItem>
             )}
           </ComboboxList>
@@ -335,7 +339,7 @@ function EstimateResult({
         />
         <Stat label={t('remaining-runs', '残り周回')} value={t('runs-count', '{{count}}周', { count: result.runs.runs })} />
         <Stat label={t('required-ap', '必要AP')} value={result.ap.toLocaleString()} />
-        {result.pods > 0 && (
+        {result.consumesPod && (
           <Stat label={t('storm-pods', 'ストームポッド')} value={t('pods-count', '{{count}}個', { count: result.pods })} />
         )}
       </div>
@@ -376,6 +380,7 @@ export function BondServantCard({
   candidates,
   teapotEnabled,
   plannedLaps,
+  podFreeQuestIds,
   onChange,
   onRemove,
 }: Readonly<{
@@ -384,6 +389,7 @@ export function BondServantCard({
   candidates: BondQuestCandidate[]
   teapotEnabled: boolean
   plannedLaps: ReadonlyMap<string, number>
+  podFreeQuestIds: ReadonlySet<string>
   onChange: EntryChange
   onRemove: () => void
 }>) {
@@ -402,7 +408,13 @@ export function BondServantCard({
           {t('remove', '削除')}
         </Button>
       </div>
-      <QuestSelect entry={entry} candidates={candidates} plannedLaps={plannedLaps} onChange={onChange} />
+      <QuestSelect
+        entry={entry}
+        candidates={candidates}
+        plannedLaps={plannedLaps}
+        podFreeQuestIds={podFreeQuestIds}
+        onChange={onChange}
+      />
       <BondStateInputs
         entry={entry}
         growth={servant?.bondGrowth}

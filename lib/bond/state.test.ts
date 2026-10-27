@@ -21,12 +21,21 @@ const ENTRY: BondTrackerEntry = {
   observedTeapotRun: false,
   measuredQuestId: 'q1',
 }
-const VALID = { entries: [ENTRY], teapot: { enabled: true, stock: 3 } }
-const EMPTY = { entries: [], teapot: { enabled: false, stock: 0 } }
+const VALID = { entries: [ENTRY], teapot: { enabled: true, stock: 3 }, useApples: false }
+const EMPTY = { entries: [], teapot: { enabled: false, stock: 0 }, useApples: false }
 
 describe('parseBondTrackerState', () => {
   it('accepts a valid state', () => {
     expect(parseBondTrackerState(VALID)).toEqual(VALID)
+  })
+
+  it('restores a value saved before the apples setting existed as off', () => {
+    const legacy = { entries: VALID.entries, teapot: VALID.teapot }
+    expect(parseBondTrackerState(legacy)).toEqual({ ...VALID, useApples: false })
+  })
+
+  it('keeps the apples setting turned on', () => {
+    expect(parseBondTrackerState({ ...VALID, useApples: true })).toEqual({ ...VALID, useApples: true })
   })
 
   it('drops unknown fields', () => {
@@ -45,6 +54,8 @@ describe('parseBondTrackerState', () => {
     ['entries missing', { teapot: VALID.teapot }],
     ['teapot missing', { entries: [ENTRY] }],
     ['teapot.enabled wrong type', { ...VALID, teapot: { enabled: 'yes', stock: 3 } }],
+    ['useApples wrong type', { ...VALID, useApples: 'yes' }],
+    ['useApples null', { ...VALID, useApples: null }],
     ['negative teapot stock', { ...VALID, teapot: { enabled: true, stock: -1 } }],
     ['entry field missing', { ...VALID, entries: [{ ...ENTRY, questId: undefined }] }],
     ['servantId as string', { ...VALID, entries: [{ ...ENTRY, servantId: '100100' }] }],
