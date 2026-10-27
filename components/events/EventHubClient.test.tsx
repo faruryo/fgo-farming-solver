@@ -470,7 +470,7 @@ describe('EventHubClient', () => {
         <EventHubClient summary={summary} boxEvent={event({ shop, farmingNodes, ...overrides })} features={['shop']} />,
       )
     const cellOf = (name: string) => screen.getByLabelText(`${name} の交換回数`).closest('tr')?.cells[1] as HTMLElement
-    const toggleOf = (name: string) => screen.getByRole('radiogroup', { name: `${name} は要るか` })
+    const toggleOf = (name: string) => screen.getByRole('radiogroup', { name: `${name} は必要か` })
     const shortfallButton = () => screen.getByRole('button', { name: '不足素材のみ' })
 
     beforeEach(() => {
@@ -495,41 +495,60 @@ describe('EventHubClient', () => {
       expect(within(cellOf('素材6516')).queryByRole('radiogroup')).not.toBeInTheDocument()
     })
 
-    it('計画の対象外の品目の切り替えは初期値「要らない」で、「要る」にしても交換回数は変わらない', () => {
+    it('計画の対象外の品目の切り替えは初期値「不要」で、「必要」にしても交換回数は変わらない', () => {
       renderShop()
 
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要らない' })).toBeChecked()
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).not.toBeChecked()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).not.toBeChecked()
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
     })
 
-    it('「要る」は描き直しても残り、交換回数は 0 から始まる', () => {
+    it('「必要」は描き直しても残り、交換回数は 0 から始まる', () => {
       const { unmount } = renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
       fireEvent.click(shortfallButton())
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
       unmount()
 
       renderShop()
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
     })
 
-    it('別のイベントでも保存した「要る」を使い、「要らない」に戻すと保存からその品目が消える', () => {
+    it('別のイベントでも保存した「必要」を使い、「不要」に戻すと保存からその品目が消える', () => {
       const { unmount } = renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
       unmount()
 
       renderShop({ id: 80700, shop: [shopEntry(4001, 94002, { costName: '江戸むすび', qty: 1, limitNum: 3 })] })
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
 
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要らない' }))
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' }))
       expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
         94100: true,
       })
+    })
+
+    it('「必要」にした品目は品目 ID ごとに true として保存される', () => {
+      renderShop()
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({ 4001: true })
+
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
+        4001: true,
+        94100: true,
+      })
+    })
+
+    it('保存済みの値で true の品目だけを「必要」にする', () => {
+      setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 94100: true })
+      renderShop()
+      expect(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
     })
 
     it('選んだことの無い端末では、開いただけで要る・要らないの保存を作らない', () => {
@@ -537,10 +556,10 @@ describe('EventHubClient', () => {
       expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
     })
 
-    it('不足素材のみで不足の分と「要る」の在庫上限を入れ、周回の内訳を出し、その後も回数を変えられる', () => {
+    it('不足素材のみで不足の分と「必要」の在庫上限を入れ、周回の内訳を出し、その後も回数を変えられる', () => {
       renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要る' }))
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
       expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
 
       fireEvent.click(shortfallButton())
@@ -552,13 +571,13 @@ describe('EventHubClient', () => {
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
       expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(0)
       expect(within(cellOf('素材94100')).getByText('上限なし: 回数を入れてください')).toBeInTheDocument()
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要らない' }))
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '不要' }))
       expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要る' }))
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
       expect(screen.getByText('必要量 200')).toBeInTheDocument()
       expect(screen.getByText('合計 20 周・AP 800')).toBeInTheDocument()
 
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '要らない' }))
+      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' }))
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
 
       fireEvent.change(screen.getByLabelText('素材94100 の交換回数'), { target: { value: '3' } })

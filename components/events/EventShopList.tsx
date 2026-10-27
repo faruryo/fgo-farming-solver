@@ -99,7 +99,7 @@ const WantedToggle: React.FC<{ name: string; wanted: boolean; onChange: (wanted:
       role="radio"
       aria-checked={wanted === value}
       onClick={() => onChange(value)}
-      className="h-11 min-w-11 px-2 text-[11px] font-medium"
+      className="h-11 min-w-11 px-2 text-[11px] font-medium whitespace-nowrap"
       style={
         wanted === value
           ? { background: 'var(--gold)', color: 'var(--bg)' }
@@ -112,12 +112,12 @@ const WantedToggle: React.FC<{ name: string; wanted: boolean; onChange: (wanted:
   return (
     <span
       role="radiogroup"
-      aria-label={t('event-shop-wanted-label', '{{name}} は要るか', { name })}
+      aria-label={t('event-shop-wanted-label', '{{name}} は必要か', { name })}
       className="inline-flex rounded-md overflow-hidden"
       style={{ border: '1px solid var(--border)' }}
     >
-      {option(true, t('event-shop-wanted', '要る'))}
-      {option(false, t('event-shop-not-wanted', '要らない'))}
+      {option(true, t('event-shop-wanted', '必要'))}
+      {option(false, t('event-shop-not-wanted', '不要'))}
     </span>
   )
 }
@@ -144,8 +144,10 @@ const RowPlanLabel: React.FC<{ name: string; plan: RowPlan; count: number }> = (
       {status.kind === 'unused' && <span>{t('event-shop-status-unused', '使わない')}</span>}
       {status.kind === 'outside' && (
         <>
-          <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
-          <WantedToggle name={name} wanted={plan.wanted} onChange={plan.onWantedChange} />
+          <span className="flex items-center gap-2 whitespace-nowrap">
+            <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
+            <WantedToggle name={name} wanted={plan.wanted} onChange={plan.onWantedChange} />
+          </span>
           {plan.wanted && plan.promptUnlimited && count === 0 && (
             <span style={{ color: 'var(--red)' }}>
               {t('event-shop-unlimited-prompt', '上限なし: 回数を入れてください')}
@@ -267,26 +269,29 @@ const ShopTable: React.FC<
     )
   }
 
+  // 狭い幅では表の中だけを横スクロールにし、カードの外へはみ出さない。
   return (
-    <table className="w-full text-xs">
-      <thead>
-        <tr style={{ color: 'var(--text3)' }}>
-          <th className="text-right font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
-          <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
-          <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
-          <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '1回の個数')}</th>
-          <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '在庫上限')}</th>
-          <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '1回の対価')}</th>
-          <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', '通貨1個で何 AP 分')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {showLabels && <GroupLabelRow>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>}
-        {unpriced.map(item => row(item))}
-        {showLabels && <GroupLabelRow>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
-        {ranked.map(r => row(r.item, r))}
-      </tbody>
-    </table>
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
+            <th className="text-right font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
+            <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
+            <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
+            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
+            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
+            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '対価')}</th>
+            <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', 'AP/個')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {showLabels && <GroupLabelRow>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>}
+          {unpriced.map(item => row(item))}
+          {showLabels && <GroupLabelRow>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
+          {ranked.map(r => row(r.item, r))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
