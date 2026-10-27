@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  makeBondUpCraftEssence,
   makeCompleteMaterials,
   makeItem,
   makeMaterials,
+  makeNiceEquip,
   makeServant,
 } from '../components/material/test-fixtures'
 import { buildMaterialCatalog, MATERIAL_CATALOG_KEY } from './material-catalog'
@@ -10,6 +12,7 @@ import { runMaterialCatalogPhase } from './material-catalog-phase'
 
 const servant = makeServant({
   id: 1,
+  cost: 16,
   extraAssets: { faces: { ascension: { '0': 'face.png' } }, charaGraph: {} },
 })
 const servantWithMaterials = { ...servant, ...makeCompleteMaterials() }
@@ -20,9 +23,11 @@ const previous = buildMaterialCatalog({
   servants: [servant],
   materials: { 1: makeCompleteMaterials() },
   items,
+  bondUpCraftEssences: [makeBondUpCraftEssence()],
   sources: {
     niceServant: { etag: 'servant-v1' },
     niceItem: { etag: 'item-v1' },
+    niceEquip: { etag: 'equip-v1' },
   },
   updatedAt: 1,
 })
@@ -38,15 +43,17 @@ const run = (
     fetchSource: vi
       .fn()
       .mockResolvedValueOnce(new Response(null, { status: 304 }))
+      .mockResolvedValueOnce(new Response(null, { status: 304 }))
       .mockResolvedValueOnce(new Response(null, { status: 304 })),
     servantUrl: 'servants',
     itemUrl: 'items',
+    equipUrl: 'equips',
     logger,
     ...overrides,
   })
 
 describe('runMaterialCatalogPhase', () => {
-  it('skips KV writes when both Atlas sources are unchanged', async () => {
+  it('skips KV writes when all Atlas sources are unchanged', async () => {
     const get = vi.fn().mockResolvedValue(JSON.stringify(previous))
     const put = vi.fn().mockResolvedValue(undefined)
 
@@ -149,6 +156,9 @@ describe('runMaterialCatalogPhase', () => {
       )
       .mockResolvedValueOnce(
         Response.json(items, { headers: { etag: 'item-v2' } }),
+      )
+      .mockResolvedValueOnce(
+        Response.json([makeNiceEquip()], { headers: { etag: 'equip-v2' } }),
       )
 
     await expect(
