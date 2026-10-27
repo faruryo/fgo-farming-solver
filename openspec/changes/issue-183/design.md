@@ -4,6 +4,8 @@
 
 動機は proposal.md の Why を参照。
 
+この change の「絆アップ礼装」は、獲得絆を増やす効果(Atlas の関数の種類 `servantFriendshipUp`)を持つ概念礼装を指す。絆Lv10の報酬で得るサーヴァント専用の礼装(絆礼装)とは別物で、提案の対象にしない。
+
 - 絆トラッカー(`/bond`)は Material Catalog(`material_catalog_v1`)からサーヴァントの一覧と `bondGrowth` を読み、fgodrop のクエストの基本絆ポイントで周回クエストの候補を作る(`lib/bond/quest-candidates.ts`)。礼装のデータとサーヴァントのコストはまだどこにもない
 - Material Catalog は GitHub Actions の更新ジョブ(`scripts/run-updater.ts` → `lib/material-catalog-phase.ts` → `lib/material-catalog-updater.ts`)が Atlas の巨大な JSON を条件付き GET で取り、蒸留して KV に書く。Worker では巨大な JSON を parse しない
 - マスターレベルは `useMasterLevel`(localStorage `masterLevel`、クラウド同期済み)にあり、最大AP は `lib/master-profile/max-ap.ts` の静的な変化点テーブルから引く
@@ -50,22 +52,22 @@
 - 所持礼装の入力と凸状態の入力(オーナーの判断で今は扱わない)
 - 提案の結果を残り周回数・到達見込みの見積もりへ反映すること。見積もりは今までどおりリザルト画面の値を使う
 - 選択の保存とクラウド同期
-- イベント限定の絆礼装、イベントのボーナス、フレンドのサポートの礼装、編成ボーナス(絆Lv15到達者などによるもの)
+- イベント限定の絆アップ礼装、イベントのボーナス、フレンドのサポートの礼装、編成ボーナス(絆Lv15到達者などによるもの)
 
 ## Decisions
 
 ### 1. 礼装データは Material Catalog に足す
 
-カタログの更新ジョブに `nice_equip.json` を3つ目の取得元として足し、`sources.niceEquip` に検証子を持つ。蒸留の結果は `bondCraftEssences: { id, collectionNo, name, rarity, cost, face, target: 'party' | 'self', rate, add }[]` としてカタログに載せる。サーヴァントには `cost?` を足す。どちらも任意項目の追加なのでキーとスキーマバージョンは変えない(`bondGrowth` を足したときと同じ扱い)。
+カタログの更新ジョブに `nice_equip.json` を3つ目の取得元として足し、`sources.niceEquip` に検証子を持つ。蒸留の結果は `bondUpCraftEssences: { id, collectionNo, name, rarity, cost, face, target: 'party' | 'self', rate, add }[]` としてカタログに載せる。サーヴァントには `cost?` を足す。どちらも任意項目の追加なのでキーとスキーマバージョンは変えない(`bondGrowth` を足したときと同じ扱い)。
 
 - 却下: ブラウザから Atlas の `nice_equip.json` を直接取る。22MB あり、絆トラッカーを開くたびに読ませられない
 - 却下: 別の KV キーに分ける。consumer(`/bond`)は既にカタログを読んでおり、更新の単位を増やす理由がない
 
-`materialCatalogFingerprint` に `bondCraftEssences` を含める。含めないと、`nice_equip.json` だけが変わった回が「蒸留結果が同一」とみなされて書き込まれず、新しい礼装が載らないうえに `sources.niceEquip` の検証子も保存されず、毎回22MB を取り直すことになる。空の一覧は検証で拒否する(空を保存すると、取り直しの規則も UI の「読み込めない」表示も働かない)。
+`materialCatalogFingerprint` に `bondUpCraftEssences` を含める。含めないと、`nice_equip.json` だけが変わった回が「蒸留結果が同一」とみなされて書き込まれず、新しい礼装が載らないうえに `sources.niceEquip` の検証子も保存されず、毎回22MB を取り直すことになる。空の一覧は検証で拒否する(空を保存すると、取り直しの規則も UI の「読み込めない」表示も働かない)。
 
-取り直しは `servantValidatorFor` と同じ形で、既存カタログのサーヴァントが誰も `cost` を持たないときは `nice_servant.json` を、`bondCraftEssences` がないときは `nice_equip.json` を検証子なしで取る。`nice_equip.json` だけが変わった回は、サーヴァントと素材とアイテムを既存カタログから引き継ぐ。`buildMaterialCatalog` はサーヴァントの項目を明示して組み直すので、`cost` も `bondGrowth` と同じく写す。
+取り直しは `servantValidatorFor` と同じ形で、既存カタログのサーヴァントが誰も `cost` を持たないときは `nice_servant.json` を、`bondUpCraftEssences` がないときは `nice_equip.json` を検証子なしで取る。`nice_equip.json` だけが変わった回は、サーヴァントと素材とアイテムを既存カタログから引き継ぐ。`buildMaterialCatalog` はサーヴァントの項目を明示して組み直すので、`cost` も `bondGrowth` と同じく写す。
 
-ローカル開発用の `lib/material-catalog-local.ts`(KV がない `pnpm dev` の経路)も `nice_equip` を取って `bondCraftEssences` と `sources.niceEquip` を組む。
+ローカル開発用の `lib/material-catalog-local.ts`(KV がない `pnpm dev` の経路)も `nice_equip` を取って `bondUpCraftEssences` と `sources.niceEquip` を組む。
 
 蒸留の規則:
 - `servantFriendshipUp` の関数を持つスキルのうち、`condLimitCount` が最大の段のスキルだけを読む(最大解放の値)
@@ -113,6 +115,6 @@
 
 ## Migration Plan
 
-1. 実装をマージすると、次の定期更新でカタログに `cost` と `bondCraftEssences` が入る(取り直しの規則で、取得元が未変更でも入る)
+1. 実装をマージすると、次の定期更新でカタログに `cost` と `bondUpCraftEssences` が入る(取り直しの規則で、取得元が未変更でも入る)
 2. それまでは提案に「礼装のデータを読み込めない」と出る。入力と見積もりは影響を受けない
 3. 戻すときは実装を revert する。カタログに残った任意項目は古い consumer に無視される
