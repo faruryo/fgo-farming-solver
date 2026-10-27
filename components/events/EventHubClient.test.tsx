@@ -552,6 +552,9 @@ describe('EventHubClient', () => {
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
       expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(0)
       expect(within(cellOf('素材94100')).getByText('上限なし: 回数を入れてください')).toBeInTheDocument()
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要らない' }))
+      expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
+      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '要る' }))
       expect(screen.getByText('必要量 200')).toBeInTheDocument()
       expect(screen.getByText('合計 20 周・AP 800')).toBeInTheDocument()
 

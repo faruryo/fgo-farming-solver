@@ -146,7 +146,7 @@ const RowPlanLabel: React.FC<{ name: string; plan: RowPlan; count: number }> = (
         <>
           <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
           <WantedToggle name={name} wanted={plan.wanted} onChange={plan.onWantedChange} />
-          {plan.promptUnlimited && count === 0 && (
+          {plan.wanted && plan.promptUnlimited && count === 0 && (
             <span style={{ color: 'var(--red)' }}>
               {t('event-shop-unlimited-prompt', '上限なし: 回数を入れてください')}
             </span>
