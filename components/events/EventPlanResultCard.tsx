@@ -90,11 +90,10 @@ export const EventPlanResultCard: React.FC<Props> = ({
         <StatBlock
           label={t('消費AP')}
           value={totalAp > 0 ? totalAp.toLocaleString() : '—'}
-          sub={totalAp > 0 ? t('最大AP基準', { maxAp: apBudget.maxAp }) : undefined}
         />
       </div>
 
-      {/* AP予算内訳（黄金の果実 → 聖晶石 → 課金額） */}
+      {/* AP予算内訳（回復の回数 → 黄金の果実 → 聖晶石 → 課金額） */}
       {totalAp > 0 && (
         <>
           <Separator />

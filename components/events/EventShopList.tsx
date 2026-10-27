@@ -470,7 +470,7 @@ const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp
         className="rounded-md flex flex-col gap-2 px-4 py-3"
         style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
       >
-        <ApBudgetBreakdown apBudget={apBudget} showRestores />
+        <ApBudgetBreakdown apBudget={apBudget} />
         {partial && (
           <Message>{t('event-shop-ap-budget-partial', '周回で集められる通貨の分の AP で計算しています。')}</Message>
         )}
