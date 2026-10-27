@@ -1,7 +1,7 @@
 # quest-efficiency Specification
 
 ## Purpose
-TBD - created by archiving change quest-efficiency-points. Update Purpose after archive.
+クエストごとに、対象素材のドロップ率を AP あたり（または周回あたり）で正規化した相対効率を重み付きで合計した効率ポイントを出し、`/quests` の一覧・検索・詳細で効率のよいクエストを選べるようにする。重みには育成計算機と共有する所持数と目標を反映し、クエスト報酬（QP・絆・EXP）も効率ポイントに加える。比べるクエストと素材はフィルタで絞り込める。
 
 ## Requirements
 

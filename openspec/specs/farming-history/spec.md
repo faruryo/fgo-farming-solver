@@ -1,7 +1,7 @@
 # farming-history Specification
 
 ## Purpose
-TBD - created by archiving change farming-history-management. Update Purpose after archive.
+ログインユーザーが実行した周回計算の結果を保存し、一覧・推移グラフ・結果ページで見返せるようにする。必要分とストック込みの2目標の計算は1組にまとめて表示し、結果ごとに公開・非公開を選べるようにする。削除は論理削除とし、未ログインのユーザーには履歴の導線を出さない。
 
 ## Requirements
 
