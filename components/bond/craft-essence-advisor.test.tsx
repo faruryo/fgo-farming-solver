@@ -11,8 +11,10 @@ import { CraftEssenceAdvisor, type AdvisorServant } from './craft-essence-adviso
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string, values?: Record<string, string | number>) =>
-      (fallback ?? key).replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(values?.[name] ?? '')),
+    t: (key: string, fallback?: string, values?: Record<string, string | number>) => {
+      const params = new Map(Object.entries(values ?? {}))
+      return (fallback ?? key).replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(params.get(name) ?? ''))
+    },
     i18n: { language: 'ja' },
   }),
 }))
@@ -35,7 +37,7 @@ const registeredServants = (count: number, questId = 'ordeal'): AdvisorServant[]
 const essences = [makeBondUpCraftEssence({ cost: 12, rate: 200, name: 'カルデアの者' })]
 
 // 名前は label の中身(クラスアイコンの alt + サーヴァント名)になる
-const checkbox = (name: string) => screen.getByRole('checkbox', { name: new RegExp(`${name}$`) })
+const checkbox = (name: string) => screen.getByRole('checkbox', { name: accessibleName => accessibleName.endsWith(name) })
 const checkedNames = () =>
   screen
     .getAllByRole('checkbox')

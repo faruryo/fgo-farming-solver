@@ -34,8 +34,8 @@ const previous = buildMaterialCatalog({
 
 const logger = { log: vi.fn(), error: vi.fn() }
 const refusedUpdate = expect.objectContaining({
-  message: expect.stringMatching(/^Refusing Material Catalog update:/),
-})
+  message: expect.stringMatching(/^Refusing Material Catalog update:/) as string,
+}) as unknown
 
 const run = (
   overrides: Partial<Parameters<typeof runMaterialCatalogPhase>[0]> = {},

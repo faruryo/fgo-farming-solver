@@ -3,6 +3,23 @@ import { conditionalRequestHeaders, updateMaterialCatalog } from './material-cat
 
 type Logger = Pick<Console, 'error' | 'log'>
 
+const conditionalFetch =
+  (fetchSource: typeof fetch): Parameters<typeof updateMaterialCatalog>[0]['fetchSource'] =>
+  async (url, validator) => {
+    const response = await fetchSource(url, { headers: conditionalRequestHeaders(validator) })
+    if (response.status !== 200 && response.status !== 304) {
+      throw new Error(`Material Catalog fetch failed: ${response.status}`)
+    }
+    return {
+      status: response.status,
+      value: response.status === 200 ? await response.json() : undefined,
+      validator: {
+        etag: response.headers.get('etag') ?? undefined,
+        lastModified: response.headers.get('last-modified') ?? undefined,
+      },
+    }
+  }
+
 export const runMaterialCatalogPhase = async ({
   get,
   put,
@@ -34,20 +51,7 @@ export const runMaterialCatalogPhase = async ({
       equipUrl,
       eventUrl,
       now,
-      fetchSource: async (url, validator) => {
-        const response = await fetchSource(url, { headers: conditionalRequestHeaders(validator) })
-        if (response.status !== 200 && response.status !== 304) {
-          throw new Error(`Material Catalog fetch failed: ${response.status}`)
-        }
-        return {
-          status: response.status,
-          value: response.status === 200 ? await response.json() : undefined,
-          validator: {
-            etag: response.headers.get('etag') ?? undefined,
-            lastModified: response.headers.get('last-modified') ?? undefined,
-          },
-        }
-      },
+      fetchSource: conditionalFetch(fetchSource),
     })
     if (catalog.changed && catalog.catalog) {
       const serialized = JSON.stringify(catalog.catalog)

@@ -25,12 +25,11 @@ const MAX_COST_BREAKPOINTS: readonly (readonly [level: number, maxCost: number])
 
 const buildMaxCostTable = (): number[] => {
   const table = new Array<number>(MAX_MASTER_LEVEL + 1).fill(0)
-  for (let i = 0; i < MAX_COST_BREAKPOINTS.length; i++) {
-    const [level, maxCost] = MAX_COST_BREAKPOINTS[i]
-    const next = MAX_COST_BREAKPOINTS[i + 1]
+  MAX_COST_BREAKPOINTS.forEach(([level, maxCost], i) => {
+    const next = MAX_COST_BREAKPOINTS.at(i + 1)
     const endLevel = next ? next[0] - 1 : MAX_MASTER_LEVEL
-    for (let lv = level; lv <= endLevel; lv++) table[lv] = maxCost
-  }
+    table.fill(maxCost, level, endLevel + 1)
+  })
   return table
 }
 
@@ -44,5 +43,5 @@ const MAX_COST_TABLE = buildMaxCostTable()
  */
 export const maxCostForLevel = (level: number): number => {
   const clamped = Math.max(1, Math.min(MAX_MASTER_LEVEL, Math.floor(level)))
-  return MAX_COST_TABLE[clamped]
+  return MAX_COST_TABLE.at(clamped) ?? 0
 }

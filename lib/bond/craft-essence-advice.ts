@@ -51,8 +51,8 @@ const evaluate = (types: readonly EffectType[], counts: readonly number[], baseP
   let selfAdd = 0
   let cost = 0
   let cards = 0
-  counts.forEach((count, i) => {
-    const type = types[i]
+  types.forEach((type, i) => {
+    const count = counts.at(i) ?? 0
     if (type.target === 'party') {
       rate += type.rate * count
       partyAdd += type.add * count
@@ -77,18 +77,18 @@ const bestCombo = (types: readonly EffectType[], basePoints: number, servantCoun
   const counts = types.map(() => 0)
   let best = evaluate(types, counts, basePoints, servantCount)
   const visit = (index: number, slots: number, remaining: number) => {
-    if (index === types.length) {
+    const type = types.at(index)
+    if (!type) {
       const combo = evaluate(types, counts, basePoints, servantCount)
       if (isBetter(combo, best)) best = combo
       return
     }
-    const type = types[index]
     const limit = Math.min(type.essences.length, slots, Math.floor(remaining / type.cost))
     for (let count = 0; count <= limit; count++) {
-      counts[index] = count
+      counts.splice(index, 1, count)
       visit(index + 1, slots - count, remaining - count * type.cost)
     }
-    counts[index] = 0
+    counts.splice(index, 1, 0)
   }
   visit(0, servantCount, budget)
   return best
@@ -117,8 +117,10 @@ export const adviseBondCraftEssences = ({
   const types = effectTypes(essences)
   const best = bestCombo(types, basePoints, servants.length, maxCost - servantCost)
   const chosen = types
-    .flatMap((type, i) =>
-      type.essences.slice(0, best.counts[i]).map(essence => ({ essence, alternatives: type.essences.slice(best.counts[i]) })))
+    .flatMap((type, i) => {
+      const count = best.counts.at(i) ?? 0
+      return type.essences.slice(0, count).map(essence => ({ essence, alternatives: type.essences.slice(count) }))
+    })
     // 誰に付けても合計は同じなので、表示を安定させるため自身に効く礼装 → コストの大きい礼装の順に先頭から付ける。
     .sort((a, b) =>
       Number(b.essence.target === 'self') - Number(a.essence.target === 'self') ||
