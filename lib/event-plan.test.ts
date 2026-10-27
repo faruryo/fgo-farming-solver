@@ -18,6 +18,8 @@ import {
   computeTotalNeed,
   computeShortfall,
   computeRosterImpact,
+  planShopCurrencies,
+  splitUnfarmable,
 } from './event-plan'
 import eventsJson from '../mocks/events.json'
 
@@ -473,5 +475,121 @@ describe('computeRosterImpact', () => {
     )
 
     expect(impact.solverDemand).toBe(impact.residualShortfall)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 交換所の通貨の周回計画
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('planShopCurrencies', () => {
+  const A = 9001
+  const B = 9002
+  const C = 9003
+  const D = 9004
+  const shopEvent: EventPlannerEvent = {
+    ...mockEvent,
+    id: 99999,
+    lotteries: [],
+    shop: [],
+    farmingNodes: [
+      {
+        questId: 1,
+        name: '3種',
+        ap: 40,
+        drops: [
+          { itemId: A, perRun: 10 },
+          { itemId: B, perRun: 10 },
+          { itemId: C, perRun: 10 },
+        ],
+      },
+      { questId: 2, name: 'A', ap: 40, drops: [{ itemId: A, perRun: 15 }] },
+      { questId: 3, name: 'B', ap: 40, drops: [{ itemId: B, perRun: 15 }] },
+      { questId: 4, name: 'C', ap: 40, drops: [{ itemId: C, perRun: 15 }] },
+    ],
+  }
+  const need = new Map([
+    [A, 300],
+    [B, 300],
+    [C, 300],
+  ])
+
+  const planned = (event: EventPlannerEvent, demand: Map<number, number>) => {
+    const plan = planShopCurrencies(event, demand)
+    if (plan.status !== 'planned') throw new Error(`unexpected status ${plan.status}`)
+    return plan
+  }
+  const plannedResult = (event: EventPlannerEvent, demand: Map<number, number>) => {
+    const { result } = planned(event, demand)
+    if (!result) throw new Error('no farming plan')
+    return result
+  }
+
+  it('3種類の通貨の必要量を1つの LP で同時に満たす', () => {
+    expect(planned(shopEvent, need).unfarmable).toEqual([])
+    const result = plannedResult(shopEvent, need)
+    for (const [id, qty] of need) {
+      const got = result.items.find((i) => i.id === String(id))?.count ?? 0
+      expect(got).toBeGreaterThanOrEqual(qty)
+    }
+    expect(result.quests.map((q) => q.id)).toEqual(['1'])
+    expect(result.total_lap).toBe(30)
+    expect(result.total_ap).toBe(1200)
+  })
+
+  it('通貨ごとに別々に解いて足すより合計 AP が小さい', () => {
+    const joint = plannedResult(shopEvent, need).total_ap
+    const separate = [...need].reduce(
+      (acc, [id, qty]) => acc + plannedResult(shopEvent, new Map([[id, qty]])).total_ap,
+      0,
+    )
+    expect(joint).toBeLessThan(separate)
+  })
+
+  it('必要量が無ければ計算しない', () => {
+    expect(planShopCurrencies(shopEvent, new Map([[A, 0]]))).toEqual({ status: 'none' })
+    expect(planShopCurrencies(shopEvent, new Map())).toEqual({ status: 'none' })
+  })
+
+  it('ドロップの統計が無いときは計算しない', () => {
+    const noDrops: EventPlannerEvent = {
+      ...shopEvent,
+      farmingNodes: shopEvent.farmingNodes.map((n) => ({ ...n, drops: [] })),
+    }
+    expect(planShopCurrencies(noDrops, need)).toEqual({ status: 'no-drops' })
+  })
+
+  it('1種類がどのクエストにも落ちないときは分けて返し、残りの通貨で周回を出す', () => {
+    const demand = new Map([[A, 150], [D, 100]])
+    expect(planned(shopEvent, demand).unfarmable).toEqual([D])
+    const result = plannedResult(shopEvent, demand)
+    expect(result.items.map((i) => i.id)).toEqual([String(A)])
+    expect(result.items[0]?.count).toBeGreaterThanOrEqual(150)
+    expect(result.total_ap).toBe(400)
+  })
+
+  it('すべての通貨がどのクエストにも落ちないときは周回の内訳を出さない', () => {
+    const plan = planned(shopEvent, new Map([[D, 100], [D + 1, 5]]))
+    expect(plan.result).toBeNull()
+    expect(plan.unfarmable).toEqual([D, D + 1])
+  })
+})
+
+describe('splitUnfarmable', () => {
+  it('skipped_items の通貨を見込み獲得量から外す', () => {
+    const split = splitUnfarmable({
+      params: { objective: 'ap', items: {}, quests: [] },
+      quests: [],
+      items: [
+        { id: '1', category: '', name: 'a', count: 10 },
+        { id: '2', category: '', name: 'b', count: 0 },
+      ],
+      drop_rates: [],
+      total_lap: 1,
+      total_ap: 40,
+      skipped_items: ['2'],
+    })
+    expect(split.unfarmable).toEqual([2])
+    expect(split.result?.items.map((i) => i.id)).toEqual(['1'])
   })
 })

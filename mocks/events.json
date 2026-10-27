@@ -2409,7 +2409,9 @@
           "costAmount": 80,
           "limitNum": 5,
           "name": "狂の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6007.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6007.png",
+          "costName": "魔芒石",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94151101.png"
         },
         {
           "itemId": 7107,
@@ -2418,7 +2420,9 @@
           "costAmount": 200,
           "limitNum": 3,
           "name": "バーサーカーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7107.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7107.png",
+          "costName": "魔芒石",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94151101.png"
         },
         {
           "itemId": 6502,
@@ -2427,7 +2431,9 @@
           "costAmount": 120,
           "limitNum": 4,
           "name": "世界樹の種",
-          "icon": "https://static.atlasacademy.io/JP/Items/6502.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6502.png",
+          "costName": "魔芒石",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94151101.png"
         }
       ],
       "farmingNodes": [
@@ -5048,7 +5054,9 @@
           "costAmount": 400,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 6999,
@@ -5057,7 +5065,9 @@
           "costAmount": 400,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 6999,
@@ -5066,7 +5076,9 @@
           "costAmount": 400,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 6999,
@@ -5075,7 +5087,9 @@
           "costAmount": 4,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         },
         {
           "itemId": 5000,
@@ -5084,7 +5098,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "クイック・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5000.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5000.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         },
         {
           "itemId": 5001,
@@ -5093,7 +5109,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "アーツ・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5001.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         },
         {
           "itemId": 5002,
@@ -5102,7 +5120,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "バスター・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5002.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5002.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         },
         {
           "itemId": 5003,
@@ -5111,7 +5131,9 @@
           "costAmount": 1,
           "limitNum": 3,
           "name": "コード・リムーバー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5003.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         },
         {
           "itemId": 48,
@@ -5120,7 +5142,9 @@
           "costAmount": 10,
           "limitNum": 25,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 48,
@@ -5129,7 +5153,9 @@
           "costAmount": 10,
           "limitNum": 25,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 48,
@@ -5138,7 +5164,9 @@
           "costAmount": 10,
           "limitNum": 25,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 48,
@@ -5147,7 +5175,9 @@
           "costAmount": 1,
           "limitNum": 5,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         },
         {
           "itemId": 6525,
@@ -5156,7 +5186,9 @@
           "costAmount": 30,
           "limitNum": 10,
           "name": "智慧のスカラベ",
-          "icon": "https://static.atlasacademy.io/JP/Items/6525.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6525.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 6539,
@@ -5165,7 +5197,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "暁光炉心",
-          "icon": "https://static.atlasacademy.io/JP/Items/6539.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6539.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 6523,
@@ -5174,7 +5208,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "封魔のランプ",
-          "icon": "https://static.atlasacademy.io/JP/Items/6523.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6523.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 6553,
@@ -5183,7 +5219,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "太陽皮",
-          "icon": "https://static.atlasacademy.io/JP/Items/6553.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6553.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 6528,
@@ -5192,7 +5230,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "原初の産毛",
-          "icon": "https://static.atlasacademy.io/JP/Items/6528.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6528.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 6537,
@@ -5201,7 +5241,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "巨人の指輪",
-          "icon": "https://static.atlasacademy.io/JP/Items/6537.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6537.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 6550,
@@ -5210,7 +5252,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "夢幻の鱗粉",
-          "icon": "https://static.atlasacademy.io/JP/Items/6550.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6550.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 6510,
@@ -5219,7 +5263,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "無間の歯車",
-          "icon": "https://static.atlasacademy.io/JP/Items/6510.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6510.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 6502,
@@ -5228,7 +5274,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "世界樹の種",
-          "icon": "https://static.atlasacademy.io/JP/Items/6502.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6502.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 6533,
@@ -5237,7 +5285,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "宵哭きの鉄杭",
-          "icon": "https://static.atlasacademy.io/JP/Items/6533.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6533.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 6530,
@@ -5246,7 +5296,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "魔術髄液",
-          "icon": "https://static.atlasacademy.io/JP/Items/6530.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6530.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 6503,
@@ -5255,7 +5307,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "英雄の証",
-          "icon": "https://static.atlasacademy.io/JP/Items/6503.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6503.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 7101,
@@ -5264,7 +5318,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "セイバーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7101.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7101.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7102,
@@ -5273,7 +5329,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "アーチャーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7102.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7102.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7103,
@@ -5282,7 +5340,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "ランサーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7103.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7103.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7104,
@@ -5291,7 +5351,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "ライダーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7104.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7104.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7105,
@@ -5300,7 +5362,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "キャスターモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7105.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7105.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7106,
@@ -5309,7 +5373,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "アサシンモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7106.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7106.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7107,
@@ -5318,7 +5384,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "バーサーカーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7107.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7107.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 7001,
@@ -5327,7 +5395,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "セイバーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7001.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 7002,
@@ -5336,7 +5406,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "アーチャーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7002.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7002.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 7003,
@@ -5345,7 +5417,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "ランサーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7003.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 7004,
@@ -5354,7 +5428,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "ライダーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7004.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7004.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 7005,
@@ -5363,7 +5439,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "キャスターピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7005.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7005.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 7006,
@@ -5372,7 +5450,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "アサシンピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7006.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7006.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 7007,
@@ -5381,7 +5461,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "バーサーカーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7007.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7007.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 94083603,
@@ -5390,7 +5472,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "からくり水鉄砲",
-          "icon": "https://static.atlasacademy.io/JP/Items/94083603.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94083603.png",
+          "costName": "からくりヘルメット",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083602.png"
         },
         {
           "itemId": 94083602,
@@ -5399,7 +5483,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "からくりヘルメット",
-          "icon": "https://static.atlasacademy.io/JP/Items/94083602.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94083602.png",
+          "costName": "からくりプロテクター",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083601.png"
         },
         {
           "itemId": 1,
@@ -5408,7 +5494,9 @@
           "costAmount": 2,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "からくり水鉄砲",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083603.png"
         },
         {
           "itemId": 1,
@@ -5417,7 +5505,9 @@
           "costAmount": 1,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "茶運びシトナイ人形",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94083604.png"
         }
       ],
       "farmingNodes": [
@@ -9641,7 +9731,9 @@
           "costAmount": 400,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 94090907,
@@ -9650,7 +9742,9 @@
           "costAmount": 100,
           "limitNum": 2,
           "name": "サンタボンバーハット",
-          "icon": "https://static.atlasacademy.io/JP/Items/94090907.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94090907.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 40530001,
@@ -9659,7 +9753,9 @@
           "costAmount": 20,
           "limitNum": 16,
           "name": "サーヴァントコイン",
-          "icon": "https://static.atlasacademy.io/JP/Coins/405300.png"
+          "icon": "https://static.atlasacademy.io/JP/Coins/405300.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 48,
@@ -9668,7 +9764,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 6517,
@@ -9677,7 +9775,9 @@
           "costAmount": 30,
           "limitNum": 10,
           "name": "蛮神の心臓",
-          "icon": "https://static.atlasacademy.io/JP/Items/6517.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6517.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 6544,
@@ -9686,7 +9786,9 @@
           "costAmount": 30,
           "limitNum": 10,
           "name": "煌星のカケラ",
-          "icon": "https://static.atlasacademy.io/JP/Items/6544.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6544.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 6520,
@@ -9695,7 +9797,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "血の涙石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6520.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6520.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 6536,
@@ -9704,7 +9808,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "オーロラ鋼",
-          "icon": "https://static.atlasacademy.io/JP/Items/6536.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6536.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 7101,
@@ -9713,7 +9819,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "セイバーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7101.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7101.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 7103,
@@ -9722,7 +9830,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "ランサーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7103.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7103.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 7105,
@@ -9731,7 +9841,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "キャスターモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7105.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7105.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 6999,
@@ -9740,7 +9852,9 @@
           "costAmount": 400,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 94090907,
@@ -9749,7 +9863,9 @@
           "costAmount": 100,
           "limitNum": 1,
           "name": "サンタボンバーハット",
-          "icon": "https://static.atlasacademy.io/JP/Items/94090907.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94090907.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 40530001,
@@ -9758,7 +9874,9 @@
           "costAmount": 20,
           "limitNum": 16,
           "name": "サーヴァントコイン",
-          "icon": "https://static.atlasacademy.io/JP/Coins/405300.png"
+          "icon": "https://static.atlasacademy.io/JP/Coins/405300.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 48,
@@ -9767,7 +9885,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 6546,
@@ -9776,7 +9896,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "悠久の実",
-          "icon": "https://static.atlasacademy.io/JP/Items/6546.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6546.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 6524,
@@ -9785,7 +9907,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "大騎士勲章",
-          "icon": "https://static.atlasacademy.io/JP/Items/6524.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6524.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 6550,
@@ -9794,7 +9918,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "夢幻の鱗粉",
-          "icon": "https://static.atlasacademy.io/JP/Items/6550.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6550.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 6527,
@@ -9803,7 +9929,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "万死の毒針",
-          "icon": "https://static.atlasacademy.io/JP/Items/6527.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6527.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 7001,
@@ -9812,7 +9940,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "セイバーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7001.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 7003,
@@ -9821,7 +9951,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "ランサーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7003.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 7005,
@@ -9830,7 +9962,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "キャスターピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7005.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7005.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 6999,
@@ -9839,7 +9973,9 @@
           "costAmount": 400,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 94090907,
@@ -9848,7 +9984,9 @@
           "costAmount": 100,
           "limitNum": 1,
           "name": "サンタボンバーハット",
-          "icon": "https://static.atlasacademy.io/JP/Items/94090907.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94090907.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 40530001,
@@ -9857,7 +9995,9 @@
           "costAmount": 20,
           "limitNum": 16,
           "name": "サーヴァントコイン",
-          "icon": "https://static.atlasacademy.io/JP/Coins/405300.png"
+          "icon": "https://static.atlasacademy.io/JP/Coins/405300.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 48,
@@ -9866,7 +10006,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 6510,
@@ -9875,7 +10017,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "無間の歯車",
-          "icon": "https://static.atlasacademy.io/JP/Items/6510.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6510.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 6535,
@@ -9884,7 +10028,9 @@
           "costAmount": 15,
           "limitNum": 20,
           "name": "永遠結氷",
-          "icon": "https://static.atlasacademy.io/JP/Items/6535.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6535.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 6512,
@@ -9893,7 +10039,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "竜の牙",
-          "icon": "https://static.atlasacademy.io/JP/Items/6512.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6512.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 6522,
@@ -9902,7 +10050,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "愚者の鎖",
-          "icon": "https://static.atlasacademy.io/JP/Items/6522.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6522.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 6999,
@@ -9911,7 +10061,9 @@
           "costAmount": 4,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "ノーチラスオーナメント",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090904.png"
         },
         {
           "itemId": 5000,
@@ -9920,7 +10072,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "クイック・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5000.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5000.png",
+          "costName": "ノーチラスオーナメント",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090904.png"
         },
         {
           "itemId": 5001,
@@ -9929,7 +10083,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "アーツ・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5001.png",
+          "costName": "ノーチラスオーナメント",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090904.png"
         },
         {
           "itemId": 5002,
@@ -9938,7 +10094,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "バスター・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5002.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5002.png",
+          "costName": "ノーチラスオーナメント",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090904.png"
         },
         {
           "itemId": 5003,
@@ -9947,7 +10105,9 @@
           "costAmount": 1,
           "limitNum": 3,
           "name": "コード・リムーバー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5003.png",
+          "costName": "ノーチラスオーナメント",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090904.png"
         },
         {
           "itemId": 94090903,
@@ -9956,7 +10116,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "シャークパイ",
-          "icon": "https://static.atlasacademy.io/JP/Items/94090903.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94090903.png",
+          "costName": "サンゴケイン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090902.png"
         },
         {
           "itemId": 94090902,
@@ -9965,7 +10127,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "サンゴケイン",
-          "icon": "https://static.atlasacademy.io/JP/Items/94090902.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94090902.png",
+          "costName": "シェルクラッカー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090901.png"
         },
         {
           "itemId": 1,
@@ -9974,7 +10138,9 @@
           "costAmount": 2,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "シャークパイ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090903.png"
         },
         {
           "itemId": 1,
@@ -9983,7 +10149,9 @@
           "costAmount": 1,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "ノーチラスオーナメント",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94090904.png"
         }
       ],
       "farmingNodes": [
@@ -13816,7 +13984,9 @@
           "costAmount": 50,
           "limitNum": 2,
           "name": "サンタユーゴ",
-          "icon": "https://static.atlasacademy.io/JP/Items/94138507.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94138507.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 94138507,
@@ -13825,7 +13995,9 @@
           "costAmount": 50,
           "limitNum": 1,
           "name": "サンタユーゴ",
-          "icon": "https://static.atlasacademy.io/JP/Items/94138507.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94138507.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 94138507,
@@ -13834,7 +14006,9 @@
           "costAmount": 50,
           "limitNum": 1,
           "name": "サンタユーゴ",
-          "icon": "https://static.atlasacademy.io/JP/Items/94138507.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94138507.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 280080001,
@@ -13843,7 +14017,9 @@
           "costAmount": 10,
           "limitNum": 16,
           "name": "サーヴァントコイン",
-          "icon": "https://static.atlasacademy.io/JP/Coins/2800800.png"
+          "icon": "https://static.atlasacademy.io/JP/Coins/2800800.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 280080001,
@@ -13852,7 +14028,9 @@
           "costAmount": 10,
           "limitNum": 16,
           "name": "サーヴァントコイン",
-          "icon": "https://static.atlasacademy.io/JP/Coins/2800800.png"
+          "icon": "https://static.atlasacademy.io/JP/Coins/2800800.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 280080001,
@@ -13861,7 +14039,9 @@
           "costAmount": 10,
           "limitNum": 16,
           "name": "サーヴァントコイン",
-          "icon": "https://static.atlasacademy.io/JP/Coins/2800800.png"
+          "icon": "https://static.atlasacademy.io/JP/Coins/2800800.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6999,
@@ -13870,7 +14050,9 @@
           "costAmount": 300,
           "limitNum": 2,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6999,
@@ -13879,7 +14061,9 @@
           "costAmount": 300,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6999,
@@ -13888,7 +14072,9 @@
           "costAmount": 300,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6999,
@@ -13897,7 +14083,9 @@
           "costAmount": 4,
           "limitNum": 2,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "クリスマストゥーシューズ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138504.png"
         },
         {
           "itemId": 48,
@@ -13906,7 +14094,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 48,
@@ -13915,7 +14105,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 48,
@@ -13924,7 +14116,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 5000,
@@ -13933,7 +14127,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "クイック・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5000.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5000.png",
+          "costName": "クリスマストゥーシューズ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138504.png"
         },
         {
           "itemId": 5001,
@@ -13942,7 +14138,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "アーツ・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5001.png",
+          "costName": "クリスマストゥーシューズ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138504.png"
         },
         {
           "itemId": 5002,
@@ -13951,7 +14149,9 @@
           "costAmount": 1,
           "limitNum": 1,
           "name": "バスター・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5002.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5002.png",
+          "costName": "クリスマストゥーシューズ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138504.png"
         },
         {
           "itemId": 5003,
@@ -13960,7 +14160,9 @@
           "costAmount": 1,
           "limitNum": 3,
           "name": "コード・リムーバー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5003.png",
+          "costName": "クリスマストゥーシューズ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138504.png"
         },
         {
           "itemId": 6542,
@@ -13969,7 +14171,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "真理の卵",
-          "icon": "https://static.atlasacademy.io/JP/Items/6542.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6542.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6540,
@@ -13978,7 +14182,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "九十九鏡",
-          "icon": "https://static.atlasacademy.io/JP/Items/6540.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6540.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6501,
@@ -13987,7 +14193,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "鳳凰の羽根",
-          "icon": "https://static.atlasacademy.io/JP/Items/6501.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6501.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6553,
@@ -13996,7 +14204,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "太陽皮",
-          "icon": "https://static.atlasacademy.io/JP/Items/6553.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6553.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6519,
@@ -14005,7 +14215,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "戦馬の幼角",
-          "icon": "https://static.atlasacademy.io/JP/Items/6519.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6519.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6535,
@@ -14014,7 +14226,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "永遠結氷",
-          "icon": "https://static.atlasacademy.io/JP/Items/6535.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6535.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6502,
@@ -14023,7 +14237,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "世界樹の種",
-          "icon": "https://static.atlasacademy.io/JP/Items/6502.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6502.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6554,
@@ -14032,7 +14248,9 @@
           "costAmount": 5,
           "limitNum": 60,
           "name": "黒曜鋭刃",
-          "icon": "https://static.atlasacademy.io/JP/Items/6554.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6554.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6543,
@@ -14041,7 +14259,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "光銀の冠",
-          "icon": "https://static.atlasacademy.io/JP/Items/6543.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6543.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6526,
@@ -14050,7 +14270,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "追憶の貝殻",
-          "icon": "https://static.atlasacademy.io/JP/Items/6526.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6526.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6527,
@@ -14059,7 +14281,9 @@
           "costAmount": 10,
           "limitNum": 60,
           "name": "万死の毒針",
-          "icon": "https://static.atlasacademy.io/JP/Items/6527.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6527.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6533,
@@ -14068,7 +14292,9 @@
           "costAmount": 5,
           "limitNum": 60,
           "name": "宵哭きの鉄杭",
-          "icon": "https://static.atlasacademy.io/JP/Items/6533.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6533.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6201,
@@ -14077,7 +14303,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "剣の秘石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6201.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6201.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6205,
@@ -14086,7 +14314,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "術の秘石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6205.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6205.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6207,
@@ -14095,7 +14325,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "狂の秘石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6207.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6207.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 6101,
@@ -14104,7 +14336,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "剣の魔石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6101.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6101.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6105,
@@ -14113,7 +14347,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "術の魔石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6105.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6105.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6107,
@@ -14122,7 +14358,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "狂の魔石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6107.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6107.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 6001,
@@ -14131,7 +14369,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "剣の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6001.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6005,
@@ -14140,7 +14380,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "術の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6005.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6005.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 6007,
@@ -14149,7 +14391,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "狂の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6007.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6007.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 7101,
@@ -14158,7 +14402,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "セイバーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7101.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7101.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 7105,
@@ -14167,7 +14413,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "キャスターモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7105.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7105.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 7107,
@@ -14176,7 +14424,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "バーサーカーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7107.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7107.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 7001,
@@ -14185,7 +14435,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "セイバーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7001.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 7005,
@@ -14194,7 +14446,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "キャスターピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7005.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7005.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 7007,
@@ -14203,7 +14457,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "バーサーカーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7007.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7007.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 94138503,
@@ -14212,7 +14468,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "クロネコティーカップ",
-          "icon": "https://static.atlasacademy.io/JP/Items/94138503.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94138503.png",
+          "costName": "メリーフォーク",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138502.png"
         },
         {
           "itemId": 94138502,
@@ -14221,7 +14479,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "メリーフォーク",
-          "icon": "https://static.atlasacademy.io/JP/Items/94138502.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94138502.png",
+          "costName": "ホーリープレート",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138501.png"
         },
         {
           "itemId": 1,
@@ -14230,7 +14490,9 @@
           "costAmount": 2,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "クロネコティーカップ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138503.png"
         },
         {
           "itemId": 1,
@@ -14239,7 +14501,9 @@
           "costAmount": 1,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "クリスマストゥーシューズ",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94138504.png"
         }
       ],
       "farmingNodes": [
@@ -17309,7 +17573,9 @@
           "costAmount": 300,
           "limitNum": 2,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6999,
@@ -17318,7 +17584,9 @@
           "costAmount": 300,
           "limitNum": 2,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6999,
@@ -17327,7 +17595,9 @@
           "costAmount": 300,
           "limitNum": 1,
           "name": "伝承結晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6999.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6999.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 48,
@@ -17336,7 +17606,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 48,
@@ -17345,7 +17617,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 48,
@@ -17354,7 +17628,9 @@
           "costAmount": 10,
           "limitNum": 30,
           "name": "巡霊の葉",
-          "icon": "https://static.atlasacademy.io/JP/Items/48.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/48.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 5000,
@@ -17363,7 +17639,9 @@
           "costAmount": 50,
           "limitNum": 1,
           "name": "クイック・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5000.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5000.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 5002,
@@ -17372,7 +17650,9 @@
           "costAmount": 50,
           "limitNum": 1,
           "name": "バスター・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5002.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5002.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 5001,
@@ -17381,7 +17661,9 @@
           "costAmount": 50,
           "limitNum": 1,
           "name": "アーツ・コード・オープナー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5001.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 5003,
@@ -17390,7 +17672,9 @@
           "costAmount": 20,
           "limitNum": 1,
           "name": "コード・リムーバー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5003.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 5003,
@@ -17399,7 +17683,9 @@
           "costAmount": 20,
           "limitNum": 1,
           "name": "コード・リムーバー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5003.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 5003,
@@ -17408,7 +17694,9 @@
           "costAmount": 20,
           "limitNum": 1,
           "name": "コード・リムーバー",
-          "icon": "https://static.atlasacademy.io/JP/Items/5003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5003.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6563,
@@ -17417,7 +17705,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "遺霊箱",
-          "icon": "https://static.atlasacademy.io/JP/Items/6563.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6563.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6523,
@@ -17426,7 +17716,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "封魔のランプ",
-          "icon": "https://static.atlasacademy.io/JP/Items/6523.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6523.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6514,
@@ -17435,7 +17727,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "ホムンクルスベビー",
-          "icon": "https://static.atlasacademy.io/JP/Items/6514.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6514.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6549,
@@ -17444,7 +17738,9 @@
           "costAmount": 5,
           "limitNum": 60,
           "name": "赦免の小鐘",
-          "icon": "https://static.atlasacademy.io/JP/Items/6549.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6549.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6531,
@@ -17453,7 +17749,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "奇奇神酒",
-          "icon": "https://static.atlasacademy.io/JP/Items/6531.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6531.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6501,
@@ -17462,7 +17760,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "鳳凰の羽根",
-          "icon": "https://static.atlasacademy.io/JP/Items/6501.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6501.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6515,
@@ -17471,7 +17771,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "八連双晶",
-          "icon": "https://static.atlasacademy.io/JP/Items/6515.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6515.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6555,
@@ -17480,7 +17782,9 @@
           "costAmount": 5,
           "limitNum": 60,
           "name": "狂気の残滓",
-          "icon": "https://static.atlasacademy.io/JP/Items/6555.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6555.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6517,
@@ -17489,7 +17793,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "蛮神の心臓",
-          "icon": "https://static.atlasacademy.io/JP/Items/6517.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6517.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6537,
@@ -17498,7 +17804,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "巨人の指輪",
-          "icon": "https://static.atlasacademy.io/JP/Items/6537.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6537.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6505,
@@ -17507,7 +17815,9 @@
           "costAmount": 10,
           "limitNum": 60,
           "name": "虚影の塵",
-          "icon": "https://static.atlasacademy.io/JP/Items/6505.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6505.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6530,
@@ -17516,7 +17826,9 @@
           "costAmount": 5,
           "limitNum": 60,
           "name": "魔術髄液",
-          "icon": "https://static.atlasacademy.io/JP/Items/6530.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6530.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6201,
@@ -17525,7 +17837,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "剣の秘石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6201.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6201.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6203,
@@ -17534,7 +17848,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "槍の秘石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6203.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6203.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6205,
@@ -17543,7 +17859,9 @@
           "costAmount": 20,
           "limitNum": 20,
           "name": "術の秘石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6205.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6205.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 6101,
@@ -17552,7 +17870,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "剣の魔石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6101.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6101.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6103,
@@ -17561,7 +17881,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "槍の魔石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6103.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6103.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6105,
@@ -17570,7 +17892,9 @@
           "costAmount": 15,
           "limitNum": 30,
           "name": "術の魔石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6105.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6105.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 6001,
@@ -17579,7 +17903,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "剣の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6001.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6003,
@@ -17588,7 +17914,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "槍の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6003.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 6005,
@@ -17597,7 +17925,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "術の輝石",
-          "icon": "https://static.atlasacademy.io/JP/Items/6005.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/6005.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 7101,
@@ -17606,7 +17936,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "セイバーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7101.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7101.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 7103,
@@ -17615,7 +17947,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "ランサーモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7103.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7103.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 7105,
@@ -17624,7 +17958,9 @@
           "costAmount": 15,
           "limitNum": 40,
           "name": "キャスターモニュメント",
-          "icon": "https://static.atlasacademy.io/JP/Items/7105.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7105.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         },
         {
           "itemId": 7001,
@@ -17633,7 +17969,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "セイバーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7001.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7001.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 7003,
@@ -17642,7 +17980,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "ランサーピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7003.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7003.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 7005,
@@ -17651,7 +17991,9 @@
           "costAmount": 10,
           "limitNum": 40,
           "name": "キャスターピース",
-          "icon": "https://static.atlasacademy.io/JP/Items/7005.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/7005.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 94145803,
@@ -17660,7 +18002,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "サニーフェザー",
-          "icon": "https://static.atlasacademy.io/JP/Items/94145803.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94145803.png",
+          "costName": "クラウディバルーン",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145802.png"
         },
         {
           "itemId": 94145802,
@@ -17669,7 +18013,9 @@
           "costAmount": 10,
           "limitNum": 0,
           "name": "クラウディバルーン",
-          "icon": "https://static.atlasacademy.io/JP/Items/94145802.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/94145802.png",
+          "costName": "レイニーグライダー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145801.png"
         },
         {
           "itemId": 1,
@@ -17678,7 +18024,9 @@
           "costAmount": 2,
           "limitNum": 0,
           "name": "QP",
-          "icon": "https://static.atlasacademy.io/JP/Items/5.png"
+          "icon": "https://static.atlasacademy.io/JP/Items/5.png",
+          "costName": "サニーフェザー",
+          "costIcon": "https://static.atlasacademy.io/JP/Items/94145803.png"
         }
       ],
       "farmingNodes": [
