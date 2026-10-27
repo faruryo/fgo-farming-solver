@@ -33,6 +33,9 @@ const previous = buildMaterialCatalog({
 })
 
 const logger = { log: vi.fn(), error: vi.fn() }
+const refusedUpdate = expect.objectContaining({
+  message: expect.stringMatching(/^Refusing Material Catalog update:/),
+})
 
 const run = (
   overrides: Partial<Parameters<typeof runMaterialCatalogPhase>[0]> = {},
@@ -80,9 +83,12 @@ describe('runMaterialCatalogPhase', () => {
       .fn()
       .mockResolvedValueOnce(Response.json([]))
       .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(new Response(null, { status: 304 }))
+    const logger = { log: vi.fn(), error: vi.fn() }
 
-    await expect(run({ put, fetchSource })).resolves.toEqual({ failed: true })
+    await expect(run({ put, fetchSource, logger })).resolves.toEqual({ failed: true })
     expect(put).not.toHaveBeenCalled()
+    expect(logger.error).toHaveBeenCalledWith(expect.any(String), refusedUpdate)
   })
 
   it.each([
@@ -138,10 +144,13 @@ describe('runMaterialCatalogPhase', () => {
         .mockResolvedValueOnce(
           Response.json(items, { headers: { etag: 'item-v1' } }),
         )
+        .mockResolvedValueOnce(new Response(null, { status: 304 }))
+      const logger = { log: vi.fn(), error: vi.fn() }
 
-      await expect(run({ put, fetchSource })).resolves.toEqual({ failed: true })
+      await expect(run({ put, fetchSource, logger })).resolves.toEqual({ failed: true })
 
       expect(put).not.toHaveBeenCalled()
+      expect(logger.error).toHaveBeenCalledWith(expect.any(String), refusedUpdate)
     },
   )
 
