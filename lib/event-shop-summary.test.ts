@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import type { EventShopItem } from './master-data/types'
 import {
+  allocateShortfallOnly,
   clampExchangeCount,
+  computeShopShortfall,
+  shopItemStatus,
+  summarizeShortfall,
   computeShopCurrencyNeeds,
   formatEfficiency,
   groupShopByCurrency,
@@ -167,5 +171,153 @@ describe('formatEfficiency', () => {
     expect(formatEfficiency(1.2)).toBe('1.2')
     expect(formatEfficiency(1.0645)).toBe('1.06')
     expect(formatEfficiency(1.0649)).toBe('1.06')
+  })
+})
+
+const needOf = (need: Record<number, number>) => new Map(Object.entries(need).map(([k, v]) => [Number(k), v]))
+
+/** 不足と所持数から状態を決め、不足素材のみの回数を出す。 */
+const allocate = (
+  shop: EventShopItem[],
+  need: Record<number, number>,
+  possession: Record<string, number | undefined> = {},
+  wanted: number[] = [],
+  /** null は素材カタログを読めていないとき。 */
+  planItemIds: ReadonlySet<number> | null = new Set(),
+) => {
+  const totalNeed = needOf(need)
+  const shortfall = computeShopShortfall(totalNeed, possession)
+  return allocateShortfallOnly(
+    shop,
+    shortfall,
+    itemId => shopItemStatus(itemId, totalNeed, shortfall, planItemIds ?? undefined),
+    new Set(wanted),
+  )
+}
+
+const countsOf = (allocation: { counts: ReadonlyMap<number, number> }) => [...allocation.counts.values()]
+
+describe('computeShopShortfall', () => {
+  it('総必要数から所持数を引き、0 未満は 0 にする。所持数が欠けている素材は所持 0', () => {
+    const shortfall = computeShopShortfall(needOf({ 10: 30, 11: 30, 12: 7 }), { 10: 25, 11: 40, 13: 5 })
+    expect([...shortfall]).toEqual([[10, 5], [11, 0], [12, 7]])
+  })
+})
+
+describe('shopItemStatus', () => {
+  const totalNeed = needOf({ 10: 30, 11: 30, 12: 0, 1: 100 })
+  const shortfall = computeShopShortfall(totalNeed, { 10: 25, 11: 40 })
+  const planIds = new Set([10, 11, 12])
+
+  it('必要数があれば不足の有無で「あと N 個」と「足りている」。集合に入らなくても同じ', () => {
+    expect(shopItemStatus(10, totalNeed, shortfall, planIds)).toEqual({ kind: 'short', shortfall: 5 })
+    expect(shopItemStatus(11, totalNeed, shortfall, planIds)).toEqual({ kind: 'enough' })
+    expect(shopItemStatus(10, totalNeed, shortfall, new Set())).toEqual({ kind: 'short', shortfall: 5 })
+    expect(shopItemStatus(10, totalNeed, shortfall, undefined)).toEqual({ kind: 'short', shortfall: 5 })
+  })
+
+  it('必要数 0 で集合に入る素材は「使わない」、入らない品目は「計画の対象外」', () => {
+    expect(shopItemStatus(12, totalNeed, shortfall, planIds)).toEqual({ kind: 'unused' })
+    expect(shopItemStatus(4001, totalNeed, shortfall, planIds)).toEqual({ kind: 'outside' })
+  })
+
+  it('集合が undefined なら必要数 0 の品目は状態なし', () => {
+    expect(shopItemStatus(12, totalNeed, shortfall, undefined)).toBeUndefined()
+    expect(shopItemStatus(4001, totalNeed, shortfall, undefined)).toBeUndefined()
+  })
+
+  it('QP は必要数があっても状態なし', () => {
+    expect(shopItemStatus(1, totalNeed, shortfall, planIds)).toBeUndefined()
+  })
+})
+
+describe('allocateShortfallOnly', () => {
+  it('不足 5・在庫上限 10・1回1個なら 5 回', () => {
+    const allocation = allocate([entry(10, 90, 10, 10)], { 10: 30 }, { 10: 25 })
+    expect(countsOf(allocation)).toEqual([5])
+    expect(allocation.remaining.get(10)).toBe(0)
+    expect(allocation.remainders.size).toBe(0)
+  })
+
+  it('1回3個なら切り上げて 2 回', () => {
+    expect(countsOf(allocate([entry(10, 90, 10, 10, { qty: 3 })], { 10: 5 }))).toEqual([2])
+  })
+
+  it('同じ素材の品目が2つなら元の順に 3 と 2', () => {
+    expect(countsOf(allocate([entry(10, 90, 10, 3), entry(10, 91, 10, 10)], { 10: 5 }))).toEqual([3, 2])
+  })
+
+  it('在庫上限なしなら打ち切らず 7 回', () => {
+    expect(countsOf(allocate([entry(10, 90, 10, 0)], { 10: 7 }))).toEqual([7])
+  })
+
+  it('不足 15・在庫上限 10 なら残り 5', () => {
+    const allocation = allocate([entry(10, 90, 10, 10)], { 10: 15 })
+    expect(countsOf(allocation)).toEqual([10])
+    expect(allocation.remaining.get(10)).toBe(5)
+    expect([...allocation.remainders]).toEqual([[0, 5]])
+  })
+
+  it('同じ素材の品目が複数あって残りが出るとき、残りを持つのは元の順で最後の品目', () => {
+    const allocation = allocate([entry(10, 90, 10, 3), entry(11, 90, 10, 0), entry(10, 91, 10, 2)], { 10: 9, 11: 1 })
+    expect(countsOf(allocation)).toEqual([3, 1, 2])
+    expect([...allocation.remainders]).toEqual([[2, 4]])
+  })
+
+  it('足りている品目・使わない品目は 0 回', () => {
+    const allocation = allocate(
+      [entry(10, 90, 10, 10), entry(12, 90, 10, 10)],
+      { 10: 30 },
+      { 10: 40 },
+      [12],
+      new Set([10, 12]),
+    )
+    expect(countsOf(allocation)).toEqual([0, 0])
+    expect(allocation.remaining.size).toBe(0)
+  })
+
+  it('「要る」の計画の対象外の品目は在庫上限ありで上限、在庫上限なしで 0 回にして挙げる。「要らない」は 0 回', () => {
+    const allocation = allocate(
+      [entry(5003, 90, 10, 1), entry(94100, 90, 10, 0), entry(4001, 90, 10, 5)],
+      {},
+      {},
+      [5003, 94100],
+    )
+    expect(countsOf(allocation)).toEqual([1, 0, 0])
+    expect([...allocation.unlimitedWanted]).toEqual([1])
+  })
+
+  it('「要る」に入っていても、状態なし・使わない品目は 0 回、必要数のある品目は不足の分', () => {
+    const shop = [entry(4001, 90, 10, 5), entry(12, 90, 10, 5), entry(10, 90, 10, 10)]
+    expect(countsOf(allocate(shop, { 10: 3 }, {}, [4001, 12, 10], null))).toEqual([0, 0, 3])
+    expect(countsOf(allocate(shop, { 10: 3 }, {}, [4001, 12, 10], new Set([12])))).toEqual([5, 0, 3])
+  })
+
+  it('QP の品目は 0 回で要約に数えない', () => {
+    const allocation = allocate([entry(1, 90, 10, 10, { qty: 10000 })], { 1: 50000 }, {}, [1])
+    expect(countsOf(allocation)).toEqual([0])
+    expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 0, filledMaterials: 0 })
+  })
+
+  it('1回の個数が 0 の品目は 0 回で、割り当てから外れる', () => {
+    const allocation = allocate(
+      [entry(10, 90, 10, 10, { qty: 0 }), entry(10, 91, 10, 10), entry(4001, 90, 10, 0, { qty: 0 })],
+      { 10: 4 },
+      {},
+      [4001],
+    )
+    expect(countsOf(allocation)).toEqual([0, 4, 0])
+    expect(allocation.unlimitedWanted.size).toBe(0)
+  })
+})
+
+describe('summarizeShortfall', () => {
+  it('交換所に品目のある不足の素材 3 つのうち 2 つが埋まる', () => {
+    const allocation = allocate(
+      [entry(10, 90, 10, 10), entry(11, 90, 10, 10), entry(12, 90, 10, 10), entry(13, 90, 10, 10)],
+      { 10: 5, 11: 10, 12: 15, 13: 3, 14: 99 },
+      { 13: 3 },
+    )
+    expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 3, filledMaterials: 2 })
   })
 })

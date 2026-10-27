@@ -2,7 +2,7 @@
 
 ## 1. 計算
 
-- [ ] 1.1 `lib/event-shop-summary.ts` に、design の決定 1・2・3・5 の純粋関数を足す。`lib/event-plan.ts` の `allocateShop` は使わず、変えない。
+- [x] 1.1 `lib/event-shop-summary.ts` に、design の決定 1・2・3・5 の純粋関数を足す。`lib/event-plan.ts` の `allocateShop` は使わず、変えない。
   - 不足: 総必要数（atlasId → 個数）と所持数（atlasId の文字列 → 個数）から、素材ごとの不足（0 未満は 0）を出す
   - 品目の状態: 総必要数・不足・育成計画で扱う素材の集合（無ければ undefined）から、QP（状態なし）・足りている・あと N 個・使わない・計画の対象外を決める。集合が undefined のときは、必要数 0 の品目を状態なしにする
   - 不足素材のみの回数: 交換所・不足・品目の状態・保存した「要る」の集合（atlasId）から、状態が「計画の対象外」の品目だけを「要る」として扱い（design の決定 3）、交換回数（交換所の配列の添字 → 回数）・素材ごとの交換所で埋まらない残り・在庫上限が無くて回数を入れなかった「要る」の品目を返す
@@ -20,7 +20,7 @@
 
 ## 2. 画面
 
-- [ ] 2.1 `components/events/EventShopList.tsx` で、`useRosterNeed()`・所持数（`STORAGE_KEYS.POSSESSION`、`lazyWrite: true`）・`useMaterialCatalog()` を読み、design の決定 2・4〜8 のとおりにする。
+- [x] 2.1 `components/events/EventShopList.tsx` で、`useRosterNeed()`・所持数（`STORAGE_KEYS.POSSESSION`、`lazyWrite: true`）・`useMaterialCatalog()` を読み、design の決定 2・4〜8 のとおりにする。
   - `lib/constants/storage-keys.ts` に `EVENTS_SHOP_WANTED_ITEMS: 'events/shopWantedItems'` を「Local/UI-only state」の区画に足す（`CLOUD_SYNC_KEYS` には入れない）
   - 品目の行にラベルを出し、計画の対象外の品目に「要る／要らない」の切り替えを出す。選択は `useLocalStorage(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, {}, { lazyWrite: true })` に atlasId の文字列 → `true` で持ち、「要らない」に戻したらキーを消す。持っていない品目は「要らない」。交換回数は保存しない
   - 「全部交換」の隣に「不足素材のみ」と説明の1行を足す
@@ -44,4 +44,4 @@
 
 ## 3. 確認
 
-- [ ] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->

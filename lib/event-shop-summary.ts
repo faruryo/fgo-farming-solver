@@ -132,3 +132,108 @@ export const orderShopByEfficiency = (
 
 /** 効率の表示。小数2桁までにし、末尾の0は出さない。 */
 export const formatEfficiency = (value: number): string => String(Math.round(value * 100) / 100)
+
+/** QP の atlasId。交換所の QP で育成計画の QP を埋める使い方は想定しないので、要る・要らないの対象から外す。 */
+export const QP_ITEM_ID = 1
+
+/** 素材ごとの不足（総必要数 − 所持数、0 未満は 0）。所持数は atlasId の文字列 → 個数。 */
+export const computeShopShortfall = (
+  totalNeed: ReadonlyMap<number, number>,
+  possession: Readonly<Record<string, number | undefined>>,
+): Map<number, number> =>
+  new Map(
+    [...totalNeed].map(([id, need]) => [id, Math.max(0, need - (Number(possession[String(id)]) || 0))]),
+  )
+
+/** 育成計画から見た品目の状態。 */
+export type ShopItemStatus =
+  | { kind: 'enough' }
+  | { kind: 'short'; shortfall: number }
+  /** 育成計画で扱う素材だが、今の必要数は 0。 */
+  | { kind: 'unused' }
+  /** 育成計画で扱っていない品目。 */
+  | { kind: 'outside' }
+
+/**
+ * 品目の状態を決める。QP は状態なし。必要数のある素材は `planItemIds` を見ない。
+ * `planItemIds`（育成計画で扱う素材の集合）が undefined なら、必要数 0 の品目は見分けられないので状態なし。
+ */
+export const shopItemStatus = (
+  itemId: number,
+  totalNeed: ReadonlyMap<number, number>,
+  shortfall: ReadonlyMap<number, number>,
+  planItemIds: ReadonlySet<number> | undefined,
+): ShopItemStatus | undefined => {
+  if (itemId === QP_ITEM_ID) return undefined
+  if ((totalNeed.get(itemId) ?? 0) > 0) {
+    const n = shortfall.get(itemId) ?? 0
+    return n > 0 ? { kind: 'short', shortfall: n } : { kind: 'enough' }
+  }
+  if (!planItemIds) return undefined
+  return planItemIds.has(itemId) ? { kind: 'unused' } : { kind: 'outside' }
+}
+
+export interface ShortfallAllocation {
+  /** 品目ごとの交換回数。キーは交換所の配列の添字で、すべての品目を持つ。 */
+  counts: Map<number, number>
+  /** 交換所に品目のある不足の素材ごとの、交換所で埋まらない残り（埋まるなら 0）。 */
+  remaining: Map<number, number>
+  /** 残りのある素材の、交換所の元の順で最後の品目の添字 → 残り。 */
+  remainders: Map<number, number>
+  /** 在庫上限が無くて回数を入れなかった「要る」の品目の添字。 */
+  unlimitedWanted: Set<number>
+}
+
+/**
+ * 不足の分と「要る」の計画の対象外の品目だけを交換する回数を出す。
+ * 不足は交換所の元の順に品目へ割り当て、在庫上限で打ち切る。1回の個数が 0 以下の品目は割り当てない。
+ * `wanted` は保存した「要る」の atlasId で、状態が「計画の対象外」の品目にだけ使う。
+ */
+export const allocateShortfallOnly = (
+  shop: EventShopItem[],
+  shortfall: ReadonlyMap<number, number>,
+  statusOf: (itemId: number) => ShopItemStatus | undefined,
+  wanted: ReadonlySet<number>,
+): ShortfallAllocation => {
+  const counts = new Map<number, number>()
+  const remaining = new Map<number, number>()
+  const lastIndex = new Map<number, number>()
+  const unlimitedWanted = new Set<number>()
+  shop.forEach((item, index) => {
+    counts.set(index, 0)
+    const status = statusOf(item.itemId)
+    if (status?.kind === 'short') {
+      lastIndex.set(item.itemId, index)
+      const left = remaining.get(item.itemId) ?? shortfall.get(item.itemId) ?? 0
+      if (item.qty <= 0 || left <= 0) {
+        remaining.set(item.itemId, left)
+        return
+      }
+      const needed = Math.ceil(left / item.qty)
+      const count = item.limitNum > 0 ? Math.min(needed, item.limitNum) : needed
+      counts.set(index, count)
+      remaining.set(item.itemId, Math.max(0, left - count * item.qty))
+    } else if (status?.kind === 'outside' && wanted.has(item.itemId) && item.qty > 0) {
+      if (item.limitNum > 0) counts.set(index, item.limitNum)
+      else unlimitedWanted.add(index)
+    }
+  })
+  const remainders = new Map<number, number>()
+  for (const [itemId, left] of remaining) {
+    const index = lastIndex.get(itemId)
+    if (left > 0 && index !== undefined) remainders.set(index, left)
+  }
+  return { counts, remaining, remainders, unlimitedWanted }
+}
+
+export interface ShortfallSummary {
+  /** 交換所に品目のある不足の素材（QP を除く）の数。 */
+  shortMaterials: number
+  /** そのうち交換所で埋まる素材の数。 */
+  filledMaterials: number
+}
+
+export const summarizeShortfall = (allocation: Pick<ShortfallAllocation, 'remaining'>): ShortfallSummary => {
+  const lefts = [...allocation.remaining.values()]
+  return { shortMaterials: lefts.length, filledMaterials: lefts.filter(left => left === 0).length }
+}
