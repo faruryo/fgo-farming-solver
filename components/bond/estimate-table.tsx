@@ -36,6 +36,26 @@ function Tile({ label, value, sub }: Readonly<{ label: string; value: string; su
   )
 }
 
+const pad = (n: number) => String(n).padStart(2, '0')
+
+const formatEndsAt = (sec: number) => {
+  const d = new Date(sec * 1000)
+  return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function PodFreeNote({ total, useApples }: Readonly<{ total: Summary['total']; useApples: boolean }>) {
+  const { t } = useTranslation('bond')
+  if (total.freeRuns === 0 || total.freeEndsAt === null) return null
+  const params = { count: total.freeRuns, until: formatEndsAt(total.freeEndsAt) }
+  return (
+    <p className="text-[11px]" style={{ color: 'var(--text3)' }} data-testid="bond-pod-free-note">
+      {useApples
+        ? t('pod-free-note-apples', 'ポッド無料期間中の{{count}}周をすべて0個と数えています（{{until}}まで）', params)
+        : t('pod-free-note', 'ポッド無料期間に自然回復で回せる{{count}}周を0個と数えています（{{until}}まで）', params)}
+    </p>
+  )
+}
+
 function GoalSummary({ total }: Readonly<{ total: Summary['total'] }>) {
   const { t } = useTranslation('bond')
   const { days, bottleneck } = timeToGoal(total)
@@ -179,15 +199,18 @@ export function BondEstimateTable({
   cards,
   questsById,
   plannedLaps,
+  useApples,
 }: Readonly<{
   summary: Summary
   cards: readonly BondCard[]
   questsById: ReadonlyMap<string, Quest>
   plannedLaps: ReadonlyMap<string, number>
+  useApples: boolean
 }>) {
   return (
     <div className="flex flex-col gap-4">
       <GoalSummary total={summary.total} />
+      <PodFreeNote total={summary.total} useApples={useApples} />
       <div className="flex flex-col gap-2">
         {cards.map(({ servant, estimate }) => (
           <ServantProgress

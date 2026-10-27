@@ -715,6 +715,8 @@
     "plan-option": "周回予定 {{count}}周",
     "plan-over": "予定超過",
     "plan-split": "予定内 {{inPlan}}周(絆{{bond}}) / 予定超過 {{over}}周",
+    "pod-free-note": "ポッド無料期間に自然回復で回せる{{count}}周を0個と数えています（{{until}}まで）",
+    "pod-free-note-apples": "ポッド無料期間中の{{count}}周をすべて0個と数えています（{{until}}まで）",
     "pods-count": "{{count}}個",
     "progress-unavailable": "入力を確認してください",
     "quest": "周回クエスト",
@@ -742,6 +744,7 @@
     "teapot-stock": "ティーポット所持数",
     "title": "絆トラッカー",
     "total": "合計",
-    "unconfirmed-class": "※対象クラス未確認"
+    "unconfirmed-class": "※対象クラス未確認",
+    "use-apples": "りんご・石を使う"
   }
 }

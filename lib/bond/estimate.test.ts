@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bondIncrement, bondPerRun, estimateRuns, groupByQuest, remainingBond } from './estimate'
+import { podFreeEndsAtByQuest } from './pod-free'
+import { timeToGoal } from './progress'
 
 // アルトリア・ペンドラゴンの実データ(Lv15→16 が 5,000,000)
 const GROWTH = [
@@ -113,11 +115,11 @@ describe('groupByQuest', () => {
       { questId: 'broken', area: '冠位研鑽戦', effectiveAp: 40, runs: null },
     ])
     expect(result.groups).toEqual([
-      { questId: 'grand', runs: 150, ap: 6000, pods: 150, servantCount: 2 },
-      { questId: 'ordeal', runs: 800, ap: 32000, pods: 800, servantCount: 1 },
-      { questId: 'daily', runs: 10, ap: 400, pods: 0, servantCount: 1 },
+      { questId: 'grand', runs: 150, ap: 6000, pods: 150, freeRuns: 0, freeEndsAt: null, servantCount: 2 },
+      { questId: 'ordeal', runs: 800, ap: 32000, pods: 800, freeRuns: 0, freeEndsAt: null, servantCount: 1 },
+      { questId: 'daily', runs: 10, ap: 400, pods: 0, freeRuns: 0, freeEndsAt: null, servantCount: 1 },
     ])
-    expect(result.total).toEqual({ runs: 960, ap: 38400, pods: 950 })
+    expect(result.total).toEqual({ runs: 960, ap: 38400, pods: 950, freeRuns: 0, freeEndsAt: null })
   })
 
   it('keeps the max regardless of order', () => {
@@ -131,7 +133,93 @@ describe('groupByQuest', () => {
   it('returns empty totals when every entry has an error', () => {
     expect(groupByQuest([{ questId: 'q', area: 'a', effectiveAp: 20, runs: null }])).toEqual({
       groups: [],
-      total: { runs: 0, ap: 0, pods: 0 },
+      total: { runs: 0, ap: 0, pods: 0, freeRuns: 0, freeEndsAt: null },
     })
+  })
+})
+
+describe('groupByQuest during a pod-free period', () => {
+  const DAY = 24 * 60 * 60
+  const NOW = 1_800_000_000
+  const grand = (runs: number) => ({ questId: 'grand', area: '冠位研鑽戦', effectiveAp: 40, runs })
+  const ordeal = (runs: number) => ({ questId: 'ordeal', area: 'オーディール・コール', effectiveAp: 40, runs })
+  const context = (ends: Record<string, number>, useApples = false) => ({
+    podFreeEndsAt: new Map(Object.entries(ends).map(([id, days]) => [id, NOW + days * DAY])),
+    nowSec: NOW,
+    useApples,
+  })
+  const pods = (result: ReturnType<typeof groupByQuest>) => result.groups.map(group => group.pods)
+
+  it('is unchanged with an empty input', () => {
+    const estimates = [grand(150), ordeal(800)]
+    expect(groupByQuest(estimates, context({}))).toEqual(groupByQuest(estimates))
+  })
+
+  it('splits the AP of a shared period and records the counted runs', () => {
+    const result = groupByQuest([grand(150), ordeal(50)], context({ grand: 10, ordeal: 10 }))
+    expect(pods(result)).toEqual([96, 32])
+    expect(result.groups.map(group => group.freeRuns)).toEqual([54, 18])
+    expect(result.total).toEqual({ runs: 200, ap: 8000, pods: 128, freeRuns: 72, freeEndsAt: NOW + 10 * DAY })
+  })
+
+  it('gives the earlier period its AP first', () => {
+    const result = groupByQuest([grand(100), ordeal(100)], context({ grand: 2, ordeal: 10 }))
+    expect(pods(result)).toEqual([86, 43])
+  })
+
+  it('carries unused AP of the earlier period over', () => {
+    const result = groupByQuest([grand(10), ordeal(100)], context({ grand: 2, ordeal: 10 }))
+    expect(pods(result)).toEqual([0, 38])
+    expect(result.total.freeEndsAt).toBe(NOW + 10 * DAY)
+  })
+
+  it('uses the later period when a quest is in two periods', () => {
+    const podFreeEndsAt = podFreeEndsAtByQuest(
+      [
+        { id: 1, name: 'a', startedAt: NOW - DAY, endedAt: NOW + DAY, questIds: ['grand'] },
+        { id: 2, name: 'b', startedAt: NOW - DAY, endedAt: NOW + 3 * DAY, questIds: ['grand'] },
+      ],
+      NOW,
+    )
+    const result = groupByQuest([grand(100)], { podFreeEndsAt, nowSec: NOW, useApples: false })
+    expect(result.groups[0]).toMatchObject({ freeRuns: 21, pods: 79, freeEndsAt: NOW + 3 * DAY })
+  })
+
+  it('does not count quests that consume no pods', () => {
+    const daily = { questId: 'daily', area: '修練場（月）', effectiveAp: 40, runs: 10 }
+    const result = groupByQuest([daily, grand(150)], context({ daily: 1, grand: 1 }))
+    expect(result.groups[0]).toMatchObject({ pods: 0, freeRuns: 0, freeEndsAt: null })
+    // 修練場が AP を取らないので、冠位研鑽戦が1日分の288APをすべて使う
+    expect(result.groups[1]).toMatchObject({ freeRuns: 7, pods: 143 })
+    expect(result.total).toMatchObject({ freeRuns: 7, freeEndsAt: NOW + DAY })
+  })
+
+  it('counts every run of a 0 AP quest free without NaN', () => {
+    const result = groupByQuest(
+      [{ questId: 'free', area: '冠位研鑽戦', effectiveAp: 0, runs: 30 }, grand(150), ordeal(50)],
+      context({ free: 10, grand: 10, ordeal: 10 }),
+    )
+    expect(pods(result)).toEqual([0, 96, 32])
+  })
+
+  it('counts all runs free without splitting when using apples', () => {
+    const result = groupByQuest([grand(150), ordeal(50)], context({ grand: 10, ordeal: 10 }, true))
+    expect(result.total).toMatchObject({ pods: 0, freeRuns: 200, ap: 8000 })
+  })
+
+  it('keeps one pod per run outside the period when using apples', () => {
+    const result = groupByQuest([grand(150), ordeal(50)], context({ grand: 1 }, true))
+    expect(pods(result)).toEqual([0, 50])
+  })
+
+  it('treats a zero total as the AP bottleneck in time to goal', () => {
+    const { total } = groupByQuest([grand(12)], context({ grand: 5 }))
+    expect(total.pods).toBe(0)
+    expect(timeToGoal(total)).toEqual({ days: 2, bottleneck: 'ap' })
+  })
+
+  it('passes the pods left after free runs to time to goal', () => {
+    const { total } = groupByQuest([grand(150), ordeal(50)], context({ grand: 10, ordeal: 10 }))
+    expect(timeToGoal(total)).toEqual(timeToGoal({ ap: 8000, pods: 128 }))
   })
 })
