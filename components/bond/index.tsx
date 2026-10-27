@@ -30,17 +30,17 @@ function TeapotSettings({
   const { t } = useTranslation('bond')
   return (
     <div className="c-card flex flex-col gap-2 p-3 text-sm">
-      <label className="flex items-center justify-between gap-3">
-        <span>{t('teapot-enabled', 'ティーポットを使う')}</span>
+      <label className="flex w-fit items-center gap-3">
         <Switch
           checked={teapot.enabled}
           onCheckedChange={enabled => onChange({ enabled })}
           aria-label={t('teapot-enabled', 'ティーポットを使う')}
         />
+        <span>{t('teapot-enabled', 'ティーポットを使う')}</span>
       </label>
       {teapot.enabled && (
         <>
-          <label className="flex items-center justify-between gap-3" htmlFor="bond-teapot-stock">
+          <label className="flex w-fit items-center gap-3" htmlFor="bond-teapot-stock">
             <span>{t('teapot-stock', 'ティーポット所持数')}</span>
             <Input
               id="bond-teapot-stock"
@@ -57,13 +57,13 @@ function TeapotSettings({
           </p>
         </>
       )}
-      <label className="flex items-center justify-between gap-3">
-        <span>{t('use-apples', 'りんご・石を使う')}</span>
+      <label className="flex w-fit items-center gap-3">
         <Switch
           checked={useApples}
           onCheckedChange={onUseApplesChange}
           aria-label={t('use-apples', 'りんご・石を使う')}
         />
+        <span>{t('use-apples', 'りんご・石を使う')}</span>
       </label>
     </div>
   )
