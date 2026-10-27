@@ -551,6 +551,19 @@ describe('EventHubClient', () => {
       expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
     })
 
+    it.each([null, [94100], 'broken'])('保存した要る・要らないが壊れていても（%j）落ちず、全品目を「不要」として出す', stored => {
+      setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, stored)
+      renderShop()
+      expect(within(toggleOf('素材94100')).getByRole('radio', { name: '不要' })).toBeChecked()
+      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
+    })
+
+    it.each([null, [25, 40], 'broken'])('保存した実所持数が壊れていても（%j）落ちず、所持 0 として出す', stored => {
+      setLs(STORAGE_KEYS.POSSESSION, stored)
+      renderShop()
+      expect(within(cellOf('素材6516')).getByText('あと 30 個')).toBeInTheDocument()
+    })
+
     it('選んだことの無い端末では、開いただけで要る・要らないの保存を作らない', () => {
       renderShop()
       expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()

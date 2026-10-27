@@ -145,6 +145,16 @@ describe('EventCraftSection', () => {
     expect(advisorProps.at(-1)).toEqual({ items, fullNeed: { '01': 7, '02': 5 }, stockEnabled: false })
   })
 
+  it.each([null, [3, 0], 'broken'])('保存した実所持数が壊れていても（%j）落ちず、所持 0 として扱う', async (stored) => {
+    rosterMock = ready({ 6516: 10, 6517: 5 })
+    setLs(STORAGE_KEYS.POSSESSION, stored)
+    stubDrops(baseDrops)
+    render(<EventCraftSection items={items} />)
+    await screen.findByTestId('advisor')
+    expect(advisorProps.at(-1)).toEqual({ items, fullNeed: { '01': 10, '02': 5 }, stockEnabled: false })
+    expect(localStorage.getItem(STORAGE_KEYS.POSSESSION)).toBe(JSON.stringify(stored))
+  })
+
   it('(b) 正の need 素材のドロップ率欠落で Advisor を出さず、名前と欠け方を出す', async () => {
     rosterMock = ready({ 6516: 10, 6517: 5 })
     stubDrops({ ...baseDrops, drop_rates: [baseDrops.drop_rates[0]] })
