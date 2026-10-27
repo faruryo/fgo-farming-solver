@@ -131,8 +131,9 @@ export interface EventFarmingNode {
    * 1周あたり期待ドロップ数。
    * Atlas ドロップデータ（dropCount / runs * num）から算出。
    * 新規イベント序盤は空配列（手入力フォールバック用）。
+   * countPerRun は1周あたりのドロップ回数（dropCount / runs）。取り込み直す前のデータには無い。
    */
-  drops: { itemId: number; perRun: number; name?: string; icon?: string }[]
+  drops: { itemId: number; perRun: number; countPerRun?: number; name?: string; icon?: string }[]
 }
 
 /**

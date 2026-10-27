@@ -20,6 +20,7 @@ import {
   computeRosterImpact,
   planShopCurrencies,
   splitUnfarmable,
+  applyDropBonus,
 } from './event-plan'
 import eventsJson from '../mocks/events.json'
 
@@ -591,5 +592,69 @@ describe('splitUnfarmable', () => {
     })
     expect(split.unfarmable).toEqual([2])
     expect(split.result?.items.map((i) => i.id)).toEqual(['1'])
+  })
+})
+
+describe('applyDropBonus', () => {
+  const A = 9001
+  const B = 9002
+  const bonusEvent: EventPlannerEvent = {
+    ...mockEvent,
+    id: 99998,
+    lotteries: [],
+    shop: [],
+    farmingNodes: [
+      {
+        questId: 1,
+        name: 'A×2',
+        ap: 40,
+        drops: [
+          { itemId: A, perRun: 15, countPerRun: 5 },
+          { itemId: A, perRun: 3, countPerRun: 1 },
+          { itemId: B, perRun: 10, countPerRun: 2 },
+        ],
+      },
+      { questId: 2, name: 'old', ap: 40, drops: [{ itemId: B, perRun: 8 }] },
+    ],
+  }
+  const perRuns = (event: EventPlannerEvent) =>
+    event.farmingNodes.map((n) => n.drops.map((d) => d.perRun))
+
+  it('perRun + 回数 × N にし、同じクエストの同じ品目のドロップそれぞれに足す', () => {
+    const { event, unapplied } = applyDropBonus(bonusEvent, new Map([[A, 2]]))
+    expect(perRuns(event)).toEqual([[25, 5, 10], [8]])
+    expect(unapplied).toEqual([])
+  })
+
+  it('回数を持たないドロップは素の値のままで、その品目を反映できなかった品目として返す', () => {
+    const { event, unapplied } = applyDropBonus(bonusEvent, new Map([[A, 0], [B, 1]]))
+    expect(perRuns(event)).toEqual([[15, 3, 12], [8]])
+    expect(unapplied).toEqual([B])
+  })
+
+  it('ボーナスが0の品目は反映できなかった品目に入らない', () => {
+    const { unapplied } = applyDropBonus(bonusEvent, new Map([[A, 1], [B, 0]]))
+    expect(unapplied).toEqual([])
+  })
+
+  it('ボーナスが空か全部0なら入ったイベントをそのまま返し、周回の計算も同じになる', () => {
+    const need = new Map([[A, 300], [B, 100]])
+    for (const bonus of [new Map<number, number>(), new Map([[A, 0], [B, 0]])]) {
+      const { event, unapplied } = applyDropBonus(bonusEvent, bonus)
+      expect(event).toBe(bonusEvent)
+      expect(unapplied).toEqual([])
+      expect(planShopCurrencies(event, need)).toEqual(planShopCurrencies(bonusEvent, need))
+    }
+  })
+
+  it('ボーナス込みの1周の獲得量で周回数を求める', () => {
+    const single: EventPlannerEvent = {
+      ...bonusEvent,
+      farmingNodes: [{ questId: 1, name: 'A', ap: 40, drops: [{ itemId: A, perRun: 10, countPerRun: 5 }] }],
+    }
+    const plan = planShopCurrencies(applyDropBonus(single, new Map([[A, 2]])).event, new Map([[A, 300]]))
+    if (plan.status !== 'planned' || !plan.result) throw new Error('no farming plan')
+    expect(plan.result.quests.map((q) => q.lap)).toEqual([15])
+    expect(plan.result.items.find((i) => i.id === String(A))?.count).toBeGreaterThanOrEqual(300)
   })
 })

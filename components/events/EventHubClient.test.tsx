@@ -150,7 +150,7 @@ describe('EventHubClient', () => {
     expect(screen.getByText('15 周')).toBeInTheDocument()
     expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
     expect(screen.getByText('武蔵うどん: 見込み 150（必要量 150）')).toBeInTheDocument()
-    expect(screen.getByText('ドロップはイベントのボーナス（礼装・サーヴァント）を含まない統計値です。')).toBeInTheDocument()
+    expect(screen.getByText('ドロップはイベントのボーナス（ドロップ増加礼装）を含まない統計値です。')).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('武蔵うどん の所持数'), { target: { value: '1000' } })
     expect(screen.getByText('必要量 0')).toBeInTheDocument()
@@ -653,6 +653,121 @@ describe('EventHubClient', () => {
       expect(within(cellOf('素材6519')).getByText('あと 15 個')).toBeInTheDocument()
       fireEvent.click(shortfallButton())
       expect(localStorage.getItem(STORAGE_KEYS.POSSESSION)).toBe(before)
+    })
+  })
+
+  describe('ドロップ増加礼装のボーナス', () => {
+    const UDON = 94001
+    const MUSUBI = 94002
+    const DANGO = 94003
+    const POINT = 94099
+    const bonusEvent = (withCount = true) =>
+      event({
+        shop: [
+          shopEntry(1, UDON, { costName: '武蔵うどん', costAmount: 30, limitNum: 10 }),
+          shopEntry(2, MUSUBI, { costName: '江戸むすび' }),
+          shopEntry(3, DANGO, { costName: '吉備団子' }),
+        ],
+        farmingNodes: [
+          {
+            questId: 1,
+            name: '上級',
+            ap: 40,
+            drops: [
+              { itemId: UDON, perRun: 10, ...(withCount ? { countPerRun: 5 } : {}) },
+              { itemId: POINT, perRun: 600, ...(withCount ? { countPerRun: 3 } : {}), name: 'うどんポイント' },
+            ],
+          },
+          { questId: 2, name: '素材', ap: 20, drops: [{ itemId: 6001, perRun: 1, countPerRun: 1 }] },
+        ],
+      })
+    const renderShop = (shopEvent: EventPlannerEvent, pointItemId?: number) =>
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} pointItemId={pointItemId} />)
+    const bonusInput = (name: string) => screen.getByLabelText(`${name} のドロップボーナス`)
+    const bonusCard = () =>
+      screen.getByRole('heading', { name: 'ドロップ増加礼装' }).closest('div.rounded-md') as HTMLElement
+    const perRunCells = () =>
+      Array.from(screen.getByTestId('shop-per-run').querySelectorAll('tbody tr')).map(row =>
+        Array.from(row.querySelectorAll('td')).map(td => td.textContent),
+      )
+    const needUdon = (value: string) =>
+      fireEvent.change(screen.getByLabelText('素材1 の交換回数'), { target: { value } })
+    const NOTE = 'ドロップはイベントのボーナス（ドロップ増加礼装）を含まない統計値です。'
+
+    it('ポイントの品目があるときは通貨とポイントの欄が初期値 0 で出る', () => {
+      renderShop(bonusEvent(), POINT)
+      for (const name of ['武蔵うどん', '江戸むすび', '吉備団子', 'うどんポイント']) {
+        expect(bonusInput(name)).toHaveValue(0)
+      }
+    })
+
+    it('ポイントの品目が無いときは通貨の欄だけが出る', () => {
+      renderShop(bonusEvent())
+      for (const name of ['武蔵うどん', '江戸むすび', '吉備団子']) expect(bonusInput(name)).toHaveValue(0)
+      expect(screen.queryByLabelText('うどんポイント のドロップボーナス')).not.toBeInTheDocument()
+    })
+
+    it('見出しと説明の1行を出し、注記と説明にサーヴァントが出ない', () => {
+      renderShop(bonusEvent(), POINT)
+      expect(
+        within(bonusCard()).getByText(
+          '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
+        ),
+      ).toBeInTheDocument()
+      needUdon('10')
+      fireEvent.change(bonusInput('武蔵うどん'), { target: { value: '2' } })
+      expect(document.body.textContent).not.toContain('サーヴァント')
+    })
+
+    it('ボーナスのカードの直下に1周の獲得量の表があり、通貨ごとのカードより上にある', () => {
+      renderShop(bonusEvent(), POINT)
+      const perRun = screen.getByTestId('shop-per-run')
+      expect(bonusCard().nextElementSibling).toBe(perRun)
+      expect(perRun.compareDocumentPosition(cardOf('武蔵うどん')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+
+    it('通貨もポイントも落ちないクエストは表に出ず、値は小数1桁', () => {
+      renderShop(bonusEvent(), POINT)
+      expect(perRunCells()).toEqual([['上級AP40', '10.0', '-', '-', '600.0']])
+    })
+
+    it('ボーナスを入れると1周の獲得量・周回数・注記が変わる', () => {
+      renderShop(bonusEvent(), POINT)
+      needUdon('10')
+      expect(screen.getByText('30 周')).toBeInTheDocument()
+      expect(screen.getByText(NOTE)).toBeInTheDocument()
+
+      fireEvent.change(bonusInput('武蔵うどん'), { target: { value: '2' } })
+      fireEvent.change(bonusInput('うどんポイント'), { target: { value: '100' } })
+
+      expect(perRunCells()).toEqual([['上級AP40', '20.0+10.0', '-', '-', '900.0+300.0']])
+      expect(screen.getByText('15 周')).toBeInTheDocument()
+      expect(
+        screen.getByText(`${NOTE}入れたドロップ増加礼装のボーナス（1ドロップにつき +N）を足して計算しています。`),
+      ).toBeInTheDocument()
+      expect(screen.queryByText(/ボーナスを反映できません/)).not.toBeInTheDocument()
+    })
+
+    it('回数を持たないドロップだけのときは反映できない旨を出し、周回の内訳は素の値のまま', () => {
+      renderShop(bonusEvent(false), POINT)
+      needUdon('10')
+      fireEvent.change(bonusInput('武蔵うどん'), { target: { value: '2' } })
+
+      expect(screen.getByText('武蔵うどん はデータの更新前のため、ボーナスを反映できません。')).toBeInTheDocument()
+      expect(perRunCells()).toEqual([['上級AP40', '10.0', '-', '-', '600.0']])
+      expect(screen.getByText('30 周')).toBeInTheDocument()
+    })
+
+    it('-3 と 2.5 は 0 と 2 として扱う', () => {
+      renderShop(bonusEvent(), POINT)
+      needUdon('10')
+      fireEvent.change(bonusInput('武蔵うどん'), { target: { value: '-3' } })
+      expect(bonusInput('武蔵うどん')).toHaveValue(0)
+      expect(screen.getByText('30 周')).toBeInTheDocument()
+
+      fireEvent.change(bonusInput('武蔵うどん'), { target: { value: '2.5' } })
+      expect(bonusInput('武蔵うどん')).toHaveValue(2)
+      expect(screen.getByText('15 周')).toBeInTheDocument()
     })
   })
 })
