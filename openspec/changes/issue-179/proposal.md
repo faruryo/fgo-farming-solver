@@ -28,4 +28,5 @@ Atlas はこれらの交換を `purchaseType: servant`（サーヴァント扱�
 - `lib/refresh-event-data-compact.ts`（`compactShop`）と `scripts/refresh-event-data.ts`: サーヴァント扱いの交換の取り込み、対象のサーヴァント／礼装の名前・レア度・アイコンの取得
 - `lib/master-data/types.ts`（`EventShopItem`）: 品目の種類を表す任意のフィールドを足す。古い KV データ（フィールドが無い）はアイテムの品目として読む
 - `lib/event-shop-summary.ts`・`components/events/EventShopList.tsx`: サーヴァント扱いの品目の表示と、計画の対象外の判定、必要／不要の保存のキー
+- `lib/event-plan.ts`・`components/events/EventPlannerClient.tsx`（ボックス計画）: サーヴァント扱いの品目を、素材の需要との突き合わせと直接指定の候補から除く
 - KV の `event_data_json` の形が変わる（後方互換の追加のみ）。既存のイベントにも並べるには、マージ後に「Refresh event_data KV cache」を手動で実行して作り直す（PR 本文の「人がやること」）
