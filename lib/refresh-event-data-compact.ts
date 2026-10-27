@@ -56,6 +56,35 @@ export function compactShop(shop: AtlasShopItem[], itemMap: ItemMap): EventShopI
     })
 }
 
+export interface AtlasDrop {
+  objectId: number
+  num: number
+  runs: number
+  dropCount: number
+}
+
+const round4 = (v: number): number => Math.round(v * 10000) / 10000
+
+/**
+ * Atlas のクエストのドロップ → EventFarmingNode['drops']。
+ * runs 0 のものと 1周あたり期待値がほぼ 0 のものは除く。
+ */
+export function compactDrops(drops: AtlasDrop[], itemMap: ItemMap): EventFarmingNode['drops'] {
+  return drops
+    .filter(d => d.runs > 0)
+    .map(d => {
+      const meta = itemMap.get(d.objectId)
+      return {
+        itemId: d.objectId,
+        perRun: round4((d.dropCount / d.runs) * d.num),
+        countPerRun: round4(d.dropCount / d.runs),
+        name: meta?.name ?? '',
+        ...(meta?.icon ? { icon: meta.icon } : {}),
+      }
+    })
+    .filter(d => d.perRun > 0.0001)
+}
+
 export type EventImportDecision =
   | { kind: 'skip'; reason: string }
   | { kind: 'lottery' }
