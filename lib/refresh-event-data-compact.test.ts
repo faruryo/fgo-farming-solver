@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { EventFarmingNode, EventRewards, EventShopItem } from './master-data/types'
 import {
   buildEventRewardsRows,
+  compactDrops,
   compactMissions,
   compactPointRewards,
   compactShop,
@@ -246,5 +247,38 @@ describe('buildEventRewardsRows', () => {
     const v80632 = JSON.parse(rows[1].value) as EventRewards
     expect(v80632.missions).toHaveLength(2)
     expect(v80632).not.toHaveProperty('pointItemId')
+  })
+})
+
+describe('compactDrops', () => {
+  it('perRun は dropCount / runs × num、countPerRun は dropCount / runs になる', () => {
+    expect(compactDrops([{ objectId: 94001, num: 3, runs: 100, dropCount: 500 }], itemMap)).toEqual([
+      { itemId: 94001, perRun: 15, countPerRun: 5, name: '武蔵うどん', icon: 'udon.png' },
+    ])
+  })
+
+  it('4桁に丸める', () => {
+    expect(compactDrops([{ objectId: 100, num: 2, runs: 3, dropCount: 1 }], itemMap)).toMatchObject([
+      { perRun: 0.6667, countPerRun: 0.3333 },
+    ])
+  })
+
+  it('runs 0 のドロップと期待値がほぼ 0 のドロップを除く', () => {
+    expect(
+      compactDrops(
+        [
+          { objectId: 100, num: 1, runs: 0, dropCount: 0 },
+          { objectId: 102, num: 1, runs: 100000, dropCount: 1 },
+          { objectId: 94001, num: 1, runs: 10, dropCount: 10 },
+        ],
+        itemMap,
+      ).map(d => d.itemId),
+    ).toEqual([94001])
+  })
+
+  it('itemMap に無い品目は名前を空にしアイコンを付けない', () => {
+    expect(compactDrops([{ objectId: 999, num: 1, runs: 1, dropCount: 1 }], itemMap)).toEqual([
+      { itemId: 999, perRun: 1, countPerRun: 1, name: '' },
+    ])
   })
 })

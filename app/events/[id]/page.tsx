@@ -1,4 +1,4 @@
-import { getEventById } from '../../../lib/get-events'
+import { getEventById, getEventRewards } from '../../../lib/get-events'
 import { getItems } from '../../../lib/get-items'
 import { getDrops } from '../../../lib/get-drops'
 import { resolveUnitPrices } from '../../../lib/progress/lap-value'
@@ -44,7 +44,9 @@ export default async function EventDetailPage({ params }: Props) {
 
   const features = featuresFor(eventId, kvEvent)
   const items = features.includes('craft') ? await getItems('ja') : undefined
-  const shopApPrices = isShopOnlyEvent(features, kvEvent) ? await loadShopApPrices(kvEvent.shop) : undefined
+  const shopOnly = isShopOnlyEvent(features, kvEvent)
+  const shopApPrices = shopOnly ? await loadShopApPrices(kvEvent.shop) : undefined
+  const pointItemId = shopOnly ? (await getEventRewards(eventId))?.pointItemId : undefined
 
   return (
     <EventHubClient
@@ -53,6 +55,7 @@ export default async function EventDetailPage({ params }: Props) {
       items={items}
       features={features}
       shopApPrices={shopApPrices}
+      pointItemId={pointItemId}
     />
   )
 }
