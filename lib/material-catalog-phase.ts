@@ -9,6 +9,7 @@ export const runMaterialCatalogPhase = async ({
   fetchSource = fetch,
   servantUrl,
   itemUrl,
+  equipUrl,
   eventUrl,
   now = Date.now,
   logger = console,
@@ -18,6 +19,7 @@ export const runMaterialCatalogPhase = async ({
   fetchSource?: typeof fetch
   servantUrl: string
   itemUrl: string
+  equipUrl: string
   eventUrl?: string
   now?: () => number
   logger?: Logger
@@ -29,6 +31,7 @@ export const runMaterialCatalogPhase = async ({
       previous,
       servantUrl,
       itemUrl,
+      equipUrl,
       eventUrl,
       now,
       fetchSource: async (url, validator) => {
