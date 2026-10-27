@@ -79,3 +79,52 @@ describe('estimateEntry', () => {
     expect(run({ questId: 'saber-only', measuredQuestId: 'grand' }).entry.questId).toBe('grand')
   })
 })
+
+describe('estimateEntry during a pod-free period', () => {
+  const DAY = 24 * 60 * 60
+  const NOW = 1_800_000_000
+  // 残り絆 12 × 5,000 を 1周 5,000 で回すと12周
+  const entry = { questId: 'grand', measuredQuestId: 'grand', remainingToNext: 60000, observedPerRun: 5000 }
+  const runWith = (days: number | null, useApples = false, overrides: Partial<BondTrackerEntry> = entry) =>
+    estimateEntry({
+      entry: { ...ENTRY, ...overrides },
+      growth: GROWTH,
+      candidates,
+      questsById,
+      teapotStock: null,
+      podFree: {
+        podFreeEndsAt: new Map(days === null ? [] : [[overrides.questId ?? ENTRY.questId, NOW + days * DAY]]),
+        nowSec: NOW,
+        useApples,
+      },
+    }).result
+
+  it('is unchanged with an empty input', () => {
+    expect(runWith(null)).toEqual(run(entry).result)
+    expect(runWith(null)).toMatchObject({ pods: 12, consumesPod: true })
+  })
+
+  it.each([
+    ['5 days left', 5, 0],
+    ['1 day left', 1, 5],
+  ])('counts natural AP runs free: %s', (_label, days, pods) => {
+    expect(runWith(days)).toMatchObject({ runs: { runs: 12 }, ap: 480, pods, consumesPod: true })
+  })
+
+  it('counts every run free when using apples without changing AP', () => {
+    expect(runWith(1, true)).toMatchObject({ runs: { runs: 12 }, ap: 480, pods: 0, consumesPod: true })
+  })
+
+  it('reports quests that consume no pods', () => {
+    const quests: Quest[] = [{ id: 'daily', section: 'Free', area: '修練場（月）', name: '初級', ap: 40, bondPoints: 1000 }]
+    expect(
+      estimateEntry({
+        entry: { ...ENTRY, questId: 'daily', measuredQuestId: 'daily' },
+        growth: GROWTH,
+        candidates: bondQuestCandidates(quests, [], 'caster'),
+        questsById: new Map(quests.map(q => [q.id, q])),
+        teapotStock: null,
+      }).result,
+    ).toMatchObject({ pods: 0, consumesPod: false })
+  })
+})

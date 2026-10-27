@@ -786,6 +786,8 @@
     "plan-option": "Planned {{count}} runs",
     "plan-over": "Over plan",
     "plan-split": "Within plan {{inPlan}} runs ({{bond}} bond) / over plan {{over}} runs",
+    "pod-free-note": "{{count}} runs you can do with natural AP recovery during the pod-free period are counted as 0 pods (until {{until}})",
+    "pod-free-note-apples": "All {{count}} runs during the pod-free period are counted as 0 pods (until {{until}})",
     "pods-count": "{{count}}",
     "progress-unavailable": "Check the inputs",
     "quest": "Farming quest",
@@ -813,6 +815,7 @@
     "teapot-stock": "Teapots owned",
     "title": "Bond Tracker",
     "total": "Total",
-    "unconfirmed-class": "* class restriction unconfirmed"
+    "unconfirmed-class": "* class restriction unconfirmed",
+    "use-apples": "Use apples / Saint Quartz"
   }
 }

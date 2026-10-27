@@ -8,6 +8,7 @@ import {
   type BondPerRunBasis,
   type RunEstimate,
 } from './estimate'
+import { podFreeRuns, type PodFreeContext } from './pod-free'
 import type { BondQuestCandidate } from './quest-candidates'
 import { reconcileEntry, type BondTrackerEntry } from './state'
 
@@ -24,6 +25,7 @@ export type EntryEstimate = {
     runs: RunEstimate
     ap: number
     pods: number
+    consumesPod: boolean
   } | null
 }
 
@@ -33,12 +35,15 @@ export const estimateEntry = ({
   candidates,
   questsById,
   teapotStock,
+  podFree,
 }: {
   entry: BondTrackerEntry
   growth: readonly number[] | undefined
   candidates: readonly BondQuestCandidate[]
   questsById: ReadonlyMap<string, Quest>
   teapotStock: number | null
+  /** 省略時は期間外として扱う。サーヴァント単独で回す前提で、他のクエストとは分け合わない。 */
+  podFree?: PodFreeContext
 }): EntryEstimate => {
   const { entry } = reconcileEntry(savedEntry, candidates, new Set(questsById.keys()))
   const candidate = candidates.find(c => c.quest.id === entry.questId)
@@ -56,6 +61,17 @@ export const estimateEntry = ({
   if (!perRun.ok) errors.push(perRun.error)
   if (!remaining.ok || !perRun.ok || !candidate) return { entry, candidate, errors, result: null }
   const runs = estimateRuns(remaining.remaining, perRun.perRun, teapotStock)
+  const consumesPod = questConsumesPod(candidate.quest.area)
+  const endsAt = podFree?.podFreeEndsAt.get(candidate.quest.id)
+  const freeRuns =
+    podFree && endsAt !== undefined
+      ? podFreeRuns({
+          remainingSec: endsAt - podFree.nowSec,
+          effectiveAp: candidate.effectiveAp,
+          runs: runs.runs,
+          useApples: podFree.useApples,
+        })
+      : 0
   return {
     entry,
     candidate,
@@ -68,7 +84,8 @@ export const estimateEntry = ({
       measuredQuest,
       runs,
       ap: runs.runs * candidate.effectiveAp,
-      pods: questConsumesPod(candidate.quest.area) ? runs.runs : 0,
+      pods: consumesPod ? runs.runs - freeRuns : 0,
+      consumesPod,
     },
   }
 }
