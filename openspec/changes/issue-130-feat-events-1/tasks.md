@@ -2,11 +2,11 @@
 
 ## 1. データ
 
-- [ ] 1.1 `lib/master-data/types.ts` の `EventFarmingNode` のドロップに、1周あたりのドロップ回数の任意の項目を足し、`scripts/refresh-event-data.ts` のドロップの取り込みで `dropCount / runs` を4桁に丸めて書く（design の決定 1。`perRun` の式と丸めは変えない）。今の変換は fetch と同じループの中にあるので、Atlas のドロップの配列から取り込むドロップの配列を返す純粋関数として `lib/refresh-event-data-compact.ts` に出し、`scripts/refresh-event-data.ts` から呼ぶ。`lib/refresh-event-data-compact.test.ts` に、runs 100・dropCount 500・num 3 で `perRun` 15・回数 5 になること、runs 0 のドロップを除く既存の振る舞いが変わらないことをユニットテストにする
+- [x] 1.1 `lib/master-data/types.ts` の `EventFarmingNode` のドロップに、1周あたりのドロップ回数の任意の項目を足し、`scripts/refresh-event-data.ts` のドロップの取り込みで `dropCount / runs` を4桁に丸めて書く（design の決定 1。`perRun` の式と丸めは変えない）。今の変換は fetch と同じループの中にあるので、Atlas のドロップの配列から取り込むドロップの配列を返す純粋関数として `lib/refresh-event-data-compact.ts` に出し、`scripts/refresh-event-data.ts` から呼ぶ。`lib/refresh-event-data-compact.test.ts` に、runs 100・dropCount 500・num 3 で `perRun` 15・回数 5 になること、runs 0 のドロップを除く既存の振る舞いが変わらないことをユニットテストにする
 
 ## 2. 計算
 
-- [ ] 2.1 `lib/event-plan.ts` に、イベントとボーナス（品目 ID → N）から、ドロップごとの1周の獲得量を `perRun + 回数 × N` に置き換えたイベントと、回数を持たずボーナスを反映できなかった品目の ID を返す純粋関数を足す（design の決定 2。`buildEventDrops`・`runEventSolver`・`planShopCurrencies` の中は変えない）。`lib/event-plan.test.ts` に次を確かめるテストを足す
+- [x] 2.1 `lib/event-plan.ts` に、イベントとボーナス（品目 ID → N）から、ドロップごとの1周の獲得量を `perRun + 回数 × N` に置き換えたイベントと、回数を持たずボーナスを反映できなかった品目の ID を返す純粋関数を足す（design の決定 2。`buildEventDrops`・`runEventSolver`・`planShopCurrencies` の中は変えない）。`lib/event-plan.test.ts` に次を確かめるテストを足す
   - 素の 15.0・回数 5.0・N 2 で 25.0 になる。同じクエストに同じ品目のドロップが2つあるときは両方に足す
   - 回数を持たないドロップは素の値のままで、その品目が反映できなかった品目に入る。ボーナスが0の品目は入らない
   - ボーナスが空か全部0のとき、`planShopCurrencies` の結果がボーナスを通さないときと同じになる
@@ -14,7 +14,7 @@
 
 ## 3. 画面
 
-- [ ] 3.1 `app/events/[id]/page.tsx` で、ロトの無い交換所イベントのときだけ `getEventRewards` の `pointItemId` を読み、`EventHubClient` を通して `EventShopList` に渡す（design の決定 3）。`components/events/EventShopList.tsx` に、ボーナスの入力のカード（通貨ごととポイントの品目、0 以上の整数に直す）、クエストごとのボーナス込みの1周の獲得量の表、注記の切り替え、反映できない品目の表示を足し、交換所の周回計算に 2.1 の関数を通したイベントを渡す（design の決定 2・4）。入力は保存しない。`components/events/EventHubClient.test.tsx` に次を足す
+- [x] 3.1 `app/events/[id]/page.tsx` で、ロトの無い交換所イベントのときだけ `getEventRewards` の `pointItemId` を読み、`EventHubClient` を通して `EventShopList` に渡す（design の決定 3）。`components/events/EventShopList.tsx` に、ボーナスの入力のカード（通貨ごととポイントの品目、0 以上の整数に直す）、クエストごとのボーナス込みの1周の獲得量の表、注記の切り替え、反映できない品目の表示を足し、交換所の周回計算に 2.1 の関数を通したイベントを渡す（design の決定 2・4）。入力は保存しない。`components/events/EventHubClient.test.tsx` に次を足す
   - ポイントの品目があるときは通貨とポイントの欄が、無いときは通貨の欄だけが、初期値 0 で出る
   - ボーナスを入れると1周の獲得量の表の値と、周回の内訳の周回数が変わり、注記がボーナスを含む旨に変わる
   - 回数を持たないドロップだけのイベントでボーナスを入れると、反映できない旨が出て、周回の内訳が素の値のままである
