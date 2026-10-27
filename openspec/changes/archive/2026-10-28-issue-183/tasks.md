@@ -24,9 +24,9 @@
 
 ## 5. 全体の確認
 
-- [ ] 5.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run` が通ることを確かめる <!-- verify-only -->
-- [ ] 5.2 Atlas の実データの `nice_equip.json` と `nice_servant.json` で蒸留した結果が design.md の実測(イベント限定を除いて59件、8通りの効果とコスト、★5のコスト16)と合うことを確かめる <!-- verify-only -->
-- [ ] 5.3 KV のない `pnpm dev`(ローカルで Atlas の実データからカタログを作る経路)で `/bond` を開き、礼装の提案タブで spec のシナリオどおりに表示されることを、verify skill の手順でブラウザから確かめる <!-- verify-only -->
+- [x] 5.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run` が通ることを確かめる <!-- verify-only -->
+- [x] 5.2 Atlas の実データの `nice_equip.json` と `nice_servant.json` で蒸留した結果が design.md の実測(イベント限定を除いて59件、8通りの効果とコスト、★5のコスト16)と合うことを確かめる <!-- verify-only -->
+- [x] 5.3 KV のない `pnpm dev`(ローカルで Atlas の実データからカタログを作る経路)で `/bond` を開き、礼装の提案タブで spec のシナリオどおりに表示されることを、verify skill の手順でブラウザから確かめる <!-- verify-only -->
 
 
 ## Auditor Feedback
