@@ -23,6 +23,10 @@ vi.mock('../../hooks/use-active-campaigns', () => ({
   useActiveCampaigns: () => ({ activeCampaigns: [], digest: '', nowSec: 0 }),
 }))
 
+vi.mock('../../hooks/use-dashboard-meta', () => ({
+  useDashboardMeta: () => ({ data: null, isLoading: false, error: null }),
+}))
+
 vi.mock('../../hooks/use-local-storage', () => ({
   useLocalStorage: (_key: string, initial: unknown) => [initial, vi.fn()],
 }))

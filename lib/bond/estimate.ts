@@ -1,4 +1,5 @@
 import { questConsumesPod } from '../quest-consumes-pod'
+import { allocatePodFreeRuns, type PodFreeContext } from './pod-free'
 
 export const MAX_CURRENT_BOND_LEVEL = 15
 export const MAX_TARGET_BOND_LEVEL = 16
@@ -122,13 +123,22 @@ export type QuestRunGroup = {
   runs: number
   ap: number
   pods: number
+  /** ストームポッド消費なし期間に無料と数えた周回数。 */
+  freeRuns: number
+  /** 無料と数えた周回がある期間の終わり(秒)。無ければ null。 */
+  freeEndsAt: number | null
   servantCount: number
 }
+
+export type QuestRunTotal = Pick<QuestRunGroup, 'runs' | 'ap' | 'pods' | 'freeRuns' | 'freeEndsAt'>
+
+const NO_POD_FREE: PodFreeContext = { podFreeEndsAt: new Map(), nowSec: 0, useApples: false }
 
 /** 同じクエストの騎は同じ編成で回す前提で、周回数は所属騎の最大値にする。 */
 export const groupByQuest = (
   estimates: readonly QuestRunInput[],
-): { groups: QuestRunGroup[]; total: { runs: number; ap: number; pods: number } } => {
+  { podFreeEndsAt, nowSec, useApples }: PodFreeContext = NO_POD_FREE,
+): { groups: QuestRunGroup[]; total: QuestRunTotal } => {
   const byQuest = new Map<string, QuestRunInput & { runs: number; servantCount: number }>()
   for (const estimate of estimates) {
     if (estimate.runs === null) continue
@@ -139,16 +149,38 @@ export const groupByQuest = (
       servantCount: (current?.servantCount ?? 0) + 1,
     })
   }
-  const groups = [...byQuest.values()].map(({ questId, area, effectiveAp, runs, servantCount }) => ({
-    questId,
-    runs,
-    ap: runs * effectiveAp,
-    pods: questConsumesPod(area) ? runs : 0,
-    servantCount,
-  }))
-  const total = groups.reduce(
-    (sum, group) => ({ runs: sum.runs + group.runs, ap: sum.ap + group.ap, pods: sum.pods + group.pods }),
-    { runs: 0, ap: 0, pods: 0 },
+  const quests = [...byQuest.values()]
+  const freeRunsByQuest = allocatePodFreeRuns(
+    quests.flatMap(({ questId, area, effectiveAp, runs }) => {
+      const endsAt = podFreeEndsAt.get(questId)
+      return endsAt !== undefined && questConsumesPod(area)
+        ? [{ questId, remainingSec: endsAt - nowSec, effectiveAp, runs }]
+        : []
+    }),
+    useApples,
+  )
+  const groups = quests.map(({ questId, area, effectiveAp, runs, servantCount }) => {
+    const freeRuns = freeRunsByQuest.get(questId) ?? 0
+    return {
+      questId,
+      runs,
+      ap: runs * effectiveAp,
+      pods: questConsumesPod(area) ? runs - freeRuns : 0,
+      freeRuns,
+      freeEndsAt: freeRuns > 0 ? (podFreeEndsAt.get(questId) as number) : null,
+      servantCount,
+    }
+  })
+  const total = groups.reduce<QuestRunTotal>(
+    (sum, group) => ({
+      runs: sum.runs + group.runs,
+      ap: sum.ap + group.ap,
+      pods: sum.pods + group.pods,
+      freeRuns: sum.freeRuns + group.freeRuns,
+      freeEndsAt:
+        group.freeEndsAt === null ? sum.freeEndsAt : Math.max(sum.freeEndsAt ?? group.freeEndsAt, group.freeEndsAt),
+    }),
+    { runs: 0, ap: 0, pods: 0, freeRuns: 0, freeEndsAt: null },
   )
   return { groups, total }
 }
