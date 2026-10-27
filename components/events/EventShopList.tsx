@@ -18,7 +18,7 @@ import {
   type ShopCurrencyNeed,
   type ShopExchangeCounts,
 } from '../../lib/event-shop-summary'
-import { planShopCurrencies, type ShopCurrencyPlan } from '../../lib/event-plan'
+import { applyDropBonus, planShopCurrencies, type ShopCurrencyPlan } from '../../lib/event-plan'
 import type { Result } from '../../interfaces/api'
 import { computeApBudget } from '../../lib/ap-budget'
 import { ApBudgetBreakdown, ApBudgetInputs, useApBudgetProfile } from './ApBudget'
@@ -254,11 +254,12 @@ const PlanSummary: React.FC<{ plan: ShopCurrencyPlan }> = ({ plan }) => {
   )
 }
 
-const FarmingPlan: React.FC<{ plan: ShopCurrencyPlan; groups: ShopCurrencyGroup[]; needs: ShopCurrencyNeed[] }> = ({
-  plan,
-  groups,
-  needs,
-}) => {
+const FarmingPlan: React.FC<{
+  plan: ShopCurrencyPlan
+  groups: ShopCurrencyGroup[]
+  needs: ShopCurrencyNeed[]
+  bonusApplied: boolean
+}> = ({ plan, groups, needs, bonusApplied }) => {
   const { t } = useTranslation('events')
   const label = useCurrencyLabel()
   const nameOf = (id: number) => label(groups.find(g => g.costItemId === id) ?? { costItemId: id })
@@ -284,18 +285,21 @@ const FarmingPlan: React.FC<{ plan: ShopCurrencyPlan; groups: ShopCurrencyGroup[
               })}
             </p>
           )}
-          {plan.result && <PlanBreakdown result={plan.result} needs={needs} nameOf={nameOf} />}
+          {plan.result && (
+            <PlanBreakdown result={plan.result} needs={needs} nameOf={nameOf} bonusApplied={bonusApplied} />
+          )}
         </>
       )}
     </div>
   )
 }
 
-const PlanBreakdown: React.FC<{ result: Result; needs: ShopCurrencyNeed[]; nameOf: (id: number) => string }> = ({
-  result,
-  needs,
-  nameOf,
-}) => {
+const PlanBreakdown: React.FC<{
+  result: Result
+  needs: ShopCurrencyNeed[]
+  nameOf: (id: number) => string
+  bonusApplied: boolean
+}> = ({ result, needs, nameOf, bonusApplied }) => {
   const { t } = useTranslation('events')
   return (
     <>
@@ -340,7 +344,12 @@ const PlanBreakdown: React.FC<{ result: Result; needs: ShopCurrencyNeed[]; nameO
         ))}
       </ul>
       <Message>
-        {t('event-shop-plan-bonus-note', 'ドロップはイベントのボーナス（礼装・サーヴァント）を含まない統計値です。')}
+        {t('event-shop-plan-bonus-note', 'ドロップはイベントのボーナス（ドロップ増加礼装）を含まない統計値です。')}
+        {bonusApplied &&
+          t(
+            'event-shop-plan-bonus-applied',
+            '入れたドロップ増加礼装のボーナス（1ドロップにつき +N）を足して計算しています。',
+          )}
       </Message>
     </>
   )
@@ -369,6 +378,147 @@ const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp
 
 const NO_AP_PRICES: Readonly<Record<number, number>> = {}
 
+/** ボーナスの欄と1周の獲得量の表の列（交換所の通貨とイベントポイントの品目）。 */
+interface BonusTarget {
+  itemId: number
+  label: string
+  icon?: string
+}
+
+const formatPerRun = (value: number): string => value.toFixed(1)
+
+const DropBonusInputs: React.FC<{
+  targets: BonusTarget[]
+  bonus: ReadonlyMap<number, number>
+  unappliedLabels: string[]
+  onChange: (itemId: number, value: number) => void
+}> = ({ targets, bonus, unappliedLabels, onChange }) => {
+  const { t } = useTranslation('events')
+  return (
+    <div
+      className="rounded-md flex flex-col gap-2 px-4 py-3"
+      style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+    >
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+        {t('event-shop-bonus-title', 'ドロップ増加礼装')}
+      </h3>
+      <p className="text-xs" style={{ color: 'var(--text2)' }}>
+        {t(
+          'event-shop-bonus-description',
+          '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
+        )}
+      </p>
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
+        {targets.map(target => (
+          <label key={target.itemId} className="flex items-center gap-1.5 min-w-0">
+            <Icon src={target.icon} />
+            <span className="truncate">{target.label}</span>
+            <span className="flex-shrink-0">+</span>
+            <Input
+              type="number"
+              min={0}
+              value={bonus.get(target.itemId) ?? 0}
+              onChange={e => onChange(target.itemId, toCount(e.target.value))}
+              aria-label={t('event-shop-bonus-label', '{{name}} のドロップボーナス', { name: target.label })}
+              className="h-7 w-14 px-1.5 flex-shrink-0"
+            />
+          </label>
+        ))}
+      </div>
+      {unappliedLabels.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--red)' }}>
+          {t('event-shop-bonus-unapplied', '{{names}} はデータの更新前のため、ボーナスを反映できません。', {
+            names: unappliedLabels.join('、'),
+          })}
+        </p>
+      )}
+    </div>
+  )
+}
+
+type FarmingDrops = EventPlannerEvent['farmingNodes'][number]['drops']
+
+const sumPerRun = (drops: FarmingDrops, itemId: number): number =>
+  drops.reduce((acc, d) => (d.itemId === itemId ? acc + d.perRun : acc), 0)
+
+/** クエストごとの行（ボーナス込みの値と素の値との差）。通貨もポイントも落ちないクエストは除く。 */
+const perRunRows = (base: EventPlannerEvent, bonused: EventPlannerEvent, targets: BonusTarget[]) => {
+  const baseDropsOf = new Map(base.farmingNodes.map(node => [node.questId, node.drops]))
+  return bonused.farmingNodes.flatMap(node => {
+    const baseDrops = baseDropsOf.get(node.questId) ?? []
+    const cells = targets.map(target => {
+      const value = sumPerRun(node.drops, target.itemId)
+      return {
+        itemId: target.itemId,
+        has: node.drops.some(d => d.itemId === target.itemId),
+        value,
+        diff: value - sumPerRun(baseDrops, target.itemId),
+      }
+    })
+    return cells.some(cell => cell.has) ? [{ node, cells }] : []
+  })
+}
+
+/** クエストごとの、通貨とイベントポイントの1周の獲得量（ボーナス込み）。 */
+const PerRunTable: React.FC<{
+  base: EventPlannerEvent
+  bonused: EventPlannerEvent
+  targets: BonusTarget[]
+  bonus: ReadonlyMap<number, number>
+}> = ({ base, bonused, targets, bonus }) => {
+  const { t } = useTranslation('events')
+  const rows = perRunRows(base, bonused, targets)
+  if (rows.length === 0) return null
+
+  return (
+    <div
+      data-testid="shop-per-run"
+      className="rounded-md flex flex-col gap-2 px-4 py-3 min-w-0"
+      style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+    >
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+        {t('event-shop-per-run-title', '1周の獲得量')}
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr style={{ color: 'var(--text3)' }}>
+              <th className="text-left font-medium py-1 pr-2">{t('event-shop-plan-col-quest', 'クエスト')}</th>
+              {targets.map(target => (
+                <th key={target.itemId} className="text-right font-medium py-1 px-1 whitespace-nowrap">
+                  {target.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ node, cells }) => (
+              <tr key={node.questId} style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
+                <td className="py-1 pr-2">
+                  {node.name}
+                  <span className="ml-1" style={{ color: 'var(--text3)' }}>
+                    {t('event-shop-plan-ap', 'AP{{ap}}', { ap: node.ap })}
+                  </span>
+                </td>
+                {cells.map(cell => (
+                  <td key={cell.itemId} className="text-right py-1 px-1 whitespace-nowrap tabular-nums">
+                    {cell.has ? formatPerRun(cell.value) : '-'}
+                    {cell.has && (bonus.get(cell.itemId) ?? 0) > 0 && cell.diff > 0 && (
+                      <span className="ml-1 text-[10px]" style={{ color: 'var(--text3)' }}>
+                        +{formatPerRun(cell.diff)}
+                      </span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 const SelectAll: React.FC<{ onSelectAll: () => void }> = ({ onSelectAll }) => {
   const { t } = useTranslation('events')
   return (
@@ -385,26 +535,55 @@ const SelectAll: React.FC<{ onSelectAll: () => void }> = ({ onSelectAll }) => {
 
 /**
  * 交換所の品目を対価の通貨ごとにまとめて回数を選ばせ、通貨ごとの必要量と、それを満たす周回の内訳を出す。
- * 選んだ回数と所持数は画面を開いている間だけ持つ。
+ * 選んだ回数と所持数とドロップ増加礼装のボーナスは画面を開いている間だけ持つ。
  */
-export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Readonly<Record<number, number>> }> = ({
-  event,
-  apPrices = NO_AP_PRICES,
-}) => {
+export const EventShopList: React.FC<{
+  event: EventPlannerEvent
+  apPrices?: Readonly<Record<number, number>>
+  /** イベントポイントの品目の atlasId。あればボーナスの欄と1周の獲得量の列に出す。 */
+  pointItemId?: number
+}> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
+  const { t } = useTranslation('events')
+  const label = useCurrencyLabel()
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
   const [counts, setCounts] = useState<ShopExchangeCounts>(() => new Map())
   const [owned, setOwned] = useState<ReadonlyMap<number, number>>(() => new Map())
+  const [bonus, setBonus] = useState<ReadonlyMap<number, number>>(() => new Map())
   const needs = useMemo(() => computeShopCurrencyNeeds(shop, counts, owned), [shop, counts, owned])
+  const bonused = useMemo(() => applyDropBonus(event, new Map(bonus)), [event, bonus])
   const plan = useMemo(
-    () => planShopCurrencies(event, new Map(needs.map(n => [n.costItemId, n.need]))),
-    [event, needs],
+    () => planShopCurrencies(bonused.event, new Map(needs.map(n => [n.costItemId, n.need]))),
+    [bonused, needs],
   )
+
+  const targets: BonusTarget[] = groups.map(group => ({
+    itemId: group.costItemId,
+    label: label(group),
+    icon: group.costIcon,
+  }))
+  if (pointItemId !== undefined && !targets.some(target => target.itemId === pointItemId)) {
+    const drop = event.farmingNodes.flatMap(n => n.drops).find(d => d.itemId === pointItemId)
+    targets.push({
+      itemId: pointItemId,
+      label: drop?.name || t('event-shop-currency-id', '名前不明のアイテム（ID {{id}}）', { id: pointItemId }),
+      icon: drop?.icon,
+    })
+  }
+  const unappliedLabels = bonused.unapplied.map(id => targets.find(target => target.itemId === id)?.label ?? `#${id}`)
+  const bonusApplied = [...bonus.values()].some(n => n > 0)
 
   return (
     <div className="flex flex-col gap-4">
       <PlanSummary plan={plan} />
       <SelectAll onSelectAll={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} />
+      <DropBonusInputs
+        targets={targets}
+        bonus={bonus}
+        unappliedLabels={unappliedLabels}
+        onChange={(itemId, value) => setBonus(prev => new Map(prev).set(itemId, value))}
+      />
+      <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={bonus} />
       {groups.map(group => (
         <CurrencyGroupCard
           key={group.costItemId}
@@ -418,7 +597,7 @@ export const EventShopList: React.FC<{ event: EventPlannerEvent; apPrices?: Read
           onOwnedChange={value => setOwned(prev => new Map(prev).set(group.costItemId, value))}
         />
       ))}
-      <FarmingPlan plan={plan} groups={groups} needs={needs} />
+      <FarmingPlan plan={plan} groups={groups} needs={needs} bonusApplied={bonusApplied} />
       {plan.status === 'planned' && plan.result && plan.result.total_ap > 0 && (
         <ShopApBudget totalAp={plan.result.total_ap} partial={plan.unfarmable.length > 0} />
       )}

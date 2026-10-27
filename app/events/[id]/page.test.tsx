@@ -24,8 +24,10 @@ const shopEvent = {
     { itemId: 6516, qty: 2, costItemId: 94002, costAmount: 30, limitNum: 1 },
   ],
 }
+const getEventRewards = vi.fn(async (id: number) => (id === 80700 ? { eventId: id, pointItemId: 94099 } : undefined))
 vi.mock('../../../lib/get-events', () => ({
   getEventById: async (id: number) => [boxEvent, shopEvent].find(e => e.id === id) ?? null,
+  getEventRewards: (id: number) => getEventRewards(id),
 }))
 const drops = {
   items: [
@@ -72,6 +74,18 @@ describe('/events/[id]', () => {
     const el = await renderPage('80586')
     expect(el.props.shopApPrices).toBeUndefined()
     expect(getDrops).not.toHaveBeenCalled()
+  })
+
+  it('KV のボックスイベント: ポイントの品目を読まない', async () => {
+    getEventRewards.mockClear()
+    const el = await renderPage('80586')
+    expect(el.props.pointItemId).toBeUndefined()
+    expect(getEventRewards).not.toHaveBeenCalled()
+  })
+
+  it('ロトの無い交換所イベント: ポイントの品目を渡す', async () => {
+    const el = await renderPage('80700')
+    expect(el.props.pointItemId).toBe(94099)
   })
 
   it('ロトの無い交換所イベント: 交換所の品目の分だけ AP 換算値を渡す', async () => {

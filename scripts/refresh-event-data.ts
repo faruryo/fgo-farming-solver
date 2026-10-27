@@ -47,6 +47,7 @@ import {
 } from '../lib/refresh-event-data-merge'
 import {
   buildEventRewardsRows,
+  compactDrops,
   compactMissions,
   compactPointRewards,
   compactShop,
@@ -55,6 +56,7 @@ import {
   tryCompact,
 } from '../lib/refresh-event-data-compact'
 import type {
+  AtlasDrop,
   AtlasMission,
   AtlasPointReward,
   AtlasShopItem,
@@ -122,13 +124,6 @@ interface AtlasSpot {
 
 interface AtlasWar {
   spots: AtlasSpot[]
-}
-
-interface AtlasDrop {
-  objectId: number
-  num: number
-  runs: number
-  dropCount: number
 }
 
 interface AtlasQuestDetail {
@@ -319,18 +314,7 @@ async function compactFarmingNodes(
           const qd = await fetchJson<AtlasQuestDetail>(
             `${origin}/nice/${region}/quest/${q.id}/${lastPhase}`
           )
-          drops = (qd.drops ?? [])
-            .filter(d => d.runs > 0)
-            .map(d => {
-              const meta = itemMap.get(d.objectId)
-              return {
-                itemId: d.objectId,
-                perRun: Math.round((d.dropCount / d.runs) * d.num * 10000) / 10000,
-                name: meta?.name ?? '',
-                ...(meta?.icon ? { icon: meta.icon } : {}),
-              }
-            })
-            .filter(d => d.perRun > 0.0001)
+          drops = compactDrops(qd.drops ?? [], itemMap)
         } catch (e) {
           console.warn(`  skipping drops for quest ${q.id}: ${e}`)
         }

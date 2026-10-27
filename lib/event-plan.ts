@@ -381,6 +381,40 @@ export const splitUnfarmable = (
   return { status: 'planned', result: { ...result, items }, unfarmable }
 }
 
+export type DropBonusResult = {
+  /** ドロップごとの1周の獲得量をボーナス込みにしたイベント。 */
+  event: EventPlannerEvent
+  /** ボーナスが入っているが、1周あたりのドロップ回数を持たないドロップがある品目の atlasId。 */
+  unapplied: number[]
+}
+
+/**
+ * ドロップ増加のボーナス（atlasId → 1ドロップにつき +N）を、各ドロップの1周の獲得量
+ * `perRun + countPerRun × N` に反映する。同じクエストに同じ品目のドロップが複数あれば、それぞれに足す。
+ * 回数を持たないドロップは素の値のまま。ボーナスが空か全部0なら入ったイベントをそのまま返す。
+ */
+export const applyDropBonus = (
+  event: EventPlannerEvent,
+  bonus: Map<number, number>,
+): DropBonusResult => {
+  const active = new Map([...bonus].filter(([, n]) => n > 0))
+  if (active.size === 0) return { event, unapplied: [] }
+  const unapplied = new Set<number>()
+  const farmingNodes = event.farmingNodes.map((node) => ({
+    ...node,
+    drops: node.drops.map((drop) => {
+      const n = active.get(drop.itemId)
+      if (n === undefined) return drop
+      if (drop.countPerRun === undefined) {
+        unapplied.add(drop.itemId)
+        return drop
+      }
+      return { ...drop, perRun: drop.perRun + drop.countPerRun * n }
+    }),
+  }))
+  return { event: { ...event, farmingNodes }, unapplied: [...unapplied] }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Task 12 — 逆算（欲しいアイテム数 → 最小箱数）
 // ─────────────────────────────────────────────────────────────────────────────
