@@ -20,6 +20,8 @@ interface Props {
   features: EventFeature[]
   /** 交換所の品目の atlasId → 素材1個の AP 換算値。 */
   shopApPrices?: Readonly<Record<number, number>>
+  /** イベントポイントの品目の atlasId（ロトの無い交換所イベントで、あるときだけ）。 */
+  pointItemId?: number
 }
 
 const noopSubscribe = () => () => {}
@@ -71,7 +73,7 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </h2>
 )
 
-export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, features, shopApPrices }) => {
+export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, features, shopApPrices, pointItemId }) => {
   const { t } = useTranslation('events')
   const box = features.includes('box') ? boxEvent : undefined
   const craftItems = features.includes('craft') ? items : undefined
@@ -101,7 +103,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
                   )}
                 </p>
               </div>
-              <EventShopList event={shopOnly} apPrices={shopApPrices} />
+              <EventShopList event={shopOnly} apPrices={shopApPrices} pointItemId={pointItemId} />
             </section>
           )}
 
