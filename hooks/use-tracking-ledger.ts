@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { TargetKey } from '../interfaces/atlas-academy'
 import { MaterialsForServants } from '../lib/get-materials'
 import { MaterialCatalogItem, MaterialCatalogServant } from '../lib/material-catalog'
-import { useLocalStorage } from './use-local-storage'
+import { countsOrEmpty, useLocalStorage } from './use-local-storage'
 import { diffMaterialsForStartChange, MaterialDelta } from '../lib/diff-materials'
 import { showTrackingToast, showBlockedToast } from '../lib/tracking-toast'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
@@ -166,7 +166,8 @@ const useTrackingStorage = () => {
   )
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
-    {}
+    {},
+    { onGet: countsOrEmpty, repairOnGet: true }
   )
   return {
     trackingMode,

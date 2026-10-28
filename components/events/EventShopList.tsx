@@ -26,7 +26,7 @@ import {
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
 import { useRosterNeed, type RosterNeed } from '../../hooks/use-roster-need'
-import { recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import { materialCatalogItemIds } from '../../lib/material-catalog'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -690,7 +690,7 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
   const [possession] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
     {},
-    { lazyWrite: true, onGet: recordOrEmpty },
+    { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
   )
   const { wantedIds, setItemWanted } = useWantedItems()
   const [planItemIds, setPlanItemIds] = useState<PlanItemIds>()

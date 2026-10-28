@@ -1,12 +1,12 @@
-import { useLocalStorage } from './use-local-storage'
+import { countsOrEmpty, itemCountsOrEmpty, useLocalStorage } from './use-local-storage'
 import { useStockTarget } from './use-stock-target'
 import type { EfficiencyDenominator } from '../lib/quest-efficiency'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 export const useQuestEfficiencyOptions = () => {
-  const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(STORAGE_KEYS.POSSESSION, {})
+  const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(STORAGE_KEYS.POSSESSION, {}, { onGet: countsOrEmpty, repairOnGet: true })
   const [materialResult, setMaterialResult] = useLocalStorage<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT, {})
-  const [itemsRaw, setItemsRaw] = useLocalStorage<Record<string, string | number | undefined>>(STORAGE_KEYS.ITEMS, {})
+  const [itemsRaw, setItemsRaw] = useLocalStorage<Record<string, string | number | undefined>>(STORAGE_KEYS.ITEMS, {}, { onGet: itemCountsOrEmpty, repairOnGet: true })
   const {
     purpose,
     setPurpose,
