@@ -7,6 +7,13 @@ import {
   useState,
 } from 'react'
 
+/**
+ * `onGet` 用。保存値が object（配列を除く）でなければ空の object として読む。
+ * 壊れた保存値（`null` など）で `Object.entries` などが投げて描画が落ちるのを防ぐ。
+ */
+export const recordOrEmpty = <V>(item: unknown): Record<string, V> =>
+  item !== null && typeof item === 'object' && !Array.isArray(item) ? (item as Record<string, V>) : {}
+
 export const useLocalStorage = <T>(
   key: string,
   initialState: T,

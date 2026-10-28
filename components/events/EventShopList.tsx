@@ -26,7 +26,7 @@ import {
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
 import { useRosterNeed, type RosterNeed } from '../../hooks/use-roster-need'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import { materialCatalogItemIds } from '../../lib/material-catalog'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -669,7 +669,7 @@ const useWantedItems = () => {
   const [wanted, setWanted] = useLocalStorage<Record<string, true>>(
     STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS,
     NO_WANTED,
-    { lazyWrite: true },
+    { lazyWrite: true, onGet: recordOrEmpty },
   )
   const wantedIds = useMemo(
     () => new Set(Object.entries(wanted).filter(([, value]) => value === true).map(([id]) => Number(id))),
@@ -690,7 +690,7 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
   const [possession] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
     {},
-    { lazyWrite: true },
+    { lazyWrite: true, onGet: recordOrEmpty },
   )
   const { wantedIds, setItemWanted } = useWantedItems()
   const [planItemIds, setPlanItemIds] = useState<PlanItemIds>()

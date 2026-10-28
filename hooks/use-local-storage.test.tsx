@@ -2,7 +2,7 @@
 
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useLocalStorage } from './use-local-storage'
+import { recordOrEmpty, useLocalStorage } from './use-local-storage'
 import { mergeChaldeaState } from './use-chaldea-state-merger'
 import { ChaldeaState, ServantState, createChaldeaState } from './create-chaldea-state'
 
@@ -226,6 +226,26 @@ describe('useLocalStorage + mergeChaldeaState integration (material state)', () 
 
     const finalStored = readMaterial()
     expect(finalStored['1'].targets.skill.ranges.map((r) => r.start)).toEqual([9, 10, 9])
+  })
+})
+
+describe('recordOrEmpty', () => {
+  it.each([null, undefined, [1, 2], 'text', 3, true])('object でない保存値（%j）は空の object にする', (stored) => {
+    expect(recordOrEmpty(stored)).toEqual({})
+  })
+
+  it('object はそのまま返す', () => {
+    const stored = { 1: 2 }
+    expect(recordOrEmpty(stored)).toBe(stored)
+  })
+
+  it('保存値が null でも onGet で初期値の形に読み、保存値は書き換えない', async () => {
+    localStorage.setItem('test/null-record', 'null')
+    const { result } = renderHook(() =>
+      useLocalStorage<Record<string, number>>('test/null-record', {}, { lazyWrite: true, onGet: recordOrEmpty })
+    )
+    await waitFor(() => expect(result.current[0]).toEqual({}))
+    expect(localStorage.getItem('test/null-record')).toBe('null')
   })
 })
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import {
   calcBoxLayer,
@@ -60,7 +60,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const [possessionRaw] = useLocalStorage<Record<string, string | number>>(
     STORAGE_KEYS.ITEMS,
     {},
-    { lazyWrite: true }
+    { lazyWrite: true, onGet: recordOrEmpty }
   )
 
   // Normalize possession to Record<string, number>

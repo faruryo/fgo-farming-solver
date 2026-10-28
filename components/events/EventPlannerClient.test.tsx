@@ -6,6 +6,7 @@ import { EventPlanResultCard } from './EventPlanResultCard'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import { allocateShop, calcBoxLayer, runEventSolver } from '../../lib/event-plan'
 import { computeApBudget } from '../../lib/ap-budget'
+import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 vi.mock('react-i18next', async () => (await import('./events-i18n-test-utils')).eventsTranslationMock())
 
@@ -84,6 +85,14 @@ describe('箱計画の AP 予算', () => {
     expect(within(breakdown).getByText('所持 3')).toBeInTheDocument()
     expect(within(breakdown).getByText('¥238')).toBeInTheDocument()
     expect(within(breakdown).getByText('回復の回数')).toBeInTheDocument()
+  })
+
+  it('保存した周回目標が壊れていても（null）落ちずに描画する', async () => {
+    localStorage.setItem('masterLevel', '157')
+    localStorage.setItem(STORAGE_KEYS.ITEMS, 'null')
+    render(<EventPlannerClient event={boxEvent} />)
+
+    expect(await screen.findByText('最大AP 144')).toBeInTheDocument()
   })
 
   it('箱計画の画面で所持黄金の果実を変えると、内訳がその値に追いつく', async () => {
