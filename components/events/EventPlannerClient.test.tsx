@@ -46,7 +46,7 @@ describe('箱計画の AP 予算', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => localStorage.clear())
 
-  it('内訳は黄金の果実消費・必要聖晶石・課金額目安の3項目で、回復の回数は出ない', () => {
+  it('内訳は交換所と同じく回復の回数・黄金の果実・必要聖晶石・課金額目安の4項目を出す #167', () => {
     renderCard(250)
 
     const breakdown = breakdownOf()
@@ -58,8 +58,8 @@ describe('箱計画の AP 予算', () => {
     expect(within(breakdown).getByText('4')).toBeInTheDocument()
     expect(within(breakdown).getByText('課金額目安')).toBeInTheDocument()
     expect(within(breakdown).getByText('¥238')).toBeInTheDocument()
-    expect(breakdown.querySelector('.grid')?.children).toHaveLength(3)
-    expect(screen.queryByText('回復の回数')).not.toBeInTheDocument()
+    expect(within(breakdown).getByText('回復の回数').nextElementSibling?.textContent).toBe('7')
+    expect(breakdown.querySelector('.grid')?.children).toHaveLength(4)
   })
 
   it('合計 AP が 0 のときは内訳が出ない', () => {
@@ -84,8 +84,7 @@ describe('箱計画の AP 予算', () => {
     const breakdown = breakdownOf()
     expect(within(breakdown).getByText('所持 3')).toBeInTheDocument()
     expect(within(breakdown).getByText('¥238')).toBeInTheDocument()
-    expect(breakdown.querySelector('.grid')?.children).toHaveLength(3)
-    expect(screen.queryByText('回復の回数')).not.toBeInTheDocument()
+    expect(within(breakdown).getByText('回復の回数')).toBeInTheDocument()
   })
 
   it('保存した周回目標が壊れていても（null）落ちずに描画する', async () => {

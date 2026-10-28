@@ -94,11 +94,8 @@ export const ApBudgetInputs: React.FC = () => {
   )
 }
 
-/** AP予算内訳（[回復の回数 →] 黄金の果実 → 聖晶石 → 課金額）。 */
-export const ApBudgetBreakdown: React.FC<{ apBudget: ApBudget; showRestores?: boolean }> = ({
-  apBudget,
-  showRestores = false,
-}) => {
+/** AP予算内訳（回復の回数 → 黄金の果実 → 聖晶石 → 課金額）。箱計画と交換所で同じ項目・並び。 */
+export const ApBudgetBreakdown: React.FC<{ apBudget: ApBudget }> = ({ apBudget }) => {
   const { t } = useTranslation('events')
   return (
     <div className="flex flex-col gap-2">
@@ -115,14 +112,12 @@ export const ApBudgetBreakdown: React.FC<{ apBudget: ApBudget; showRestores?: bo
           </TooltipContent>
         </Tooltip>
       </div>
-      <div className={showRestores ? 'grid grid-cols-2 sm:grid-cols-4 gap-3' : 'grid grid-cols-3 gap-3'}>
-        {showRestores && (
-          <StatBlock
-            label={t('event-ap-restores', '回復の回数')}
-            value={apBudget.totalRestores.toLocaleString()}
-            sub={t('最大AP基準', '最大AP {{maxAp}} 基準', { maxAp: apBudget.maxAp })}
-          />
-        )}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatBlock
+          label={t('event-ap-restores', '回復の回数')}
+          value={apBudget.totalRestores.toLocaleString()}
+          sub={t('最大AP基準', '最大AP {{maxAp}} 基準', { maxAp: apBudget.maxAp })}
+        />
         <StatBlock
           label={t('黄金の果実消費', '黄金の果実')}
           value={apBudget.goldenFruitUsed.toLocaleString()}

@@ -1,7 +1,7 @@
 # master-profile Specification
 
 ## Purpose
-TBD - created by archiving change ap-budget-quartz-cost. Update Purpose after archive.
+マスターレベルのように、特定の機能に属さず、最大AP などのレベル依存値の算出に複数の機能が使うユーザーのプロフィール値を保持し、クラウド同期でデバイス間に共有する。
 ## Requirements
 ### Requirement: マスターレベルの保持とクラウド同期
 システムは、ユーザーのマスターレベルを保持し、`use-cloud-sync` の同期対象としてデバイス間で共有しなければならない (SHALL)。マスターレベルは最大AP 等のレベル依存値の算出に用いる横断プロフィール値である。
