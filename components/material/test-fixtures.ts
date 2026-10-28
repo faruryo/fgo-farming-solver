@@ -1,8 +1,8 @@
 // Shared fixture factories for components/material/*.test.tsx.
 // Not a *.test.ts(x) file itself, so vitest does not pick it up as a suite.
-import { NiceServant, Item } from '../../interfaces/atlas-academy'
+import { NiceEquip, NiceServant, Item } from '../../interfaces/atlas-academy'
 import { ReducedMaterials, ReducedMaterialsRecord } from '../../lib/get-materials'
-import { MaterialCatalogServant } from '../../lib/material-catalog'
+import { MaterialCatalogBondUpCraftEssence, MaterialCatalogServant } from '../../lib/material-catalog'
 
 export const makeServant = (overrides: Partial<NiceServant> = {}): NiceServant => ({
   id: 1,
@@ -96,3 +96,33 @@ export const makeCompleteMaterials = (): ReducedMaterialsRecord => {
     appendSkillMaterials: completeMaterialTable(materials.appendSkillMaterials, CATALOG_MATERIAL_LEVELS.appendSkillMaterials),
   }
 }
+
+export const makeBondUpCraftEssence = (
+  overrides: Partial<MaterialCatalogBondUpCraftEssence> = {}
+): MaterialCatalogBondUpCraftEssence => ({
+  id: 9400000,
+  collectionNo: 1,
+  name: '英霊肖像',
+  rarity: 4,
+  cost: 9,
+  face: 'https://static.atlasacademy.io/JP/Faces/f_9400000.png',
+  target: 'party',
+  rate: 200,
+  add: 0,
+  ...overrides,
+})
+
+/** 絆の増加効果を1つ持つ nice_equip の要素。skills を渡せば効果を差し替えられる。 */
+export const makeNiceEquip = (overrides: Partial<NiceEquip> = {}): NiceEquip => ({
+  id: 9400000,
+  collectionNo: 1,
+  name: '英霊肖像',
+  rarity: 4,
+  cost: 9,
+  extraAssets: { faces: { equip: { '9400000': 'https://static.atlasacademy.io/JP/Faces/f_9400000.png' } } },
+  skills: [{
+    condLimitCount: 0,
+    functions: [{ funcType: 'servantFriendshipUp', funcTargetType: 'ptFull', svals: [{ RateCount: 200 }] }],
+  }],
+  ...overrides,
+})

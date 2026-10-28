@@ -34,14 +34,10 @@ import { applyDropBonus, planShopCurrencies, type ShopCurrencyPlan } from '../..
 import type { Result } from '../../interfaces/api'
 import { computeApBudget } from '../../lib/ap-budget'
 import { ApBudgetBreakdown, ApBudgetInputs, useApBudgetProfile } from './ApBudget'
+import { DropBonusInputs, toCount, type BonusTarget } from './DropBonusInputs'
 
 const Icon: React.FC<{ src?: string }> = ({ src }) =>
   src ? <Image src={src} alt="" width={20} height={20} className="w-5 h-5 object-contain flex-shrink-0" /> : null
-
-const toCount = (value: string): number => {
-  const n = Math.floor(Number(value))
-  return Number.isFinite(n) ? Math.max(0, n) : 0
-}
 
 const useCurrencyLabel = () => {
   const { t } = useTranslation('events')
@@ -482,63 +478,7 @@ const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp
 
 const NO_AP_PRICES: Readonly<Record<number, number>> = {}
 
-/** ボーナスの欄と1周の獲得量の表の列（交換所の通貨とイベントポイントの品目）。 */
-interface BonusTarget {
-  itemId: number
-  label: string
-  icon?: string
-}
-
 const formatPerRun = (value: number): string => value.toFixed(1)
-
-const DropBonusInputs: React.FC<{
-  targets: BonusTarget[]
-  bonus: ReadonlyMap<number, number>
-  unappliedLabels: string[]
-  onChange: (itemId: number, value: number) => void
-}> = ({ targets, bonus, unappliedLabels, onChange }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div
-      className="rounded-md flex flex-col gap-2 px-4 py-3"
-      style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
-    >
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
-        {t('event-shop-bonus-title', 'ドロップ増加礼装')}
-      </h3>
-      <p className="text-xs" style={{ color: 'var(--text2)' }}>
-        {t(
-          'event-shop-bonus-description',
-          '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
-        )}
-      </p>
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
-        {targets.map(target => (
-          <label key={target.itemId} className="flex items-center gap-1.5 min-w-0">
-            <Icon src={target.icon} />
-            <span className="truncate">{target.label}</span>
-            <span className="flex-shrink-0">+</span>
-            <Input
-              type="number"
-              min={0}
-              value={bonus.get(target.itemId) ?? 0}
-              onChange={e => onChange(target.itemId, toCount(e.target.value))}
-              aria-label={t('event-shop-bonus-label', '{{name}} のドロップボーナス', { name: target.label })}
-              className="h-7 w-14 px-1.5 flex-shrink-0"
-            />
-          </label>
-        ))}
-      </div>
-      {unappliedLabels.length > 0 && (
-        <p className="text-xs" style={{ color: 'var(--red)' }}>
-          {t('event-shop-bonus-unapplied', '{{names}} はデータの更新前のため、ボーナスを反映できません。', {
-            names: unappliedLabels.join('、'),
-          })}
-        </p>
-      )}
-    </div>
-  )
-}
 
 type FarmingDrops = EventPlannerEvent['farmingNodes'][number]['drops']
 
@@ -854,6 +794,7 @@ export const EventShopList: React.FC<{
   /** イベントポイントの品目の atlasId。あればボーナスの欄と1周の獲得量の列に出す。 */
   pointItemId?: number
 }> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
+  const { t } = useTranslation('events')
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
   const [counts, setCounts] = useState<ShopExchangeCounts>(() => new Map())
@@ -880,6 +821,10 @@ export const EventShopList: React.FC<{
         targets={targets}
         bonus={bonus}
         unappliedLabels={unappliedLabels}
+        description={t(
+          'event-shop-bonus-description',
+          '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
+        )}
         onChange={(itemId, value) => setBonus(prev => new Map(prev).set(itemId, value))}
       />
       <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={bonus} />
