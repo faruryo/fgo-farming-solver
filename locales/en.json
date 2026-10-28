@@ -557,6 +557,8 @@
     "event-shop-bonus-description": "Enter the +N per drop from the CEs in your party to include it in the per-run amounts and runs",
     "event-shop-bonus-label": "Drop bonus for {{name}}",
     "event-shop-bonus-unapplied": "The bonus can't be applied to {{names}} because the data hasn't been updated yet.",
+    "event-planner-bonus-description": "Enter the +N per drop from the CEs in your party to include it in the runs and AP",
+    "event-planner-bonus-applied": "The drop-up CE bonuses you entered (+N per drop) are added to this calculation.",
     "event-shop-per-run-title": "Per-run amounts",
     "event-shop-summary-total": "Farming total: {{laps}} runs / AP {{ap}}",
     "event-shop-summary-none": "Farming total: none needed",
