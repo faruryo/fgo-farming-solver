@@ -52,7 +52,7 @@ describe('ApBudgetBreakdown', () => {
   const budget = computeApBudget(1000, 144, 3)
 
   it('computeApBudget の結果どおりに回復の回数・黄金の果実・聖晶石・課金額を出す', () => {
-    render(<ApBudgetBreakdown apBudget={budget} showRestores />)
+    render(<ApBudgetBreakdown apBudget={budget} />)
 
     expect(budget).toMatchObject({ totalRestores: 7, goldenFruitUsed: 3, quartzCount: 4, yen: 238 })
     const value = (label: string) => screen.getByText(label).nextElementSibling?.textContent
@@ -63,10 +63,12 @@ describe('ApBudgetBreakdown', () => {
     expect(value('課金額目安')).toBe('¥238')
   })
 
-  it('回復の回数を出さない指定では3項目だけを出す', () => {
+  it('回復の回数 → 黄金の果実 → 聖晶石 → 課金額の4項目をこの順で出す', () => {
     render(<ApBudgetBreakdown apBudget={budget} />)
 
-    expect(screen.queryByText('回復の回数')).not.toBeInTheDocument()
-    expect(screen.getByText('黄金の果実').closest('.grid')?.children).toHaveLength(3)
+    const labels = [...(screen.getByText('黄金の果実').closest('.grid')?.children ?? [])].map(
+      c => c.firstElementChild?.textContent,
+    )
+    expect(labels).toEqual(['回復の回数', '黄金の果実', '必要聖晶石', '課金額目安'])
   })
 })
