@@ -18,11 +18,11 @@
 
 ## 3. 品質ゲート
 
-- [ ] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm test --run`、`pnpm run lint:ratchet`、`pnpm run type-check` が通ることを確かめる <!-- verify-only -->
 
 ## 4. 画面の確認
 
-- [ ] 4.1 `pnpm dev`（`--webpack` は付けない。3000・3001 は使わない）で画面を確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
+- [x] 4.1 `pnpm dev`（`--webpack` は付けない。3000・3001 は使わない）で画面を確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
   - 準備: 確認のときだけ `mocks/events.json` の 80506 の各ドロップに1周あたりのドロップ回数を足す（commit しない）
   - /events/80506 を 375px と desktop の幅で開き、ボーナスの欄（見出しと説明の1行、箱の通貨の欄だけ）と計算結果が入る範囲を撮る。箱を開ける通貨のボーナスに値を入れると周回数と合計 AP が減り、注記が出ること、ページを読み込み直すと欄が 0 に戻ること、375px でページに横スクロールが出ないことを確かめる
   - 準備で足した値を元に戻し、`git status` で `mocks/events.json` に差分が無いことを確かめる
