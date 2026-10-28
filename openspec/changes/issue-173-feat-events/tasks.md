@@ -2,11 +2,11 @@
 
 ## 1. 入力の部品の共用
 
-- [ ] 1.1 `components/events/EventShopList.tsx` の `DropBonusInputs` と `BonusTarget` を、交換所と箱計画の両方から使えるファイル（例: `components/events/DropBonusInputs.tsx`）へ出し、説明の1行を呼び出し側から渡せるようにして、`EventShopList.tsx` は今の文言を渡して使う（design の決定 4）。交換所の表示と振る舞いは変えない。確認: `components/events/EventHubClient.test.tsx` の交換所のボーナスのテストが変更なしで通る
+- [x] 1.1 `components/events/EventShopList.tsx` の `DropBonusInputs` と `BonusTarget` を、交換所と箱計画の両方から使えるファイル（例: `components/events/DropBonusInputs.tsx`）へ出し、説明の1行を呼び出し側から渡せるようにして、`EventShopList.tsx` は今の文言を渡して使う（design の決定 4）。交換所の表示と振る舞いは変えない。確認: `components/events/EventHubClient.test.tsx` の交換所のボーナスのテストが変更なしで通る
 
 ## 2. 箱計画への反映
 
-- [ ] 2.1 `components/events/EventPlannerClient.tsx` に、ボーナス（通貨の品目 ID → +N）を `useState` で持ち、1.1 の部品でボーナスの欄を AP 予算の入力の上に出す（design の決定 1・3・5）。対象は箱を開ける通貨だけで、名前とアイコンはイベントの通貨の表記を使う。説明の1行と注記は箱計画用の新しいキーにする。ドロップの統計が無い（手入力のドロップの）ときは欄を出さない。`effectiveEvent` を `applyDropBonus` に通したイベントを、箱数の逆算・箱の確定報酬・交換所の配分・`runEventSolver`・`EventPlanResultCard` に渡す（design の決定 2）。ボーナスを 1 以上にしたら計算結果の直下に注記を、箱の通貨に反映できないときはその通貨名を出す。新しい文言は `locales` の events の ja と en の両方に足す。`components/events/EventPlannerClient.test.tsx` に次を足す
+- [x] 2.1 `components/events/EventPlannerClient.tsx` に、ボーナス（通貨の品目 ID → +N）を `useState` で持ち、1.1 の部品でボーナスの欄を AP 予算の入力の上に出す（design の決定 1・3・5）。対象は箱を開ける通貨だけで、名前とアイコンはイベントの通貨の表記を使う。説明の1行と注記は箱計画用の新しいキーにする。ドロップの統計が無い（手入力のドロップの）ときは欄を出さない。`effectiveEvent` を `applyDropBonus` に通したイベントを、箱数の逆算・箱の確定報酬・交換所の配分・`runEventSolver`・`EventPlanResultCard` に渡す（design の決定 2）。ボーナスを 1 以上にしたら計算結果の直下に注記を、箱の通貨に反映できないときはその通貨名を出す。新しい文言は `locales` の events の ja と en の両方に足す。`components/events/EventPlannerClient.test.tsx` に次を足す
   - 箱の通貨1種と交換所の通貨が複数ある箱のイベントで、箱の通貨の初期値 0 の欄だけが「ドロップ増加礼装」の見出しと、周回数と AP がボーナス込みになることを示す説明の1行とともに出て、交換所の通貨の欄は出ない。説明の1行に1周の獲得量が出ない
   - 箱を開けるのに要る通貨が 300、その通貨を落とすクエストが1つ（素の 10.0・回数 5.0）のイベントで、ボーナスに 2 を入れると、そのクエストの周回数が 15 周になり、合計 AP がその分になる。注記が出る
   - すべてのボーナスが 0 のとき、周回数と合計 AP がボーナスの機能が無いときと同じで、注記が出ない
