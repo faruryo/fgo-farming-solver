@@ -480,6 +480,8 @@
     "event-shop-bonus-description": "編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります",
     "event-shop-bonus-label": "{{name}} のドロップボーナス",
     "event-shop-bonus-unapplied": "{{names}} はデータの更新前のため、ボーナスを反映できません。",
+    "event-planner-bonus-description": "編成した礼装の 1ドロップにつき +N を入れると、周回数と AP がボーナス込みになります",
+    "event-planner-bonus-applied": "入れたドロップ増加礼装のボーナス（1ドロップにつき +N）を足して計算しています。",
     "event-shop-per-run-title": "1周の獲得量",
     "event-shop-summary-total": "周回の合計 {{laps}} 周・AP {{ap}}",
     "event-shop-summary-none": "周回の合計: 不要",
