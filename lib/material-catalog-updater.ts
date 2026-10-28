@@ -1,7 +1,8 @@
-import type { Item, NiceServant } from '../interfaces/atlas-academy'
+import type { Item, NiceEquip, NiceServant } from '../interfaces/atlas-academy'
 import { reduceServantMaterials, type MaterialsForServants } from './get-materials'
 import {
   buildMaterialCatalog,
+  distillBondUpCraftEssences,
   materialCatalogItemIds,
   materialCatalogFingerprint,
   validateMaterialCatalog,
@@ -26,6 +27,15 @@ export const conditionalRequestHeaders = (validator: SourceValidator): Headers =
 const validatorFor = (response: Awaited<ReturnType<ConditionalFetch>>, previous: SourceValidator): SourceValidator =>
   response.status === 304 ? previous : response.validator
 
+const sourcesFor = (
+  previous: MaterialCatalogV1 | null,
+  responses: Record<keyof MaterialCatalogV1['sources'], Awaited<ReturnType<ConditionalFetch>>>
+): MaterialCatalogV1['sources'] => ({
+  niceServant: validatorFor(responses.niceServant, previous?.sources.niceServant ?? {}),
+  niceItem: validatorFor(responses.niceItem, previous?.sources.niceItem ?? {}),
+  niceEquip: validatorFor(responses.niceEquip, previous?.sources.niceEquip ?? {}),
+})
+
 const parseServants = (value: unknown): NiceServant[] => {
   if (!Array.isArray(value)) throw new Error('Material Catalog servant response is not an array')
   return value.filter((servant): servant is NiceServant =>
@@ -38,6 +48,12 @@ const parseServants = (value: unknown): NiceServant[] => {
 const parseItems = (value: unknown): Item[] => {
   if (!Array.isArray(value)) throw new Error('Material Catalog item response is not an array')
   return value as Item[]
+}
+
+const parseEquips = (value: unknown): NiceEquip[] => {
+  if (!Array.isArray(value)) throw new Error('Material Catalog equip response is not an array')
+  return value.filter((equip): equip is NiceEquip =>
+    !!equip && typeof equip === 'object' && Array.isArray((equip as NiceEquip).skills))
 }
 
 type BasicEventEntry = { id: number; name: string; type?: unknown; startedAt?: unknown }
@@ -111,25 +127,39 @@ const itemSection = (
   )
 }
 
+const bondUpCraftEssenceSection = (
+  response: Awaited<ReturnType<ConditionalFetch>>,
+  previous: MaterialCatalogV1 | null
+): NonNullable<MaterialCatalogV1['bondUpCraftEssences']> =>
+  response.status === 304
+    ? existingOrThrow(previous).bondUpCraftEssences ?? []
+    : distillBondUpCraftEssences(parseEquips(response.value))
+
 const materialItemsAreKnown = (materials: MaterialsForServants, items: MaterialCatalogV1['items']): boolean => {
   const knownItemIds = new Set(items.map(item => item.id))
   return [...materialCatalogItemIds(materials)].every(itemId => knownItemIds.has(itemId))
 }
 
-// bondGrowth・eventBonuses を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
+// bondGrowth・eventBonuses・cost を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
 // 一部の欠落は Atlas 側の通常状態なので、全騎が持たないときだけ取り直す。
 // eventBonuses は開催中のボーナスが無いと空配列になるため、値でなく項目の有無で見る。
 const servantValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
   previous?.servants.some(servant => servant.bondGrowth) &&
-  previous.servants.some(servant => servant.eventBonuses !== undefined)
+  previous.servants.some(servant => servant.eventBonuses !== undefined) &&
+  previous.servants.some(servant => servant.cost !== undefined)
     ? previous.sources.niceServant
     : {}
+
+// 絆アップ礼装の一覧を足した直後も同じく、一覧のない既存カタログでは検証子を付けずに取る。
+const equipValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
+  previous?.bondUpCraftEssences ? previous.sources.niceEquip ?? {} : {}
 
 export const updateMaterialCatalog = async ({
   previous,
   fetchSource,
   servantUrl,
   itemUrl,
+  equipUrl,
   eventUrl,
   now,
 }: {
@@ -137,6 +167,7 @@ export const updateMaterialCatalog = async ({
   fetchSource: ConditionalFetch
   servantUrl: string
   itemUrl: string
+  equipUrl: string
   eventUrl?: string
   now: () => number
 }): Promise<{ catalog: MaterialCatalogV1 | null; changed: boolean; reason: string }> => {
@@ -146,12 +177,13 @@ export const updateMaterialCatalog = async ({
   const refetchServants = eventUrl !== undefined &&
     (events === undefined || bonusEventStartedSince(events, previous, Math.floor(now() / 1000)))
   const servantValidator = refetchServants ? {} : servantValidatorFor(previous)
-  const [servantsResponse, initialItemsResponse] = await Promise.all([
+  const [servantsResponse, initialItemsResponse, equipsResponse] = await Promise.all([
     fetchSource(servantUrl, servantValidator),
     fetchSource(itemUrl, previous?.sources.niceItem ?? {}),
+    fetchSource(equipUrl, equipValidatorFor(previous)),
   ])
-  if (servantsResponse.status === 304 && initialItemsResponse.status === 304) {
-    return { catalog: existingOrThrow(previous), changed: false, reason: 'both sources not modified' }
+  if (servantsResponse.status === 304 && initialItemsResponse.status === 304 && equipsResponse.status === 304) {
+    return { catalog: existingOrThrow(previous), changed: false, reason: 'all sources not modified' }
   }
   const { servants, materials } = servantSection(servantsResponse, previous)
   const itemsResponse =
@@ -161,16 +193,15 @@ export const updateMaterialCatalog = async ({
       ? await fetchSource(itemUrl, {})
       : initialItemsResponse
   const items = itemSection(itemsResponse, previous, materials)
+  const bondUpCraftEssences = bondUpCraftEssenceSection(equipsResponse, previous)
   // 取れなかったときは前回の名前を引き継ぐ（空にすると、次に nice_servant が変わるまでイベント ID 表示に固定される）。
   const eventNames = events ? new Map(events.map(e => [e.id, e.name])) : previousEventNames(previous)
   const candidate = buildMaterialCatalog({
     servants,
     materials,
     items,
-    sources: {
-      niceServant: validatorFor(servantsResponse, previous?.sources.niceServant ?? {}),
-      niceItem: validatorFor(itemsResponse, previous?.sources.niceItem ?? {}),
-    },
+    bondUpCraftEssences,
+    sources: sourcesFor(previous, { niceServant: servantsResponse, niceItem: itemsResponse, niceEquip: equipsResponse }),
     updatedAt: now(),
     eventNames,
   })

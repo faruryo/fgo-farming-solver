@@ -58,7 +58,7 @@
 
 ### 1. 礼装データは Material Catalog に足す
 
-カタログの更新ジョブに `nice_equip.json` を3つ目の取得元として足し、`sources.niceEquip` に検証子を持つ。蒸留の結果は `bondUpCraftEssences: { id, collectionNo, name, rarity, cost, face, target: 'party' | 'self', rate, add }[]` としてカタログに載せる。サーヴァントには `cost?` を足す。どちらも任意項目の追加なのでキーとスキーマバージョンは変えない(`bondGrowth` を足したときと同じ扱い)。
+カタログの更新ジョブに `nice_equip.json` を、検証子を持つ条件付き取得の取得元(今は `sources.niceServant` と `sources.niceItem` の2つ)の3つ目として足し、`sources.niceEquip` に検証子を持つ。イベント一覧(`eventUrl`)の取得は検証子を持たないので数えない。蒸留の結果は `bondUpCraftEssences: { id, collectionNo, name, rarity, cost, face, target: 'party' | 'self', rate, add }[]` としてカタログに載せる。サーヴァントには `cost?` を足す。どちらも任意項目の追加なのでキーとスキーマバージョンは変えない(`bondGrowth` を足したときと同じ扱い)。
 
 - 却下: ブラウザから Atlas の `nice_equip.json` を直接取る。22MB あり、絆トラッカーを開くたびに読ませられない
 - 却下: 別の KV キーに分ける。consumer(`/bond`)は既にカタログを読んでおり、更新の単位を増やす理由がない
@@ -104,7 +104,7 @@
 
 ### 5. 画面
 
-`components/bond/index.tsx` の Tabs に「礼装の提案」タブを足し、新しいコンポーネント(`components/bond/craft-essence-advisor.tsx`)に入力(サーヴァントの選択、クエスト、マスターレベル)と結果を描く。クエストの共通の候補は、選んだサーヴァントごとの `bondQuestCandidates` の結果の共通部分を、先頭のサーヴァントの並び順で取る。文言は既存の ja/en の翻訳ファイルに足す。
+`components/bond/index.tsx` の Tabs に「礼装の提案」タブを足し、新しいコンポーネント(`components/bond/craft-essence-advisor.tsx`)に入力(サーヴァントの選択、クエスト、マスターレベル)と結果を描く。クエストの共通の候補は、選んだサーヴァントごとの `bondQuestCandidates` の結果の共通部分を、先頭のサーヴァントの並び順で取る。選んだサーヴァントが0体のときは共通部分を取らず(空集合の共通部分を「全クエスト」としない)、選ぶよう示す。文言は既存の ja/en の翻訳ファイルに足す。
 
 ## Risks / Trade-offs
 

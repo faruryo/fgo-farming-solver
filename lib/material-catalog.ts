@@ -2,6 +2,8 @@ import type {
   ClassName,
   Item,
   MaterialsKey,
+  NiceEquip,
+  NiceEquipSkill,
   NiceServant,
 } from '../interfaces/atlas-academy'
 import type { MaterialsForServants, ReducedMaterials } from './get-materials'
@@ -16,7 +18,23 @@ export type SourceValidator = { etag?: string; lastModified?: string }
 export type MaterialCatalogServant = Pick<
   NiceServant,
   'id' | 'name' | 'className' | 'collectionNo' | 'rarity'
-> & { face: string | null; bondGrowth?: number[]; eventBonuses?: ServantEventBonus[] }
+> & { face: string | null; bondGrowth?: number[]; eventBonuses?: ServantEventBonus[]; cost?: number }
+
+/**
+ * 獲得絆を増やす概念礼装。値は最大解放時のもの。
+ * rate はパーティ全体の増加率(千分率)、add は固定の増加量。target が self のときは add だけを持つ。
+ */
+export type MaterialCatalogBondUpCraftEssence = {
+  id: number
+  collectionNo: number
+  name: string
+  rarity: number
+  cost: number
+  face: string
+  target: 'party' | 'self'
+  rate: number
+  add: number
+}
 
 export type MaterialCatalogItem = Pick<Item, 'id' | 'name' | 'icon'>
 
@@ -49,10 +67,12 @@ export type MaterialCatalogV1 = {
   sources: {
     niceServant: SourceValidator
     niceItem: SourceValidator
+    niceEquip?: SourceValidator
   }
   servants: MaterialCatalogServant[]
   materials: MaterialsForServants
   items: MaterialCatalogItem[]
+  bondUpCraftEssences?: MaterialCatalogBondUpCraftEssence[]
 }
 
 export const materialCatalogFace = (servant: NiceServant): string | null => {
@@ -74,10 +94,77 @@ export const isValidBondGrowth = (value: unknown): value is number[] =>
       isFinitePositive(point) && (index === 0 || point >= (value[index - 1] as number)),
   )
 
+const isNonNegativeInteger = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0
+
+const BOND_UP_FUNC_TYPE = 'servantFriendshipUp'
+const BOND_UP_TARGETS: Record<string, MaterialCatalogBondUpCraftEssence['target']> = {
+  ptFull: 'party',
+  self: 'self',
+}
+
+type BondUpEffect = Pick<MaterialCatalogBondUpCraftEssence, 'target' | 'rate' | 'add'>
+
+const bondUpFunctionEffect = (
+  fn: NiceEquipSkill['functions'][number],
+): BondUpEffect | null => {
+  if (fn.funcType !== BOND_UP_FUNC_TYPE || !Object.hasOwn(BOND_UP_TARGETS, fn.funcTargetType)) return null
+  const target = BOND_UP_TARGETS[fn.funcTargetType]
+  const sval = fn.svals.at(-1)
+  // イベント期間限定・特性限定の効果は提案の対象にしない。
+  if (!sval || sval.EventId || sval.Individuality) return null
+  // shortcut: 自身に効く増加率はイベント限定を除くと存在しないため読まない。
+  const rate = target === 'party' ? sval.RateCount ?? 0 : 0
+  return { target, rate, add: sval.AddCount ?? 0 }
+}
+
+const bondUpEffect = (equip: NiceEquip): BondUpEffect | null => {
+  const skills = (equip.skills ?? []).filter(skill =>
+    skill.functions.some(fn => fn.funcType === BOND_UP_FUNC_TYPE),
+  )
+  if (!skills.length) return null
+  // 未解放と最大解放の2段を持つ礼装は最大解放の段だけを読む。
+  const maxLimit = Math.max(...skills.map(skill => skill.condLimitCount))
+  const totals = new Map<BondUpEffect['target'], { rate: number; add: number }>()
+  const effects = skills
+    .filter(skill => skill.condLimitCount === maxLimit)
+    .flatMap(skill => skill.functions.map(bondUpFunctionEffect))
+  for (const effect of effects) {
+    if (!effect) continue
+    const total = totals.get(effect.target) ?? { rate: 0, add: 0 }
+    totals.set(effect.target, { rate: total.rate + effect.rate, add: total.add + effect.add })
+  }
+  // shortcut: パーティ全体と自身の効果が混ざる礼装はイベント限定を除くと存在しないため一覧に入れない。
+  if (totals.size !== 1) return null
+  const [[target, { rate, add }]] = [...totals]
+  return rate > 0 || add > 0 ? { target, rate, add } : null
+}
+
+/** nice_equip から、イベント限定・特性限定でない獲得絆の増加効果を持つ礼装を図鑑番号順に蒸留する。 */
+export const distillBondUpCraftEssences = (
+  equips: NiceEquip[],
+): MaterialCatalogBondUpCraftEssence[] =>
+  equips
+    .flatMap(equip => {
+      const effect = bondUpEffect(equip)
+      if (!effect) return []
+      return [{
+        id: equip.id,
+        collectionNo: equip.collectionNo,
+        name: equip.name,
+        rarity: equip.rarity,
+        cost: equip.cost,
+        face: Object.values(equip.extraAssets?.faces?.equip ?? {})[0] ?? '',
+        ...effect,
+      }]
+    })
+    .sort((a, b) => a.collectionNo - b.collectionNo || a.id - b.id)
+
 export const buildMaterialCatalog = ({
   servants,
   materials,
   items,
+  bondUpCraftEssences,
   sources,
   updatedAt,
   eventNames,
@@ -85,6 +172,7 @@ export const buildMaterialCatalog = ({
   servants: Array<NiceServant | MaterialCatalogServant>
   materials: MaterialsForServants
   items: Array<Item | MaterialCatalogItem>
+  bondUpCraftEssences?: MaterialCatalogBondUpCraftEssence[]
   sources: MaterialCatalogV1['sources']
   updatedAt: number
   eventNames?: ReadonlyMap<number, string>
@@ -103,6 +191,7 @@ export const buildMaterialCatalog = ({
     ...(isValidBondGrowth(servant.bondGrowth)
       ? { bondGrowth: [...servant.bondGrowth] }
       : {}),
+    ...(isNonNegativeInteger(servant.cost) ? { cost: servant.cost } : {}),
     eventBonuses:
       'extraAssets' in servant
         ? extractEventBonuses(servant.extraPassive, Math.floor(updatedAt / 1000), eventNames)
@@ -110,6 +199,7 @@ export const buildMaterialCatalog = ({
   })),
   materials,
   items: items.map(({ id, name, icon }) => ({ id, name, icon })),
+  ...(bondUpCraftEssences ? { bondUpCraftEssences } : {}),
 })
 
 export const materialCatalogFingerprint = (
@@ -120,6 +210,7 @@ export const materialCatalogFingerprint = (
     servants: catalog.servants,
     materials: catalog.materials,
     items: catalog.items,
+    bondUpCraftEssences: catalog.bondUpCraftEssences,
   })
 
 export const materialCatalogItemIds = (
@@ -180,6 +271,35 @@ const itemDisplayError = (item: unknown): string | null => {
     return 'invalid item display fields'
   }
   return null
+}
+
+const bondUpCraftEssenceError = (essence: unknown): string | null => {
+  if (!isRecord(essence)) return 'invalid bond-up craft essence'
+  if (
+    !isPositiveInteger(essence.id) ||
+    !isDisplayString(essence.name) ||
+    !isDisplayString(essence.face) ||
+    !isPositiveInteger(essence.cost) ||
+    (essence.target !== 'party' && essence.target !== 'self') ||
+    !isFiniteNonNegative(essence.rate) ||
+    !isFiniteNonNegative(essence.add) ||
+    (essence.rate <= 0 && essence.add <= 0)
+  ) {
+    return 'invalid bond-up craft essence'
+  }
+  return null
+}
+
+const bondUpCraftEssencesError = (catalog: MaterialCatalogV1): string | null => {
+  const essences = catalog.bondUpCraftEssences
+  if (!Array.isArray(essences) || !essences.length) return 'bond-up craft essences is empty'
+  for (const essence of essences) {
+    const error = bondUpCraftEssenceError(essence)
+    if (error) return error
+  }
+  return new Set(essences.map(essence => essence.id)).size === essences.length
+    ? null
+    : 'duplicate bond-up craft essence id'
 }
 
 const displayFieldsError = (catalog: MaterialCatalogV1): string | null => {
@@ -383,6 +503,14 @@ const previousCatalogError = (
   if (hasUnexpectedCountDrop(catalog.items.length, previous.items.length)) {
     return 'projected item count dropped unexpectedly'
   }
+  if (
+    hasUnexpectedCountDrop(
+      catalog.bondUpCraftEssences?.length ?? 0,
+      previous.bondUpCraftEssences?.length ?? 0,
+    )
+  ) {
+    return 'bond-up craft essence count dropped unexpectedly'
+  }
   const candidateTotals = materialQuantityTotals(catalog)
   const previousTotals = materialQuantityTotals(previous)
   if (hasUnexpectedCountDrop(candidateTotals.amount, previousTotals.amount)) {
@@ -415,6 +543,8 @@ export const validateMaterialCatalog = (
     new Set(catalog.items.map((item) => item.id)).size !== catalog.items.length
   )
     return { ok: false, reason: 'duplicate item id' }
+  const essenceError = bondUpCraftEssencesError(catalog)
+  if (essenceError) return { ok: false, reason: essenceError }
   const itemIds = new Set(catalog.items.map((item) => item.id))
   const materialError = validateMaterials(catalog, itemIds)
   if (materialError) return { ok: false, reason: materialError }

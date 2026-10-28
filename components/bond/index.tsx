@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import type { BondTrackerState } from '../../lib/bond/state'
-import type { MaterialCatalogServant } from '../../lib/material-catalog'
+import type { MaterialCatalogBondUpCraftEssence, MaterialCatalogServant } from '../../lib/material-catalog'
+import { advisorServants, CraftEssenceAdvisor } from './craft-essence-advisor'
 import { BondEstimateTable } from './estimate-table'
 import { BondServantCard, ClassIcon } from './servant-card'
 import { useBondTracker } from './use-bond-tracker'
@@ -115,7 +116,9 @@ function ServantSearch({
   )
 }
 
-function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServant[] }>) {
+type BondTrackerBodyProps = { servants: MaterialCatalogServant[]; bondUpCraftEssences: MaterialCatalogBondUpCraftEssence[] | undefined }
+
+function BondTrackerBody({ servants, bondUpCraftEssences }: Readonly<BondTrackerBodyProps>) {
   const { t } = useTranslation('bond')
   const tracker = useBondTracker(servants)
   if (tracker.isLoading) return <p>{t('loading', '読み込んでいます…')}</p>
@@ -131,6 +134,7 @@ function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServa
         <TabsList>
           <TabsTrigger value="input">{t('tab-input', '入力')}</TabsTrigger>
           <TabsTrigger value="estimate">{t('tab-estimate', '見積もり')}</TabsTrigger>
+          <TabsTrigger value="advisor">{t('tab-advisor', '礼装の提案')}</TabsTrigger>
         </TabsList>
         <TabsContent value="input" className="flex flex-col gap-3">
           <ServantSearch
@@ -166,6 +170,9 @@ function BondTrackerBody({ servants }: Readonly<{ servants: MaterialCatalogServa
             useApples={tracker.state.useApples}
           />
         </TabsContent>
+        <TabsContent value="advisor">
+          <CraftEssenceAdvisor registered={advisorServants(tracker.cards)} essences={bondUpCraftEssences} />
+        </TabsContent>
       </Tabs>
     </div>
   )
@@ -182,5 +189,5 @@ export function BondTracker() {
       </div>
     )
   if (!catalog) return <p>{t('loading', '読み込んでいます…')}</p>
-  return <BondTrackerBody servants={catalog.servants} />
+  return <BondTrackerBody servants={catalog.servants} bondUpCraftEssences={catalog.bondUpCraftEssences} />
 }
