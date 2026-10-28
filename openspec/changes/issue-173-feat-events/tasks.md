@@ -2,12 +2,12 @@
 
 ## 1. 入力の部品の共用
 
-- [ ] 1.1 `components/events/EventShopList.tsx` の `DropBonusInputs`・`BonusTarget`・対象の品目を組み立てる処理（`useBonusTargets`）を、交換所と箱計画の両方から使えるファイル（例: `components/events/DropBonusInputs.tsx`）へ出し、`EventShopList.tsx` はそれを使う（design の決定 4）。交換所の表示と振る舞いは変えない。確認: `components/events/EventHubClient.test.tsx` の交換所のボーナスのテストが変更なしで通る
+- [ ] 1.1 `components/events/EventShopList.tsx` の `DropBonusInputs` と `BonusTarget` を、交換所と箱計画の両方から使えるファイル（例: `components/events/DropBonusInputs.tsx`）へ出し、説明の1行を呼び出し側から渡せるようにして、`EventShopList.tsx` は今の文言を渡して使う（design の決定 4）。交換所の表示と振る舞いは変えない。確認: `components/events/EventHubClient.test.tsx` の交換所のボーナスのテストが変更なしで通る
 
 ## 2. 箱計画への反映
 
-- [ ] 2.1 `components/events/EventPlannerClient.tsx` に、ボーナス（通貨の品目 ID → +N）を `useState` で持ち、1.1 の部品でボーナスの欄を AP 予算の入力の上に出す（design の決定 1・3・5）。対象は箱を開ける通貨を先頭に、交換所の対価の通貨を重複を除いて並べる。ドロップの統計が無い（手入力のドロップの）ときは欄を出さない。`effectiveEvent` を `applyDropBonus` に通したイベントを、箱数の逆算・箱の確定報酬・交換所の配分・`runEventSolver`・`EventPlanResultCard` に渡す（design の決定 2）。ボーナスを1つでも入れたら計算結果の近くに注記を、反映できない通貨があればその通貨名を出す。文言を足すときは `locales` の events の ja と en の両方に足す。`components/events/EventPlannerClient.test.tsx` に次を足す
-  - 箱の通貨1種と交換所の通貨が複数ある箱のイベントで、それぞれに初期値 0 の欄が「ドロップ増加礼装」の見出しと説明の1行とともに出る。箱の通貨と同じ交換所の通貨は1つにまとまる
+- [ ] 2.1 `components/events/EventPlannerClient.tsx` に、ボーナス（通貨の品目 ID → +N）を `useState` で持ち、1.1 の部品でボーナスの欄を AP 予算の入力の上に出す（design の決定 1・3・5）。対象は箱を開ける通貨だけで、名前とアイコンはイベントの通貨の表記を使う。説明の1行と注記は箱計画用の新しいキーにする。ドロップの統計が無い（手入力のドロップの）ときは欄を出さない。`effectiveEvent` を `applyDropBonus` に通したイベントを、箱数の逆算・箱の確定報酬・交換所の配分・`runEventSolver`・`EventPlanResultCard` に渡す（design の決定 2）。ボーナスを 1 以上にしたら計算結果の直下に注記を、箱の通貨に反映できないときはその通貨名を出す。新しい文言は `locales` の events の ja と en の両方に足す。`components/events/EventPlannerClient.test.tsx` に次を足す
+  - 箱の通貨1種と交換所の通貨が複数ある箱のイベントで、箱の通貨の初期値 0 の欄だけが「ドロップ増加礼装」の見出しと、周回数と AP がボーナス込みになることを示す説明の1行とともに出て、交換所の通貨の欄は出ない。説明の1行に1周の獲得量が出ない
   - 箱を開けるのに要る通貨が 300、その通貨を落とすクエストが1つ（素の 10.0・回数 5.0）のイベントで、ボーナスに 2 を入れると、そのクエストの周回数が 15 周になり、合計 AP がその分になる。注記が出る
   - すべてのボーナスが 0 のとき、周回数と合計 AP がボーナスの機能が無いときと同じで、注記が出ない
   - ボーナスを入れたまま入力モードを箱数から欲しいアイテムへ切り替えても、欄の値が保たれ、周回の計算がボーナス込みのままである
@@ -24,5 +24,5 @@
 
 - [ ] 4.1 `pnpm dev`（`--webpack` は付けない。3000・3001 は使わない）で画面を確かめ、スクリーンショットを実装 PR に載せる <!-- verify-only -->
   - 準備: 確認のときだけ `mocks/events.json` の 80506 の各ドロップに1周あたりのドロップ回数を足す（commit しない）
-  - /events/80506 を 375px と desktop の幅で開き、ボーナスの欄（見出しと説明の1行、5種類の通貨）と計算結果が入る範囲を撮る。箱を開ける通貨のボーナスに値を入れると周回数と合計 AP が減り、注記が出ること、ページを読み込み直すと欄が 0 に戻ること、375px でページに横スクロールが出ないことを確かめる
+  - /events/80506 を 375px と desktop の幅で開き、ボーナスの欄（見出しと説明の1行、箱の通貨の欄だけ）と計算結果が入る範囲を撮る。箱を開ける通貨のボーナスに値を入れると周回数と合計 AP が減り、注記が出ること、ページを読み込み直すと欄が 0 に戻ること、375px でページに横スクロールが出ないことを確かめる
   - 準備で足した値を元に戻し、`git status` で `mocks/events.json` に差分が無いことを確かめる
