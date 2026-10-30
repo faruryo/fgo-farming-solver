@@ -12,7 +12,7 @@ import { useDrops } from '../../hooks/use-drops'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
 import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
@@ -58,7 +58,8 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
   const podFree = usePodFreeQuests(dashboardMeta?.podFreePeriods, nowSec)
   const [possession] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
-    {}
+    {},
+    { onGet: countsOrEmpty, repairOnGet: true }
   )
 
   const nearGoalEntries = useMemo(() => {

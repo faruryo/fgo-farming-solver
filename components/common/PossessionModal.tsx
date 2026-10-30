@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ItemIdentity } from './ItemIdentity'
 import { StockTargetSettings } from './StockTargetSettings'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { PossessionImportDialog } from './possession-import/PossessionImportDialog'
 import { parsePossessionInput } from '../../lib/possession-count'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -112,6 +112,7 @@ export const PossessionModal: React.FC<{
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
     {},
+    { onGet: countsOrEmpty, repairOnGet: true },
   )
   const [importOpen, setImportOpen] = useState(false)
 

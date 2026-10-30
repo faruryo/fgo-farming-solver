@@ -7,6 +7,27 @@ import {
   useState,
 } from 'react'
 
+/**
+ * `onGet` 用。保存値が object（配列を除く）でなければ空の object として読む。
+ * 壊れた保存値（`null` など）で `Object.entries` などが投げて描画が落ちるのを防ぐ。
+ */
+export const recordOrEmpty = <V>(item: unknown): Record<string, V> =>
+  item !== null && typeof item === 'object' && !Array.isArray(item) ? (item as Record<string, V>) : {}
+
+/** `onGet` 用（所持数）。`recordOrEmpty` に加え、有限の数でない値の品目を外す。 */
+export const countsOrEmpty = (item: unknown): Record<string, number> =>
+  Object.fromEntries(
+    Object.entries(recordOrEmpty(item)).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1]))
+  )
+
+/** `onGet` 用（周回目標）。入力欄の文字列（`''` を含む）は残し、数として読めない値の品目を外す。 */
+export const itemCountsOrEmpty = <V extends string | number = string | number>(item: unknown): Record<string, V> =>
+  Object.fromEntries(
+    Object.entries(recordOrEmpty(item)).filter(([, v]) =>
+      typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string' && Number.isFinite(Number(v))
+    )
+  ) as Record<string, V>
+
 export const useLocalStorage = <T>(
   key: string,
   initialState: T,
@@ -16,6 +37,10 @@ export const useLocalStorage = <T>(
     // 読むだけの画面が未設定端末へ初期値や onGet 変換結果を書き込まないよう、
     // 返した setter が呼ばれるまで保存しない。
     lazyWrite?: boolean
+    // onGet で変わった保存値を壊れた値の補正とみなし、読んだ時に1回だけ書き戻す。
+    // 補正はユーザーの編集ではないので derived で通知し、クラウド同期の dirty にしない
+    // （壊れていない端末のクラウド値を補正だけで上書きしない）。
+    repairOnGet?: boolean
   }
 ): [T, Dispatch<SetStateAction<T>>] => {
   // Always initialize with initialState to avoid SSR/hydration mismatch.
@@ -30,16 +55,23 @@ export const useLocalStorage = <T>(
   const editedRef = useRef(false)
   const lazyWrite = options?.lazyWrite
 
+  const parseStored = (json: string): T => {
+    const parsed = JSON.parse(json) as T
+    if (!options?.onGet) return parsed
+    const obj = options.onGet(parsed)
+    if (options.repairOnGet && JSON.stringify(obj) !== JSON.stringify(parsed)) {
+      localStorage.setItem(key, JSON.stringify(obj))
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key, derived: true } }))
+    }
+    return obj
+  }
+
   // Sync from localStorage after mount (client-only, runs after hydration)
   useEffect(() => {
     if (!options?.useInitial) {
       try {
         const json = localStorage.getItem(key)
-        if (json) {
-          let obj = JSON.parse(json) as T
-          if (options?.onGet) obj = options.onGet(obj)
-          setState(obj)
-        }
+        if (json) setState(parseStored(json))
       } catch (e) {
         console.error(e)
       }
@@ -75,8 +107,7 @@ export const useLocalStorage = <T>(
       const json = localStorage.getItem(key)
       if (json) {
         try {
-          let obj = JSON.parse(json) as T
-          if (options?.onGet) obj = options.onGet(obj)
+          const obj = parseStored(json)
           if (JSON.stringify(obj) !== JSON.stringify(stateRef.current)) {
             setState(obj)
           }

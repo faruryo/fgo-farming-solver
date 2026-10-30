@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
 import { useChecked } from '../../hooks/use-checked-from-quest-state'
 import { useExcludedQuests } from '../../hooks/use-excluded-quests'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { itemCountsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useQuestTree } from '../../hooks/use-quest-tree'
 import { Item, Quest } from '../../interfaces/fgodrop'
 import { Localized } from '../../lib/get-local-items'
@@ -83,7 +83,8 @@ export const Index = ({ items, quests }: FarmingIndexProps) => {
   )
   const [itemCounts, setItemCounts] = useLocalStorage(
     STORAGE_KEYS.ITEMS,
-    initialItemCounts
+    initialItemCounts,
+    { onGet: itemCountsOrEmpty<string>, repairOnGet: true }
   )
 
   // 周回対象クエスト選択の永続化（旧 'quests' → 'excludedQuests' 移行 /

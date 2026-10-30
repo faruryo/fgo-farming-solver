@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { FarmingPurposeSelector } from '../common/FarmingPurposeSelector'
 import { EventCraftAdvisor } from '../material/event-craft-advisor'
 import { useRosterNeed, toAmounts, type RosterNeed } from '../../hooks/use-roster-need'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useDrops } from '../../hooks/use-drops'
 import { useStockTarget } from '../../hooks/use-stock-target'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -152,7 +152,7 @@ export const EventCraftSection: React.FC<Props> = ({ items }) => {
   const [possession] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
     {},
-    { lazyWrite: true },
+    { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
   )
   const drops = useDrops()
   const { purpose, stockEnabled, stockBuffer } = useStockTarget()

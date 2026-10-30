@@ -49,7 +49,28 @@ export type NiceServant = Servant &
     /** 絆Lvごとの累積必要ポイント(index 0 が Lv1 到達に必要な累積値)。 */
     bondGrowth?: number[]
     extraPassive?: NiceExtraPassiveSkill[]
+    cost?: number
   }
+
+/** 概念礼装(nice_equip)。絆アップ礼装の蒸留に使う項目だけ型を付ける。 */
+export type NiceEquip = {
+  id: number
+  collectionNo: number
+  name: string
+  rarity: number
+  cost: number
+  extraAssets?: { faces?: { equip?: Record<string, string> } }
+  skills: NiceEquipSkill[]
+}
+
+export type NiceEquipSkill = {
+  condLimitCount: number
+  functions: {
+    funcType: string
+    funcTargetType: string
+    svals: { RateCount?: number; AddCount?: number; EventId?: number; Individuality?: number }[]
+  }[]
+}
 
 /** イベント特攻・絆ボーナスなど、期間やイベントに紐づく追加パッシブ。必要な項目だけ型を付ける。 */
 export type NiceExtraPassiveSkill = {

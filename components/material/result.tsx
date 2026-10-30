@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, ImageUp, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useStockTarget } from '../../hooks/use-stock-target'
 import { useQuestTree } from '../../hooks/use-quest-tree'
 import { useExcludedQuests } from '../../hooks/use-excluded-quests'
@@ -231,6 +231,7 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   >(
     STORAGE_KEYS.POSSESSION,
     Object.fromEntries(trackedItems.map((item) => [item.id.toString(), 0])),
+    { onGet: countsOrEmpty, repairOnGet: true },
   )
 
   // 表示フィルタ: all=全て / short=不足(必要数未達) / stock=ストック不足(必要数+buffer未達)。

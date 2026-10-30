@@ -2,7 +2,7 @@
 
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useLocalStorage } from './use-local-storage'
+import { countsOrEmpty, itemCountsOrEmpty, recordOrEmpty, useLocalStorage } from './use-local-storage'
 import { mergeChaldeaState } from './use-chaldea-state-merger'
 import { ChaldeaState, ServantState, createChaldeaState } from './create-chaldea-state'
 
@@ -229,6 +229,26 @@ describe('useLocalStorage + mergeChaldeaState integration (material state)', () 
   })
 })
 
+describe('recordOrEmpty', () => {
+  it.each([null, undefined, [1, 2], 'text', 3, true])('object でない保存値（%j）は空の object にする', (stored) => {
+    expect(recordOrEmpty(stored)).toEqual({})
+  })
+
+  it('object はそのまま返す', () => {
+    const stored = { 1: 2 }
+    expect(recordOrEmpty(stored)).toBe(stored)
+  })
+
+  it('保存値が null でも onGet で初期値の形に読み、保存値は書き換えない', async () => {
+    localStorage.setItem('test/null-record', 'null')
+    const { result } = renderHook(() =>
+      useLocalStorage<Record<string, number>>('test/null-record', {}, { lazyWrite: true, onGet: recordOrEmpty })
+    )
+    await waitFor(() => expect(result.current[0]).toEqual({}))
+    expect(localStorage.getItem('test/null-record')).toBe('null')
+  })
+})
+
 describe('useLocalStorage lazyWrite', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -280,5 +300,88 @@ describe('useLocalStorage lazyWrite', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(setItem).not.toHaveBeenCalled()
     expect(localStorage.getItem('test/lazy-sync')).toBe('{"count":5}')
+  })
+})
+
+describe('countsOrEmpty / itemCountsOrEmpty', () => {
+  it('所持数は有限の数でない値の品目だけを外す', () => {
+    expect(countsOrEmpty({ 6516: 'abc', 6517: 3, 6518: null, 6519: Infinity })).toEqual({ 6517: 3 })
+    expect(countsOrEmpty([1, 2])).toEqual({})
+  })
+
+  it('周回目標は入力欄の文字列を残し、数として読めない値の品目だけを外す', () => {
+    expect(itemCountsOrEmpty({ a: '', b: '5', c: 7, d: 'abc', e: null, f: {} })).toEqual({ a: '', b: '5', c: 7 })
+    expect(itemCountsOrEmpty(null)).toEqual({})
+  })
+})
+
+describe('useLocalStorage repairOnGet', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.restoreAllMocks()
+  })
+
+  it.each([
+    ['null', '{}'],
+    ['[1,2]', '{}'],
+    ['{"6516":"abc","6517":3}', '{"6517":3}'],
+  ])('壊れた保存値 %s を読むと補正値 %s を書き戻し、同期の dirty にしない通知だけを出す', async (stored, repaired) => {
+    localStorage.setItem('test/repair', stored)
+    const onSync = vi.fn()
+    window.addEventListener('ls-sync', onSync)
+
+    const { result } = renderHook(() =>
+      useLocalStorage<Record<string, number>>('test/repair', {}, { onGet: countsOrEmpty, repairOnGet: true })
+    )
+
+    await waitFor(() => expect(result.current[0]).toEqual(JSON.parse(repaired)))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(localStorage.getItem('test/repair')).toBe(repaired)
+    expect(onSync).toHaveBeenCalledTimes(1)
+    expect((onSync.mock.calls[0][0] as CustomEvent).detail).toEqual({ key: 'test/repair', derived: true })
+
+    window.removeEventListener('ls-sync', onSync)
+  })
+
+  it('lazyWrite でも壊れた保存値は書き戻す', async () => {
+    localStorage.setItem('test/repair-lazy', 'null')
+    const { result } = renderHook(() =>
+      useLocalStorage<Record<string, number>>('test/repair-lazy', {}, { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true })
+    )
+    await waitFor(() => expect(result.current[0]).toEqual({}))
+    expect(localStorage.getItem('test/repair-lazy')).toBe('{}')
+  })
+
+  it('正しい保存値は書き換えず、通知も出さない', async () => {
+    localStorage.setItem('test/repair-ok', '{"6517":3}')
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    const onSync = vi.fn()
+    window.addEventListener('ls-sync', onSync)
+
+    const { result } = renderHook(() =>
+      useLocalStorage<Record<string, number>>('test/repair-ok', {}, { onGet: countsOrEmpty, repairOnGet: true })
+    )
+
+    await waitFor(() => expect(result.current[0]).toEqual({ 6517: 3 }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(setItem).not.toHaveBeenCalled()
+    expect(onSync).not.toHaveBeenCalled()
+
+    window.removeEventListener('ls-sync', onSync)
+  })
+
+  it('他のタブから届いた壊れた値も補正して書き戻す', async () => {
+    const { result } = renderHook(() =>
+      useLocalStorage<Record<string, number>>('test/repair-sync', {}, { onGet: countsOrEmpty, repairOnGet: true })
+    )
+    await waitFor(() => expect(localStorage.getItem('test/repair-sync')).toBe('{}'))
+
+    localStorage.setItem('test/repair-sync', '{"1":"x","2":4}')
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: 'test/repair-sync' }))
+    })
+
+    await waitFor(() => expect(result.current[0]).toEqual({ 2: 4 }))
+    expect(localStorage.getItem('test/repair-sync')).toBe('{"2":4}')
   })
 })

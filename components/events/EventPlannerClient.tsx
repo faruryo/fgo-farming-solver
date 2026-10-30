@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import { useLocalStorage } from '../../hooks/use-local-storage'
+import { itemCountsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import {
   calcBoxLayer,
@@ -15,6 +15,7 @@ import {
   computeRosterImpact,
   reverseCalcBoxes,
   runEventSolver,
+  applyDropBonus,
   type BoxLayerResult,
   type ShopAllocationResult,
   type RosterImpactResult,
@@ -24,6 +25,7 @@ import { useRosterNeed } from '../../hooks/use-roster-need'
 import { EventPlanResultCard } from './EventPlanResultCard'
 import { ApBudgetInputs, useApBudgetProfile } from './ApBudget'
 import { computeApBudget } from '../../lib/ap-budget'
+import { DropBonusInputs } from './DropBonusInputs'
 
 interface Props {
   event: EventPlannerEvent
@@ -58,7 +60,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const [possessionRaw] = useLocalStorage<Record<string, string | number>>(
     STORAGE_KEYS.ITEMS,
     {},
-    { lazyWrite: true }
+    { lazyWrite: true, onGet: itemCountsOrEmpty, repairOnGet: true }
   )
 
   // Normalize possession to Record<string, number>
@@ -86,6 +88,8 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const [manualDropPerRun, setManualDropPerRun] = useState<string>('')
   // Direct item demand input (US-2): atlasId(string) → desired quantity(string)
   const [itemDemandInput, setItemDemandInput] = useState<Record<string, string>>({})
+  // ドロップ増加礼装のボーナス（通貨の atlasId → +N）。画面を開いている間だけ持つ。
+  const [bonus, setBonus] = useState<ReadonlyMap<number, number>>(() => new Map())
 
   const selectableItems = useMemo(() => collectSelectableItems(event), [event])
 
@@ -104,7 +108,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   const usingManualDrops = !hasAtlasDrops && Number(manualDropPerRun) > 0 && !!event.farmingNodes[0]
 
   // Build event with manual drops substituted when Atlas data is absent and user typed one
-  const effectiveEvent = useMemo<EventPlannerEvent>(() => {
+  const manualEvent = useMemo<EventPlannerEvent>(() => {
     const manualNum = Number(manualDropPerRun)
     if (hasAtlasDrops || !manualNum || !event.farmingNodes[0]) return event
 
@@ -121,6 +125,14 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
       ),
     }
   }, [event, hasAtlasDrops, manualDropPerRun])
+
+  // ボーナスは箱を開ける通貨だけが対象。手入力のドロップには足さない（礼装の分も含めて入れてもらう）。
+  const bonused = useMemo(
+    () => (hasAtlasDrops ? applyDropBonus(manualEvent, new Map(bonus)) : { event: manualEvent, unapplied: [] }),
+    [hasAtlasDrops, manualEvent, bonus],
+  )
+  const effectiveEvent = bonused.event
+  const bonusApplied = hasAtlasDrops && [...bonus.values()].some(n => n > 0)
 
   // ── Calculations ────────────────────────────────────────────────────────────
 
@@ -391,6 +403,20 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                 </div>
               </div>
 
+              {/* ドロップ増加礼装のボーナス（ドロップの統計があるときだけ） */}
+              {hasAtlasDrops && (
+                <DropBonusInputs
+                  targets={[{ itemId: event.currency.id, label: event.currency.name, icon: event.currency.icon }]}
+                  bonus={bonus}
+                  unappliedLabels={bonused.unapplied.length > 0 ? [event.currency.name] : []}
+                  description={t(
+                    'event-planner-bonus-description',
+                    '編成した礼装の 1ドロップにつき +N を入れると、周回数と AP がボーナス込みになります',
+                  )}
+                  onChange={(itemId, value) => setBonus(prev => new Map(prev).set(itemId, value))}
+                />
+              )}
+
               {/* Master profile: AP予算（マスターレベル + 所持黄金の果実） */}
               <ApBudgetInputs />
 
@@ -470,6 +496,14 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                     : solverResult?.dropSource ?? (hasAtlasDrops ? 'atlas' : 'none')
                 }
               />
+              {bonusApplied && (
+                <p className="text-xs" style={{ color: 'var(--text3)' }}>
+                  {t(
+                    'event-planner-bonus-applied',
+                    '入れたドロップ増加礼装のボーナス（1ドロップにつき +N）を足して計算しています。',
+                  )}
+                </p>
+              )}
 
               {/* Overflow warnings (US-6) */}
               {shopAllocation.hasOverflow && (
