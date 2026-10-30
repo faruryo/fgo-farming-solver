@@ -716,7 +716,7 @@ describe('EventHubClient', () => {
       it('礼装を「必要」にすると svt:<番号> のキーで保存し、同じ番号のアイテムのキーは作らない', () => {
         renderSvtShop()
         const [ce] = screen.getAllByRole('radiogroup', { name: '完璧なお正月 は必要か' })
-        fireEvent.click(within(ce as HTMLElement).getByRole('radio', { name: '必要' }))
+        fireEvent.click(within(ce).getByRole('radio', { name: '必要' }))
 
         expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
           'svt:9305420': true,
