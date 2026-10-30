@@ -13,7 +13,9 @@ export const dynamic = 'force-dynamic'
 const loadShopApPrices = async (shop: EventShopItem[]): Promise<Record<number, number>> => {
   try {
     const prices = resolveUnitPrices(await getDrops(), [])
-    const entries = shop.flatMap(({ itemId }) => {
+    // サーヴァント扱いの品目はドロップ表に現れないので引かない。
+    const entries = shop.flatMap(({ itemId, kind }) => {
+      if (kind === 'svt') return []
       const price = prices.get(String(itemId))
       return price ? [[itemId, price.apPrice] as const] : []
     })

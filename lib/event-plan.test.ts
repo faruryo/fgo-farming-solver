@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import type { EventPlannerEvent } from './master-data/types'
+import type { EventPlannerEvent, EventShopItem } from './master-data/types'
 import type { ChaldeaState } from '../hooks/create-chaldea-state'
 import type { MaterialsForServants } from './get-materials'
 import {
@@ -163,6 +163,29 @@ describe('allocateShop', () => {
     ])
     const result = allocateShop(shopItems, demand)
     expect(result.totalCurrencyUsed).toBe(200 + 600)
+  })
+})
+
+describe('サーヴァント扱いの交換所の品目（kind=svt）', () => {
+  // 9305420 は礼装とイベントアイテムで番号が同じ
+  const svtItem: EventShopItem = {
+    itemId: 9305420, kind: 'svt', qty: 1, costItemId: 94151101, costAmount: 50, limitNum: 2, name: '完璧なお正月',
+  }
+  const item: EventShopItem = {
+    itemId: 9305420, qty: 1, costItemId: 94151101, costAmount: 10, limitNum: 10, name: 'お正月のアイテム',
+  }
+
+  it('需要のある素材と同じ番号でも交換に選ばれず、アイテムの品目に配分される', () => {
+    const result = allocateShop([svtItem, item], new Map([[9305420, 3]]))
+    expect(result.allocations.map((a) => a.shopItem)).toEqual([item])
+    expect(result.allocations[0]?.allocated).toBe(3)
+    expect(result.totalCurrencyUsed).toBe(30)
+  })
+
+  it('名前の対応表はアイテムの名前のまま', () => {
+    const event: EventPlannerEvent = { ...mockEvent, shop: [item, svtItem] }
+    const { drops } = buildEventDrops(event, 0, new Map([[9305420, 1]]))
+    expect(drops.items.find((i) => i.id === '9305420')?.name).toBe('お正月のアイテム')
   })
 })
 

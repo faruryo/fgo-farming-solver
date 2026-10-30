@@ -18,12 +18,17 @@ import type {
 /** Atlas nice_item の id → 表示名・アイコン・品目の種類（Atlas の type。eventPoint 等）。 */
 export type ItemMap = Map<number, { name: string; icon: string; type: string }>
 
+/** Atlas basic_svt の id → 表示名・レア度・アイコン（face の URL）。 */
+export type SvtMap = Map<number, { name: string; rarity: number; face: string }>
+
 export interface AtlasShopItem {
   purchaseType: string
   payType: string
   targetIds: number[]
   setNum: number
   limitNum: number
+  /** 交換所の見出し。svt の情報が取れないときの名前に使う。 */
+  name?: string
   cost: {
     item: { id: number }
     amount: number
@@ -31,26 +36,49 @@ export interface AtlasShopItem {
   gifts?: unknown[]
 }
 
-/** AtlasShopItem[] → EventShopItem[] の変換 */
-export function compactShop(shop: AtlasShopItem[], itemMap: ItemMap): EventShopItem[] {
+/**
+ * AtlasShopItem[] → EventShopItem[] の変換。
+ * purchaseType が item（アイテム）と servant（種火・フォウくん・礼装など）で、対価がイベントアイテムのものを取る。
+ * servant は kind='svt' にし、名前・レア度・アイコンを svtMap から付ける（無ければ見出しを名前にする）。
+ */
+export function compactShop(shop: AtlasShopItem[], itemMap: ItemMap, svtMap?: SvtMap): EventShopItem[] {
   return shop
-    .filter(s => s.purchaseType === 'item' && s.payType === 'eventItem')
+    .filter(s => (s.purchaseType === 'item' || s.purchaseType === 'servant') && s.payType === 'eventItem')
     .flatMap(s => {
       // gifts が空のときは targetIds × setNum で報酬を決定（Phase 0 確認済み）
       if (!s.targetIds || s.targetIds.length === 0) return []
       const costMeta = itemMap.get(s.cost.item.id)
+      const base = (itemId: number) => ({
+        itemId,
+        qty: s.setNum ?? 1,
+        costItemId: s.cost.item.id,
+        costAmount: s.cost.amount,
+        limitNum: s.limitNum ?? 0,
+      })
+      const costFields = {
+        ...(costMeta ? { costName: costMeta.name } : {}),
+        ...(costMeta?.icon ? { costIcon: costMeta.icon } : {}),
+      }
+      if (s.purchaseType === 'servant') {
+        return s.targetIds.map((itemId): EventShopItem => {
+          const meta = svtMap?.get(itemId)
+          return {
+            ...base(itemId),
+            kind: 'svt',
+            name: meta?.name ?? s.name ?? '',
+            ...(meta?.face ? { icon: meta.face } : {}),
+            ...(meta ? { rarity: meta.rarity } : {}),
+            ...costFields,
+          }
+        })
+      }
       return s.targetIds.map(itemId => {
         const meta = itemMap.get(itemId)
         return {
-          itemId,
-          qty: s.setNum ?? 1,
-          costItemId: s.cost.item.id,
-          costAmount: s.cost.amount,
-          limitNum: s.limitNum ?? 0,
+          ...base(itemId),
           name: meta?.name ?? '',
           ...(meta?.icon ? { icon: meta.icon } : {}),
-          ...(costMeta ? { costName: costMeta.name } : {}),
-          ...(costMeta?.icon ? { costIcon: costMeta.icon } : {}),
+          ...costFields,
         }
       })
     })
@@ -100,7 +128,8 @@ export type EventImportDecision =
  *
  * - ロトが1件以上あって検証が全滅したら skip（交換所イベントとして入れると既存の箱データを空のロトで上書きするため）。
  * - ロトが無く交換所も空なら skip。
- * - ロトが無く交換所があれば、交換所の最初のエントリーの対価の通貨を currency にする。
+ * - ロトが無く交換所があれば、最初のアイテムの品目（無ければ最初のサーヴァント扱いの品目）の
+ *   対価の通貨を currency にする。サーヴァント扱いの品目が先に並んでも既存の通貨を変えないため。
  */
 export function decideEventImport(
   atlasLotteryCount: number,
@@ -113,7 +142,7 @@ export function decideEventImport(
       ? { kind: 'lottery' }
       : { kind: 'skip', reason: 'all lotteries failed validation' }
   }
-  const first = shop[0]
+  const first = shop.find(s => s.kind !== 'svt') ?? shop[0]
   if (!first) return { kind: 'skip', reason: 'no lotteries and no shop items' }
   const meta = itemMap.get(first.costItemId)
   return {
