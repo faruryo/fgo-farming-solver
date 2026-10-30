@@ -675,6 +675,91 @@ describe('EventHubClient', () => {
       expect(screen.queryByText(/見分けられません/)).not.toBeInTheDocument()
     })
 
+    describe('サーヴァント扱いの品目', () => {
+      const icon = (id: number) => `https://static.atlasacademy.io/JP/Faces/f_${id}0.png`
+      const svtEntry = (itemId: number, name: string, limitNum: number, costItemId = 94001): EventShopItem => ({
+        itemId,
+        kind: 'svt',
+        qty: 1,
+        costItemId,
+        costAmount: 10,
+        limitNum,
+        name,
+        icon: icon(itemId),
+        costName: costItemId === 94001 ? '武蔵うどん' : '江戸むすび',
+      })
+      // 9305420 は礼装とイベントアイテムで番号が同じ。6516 は育成計画で必要数のある素材の番号。
+      const svtShop = [
+        svtEntry(9770500, '叡智の大火', 100),
+        svtEntry(9700300, '星のフォウくん', 40),
+        svtEntry(9305420, '完璧なお正月', 2),
+        svtEntry(9305420, '完璧なお正月', 1, 94002),
+        svtEntry(6516, '番号が素材と同じ礼装', 1),
+        shopEntry(9305420, 94001, { name: '同じ番号のアイテム', qty: 1, costAmount: 10, limitNum: 3 }),
+      ]
+      const renderSvtShop = () => renderShop({ shop: svtShop })
+
+      it('名前とアイコンとともに並び、「計画の対象外」と必要／不要の切り替えが出る', () => {
+        renderSvtShop()
+        for (const [id, name] of [
+          [9770500, '叡智の大火'],
+          [9700300, '星のフォウくん'],
+          [6516, '番号が素材と同じ礼装'],
+        ] as const) {
+          expect(cellOf(name).querySelector('img')?.getAttribute('src')).toContain(encodeURIComponent(icon(id)))
+          expect(within(cellOf(name)).getByText('計画の対象外')).toBeInTheDocument()
+          expect(within(toggleOf(name)).getByRole('radio', { name: '不要' })).toBeChecked()
+        }
+        expect(screen.getAllByLabelText('完璧なお正月 の交換回数')).toHaveLength(2)
+      })
+
+      it('礼装を「必要」にすると svt:<番号> のキーで保存し、同じ番号のアイテムのキーは作らない', () => {
+        renderSvtShop()
+        const [ce] = screen.getAllByRole('radiogroup', { name: '完璧なお正月 は必要か' })
+        fireEvent.click(within(ce as HTMLElement).getByRole('radio', { name: '必要' }))
+
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
+          'svt:9305420': true,
+        })
+        for (const group of screen.getAllByRole('radiogroup', { name: '完璧なお正月 は必要か' })) {
+          expect(within(group).getByRole('radio', { name: '必要' })).toBeChecked()
+        }
+        expect(within(toggleOf('同じ番号のアイテム')).getByRole('radio', { name: '不要' })).toBeChecked()
+
+        fireEvent.click(shortfallButton())
+        const [ceA, ceB] = screen.getAllByLabelText('完璧なお正月 の交換回数')
+        expect(ceA).toHaveValue(2)
+        expect(ceB).toHaveValue(1)
+        expect(screen.getByLabelText('同じ番号のアイテム の交換回数')).toHaveValue(0)
+        expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(0)
+      })
+
+      it('全部交換を押すと在庫上限の回数になる', () => {
+        renderSvtShop()
+        fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+        expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(100)
+        expect(screen.getByLabelText('星のフォウくん の交換回数')).toHaveValue(40)
+        const [ceA, ceB] = screen.getAllByLabelText('完璧なお正月 の交換回数')
+        expect(ceA).toHaveValue(2)
+        expect(ceB).toHaveValue(1)
+      })
+
+      it('育成計画が未設定のとき・素材の一覧を読み込めないときは切り替えを出さない', () => {
+        mocks.roster = { status: 'empty' }
+        const { unmount } = renderSvtShop()
+        expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+        unmount()
+
+        mocks.roster = ready({ 6516: 30 })
+        mocks.catalog = { catalog: null, failed: true, reload }
+        renderSvtShop()
+        expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+        expect(within(cellOf('番号が素材と同じ礼装')).queryByText(/あと/)).not.toBeInTheDocument()
+      })
+    })
+
     it('所持数は POSSESSION から読み、ITEMS の値は使わず、POSSESSION を書き換えない', () => {
       setLs(STORAGE_KEYS.ITEMS, { 6516: 0, 6517: 0, 6519: 15 })
       const before = localStorage.getItem(STORAGE_KEYS.POSSESSION)

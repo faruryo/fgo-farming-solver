@@ -120,7 +120,8 @@ export const orderShopByEfficiency = (
   const unpriced: EventShopItem[] = []
   const priced: { item: EventShopItem; efficiency: number }[] = []
   for (const item of group.items) {
-    const price = prices.get(item.itemId)
+    // サーヴァント扱いの品目はドロップ表に現れないので、同じ番号のアイテムの価格を引かない。
+    const price = item.kind === 'svt' ? undefined : prices.get(item.itemId)
     if (price === undefined || price <= 0 || item.costAmount <= 0) unpriced.push(item)
     else priced.push({ item, efficiency: (item.qty * price) / item.costAmount })
   }
@@ -155,15 +156,25 @@ export type ShopItemStatus =
   | { kind: 'outside' }
 
 /**
+ * 「要る」の保存のキー。アイテムの品目は番号の文字列、サーヴァント扱いの品目は `svt:<番号>`
+ * （番号が同じアイテムの品目と取り違えないため）。
+ */
+export const shopWantedKey = (item: Pick<EventShopItem, 'itemId' | 'kind'>): string =>
+  item.kind === 'svt' ? `svt:${item.itemId}` : String(item.itemId)
+
+/**
  * 品目の状態を決める。QP は状態なし。必要数のある素材は `planItemIds` を見ない。
  * `planItemIds`（育成計画で扱う素材の集合）が undefined なら、必要数 0 の品目は見分けられないので状態なし。
+ * サーヴァント扱いの品目は育成計画の素材ではないので、番号を突き合わせずに計画の対象外にする。
  */
 export const shopItemStatus = (
-  itemId: number,
+  item: Pick<EventShopItem, 'itemId' | 'kind'>,
   totalNeed: ReadonlyMap<number, number>,
   shortfall: ReadonlyMap<number, number>,
   planItemIds: ReadonlySet<number> | undefined,
 ): ShopItemStatus | undefined => {
+  if (item.kind === 'svt') return planItemIds ? { kind: 'outside' } : undefined
+  const { itemId } = item
   if (itemId === QP_ITEM_ID) return undefined
   if ((totalNeed.get(itemId) ?? 0) > 0) {
     const n = shortfall.get(itemId) ?? 0
@@ -187,13 +198,13 @@ export interface ShortfallAllocation {
 /**
  * 不足の分と「要る」の計画の対象外の品目だけを交換する回数を出す。
  * 不足は交換所の元の順に品目へ割り当て、在庫上限で打ち切る。1回の個数が 0 以下の品目は割り当てない。
- * `wanted` は保存した「要る」の atlasId で、状態が「計画の対象外」の品目にだけ使う。
+ * `wanted` は保存した「要る」のキー（`shopWantedKey`）で、状態が「計画の対象外」の品目にだけ使う。
  */
 export const allocateShortfallOnly = (
   shop: EventShopItem[],
   shortfall: ReadonlyMap<number, number>,
-  statusOf: (itemId: number) => ShopItemStatus | undefined,
-  wanted: ReadonlySet<number>,
+  statusOf: (item: EventShopItem) => ShopItemStatus | undefined,
+  wanted: ReadonlySet<string>,
 ): ShortfallAllocation => {
   const counts = new Map<number, number>()
   const remaining = new Map<number, number>()
@@ -201,7 +212,7 @@ export const allocateShortfallOnly = (
   const unlimitedWanted = new Set<number>()
   shop.forEach((item, index) => {
     counts.set(index, 0)
-    const status = statusOf(item.itemId)
+    const status = statusOf(item)
     if (status?.kind === 'short') {
       lastIndex.set(item.itemId, index)
       const left = remaining.get(item.itemId) ?? shortfall.get(item.itemId) ?? 0
@@ -213,7 +224,7 @@ export const allocateShortfallOnly = (
       const count = item.limitNum > 0 ? Math.min(needed, item.limitNum) : needed
       counts.set(index, count)
       remaining.set(item.itemId, Math.max(0, left - count * item.qty))
-    } else if (status?.kind === 'outside' && wanted.has(item.itemId) && item.qty > 0) {
+    } else if (status?.kind === 'outside' && wanted.has(shopWantedKey(item)) && item.qty > 0) {
       if (item.limitNum > 0) counts.set(index, item.limitNum)
       else unlimitedWanted.add(index)
     }

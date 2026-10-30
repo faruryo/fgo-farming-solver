@@ -62,6 +62,7 @@ import type {
   AtlasShopItem,
   EventRewardsEntry,
   ItemMap,
+  SvtMap,
 } from '../lib/refresh-event-data-compact'
 import type {
   EventCurrency,
@@ -224,6 +225,23 @@ async function fetchItemMap(): Promise<ItemMap> {
   const map: ItemMap = new Map()
   for (const item of items) {
     map.set(item.id, { name: item.name, icon: item.icon, type: item.type })
+  }
+  return map
+}
+
+interface AtlasSvtEntry {
+  id: number
+  name: string
+  rarity: number
+  face: string
+}
+
+/** Atlas basic_svt（全件、日本語）を取得して Map<id, {name, rarity, face}> を返す */
+async function fetchSvtMap(): Promise<SvtMap> {
+  const svts = await fetchJson<AtlasSvtEntry[]>(`${origin}/export/${region}/basic_svt.json`)
+  const map: SvtMap = new Map()
+  for (const svt of svts) {
+    map.set(svt.id, { name: svt.name, rarity: svt.rarity, face: svt.face })
   }
   return map
 }
@@ -396,6 +414,17 @@ async function main() {
   const itemMap = await fetchItemMap()
   console.log(`  Loaded ${itemMap.size} items`)
 
+  // 交換所のサーヴァント扱いの品目（種火・フォウくん・礼装など）の名前・レア度・アイコン。
+  // 取れなくても交換所の見出しを名前にして取り込みを続ける。
+  console.log(`Fetching svt map from ${origin}/export/${region}/basic_svt.json...`)
+  let svtMap: SvtMap | undefined
+  try {
+    svtMap = await fetchSvtMap()
+    console.log(`  Loaded ${svtMap.size} svts`)
+  } catch (e) {
+    console.warn(`  svt map unavailable (${e}); servant shop items will use shop entry names.`)
+  }
+
   console.log(`Fetching ${origin}/export/${region}/basic_event.json...`)
   const basicEvents = await fetchJson<BasicEvent[]>(
     `${origin}/export/${region}/basic_event.json`
@@ -441,7 +470,7 @@ async function main() {
       validLotteries.push(vl.data)
     }
 
-    const shop = compactShop(event.shop, itemMap)
+    const shop = compactShop(event.shop, itemMap, svtMap)
 
     const decision = decideEventImport(event.lotteries.length, validLotteries.length, shop, itemMap)
     if (decision.kind === 'skip') {

@@ -36,8 +36,9 @@ type InputMode = 'roster' | 'boxes' | 'items'
 /**
  * 直接指定モードで選べる素材候補 (通常箱の確定報酬 + 交換所アイテムの atlasId を集約)。
  * rareRewards（サーヴァント・聖杯・伝承結晶など一発もの）は周回計画の対象外なので除外する。
+ * 交換所のサーヴァント扱いの品目（kind='svt'。種火・フォウくん・礼装など）も素材ではないので除外する。
  */
-const collectSelectableItems = (event: EventPlannerEvent): { id: number; name: string; icon?: string }[] => {
+export const collectSelectableItems = (event: EventPlannerEvent): { id: number; name: string; icon?: string }[] => {
   const map = new Map<number, { name: string; icon?: string }>()
   for (const box of event.lotteries) {
     for (const c of box.contents) {
@@ -45,6 +46,7 @@ const collectSelectableItems = (event: EventPlannerEvent): { id: number; name: s
     }
   }
   for (const s of event.shop) {
+    if (s.kind === 'svt') continue
     if (!map.has(s.itemId)) map.set(s.itemId, { name: s.name ?? '', icon: s.icon })
   }
   return Array.from(map.entries())
