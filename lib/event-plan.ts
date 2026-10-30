@@ -149,6 +149,7 @@ export type ShopAllocationResult = {
 /**
  * 交換所アイテムを指定個数まで配分する。
  * limitNum で上限打ち切り + 超過分は overflow に記録（US-6）。
+ * サーヴァント扱いの品目（kind='svt'）は素材ではないので配分の対象から除く。
  *
  * @param shop       EventShopItem[]
  * @param demand     atlasId → 欲しい素材個数（0 以下は無視）
@@ -162,6 +163,7 @@ export const allocateShop = (
   let hasOverflow = false
 
   for (const shopItem of shop) {
+    if (shopItem.kind === 'svt') continue
     const wanted = demand.get(shopItem.itemId) ?? 0
     if (wanted <= 0) {
       allocations.push({
@@ -242,6 +244,7 @@ export const buildEventDrops = (
     }
   }
   for (const item of event.shop) {
+    if (item.kind === 'svt') continue
     if (item.name) itemNameMap.set(item.itemId, item.name)
   }
   for (const box of event.lotteries) {

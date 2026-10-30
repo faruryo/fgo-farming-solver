@@ -95,11 +95,16 @@ export interface EventLotteryBox {
 }
 
 /**
- * 交換所の1エントリー（purchaseType='item' かつ payType='eventItem' のみ）。
+ * 交換所の1エントリー（payType='eventItem' で、purchaseType='item' または 'servant' のもの）。
+ * purchaseType='servant'（種火・フォウくん・礼装など）は kind='svt' を持ち、itemId は svt の番号。
  */
 export interface EventShopItem {
-  /** 獲得アイテムの Atlas Academy item id。 */
+  /** 獲得物の番号。アイテムなら Atlas Academy item id、kind='svt' なら svt id。 */
   itemId: number
+  /** 獲得物がサーヴァント扱い（種火・フォウくん・礼装など）のとき 'svt'。無ければアイテム。 */
+  kind?: 'svt'
+  /** 獲得物のレア度（kind='svt' で取得できたときのみ）。 */
+  rarity?: number
   /** 1回の購入で得られる個数（Atlas setNum）。 */
   qty: number
   /** 対価となるイベント通貨の Atlas Academy item id。 */
@@ -152,7 +157,7 @@ export interface EventPlannerEvent {
   endedAt: number
   /**
    * ロトで使用するイベント通貨。
-   * ロトの無いイベントでは交換所の最初のエントリーの対価の通貨（箱計画では使わない）。
+   * ロトの無いイベントでは交換所の最初のアイテムの品目（無ければ最初のサーヴァント扱いの品目）の対価の通貨（箱計画では使わない）。
    */
   currency: EventCurrency
   /**
@@ -166,7 +171,7 @@ export interface EventPlannerEvent {
    * 11箱ロトなら 11 要素。
    */
   lotteries: EventLotteryBox[]
-  /** 交換所の素材エントリー（purchaseType='item' かつ payType='eventItem' のみ）。 */
+  /** 交換所のエントリー（payType='eventItem' で、purchaseType='item' または 'servant' のもの）。 */
   shop: EventShopItem[]
   /** イベント周回ノード。 */
   farmingNodes: EventFarmingNode[]

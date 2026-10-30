@@ -17,6 +17,7 @@ import {
   orderShopByEfficiency,
   selectAllCurrenciesUpToLimit,
   shopItemStatus,
+  shopWantedKey,
   summarizeShortfall,
   type RankedShopItem,
   type ShopCurrencyGroup,
@@ -662,7 +663,8 @@ const PlanItemIdsLoader: React.FC<{ onChange: (value: PlanItemIds | undefined) =
 const NO_WANTED: Record<string, true> = {}
 
 /**
- * 計画の対象外の品目の「要る」を、品目（atlasId）ごとに端末へ保存する。イベントをまたいで共通。
+ * 計画の対象外の品目の「要る」を、品目ごとに端末へ保存する。イベントをまたいで共通。
+ * キーはアイテムなら atlasId、サーヴァント扱いの品目なら `svt:<番号>`（`shopWantedKey`）。
  * 「要る」だけを持ち、「要らない」に戻したらキーを消す。
  */
 const useWantedItems = () => {
@@ -671,16 +673,17 @@ const useWantedItems = () => {
     NO_WANTED,
     { lazyWrite: true, onGet: recordOrEmpty },
   )
-  const wantedIds = useMemo(
-    () => new Set(Object.entries(wanted).filter(([, value]) => value === true).map(([id]) => Number(id))),
+  const wantedKeys = useMemo(
+    () => new Set(Object.entries(wanted).filter(([, value]) => value === true).map(([key]) => key)),
     [wanted],
   )
-  const setItemWanted = (itemId: number, value: boolean) =>
+  const setItemWanted = (item: EventShopItem, value: boolean) =>
     setWanted(prev => {
-      const rest = Object.fromEntries(Object.entries(prev).filter(([id]) => id !== String(itemId)))
-      return value ? { ...rest, [String(itemId)]: true } : rest
+      const key = shopWantedKey(item)
+      const rest = Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
+      return value ? { ...rest, [key]: true } : rest
     })
-  return { wantedIds, setItemWanted }
+  return { wantedKeys, setItemWanted }
 }
 
 /** 育成計画と実所持数から、品目の状態と不足素材のみの回数を出す。育成計画と所持数は読むだけ。 */
@@ -692,7 +695,7 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
     {},
     { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
   )
-  const { wantedIds, setItemWanted } = useWantedItems()
+  const { wantedKeys, setItemWanted } = useWantedItems()
   const [planItemIds, setPlanItemIds] = useState<PlanItemIds>()
   const [unlimitedPrompt, setUnlimitedPrompt] = useState<ReadonlySet<number>>(() => new Set())
 
@@ -703,21 +706,21 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
     const shortfall = computeShopShortfall(ready.totalNeed, possession)
     return {
       shortfall,
-      of: (itemId: number) => shopItemStatus(itemId, ready.totalNeed, shortfall, catalogIds),
+      of: (item: EventShopItem) => shopItemStatus(item, ready.totalNeed, shortfall, catalogIds),
     }
   }, [ready, possession, catalogIds])
   const allocation = useMemo(
-    () => statusOf && allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, wantedIds),
-    [shop, statusOf, wantedIds],
+    () => statusOf && allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, wantedKeys),
+    [shop, statusOf, wantedKeys],
   )
   const summary = useMemo(() => allocation && summarizeShortfall(allocation), [allocation])
 
   const planOf = (item: EventShopItem, index: number): RowPlan | undefined =>
     statusOf && allocation
       ? {
-          status: statusOf.of(item.itemId),
-          wanted: wantedIds.has(item.itemId),
-          onWantedChange: value => setItemWanted(item.itemId, value),
+          status: statusOf.of(item),
+          wanted: wantedKeys.has(shopWantedKey(item)),
+          onWantedChange: value => setItemWanted(item, value),
           remainder: allocation.remainders.get(index),
           promptUnlimited: unlimitedPrompt.has(index),
         }

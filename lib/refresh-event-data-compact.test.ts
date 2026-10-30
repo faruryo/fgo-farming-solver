@@ -15,6 +15,7 @@ import type {
   AtlasPointReward,
   AtlasShopItem,
   ItemMap,
+  SvtMap,
 } from './refresh-event-data-compact'
 
 const itemMap: ItemMap = new Map([
@@ -67,6 +68,120 @@ describe('compactShop', () => {
   })
 })
 
+// nice_event 80632 の交換所の形: 種火・フォウくん・同じ礼装が3つの通貨で在庫上限 2・1・1
+const svtMap: SvtMap = new Map([
+  [9770500, { name: '叡智の大火', rarity: 5, face: 'https://example.com/f_97705000.png' }],
+  [9700300, { name: '星のフォウくん', rarity: 3, face: 'https://example.com/f_97003000.png' }],
+  [9306300, { name: '月より団子', rarity: 5, face: 'https://example.com/f_93063000.png' }],
+])
+
+const svtShop = (
+  targetId: number,
+  costItemId: number,
+  limitNum: number,
+  name: string,
+  purchaseType = 'servant',
+): AtlasShopItem => ({
+  purchaseType,
+  payType: 'eventItem',
+  targetIds: [targetId],
+  setNum: 1,
+  limitNum,
+  name,
+  cost: { item: { id: costItemId }, amount: 100 },
+  gifts: [],
+})
+
+const atlasShop80632: AtlasShopItem[] = [
+  svtShop(9306300, 94001, 2, '月より団子'),
+  svtShop(9306300, 94002, 1, '月より団子'),
+  svtShop(9306300, 94003, 1, '月より団子'),
+  svtShop(9770500, 94001, 100, '叡智の大火'),
+  svtShop(9700300, 94002, 40, '星のフォウくん'),
+  svtShop(8400990, 94001, 1, 'コマンドコード', 'commandCode'),
+  svtShop(9939270, 94001, 1, '霊衣開放権', 'costumeRelease'),
+  atlasShop(94002),
+]
+
+describe('compactShop（サーヴァント扱いの交換）', () => {
+  it('種火・フォウくん・礼装を kind=svt・名前・レア度・アイコン・個数・対価・在庫上限とともに出す', () => {
+    const shop = compactShop(atlasShop80632, itemMap, svtMap)
+    expect(shop.filter(s => s.kind === 'svt' && s.itemId !== 9306300)).toEqual([
+      {
+        itemId: 9770500,
+        kind: 'svt',
+        qty: 1,
+        costItemId: 94001,
+        costAmount: 100,
+        limitNum: 100,
+        name: '叡智の大火',
+        rarity: 5,
+        icon: 'https://example.com/f_97705000.png',
+        costName: '武蔵うどん',
+        costIcon: 'udon.png',
+      },
+      {
+        itemId: 9700300,
+        kind: 'svt',
+        qty: 1,
+        costItemId: 94002,
+        costAmount: 100,
+        limitNum: 40,
+        name: '星のフォウくん',
+        rarity: 3,
+        icon: 'https://example.com/f_97003000.png',
+      },
+    ])
+  })
+
+  it('同じ礼装の3つの交換は通貨と在庫上限の違う3つの品目になる', () => {
+    const shop = compactShop(atlasShop80632, itemMap, svtMap)
+    const ces = shop.filter(s => s.itemId === 9306300)
+    expect(ces.map(s => [s.kind, s.costItemId, s.limitNum, s.name, s.rarity, s.icon])).toEqual([
+      ['svt', 94001, 2, '月より団子', 5, 'https://example.com/f_93063000.png'],
+      ['svt', 94002, 1, '月より団子', 5, 'https://example.com/f_93063000.png'],
+      ['svt', 94003, 1, '月より団子', 5, 'https://example.com/f_93063000.png'],
+    ])
+  })
+
+  it('コマンドコードと霊衣開放権の交換は出さない', () => {
+    const ids = compactShop(atlasShop80632, itemMap, svtMap).map(s => s.itemId)
+    expect(ids).not.toContain(8400990)
+    expect(ids).not.toContain(9939270)
+    expect(ids).toHaveLength(6)
+  })
+
+  it('対応表に無い番号は見出しを名前にし、アイコンとレア度を付けない', () => {
+    const [entry] = compactShop([svtShop(9999999, 94001, 1, '見出しの名前')], itemMap, svtMap)
+    expect(entry).toMatchObject({ itemId: 9999999, kind: 'svt', name: '見出しの名前' })
+    expect(entry).not.toHaveProperty('icon')
+    expect(entry).not.toHaveProperty('rarity')
+  })
+
+  it('対応表を渡さないときも見出しを名前にし、アイコンとレア度を付けない', () => {
+    const shop = compactShop(atlasShop80632, itemMap)
+    const fire = shop.find(s => s.itemId === 9770500)
+    expect(fire).toMatchObject({ kind: 'svt', name: '叡智の大火', limitNum: 100 })
+    expect(fire).not.toHaveProperty('icon')
+    expect(fire).not.toHaveProperty('rarity')
+  })
+
+  it('アイテムの品目は今までどおり出て kind を持たない', () => {
+    const shop = compactShop(atlasShop80632, itemMap, svtMap)
+    const item = shop.find(s => s.itemId === 100)
+    expect(item).toEqual({
+      itemId: 100,
+      qty: 2,
+      costItemId: 94002,
+      costAmount: 30,
+      limitNum: 5,
+      name: '素材A',
+      icon: 'a.png',
+    })
+    expect(item).not.toHaveProperty('kind')
+  })
+})
+
 describe('decideEventImport', () => {
   it('ロトあり: ロト型として取り込む', () => {
     expect(decideEventImport(1, 1, [shopItem(94001)], itemMap)).toEqual({ kind: 'lottery' })
@@ -85,6 +200,28 @@ describe('decideEventImport', () => {
     expect(decideEventImport(0, 0, [shopItem(99999)], itemMap)).toMatchObject({
       kind: 'shop',
       currency: { id: 99999, name: '', icon: '' },
+    })
+  })
+
+  it('最初が礼装でその後にアイテムの交換があるとき、通貨はアイテムの交換の対価', () => {
+    const shop = compactShop([svtShop(9306300, 94001, 2, '月より団子'), atlasShop(94160904)], itemMap, svtMap)
+    expect(decideEventImport(0, 0, shop, itemMap)).toMatchObject({
+      kind: 'shop',
+      currency: { id: 94160904, name: 'パンプキン収穫ポイント', icon: 'pt.png' },
+    })
+  })
+
+  it('サーヴァント扱いの交換だけの交換所は shop として取り込み、通貨はその最初の対価', () => {
+    const shop = compactShop(
+      [svtShop(9770500, 94001, 100, '叡智の大火'), svtShop(9700300, 94160904, 40, '星のフォウくん')],
+      itemMap,
+      svtMap,
+    )
+    expect(decideEventImport(0, 0, shop, itemMap)).toEqual({
+      kind: 'shop',
+      currency: { id: 94001, name: '武蔵うどん', icon: 'udon.png' },
+      unlimitedBoxes: false,
+      lotteries: [],
     })
   })
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { EventPlannerClient } from './EventPlannerClient'
+import { EventPlannerClient, collectSelectableItems } from './EventPlannerClient'
 import { EventPlanResultCard } from './EventPlanResultCard'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import { allocateShop, calcBoxLayer, runEventSolver } from '../../lib/event-plan'
@@ -23,6 +23,20 @@ const boxEvent: EventPlannerEvent = {
   shop: [],
   farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }] }],
 }
+
+describe('collectSelectableItems', () => {
+  it('交換所のサーヴァント扱いの品目を候補に出さず、同じ番号のアイテムの候補名はアイテムの名前のまま', () => {
+    const items = collectSelectableItems({
+      ...boxEvent,
+      shop: [
+        { itemId: 9305420, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 50, limitNum: 2, name: '完璧なお正月' },
+        { itemId: 9770500, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 10, limitNum: 100, name: '叡智の大火' },
+        { itemId: 9305420, qty: 1, costItemId: 94001, costAmount: 10, limitNum: 10, name: 'お正月のアイテム' },
+      ],
+    })
+    expect(items).toEqual([{ id: 9305420, name: 'お正月のアイテム', icon: undefined }])
+  })
+})
 
 const breakdownOf = () => screen.getByText('AP予算内訳').closest('div.flex-col') as HTMLElement
 
