@@ -120,6 +120,16 @@ describe('selectAllCurrenciesUpToLimit', () => {
     expect(next.has(4)).toBe(false)
   })
 
+  it('サーヴァント扱いの品目も在庫上限の回数にし、通貨の必要量に対価が入る', () => {
+    const svtShop = [entry(9700300, 10, 20, 40, { kind: 'svt' }), entry(100, 10, 5, 10)]
+    const next = selectAllCurrenciesUpToLimit(svtShop, new Map())
+    expect(next.get(0)).toBe(40)
+    expect(next.get(1)).toBe(10)
+    expect(computeShopCurrencyNeeds(svtShop, next, new Map())).toEqual([
+      { costItemId: 10, selectedCost: 850, need: 850 },
+    ])
+  })
+
   it('鍵は交換所の配列全体の添字で、通貨ごとに selectAllUpToLimit を当てた結果と同じ', () => {
     const counts = new Map([[2, 3], [4, 7], [1, 4]])
     const expected = selectAllUpToLimit(shop, selectAllUpToLimit(shop, counts, 10), 11)
@@ -158,6 +168,13 @@ describe('orderShopByEfficiency', () => {
     expect(orderShopByEfficiency({ items }, {})).toEqual({ unpriced: items, ranked: [] })
   })
 
+  it('サーヴァント扱いの品目は同じ番号の価格があっても効率と順位を持たず、前に並ぶ', () => {
+    const items = [priced(1, 1), entry(9305420, 10, 1, 1, { kind: 'svt' })]
+    const { unpriced, ranked } = orderShopByEfficiency({ items }, { 1: 10, 9305420: 50 })
+    expect(unpriced).toEqual([items[1]])
+    expect(ranked.map(r => r.item)).toEqual([items[0]])
+  })
+
   it('同じ itemId で対価の違う品目を別々に扱う', () => {
     const items = [priced(1, 10), priced(1, 2)]
     const { ranked } = orderShopByEfficiency({ items }, { 1: 10 })
@@ -181,7 +198,8 @@ const allocate = (
   shop: EventShopItem[],
   need: Record<number, number>,
   possession: Record<string, number | undefined> = {},
-  wanted: number[] = [],
+  /** 「要る」の保存のキー。数はアイテムの番号の文字列として扱う。 */
+  wanted: (number | string)[] = [],
   /** null は素材カタログを読めていないとき。 */
   planItemIds: ReadonlySet<number> | null = new Set(),
 ) => {
@@ -190,8 +208,8 @@ const allocate = (
   return allocateShortfallOnly(
     shop,
     shortfall,
-    itemId => shopItemStatus(itemId, totalNeed, shortfall, planItemIds ?? undefined),
-    new Set(wanted),
+    item => shopItemStatus(item, totalNeed, shortfall, planItemIds ?? undefined),
+    new Set(wanted.map(String)),
   )
 }
 
@@ -210,24 +228,30 @@ describe('shopItemStatus', () => {
   const planIds = new Set([10, 11, 12])
 
   it('必要数があれば不足の有無で「あと N 個」と「足りている」。集合に入らなくても同じ', () => {
-    expect(shopItemStatus(10, totalNeed, shortfall, planIds)).toEqual({ kind: 'short', shortfall: 5 })
-    expect(shopItemStatus(11, totalNeed, shortfall, planIds)).toEqual({ kind: 'enough' })
-    expect(shopItemStatus(10, totalNeed, shortfall, new Set())).toEqual({ kind: 'short', shortfall: 5 })
-    expect(shopItemStatus(10, totalNeed, shortfall, undefined)).toEqual({ kind: 'short', shortfall: 5 })
+    expect(shopItemStatus({ itemId: 10 }, totalNeed, shortfall, planIds)).toEqual({ kind: 'short', shortfall: 5 })
+    expect(shopItemStatus({ itemId: 11 }, totalNeed, shortfall, planIds)).toEqual({ kind: 'enough' })
+    expect(shopItemStatus({ itemId: 10 }, totalNeed, shortfall, new Set())).toEqual({ kind: 'short', shortfall: 5 })
+    expect(shopItemStatus({ itemId: 10 }, totalNeed, shortfall, undefined)).toEqual({ kind: 'short', shortfall: 5 })
   })
 
   it('必要数 0 で集合に入る素材は「使わない」、入らない品目は「計画の対象外」', () => {
-    expect(shopItemStatus(12, totalNeed, shortfall, planIds)).toEqual({ kind: 'unused' })
-    expect(shopItemStatus(4001, totalNeed, shortfall, planIds)).toEqual({ kind: 'outside' })
+    expect(shopItemStatus({ itemId: 12 }, totalNeed, shortfall, planIds)).toEqual({ kind: 'unused' })
+    expect(shopItemStatus({ itemId: 4001 }, totalNeed, shortfall, planIds)).toEqual({ kind: 'outside' })
   })
 
   it('集合が undefined なら必要数 0 の品目は状態なし', () => {
-    expect(shopItemStatus(12, totalNeed, shortfall, undefined)).toBeUndefined()
-    expect(shopItemStatus(4001, totalNeed, shortfall, undefined)).toBeUndefined()
+    expect(shopItemStatus({ itemId: 12 }, totalNeed, shortfall, undefined)).toBeUndefined()
+    expect(shopItemStatus({ itemId: 4001 }, totalNeed, shortfall, undefined)).toBeUndefined()
   })
 
   it('QP は必要数があっても状態なし', () => {
-    expect(shopItemStatus(1, totalNeed, shortfall, planIds)).toBeUndefined()
+    expect(shopItemStatus({ itemId: 1 }, totalNeed, shortfall, planIds)).toBeUndefined()
+  })
+
+  it('サーヴァント扱いの品目は番号が必要数や集合に入っていても「計画の対象外」、集合が undefined なら状態なし', () => {
+    expect(shopItemStatus({ itemId: 10, kind: 'svt' }, totalNeed, shortfall, planIds)).toEqual({ kind: 'outside' })
+    expect(shopItemStatus({ itemId: 12, kind: 'svt' }, totalNeed, shortfall, planIds)).toEqual({ kind: 'outside' })
+    expect(shopItemStatus({ itemId: 10, kind: 'svt' }, totalNeed, shortfall, undefined)).toBeUndefined()
   })
 })
 
@@ -308,6 +332,22 @@ describe('allocateShortfallOnly', () => {
     )
     expect(countsOf(allocation)).toEqual([0, 4, 0])
     expect(allocation.unlimitedWanted.size).toBe(0)
+  })
+})
+
+describe('allocateShortfallOnly（サーヴァント扱いの品目）', () => {
+  const svt = (itemId: number, limitNum: number): EventShopItem => entry(itemId, 90, 10, limitNum, { kind: 'svt' })
+
+  it('在庫上限 100 の種火を「必要」、在庫上限 2 の礼装を「不要」にすると 100 と 0', () => {
+    const allocation = allocate([svt(9770500, 100), svt(9306300, 2)], {}, {}, ['svt:9770500'])
+    expect(countsOf(allocation)).toEqual([100, 0])
+    expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 0, filledMaterials: 0 })
+  })
+
+  it('番号が同じアイテムの品目と「必要」を取り違えない', () => {
+    const shop = [entry(9305420, 90, 10, 3), svt(9305420, 2)]
+    expect(countsOf(allocate(shop, {}, {}, ['svt:9305420']))).toEqual([0, 2])
+    expect(countsOf(allocate(shop, {}, {}, ['9305420']))).toEqual([3, 0])
   })
 })
 
