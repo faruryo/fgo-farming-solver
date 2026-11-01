@@ -9,6 +9,7 @@ import {
   computeShopCurrencyNeeds,
   formatEfficiency,
   groupShopByCurrency,
+  isDefaultWanted,
   orderShopByEfficiency,
   selectAllCurrenciesUpToLimit,
   selectAllUpToLimit,
@@ -253,6 +254,20 @@ describe('shopItemStatus', () => {
     expect(shopItemStatus({ itemId: 12, kind: 'svt' }, totalNeed, shortfall, planIds)).toEqual({ kind: 'outside' })
     expect(shopItemStatus({ itemId: 10, kind: 'svt' }, totalNeed, shortfall, undefined)).toBeUndefined()
   })
+
+  it('集合が undefined でも、必要数 0 の伝承結晶は「使わない」、夢火は「計画の対象外」', () => {
+    expect(shopItemStatus({ itemId: 6999 }, totalNeed, shortfall, undefined)).toEqual({ kind: 'unused' })
+    expect(shopItemStatus({ itemId: 1000 }, totalNeed, shortfall, undefined)).toEqual({ kind: 'outside' })
+  })
+
+  it('サーヴァント扱いの同じ番号の品目は既定で交換する品目に含まれない', () => {
+    expect(shopItemStatus({ itemId: 6999, kind: 'svt' }, totalNeed, shortfall, undefined)).toBeUndefined()
+    expect(shopItemStatus({ itemId: 1000, kind: 'svt' }, totalNeed, shortfall, undefined)).toBeUndefined()
+    expect(isDefaultWanted({ itemId: 6999 })).toBe(true)
+    expect(isDefaultWanted({ itemId: 1000 })).toBe(true)
+    expect(isDefaultWanted({ itemId: 6999, kind: 'svt' })).toBe(false)
+    expect(isDefaultWanted({ itemId: 1000, kind: 'svt' })).toBe(false)
+  })
 })
 
 describe('allocateShortfallOnly', () => {
@@ -331,6 +346,63 @@ describe('allocateShortfallOnly', () => {
       [4001],
     )
     expect(countsOf(allocation)).toEqual([0, 4, 0])
+    expect(allocation.unlimitedWanted.size).toBe(0)
+  })
+})
+
+describe('allocateShortfallOnly（既定で交換する品目）', () => {
+  const LORE = 6999
+  const FIRE = 1000
+  const planIds = new Set([LORE])
+
+  it('必要数 0 の伝承結晶の在庫上限 2・2・1 の3品目は 2・2・1', () => {
+    const shop = [entry(LORE, 90, 10, 2), entry(LORE, 90, 10, 2), entry(LORE, 91, 10, 1)]
+    expect(countsOf(allocate(shop, {}, {}, [LORE], planIds))).toEqual([2, 2, 1])
+  })
+
+  it('夢火の在庫上限 1 の品目は 1', () => {
+    expect(countsOf(allocate([entry(FIRE, 90, 10, 1)], {}, {}, [FIRE], planIds))).toEqual([1])
+  })
+
+  it('伝承結晶の不足 1・在庫上限 2 なら 2 で、残りは出ない', () => {
+    const allocation = allocate([entry(LORE, 90, 10, 2)], { [LORE]: 1 }, {}, [LORE], planIds)
+    expect(countsOf(allocation)).toEqual([2])
+    expect(allocation.remaining.get(LORE)).toBe(0)
+    expect(allocation.remainders.size).toBe(0)
+  })
+
+  it('伝承結晶の不足 5・在庫上限 2 なら 2 で、残り 3', () => {
+    const allocation = allocate([entry(LORE, 90, 10, 2)], { [LORE]: 5 }, {}, [LORE], planIds)
+    expect(countsOf(allocation)).toEqual([2])
+    expect([...allocation.remainders]).toEqual([[0, 3]])
+  })
+
+  it('必要数 0 の伝承結晶の在庫上限なしの品目は 0 回で、手入力を促す', () => {
+    const allocation = allocate([entry(LORE, 90, 10, 0)], {}, {}, [LORE], planIds)
+    expect(countsOf(allocation)).toEqual([0])
+    expect([...allocation.unlimitedWanted]).toEqual([0])
+  })
+
+  it('不足 2 を在庫上限 2 の品目で埋めた後の在庫上限なしの品目は 0 回で、手入力を促す', () => {
+    const allocation = allocate(
+      [entry(LORE, 90, 10, 2), entry(LORE, 91, 10, 0)],
+      { [LORE]: 2 },
+      {},
+      [LORE],
+      planIds,
+    )
+    expect(countsOf(allocation)).toEqual([2, 0])
+    expect([...allocation.unlimitedWanted]).toEqual([1])
+    expect(allocation.remainders.size).toBe(0)
+  })
+
+  it('「不要」の伝承結晶は不足 1・在庫上限 2 なら 1', () => {
+    expect(countsOf(allocate([entry(LORE, 90, 10, 2)], { [LORE]: 1 }, {}, [], planIds))).toEqual([1])
+  })
+
+  it('「不要」の伝承結晶（必要数 0）と夢火は 0', () => {
+    const allocation = allocate([entry(LORE, 90, 10, 2), entry(FIRE, 90, 10, 1)], {}, {}, [], planIds)
+    expect(countsOf(allocation)).toEqual([0, 0])
     expect(allocation.unlimitedWanted.size).toBe(0)
   })
 })
