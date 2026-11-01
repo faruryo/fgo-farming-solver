@@ -6,7 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { useMasterLevel } from '../../hooks/use-master-level'
-import { adviseBondCraftEssences, type CraftEssenceAdvice } from '../../lib/bond/craft-essence-advice'
+import {
+  adviseBondCraftEssences,
+  type CraftEssenceAdvice,
+  type CraftEssenceAssignment,
+} from '../../lib/bond/craft-essence-advice'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
 import { defaultSharedBondQuestId, sharedBondQuestCandidates } from '../../lib/bond/shared-quest-candidates'
 import { MAX_MASTER_LEVEL } from '../../lib/master-profile/max-ap'
@@ -94,6 +98,77 @@ const EssenceFace = ({ essence, size }: Readonly<{ essence: MaterialCatalogBondU
   <Image src={essence.face} alt="" width={size} height={size} className="rounded" />
 )
 
+const STAGE_NAMES = ['第1再臨', '第2再臨', '第3再臨', '最終再臨']
+
+const useStageName = () => {
+  const { t } = useTranslation('bond')
+  return (stage: number) => t(`advisor-stage-${stage}`, STAGE_NAMES.at(stage) ?? '')
+}
+
+/** 効く相手と効果。「〔キャスター〕に +20%」「全員に +50」「自身に +50」。 */
+function EssenceEffect({ essence }: Readonly<{ essence: MaterialCatalogBondUpCraftEssence }>) {
+  const { t } = useTranslation('bond')
+  const parts =
+    essence.target === 'self'
+      ? [t('advisor-effect-self', '自身に +{{add}}', { add: essence.add })]
+      : effectParts(essence, essence.appliesToLabel ?? t('advisor-everyone', '全員'), t)
+  return <span style={{ color: 'var(--text3)' }}>{parts.join(' ')}</span>
+}
+
+const effectParts = (
+  essence: MaterialCatalogBondUpCraftEssence,
+  target: string,
+  t: ReturnType<typeof useTranslation>['t'],
+): string[] => [
+  ...(essence.rate > 0 ? [t('advisor-effect-rate', '{{target}}に +{{rate}}%', { target, rate: essence.rate / 10 })] : []),
+  ...(essence.add > 0 ? [t('advisor-effect-add', '{{target}}に +{{add}}', { target, add: essence.add })] : []),
+]
+
+function AssignmentRow({
+  assignment: { servantId, essence, alternatives, points, countedStage, stageNotes },
+  nameOf,
+}: Readonly<{ assignment: CraftEssenceAssignment; nameOf: (id: number) => string }>) {
+  const { t } = useTranslation('bond')
+  const stageName = useStageName()
+  return (
+    <li className="c-card flex flex-col gap-1 p-2 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-semibold">{nameOf(servantId)}</span>
+        <span className="flex flex-wrap items-center gap-2">
+          {countedStage !== null && (
+            <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+              {t('advisor-counted-stage', '{{stage}}で数えた', { stage: stageName(countedStage) })}
+            </span>
+          )}
+          {t('advisor-points', '1周 {{points}}', { points: points.toLocaleString() })}
+        </span>
+      </div>
+      {essence ? (
+        <span className="flex flex-wrap items-center gap-2">
+          <EssenceFace essence={essence} size={32} />
+          {essence.name}
+          <EssenceEffect essence={essence} />
+        </span>
+      ) : (
+        <span style={{ color: 'var(--text3)' }}>{t('advisor-no-essence', '礼装なし')}</span>
+      )}
+      {stageNotes.map(note => (
+        <span key={note.servantId} className="text-[11px]" style={{ color: 'var(--text3)' }}>
+          {t('advisor-stage-applies', '{{name}}は{{stages}}で効く', {
+            name: nameOf(note.servantId),
+            stages: note.stages.map(stageName).join('・'),
+          })}
+        </span>
+      ))}
+      {alternatives.length > 0 && (
+        <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+          {t('advisor-alternatives', '同じ効果: {{names}}', { names: alternatives.map(e => e.name).join('、') })}
+        </span>
+      )}
+    </li>
+  )
+}
+
 function AdviceResult({
   advice,
   servantsById,
@@ -121,26 +196,8 @@ function AdviceResult({
   return (
     <div className="flex flex-col gap-2" data-testid="bond-advisor-result">
       <ul className="flex flex-col gap-2">
-        {advice.assignments.map(({ servantId, essence, alternatives, points }) => (
-          <li key={servantId} className="c-card flex flex-col gap-1 p-2 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-semibold">{nameOf(servantId)}</span>
-              <span>{t('advisor-points', '1周 {{points}}', { points: points.toLocaleString() })}</span>
-            </div>
-            {essence ? (
-              <span className="flex items-center gap-2">
-                <EssenceFace essence={essence} size={32} />
-                {essence.name}
-              </span>
-            ) : (
-              <span style={{ color: 'var(--text3)' }}>{t('advisor-no-essence', '礼装なし')}</span>
-            )}
-            {alternatives.length > 0 && (
-              <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-                {t('advisor-alternatives', '同じ効果: {{names}}', { names: alternatives.map(e => e.name).join('、') })}
-              </span>
-            )}
-          </li>
+        {advice.assignments.map(assignment => (
+          <AssignmentRow key={assignment.servantId} assignment={assignment} nameOf={nameOf} />
         ))}
       </ul>
       <AdviceTotals advice={advice} />
@@ -184,7 +241,12 @@ function QuestAdvice({
     return <Note alert>{t('advisor-no-shared-quest', '選んだサーヴァントで一緒に回せるクエストがありません')}</Note>
   const advice = quest
     ? adviseBondCraftEssences({
-        servants: selected.map(({ servant }) => ({ id: servant.id, cost: servant.cost })),
+        servants: selected.map(({ servant }) => ({
+          id: servant.id,
+          cost: servant.cost,
+          traits: servant.traits,
+          ascensionTraits: servant.ascensionTraits,
+        })),
         basePoints: quest.bondPoints as number,
         maxCost: maxCostForLevel(level),
         essences,
@@ -228,7 +290,9 @@ export function CraftEssenceAdvisor({
     if (selectedIds.includes(id)) setChosenIds(selectedIds.filter(s => s !== id))
     else if (selectedIds.length < MAX_ADVISOR_SERVANTS) setChosenIds([...selectedIds, id])
   }
-  if (!essences?.length)
+  // 効く相手の条件を持たない礼装(条件を足す前のカタログ)は、誰に効くか分からないので候補にしない。
+  const usable = essences?.filter(essence => essence.appliesTo !== undefined) ?? []
+  if (!usable.length)
     return <Note alert>{t('advisor-no-essence-data', '礼装のデータを読み込めないため提案できません')}</Note>
   return (
     <div className="flex flex-col gap-3" data-testid="bond-craft-essence-advisor">
@@ -240,7 +304,7 @@ export function CraftEssenceAdvisor({
       {selected.length === 0 ? (
         <Note alert>{t('advisor-no-servant', '提案するサーヴァントを選んでください')}</Note>
       ) : (
-        <QuestAdvice selected={selected} essences={essences} />
+        <QuestAdvice selected={selected} essences={usable} />
       )}
     </div>
   )

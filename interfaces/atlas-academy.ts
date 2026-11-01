@@ -50,7 +50,12 @@ export type NiceServant = Servant &
     bondGrowth?: number[]
     extraPassive?: NiceExtraPassiveSkill[]
     cost?: number
+    traits?: NiceTrait[]
+    /** 再臨・霊衣ごとの特性の上書き。値は特性の完全な一覧で、空の配列は上書きなし。 */
+    ascensionAdd?: { individuality?: { ascension?: Record<string, NiceTrait[]>; costume?: Record<string, NiceTrait[]> } }
   }
+
+export type NiceTrait = { id: number; name?: string; negative?: boolean }
 
 /** 概念礼装(nice_equip)。絆アップ礼装の蒸留に使う項目だけ型を付ける。 */
 export type NiceEquip = {
@@ -63,12 +68,22 @@ export type NiceEquip = {
   skills: NiceEquipSkill[]
 }
 
+type NiceEquipSval = { RateCount?: number; AddCount?: number; EventId?: number; Individuality?: number }
+
 export type NiceEquipSkill = {
   condLimitCount: number
+  detail?: string
   functions: {
     funcType: string
     funcTargetType: string
-    svals: { RateCount?: number; AddCount?: number; EventId?: number; Individuality?: number }[]
+    svals: NiceEquipSval[]
+    /** いずれかの特性を持つ相手に効く。 */
+    functvals?: NiceTrait[]
+    /** 内側のすべての特性を持つ相手に効き、外側はいずれか。空でなければ functvals より優先する。 */
+    overWriteTvalsList?: NiceTrait[][]
+    funcquestTvals?: NiceTrait[]
+    /** サポートで付けたときの svals。 */
+    followerVals?: NiceEquipSval[]
   }[]
 }
 
