@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../common/page-header'
 import { Badge } from '@/components/ui/badge'
 import type { EventFeature } from '../../data/event-features'
-import { isShopOnlyEvent, type EventSummary } from '../../lib/event-features'
+import { isServantOnlyShop, isShopOnlyEvent, type EventSummary } from '../../lib/event-features'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import type { EnrichedItem } from '../../lib/get-items'
 import { EventPlannerClient } from './EventPlannerClient'
 import { EventCraftSection } from './EventCraftSection'
-import { EventShopList } from './EventShopList'
+import { EventShopCatalog, EventShopList } from './EventShopList'
 import { formatDate } from './EventListClient'
 
 interface Props {
@@ -78,6 +78,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
   const box = features.includes('box') ? boxEvent : undefined
   const craftItems = features.includes('craft') ? items : undefined
   const shopOnly = isShopOnlyEvent(features, boxEvent) ? boxEvent : undefined
+  const catalogOnly = shopOnly ? isServantOnlyShop(shopOnly.shop) : false
 
   return (
     <div className="c-page">
@@ -92,7 +93,22 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
             </section>
           )}
 
-          {shopOnly && (
+          {shopOnly && catalogOnly && (
+            <section className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <SectionTitle>{t('event-shop-catalog-title', '交換所の品目')}</SectionTitle>
+                <p className="text-xs" style={{ color: 'var(--text2)' }}>
+                  {t(
+                    'event-shop-catalog-description',
+                    'この交換所には礼装などしか並ばないため、周回数は計算せず、品目と対価だけを並べます',
+                  )}
+                </p>
+              </div>
+              <EventShopCatalog shop={shopOnly.shop} />
+            </section>
+          )}
+
+          {shopOnly && !catalogOnly && (
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <SectionTitle>{t('event-shop-section-title', '交換所の周回計算')}</SectionTitle>
