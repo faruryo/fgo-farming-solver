@@ -2,7 +2,7 @@ import { getEventById, getEventRewards } from '../../../lib/get-events'
 import { getItems } from '../../../lib/get-items'
 import { getDrops } from '../../../lib/get-drops'
 import { resolveUnitPrices } from '../../../lib/progress/lap-value'
-import { featuresFor, isShopOnlyEvent, resolveEventSummary } from '../../../lib/event-features'
+import { featuresFor, isServantOnlyShop, isShopOnlyEvent, resolveEventSummary } from '../../../lib/event-features'
 import type { EventShopItem } from '../../../lib/master-data/types'
 import { EventHubClient } from '../../../components/events/EventHubClient'
 import { EventDataMissing } from '../../../components/events/EventDataMissing'
@@ -46,9 +46,10 @@ export default async function EventDetailPage({ params }: Props) {
 
   const features = featuresFor(eventId, kvEvent)
   const items = features.includes('craft') ? await getItems('ja') : undefined
-  const shopOnly = isShopOnlyEvent(features, kvEvent)
-  const shopApPrices = shopOnly ? await loadShopApPrices(kvEvent.shop) : undefined
-  const pointItemId = shopOnly ? (await getEventRewards(eventId))?.pointItemId : undefined
+  // 品目がすべてサーヴァント扱いの交換所は一覧だけを出すので、周回計算用のデータを読まない。
+  const needsShopCalc = isShopOnlyEvent(features, kvEvent) && !isServantOnlyShop(kvEvent.shop)
+  const shopApPrices = needsShopCalc ? await loadShopApPrices(kvEvent.shop) : undefined
+  const pointItemId = needsShopCalc ? (await getEventRewards(eventId))?.pointItemId : undefined
 
   return (
     <EventHubClient
