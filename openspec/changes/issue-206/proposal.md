@@ -22,7 +22,7 @@
 
 ### Modified Capabilities
 
-- `event-shop-servant-exchange`: 品目がすべてサーヴァント扱いの交換所では、周回計算を出さず品目の一覧だけを出す要件を足し、「サーヴァント扱いの品目の表示と計算」をアイテムの品目もある交換所に限る（`event-planner` の「ロトの無い交換所イベントの周回計画」は未 archive の `issue-127-bug-events` が delta を持つため変えず、例外をこの capability に書く）
+- `event-shop-servant-exchange`: 品目がすべてサーヴァント扱いの交換所では、周回計算を出さず品目の一覧だけを出す要件を足し、「サーヴァント扱いの品目の表示と計算」と「サーヴァント扱いの品目の必要／不要」をアイテムの品目もある交換所に限る（`event-planner` の「ロトの無い交換所イベントの周回計画」は未 archive の `issue-127-bug-events` が delta を持つため変えず、例外をこの capability に書く）
 
 ## Impact
 
