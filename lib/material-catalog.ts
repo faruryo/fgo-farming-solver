@@ -383,7 +383,7 @@ const servantTraitsError = (servant: MaterialCatalogServant): string | null =>
     ? null
     : 'invalid servant traits'
 
-const itemDisplayError =(item: unknown): string | null => {
+const itemDisplayError = (item: unknown): string | null => {
   if (!isRecord(item)) return 'invalid item display fields'
   if (
     !isPositiveInteger(item.id) ||

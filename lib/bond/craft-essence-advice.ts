@@ -15,7 +15,7 @@ export type CraftEssenceAdviceServant = {
 }
 
 /** 礼装を数えたサーヴァントのうち、段階で効くかが変わるサーヴァントと、その礼装が効く段階(0 始まり)。 */
-type CraftEssenceStageNote ={ servantId: number; stages: number[] }
+type CraftEssenceStageNote = { servantId: number; stages: number[] }
 
 export type CraftEssenceAssignment = {
   servantId: number
