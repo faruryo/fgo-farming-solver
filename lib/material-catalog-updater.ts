@@ -140,19 +140,23 @@ const materialItemsAreKnown = (materials: MaterialsForServants, items: MaterialC
   return [...materialCatalogItemIds(materials)].every(itemId => knownItemIds.has(itemId))
 }
 
-// bondGrowth・eventBonuses・cost を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
+// bondGrowth・eventBonuses・cost・traits を足した直後は Atlas が未変更で304を返し続け、項目のない一覧が固定される。
 // 一部の欠落は Atlas 側の通常状態なので、全騎が持たないときだけ取り直す。
 // eventBonuses は開催中のボーナスが無いと空配列になるため、値でなく項目の有無で見る。
+// ascensionTraits は段階で特性が変わるサーヴァントにしか入らず、traits と同じ蒸留で入るので目印にしない。
 const servantValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
   previous?.servants.some(servant => servant.bondGrowth) &&
   previous.servants.some(servant => servant.eventBonuses !== undefined) &&
-  previous.servants.some(servant => servant.cost !== undefined)
+  previous.servants.some(servant => servant.cost !== undefined) &&
+  previous.servants.some(servant => servant.traits !== undefined)
     ? previous.sources.niceServant
     : {}
 
-// 絆アップ礼装の一覧を足した直後も同じく、一覧のない既存カタログでは検証子を付けずに取る。
+// 絆アップ礼装の一覧や効く相手の条件を足した直後も同じく、それらのない既存カタログでは検証子を付けずに取る。
 const equipValidatorFor = (previous: MaterialCatalogV1 | null): SourceValidator =>
-  previous?.bondUpCraftEssences ? previous.sources.niceEquip ?? {} : {}
+  previous?.bondUpCraftEssences?.some(essence => essence.appliesTo !== undefined)
+    ? previous.sources.niceEquip ?? {}
+    : {}
 
 export const updateMaterialCatalog = async ({
   previous,

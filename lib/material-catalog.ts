@@ -18,7 +18,16 @@ export type SourceValidator = { etag?: string; lastModified?: string }
 export type MaterialCatalogServant = Pick<
   NiceServant,
   'id' | 'name' | 'className' | 'collectionNo' | 'rarity'
-> & { face: string | null; bondGrowth?: number[]; eventBonuses?: ServantEventBonus[]; cost?: number }
+> & {
+  face: string | null
+  bondGrowth?: number[]
+  eventBonuses?: ServantEventBonus[]
+  cost?: number
+  /** 基本の特性 ID。 */
+  traits?: number[]
+  /** 第1再臨・第2再臨・第3再臨・最終再臨の特性 ID の完全な一覧。どれかの段階が traits と違うサーヴァントだけが持つ。 */
+  ascensionTraits?: number[][]
+}
 
 /**
  * 獲得絆を増やす概念礼装。値は最大解放時のもの。
@@ -34,6 +43,15 @@ export type MaterialCatalogBondUpCraftEssence = {
   target: 'party' | 'self'
   rate: number
   add: number
+  /**
+   * 効く相手の条件。いずれかの組の特性をすべて持つ相手に効き、[] は全員に効く。
+   * 蒸留は常に書く。項目がないのは条件を足す前のカタログ。
+   */
+  appliesTo?: number[][]
+  /** 条件付きの礼装の効く相手の表記(効果文の最初の〔から最後の〕まで)。 */
+  appliesToLabel?: string
+  /** サポートで付けたときの増加率(千分率)。自分で付けたときと異なる礼装だけが持つ。 */
+  supportRate?: number
 }
 
 export type MaterialCatalogItem = Pick<Item, 'id' | 'name' | 'icon'>
@@ -97,26 +115,111 @@ export const isValidBondGrowth = (value: unknown): value is number[] =>
 const isNonNegativeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0
 
+// 第2再臨は再臨1と2のどちらで編成しても持つ特性だけを数えるため、両方の積集合にする。
+const ASCENSION_STAGE_KEYS = [['0'], ['1', '2'], ['3'], ['4']]
+
+/** 1要素以上・正の整数・重複なしの特性 ID の一覧。 */
+const isValidTraitIds = (value: unknown): value is number[] =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every(isPositiveInteger) &&
+  new Set(value).size === value.length
+
+const isValidAscensionTraits = (value: unknown): value is number[][] =>
+  Array.isArray(value) && value.length === ASCENSION_STAGE_KEYS.length && value.every(isValidTraitIds)
+
+/** 「持たない」を表す特性は ID として読まない(正の整数でない値にして検証で落とす)。 */
+const traitIdsOf = (traits: readonly unknown[]): unknown[] =>
+  traits.map(trait => (isRecord(trait) && trait.negative !== true ? trait.id : undefined))
+
+const isSameTraitSet = (stage: readonly unknown[], traits: readonly number[]): boolean => {
+  const base = new Set<unknown>(traits)
+  return stage.length === traits.length && stage.every(trait => base.has(trait))
+}
+
+/** nice_servant の基本の特性と、霊基再臨の段階ごとの特性を蒸留する。霊衣の特性は開放していないと使えないので読まない。 */
+const distillServantTraits = (servant: NiceServant): Pick<MaterialCatalogServant, 'traits' | 'ascensionTraits'> => {
+  const traits = Array.isArray(servant.traits) ? traitIdsOf(servant.traits) : undefined
+  if (!isValidTraitIds(traits)) return {}
+  const ascension = servant.ascensionAdd?.individuality?.ascension ?? {}
+  // 空の再臨は上書きなし。空でない値は特性の完全な一覧。
+  const stageOf = (key: string): unknown[] => {
+    const value: unknown = Object.getOwnPropertyDescriptor(ascension, key)?.value
+    return Array.isArray(value) && value.length > 0 ? traitIdsOf(value) : traits
+  }
+  const stages = ASCENSION_STAGE_KEYS.map(([first, ...rest]) =>
+    rest.map(stageOf).reduce((common, next) => common.filter(trait => next.includes(trait)), stageOf(first)))
+  if (stages.every(stage => isSameTraitSet(stage, traits))) return { traits }
+  return isValidAscensionTraits(stages) ? { traits, ascensionTraits: stages } : { traits }
+}
+
+const catalogServantTraits = (servant: MaterialCatalogServant): Pick<MaterialCatalogServant, 'traits' | 'ascensionTraits'> => {
+  if (!isValidTraitIds(servant.traits)) return {}
+  return isValidAscensionTraits(servant.ascensionTraits)
+    ? { traits: [...servant.traits], ascensionTraits: servant.ascensionTraits.map(stage => [...stage]) }
+    : { traits: [...servant.traits] }
+}
+
 const BOND_UP_FUNC_TYPE = 'servantFriendshipUp'
 const BOND_UP_TARGETS: Record<string, MaterialCatalogBondUpCraftEssence['target']> = {
   ptFull: 'party',
   self: 'self',
 }
 
-type BondUpEffect = Pick<MaterialCatalogBondUpCraftEssence, 'target' | 'rate' | 'add'>
+type BondUpEffect = Pick<
+  MaterialCatalogBondUpCraftEssence,
+  'target' | 'rate' | 'add' | 'appliesToLabel' | 'supportRate'
+> & { appliesTo: number[][] }
 
-const bondUpFunctionEffect = (
-  fn: NiceEquipSkill['functions'][number],
-): BondUpEffect | null => {
+type BondUpFunction = NiceEquipSkill['functions'][number]
+
+type BondUpFunctionEffect = Pick<BondUpEffect, 'target' | 'rate' | 'add' | 'appliesTo'> & { supportRate: number }
+
+const BOND_UP_SVAL_KEYS = new Set(['Individuality', 'RateCount', 'AddCount', 'EventId'])
+
+const isValidTraitGroups = (value: unknown): value is number[][] =>
+  Array.isArray(value) &&
+  value.every(group => Array.isArray(group) && group.length > 0 && group.every(isPositiveInteger))
+
+/** overWriteTvalsList が空でなければその各組、空なら functvals の各特性を1つずつの組にする。読めなければ null。 */
+const bondUpAppliesTo = (fn: BondUpFunction): number[][] | null => {
+  const groups = fn.overWriteTvalsList?.length
+    ? fn.overWriteTvalsList.map(group => (Array.isArray(group) ? traitIdsOf(group) : []))
+    : (fn.functvals ?? []).map(trait => traitIdsOf([trait]))
+  return isValidTraitGroups(groups) ? groups : null
+}
+
+/** 読めない値やクエストの条件を持つ効果は、効く相手を取り違えないよう読まない。 */
+const hasUnreadableCondition = (fn: BondUpFunction, sval: NonNullable<BondUpFunction['svals'][number]>): boolean =>
+  Object.keys(sval).some(key => !BOND_UP_SVAL_KEYS.has(key)) || !!fn.funcquestTvals?.length
+
+const bondUpFunctionEffect = (fn: BondUpFunction): BondUpFunctionEffect | null => {
   if (fn.funcType !== BOND_UP_FUNC_TYPE || !Object.hasOwn(BOND_UP_TARGETS, fn.funcTargetType)) return null
   const target = BOND_UP_TARGETS[fn.funcTargetType]
   const sval = fn.svals.at(-1)
-  // イベント期間限定・特性限定の効果は提案の対象にしない。
-  if (!sval || sval.EventId || sval.Individuality) return null
+  // イベント期間限定・svals 側の特性限定の効果は提案の対象にしない。
+  if (!sval || sval.EventId || sval.Individuality || hasUnreadableCondition(fn, sval)) return null
+  const appliesTo = bondUpAppliesTo(fn)
+  if (!appliesTo) return null
   // shortcut: 自身に効く増加率はイベント限定を除くと存在しないため読まない。
   const rate = target === 'party' ? sval.RateCount ?? 0 : 0
-  return { target, rate, add: sval.AddCount ?? 0 }
+  const followerRate = fn.followerVals?.at(-1)?.RateCount
+  const supportRate = target === 'party' && typeof followerRate === 'number' ? followerRate : rate
+  return { target, rate, add: sval.AddCount ?? 0, appliesTo, supportRate }
 }
+
+const appliesToKey = (appliesTo: readonly number[][]): string =>
+  JSON.stringify(appliesTo.map(group => [...group].sort((a, b) => a - b).join(',')).sort((a, b) => a.localeCompare(b)))
+
+/** 効果文の最初の〔から最後の〕まで。 */
+const bracketedLabel = (detail: string): string | undefined => {
+  const start = detail.indexOf('〔')
+  const end = detail.lastIndexOf('〕')
+  return start >= 0 && end > start ? detail.slice(start, end + 1) : undefined
+}
+
+const appliesToLabelOf = (skills: readonly NiceEquipSkill[]): string | undefined =>
+  skills.map(skill => bracketedLabel(skill.detail ?? '')).find(isDisplayString)
 
 const bondUpEffect = (equip: NiceEquip): BondUpEffect | null => {
   const skills = (equip.skills ?? []).filter(skill =>
@@ -125,22 +228,34 @@ const bondUpEffect = (equip: NiceEquip): BondUpEffect | null => {
   if (!skills.length) return null
   // 未解放と最大解放の2段を持つ礼装は最大解放の段だけを読む。
   const maxLimit = Math.max(...skills.map(skill => skill.condLimitCount))
-  const totals = new Map<BondUpEffect['target'], { rate: number; add: number }>()
-  const effects = skills
-    .filter(skill => skill.condLimitCount === maxLimit)
-    .flatMap(skill => skill.functions.map(bondUpFunctionEffect))
-  for (const effect of effects) {
+  const maxSkills = skills.filter(skill => skill.condLimitCount === maxLimit)
+  const totals = new Map<string, BondUpFunctionEffect>()
+  for (const effect of maxSkills.flatMap(skill => skill.functions.map(bondUpFunctionEffect))) {
     if (!effect) continue
-    const total = totals.get(effect.target) ?? { rate: 0, add: 0 }
-    totals.set(effect.target, { rate: total.rate + effect.rate, add: total.add + effect.add })
+    const key = `${effect.target}|${appliesToKey(effect.appliesTo)}`
+    const total = totals.get(key)
+    totals.set(key, total
+      ? { ...total, rate: total.rate + effect.rate, add: total.add + effect.add, supportRate: total.supportRate + effect.supportRate }
+      : effect)
   }
-  // shortcut: パーティ全体と自身の効果が混ざる礼装はイベント限定を除くと存在しないため一覧に入れない。
+  // shortcut: 対象(パーティ全体と自身)や効く相手の条件が混ざる礼装はイベント限定を除くと存在しないため一覧に入れない。
   if (totals.size !== 1) return null
-  const [[target, { rate, add }]] = [...totals]
-  return rate > 0 || add > 0 ? { target, rate, add } : null
+  const [{ target, rate, add, appliesTo, supportRate }] = [...totals.values()]
+  if (rate <= 0 && add <= 0) return null
+  const appliesToLabel = appliesTo.length ? appliesToLabelOf(maxSkills) : undefined
+  // 効く相手を表記できない条件付きの礼装は、条件を読めない礼装として扱う。
+  if (appliesTo.length && !appliesToLabel) return null
+  return {
+    target,
+    rate,
+    add,
+    appliesTo,
+    ...(appliesToLabel ? { appliesToLabel } : {}),
+    ...(supportRate === rate ? {} : { supportRate }),
+  }
 }
 
-/** nice_equip から、イベント限定・特性限定でない獲得絆の増加効果を持つ礼装を図鑑番号順に蒸留する。 */
+/** nice_equip から、イベント限定でなく効く相手の条件を読める獲得絆の増加効果を持つ礼装を図鑑番号順に蒸留する。 */
 export const distillBondUpCraftEssences = (
   equips: NiceEquip[],
 ): MaterialCatalogBondUpCraftEssence[] =>
@@ -192,6 +307,7 @@ export const buildMaterialCatalog = ({
       ? { bondGrowth: [...servant.bondGrowth] }
       : {}),
     ...(isNonNegativeInteger(servant.cost) ? { cost: servant.cost } : {}),
+    ...('extraAssets' in servant ? distillServantTraits(servant) : catalogServantTraits(servant)),
     eventBonuses:
       'extraAssets' in servant
         ? extractEventBonuses(servant.extraPassive, Math.floor(updatedAt / 1000), eventNames)
@@ -261,7 +377,13 @@ const servantDisplayError = (servant: unknown): string | null => {
     : 'invalid servant display fields'
 }
 
-const itemDisplayError = (item: unknown): string | null => {
+const servantTraitsError = (servant: MaterialCatalogServant): string | null =>
+  (servant.traits === undefined || isValidTraitIds(servant.traits)) &&
+  (servant.ascensionTraits === undefined || isValidAscensionTraits(servant.ascensionTraits))
+    ? null
+    : 'invalid servant traits'
+
+const itemDisplayError =(item: unknown): string | null => {
   if (!isRecord(item)) return 'invalid item display fields'
   if (
     !isPositiveInteger(item.id) ||
@@ -287,8 +409,15 @@ const bondUpCraftEssenceError = (essence: unknown): string | null => {
   ) {
     return 'invalid bond-up craft essence'
   }
-  return null
+  return bondUpCraftEssenceConditionError(essence)
 }
+
+const bondUpCraftEssenceConditionError = ({ appliesTo, appliesToLabel, supportRate }: Record<string, unknown>): string | null =>
+  isValidTraitGroups(appliesTo) &&
+  (appliesTo.length === 0 || isDisplayString(appliesToLabel)) &&
+  (supportRate === undefined || isFiniteNonNegative(supportRate))
+    ? null
+    : 'invalid bond-up craft essence'
 
 const bondUpCraftEssencesError = (catalog: MaterialCatalogV1): string | null => {
   const essences = catalog.bondUpCraftEssences
@@ -304,7 +433,7 @@ const bondUpCraftEssencesError = (catalog: MaterialCatalogV1): string | null => 
 
 const displayFieldsError = (catalog: MaterialCatalogV1): string | null => {
   for (const servant of catalog.servants) {
-    const error = servantDisplayError(servant)
+    const error = servantDisplayError(servant) ?? servantTraitsError(servant)
     if (error) return error
   }
   for (const item of catalog.items) {
