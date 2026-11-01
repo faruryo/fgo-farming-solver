@@ -29,6 +29,6 @@
 
 ## Impact
 
-- 変更: `lib/material-catalog.ts`(型、礼装の条件とサポート時の値の蒸留、サーヴァントの特性の蒸留、検証)、`lib/material-catalog-updater.ts`(取り直しの条件と指紋)、`lib/material-catalog-local.ts`(ローカルの経路で同じ項目を組む)、`lib/bond/craft-essence-advice.ts`(条件で効く相手を絞る探索)、`components/bond/craft-essence-advisor.tsx`(サーヴァントの特性を提案に渡す)と各テスト。
+- 変更: `lib/material-catalog.ts`(型、礼装の条件とサポート時の値の蒸留、サーヴァントの特性の蒸留、検証)、`lib/material-catalog-updater.ts`(取り直しの条件)、`lib/material-catalog-local.ts`(ローカルの経路で同じ項目を組む)、`lib/bond/craft-essence-advice.ts`(条件で効く相手を絞る探索)、`components/bond/craft-essence-advisor.tsx`(サーヴァントの特性を提案に渡す)と各テスト。
 - データ: `material_catalog_v1` のサーヴァント1件あたり平均17個程度の整数(全体で約50KB)と、礼装ごとの条件が増える。上限の5MB に対して十分小さい。任意項目の追加なのでキーとスキーマバージョンは変えない。
 - 範囲外: #186 のフレンドの礼装の提案、霊基・霊衣ごとに変わる特性の選択、イベント限定の絆アップ礼装。
