@@ -11,4 +11,4 @@
 
 ## 3. 確認
 
-- [ ] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run` が通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run` が通ることを確かめる <!-- verify-only -->
