@@ -48,6 +48,21 @@ describe('featuresFor', () => {
   ] as const)('%s', (_label, id, kvEvent, expected) => {
     expect(featuresFor(id, kvEvent, registry)).toEqual(expected)
   })
+
+  // #204: 礼装しか置いていない交換所（周回する場所も無い）は周回計算に使えない
+  const svt = { itemId: 9, kind: 'svt' as const, qty: 1, costItemId: 2, costAmount: 1, limitNum: 1 }
+  const node = { questId: 1, name: 'q', ap: 40, drops: [] }
+  const shopEvent = (shopItems: EventPlannerEvent['shop'], farmingNodes?: EventPlannerEvent['farmingNodes']) =>
+    ({ lotteries: [], shop: shopItems, farmingNodes }) as Pick<EventPlannerEvent, 'lotteries' | 'shop' | 'farmingNodes'>
+  it.each([
+    ['svt だけで周回場所なし', shopEvent([svt], []), []],
+    ['svt だけで farmingNodes 欠落（旧 KV）', shopEvent([svt]), []],
+    ['svt だけでも周回場所あり', shopEvent([svt], [node]), ['shop']],
+    ['素材と svt が混在し周回場所なし', shopEvent([...shop, svt], []), ['shop']],
+    ['素材だけで周回場所なし', shopEvent(shop, []), ['shop']],
+  ] as const)('%s', (_label, kvEvent, expected) => {
+    expect(featuresFor(9, kvEvent, {})).toEqual(expected)
+  })
 })
 
 describe('mergeEventList', () => {

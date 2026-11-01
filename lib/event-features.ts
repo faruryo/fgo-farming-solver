@@ -17,15 +17,19 @@ type Registry = Record<number, EventFeatureEntry>
 /**
  * KV のイベントのロトが1件以上なら 'box'、交換所が1件以上なら 'shop' と、
  * レジストリの features の和集合（box が先、重複なし）。
+ * ただし交換所がサーヴァント扱いの品目（礼装など）だけで周回する場所も無いときは、
+ * 周回計算に使えないので 'shop' を付けない。
  */
 export const featuresFor = (
   id: number,
-  kvEvent: Pick<EventPlannerEvent, 'lotteries' | 'shop'> | null | undefined,
+  kvEvent: Pick<EventPlannerEvent, 'lotteries' | 'shop' | 'farmingNodes'> | null | undefined,
   registry: Registry = EVENT_FEATURES,
 ): EventFeature[] => {
   const features = new Set<EventFeature>()
   if ((kvEvent?.lotteries?.length ?? 0) > 0) features.add('box')
-  if ((kvEvent?.shop?.length ?? 0) > 0) features.add('shop')
+  const shop = kvEvent?.shop ?? []
+  const svtOnlyWithoutNodes = shop.every((s) => s.kind === 'svt') && (kvEvent?.farmingNodes?.length ?? 0) === 0
+  if (shop.length > 0 && !svtOnlyWithoutNodes) features.add('shop')
   const entry: EventFeatureEntry | undefined = Reflect.get(registry, id)
   for (const f of entry?.features ?? []) features.add(f)
   return [...features]
