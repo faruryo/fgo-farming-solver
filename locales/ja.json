@@ -424,6 +424,8 @@
     "event-feature-shop": "交換所",
     "event-shop-section-title": "交換所の周回計算",
     "event-shop-section-description": "交換したい品目の数を入れると、必要な通貨の数と、集めるのに要る周回数・AP を計算します",
+    "event-shop-catalog-title": "交換所の品目",
+    "event-shop-catalog-description": "この交換所には礼装などしか並ばないため、周回数は計算せず、品目と対価だけを並べます",
     "event-shop-currency-id": "名前不明のアイテム（ID {{id}}）",
     "event-shop-total": "全交換 {{total}}",
     "event-shop-unlimited-count": "＋上限なし {{count}} 品目",

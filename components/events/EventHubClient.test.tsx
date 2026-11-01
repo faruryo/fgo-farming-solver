@@ -758,6 +758,105 @@ describe('EventHubClient', () => {
         expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
         expect(within(cellOf('番号が素材と同じ礼装')).queryByText(/あと/)).not.toBeInTheDocument()
       })
+
+      describe('品目がすべてサーヴァント扱いの交換所', () => {
+        const catalogShop = [
+          svtEntry(9770500, '叡智の大火', 100),
+          { ...svtEntry(9700300, '星のフォウくん', 0), qty: 3 },
+          svtEntry(9305420, '完璧なお正月', 2, 94002),
+        ]
+        const rowOf = (name: string) => screen.getByText(name).closest('tr') as HTMLElement
+        const pointItemId = 94001
+        const DESCRIPTION = 'この交換所には礼装などしか並ばないため、周回数は計算せず、品目と対価だけを並べます'
+        // 説明文の「周回数」を除いて、周回に関わる表示が無いことを見るため、確かめた後に説明文を外す。
+        const takeDescription = () => {
+          const description = screen.getByText(DESCRIPTION)
+          description.remove()
+        }
+
+        const expectCatalogOnly = () => {
+          expect(screen.getByRole('heading', { name: '交換所の品目' })).toBeInTheDocument()
+          expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
+
+          const udon = screen.getByRole('heading', { name: '武蔵うどん' }).closest('div.rounded-md') as HTMLElement
+          const musubi = screen.getByRole('heading', { name: '江戸むすび' }).closest('div.rounded-md') as HTMLElement
+          expect(within(udon).getByText('叡智の大火')).toBeInTheDocument()
+          expect(within(udon).getByText('星のフォウくん')).toBeInTheDocument()
+          expect(within(musubi).getByText('完璧なお正月')).toBeInTheDocument()
+          expect(within(udon).getAllByRole('columnheader').map(th => th.textContent)).toEqual([
+            '品目',
+            '個数',
+            '上限',
+            '対価',
+          ])
+
+          const fire = within(rowOf('叡智の大火'))
+          expect(rowOf('叡智の大火').querySelector('img')?.getAttribute('src')).toContain(
+            encodeURIComponent(icon(9770500)),
+          )
+          expect(fire.getByText('×1')).toBeInTheDocument()
+          expect(fire.getByText('100')).toBeInTheDocument()
+          expect(fire.getByText('10')).toBeInTheDocument()
+          const fou = within(rowOf('星のフォウくん'))
+          expect(fou.getByText('×3')).toBeInTheDocument()
+          expect(fou.getByText('上限なし')).toBeInTheDocument()
+
+          expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
+          expect(screen.queryByRole('button', { name: '全部交換' })).not.toBeInTheDocument()
+          expect(screen.queryByRole('button', { name: '不足素材のみ' })).not.toBeInTheDocument()
+          expect(screen.queryByLabelText(/の所持数$/)).not.toBeInTheDocument()
+          expect(screen.queryByText(/必要量/)).not.toBeInTheDocument()
+          expect(screen.queryByLabelText(/のドロップボーナス$/)).not.toBeInTheDocument()
+          expect(screen.queryByTestId('shop-per-run')).not.toBeInTheDocument()
+          expect(screen.queryByText('1周の獲得量')).not.toBeInTheDocument()
+          expect(screen.queryByTestId('shop-plan-summary')).not.toBeInTheDocument()
+          expect(screen.queryByText(/周回/)).not.toBeInTheDocument()
+          expect(screen.queryByTestId('shop-ap-budget')).not.toBeInTheDocument()
+          expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
+          expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+          expect(screen.queryByText(/全交換/)).not.toBeInTheDocument()
+          expect(screen.queryByText(/上限なし \d+ 品目/)).not.toBeInTheDocument()
+          expect(mocks.useMaterialCatalog).not.toHaveBeenCalled()
+        }
+
+        it('周回クエストが無いとき、品目の一覧だけを出す', () => {
+          render(
+            <EventHubClient
+              summary={summary}
+              boxEvent={event({ shop: catalogShop, farmingNodes: [] })}
+              features={['shop']}
+              pointItemId={pointItemId}
+            />,
+          )
+          takeDescription()
+          expectCatalogOnly()
+        })
+
+        it('周回クエストはあるが対価の通貨を落とさないとき、品目の一覧だけを出す', () => {
+          render(
+            <EventHubClient
+              summary={summary}
+              boxEvent={event({
+                shop: catalogShop,
+                farmingNodes: [{ questId: 1, name: '上級', ap: 40, drops: [{ itemId: 6001, perRun: 1 }] }],
+              })}
+              features={['shop']}
+              pointItemId={pointItemId}
+            />,
+          )
+          takeDescription()
+          expectCatalogOnly()
+        })
+
+        it('礼装とアイテムの品目が混在するときは、今までどおり周回計算を出す', () => {
+          renderShop({ shop: [...catalogShop, shopEntry(6516, 94001, { costName: '武蔵うどん' })] })
+          expect(screen.getByRole('heading', { name: '交換所の周回計算' })).toBeInTheDocument()
+          expect(screen.queryByRole('heading', { name: '交換所の品目' })).not.toBeInTheDocument()
+          expect(screen.getByLabelText('叡智の大火 の交換回数')).toBeInTheDocument()
+          fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+          expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(100)
+        })
+      })
     })
 
     it('所持数は POSSESSION から読み、ITEMS の値は使わず、POSSESSION を書き換えない', () => {

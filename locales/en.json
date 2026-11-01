@@ -501,6 +501,8 @@
     "event-feature-shop": "Shop",
     "event-shop-section-title": "Shop farming calculator",
     "event-shop-section-description": "Enter how many of each item you want to exchange to calculate the currency you need and the runs / AP to collect it",
+    "event-shop-catalog-title": "Shop items",
+    "event-shop-catalog-description": "This shop only offers Craft Essences and similar items, so no runs are calculated; only the items and their costs are listed",
     "event-shop-currency-id": "Unknown item (ID {{id}})",
     "event-shop-total": "Total for all: {{total}}",
     "event-shop-unlimited-count": "+ {{count}} unlimited item(s)",

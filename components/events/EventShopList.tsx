@@ -46,7 +46,10 @@ const useCurrencyLabel = () => {
     group.costName || t('event-shop-currency-id', '名前不明のアイテム（ID {{id}}）', { id: group.costItemId })
 }
 
-const CurrencyHeader: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {
+const CurrencyHeader: React.FC<{ group: ShopCurrencyGroup; showTotal?: boolean }> = ({
+  group,
+  showTotal = true,
+}) => {
   const { t } = useTranslation('events')
   const label = useCurrencyLabel()
   return (
@@ -58,14 +61,16 @@ const CurrencyHeader: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {
         <Icon src={group.costIcon} />
         {label(group)}
       </h3>
-      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text2)' }}>
-        <span>{t('event-shop-total', '全交換 {{total}}', { total: group.totalCost.toLocaleString() })}</span>
-        {group.unlimitedCount > 0 && (
-          <span style={{ color: 'var(--text3)' }}>
-            {t('event-shop-unlimited-count', '＋上限なし {{count}} 品目', { count: group.unlimitedCount })}
-          </span>
-        )}
-      </div>
+      {showTotal && (
+        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text2)' }}>
+          <span>{t('event-shop-total', '全交換 {{total}}', { total: group.totalCost.toLocaleString() })}</span>
+          {group.unlimitedCount > 0 && (
+            <span style={{ color: 'var(--text3)' }}>
+              {t('event-shop-unlimited-count', '＋上限なし {{count}} 品目', { count: group.unlimitedCount })}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -785,6 +790,61 @@ const useBonusTargets = (
     })
   }
   return targets
+}
+
+/** 品目・個数・上限・対価だけの表。交換回数や効率は持たず、交換所の元の順に並べる。 */
+const CatalogTable: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {
+  const { t } = useTranslation('events')
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
+            <th className="text-left font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
+            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
+            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
+            <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-cost', '対価')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.items.map((item, index) => (
+            <tr key={index} style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
+              <td className="pl-3 pr-1 py-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Icon src={item.icon} />
+                  <span>{item.name || `#${item.itemId}`}</span>
+                </span>
+              </td>
+              <td className="text-right px-1 py-1.5 whitespace-nowrap">×{item.qty.toLocaleString()}</td>
+              <td className="text-right px-1 py-1.5">
+                {item.limitNum > 0 ? item.limitNum.toLocaleString() : t('event-shop-unlimited', '上限なし')}
+              </td>
+              <td className="text-right pl-1 pr-3 py-1.5 whitespace-nowrap">{item.costAmount.toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/** 交換所の品目を対価の通貨ごとのカードに並べるだけの一覧。回数の入力や周回の計算はしない。 */
+export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) => {
+  const groups = useMemo(() => groupShopByCurrency(shop), [shop])
+  return (
+    <div className="flex flex-col gap-4">
+      {groups.map(group => (
+        <div
+          key={group.costItemId}
+          className="rounded-md flex flex-col"
+          style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+        >
+          <CurrencyHeader group={group} showTotal={false} />
+          <CatalogTable group={group} />
+        </div>
+      ))}
+    </div>
+  )
 }
 
 /**
