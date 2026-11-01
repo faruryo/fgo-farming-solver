@@ -6,7 +6,7 @@
 
 import { EVENT_FEATURES } from '../data/event-features'
 import type { EventFeature, EventFeatureEntry } from '../data/event-features'
-import type { EventPlannerEvent } from './master-data/types'
+import type { EventPlannerEvent, EventShopItem } from './master-data/types'
 
 export type EventSummary = Pick<EventPlannerEvent, 'id' | 'name' | 'startedAt' | 'endedAt'>
 
@@ -40,6 +40,13 @@ export const isShopOnlyEvent = (
   kvEvent: EventPlannerEvent | null | undefined,
 ): kvEvent is EventPlannerEvent =>
   features.includes('shop') && !features.includes('box') && (kvEvent?.shop.length ?? 0) > 0
+
+/**
+ * 交換所の品目がすべてサーヴァント扱い（種火・フォウくん・礼装など）か。空の交換所は偽。
+ * kind を持たない品目はアイテムとして扱う。周回クエストの有無は見ない。
+ */
+export const isServantOnlyShop = (shop: readonly EventShopItem[]): boolean =>
+  shop.length > 0 && shop.every(item => item.kind === 'svt')
 
 /**
  * KV イベントとレジストリ登録イベントの和集合を ID 重複なしで返す。

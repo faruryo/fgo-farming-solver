@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { EVENT_FEATURES } from '../data/event-features'
 import type { EventFeatureEntry } from '../data/event-features'
 import type { EventPlannerEvent } from './master-data/types'
-import { featuresFor, isShopOnlyEvent, mergeEventList, latestCraftEventId, resolveEventSummary } from './event-features'
+import { featuresFor, isServantOnlyShop, isShopOnlyEvent, mergeEventList, latestCraftEventId, resolveEventSummary } from './event-features'
 
 const lotteries = [{ boxIndex: 0, costPerBox: 1, contents: [], rareRewards: [] }]
 const shop = [{ itemId: 1, qty: 1, costItemId: 2, costAmount: 1, limitNum: 1 }]
@@ -126,5 +126,37 @@ describe('isShopOnlyEvent', () => {
     ['shop が無い', ['craft'], kv(1, 'A', { box: false, withShop: true }), false],
   ] as const)('%s → %s', (_label, features, event, expected) => {
     expect(isShopOnlyEvent(features, event)).toBe(expected)
+  })
+})
+
+describe('isServantOnlyShop', () => {
+  const svt = { itemId: 9400001, kind: 'svt' as const, qty: 1, costItemId: 2, costAmount: 1, limitNum: 1 }
+  const item = { itemId: 6001, qty: 1, costItemId: 2, costAmount: 1, limitNum: 1 }
+  const node = { questId: 1, name: 'q', ap: 40, drops: [] }
+
+  it('品目がすべて kind: svt なら真', () => {
+    expect(isServantOnlyShop([svt, { ...svt, itemId: 9400002 }])).toBe(true)
+  })
+
+  it('kind を持たないアイテムの品目が1つでも混ざれば偽', () => {
+    expect(isServantOnlyShop([svt, item])).toBe(false)
+    expect(isServantOnlyShop([item])).toBe(false)
+  })
+
+  it('空の交換所は偽', () => {
+    expect(isServantOnlyShop([])).toBe(false)
+  })
+
+  it('周回クエストの有無で結果が変わらない', () => {
+    const withNodes = { ...kv(9, 'k', { box: false }), shop: [svt], farmingNodes: [node] } as unknown as EventPlannerEvent
+    const withoutNodes = { ...kv(9, 'k', { box: false }), shop: [svt], farmingNodes: [] } as unknown as EventPlannerEvent
+    expect(isServantOnlyShop(withNodes.shop)).toBe(true)
+    expect(isServantOnlyShop(withoutNodes.shop)).toBe(true)
+  })
+
+  it('品目がすべて kind: svt でも featuresFor は shop を返す', () => {
+    const event = { ...kv(9, 'k', { box: false }), shop: [svt] } as EventPlannerEvent
+    expect(featuresFor(9, event, {})).toEqual(['shop'])
+    expect(isShopOnlyEvent(['shop'], event)).toBe(true)
   })
 })

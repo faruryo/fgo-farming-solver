@@ -24,9 +24,22 @@ const shopEvent = {
     { itemId: 6516, qty: 2, costItemId: 94002, costAmount: 30, limitNum: 1 },
   ],
 }
-const getEventRewards = vi.fn(async (id: number) => (id === 80700 ? { eventId: id, pointItemId: 94099 } : undefined))
+const servantShopEvent = {
+  id: 80638,
+  name: 'CE SHOP',
+  startedAt: 1,
+  endedAt: 2,
+  lotteries: [],
+  shop: [
+    { itemId: 9305420, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 10, limitNum: 1 },
+    { itemId: 6516, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 10, limitNum: 1 },
+  ],
+}
+const getEventRewards = vi.fn(async (id: number) =>
+  id === 80700 || id === 80638 ? { eventId: id, pointItemId: 94099 } : undefined,
+)
 vi.mock('../../../lib/get-events', () => ({
-  getEventById: async (id: number) => [boxEvent, shopEvent].find(e => e.id === id) ?? null,
+  getEventById: async (id: number) => [boxEvent, shopEvent, servantShopEvent].find(e => e.id === id) ?? null,
   getEventRewards: (id: number) => getEventRewards(id),
 }))
 const drops = {
@@ -107,6 +120,26 @@ describe('/events/[id]', () => {
     getDrops.mockClear()
     await renderPage('80614')
     expect(getDrops).not.toHaveBeenCalled()
+  })
+
+  it('品目がすべてサーヴァント扱いの交換所イベント: ドロップ表とポイントの品目を読まない', async () => {
+    getDrops.mockClear()
+    getEventRewards.mockClear()
+    const el = await renderPage('80638')
+    expect(el.type).toBe(EventHubClient)
+    expect(el.props).toMatchObject({ features: ['shop'], boxEvent: servantShopEvent })
+    expect(el.props.shopApPrices).toBeUndefined()
+    expect(el.props.pointItemId).toBeUndefined()
+    expect(getDrops).not.toHaveBeenCalled()
+    expect(getEventRewards).not.toHaveBeenCalled()
+  })
+
+  it('アイテムの品目のある交換所イベント: ドロップ表とポイントの品目を読む', async () => {
+    getDrops.mockClear()
+    getEventRewards.mockClear()
+    await renderPage('80700')
+    expect(getDrops).toHaveBeenCalledTimes(1)
+    expect(getEventRewards).toHaveBeenCalledWith(80700)
   })
 
   it.each([['999'], ['abc']])('存在しない ID %s は EventDataMissing', async (id) => {
