@@ -109,6 +109,7 @@ export const makeBondUpCraftEssence = (
   target: 'party',
   rate: 200,
   add: 0,
+  appliesTo: [],
   ...overrides,
 })
 
