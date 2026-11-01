@@ -675,6 +675,88 @@ describe('EventHubClient', () => {
       expect(screen.queryByText(/見分けられません/)).not.toBeInTheDocument()
     })
 
+    describe('既定で交換する品目（伝承結晶・夢火）', () => {
+      // 伝承結晶（6999）は育成計画で扱う素材、夢火（1000）は扱わない。
+      const loreCatalog = {
+        ...catalog,
+        materials: {
+          100: { skillMaterials: { 1: { items: [6516, 6999].map(id => ({ item: { id }, amount: 1 })), qp: 0 } } },
+        },
+      } as unknown as MaterialCatalogV1
+      const defaultShop = [
+        shopEntry(6999, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 2 }),
+        shopEntry(1000, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 1 }),
+        shopEntry(6999, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 0 }),
+      ]
+      const lastLoreCell = () =>
+        screen.getAllByLabelText('素材6999 の交換回数')[1].closest('tr')?.cells[1] as HTMLElement
+
+      beforeEach(() => {
+        mocks.roster = ready({})
+        mocks.catalog = { catalog: loreCatalog, failed: false, reload }
+      })
+
+      it('未選択の伝承結晶は「使わない」と「必要」の切り替えで出て、不足素材のみで在庫上限の回数が入る', () => {
+        renderShop({ shop: defaultShop })
+
+        const [loreCell] = screen.getAllByLabelText('素材6999 の交換回数').map(input => input.closest('tr')?.cells[1])
+        expect(within(loreCell as HTMLElement).getByText('使わない')).toBeInTheDocument()
+        const [loreToggle] = screen.getAllByRole('radiogroup', { name: '素材6999 は必要か' })
+        expect(within(loreToggle).getByRole('radio', { name: '必要' })).toBeChecked()
+
+        fireEvent.click(shortfallButton())
+        const [limited, unlimited] = screen.getAllByLabelText('素材6999 の交換回数')
+        expect(limited).toHaveValue(2)
+        expect(unlimited).toHaveValue(0)
+        expect(within(lastLoreCell()).getByText('上限なし: 回数を入れてください')).toBeInTheDocument()
+        expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
+      })
+
+      it('伝承結晶を「不要」にすると不足素材のみで 0 になり、選択は端末に false で残る', () => {
+        const { unmount } = renderShop({ shop: defaultShop })
+        fireEvent.click(within(screen.getAllByRole('radiogroup', { name: '素材6999 は必要か' })[0]).getByRole('radio', { name: '不要' }))
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
+          6999: false,
+        })
+
+        fireEvent.click(shortfallButton())
+        for (const input of screen.getAllByLabelText('素材6999 の交換回数')) expect(input).toHaveValue(0)
+        expect(screen.queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
+        unmount()
+
+        renderShop({ id: 80700, shop: [shopEntry(6999, 94002, { costName: '江戸むすび', qty: 1, limitNum: 3 })] })
+        expect(within(toggleOf('素材6999')).getByRole('radio', { name: '不要' })).toBeChecked()
+      })
+
+      it('未選択の夢火は「計画の対象外」と「必要」で出て、不足素材のみで在庫上限まで入る', () => {
+        renderShop({ shop: defaultShop })
+
+        expect(within(cellOf('素材1000')).getByText('計画の対象外')).toBeInTheDocument()
+        expect(within(toggleOf('素材1000')).getByRole('radio', { name: '必要' })).toBeChecked()
+        fireEvent.click(shortfallButton())
+        expect(screen.getByLabelText('素材1000 の交換回数')).toHaveValue(1)
+      })
+
+      it('不足のある伝承結晶にも「あと N 個」と切り替えが出る', () => {
+        mocks.roster = ready({ 6999: 5 })
+        setLs(STORAGE_KEYS.POSSESSION, { 6999: 2 })
+        renderShop({ shop: [defaultShop[0]] })
+
+        expect(within(cellOf('素材6999')).getByText('あと 3 個')).toBeInTheDocument()
+        expect(within(toggleOf('素材6999')).getByRole('radio', { name: '必要' })).toBeChecked()
+      })
+
+      it('素材の一覧を読み込めなくても、伝承結晶は「使わない」、夢火は「計画の対象外」と切り替えで出る', () => {
+        mocks.catalog = { catalog: null, failed: true, reload }
+        renderShop({ shop: [defaultShop[0], defaultShop[1]] })
+
+        expect(within(cellOf('素材6999')).getByText('使わない')).toBeInTheDocument()
+        expect(within(cellOf('素材1000')).getByText('計画の対象外')).toBeInTheDocument()
+        expect(toggleOf('素材6999')).toBeInTheDocument()
+        expect(toggleOf('素材1000')).toBeInTheDocument()
+      })
+    })
+
     describe('サーヴァント扱いの品目', () => {
       const icon = (id: number) => `https://static.atlasacademy.io/JP/Faces/f_${id}0.png`
       const svtEntry = (itemId: number, name: string, limitNum: number, costItemId = 94001): EventShopItem => ({
