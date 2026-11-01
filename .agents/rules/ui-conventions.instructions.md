@@ -34,10 +34,12 @@ applyTo: "app/**/*.tsx,components/**/*.tsx"
 - 第2引数のフォールバックは省略できない。テストは `t: (key, fallback) => fallback ?? key` でモックしており、フォールバックが無いと**画面に生キーが出た状態でテストが通ってしまう**。
 - 例外は意図的なデザイン英語ラベルのみ（`DATA MANAGEMENT`、`Cloud Sync` などの見出し）。翻訳対象と紛らわしいので、迷ったら `t()` を通す。
 - **WARNING**: 既存キーの命名は kebab-case キーと日本語文字列キーが混在している。新規追加は kebab-case に寄せること。
+- **表示言語は `ja` 固定**（`lib/i18n.ts` の `lng: 'ja'`, `fallbackLng: 'ja'`。英語へ切り替える導線は無い）。`locales/en.json` はキーを `ja.json` と揃えるためだけに保つ。
+  - **BLOCKER**: 英語表示の画面確認はしない。OpenSpec の tasks や PR の「人がやること」に英語表示の確認を入れない。
 
 ## UI動作確認（ブラウザ実機検証を毎回行う）
 
-- **BLOCKER**: `app/**` `components/**` の UI を変更したら、type-check / テストだけで完了とせず、**毎回ブラウザ実機で動作確認すること**（ユーザーから都度依頼されなくても必須）。`browser-use`（Chrome DevTools 相当の自動操作）で、自分が起動した dev server（下記）の該当画面を開き、変更点の挙動・連動・永続・i18n 表示を確認する。
+- **BLOCKER**: `app/**` `components/**` の UI を変更したら、type-check / テストだけで完了とせず、**毎回ブラウザ実機で動作確認すること**（ユーザーから都度依頼されなくても必須）。`browser-use`（Chrome DevTools 相当の自動操作）で、自分が起動した dev server（下記）の該当画面を開き、変更点の挙動・連動・永続・日本語表示（生キーが出ていないこと）を確認する。英語表示は確認しない（上記「i18n」）。
 - **検証の型**（最低限）:
   1. `browser-use open http://localhost:<自分のポート>/<対象パス>` → `browser-use state` で要素確認
   2. 入力を変えて連動値を `browser-use eval` で取得し、期待値と一致するか確認
