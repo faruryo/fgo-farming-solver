@@ -109,10 +109,65 @@ describe('CraftEssenceAdvisor', () => {
   })
 })
 
-describe('BondTracker without bond-up craft essences', () => {
-  it('shows that the essence data cannot be loaded and still renders the estimate tab', async () => {
+describe('CraftEssenceAdvisor conditions', () => {
+  const CASTER = 104
+  const SABER = 100
+  const BEAST = 2821
+  const withTraits = (id: number, traits: number[], ascensionTraits?: number[][]): AdvisorServant => ({
+    servant: { ...servant(id), traits, ...(ascensionTraits ? { ascensionTraits } : {}) },
+    candidates: bondQuestCandidates(QUESTS, [], 'saber'),
+    questId: 'ordeal',
+  })
+  const casterOnly = makeBondUpCraftEssence({
+    id: 1, collectionNo: 2124, cost: 12, rate: 200, name: '手稿の翼', appliesTo: [[CASTER]], appliesToLabel: '〔キャスター〕',
+  })
+  const lunch = makeBondUpCraftEssence({ id: 2, collectionNo: 330, cost: 12, rate: 100, name: 'カルデア・ランチタイム' })
+  const beastOnly = makeBondUpCraftEssence({
+    id: 3, collectionNo: 1949, cost: 12, rate: 200, name: 'ＮＦＦから愛をこめて', appliesTo: [[BEAST]], appliesToLabel: '〔ケモノ科のサーヴァント〕',
+  })
+  const portrait = makeBondUpCraftEssence({ id: 4, collectionNo: 99, cost: 5, rate: 0, add: 50, name: '英霊肖像' })
+  const darius = makeBondUpCraftEssence({ id: 5, collectionNo: 108, cost: 5, rate: 0, add: 50, target: 'self', name: 'ダレイオス' })
+
+  it('does not show an essence for casters when only a saber is selected', () => {
+    render(<CraftEssenceAdvisor registered={[withTraits(1, [SABER])]} essences={[casterOnly, lunch]} />)
+    expect(screen.getByText('カルデア・ランチタイム')).toBeTruthy()
+    expect(screen.queryByText(/手稿の翼/)).toBeNull()
+  })
+
+  it('shows who each essence applies to and its effect, without stages when they do not matter', () => {
+    render(<CraftEssenceAdvisor registered={[withTraits(1, [CASTER]), withTraits(2, [CASTER])]} essences={[casterOnly, lunch]} />)
+    expect(screen.getByText('〔キャスター〕に +20%')).toBeTruthy()
+    expect(screen.getByText('全員に +10%')).toBeTruthy()
+    expect(screen.queryByText(/で効く/)).toBeNull()
+    expect(screen.queryByText(/で数えた/)).toBeNull()
+  })
+
+  it('shows fixed amounts for everyone and for the servant itself', () => {
+    render(<CraftEssenceAdvisor registered={[withTraits(1, [SABER]), withTraits(2, [SABER])]} essences={[portrait, darius]} />)
+    expect(screen.getByText('全員に +50')).toBeTruthy()
+    expect(screen.getByText('自身に +50')).toBeTruthy()
+  })
+
+  it('shows the stages an essence applies at and the stage the servant was counted at', () => {
+    const stageServant = withTraits(1, [SABER], [[SABER], [SABER], [SABER, BEAST], [SABER, BEAST]])
+    render(<CraftEssenceAdvisor registered={[stageServant, withTraits(2, [SABER])]} essences={[beastOnly, lunch]} />)
+    expect(screen.getByText('〔ケモノ科のサーヴァント〕に +20%')).toBeTruthy()
+    expect(screen.getByText('サーヴァント1は第3再臨・最終再臨で効く')).toBeTruthy()
+    expect(screen.getAllByText('第3再臨で数えた')).toHaveLength(1)
+    expect(screen.getAllByText(/で効く/)).toHaveLength(1)
+  })
+})
+
+describe('BondTracker without usable bond-up craft essences', () => {
+  it.each([
+    ['no bond-up craft essences', undefined],
+    ['bond-up craft essences without a condition', [makeBondUpCraftEssence({ appliesTo: undefined })]],
+  ])('shows that the essence data cannot be loaded with %s and still renders the estimate tab', async (_label, bondUpCraftEssences) => {
     vi.resetModules()
-    const catalog = { schemaVersion: 1, servants: [], items: [], materials: {}, sources: {}, updatedAt: 1 } as unknown as MaterialCatalogV1
+    const catalog = {
+      schemaVersion: 1, servants: [], items: [], materials: {}, sources: {}, updatedAt: 1,
+      ...(bondUpCraftEssences ? { bondUpCraftEssences } : {}),
+    } as unknown as MaterialCatalogV1
     vi.doMock('../../hooks/use-material-catalog', () => ({
       useMaterialCatalog: () => ({ catalog, failed: false, reload: vi.fn() }),
     }))

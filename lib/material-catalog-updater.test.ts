@@ -3,7 +3,12 @@ import { conditionalRequestHeaders, updateMaterialCatalog } from './material-cat
 import { buildMaterialCatalog, type SourceValidator } from './material-catalog'
 import { makeBondUpCraftEssence, makeCompleteMaterials, makeItem, makeNiceEquip, makeServant } from '../components/material/test-fixtures'
 
-const servant = makeServant({ id: 1, cost: 16, extraAssets: { faces: { ascension: { '0': 'face.png' } }, charaGraph: {} } })
+const servant = makeServant({
+  id: 1,
+  cost: 16,
+  traits: [{ id: 2 }, { id: 100 }],
+  extraAssets: { faces: { ascension: { '0': 'face.png' } }, charaGraph: {} },
+})
 const items = [100, 200, 300, 400, 500].map(id => makeItem({ id, type: id === 100 ? 'qp' : 'skillLvUp' }))
 const equips = [makeNiceEquip()]
 const previous = buildMaterialCatalog({
@@ -150,6 +155,43 @@ describe('updateMaterialCatalog', () => {
     const result = await updateMaterialCatalog({ previous: prev, fetchSource, ...urls, now: () => 2 })
     expect(fetchSource).toHaveBeenCalledWith('servants', {})
     expect(result.catalog?.servants[0].cost).toBe(16)
+  })
+
+  it('refetches nice_servant unconditionally when no previous servant has traits', async () => {
+    const prev = { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000], traits: undefined }] }
+    const fetchSource = vi.fn(async (url: string, validator: SourceValidator) => {
+      if (url === 'servants' && !validator.etag) {
+        return { status: 200 as const, value: [{ ...servant, ...makeCompleteMaterials(), bondGrowth: [1000] }], validator: { etag: 'servant-v1' } }
+      }
+      return { status: 304 as const, validator: {} }
+    })
+    const result = await updateMaterialCatalog({ previous: prev, fetchSource, ...urls, now: () => 2 })
+    expect(fetchSource).toHaveBeenCalledWith('servants', {})
+    expect(result.catalog?.servants[0].traits).toEqual([2, 100])
+  })
+
+  it('keeps the previous traits when nice_servant returns 304', async () => {
+    const prev = { ...previous, servants: [{ ...previous.servants[0], bondGrowth: [1000] }] }
+    const fetchSource = vi.fn(async (url: string) =>
+      url === 'equips'
+        ? { status: 200 as const, value: [makeNiceEquip(), makeNiceEquip({ id: 9400001, collectionNo: 2 })], validator: { etag: 'equip-v2' } }
+        : { status: 304 as const, value: 'not an array', validator: {} })
+    const result = await updateMaterialCatalog({ previous: prev, fetchSource, ...urls, now: () => 2 })
+    expect(fetchSource).toHaveBeenCalledWith('servants', { etag: 'servant-v1' })
+    expect(result.changed).toBe(true)
+    expect(result.catalog?.servants[0].traits).toEqual([2, 100])
+  })
+
+  it('fetches nice_equip unconditionally when no previous bond-up craft essence has a condition', async () => {
+    const prev = { ...previous, bondUpCraftEssences: [makeBondUpCraftEssence({ appliesTo: undefined })] }
+    const fetchSource = vi.fn(async (url: string, validator: SourceValidator) =>
+      url === 'equips' && !validator.etag
+        ? { status: 200 as const, value: equips, validator: { etag: 'equip-v1' } }
+        : { status: 304 as const, validator: {} })
+    const result = await updateMaterialCatalog({ previous: prev, fetchSource, ...urls, now: () => 2 })
+    expect(fetchSource).toHaveBeenCalledWith('equips', {})
+    expect(result.changed).toBe(true)
+    expect(result.catalog?.bondUpCraftEssences?.[0].appliesTo).toEqual([])
   })
 
   it('keeps the previous bond-up craft essences without parsing when nice_equip returns 304', async () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { NiceEquip, NiceServant } from '../interfaces/atlas-academy'
 import {
   buildMaterialCatalog,
   distillBondUpCraftEssences,
@@ -344,6 +345,97 @@ describe('Material Catalog cost', () => {
   })
 })
 
+describe('Material Catalog traits', () => {
+  const BASE = [2, 100, 202, 302]
+  const traits = (ids: number[]) => ids.map(id => ({ id, name: `trait${id}` }))
+  const withTraits = (
+    id: number,
+    base: unknown,
+    individuality?: NonNullable<NiceServant['ascensionAdd']>['individuality'],
+  ) =>
+    ({
+      ...makeServant({ id, collectionNo: id }),
+      traits: base,
+      ...(individuality ? { ascensionAdd: { individuality } } : {}),
+    }) as ReturnType<typeof makeServant>
+  const build = (servants: NiceServant[]) =>
+    buildMaterialCatalog({
+      servants,
+      materials: Object.fromEntries(servants.map(servant => [servant.id, makeCompleteMaterials()])),
+      items: [100, 200, 300, 400, 500].map(id => makeItem({ id })),
+      bondUpCraftEssences: [makeBondUpCraftEssence()],
+      sources: { niceServant: {}, niceItem: {} },
+      updatedAt: 1,
+    })
+  const empty = { '0': [], '1': [], '2': [], '3': [], '4': [] }
+
+  it('distills trait ids and no stage traits when ascension does not change them', () => {
+    const catalog = build([withTraits(1, traits(BASE), { ascension: empty, costume: {} })])
+    expect(catalog.servants[0].traits).toEqual(BASE)
+    expect(catalog.servants[0]).not.toHaveProperty('ascensionTraits')
+  })
+
+  it('distills four stages when only ascension 3 and 4 add a trait, treating empty ones as the base', () => {
+    const beast = traits([...BASE, 2821])
+    const catalog = build([withTraits(1, traits(BASE), { ascension: { ...empty, '3': beast, '4': beast } })])
+    expect(catalog.servants[0].ascensionTraits).toEqual([BASE, BASE, [...BASE, 2821], [...BASE, 2821]])
+    expect(validateMaterialCatalog(catalog)).toEqual({ ok: true })
+  })
+
+  it('uses the traits common to ascension 1 and 2 for the second stage', () => {
+    // 再臨1と2で加わる特性が違えばどちらも数えず、基本の特性と同じになる
+    const commonIsBase = build([
+      withTraits(1, traits(BASE), { ascension: { ...empty, '1': traits([...BASE, 303]), '2': traits([...BASE, 304]) } }),
+    ])
+    expect(commonIsBase.servants[0]).not.toHaveProperty('ascensionTraits')
+    const differing = build([
+      withTraits(1, traits(BASE), { ascension: { ...empty, '1': traits([...BASE, 303]), '2': traits([2, 100, 303]) } }),
+    ])
+    expect(differing.servants[0].ascensionTraits).toEqual([BASE, [2, 100, 303], BASE, BASE])
+  })
+
+  it('does not distill costume traits', () => {
+    const catalog = build([withTraits(1, traits(BASE), { ascension: empty, costume: { '100140': traits([...BASE, 2821]) } })])
+    expect(catalog.servants[0].traits).toEqual(BASE)
+    expect(catalog.servants[0]).not.toHaveProperty('ascensionTraits')
+  })
+
+  it('omits invalid traits without rejecting the catalog', () => {
+    const catalog = build([
+      withTraits(1, undefined),
+      withTraits(2, []),
+      withTraits(3, traits([2, -1])),
+      withTraits(4, traits([2, 2])),
+      withTraits(5, [{ id: 1.5 }]),
+      withTraits(6, traits(BASE), { ascension: { ...empty, '3': traits([2, 0]) } }),
+    ])
+    expect(catalog.servants.slice(0, 5).map(servant => 'traits' in servant)).toEqual([false, false, false, false, false])
+    expect(catalog.servants[5].traits).toEqual(BASE)
+    expect(catalog.servants[5]).not.toHaveProperty('ascensionTraits')
+    expect(validateMaterialCatalog(catalog)).toEqual({ ok: true })
+  })
+
+  it('keeps traits when rebuilding from an already distilled catalog', () => {
+    const beast = traits([...BASE, 2821])
+    const first = build([withTraits(1, traits(BASE), { ascension: { ...empty, '4': beast } })])
+    const rebuilt = buildMaterialCatalog({ ...first, servants: first.servants })
+    expect(rebuilt.servants[0].traits).toEqual(BASE)
+    expect(rebuilt.servants[0].ascensionTraits).toEqual([BASE, BASE, BASE, [...BASE, 2821]])
+  })
+
+  it.each([
+    ['empty traits', { traits: [] }],
+    ['a non-positive trait id', { traits: [2, 0] }],
+    ['duplicate trait ids', { traits: [2, 2] }],
+    ['three stages', { traits: BASE, ascensionTraits: [BASE, BASE, BASE] }],
+    ['an empty stage', { traits: BASE, ascensionTraits: [BASE, BASE, [], BASE] }],
+  ])('rejects a candidate with %s', (_label, overrides) => {
+    const catalog = createCatalog()
+    Object.assign(catalog.servants[0], overrides)
+    expect(validateMaterialCatalog(catalog)).toEqual({ ok: false, reason: 'invalid servant traits' })
+  })
+})
+
 describe('distillBondUpCraftEssences', () => {
   const fn = (
     funcTargetType: string,
@@ -376,7 +468,10 @@ describe('distillBondUpCraftEssences', () => {
       target: 'party',
       rate: 100,
       add: 0,
+      appliesTo: [],
     })
+    expect(essence).not.toHaveProperty('appliesToLabel')
+    expect(essence).not.toHaveProperty('supportRate')
   })
 
   it('reads a self fixed amount that does not change on limit break and ignores a self rate', () => {
@@ -428,6 +523,139 @@ describe('distillBondUpCraftEssences', () => {
     expect(essence).toMatchObject({ rate: 0, add: 50 })
   })
 
+  const trait = (id: number) => ({ id, name: `trait${id}` })
+  type BondFunction = NiceEquip['skills'][number]['functions'][number]
+  const conditional = (
+    detail: string,
+    condition: Pick<BondFunction, 'functvals' | 'overWriteTvalsList' | 'followerVals' | 'funcquestTvals'>,
+    sval: BondFunction['svals'][number] = { Individuality: 0, RateCount: 200 },
+  ) =>
+    makeNiceEquip({
+      skills: [
+        { condLimitCount: 0, detail: '未解放', functions: [{ ...fn('ptFull', { Individuality: 0, RateCount: 40 }), ...condition }] },
+        { condLimitCount: 4, detail, functions: [{ ...fn('ptFull', sval), ...condition }] },
+      ],
+    })
+
+  it.each([
+    [
+      'one functvals trait',
+      conditional('クエストクリア時に得られる〔キャスター〕クラスの絆を20%増やす[最大解放]', { functvals: [trait(104)] }),
+      [[104]],
+      '〔キャスター〕',
+    ],
+    [
+      'several functvals traits as either',
+      conditional('クエストクリア時に得られる〔星の力を持つサーヴァント〕または〔悪〕特性の絆を20%増やす[最大解放]', {
+        functvals: [trait(304), trait(203)],
+      }),
+      [[304], [203]],
+      '〔星の力を持つサーヴァント〕または〔悪〕',
+    ],
+    [
+      'an overWriteTvalsList group as all of',
+      conditional('クエストクリア時に得られる〔秩序の女性〕の絆を20%増やす[最大解放]', {
+        functvals: [],
+        overWriteTvalsList: [[trait(300), trait(2)]],
+      }),
+      [[300, 2]],
+      '〔秩序の女性〕',
+    ],
+    [
+      'overWriteTvalsList in preference to functvals',
+      conditional('〔混沌かつ七騎士〕特性の絆を20%増やす', {
+        functvals: [trait(104)],
+        overWriteTvalsList: [[trait(301), trait(2858)], [trait(2801200)]],
+      }),
+      [[301, 2858], [2801200]],
+      '〔混沌かつ七騎士〕',
+    ],
+  ])('reads the condition from %s', (_label, equip, appliesTo, appliesToLabel) => {
+    const [essence] = distillBondUpCraftEssences([equip])
+    expect(essence).toMatchObject({ rate: 200, appliesTo, appliesToLabel })
+  })
+
+  it('reads no condition as applying to everyone and gives no label', () => {
+    const [essence] = distillBondUpCraftEssences([
+      conditional('クエストクリア時に得られる〔絆〕を20%増やす', { functvals: [], overWriteTvalsList: [] }),
+    ])
+    expect(essence.appliesTo).toEqual([])
+    expect(essence).not.toHaveProperty('appliesToLabel')
+  })
+
+  it('keeps the support rate only when followerVals differs', () => {
+    const [teaTime, same] = distillBondUpCraftEssences([
+      makeNiceEquip({
+        id: 1,
+        collectionNo: 1,
+        skills: [{
+          condLimitCount: 4,
+          functions: [{ ...fn('ptFull', { Individuality: 0, RateCount: 50 }), followerVals: [{ Individuality: 0, RateCount: 150 }] }],
+        }],
+      }),
+      makeNiceEquip({
+        id: 2,
+        collectionNo: 2,
+        skills: [{
+          condLimitCount: 4,
+          functions: [{ ...fn('ptFull', { RateCount: 100 }), followerVals: [{ RateCount: 100 }] }],
+        }],
+      }),
+    ])
+    expect(teaTime).toMatchObject({ rate: 50, supportRate: 150 })
+    expect(same).not.toHaveProperty('supportRate')
+  })
+
+  it('reads the label from the first 〔 to the last 〕 of the max limit-break detail', () => {
+    const [essence] = distillBondUpCraftEssences([
+      conditional('〔今を生きる人類(一部の疑似サーヴァント、デミ・サーヴァントなど)〕の絆を20%増やす', { functvals: [trait(2654)] }),
+    ])
+    expect(essence.appliesToLabel).toBe('〔今を生きる人類(一部の疑似サーヴァント、デミ・サーヴァントなど)〕')
+  })
+
+  it.each([
+    ['a non-zero Individuality', { functvals: [] }, { Individuality: 2000, RateCount: 200 }],
+    ['an unknown sval key', { functvals: [] }, { RateCount: 200, ApplySupportSvt: 1 } as never],
+    ['a quest condition', { functvals: [], funcquestTvals: [trait(94000001)] }, undefined],
+    ['a negative trait id', { functvals: [trait(-304)] }, undefined],
+    ['a trait marked as negative', { functvals: [{ id: 304, name: 'alignmentEvil', negative: true }] }, undefined],
+    ['an empty group', { overWriteTvalsList: [[trait(300)], []] }, undefined],
+  ])('excludes an essence whose only effect has %s', (_label, condition, sval) => {
+    expect(distillBondUpCraftEssences([conditional('〔キャスター〕の絆を20%増やす', condition, sval)])).toEqual([])
+  })
+
+  it('excludes a conditional essence whose detail has no 〔〕', () => {
+    expect(distillBondUpCraftEssences([conditional('キャスターの絆を20%増やす', { functvals: [trait(104)] })])).toEqual([])
+  })
+
+  it('excludes an essence whose effects have different conditions', () => {
+    expect(distillBondUpCraftEssences([
+      makeNiceEquip({
+        skills: [{
+          condLimitCount: 0,
+          detail: '〔キャスター〕の絆を増やす',
+          functions: [fn('ptFull', { RateCount: 100 }), { ...fn('ptFull', { RateCount: 200 }), functvals: [trait(104)] }],
+        }],
+      }),
+    ])).toEqual([])
+  })
+
+  it('sums effects that share the target and the condition', () => {
+    const [essence] = distillBondUpCraftEssences([
+      makeNiceEquip({
+        skills: [{
+          condLimitCount: 0,
+          detail: '〔キャスター〕の絆を増やす',
+          functions: [
+            { ...fn('ptFull', { RateCount: 100 }), functvals: [trait(104)] },
+            { ...fn('ptFull', { AddCount: 50 }), functvals: [trait(104)] },
+          ],
+        }],
+      }),
+    ])
+    expect(essence).toMatchObject({ rate: 100, add: 50, appliesTo: [[104]], appliesToLabel: '〔キャスター〕' })
+  })
+
   it('orders essences by collection number', () => {
     const essences = distillBondUpCraftEssences([
       makeNiceEquip({ id: 3, collectionNo: 30 }),
@@ -446,10 +674,26 @@ describe('Material Catalog bond-up craft essence validation', () => {
     ['an infinite amount', { add: Number.POSITIVE_INFINITY }],
     ['a blank name', { name: ' ' }],
     ['a blank face', { face: '' }],
+    ['no condition', { appliesTo: undefined }],
+    ['an empty group', { appliesTo: [[]], appliesToLabel: '〔キャスター〕' }],
+    ['a non-positive trait id', { appliesTo: [[0]], appliesToLabel: '〔キャスター〕' }],
+    ['a condition without a label', { appliesTo: [[104]] }],
+    ['a condition with a blank label', { appliesTo: [[104]], appliesToLabel: ' ' }],
+    ['a negative support rate', { supportRate: -1 }],
+    ['an infinite support rate', { supportRate: Number.POSITIVE_INFINITY }],
   ])('rejects %s', (_label, overrides) => {
     const catalog = createCatalog()
     catalog.bondUpCraftEssences = [makeBondUpCraftEssence(overrides)]
     expect(validateMaterialCatalog(catalog)).toEqual({ ok: false, reason: 'invalid bond-up craft essence' })
+  })
+
+  it('accepts a condition with a label and a support rate', () => {
+    const catalog = createCatalog()
+    catalog.bondUpCraftEssences = [
+      makeBondUpCraftEssence({ appliesTo: [[304], [203]], appliesToLabel: '〔星の力を持つサーヴァント〕または〔悪〕' }),
+      makeBondUpCraftEssence({ id: 2, collectionNo: 2, rate: 50, supportRate: 150 }),
+    ]
+    expect(validateMaterialCatalog(catalog)).toEqual({ ok: true })
   })
 
   it('rejects duplicate ids', () => {
