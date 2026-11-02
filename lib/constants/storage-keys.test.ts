@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { STORAGE_KEYS, CLOUD_SYNC_KEYS } from './storage-keys'
+import { STORAGE_KEYS, CLOUD_SYNC_KEYS, eventShopInputsKey, isCloudSyncKey } from './storage-keys'
 
 describe('storage-keys', () => {
   it('preserves historical posession typo for backwards-compatibility', () => {
@@ -10,6 +10,11 @@ describe('storage-keys', () => {
     const values = Object.values(STORAGE_KEYS)
     const uniqueValues = new Set(values)
     expect(uniqueValues.size).toBe(values.length)
+  })
+
+  it('builds per-event shop input keys that are not cloud-synced', () => {
+    expect(eventShopInputsKey(80632)).toBe('events/shopInputs/80632')
+    expect(isCloudSyncKey(eventShopInputsKey(80632))).toBe(false)
   })
 
   it('strictly preserves the cloud sync keys in sequence', () => {
