@@ -175,6 +175,17 @@ export interface EventPlannerEvent {
   shop: EventShopItem[]
   /** イベント周回ノード。 */
   farmingNodes: EventFarmingNode[]
+  /**
+   * ボーナス礼装の ☆ と交換所の通貨の対応（ロトの無い交換所イベントのみ）。
+   * 項目が無いのは対応を取り込む前のデータ、空の配列は対応が1つも無いことを表す。
+   */
+  bonusRarities?: EventBonusRarity[]
+}
+
+/** ボーナス礼装の ☆ と、その ☆ の礼装がドロップを増やす交換所の通貨。 */
+export interface EventBonusRarity {
+  rarity: 3 | 4 | 5
+  itemId: number
 }
 
 /**

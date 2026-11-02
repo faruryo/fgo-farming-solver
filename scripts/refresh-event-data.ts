@@ -46,6 +46,7 @@ import {
   parseExistingEvents,
 } from '../lib/refresh-event-data-merge'
 import {
+  attachBonusRarities,
   buildEventRewardsRows,
   compactDrops,
   compactMissions,
@@ -57,6 +58,7 @@ import {
 } from '../lib/refresh-event-data-compact'
 import type {
   AtlasDrop,
+  AtlasEquip,
   AtlasMission,
   AtlasPointReward,
   AtlasShopItem,
@@ -217,14 +219,20 @@ interface AtlasItemEntry {
   name: string
   icon: string
   type: string
+  individuality?: { id: number }[]
 }
 
-/** Atlas nice_item（全件、日本語）を取得して Map<id, {name, icon, type}> を返す */
+/** Atlas nice_item（全件、日本語）を取得して Map<id, {name, icon, type, individuality}> を返す */
 async function fetchItemMap(): Promise<ItemMap> {
   const items = await fetchJson<AtlasItemEntry[]>(`${origin}/export/${region}/nice_item.json`)
   const map: ItemMap = new Map()
   for (const item of items) {
-    map.set(item.id, { name: item.name, icon: item.icon, type: item.type })
+    map.set(item.id, {
+      name: item.name,
+      icon: item.icon,
+      type: item.type,
+      individuality: (item.individuality ?? []).map(i => i.id),
+    })
   }
   return map
 }
@@ -244,6 +252,22 @@ async function fetchSvtMap(): Promise<SvtMap> {
     map.set(svt.id, { name: svt.name, rarity: svt.rarity, face: svt.face })
   }
   return map
+}
+
+/**
+ * Atlas nice_equip（全件）を取得する。ボーナス礼装の ☆ と通貨の対応に使う。
+ * 取れなければ undefined を返し、取り込みは続ける（前の対応を引き継ぐ）。
+ */
+async function fetchEquips(): Promise<AtlasEquip[] | undefined> {
+  console.log(`Fetching equips from ${origin}/export/${region}/nice_equip.json...`)
+  try {
+    const equips = await fetchJson<AtlasEquip[]>(`${origin}/export/${region}/nice_equip.json`)
+    console.log(`  Loaded ${equips.length} equips`)
+    return equips
+  } catch (e) {
+    console.warn(`  equips unavailable (${e}); bonus rarities will be kept from existing data or omitted.`)
+    return undefined
+  }
 }
 
 // ── 変換ロジック ────────────────────────────────────────────────────
@@ -425,6 +449,8 @@ async function main() {
     console.warn(`  svt map unavailable (${e}); servant shop items will use shop entry names.`)
   }
 
+  const equips = await fetchEquips()
+
   console.log(`Fetching ${origin}/export/${region}/basic_event.json...`)
   const basicEvents = await fetchJson<BasicEvent[]>(
     `${origin}/export/${region}/basic_event.json`
@@ -480,20 +506,29 @@ async function main() {
 
     if (decision.kind === 'shop') {
       const farmingNodes = await compactFarmingNodes(event.warIds, itemMap)
-      results.push({
-        id: event.id,
-        name: event.name,
-        type: event.type,
-        startedAt: event.startedAt,
-        endedAt: event.endedAt,
-        currency: decision.currency,
-        unlimitedBoxes: decision.unlimitedBoxes,
-        lotteries: decision.lotteries,
-        shop,
-        farmingNodes,
-      })
+      const shopEvent = attachBonusRarities(
+        {
+          id: event.id,
+          name: event.name,
+          type: event.type,
+          startedAt: event.startedAt,
+          endedAt: event.endedAt,
+          currency: decision.currency,
+          unlimitedBoxes: decision.unlimitedBoxes,
+          lotteries: decision.lotteries,
+          shop,
+          farmingNodes,
+        },
+        equips,
+        itemMap,
+        existingEvents,
+      )
+      results.push(shopEvent)
       rewardsEntries.push(compactEventRewards(event, farmingNodes, itemMap))
-      console.log(`  ok (shop only): ${shop.length} shop items, ${farmingNodes.length} farming nodes`)
+      console.log(
+        `  ok (shop only): ${shop.length} shop items, ${farmingNodes.length} farming nodes, ` +
+        `bonus rarities ${JSON.stringify(shopEvent.bonusRarities)}`
+      )
       continue
     }
 

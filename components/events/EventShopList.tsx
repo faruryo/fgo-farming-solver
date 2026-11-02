@@ -32,11 +32,26 @@ import { countsOrEmpty, recordOrEmpty, useLocalStorage } from '../../hooks/use-l
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import { materialCatalogItemIds } from '../../lib/material-catalog'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
-import { applyDropBonus, planShopCurrencies, type ShopCurrencyPlan } from '../../lib/event-plan'
+import {
+  applyDropBonus,
+  compareBonusCraftEssences,
+  planShopCurrencies,
+  selectBonusCraftEssenceRow,
+  type BonusCraftEssenceComparison,
+  type BonusRarity,
+  type ShopCurrencyPlan,
+} from '../../lib/event-plan'
 import type { Result } from '../../interfaces/api'
 import { computeApBudget } from '../../lib/ap-budget'
 import { ApBudgetBreakdown, ApBudgetInputs, useApBudgetProfile } from './ApBudget'
 import { DropBonusInputs, toCount, type BonusTarget } from './DropBonusInputs'
+import {
+  BonusComparisonTable,
+  BonusRarityInputs,
+  EMPTY_RARITY_VALUES,
+  type RarityTarget,
+  type RarityValues,
+} from './BonusCraftEssenceInputs'
 
 const Icon: React.FC<{ src?: string }> = ({ src }) =>
   src ? <Image src={src} alt="" width={20} height={20} className="w-5 h-5 object-contain flex-shrink-0" /> : null
@@ -802,6 +817,157 @@ const useBonusTargets = (
   return targets
 }
 
+const NO_COMPARISON: BonusCraftEssenceComparison = { rows: [], unfarmable: [] }
+
+/**
+ * ボーナス礼装の ☆ ごとの入力と比較の表の状態。☆ と対応する通貨の +N は選んだ行の編成から求め、
+ * 表を出さないときは 0 にする。ほかの品目は通貨ごとの欄の値を使う。値は画面を開いている間だけ持つ。
+ */
+const useBonusCraftEssences = (
+  event: EventPlannerEvent,
+  currencyNeed: Map<number, number>,
+  bonus: ReadonlyMap<number, number>,
+  targets: BonusTarget[],
+) => {
+  const mappings = event.bonusRarities
+  const [values, setValues] = useState<ReadonlyMap<BonusRarity, RarityValues>>(() => new Map())
+  const [friendChoice, setFriendChoice] = useState<BonusRarity | null>()
+  const [selectedTotal, setSelectedTotal] = useState<number>()
+
+  const rarityTargets: RarityTarget[] = useMemo(
+    () =>
+      (mappings ?? []).map(m => ({
+        rarity: m.rarity,
+        currency: targets.find(target => target.itemId === m.itemId) ?? { itemId: m.itemId, label: `#${m.itemId}` },
+      })),
+    [mappings, targets],
+  )
+  const mappedIds = useMemo(() => new Set((mappings ?? []).map(m => m.itemId)), [mappings])
+  // 未選択のフレンドの礼装は、対応のある最も高い ☆。
+  const friendRarity =
+    friendChoice === undefined
+      ? (mappings ?? []).reduce<BonusRarity | null>((max, m) => (max === null || m.rarity > max ? m.rarity : max), null)
+      : friendChoice
+
+  const comparison = useMemo(() => {
+    if (!mappings || mappings.length === 0) return NO_COMPARISON
+    const otherBonus = new Map([...bonus].filter(([id]) => !mappedIds.has(id)))
+    const inputs = mappings.map(m => ({ ...m, ...(values.get(m.rarity) ?? EMPTY_RARITY_VALUES) }))
+    return compareBonusCraftEssences(event, currencyNeed, otherBonus, inputs, friendRarity)
+  }, [event, currencyNeed, bonus, mappings, mappedIds, values, friendRarity])
+
+  const row = selectBonusCraftEssenceRow(comparison.rows, selectedTotal)
+  // 選んだ合計枚数の行が無くなったら、AP が最も少ない行に付いていく状態に戻す。
+  if (selectedTotal !== undefined && comparison.rows.length > 0 && row?.total !== selectedTotal) {
+    setSelectedTotal(undefined)
+  }
+
+  const effectiveBonus = useMemo(() => {
+    if (row) return row.bonus
+    const next = new Map(bonus)
+    for (const id of mappedIds) next.set(id, 0)
+    return next
+  }, [row, bonus, mappedIds])
+
+  return {
+    mappings,
+    rarityTargets,
+    values,
+    setRarityValues: (rarity: BonusRarity, value: RarityValues) => setValues(prev => new Map(prev).set(rarity, value)),
+    friendRarity,
+    setFriendRarity: (rarity: BonusRarity | null) => setFriendChoice(rarity),
+    comparison,
+    selectedTotal: row?.total,
+    selectRow: (total: number) => setSelectedTotal(total),
+    effectiveBonus,
+    /** 通貨ごとの +N の欄に出す品目（☆ と対応する通貨を除く）。 */
+    perItemTargets: targets.filter(target => !mappedIds.has(target.itemId)),
+  }
+}
+
+/** ☆ ごとの欄・比較の表、または対応を持たないデータであることの1行。対応が空なら何も出さない。 */
+const BonusCraftEssenceSection: React.FC<{
+  state: ReturnType<typeof useBonusCraftEssences>
+  hasNeed: boolean
+  nameOf: (id: number) => string
+}> = ({ state, hasNeed, nameOf }) => {
+  const { t } = useTranslation('events')
+  if (!state.mappings) {
+    return (
+      <p className="text-xs" style={{ color: 'var(--text3)' }}>
+        {t('event-shop-ce-stale', 'データの更新前のため、礼装の枚数を比べられません。')}
+      </p>
+    )
+  }
+  if (state.mappings.length === 0) return null
+  const { rows, unfarmable } = state.comparison
+  return (
+    <>
+      <BonusRarityInputs
+        targets={state.rarityTargets}
+        values={state.values}
+        friendRarity={state.friendRarity}
+        onChange={state.setRarityValues}
+        onFriendChange={state.setFriendRarity}
+      />
+      {rows.length > 0 && (
+        <BonusComparisonTable
+          rarities={state.rarityTargets.map(target => target.rarity)}
+          rows={rows}
+          selectedTotal={state.selectedTotal}
+          onSelect={state.selectRow}
+        />
+      )}
+      {rows.length > 0 && unfarmable.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--red)' }}>
+          {t('event-shop-ce-unfarmable', '{{names}} は周回では集められないため、集められる通貨だけで比べています。', {
+            names: unfarmable.map(nameOf).join('、'),
+          })}
+        </p>
+      )}
+      {!hasNeed && (
+        <Message>
+          {t('event-shop-ce-no-need', '周回で集める通貨が無いため、枚数の比較はありません。')}
+        </Message>
+      )}
+    </>
+  )
+}
+
+/** 「ドロップ増加礼装」の枠: ☆ ごとの欄・比較の表・☆ と対応しない品目の通貨ごとの欄。 */
+const ShopBonusCard: React.FC<{
+  state: ReturnType<typeof useBonusCraftEssences>
+  bonus: ReadonlyMap<number, number>
+  unappliedLabels: string[]
+  hasNeed: boolean
+  nameOf: (id: number) => string
+  onChange: (itemId: number, value: number) => void
+}> = ({ state, bonus, unappliedLabels, hasNeed, nameOf, onChange }) => {
+  const { t } = useTranslation('events')
+  const hasRarityInputs = !!state.mappings && state.mappings.length > 0
+  return (
+    <DropBonusInputs
+      targets={state.perItemTargets}
+      bonus={bonus}
+      unappliedLabels={unappliedLabels}
+      description={
+        hasRarityInputs
+          ? t(
+              'event-shop-ce-description',
+              '手持ちの礼装を入れると、枚数ごとの周回数と AP を比べ、選んだ編成で周回数を計算します',
+            )
+          : t(
+              'event-shop-bonus-description',
+              '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
+            )
+      }
+      onChange={onChange}
+    >
+      <BonusCraftEssenceSection state={state} hasNeed={hasNeed} nameOf={nameOf} />
+    </DropBonusInputs>
+  )
+}
+
 /** 品目・個数・上限・対価だけの表。交換回数や効率は持たず、交換所の元の順に並べる。 */
 const CatalogTable: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {
   const { t } = useTranslation('events')
@@ -867,40 +1033,37 @@ export const EventShopList: React.FC<{
   /** イベントポイントの品目の atlasId。あればボーナスの欄と1周の獲得量の列に出す。 */
   pointItemId?: number
 }> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
-  const { t } = useTranslation('events')
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
   const [counts, setCounts] = useState<ShopExchangeCounts>(() => new Map())
   const [owned, setOwned] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [bonus, setBonus] = useState<ReadonlyMap<number, number>>(() => new Map())
   const needs = useMemo(() => computeShopCurrencyNeeds(shop, counts, owned), [shop, counts, owned])
-  const bonused = useMemo(() => applyDropBonus(event, new Map(bonus)), [event, bonus])
-  const plan = useMemo(
-    () => planShopCurrencies(bonused.event, new Map(needs.map(n => [n.costItemId, n.need]))),
-    [bonused, needs],
-  )
+  const currencyNeed = useMemo(() => new Map(needs.map(n => [n.costItemId, n.need])), [needs])
+  const targets = useBonusTargets(event, groups, pointItemId)
+  const craftEssences = useBonusCraftEssences(event, currencyNeed, bonus, targets)
+  const { effectiveBonus } = craftEssences
+  const bonused = useMemo(() => applyDropBonus(event, new Map(effectiveBonus)), [event, effectiveBonus])
+  const plan = useMemo(() => planShopCurrencies(bonused.event, currencyNeed), [bonused, currencyNeed])
   const rosterPlan = useShopRosterPlan(shop, setCounts)
 
-  const targets = useBonusTargets(event, groups, pointItemId)
-  const unappliedLabels = bonused.unapplied.map(id => targets.find(target => target.itemId === id)?.label ?? `#${id}`)
-  const bonusApplied = [...bonus.values()].some(n => n > 0)
+  const labelOf = (id: number) => targets.find(target => target.itemId === id)?.label ?? `#${id}`
+  const bonusApplied = [...effectiveBonus.values()].some(n => n > 0)
 
   return (
     <div className="flex flex-col gap-4">
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
       <SelectControls onSelectAll={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
-      <DropBonusInputs
-        targets={targets}
+      <ShopBonusCard
+        state={craftEssences}
         bonus={bonus}
-        unappliedLabels={unappliedLabels}
-        description={t(
-          'event-shop-bonus-description',
-          '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
-        )}
+        unappliedLabels={bonused.unapplied.map(labelOf)}
+        hasNeed={[...currencyNeed.values()].some(n => n > 0)}
+        nameOf={labelOf}
         onChange={(itemId, value) => setBonus(prev => new Map(prev).set(itemId, value))}
       />
-      <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={bonus} />
+      <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={effectiveBonus} />
       {groups.map(group => (
         <CurrencyGroupCard
           key={group.costItemId}

@@ -6,17 +6,22 @@
  * - ポイント報酬・ミッション・イベントポイントの品目の整形と、イベントごとの KV キーの bulk put 行。
  */
 import type {
+  EventBonusRarity,
   EventCurrency,
   EventFarmingNode,
   EventGift,
   EventMission,
+  EventPlannerEvent,
   EventPointReward,
   EventRewards,
   EventShopItem,
 } from './master-data/types'
 
-/** Atlas nice_item の id → 表示名・アイコン・品目の種類（Atlas の type。eventPoint 等）。 */
-export type ItemMap = Map<number, { name: string; icon: string; type: string }>
+/**
+ * Atlas nice_item の id → 表示名・アイコン・品目の種類（Atlas の type。eventPoint 等）・
+ * individuality の id（ボーナス礼装の対象との突き合わせに使う）。
+ */
+export type ItemMap = Map<number, { name: string; icon: string; type: string; individuality?: number[] }>
 
 /** Atlas basic_svt の id → 表示名・レア度・アイコン（face の URL）。 */
 export type SvtMap = Map<number, { name: string; rarity: number; face: string }>
@@ -299,4 +304,130 @@ export function buildEventRewardsRows(entries: EventRewardsEntry[], updatedAt: n
     }
     return [{ key: eventRewardsKey(e.eventId), value: JSON.stringify(value) }]
   })
+}
+
+// ── ボーナス礼装の ☆ と通貨の対応 ─────────────────────────────────────
+
+export interface AtlasEquipSval {
+  EventId?: number
+  Individuality?: number
+}
+
+export interface AtlasEquipFunction {
+  funcType: string
+  svals?: AtlasEquipSval[]
+}
+
+export interface AtlasEquipSkill {
+  condLimitCount?: number
+  functions?: AtlasEquipFunction[]
+}
+
+/** Atlas nice_equip の1件（使う項目だけ）。 */
+export interface AtlasEquip {
+  id: number
+  rarity: number
+  skills?: AtlasEquipSkill[]
+}
+
+const isBonusRarity = (r: number): r is EventBonusRarity['rarity'] => r === 3 || r === 4 || r === 5
+
+/**
+ * 礼装のうち、そのイベントのドロップを増やす効果（eventDropUp）が指す individuality の集合。
+ * 凸と無凸のスキルで同じものを指すときは1つとして数える。
+ */
+function dropUpTargets(equip: AtlasEquip, eventId: number): Set<number> {
+  const targets = new Set<number>()
+  for (const skill of equip.skills ?? []) {
+    for (const fn of skill.functions ?? []) {
+      if (fn.funcType !== 'eventDropUp') continue
+      for (const sv of fn.svals ?? []) {
+        if (sv.EventId === eventId && typeof sv.Individuality === 'number') targets.add(sv.Individuality)
+      }
+    }
+  }
+  return targets
+}
+
+/** 交換所の通貨の individuality → 通貨の id。 */
+function currencyIndividualities(shop: EventShopItem[], itemMap: ItemMap): Map<number, number> {
+  const byIndividuality = new Map<number, number>()
+  for (const currencyId of new Set(shop.map(s => s.costItemId))) {
+    for (const ind of itemMap.get(currencyId)?.individuality ?? []) {
+      if (!byIndividuality.has(ind)) byIndividuality.set(ind, currencyId)
+    }
+  }
+  return byIndividuality
+}
+
+/**
+ * ☆ ごとの「対象が1つだけでそれが交換所の通貨である礼装」の通貨の集合と、
+ * 対象が2つ以上の礼装が対象にする交換所の通貨の集合。
+ */
+function collectDropUpCurrencies(
+  equips: AtlasEquip[],
+  eventId: number,
+  currencyByIndividuality: Map<number, number>,
+): { singles: Map<EventBonusRarity['rarity'], Set<number>>; multiTargeted: Set<number> } {
+  const singles = new Map<EventBonusRarity['rarity'], Set<number>>()
+  const multiTargeted = new Set<number>()
+  for (const equip of equips) {
+    if (!isBonusRarity(equip.rarity)) continue
+    const currencies = [...dropUpTargets(equip, eventId)].map(ind => currencyByIndividuality.get(ind))
+    const targeted = currencies.filter((id): id is number => id !== undefined)
+    if (currencies.length > 1) {
+      for (const id of targeted) multiTargeted.add(id)
+    } else if (targeted.length === 1) {
+      const set = singles.get(equip.rarity) ?? new Set<number>()
+      set.add(targeted[0])
+      singles.set(equip.rarity, set)
+    }
+  }
+  return { singles, multiTargeted }
+}
+
+/**
+ * ロトの無い交換所イベントの、ボーナス礼装の ☆ と交換所の通貨の対応を決める（☆ の降順）。
+ *
+ * - ☆ ごとに、対象が1つだけでそれが交換所の通貨である礼装を集め、それらがすべて同じ通貨を対象にし、
+ *   その通貨をほかの ☆ の礼装が対象にしないときだけ対応させる。
+ * - 対象が1つでも交換所の通貨でない礼装は数えない。
+ * - 対象が2つ以上の礼装が対象にする通貨は対応させない。ポイントを増やす効果（eventPointUp）は見ない。
+ */
+export function decideBonusRarities(
+  equips: AtlasEquip[],
+  eventId: number,
+  shop: EventShopItem[],
+  itemMap: ItemMap,
+): EventBonusRarity[] {
+  const { singles, multiTargeted } = collectDropUpCurrencies(equips, eventId, currencyIndividualities(shop, itemMap))
+  const result: EventBonusRarity[] = []
+  for (const rarity of [5, 4, 3] as const) {
+    const set = singles.get(rarity)
+    if (!set || set.size !== 1) continue
+    const [itemId] = set
+    if (multiTargeted.has(itemId)) continue
+    const usedByOther = [...singles].some(([r, other]) => r !== rarity && other.has(itemId))
+    if (usedByOther) continue
+    result.push({ rarity, itemId })
+  }
+  return result
+}
+
+/**
+ * 取り込んだ交換所イベントに ☆ と通貨の対応を付ける。
+ * 礼装のデータが取れなかった（equips が undefined）ときは、既存のデータの同じ id のイベントが
+ * 対応を持っていればそれを引き継ぎ、無ければ項目を付けない。
+ */
+export function attachBonusRarities(
+  event: EventPlannerEvent,
+  equips: AtlasEquip[] | undefined,
+  itemMap: ItemMap,
+  existingEvents: EventPlannerEvent[],
+): EventPlannerEvent {
+  if (equips) {
+    return { ...event, bonusRarities: decideBonusRarities(equips, event.id, event.shop, itemMap) }
+  }
+  const previous = existingEvents.find(e => e.id === event.id)?.bonusRarities
+  return previous ? { ...event, bonusRarities: previous } : event
 }
