@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,14 @@ import {
   clampExchangeCount,
   computeShopCurrencyNeeds,
   computeShopShortfall,
+  countsFromItemKeys,
+  countsToItemKeys,
   formatEfficiency,
   groupShopByCurrency,
   isDefaultWanted,
   orderShopByEfficiency,
+  pickIdTable,
+  readShopSavedInputs,
   selectAllCurrenciesUpToLimit,
   shopItemStatus,
   shopWantedKey,
@@ -25,13 +29,14 @@ import {
   type ShopCurrencyNeed,
   type ShopExchangeCounts,
   type ShopItemStatus,
+  type ShopSavedInputs,
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
 import { useRosterNeed, type RosterNeed } from '../../hooks/use-roster-need'
 import { countsOrEmpty, recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import { materialCatalogItemIds } from '../../lib/material-catalog'
-import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { STORAGE_KEYS, eventShopInputsKey } from '../../lib/constants/storage-keys'
 import {
   applyDropBonus,
   compareBonusCraftEssences,
@@ -821,18 +826,26 @@ const NO_COMPARISON: BonusCraftEssenceComparison = { rows: [], unfarmable: [] }
 
 /**
  * ボーナス礼装の ☆ ごとの入力と比較の表の状態。☆ と対応する通貨の +N は選んだ行の編成から求め、
- * 表を出さないときは 0 にする。ほかの品目は通貨ごとの欄の値を使う。値は画面を開いている間だけ持つ。
+ * 表を出さないときは 0 にする。ほかの品目は通貨ごとの欄の値を使う。
+ * 値は交換所の入力（`useShopSavedInputs`）と一緒にイベントごとに端末へ保存する。
  */
 const useBonusCraftEssences = (
   event: EventPlannerEvent,
   currencyNeed: Map<number, number>,
   bonus: ReadonlyMap<number, number>,
   targets: BonusTarget[],
+  saved: ShopSavedState,
 ) => {
   const mappings = event.bonusRarities
-  const [values, setValues] = useState<ReadonlyMap<BonusRarity, RarityValues>>(() => new Map())
-  const [friendChoice, setFriendChoice] = useState<BonusRarity | null>()
-  const [selectedTotal, setSelectedTotal] = useState<number>()
+  const { inputs, edit, edited } = saved
+  const values: ReadonlyMap<BonusRarity, RarityValues> = useMemo(
+    () => new Map((mappings ?? []).map(m => [m.rarity, rarityValuesOf(inputs.rarity[m.rarity])])),
+    [mappings, inputs.rarity],
+  )
+  // 今の対応に無い ☆ の保存値は未選択として読む。
+  const savedFriend = inputs.friendRarity
+  const friendChoice = savedFriend === null ? null : mappings?.find(m => m.rarity === savedFriend)?.rarity
+  const { selectedTotal } = inputs
 
   const rarityTargets: RarityTarget[] = useMemo(
     () =>
@@ -852,14 +865,15 @@ const useBonusCraftEssences = (
   const comparison = useMemo(() => {
     if (!mappings || mappings.length === 0) return NO_COMPARISON
     const otherBonus = new Map([...bonus].filter(([id]) => !mappedIds.has(id)))
-    const inputs = mappings.map(m => ({ ...m, ...(values.get(m.rarity) ?? EMPTY_RARITY_VALUES) }))
-    return compareBonusCraftEssences(event, currencyNeed, otherBonus, inputs, friendRarity)
+    const rarityInputs = mappings.map(m => ({ ...m, ...(values.get(m.rarity) ?? EMPTY_RARITY_VALUES) }))
+    return compareBonusCraftEssences(event, currencyNeed, otherBonus, rarityInputs, friendRarity)
   }, [event, currencyNeed, bonus, mappings, mappedIds, values, friendRarity])
 
   const row = selectBonusCraftEssenceRow(comparison.rows, selectedTotal)
-  // 選んだ合計枚数の行が無くなったら、AP が最も少ない行に付いていく状態に戻す。
-  if (selectedTotal !== undefined && comparison.rows.length > 0 && row?.total !== selectedTotal) {
-    setSelectedTotal(undefined)
+  // 選んだ合計枚数の行が無くなったら、AP が最も少ない行に付いていく状態に戻す。表が消えている間は選んだ行を残す。
+  // 開いただけでは書かないよう、利用者が値を変えるまでは保存値を消さず、AP が最も少ない行を出すだけにする。
+  if (edited && selectedTotal !== undefined && comparison.rows.length > 0 && row?.total !== selectedTotal) {
+    edit(prev => ({ ...prev, selectedTotal: undefined }))
   }
 
   const effectiveBonus = useMemo(() => {
@@ -873,12 +887,13 @@ const useBonusCraftEssences = (
     mappings,
     rarityTargets,
     values,
-    setRarityValues: (rarity: BonusRarity, value: RarityValues) => setValues(prev => new Map(prev).set(rarity, value)),
+    setRarityValues: (rarity: BonusRarity, value: RarityValues) =>
+      edit(prev => ({ ...prev, rarity: { ...prev.rarity, [rarity]: { ...value } } })),
     friendRarity,
-    setFriendRarity: (rarity: BonusRarity | null) => setFriendChoice(rarity),
+    setFriendRarity: (rarity: BonusRarity | null) => edit(prev => ({ ...prev, friendRarity: rarity })),
     comparison,
     selectedTotal: row?.total,
-    selectRow: (total: number) => setSelectedTotal(total),
+    selectRow: (total: number) => edit(prev => ({ ...prev, selectedTotal: total })),
     effectiveBonus,
     /** 通貨ごとの +N の欄に出す品目（☆ と対応する通貨を除く）。 */
     perItemTargets: targets.filter(target => !mappedIds.has(target.itemId)),
@@ -1023,9 +1038,61 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
   )
 }
 
+const EMPTY_SHOP_INPUTS: ShopSavedInputs = { counts: {}, owned: {}, bonus: {}, rarity: {} }
+
+/** 保存した ☆ の表から、凸・無凸の +N と所持枚数だけを取り出す（無い値は 0）。 */
+const rarityValuesOf = (table: Readonly<Record<string, number>> | undefined): RarityValues => ({
+  maxBonus: table?.maxBonus ?? 0,
+  baseBonus: table?.baseBonus ?? 0,
+  maxOwned: table?.maxOwned ?? 0,
+  baseOwned: table?.baseOwned ?? 0,
+})
+
+/** 保存した入力と、関数形で書き込む setter と、この画面で利用者が値を変えたか。 */
+interface ShopSavedState {
+  inputs: ShopSavedInputs
+  edit: (update: (prev: ShopSavedInputs) => ShopSavedInputs) => void
+  edited: boolean
+}
+
+/** 交換所の入力をイベントごとに端末へ保存して読む。保存値との競合で入れた値が消えないよう、書き込みはすべて関数形で行う。 */
+const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[], pointItemId: number | undefined) => {
+  const { shop } = event
+  const [inputs, setInputs] = useLocalStorage<ShopSavedInputs>(eventShopInputsKey(event.id), EMPTY_SHOP_INPUTS, {
+    lazyWrite: true,
+    onGet: readShopSavedInputs,
+  })
+  const [edited, setEdited] = useState(false)
+  const edit = useCallback(
+    (update: (prev: ShopSavedInputs) => ShopSavedInputs) => {
+      setEdited(true)
+      setInputs(update)
+    },
+    [setInputs],
+  )
+  const counts = useMemo(() => countsFromItemKeys(shop, inputs.counts), [shop, inputs.counts])
+  const owned = useMemo(() => pickIdTable(inputs.owned, groups.map(g => g.costItemId)), [inputs.owned, groups])
+  const bonus = useMemo(
+    () => pickIdTable(inputs.bonus, [...groups.map(g => g.costItemId), ...(pointItemId === undefined ? [] : [pointItemId])]),
+    [inputs.bonus, groups, pointItemId],
+  )
+  const updateCounts = useCallback(
+    (update: (prev: ShopExchangeCounts) => ShopExchangeCounts) =>
+      edit(prev => ({ ...prev, counts: countsToItemKeys(shop, update(countsFromItemKeys(shop, prev.counts))) })),
+    [shop, edit],
+  )
+  const replaceCounts = useCallback((next: ShopExchangeCounts) => updateCounts(() => next), [updateCounts])
+  const setOwned = (id: number, value: number) => edit(prev => ({ ...prev, owned: { ...prev.owned, [id]: value } }))
+  const setBonus = (id: number, value: number) => edit(prev => ({ ...prev, bonus: { ...prev.bonus, [id]: value } }))
+  const saved: ShopSavedState = { inputs, edit, edited }
+  return { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus, saved }
+}
+
 /**
  * 交換所の品目を対価の通貨ごとにまとめて回数を選ばせ、通貨ごとの必要量と、それを満たす周回の内訳を出す。
- * 選んだ回数と所持数とドロップ増加礼装のボーナスは画面を開いている間だけ持つ。
+ * 選んだ回数と所持数とドロップ増加礼装のボーナス（☆ ごとの欄・フレンドの ☆・比較の表で選んだ行を含む）は
+ * イベントごとに端末へ保存する（開いただけでは書かない）。
+ * 保存のキーがイベントで変わるため、呼び出し側はイベントごとに作り直すこと（`key={event.id}`）。
  */
 export const EventShopList: React.FC<{
   event: EventPlannerEvent
@@ -1035,17 +1102,19 @@ export const EventShopList: React.FC<{
 }> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
-  const [counts, setCounts] = useState<ShopExchangeCounts>(() => new Map())
-  const [owned, setOwned] = useState<ReadonlyMap<number, number>>(() => new Map())
-  const [bonus, setBonus] = useState<ReadonlyMap<number, number>>(() => new Map())
+  const { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus, saved } = useShopSavedInputs(
+    event,
+    groups,
+    pointItemId,
+  )
   const needs = useMemo(() => computeShopCurrencyNeeds(shop, counts, owned), [shop, counts, owned])
   const currencyNeed = useMemo(() => new Map(needs.map(n => [n.costItemId, n.need])), [needs])
   const targets = useBonusTargets(event, groups, pointItemId)
-  const craftEssences = useBonusCraftEssences(event, currencyNeed, bonus, targets)
+  const craftEssences = useBonusCraftEssences(event, currencyNeed, bonus, targets, saved)
   const { effectiveBonus } = craftEssences
   const bonused = useMemo(() => applyDropBonus(event, new Map(effectiveBonus)), [event, effectiveBonus])
   const plan = useMemo(() => planShopCurrencies(bonused.event, currencyNeed), [bonused, currencyNeed])
-  const rosterPlan = useShopRosterPlan(shop, setCounts)
+  const rosterPlan = useShopRosterPlan(shop, replaceCounts)
 
   const labelOf = (id: number) => targets.find(target => target.itemId === id)?.label ?? `#${id}`
   const bonusApplied = [...effectiveBonus.values()].some(n => n > 0)
@@ -1054,14 +1123,14 @@ export const EventShopList: React.FC<{
     <div className="flex flex-col gap-4">
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
-      <SelectControls onSelectAll={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
+      <SelectControls onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
       <ShopBonusCard
         state={craftEssences}
         bonus={bonus}
         unappliedLabels={bonused.unapplied.map(labelOf)}
         hasNeed={[...currencyNeed.values()].some(n => n > 0)}
         nameOf={labelOf}
-        onChange={(itemId, value) => setBonus(prev => new Map(prev).set(itemId, value))}
+        onChange={setBonus}
       />
       <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={effectiveBonus} />
       {groups.map(group => (
@@ -1074,8 +1143,8 @@ export const EventShopList: React.FC<{
           planOf={rosterPlan.planOf}
           need={needs.find(n => n.costItemId === group.costItemId)}
           owned={owned.get(group.costItemId) ?? 0}
-          onCountChange={(index, count) => setCounts(prev => new Map(prev).set(index, count))}
-          onOwnedChange={value => setOwned(prev => new Map(prev).set(group.costItemId, value))}
+          onCountChange={(index, count) => updateCounts(prev => new Map(prev).set(index, count))}
+          onOwnedChange={value => setOwned(group.costItemId, value)}
         />
       ))}
       <FarmingPlan plan={plan} groups={groups} needs={needs} bonusApplied={bonusApplied} />

@@ -505,7 +505,7 @@ describe('EventHubClient', () => {
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
     })
 
-    it('「必要」は描き直しても残り、交換回数は 0 から始まる', () => {
+    it('「必要」は描き直しても残り、交換回数は開き直す前にそのイベントで入れていた回数のまま', () => {
       const { unmount } = renderShop()
       fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
       fireEvent.click(shortfallButton())
@@ -514,7 +514,20 @@ describe('EventHubClient', () => {
 
       renderShop()
       expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
-      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+    })
+
+    it('不足素材のみの後に開き直しても、操作の後の回数とその後に変えた回数のまま', () => {
+      const { unmount } = renderShop()
+      fireEvent.click(shortfallButton())
+      fireEvent.change(screen.getByLabelText('素材94100 の交換回数'), { target: { value: '3' } })
+      unmount()
+
+      renderShop()
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材6517 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材6519 の交換回数')).toHaveValue(10)
+      expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(3)
     })
 
     it('別のイベントでも保存した「必要」を使い、「不要」に戻すと保存からその品目が消える', () => {
@@ -1068,10 +1081,149 @@ describe('EventHubClient', () => {
       expect(screen.getByText('15 周')).toBeInTheDocument()
     })
 
+    it('交換所のボーナスは開き直しても残り、1周の獲得量と周回数はボーナス込みのまま', () => {
+      const { unmount } = renderShop(bonusEvent(), POINT)
+      needUdon('10')
+      fireEvent.change(bonusInput('武蔵うどん'), { target: { value: '2' } })
+      unmount()
+
+      renderShop(bonusEvent(), POINT)
+      expect(bonusInput('武蔵うどん')).toHaveValue(2)
+      expect(perRunCells()).toEqual([['上級AP40', '20.0+10.0', '-', '-', '600.0']])
+      expect(screen.getByText('15 周')).toBeInTheDocument()
+    })
+
     it('☆ と通貨の対応を持たないデータでは、データの更新前の1行とすべての通貨の欄を出す', () => {
       renderShop(bonusEvent(), POINT)
       expect(within(bonusCard()).getByText('データの更新前のため、礼装の枚数を比べられません。')).toBeInTheDocument()
       expect(screen.queryByLabelText('フレンドの礼装')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('交換所の入力の保存', () => {
+    const UDON = 94001
+    const MUSUBI = 94002
+    const savedKey = (id: number) => `events/shopInputs/${id}`
+    const shopEvent = (overrides: Partial<EventPlannerEvent> = {}) =>
+      event({
+        shop: [
+          shopEntry(1, UDON, { costName: '武蔵うどん', costAmount: 10, limitNum: 5 }),
+          shopEntry(2, MUSUBI, { costName: '江戸むすび', costAmount: 10, limitNum: 10 }),
+          shopEntry(3, UDON, { costName: '武蔵うどん', costAmount: 1, limitNum: 0 }),
+        ],
+        farmingNodes: [
+          {
+            questId: 1,
+            name: '上級',
+            ap: 40,
+            drops: [
+              { itemId: UDON, perRun: 10, countPerRun: 5 },
+              { itemId: MUSUBI, perRun: 10, countPerRun: 5 },
+            ],
+          },
+        ],
+        ...overrides,
+      })
+    const renderShop = (shop = shopEvent()) =>
+      render(<EventHubClient summary={summary} boxEvent={shop} features={['shop']} />)
+    const countInput = (name: string) => screen.getByLabelText(`${name} の交換回数`)
+    const ownedInput = (name: string) => screen.getByLabelText(`${name} の所持数`)
+    const bonusInput = (name: string) => screen.getByLabelText(`${name} のドロップボーナス`)
+    const enter = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } })
+
+    it('交換回数・所持数・ボーナスは開き直しても残り、必要量と周回の内訳はその値で出る', () => {
+      const { unmount } = renderShop()
+      enter(countInput('素材1'), '3')
+      enter(ownedInput('武蔵うどん'), '20')
+      enter(bonusInput('武蔵うどん'), '2')
+      expect(within(cardOf('武蔵うどん')).getByText('必要量 10')).toBeInTheDocument()
+      const before = screen.getByText(/^合計 \d+ 周・AP/).textContent
+      unmount()
+
+      renderShop()
+      expect(countInput('素材1')).toHaveValue(3)
+      expect(ownedInput('武蔵うどん')).toHaveValue(20)
+      expect(bonusInput('武蔵うどん')).toHaveValue(2)
+      expect(within(cardOf('武蔵うどん')).getByText('必要量 10')).toBeInTheDocument()
+      expect(screen.getByText(/^合計 \d+ 周・AP/).textContent).toBe(before)
+    })
+
+    it('別のイベントの交換所には混ざらない', () => {
+      const { unmount } = renderShop()
+      enter(countInput('素材1'), '3')
+      enter(ownedInput('武蔵うどん'), '20')
+      enter(bonusInput('武蔵うどん'), '2')
+      unmount()
+
+      renderShop(shopEvent({ id: 80700 }))
+      expect(countInput('素材1')).toHaveValue(0)
+      expect(ownedInput('武蔵うどん')).toHaveValue(0)
+      expect(bonusInput('武蔵うどん')).toHaveValue(0)
+    })
+
+    it('同じ画面のまま別のイベントに描き直しても、前のイベントの値を新しいイベントに書かない', () => {
+      const { rerender } = renderShop()
+      enter(countInput('素材1'), '3')
+      const saved = localStorage.getItem(savedKey(80632))
+      expect(saved).not.toBeNull()
+
+      rerender(<EventHubClient summary={summary} boxEvent={shopEvent({ id: 80700 })} features={['shop']} />)
+      expect(countInput('素材1')).toHaveValue(0)
+      expect(localStorage.getItem(savedKey(80700))).toBeNull()
+      expect(localStorage.getItem(savedKey(80632))).toBe(saved)
+    })
+
+    it('開いただけでは書き込まない', () => {
+      renderShop()
+      expect(localStorage.getItem(savedKey(80632))).toBeNull()
+    })
+
+    it('全部交換の後に開き直しても、在庫上限のある品目は上限、上限の無い品目は操作の前の回数のまま', () => {
+      const { unmount } = renderShop()
+      enter(countInput('素材3'), '4')
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+      unmount()
+
+      renderShop()
+      expect(countInput('素材1')).toHaveValue(5)
+      expect(countInput('素材2')).toHaveValue(10)
+      expect(countInput('素材3')).toHaveValue(4)
+    })
+
+    it('取り込み直しで品目が前に加わっても、回数は同じ品目に使う', () => {
+      const { unmount } = renderShop()
+      enter(countInput('素材2'), '3')
+      unmount()
+
+      const base = shopEvent()
+      renderShop({ ...base, shop: [shopEntry(9, MUSUBI, { costName: '江戸むすび' }), ...base.shop] })
+      expect(countInput('素材2')).toHaveValue(3)
+      expect(countInput('素材9')).toHaveValue(0)
+    })
+
+    it('保存値が JSON として読めない文字列でも落ちず、すべて 0 で出す', () => {
+      localStorage.setItem(savedKey(80632), '{broken')
+      renderShop()
+      expect(countInput('素材1')).toHaveValue(0)
+      expect(ownedInput('武蔵うどん')).toHaveValue(0)
+      expect(bonusInput('武蔵うどん')).toHaveValue(0)
+    })
+
+    it('一部の値が壊れていても、読める値は使い、壊れた値は 0 として出す', () => {
+      localStorage.setItem(
+        savedKey(80632),
+        JSON.stringify({
+          counts: { 'item:1:2:94001:10:0': 'x', 'item:2:2:94002:10:0': 4 },
+          owned: { [UDON]: -5, [MUSUBI]: 120 },
+          bonus: 'broken',
+        }),
+      )
+      renderShop()
+      expect(countInput('素材1')).toHaveValue(0)
+      expect(countInput('素材2')).toHaveValue(4)
+      expect(ownedInput('武蔵うどん')).toHaveValue(0)
+      expect(ownedInput('江戸むすび')).toHaveValue(120)
+      expect(bonusInput('武蔵うどん')).toHaveValue(0)
     })
   })
 
@@ -1236,6 +1388,63 @@ describe('EventHubClient', () => {
       expect(screen.getByLabelText('☆5 凸の +N')).toHaveValue(0)
       setValue('☆5 凸の +N', '2.5')
       expect(screen.getByLabelText('☆5 凸の +N')).toHaveValue(2)
+    })
+
+    const savedEntry = () => {
+      const key = Object.keys(localStorage).find(k => k.startsWith('events/shopInputs/'))
+      return key === undefined ? undefined : { key, json: localStorage.getItem(key) ?? '' }
+    }
+    const totalLine = () => screen.getByText(/^合計 \d+ 周・AP \d+$/).textContent
+
+    it('☆ ごとの欄・フレンドの ☆・選んだ行は開き直しても残り、周回の内訳はその行の編成のまま', () => {
+      const { unmount } = renderShop(ceEvent())
+      fillStar5()
+      setValue('☆5 凸の所持枚数', '1')
+      setValue('フレンドの礼装', '')
+      fireEvent.click(radio(1))
+      const before = totalLine()
+      unmount()
+
+      renderShop(ceEvent())
+      expect(screen.getByLabelText('☆5 凸の +N')).toHaveValue(2)
+      expect(screen.getByLabelText('☆5 無凸の +N')).toHaveValue(1)
+      expect(screen.getByLabelText('☆5 凸の所持枚数')).toHaveValue(1)
+      expect(screen.getByLabelText('☆5 無凸の所持枚数')).toHaveValue(2)
+      expect(screen.getByLabelText('フレンドの礼装')).toHaveValue('')
+      expect(radio(1)).toBeChecked()
+      expect(totalLine()).toBe(before)
+    })
+
+    it('表が消えてまた出ても、選んだ行は残る', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      fireEvent.click(radio(1))
+      setValue('金の通貨 の所持数', '1000')
+      expect(screen.queryByTestId('bonus-comparison')).not.toBeInTheDocument()
+      setValue('金の通貨 の所持数', '0')
+      expect(radio(1)).toBeChecked()
+      expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+    })
+
+    it('開いたときに保存した行が表に無ければ AP 最少の行を出し、対応に無いフレンドの ☆ は初期値にし、保存値は書き換えない', () => {
+      const { unmount } = renderShop(ceEvent())
+      fillStar5()
+      unmount()
+      const saved = savedEntry()
+      if (!saved) throw new Error('交換所の入力が保存されていない')
+      const stale = JSON.stringify({ ...JSON.parse(saved.json), selectedTotal: 7, friendRarity: 2 })
+      localStorage.setItem(saved.key, stale)
+
+      renderShop(ceEvent())
+      expect(radio(3)).toBeChecked()
+      expect(screen.getByLabelText('フレンドの礼装')).toHaveValue('5')
+      expect(screen.getByText('合計 10 周・AP 400')).toBeInTheDocument()
+      expect(localStorage.getItem(saved.key)).toBe(stale)
+    })
+
+    it('ボーナス礼装の入力は、開いただけでは保存しない', () => {
+      renderShop(ceEvent())
+      expect(savedEntry()).toBeUndefined()
     })
   })
 })

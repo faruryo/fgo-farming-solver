@@ -276,3 +276,103 @@ export const summarizeShortfall = (allocation: Pick<ShortfallAllocation, 'remain
   const lefts = [...allocation.remaining.values()]
   return { shortMaterials: lefts.length, filledMaterials: lefts.filter(left => left === 0).length }
 }
+
+/**
+ * 交換所の品目ごとに、並びの位置によらない品目キーを返す（配列の添字の順）。
+ * キーは `<種類>:<獲得物の番号>:<1回の個数>:<対価の通貨>:<1回の対価>:<同じ組での出現順>`。
+ * 在庫上限は組に入れず、取り込み直しで上限だけが変わっても同じ品目として扱う。
+ */
+export const shopItemKeys = (shop: EventShopItem[]): string[] => {
+  const seen = new Map<string, number>()
+  return shop.map(item => {
+    const base = [item.kind === 'svt' ? 'svt' : 'item', item.itemId, item.qty, item.costItemId, item.costAmount].join(':')
+    const order = seen.get(base) ?? 0
+    seen.set(base, order + 1)
+    return `${base}:${order}`
+  })
+}
+
+/** 添字のキーの交換回数を、品目キーの表にする。 */
+export const countsToItemKeys = (shop: EventShopItem[], counts: ShopExchangeCounts): Record<string, number> => {
+  const keys = shopItemKeys(shop)
+  return Object.fromEntries(
+    [...counts].flatMap(([index, count]) => {
+      const key = keys.at(index)
+      return key === undefined ? [] : [[key, count]]
+    }),
+  )
+}
+
+/** 品目キーの表を、今の交換所の添字のキーの交換回数にする。今の交換所に無い品目キーは捨て、在庫上限で頭打ちにする。 */
+export const countsFromItemKeys = (
+  shop: EventShopItem[],
+  saved: Readonly<Record<string, number>>,
+): Map<number, number> => {
+  const counts = new Map<number, number>()
+  const savedByKey = new Map(Object.entries(saved))
+  const keys = shopItemKeys(shop)
+  shop.forEach((item, index) => {
+    const key = keys.at(index)
+    const count = key === undefined ? undefined : savedByKey.get(key)
+    if (count !== undefined) counts.set(index, clampExchangeCount(item, count))
+  })
+  return counts
+}
+
+/**
+ * 交換所の周回計算でイベントごとに保存する入力。交換回数は品目キー、所持数とボーナスは通貨・品目の番号がキー。
+ * `rarity` はボーナス礼装の ☆ がキーで、凸・無凸の +N と所持枚数の表。
+ * `friendRarity` はフレンドの礼装の ☆（`null` は「なし」、無ければ未選択）、`selectedTotal` は比較の表で選んだ行の合計枚数。
+ */
+export interface ShopSavedInputs {
+  counts: Record<string, number>
+  owned: Record<string, number>
+  bonus: Record<string, number>
+  rarity: Record<string, Record<string, number>>
+  friendRarity?: number | null
+  selectedTotal?: number
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+const countTable = (value: unknown): Record<string, number> => {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, n]) =>
+      typeof n === 'number' && Number.isFinite(n) ? [[key, Math.max(0, Math.floor(n))]] : [],
+    ),
+  )
+}
+
+const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0
+
+/**
+ * 保存値を読む。表でなければ空、有限の数でない値は捨て、小数は切り捨て、負の数は 0 にする。
+ * フレンドの ☆ は `null` か 0 以上の整数、選んだ合計枚数は 0 以上の整数のときだけ使い、それ以外は未選択として読む。
+ */
+export const readShopSavedInputs = (value: unknown): ShopSavedInputs => {
+  const record = isRecord(value) ? value : {}
+  const rarity = isRecord(record.rarity)
+    ? Object.fromEntries(Object.entries(record.rarity).map(([key, table]) => [key, countTable(table)]))
+    : {}
+  return {
+    counts: countTable(record.counts),
+    owned: countTable(record.owned),
+    bonus: countTable(record.bonus),
+    rarity,
+    ...(record.friendRarity === null || isCount(record.friendRarity) ? { friendRarity: record.friendRarity } : {}),
+    ...(isCount(record.selectedTotal) ? { selectedTotal: record.selectedTotal } : {}),
+  }
+}
+
+/** 番号がキーの表を、指定した番号だけの表（Map）にする。ほかの番号の値は使わない。 */
+export const pickIdTable = (table: Readonly<Record<string, number>>, ids: Iterable<number>): Map<number, number> => {
+  const picked = new Map<number, number>()
+  const byId = new Map(Object.entries(table))
+  for (const id of ids) {
+    const value = byId.get(String(id))
+    if (value !== undefined) picked.set(id, value)
+  }
+  return picked
+}

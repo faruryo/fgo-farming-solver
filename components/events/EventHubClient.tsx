@@ -119,7 +119,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
                   )}
                 </p>
               </div>
-              <EventShopList event={shopOnly} apPrices={shopApPrices} pointItemId={pointItemId} />
+              <EventShopList key={shopOnly.id} event={shopOnly} apPrices={shopApPrices} pointItemId={pointItemId} />
             </section>
           )}
 
