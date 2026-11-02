@@ -12,5 +12,5 @@
 
 ## 3. 確認
 
-- [ ] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run` が通ることを確かめる <!-- verify-only -->
-- [ ] 3.2 dev server で 80632 のイベントページを開き、交換回数・所持数・ボーナスを入れてから読み込み直して値が残ること、別のイベントの交換所に混ざらないことを実画面で確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run` が通ることを確かめる <!-- verify-only -->
+- [x] 3.2 dev server で 80632 のイベントページを開き、交換回数・所持数・ボーナスを入れてから読み込み直して値が残ること、別のイベントの交換所に混ざらないことを実画面で確かめる <!-- verify-only -->
