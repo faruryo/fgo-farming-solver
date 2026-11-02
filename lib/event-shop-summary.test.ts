@@ -7,6 +7,11 @@ import {
   shopItemStatus,
   summarizeShortfall,
   computeShopCurrencyNeeds,
+  countsFromItemKeys,
+  countsToItemKeys,
+  pickIdTable,
+  readShopSavedInputs,
+  shopItemKeys,
   formatEfficiency,
   groupShopByCurrency,
   isDefaultWanted,
@@ -431,5 +436,68 @@ describe('summarizeShortfall', () => {
       { 13: 3 },
     )
     expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 3, filledMaterials: 2 })
+  })
+})
+
+describe('交換回数の品目キー', () => {
+  /** 保存して、取り込み直した交換所で読む。 */
+  const roundTrip = (before: EventShopItem[], counts: [number, number][], after: EventShopItem[]) =>
+    countsFromItemKeys(after, JSON.parse(JSON.stringify(countsToItemKeys(before, new Map(counts)))) as Record<string, number>)
+
+  it('並びが変わっても同じ品目に回数を使い、前に加わった品目は 0（回数なし）', () => {
+    const a = entry(1, 10, 20, 5)
+    const added = entry(2, 10, 10, 5)
+    expect(roundTrip([a], [[0, 3]], [added, a])).toEqual(new Map([[1, 3]]))
+  })
+
+  it('同じ獲得物で個数や対価の違う品目が前に加わっても、回数はずれない', () => {
+    const one = entry(7, 10, 5, 0)
+    const ten = entry(7, 10, 40, 0, { qty: 10 })
+    expect(roundTrip([one], [[0, 3]], [ten, one])).toEqual(new Map([[1, 3]]))
+  })
+
+  it('同じ獲得物・個数・通貨・対価の品目が2つ並ぶときは出現順で見分け、入れ替わらない', () => {
+    const shop = [entry(7, 10, 5, 3), entry(7, 10, 5, 10)]
+    expect(shopItemKeys(shop)).toEqual(['item:7:1:10:5:0', 'item:7:1:10:5:1'])
+    expect(roundTrip(shop, [[0, 2], [1, 5]], shop)).toEqual(new Map([[0, 2], [1, 5]]))
+  })
+
+  it('今の交換所に無い品目の保存値は使わない', () => {
+    const a = entry(1, 10, 20, 5)
+    const b = entry(2, 10, 20, 5)
+    expect(roundTrip([a, b], [[0, 3], [1, 4]], [b])).toEqual(new Map([[0, 4]]))
+  })
+
+  it('在庫上限が減った品目は今の在庫上限で頭打ちにする', () => {
+    expect(roundTrip([entry(1, 10, 20, 10)], [[0, 10]], [entry(1, 10, 20, 5)])).toEqual(new Map([[0, 5]]))
+  })
+
+  it('サーヴァント扱いとアイテムで番号が同じ品目を取り違えない', () => {
+    const item = entry(9001, 10, 20, 5)
+    const svt = entry(9001, 10, 20, 5, { kind: 'svt' })
+    expect(shopItemKeys([item, svt])).toEqual(['item:9001:1:10:20:0', 'svt:9001:1:10:20:0'])
+    expect(roundTrip([item, svt], [[1, 4]], [svt, item])).toEqual(new Map([[0, 4]]))
+  })
+})
+
+describe('readShopSavedInputs', () => {
+  const empty = { counts: {}, owned: {}, bonus: {} }
+
+  it('保存値全体が表でなければ空の3つの表として読む', () => {
+    for (const value of [null, 'abc', 3, [1, 2], undefined]) expect(readShopSavedInputs(value)).toEqual(empty)
+  })
+
+  it('表でない表は空、有限の数でない値は捨て、小数は切り捨て、負の数は 0 にする', () => {
+    expect(
+      readShopSavedInputs({
+        counts: { 'item:1:1:10:20:0': 'x', 'item:2:1:10:20:0': 2.7 },
+        owned: { 10: -5, 11: 120, 12: Number.POSITIVE_INFINITY, 13: null },
+        bonus: [2],
+      }),
+    ).toEqual({ counts: { 'item:2:1:10:20:0': 2 }, owned: { 10: 0, 11: 120 }, bonus: {} })
+  })
+
+  it('番号の表から今の欄の番号だけを取り出す', () => {
+    expect(pickIdTable({ 10: 2, 99: 5 }, [10, 11])).toEqual(new Map([[10, 2]]))
   })
 })

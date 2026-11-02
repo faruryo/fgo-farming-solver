@@ -44,6 +44,8 @@ export const STORAGE_KEYS = {
   DASHBOARD_HIDE_COMPLETED_EVENTS: 'dashboard.eventSection.hideCompleted',
   EVENTS_GOLDEN_FRUIT: 'events/goldenFruit',
   EVENTS_SHOP_WANTED_ITEMS: 'events/shopWantedItems',
+  /** 交換所の周回計算の入力。後ろにイベント ID を付けてイベントごとに保存する（`eventShopInputsKey`）。 */
+  EVENTS_SHOP_INPUTS_PREFIX: 'events/shopInputs/',
   FARMING_RESULT_DEFAULT_PUBLIC: 'farming/defaultPublic',
 
   // Quest efficiency filters
@@ -56,6 +58,9 @@ export const STORAGE_KEYS = {
   QUEST_EFFICIENCY_INCLUDE_EXP: 'quests/efficiency/includeExp',
   QUEST_EFFICIENCY_SHOW_LOW_KANNI: 'quests/efficiency/showLowKanni',
 } as const
+
+/** 交換所の周回計算の入力（交換回数・所持数・ボーナス）を保存するイベントごとのキー。端末だけに置き、クラウド同期しない。 */
+export const eventShopInputsKey = (eventId: number): string => `${STORAGE_KEYS.EVENTS_SHOP_INPUTS_PREFIX}${eventId}`
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
 
