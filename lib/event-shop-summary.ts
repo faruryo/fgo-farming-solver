@@ -295,12 +295,12 @@ export const shopItemKeys = (shop: EventShopItem[]): string[] => {
 /** 添字のキーの交換回数を、品目キーの表にする。 */
 export const countsToItemKeys = (shop: EventShopItem[], counts: ShopExchangeCounts): Record<string, number> => {
   const keys = shopItemKeys(shop)
-  const saved: Record<string, number> = {}
-  counts.forEach((count, index) => {
-    const key = keys[index]
-    if (key !== undefined) saved[key] = count
-  })
-  return saved
+  return Object.fromEntries(
+    [...counts].flatMap(([index, count]) => {
+      const key = keys.at(index)
+      return key === undefined ? [] : [[key, count]]
+    }),
+  )
 }
 
 /** 品目キーの表を、今の交換所の添字のキーの交換回数にする。今の交換所に無い品目キーは捨て、在庫上限で頭打ちにする。 */
@@ -309,10 +309,12 @@ export const countsFromItemKeys = (
   saved: Readonly<Record<string, number>>,
 ): Map<number, number> => {
   const counts = new Map<number, number>()
-  shopItemKeys(shop).forEach((key, index) => {
-    const item = shop[index]
-    const count = Object.prototype.hasOwnProperty.call(saved, key) ? saved[key] : undefined
-    if (item && count !== undefined) counts.set(index, clampExchangeCount(item, count))
+  const savedByKey = new Map(Object.entries(saved))
+  const keys = shopItemKeys(shop)
+  shop.forEach((item, index) => {
+    const key = keys.at(index)
+    const count = key === undefined ? undefined : savedByKey.get(key)
+    if (count !== undefined) counts.set(index, clampExchangeCount(item, count))
   })
   return counts
 }
@@ -328,12 +330,12 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
 const countTable = (value: unknown): Record<string, number> => {
-  const table: Record<string, number> = {}
-  if (!isRecord(value)) return table
-  for (const [key, n] of Object.entries(value)) {
-    if (typeof n === 'number' && Number.isFinite(n)) table[key] = Math.max(0, Math.floor(n))
-  }
-  return table
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, n]) =>
+      typeof n === 'number' && Number.isFinite(n) ? [[key, Math.max(0, Math.floor(n))]] : [],
+    ),
+  )
 }
 
 /** 保存値を3つの表に直す。表でなければ空、有限の数でない値は捨て、小数は切り捨て、負の数は 0 にする。 */
@@ -345,8 +347,9 @@ export const readShopSavedInputs = (value: unknown): ShopSavedInputs => {
 /** 番号がキーの表を、指定した番号だけの表（Map）にする。ほかの番号の値は使わない。 */
 export const pickIdTable = (table: Readonly<Record<string, number>>, ids: Iterable<number>): Map<number, number> => {
   const picked = new Map<number, number>()
+  const byId = new Map(Object.entries(table))
   for (const id of ids) {
-    const value = Object.prototype.hasOwnProperty.call(table, String(id)) ? table[String(id)] : undefined
+    const value = byId.get(String(id))
     if (value !== undefined) picked.set(id, value)
   }
   return picked
