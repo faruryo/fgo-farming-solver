@@ -14,6 +14,7 @@ import {
   computeShopShortfall,
   formatEfficiency,
   groupShopByCurrency,
+  isDefaultWanted,
   orderShopByEfficiency,
   selectAllCurrenciesUpToLimit,
   shopItemStatus,
@@ -83,6 +84,8 @@ interface RowPlan {
   status?: ShopItemStatus
   wanted: boolean
   onWantedChange: (wanted: boolean) => void
+  /** 既定で交換する品目（状態に関わらず切り替えを出す）。 */
+  defaultWanted: boolean
   /** 交換所で埋まらない不足。 */
   remainder?: number
   /** 在庫上限が無くて回数を入れなかった「要る」の品目。 */
@@ -128,13 +131,22 @@ const RowPlanLabel: React.FC<{ name: string; plan: RowPlan; count: number }> = (
   const { t } = useTranslation('events')
   const { status } = plan
   if (!status) return null
+  const toggleable = status.kind === 'outside' || plan.defaultWanted
   return (
     <span className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[11px] mt-0.5">
-      {status.kind === 'short' && (
-        <span style={{ color: 'var(--text1)' }}>
-          {t('event-shop-status-short', 'あと {{n}} 個', { n: status.shortfall.toLocaleString() })}
-        </span>
-      )}
+      <span className="flex items-center gap-2 whitespace-nowrap">
+        {status.kind === 'short' && (
+          <span style={{ color: 'var(--text1)' }}>
+            {t('event-shop-status-short', 'あと {{n}} 個', { n: status.shortfall.toLocaleString() })}
+          </span>
+        )}
+        {status.kind === 'enough' && <span>{t('event-shop-status-enough', '足りている（交換不要）')}</span>}
+        {status.kind === 'unused' && <span>{t('event-shop-status-unused', '使わない')}</span>}
+        {status.kind === 'outside' && (
+          <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
+        )}
+        {toggleable && <WantedToggle name={name} wanted={plan.wanted} onChange={plan.onWantedChange} />}
+      </span>
       {status.kind === 'short' && plan.remainder !== undefined && (
         <span style={{ color: 'var(--red)' }}>
           {t('event-shop-status-remainder', '交換所では {{n}} 個足りない', {
@@ -142,20 +154,10 @@ const RowPlanLabel: React.FC<{ name: string; plan: RowPlan; count: number }> = (
           })}
         </span>
       )}
-      {status.kind === 'enough' && <span>{t('event-shop-status-enough', '足りている（交換不要）')}</span>}
-      {status.kind === 'unused' && <span>{t('event-shop-status-unused', '使わない')}</span>}
-      {status.kind === 'outside' && (
-        <>
-          <span className="flex items-center gap-2 whitespace-nowrap">
-            <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
-            <WantedToggle name={name} wanted={plan.wanted} onChange={plan.onWantedChange} />
-          </span>
-          {plan.wanted && plan.promptUnlimited && count === 0 && (
-            <span style={{ color: 'var(--red)' }}>
-              {t('event-shop-unlimited-prompt', '上限なし: 回数を入れてください')}
-            </span>
-          )}
-        </>
+      {toggleable && plan.wanted && plan.promptUnlimited && count === 0 && (
+        <span style={{ color: 'var(--red)' }}>
+          {t('event-shop-unlimited-prompt', '上限なし: 回数を入れてください')}
+        </span>
       )}
     </span>
   )
@@ -665,27 +667,34 @@ const PlanItemIdsLoader: React.FC<{ onChange: (value: PlanItemIds | undefined) =
   return null
 }
 
-const NO_WANTED: Record<string, true> = {}
+const NO_WANTED: Record<string, boolean> = {}
 
 /**
- * 計画の対象外の品目の「要る」を、品目ごとに端末へ保存する。イベントをまたいで共通。
+ * 計画の対象外の品目と既定で交換する品目の「要る」を、品目ごとに端末へ保存する。イベントをまたいで共通。
  * キーはアイテムなら atlasId、サーヴァント扱いの品目なら `svt:<番号>`（`shopWantedKey`）。
- * 「要る」だけを持ち、「要らない」に戻したらキーを消す。
+ * 既定で交換する品目は「要る」を true、「要らない」を false で持ち、未選択は「要る」とする。
+ * ほかの品目は「要る」だけを持ち、「要らない」に戻したらキーを消す。
  */
-const useWantedItems = () => {
-  const [wanted, setWanted] = useLocalStorage<Record<string, true>>(
+const useWantedItems = (shop: EventShopItem[]) => {
+  const [wanted, setWanted] = useLocalStorage<Record<string, boolean>>(
     STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS,
     NO_WANTED,
     { lazyWrite: true, onGet: recordOrEmpty },
   )
-  const wantedKeys = useMemo(
-    () => new Set(Object.entries(wanted).filter(([, value]) => value === true).map(([key]) => key)),
-    [wanted],
-  )
+  const wantedKeys = useMemo(() => {
+    const stored = new Map(Object.entries(wanted))
+    const keys = new Set([...stored].filter(([, value]) => value === true).map(([key]) => key))
+    for (const item of shop) {
+      const key = shopWantedKey(item)
+      if (isDefaultWanted(item) && typeof stored.get(key) !== 'boolean') keys.add(key)
+    }
+    return keys
+  }, [wanted, shop])
   const setItemWanted = (item: EventShopItem, value: boolean) =>
     setWanted(prev => {
       const key = shopWantedKey(item)
       const rest = Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
+      if (isDefaultWanted(item)) return { ...rest, [key]: value }
       return value ? { ...rest, [key]: true } : rest
     })
   return { wantedKeys, setItemWanted }
@@ -700,7 +709,7 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
     {},
     { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
   )
-  const { wantedKeys, setItemWanted } = useWantedItems()
+  const { wantedKeys, setItemWanted } = useWantedItems(shop)
   const [planItemIds, setPlanItemIds] = useState<PlanItemIds>()
   const [unlimitedPrompt, setUnlimitedPrompt] = useState<ReadonlySet<number>>(() => new Set())
 
@@ -726,6 +735,7 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
           status: statusOf.of(item),
           wanted: wantedKeys.has(shopWantedKey(item)),
           onWantedChange: value => setItemWanted(item, value),
+          defaultWanted: isDefaultWanted(item),
           remainder: allocation.remainders.get(index),
           promptUnlimited: unlimitedPrompt.has(index),
         }

@@ -137,6 +137,16 @@ export const formatEfficiency = (value: number): string => String(Math.round(val
 /** QP の atlasId。交換所の QP で育成計画の QP を埋める使い方は想定しないので、要る・要らないの対象から外す。 */
 export const QP_ITEM_ID = 1
 
+/** 伝承結晶の atlasId。育成計画で扱う素材。 */
+const LORE_CRYSTAL_ITEM_ID = 6999
+
+/** 既定で「要る」とし、不足素材のみで在庫上限まで交換する品目の atlasId（伝承結晶・カルデアの夢火）。 */
+export const DEFAULT_WANTED_ITEM_IDS: ReadonlySet<number> = new Set([LORE_CRYSTAL_ITEM_ID, 1000])
+
+/** 既定で交換する品目か。サーヴァント扱いの品目は番号が同じでも含めない。 */
+export const isDefaultWanted = (item: Pick<EventShopItem, 'itemId' | 'kind'>): boolean =>
+  item.kind !== 'svt' && DEFAULT_WANTED_ITEM_IDS.has(item.itemId)
+
 /** 素材ごとの不足（総必要数 − 所持数、0 未満は 0）。所持数は atlasId の文字列 → 個数。 */
 export const computeShopShortfall = (
   totalNeed: ReadonlyMap<number, number>,
@@ -165,6 +175,7 @@ export const shopWantedKey = (item: Pick<EventShopItem, 'itemId' | 'kind'>): str
 /**
  * 品目の状態を決める。QP は状態なし。必要数のある素材は `planItemIds` を見ない。
  * `planItemIds`（育成計画で扱う素材の集合）が undefined なら、必要数 0 の品目は見分けられないので状態なし。
+ * ただし既定で交換する品目は、伝承結晶なら「使わない」、夢火なら「計画の対象外」にする。
  * サーヴァント扱いの品目は育成計画の素材ではないので、番号を突き合わせずに計画の対象外にする。
  */
 export const shopItemStatus = (
@@ -180,7 +191,11 @@ export const shopItemStatus = (
     const n = shortfall.get(itemId) ?? 0
     return n > 0 ? { kind: 'short', shortfall: n } : { kind: 'enough' }
   }
-  if (!planItemIds) return undefined
+  if (!planItemIds) {
+    // 既定で交換する品目は番号で扱いが決まっているので、一覧が無くても見分けられる。
+    if (!isDefaultWanted(item)) return undefined
+    return itemId === LORE_CRYSTAL_ITEM_ID ? { kind: 'unused' } : { kind: 'outside' }
+  }
   return planItemIds.has(itemId) ? { kind: 'unused' } : { kind: 'outside' }
 }
 
@@ -196,9 +211,23 @@ export interface ShortfallAllocation {
 }
 
 /**
+ * 不足のある素材の品目の交換回数。残りの不足 `left` を1回の個数で割って切り上げ、在庫上限で打ち切る。
+ * 「要る」の既定で交換する品目は、在庫上限があれば不足に関わらず在庫上限の回数。
+ */
+const shortCount = (item: EventShopItem, left: number, defaultWanted: boolean): number => {
+  if (item.qty <= 0) return 0
+  if (defaultWanted && item.limitNum > 0) return item.limitNum
+  if (left <= 0) return 0
+  const needed = Math.ceil(left / item.qty)
+  return item.limitNum > 0 ? Math.min(needed, item.limitNum) : needed
+}
+
+/**
  * 不足の分と「要る」の計画の対象外の品目だけを交換する回数を出す。
  * 不足は交換所の元の順に品目へ割り当て、在庫上限で打ち切る。1回の個数が 0 以下の品目は割り当てない。
- * `wanted` は保存した「要る」のキー（`shopWantedKey`）で、状態が「計画の対象外」の品目にだけ使う。
+ * `wanted` は解決後の「要る」のキー（`shopWantedKey`）で、状態が「計画の対象外」の品目と既定で交換する品目にだけ使う。
+ * 「要る」の既定で交換する品目は、在庫上限があれば状態に関わらず在庫上限まで交換し、得る個数を不足から差し引く。
+ * 在庫上限が無ければ、残りの不足があればその分、無ければ 0 にして回数の手入力を促す。
  */
 export const allocateShortfallOnly = (
   shop: EventShopItem[],
@@ -213,18 +242,17 @@ export const allocateShortfallOnly = (
   shop.forEach((item, index) => {
     counts.set(index, 0)
     const status = statusOf(item)
-    if (status?.kind === 'short') {
+    if (!status) return
+    const isWanted = item.qty > 0 && wanted.has(shopWantedKey(item))
+    const defaultWanted = isWanted && isDefaultWanted(item)
+    if (status.kind === 'short') {
       lastIndex.set(item.itemId, index)
       const left = remaining.get(item.itemId) ?? shortfall.get(item.itemId) ?? 0
-      if (item.qty <= 0 || left <= 0) {
-        remaining.set(item.itemId, left)
-        return
-      }
-      const needed = Math.ceil(left / item.qty)
-      const count = item.limitNum > 0 ? Math.min(needed, item.limitNum) : needed
+      const count = shortCount(item, left, defaultWanted)
       counts.set(index, count)
       remaining.set(item.itemId, Math.max(0, left - count * item.qty))
-    } else if (status?.kind === 'outside' && wanted.has(shopWantedKey(item)) && item.qty > 0) {
+      if (defaultWanted && count === 0) unlimitedWanted.add(index)
+    } else if (defaultWanted || (status.kind === 'outside' && isWanted)) {
       if (item.limitNum > 0) counts.set(index, item.limitNum)
       else unlimitedWanted.add(index)
     }
