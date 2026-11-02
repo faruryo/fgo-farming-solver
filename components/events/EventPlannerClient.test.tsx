@@ -215,6 +215,26 @@ describe('箱計画のドロップ増加礼装のボーナス', () => {
     expect(bonusInputOf('武蔵うどん')).toBeNull()
   })
 
+  it('所持数とボーナスは保存せず、開き直すと初期値に戻り、交換所の保存値も使わない', () => {
+    localStorage.setItem(`events/shopInputs/${bonusEvent.id}`, JSON.stringify({ counts: {}, owned: {}, bonus: { 94001: 3 } }))
+    const ownedInput = () => screen.getByText('所持通貨').parentElement?.querySelector('input') as HTMLInputElement
+    const shopInputs = () => Object.keys(localStorage).filter(key => key.startsWith('events/shopInputs/'))
+    const savedBefore = localStorage.getItem(`events/shopInputs/${bonusEvent.id}`)
+    const { unmount } = render(<EventPlannerClient event={bonusEvent} />)
+    expect(bonusInputOf('武蔵うどん')?.value).toBe('0')
+    setBonus('2')
+    fireEvent.change(ownedInput(), { target: { value: '100' } })
+    expect(ownedInput()).toHaveValue(100)
+    expect(shopInputs()).toEqual([`events/shopInputs/${bonusEvent.id}`])
+    expect(localStorage.getItem(`events/shopInputs/${bonusEvent.id}`)).toBe(savedBefore)
+    unmount()
+
+    render(<EventPlannerClient event={bonusEvent} />)
+    expect(bonusInputOf('武蔵うどん')?.value).toBe('0')
+    expect(ownedInput()).toHaveValue(0)
+    expect(screen.getByText('30 周 / 1,200 AP')).toBeInTheDocument()
+  })
+
   it('-3 と 2.5 はそれぞれ 0 と 2 として扱う', () => {
     render(<EventPlannerClient event={bonusEvent} />)
 

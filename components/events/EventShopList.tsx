@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,14 @@ import {
   clampExchangeCount,
   computeShopCurrencyNeeds,
   computeShopShortfall,
+  countsFromItemKeys,
+  countsToItemKeys,
   formatEfficiency,
   groupShopByCurrency,
   isDefaultWanted,
   orderShopByEfficiency,
+  pickIdTable,
+  readShopSavedInputs,
   selectAllCurrenciesUpToLimit,
   shopItemStatus,
   shopWantedKey,
@@ -25,13 +29,14 @@ import {
   type ShopCurrencyNeed,
   type ShopExchangeCounts,
   type ShopItemStatus,
+  type ShopSavedInputs,
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
 import { useRosterNeed, type RosterNeed } from '../../hooks/use-roster-need'
 import { countsOrEmpty, recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import { materialCatalogItemIds } from '../../lib/material-catalog'
-import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { STORAGE_KEYS, eventShopInputsKey } from '../../lib/constants/storage-keys'
 import { applyDropBonus, planShopCurrencies, type ShopCurrencyPlan } from '../../lib/event-plan'
 import type { Result } from '../../interfaces/api'
 import { computeApBudget } from '../../lib/ap-budget'
@@ -857,9 +862,36 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
   )
 }
 
+const EMPTY_SHOP_INPUTS: ShopSavedInputs = { counts: {}, owned: {}, bonus: {} }
+
+/** 交換所の入力をイベントごとに端末へ保存して読む。保存値との競合で入れた値が消えないよう、書き込みはすべて関数形で行う。 */
+const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[], pointItemId: number | undefined) => {
+  const { shop } = event
+  const [inputs, setInputs] = useLocalStorage<ShopSavedInputs>(eventShopInputsKey(event.id), EMPTY_SHOP_INPUTS, {
+    lazyWrite: true,
+    onGet: readShopSavedInputs,
+  })
+  const counts = useMemo(() => countsFromItemKeys(shop, inputs.counts), [shop, inputs.counts])
+  const owned = useMemo(() => pickIdTable(inputs.owned, groups.map(g => g.costItemId)), [inputs.owned, groups])
+  const bonus = useMemo(
+    () => pickIdTable(inputs.bonus, [...groups.map(g => g.costItemId), ...(pointItemId === undefined ? [] : [pointItemId])]),
+    [inputs.bonus, groups, pointItemId],
+  )
+  const updateCounts = useCallback(
+    (update: (prev: ShopExchangeCounts) => ShopExchangeCounts) =>
+      setInputs(prev => ({ ...prev, counts: countsToItemKeys(shop, update(countsFromItemKeys(shop, prev.counts))) })),
+    [shop, setInputs],
+  )
+  const replaceCounts = useCallback((next: ShopExchangeCounts) => updateCounts(() => next), [updateCounts])
+  const setOwned = (id: number, value: number) => setInputs(prev => ({ ...prev, owned: { ...prev.owned, [id]: value } }))
+  const setBonus = (id: number, value: number) => setInputs(prev => ({ ...prev, bonus: { ...prev.bonus, [id]: value } }))
+  return { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus }
+}
+
 /**
  * 交換所の品目を対価の通貨ごとにまとめて回数を選ばせ、通貨ごとの必要量と、それを満たす周回の内訳を出す。
- * 選んだ回数と所持数とドロップ増加礼装のボーナスは画面を開いている間だけ持つ。
+ * 選んだ回数と所持数とドロップ増加礼装のボーナスはイベントごとに端末へ保存する（開いただけでは書かない）。
+ * 保存のキーがイベントで変わるため、呼び出し側はイベントごとに作り直すこと（`key={event.id}`）。
  */
 export const EventShopList: React.FC<{
   event: EventPlannerEvent
@@ -870,16 +902,14 @@ export const EventShopList: React.FC<{
   const { t } = useTranslation('events')
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
-  const [counts, setCounts] = useState<ShopExchangeCounts>(() => new Map())
-  const [owned, setOwned] = useState<ReadonlyMap<number, number>>(() => new Map())
-  const [bonus, setBonus] = useState<ReadonlyMap<number, number>>(() => new Map())
+  const { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus } = useShopSavedInputs(event, groups, pointItemId)
   const needs = useMemo(() => computeShopCurrencyNeeds(shop, counts, owned), [shop, counts, owned])
   const bonused = useMemo(() => applyDropBonus(event, new Map(bonus)), [event, bonus])
   const plan = useMemo(
     () => planShopCurrencies(bonused.event, new Map(needs.map(n => [n.costItemId, n.need]))),
     [bonused, needs],
   )
-  const rosterPlan = useShopRosterPlan(shop, setCounts)
+  const rosterPlan = useShopRosterPlan(shop, replaceCounts)
 
   const targets = useBonusTargets(event, groups, pointItemId)
   const unappliedLabels = bonused.unapplied.map(id => targets.find(target => target.itemId === id)?.label ?? `#${id}`)
@@ -889,7 +919,7 @@ export const EventShopList: React.FC<{
     <div className="flex flex-col gap-4">
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
-      <SelectControls onSelectAll={() => setCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
+      <SelectControls onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
       <DropBonusInputs
         targets={targets}
         bonus={bonus}
@@ -898,7 +928,7 @@ export const EventShopList: React.FC<{
           'event-shop-bonus-description',
           '編成した礼装の 1ドロップにつき +N を入れると、1周の獲得量と周回数がボーナス込みになります',
         )}
-        onChange={(itemId, value) => setBonus(prev => new Map(prev).set(itemId, value))}
+        onChange={setBonus}
       />
       <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={bonus} />
       {groups.map(group => (
@@ -911,8 +941,8 @@ export const EventShopList: React.FC<{
           planOf={rosterPlan.planOf}
           need={needs.find(n => n.costItemId === group.costItemId)}
           owned={owned.get(group.costItemId) ?? 0}
-          onCountChange={(index, count) => setCounts(prev => new Map(prev).set(index, count))}
-          onOwnedChange={value => setOwned(prev => new Map(prev).set(group.costItemId, value))}
+          onCountChange={(index, count) => updateCounts(prev => new Map(prev).set(index, count))}
+          onOwnedChange={value => setOwned(group.costItemId, value)}
         />
       ))}
       <FarmingPlan plan={plan} groups={groups} needs={needs} bonusApplied={bonusApplied} />
