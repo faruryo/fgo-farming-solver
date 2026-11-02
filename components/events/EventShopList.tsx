@@ -1124,15 +1124,6 @@ export const EventShopList: React.FC<{
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
       <SelectControls onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
-      <ShopBonusCard
-        state={craftEssences}
-        bonus={bonus}
-        unappliedLabels={bonused.unapplied.map(labelOf)}
-        hasNeed={[...currencyNeed.values()].some(n => n > 0)}
-        nameOf={labelOf}
-        onChange={setBonus}
-      />
-      <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={effectiveBonus} />
       {groups.map(group => (
         <CurrencyGroupCard
           key={group.costItemId}
@@ -1147,6 +1138,15 @@ export const EventShopList: React.FC<{
           onOwnedChange={value => setOwned(group.costItemId, value)}
         />
       ))}
+      <ShopBonusCard
+        state={craftEssences}
+        bonus={bonus}
+        unappliedLabels={bonused.unapplied.map(labelOf)}
+        hasNeed={[...currencyNeed.values()].some(n => n > 0)}
+        nameOf={labelOf}
+        onChange={setBonus}
+      />
+      <PerRunTable base={event} bonused={bonused.event} targets={targets} bonus={effectiveBonus} />
       <FarmingPlan plan={plan} groups={groups} needs={needs} bonusApplied={bonusApplied} />
       {plan.status === 'planned' && plan.result && plan.result.total_ap > 0 && (
         <ShopApBudget totalAp={plan.result.total_ap} partial={plan.unfarmable.length > 0} />

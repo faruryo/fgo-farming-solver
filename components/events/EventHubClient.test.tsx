@@ -1030,11 +1030,11 @@ describe('EventHubClient', () => {
       expect(document.body.textContent).not.toContain('サーヴァント')
     })
 
-    it('ボーナスのカードの直下に1周の獲得量の表があり、通貨ごとのカードより上にある', () => {
+    it('ボーナスのカードの直下に1周の獲得量の表があり、通貨ごとのカードより下にある', () => {
       renderShop(bonusEvent(), POINT)
       const perRun = screen.getByTestId('shop-per-run')
       expect(bonusCard().nextElementSibling).toBe(perRun)
-      expect(perRun.compareDocumentPosition(cardOf('武蔵うどん')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(bonusCard().compareDocumentPosition(cardOf('武蔵うどん')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
     })
 
     it('通貨もポイントも落ちないクエストは表に出ず、値は小数1桁', () => {
