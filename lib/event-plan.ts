@@ -418,6 +418,192 @@ export const applyDropBonus = (
   return { event: { ...event, farmingNodes }, unapplied: [...unapplied] }
 }
 
+export type BonusRarity = 3 | 4 | 5
+
+/** ボーナス礼装の ☆ ごとの入力（礼装1枚あたりの +N と所持枚数）と、その ☆ に対応する通貨。 */
+export type BonusRarityInput = {
+  rarity: BonusRarity
+  /** その ☆ の礼装が増やす通貨の atlasId。 */
+  itemId: number
+  /** 凸の礼装1枚あたりの「1ドロップにつき +N」。 */
+  maxBonus: number
+  /** 無凸の礼装1枚あたりの「1ドロップにつき +N」。 */
+  baseBonus: number
+  /** 凸の所持枚数。 */
+  maxOwned: number
+  /** 無凸の所持枚数。 */
+  baseOwned: number
+}
+
+/** ボーナス礼装の合計枚数ごとの最良の組み合わせ。 */
+export type BonusCraftEssenceRow = {
+  /** フレンドの1枠を含む合計枚数。 */
+  total: number
+  /** ☆ ごとの枚数（フレンドの1枠を含む）。 */
+  counts: Record<BonusRarity, number>
+  laps: number
+  ap: number
+  /** 1枚少ない行からの AP の減り。最初の行は undefined。 */
+  apDrop?: number
+  /** この行の各品目の「1ドロップにつき +N」（☆ と対応する通貨は編成から、ほかは通貨ごとの値）。 */
+  bonus: Map<number, number>
+}
+
+export type BonusCraftEssenceComparison = {
+  rows: BonusCraftEssenceRow[]
+  /** 周回では集められない通貨の atlasId。 */
+  unfarmable: number[]
+}
+
+/** フレンドの1枠を含めた合計枚数の上限。 */
+export const MAX_BONUS_CRAFT_ESSENCES = 6
+
+const AP_EPSILON = 1e-6
+
+/**
+ * ☆ ごとの枚数の組み合わせのうち、合計枚数ごとに AP が最も少ないものを求める。
+ *
+ * - フレンドの ☆ を選んだときは、その ☆ の1枚を凸の値で必ず含める。
+ * - 自分の礼装は ☆ ごとに凸と無凸の所持枚数の和まで、凸を先に数える。
+ * - ☆ と対応する通貨の +N は「1枚あたりの +N × 枚数」の和、ほかの品目は `otherBonus` の値で解く。
+ * - 同じ AP なら周回の少ない、次に ☆5、次に ☆4 の少ない組み合わせを選ぶ。
+ * - 通貨の必要量が無い・ドロップの統計が無い・集められる通貨が無いときは行を返さない。
+ */
+export const compareBonusCraftEssences = (
+  event: EventPlannerEvent,
+  currencyNeed: Map<number, number>,
+  otherBonus: ReadonlyMap<number, number>,
+  inputs: BonusRarityInput[],
+  friendRarity: BonusRarity | null,
+): BonusCraftEssenceComparison => {
+  const friend = inputs.find((input) => input.rarity === friendRarity)
+  const solve = memoizedBonusSolver(event, currencyNeed, inputs)
+  const zero = solve(bonusFor(inputs, friend, otherBonus, inputs.map(() => 0)))
+  if (!zero.outcome) return { rows: [], unfarmable: zero.unfarmable }
+
+  const best = new Map<number, BonusCraftEssenceRow>()
+  const limit = MAX_BONUS_CRAFT_ESSENCES - (friend ? 1 : 0)
+  for (const own of ownCombinations(inputs, limit)) {
+    const bonus = bonusFor(inputs, friend, otherBonus, own)
+    const { outcome } = solve(bonus)
+    if (!outcome) continue
+    const countOf = (rarity: BonusRarity) => {
+      const k = inputs.findIndex((input) => input.rarity === rarity)
+      if (k < 0) return 0
+      return (own.at(k) ?? 0) + (friend?.rarity === rarity ? 1 : 0)
+    }
+    const row: BonusCraftEssenceRow = {
+      total: own.reduce((a, b) => a + b, 0) + (friend ? 1 : 0),
+      counts: { 3: countOf(3), 4: countOf(4), 5: countOf(5) },
+      laps: outcome.laps,
+      ap: outcome.ap,
+      bonus,
+    }
+    const current = best.get(row.total)
+    if (!current || isBetterRow(row, current)) best.set(row.total, row)
+  }
+
+  const rows = [...best.values()].sort((a, b) => a.total - b.total)
+  let prev: BonusCraftEssenceRow | undefined
+  for (const row of rows) {
+    if (prev && prev.total === row.total - 1) row.apDrop = prev.ap - row.ap
+    prev = row
+  }
+  return { rows, unfarmable: zero.unfarmable }
+}
+
+/** ☆ ごとの自分の枚数の組み合わせ（各 ☆ の所持枚数まで、合計 limit 枚まで）。 */
+const ownCombinations = (inputs: BonusRarityInput[], limit: number): number[][] =>
+  inputs.reduce<number[][]>(
+    (combos, input) =>
+      combos.flatMap((prefix) => {
+        const used = prefix.reduce((a, b) => a + b, 0)
+        const room = Math.min(input.maxOwned + input.baseOwned, limit - used)
+        return Array.from({ length: room + 1 }, (_, n) => [...prefix, n])
+      }),
+    [[]],
+  )
+
+/** 組み合わせの各品目の +N。☆ と対応する通貨は編成から（凸を先に数える）、ほかは otherBonus。 */
+const bonusFor = (
+  inputs: BonusRarityInput[],
+  friend: BonusRarityInput | undefined,
+  otherBonus: ReadonlyMap<number, number>,
+  own: number[],
+): Map<number, number> => {
+  const bonus = new Map(otherBonus)
+  inputs.forEach((input, i) => {
+    const n = own.at(i) ?? 0
+    const max = Math.min(n, input.maxOwned)
+    const fromFriend = friend === input ? input.maxBonus : 0
+    bonus.set(input.itemId, fromFriend + max * input.maxBonus + (n - max) * input.baseBonus)
+  })
+  return bonus
+}
+
+type BonusOutcome = { outcome: { laps: number; ap: number } | null; unfarmable: number[] }
+
+/** ☆ と対応する通貨の +N が同じ組み合わせは1回だけ解く。 */
+const memoizedBonusSolver = (
+  event: EventPlannerEvent,
+  currencyNeed: Map<number, number>,
+  inputs: BonusRarityInput[],
+) => {
+  const solved = new Map<string, BonusOutcome>()
+  return (bonus: Map<number, number>): BonusOutcome => {
+    const key = inputs.map((input) => bonus.get(input.itemId) ?? 0).join(',')
+    const cached = solved.get(key)
+    if (cached) return cached
+    const plan = planShopCurrencies(applyDropBonus(event, bonus).event, currencyNeed)
+    const result: BonusOutcome =
+      plan.status === 'planned'
+        ? {
+            outcome: plan.result ? { laps: plan.result.total_lap, ap: plan.result.total_ap } : null,
+            unfarmable: plan.unfarmable,
+          }
+        : { outcome: null, unfarmable: [] }
+    solved.set(key, result)
+    return result
+  }
+}
+
+/** 行の ☆ ごとの枚数。 */
+export const bonusRarityCount = (row: Pick<BonusCraftEssenceRow, 'counts'>, rarity: BonusRarity): number => {
+  switch (rarity) {
+    case 5:
+      return row.counts[5]
+    case 4:
+      return row.counts[4]
+    default:
+      return row.counts[3]
+  }
+}
+
+const isBetterRow = (a: BonusCraftEssenceRow, b: BonusCraftEssenceRow): boolean => {
+  if (Math.abs(a.ap - b.ap) > AP_EPSILON) return a.ap < b.ap
+  if (a.laps !== b.laps) return a.laps < b.laps
+  if (a.counts[5] !== b.counts[5]) return a.counts[5] < b.counts[5]
+  return a.counts[4] < b.counts[4]
+}
+
+/**
+ * 使う行を決める。選んだ合計枚数の行があればそれ、未選択か無くなっていれば
+ * AP が最も少ない行（同じ AP なら合計枚数の少ない行）。行が無ければ undefined。
+ */
+export const selectBonusCraftEssenceRow = (
+  rows: BonusCraftEssenceRow[],
+  selectedTotal: number | undefined,
+): BonusCraftEssenceRow | undefined => {
+  const selected = selectedTotal === undefined ? undefined : rows.find((row) => row.total === selectedTotal)
+  if (selected) return selected
+  return rows.reduce<BonusCraftEssenceRow | undefined>((min, row) => {
+    if (!min) return row
+    if (row.ap < min.ap - AP_EPSILON) return row
+    if (Math.abs(row.ap - min.ap) <= AP_EPSILON && row.total < min.total) return row
+    return min
+  }, undefined)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Task 12 — 逆算（欲しいアイテム数 → 最小箱数）
 // ─────────────────────────────────────────────────────────────────────────────
