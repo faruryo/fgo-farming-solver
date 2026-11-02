@@ -44,7 +44,7 @@
 - `wrangler.toml` uses `nodejs_compat` and `global_fetch_strictly_public`.
 - **D1 Local Dev Fallback**: `/api/progress` API は、ローカル開発環境（`next dev`）でDB接続がない状態（ログイン後）で動作してもクラッシュせず、自動的に時間決定的なモック（`mocks/progress.json`）へフォールバックする例外保護が組み込まれています。
 - **Unified Cache**: 高速化のため、`lib/data-source.ts` において Cloudflare Context (`env.MASTER_DATA`) がグローバルモジュールレベルでキャッシュされています。
-- **i18n**: 画面に出る文字列は必ず `t('kebab-key', '日本語フォールバック')` で書く（日本語のベタ書きも違反）。詳細は `.agents/rules/ui-conventions.instructions.md`。
+- **i18n**: 画面に出る文字列は必ず `t('kebab-key', '日本語フォールバック')` で書く（日本語のベタ書きも違反）。表示言語は `ja` 固定（`lib/i18n.ts`）で、`locales/en.json` はキーを揃えるだけ。英語表示の画面確認はせず、tasks や PR の「人がやること」にも入れない。詳細は `.agents/rules/ui-conventions.instructions.md`。
 - **Testing**: テスト追加・既存ロジックのテスタビリティ改善前に `.agents/rules/testing.instructions.md` を読む。pure関数、依存注入、ケース表、テストが実際に赤くなる確認を定義している。
 - Refer to domain-specific rules for implementation details.
 
@@ -104,6 +104,7 @@ Repository-only maintenance that does not change product/runtime behavior—such
 - **i18n Strictness (多言語対応と生キー露出防止)**:
   - 画面に表示される文字列は必ず `t('kebab-key', '日本語フォールバック')` を通す（BLOCKER。日本語・英語の直接ベタ書きは不可）。
   - 追加したキーは `locales/ja.json` と `locales/en.json` の両方に同時に追加し、テスト環境（`fallback ?? key`）で生キーが露出したままテストが通過しないよう、第2引数の日本語フォールバックを省略しないこと。
+  - 表示言語は `ja` 固定のため、英語表示の画面確認がされていないことを指摘しない。`en.json` はキーが `ja.json` と揃っているかだけを見る。
 - **UI Verification & Orphan Route Prevention (画面実機検証とナビゲーション導線)**:
   - `app/**` や `components/**` の UI を変更した場合は、型チェックやユニットテストだけで完了とせず、ブラウザ実画面（レスポンシブ、375px 幅、ホバー、localStorage 永続等）での動作確認を必須とする。
   - 新規ルート（`app/**/page.tsx`）を追加した場合、URL 直打ちだけでなく `components/common/nav.tsx` 等の常設導線から到達できるようにすること（オーファンページの禁止）。
