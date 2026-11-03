@@ -21,6 +21,10 @@ import {
   planShopCurrencies,
   splitUnfarmable,
   applyDropBonus,
+  compareBonusCraftEssences,
+  selectBonusCraftEssenceRow,
+  type BonusCraftEssenceRow,
+  type BonusRarityInput,
 } from './event-plan'
 import eventsJson from '../mocks/events.json'
 
@@ -679,5 +683,200 @@ describe('applyDropBonus', () => {
     if (plan.status !== 'planned' || !plan.result) throw new Error('no farming plan')
     expect(plan.result.quests.map((q) => q.lap)).toEqual([15])
     expect(plan.result.items.find((i) => i.id === String(A))?.count).toBeGreaterThanOrEqual(300)
+  })
+})
+
+describe('compareBonusCraftEssences', () => {
+  const GOLD = 9101
+  const SILVER = 9102
+  const BRONZE = 9103
+  const MORI = 9104
+  const goldEvent: EventPlannerEvent = {
+    ...mockEvent,
+    id: 99997,
+    lotteries: [],
+    shop: [],
+    farmingNodes: [
+      { questId: 1, name: '金', ap: 40, drops: [{ itemId: GOLD, perRun: 10, countPerRun: 5 }] },
+    ],
+  }
+  const goldNeed = new Map([[GOLD, 300]])
+  const star5 = (overrides: Partial<BonusRarityInput> = {}): BonusRarityInput => ({
+    rarity: 5,
+    itemId: GOLD,
+    maxBonus: 2,
+    baseBonus: 1,
+    maxOwned: 0,
+    baseOwned: 2,
+    ...overrides,
+  })
+  const summary = (rows: BonusCraftEssenceRow[]) =>
+    rows.map((r) => ({ total: r.total, counts: r.counts, laps: r.laps, ap: r.ap, apDrop: r.apDrop }))
+
+  it('合計枚数ごとに周回数・AP・1枚少ない行からの AP の減りを並べ、組めない合計枚数の行は出さない', () => {
+    const { rows, unfarmable } = compareBonusCraftEssences(goldEvent, goldNeed, new Map(), [star5()], 5)
+    expect(unfarmable).toEqual([])
+    expect(summary(rows)).toEqual([
+      { total: 1, counts: { 3: 0, 4: 0, 5: 1 }, laps: 15, ap: 600, apDrop: undefined },
+      { total: 2, counts: { 3: 0, 4: 0, 5: 2 }, laps: 12, ap: 480, apDrop: 120 },
+      { total: 3, counts: { 3: 0, 4: 0, 5: 3 }, laps: 10, ap: 400, apDrop: 80 },
+    ])
+    expect(rows.map((r) => r.bonus.get(GOLD))).toEqual([2, 3, 4])
+  })
+
+  it('自分の礼装は凸を先に数える', () => {
+    const { rows } = compareBonusCraftEssences(
+      goldEvent,
+      goldNeed,
+      new Map(),
+      [star5({ maxOwned: 1, baseOwned: 1 })],
+      5,
+    )
+    const two = rows.find((r) => r.total === 2)
+    expect(two?.bonus.get(GOLD)).toBe(4)
+    expect(two?.laps).toBe(10)
+  })
+
+  it('フレンドの礼装なしなら合計 0 枚の行から始まり、対応のある通貨の +N を 0 で解く', () => {
+    const { rows } = compareBonusCraftEssences(goldEvent, goldNeed, new Map(), [star5()], null)
+    expect(rows[0]).toMatchObject({ total: 0, laps: 30, ap: 1200 })
+    expect(rows[0].bonus.get(GOLD)).toBe(0)
+    expect(rows.map((r) => r.total)).toEqual([0, 1, 2])
+  })
+
+  it('対応の無い品目には通貨ごとの +N を使い、対応のある通貨は行の編成から求める', () => {
+    const event: EventPlannerEvent = {
+      ...goldEvent,
+      farmingNodes: [
+        ...goldEvent.farmingNodes,
+        { questId: 2, name: '盛り', ap: 20, drops: [{ itemId: MORI, perRun: 10, countPerRun: 5 }] },
+      ],
+    }
+    const need = new Map([[GOLD, 300], [MORI, 250]])
+    const { rows } = compareBonusCraftEssences(event, need, new Map([[MORI, 3], [GOLD, 99]]), [star5()], 5)
+    // 盛りは 10 + 5 × 3 = 25 で 10 周（200 AP）、金は各行の編成の +N で解く。
+    expect(summary(rows).map((r) => [r.total, r.laps, r.ap])).toEqual([
+      [1, 25, 800],
+      [2, 22, 680],
+      [3, 20, 600],
+    ])
+    expect(rows.map((r) => [r.bonus.get(GOLD), r.bonus.get(MORI)])).toEqual([
+      [2, 3],
+      [3, 3],
+      [4, 3],
+    ])
+  })
+
+  it('同じ AP の組み合わせでは ☆5、次に ☆4 の少ないものを選ぶ', () => {
+    const inputs: BonusRarityInput[] = [
+      { rarity: 5, itemId: SILVER, maxBonus: 2, baseBonus: 1, maxOwned: 1, baseOwned: 1 },
+      { rarity: 4, itemId: BRONZE, maxBonus: 2, baseBonus: 1, maxOwned: 1, baseOwned: 1 },
+      { rarity: 3, itemId: GOLD, maxBonus: 2, baseBonus: 1, maxOwned: 0, baseOwned: 0 },
+    ]
+    const { rows } = compareBonusCraftEssences(goldEvent, goldNeed, new Map(), inputs, null)
+    expect(rows.find((r) => r.total === 1)?.counts).toEqual({ 3: 0, 4: 1, 5: 0 })
+    expect(rows.find((r) => r.total === 2)?.counts).toEqual({ 3: 0, 4: 2, 5: 0 })
+  })
+
+  it('同じ AP の組み合わせでは周回の少ないものを ☆ の枚数より先に見る', () => {
+    const event: EventPlannerEvent = {
+      ...goldEvent,
+      farmingNodes: [
+        { questId: 1, name: '金', ap: 40, drops: [{ itemId: GOLD, perRun: 10, countPerRun: 1 }] },
+        { questId: 2, name: '銀', ap: 20, drops: [{ itemId: SILVER, perRun: 10, countPerRun: 1 }] },
+      ],
+    }
+    const inputs: BonusRarityInput[] = [
+      { rarity: 5, itemId: SILVER, maxBonus: 3, baseBonus: 3, maxOwned: 1, baseOwned: 0 },
+      { rarity: 4, itemId: GOLD, maxBonus: 2, baseBonus: 2, maxOwned: 1, baseOwned: 0 },
+    ]
+    const need = new Map([[GOLD, 100], [SILVER, 100]])
+    const { rows } = compareBonusCraftEssences(event, need, new Map(), inputs, null)
+    // ☆5（銀 8 周）と ☆4（金 9 周）はどちらも 560 AP。周回の少ない ☆5 を選ぶ。
+    expect(rows.find((r) => r.total === 1)).toMatchObject({ counts: { 3: 0, 4: 0, 5: 1 }, laps: 18, ap: 560 })
+  })
+
+  it('通貨の必要量が無い・ドロップの統計が無い・集められる通貨が無いときは行を返さない', () => {
+    expect(compareBonusCraftEssences(goldEvent, new Map(), new Map(), [star5()], 5).rows).toEqual([])
+    const noDrops: EventPlannerEvent = { ...goldEvent, farmingNodes: [{ questId: 1, name: 'x', ap: 40, drops: [] }] }
+    expect(compareBonusCraftEssences(noDrops, goldNeed, new Map(), [star5()], 5).rows).toEqual([])
+    const onlySilver = compareBonusCraftEssences(goldEvent, new Map([[SILVER, 100]]), new Map(), [star5()], 5)
+    expect(onlySilver.rows).toEqual([])
+    expect(onlySilver.unfarmable).toEqual([SILVER])
+  })
+
+  it('周回では集められない通貨があるときは、集められる通貨だけで各行を解き、その通貨を示す', () => {
+    const { rows, unfarmable } = compareBonusCraftEssences(
+      goldEvent,
+      new Map([[GOLD, 300], [SILVER, 100]]),
+      new Map(),
+      [star5()],
+      5,
+    )
+    expect(unfarmable).toEqual([SILVER])
+    expect(summary(rows).map((r) => [r.total, r.laps, r.ap])).toEqual([
+      [1, 15, 600],
+      [2, 12, 480],
+      [3, 10, 400],
+    ])
+  })
+
+  it('☆ が3つ・所持が十分なら合計 6 枚までの行を返す', () => {
+    const event: EventPlannerEvent = {
+      ...goldEvent,
+      farmingNodes: [
+        {
+          questId: 1,
+          name: '3種',
+          ap: 40,
+          drops: [
+            { itemId: GOLD, perRun: 10, countPerRun: 5 },
+            { itemId: SILVER, perRun: 10, countPerRun: 5 },
+            { itemId: BRONZE, perRun: 10, countPerRun: 5 },
+          ],
+        },
+        { questId: 2, name: '金', ap: 40, drops: [{ itemId: GOLD, perRun: 15, countPerRun: 3 }] },
+        { questId: 3, name: '銀', ap: 40, drops: [{ itemId: SILVER, perRun: 15, countPerRun: 3 }] },
+      ],
+    }
+    const inputs: BonusRarityInput[] = [
+      { rarity: 5, itemId: GOLD, maxBonus: 2, baseBonus: 1, maxOwned: 3, baseOwned: 3 },
+      { rarity: 4, itemId: SILVER, maxBonus: 3, baseBonus: 2, maxOwned: 3, baseOwned: 3 },
+      { rarity: 3, itemId: BRONZE, maxBonus: 4, baseBonus: 3, maxOwned: 3, baseOwned: 3 },
+    ]
+    const need = new Map([[GOLD, 600], [SILVER, 600], [BRONZE, 600]])
+    const { rows } = compareBonusCraftEssences(event, need, new Map(), inputs, null)
+    expect(rows.map((r) => r.total)).toEqual([0, 1, 2, 3, 4, 5, 6])
+    for (const row of rows) {
+      expect(row.counts[3] + row.counts[4] + row.counts[5]).toBe(row.total)
+      expect(row.ap).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('selectBonusCraftEssenceRow', () => {
+  const row = (total: number, ap: number): BonusCraftEssenceRow => ({
+    total,
+    counts: { 3: 0, 4: 0, 5: total },
+    laps: ap / 40,
+    ap,
+    bonus: new Map(),
+  })
+  const rows = [row(1, 600), row(2, 400), row(3, 400)]
+
+  it('未選択なら AP が最も少ない行（同じ AP なら合計枚数の少ない行）', () => {
+    expect(selectBonusCraftEssenceRow(rows, undefined)?.total).toBe(2)
+  })
+
+  it('選んだ合計枚数の行があればそれ', () => {
+    expect(selectBonusCraftEssenceRow(rows, 1)?.total).toBe(1)
+  })
+
+  it('選んだ合計枚数の行が無くなっていれば AP が最も少ない行', () => {
+    expect(selectBonusCraftEssenceRow(rows, 5)?.total).toBe(2)
+  })
+
+  it('行が無ければ undefined', () => {
+    expect(selectBonusCraftEssenceRow([], undefined)).toBeUndefined()
   })
 })

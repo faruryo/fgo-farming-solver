@@ -21,14 +21,18 @@ export interface BonusTarget {
   icon?: string
 }
 
-/** ドロップ増加礼装の「1ドロップにつき +N」を品目ごとに入れる欄。説明の1行は呼び出し側が渡す。 */
+/**
+ * ドロップ増加礼装の「1ドロップにつき +N」を品目ごとに入れる欄。説明の1行は呼び出し側が渡す。
+ * children は説明と品目ごとの欄のあいだに出す。
+ */
 export const DropBonusInputs: React.FC<{
   targets: BonusTarget[]
   bonus: ReadonlyMap<number, number>
   unappliedLabels: string[]
   description: string
   onChange: (itemId: number, value: number) => void
-}> = ({ targets, bonus, unappliedLabels, description, onChange }) => {
+  children?: React.ReactNode
+}> = ({ targets, bonus, unappliedLabels, description, onChange, children }) => {
   const { t } = useTranslation('events')
   return (
     <div
@@ -41,23 +45,26 @@ export const DropBonusInputs: React.FC<{
       <p className="text-xs" style={{ color: 'var(--text2)' }}>
         {description}
       </p>
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
-        {targets.map(target => (
-          <label key={target.itemId} className="flex items-center gap-1.5 min-w-0">
-            <Icon src={target.icon} />
-            <span className="truncate">{target.label}</span>
-            <span className="flex-shrink-0">+</span>
-            <Input
-              type="number"
-              min={0}
-              value={bonus.get(target.itemId) ?? 0}
-              onChange={e => onChange(target.itemId, toCount(e.target.value))}
-              aria-label={t('event-shop-bonus-label', '{{name}} のドロップボーナス', { name: target.label })}
-              className="h-7 w-14 px-1.5 flex-shrink-0"
-            />
-          </label>
-        ))}
-      </div>
+      {children}
+      {targets.length > 0 && (
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
+          {targets.map(target => (
+            <label key={target.itemId} className="flex items-center gap-1.5 min-w-0">
+              <Icon src={target.icon} />
+              <span className="truncate">{target.label}</span>
+              <span className="flex-shrink-0">+</span>
+              <Input
+                type="number"
+                min={0}
+                value={bonus.get(target.itemId) ?? 0}
+                onChange={e => onChange(target.itemId, toCount(e.target.value))}
+                aria-label={t('event-shop-bonus-label', '{{name}} のドロップボーナス', { name: target.label })}
+                className="h-7 w-14 px-1.5 flex-shrink-0"
+              />
+            </label>
+          ))}
+        </div>
+      )}
       {unappliedLabels.length > 0 && (
         <p className="text-xs" style={{ color: 'var(--red)' }}>
           {t('event-shop-bonus-unapplied', '{{names}} はデータの更新前のため、ボーナスを反映できません。', {

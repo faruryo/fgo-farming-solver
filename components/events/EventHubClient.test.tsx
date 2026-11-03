@@ -1030,11 +1030,11 @@ describe('EventHubClient', () => {
       expect(document.body.textContent).not.toContain('サーヴァント')
     })
 
-    it('ボーナスのカードの直下に1周の獲得量の表があり、通貨ごとのカードより上にある', () => {
+    it('ボーナスのカードの直下に1周の獲得量の表があり、通貨ごとのカードより下にある', () => {
       renderShop(bonusEvent(), POINT)
       const perRun = screen.getByTestId('shop-per-run')
       expect(bonusCard().nextElementSibling).toBe(perRun)
-      expect(perRun.compareDocumentPosition(cardOf('武蔵うどん')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(bonusCard().compareDocumentPosition(cardOf('武蔵うどん')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
     })
 
     it('通貨もポイントも落ちないクエストは表に出ず、値は小数1桁', () => {
@@ -1091,6 +1091,12 @@ describe('EventHubClient', () => {
       expect(bonusInput('武蔵うどん')).toHaveValue(2)
       expect(perRunCells()).toEqual([['上級AP40', '20.0+10.0', '-', '-', '600.0']])
       expect(screen.getByText('15 周')).toBeInTheDocument()
+    })
+
+    it('☆ と通貨の対応を持たないデータでは、データの更新前の1行とすべての通貨の欄を出す', () => {
+      renderShop(bonusEvent(), POINT)
+      expect(within(bonusCard()).getByText('データの更新前のため、礼装の枚数を比べられません。')).toBeInTheDocument()
+      expect(screen.queryByLabelText('フレンドの礼装')).not.toBeInTheDocument()
     })
   })
 
@@ -1218,6 +1224,268 @@ describe('EventHubClient', () => {
       expect(ownedInput('武蔵うどん')).toHaveValue(0)
       expect(ownedInput('江戸むすび')).toHaveValue(120)
       expect(bonusInput('武蔵うどん')).toHaveValue(0)
+    })
+  })
+
+  describe('ボーナス礼装の枚数の比較', () => {
+    const GOLD = 94101
+    const SILVER = 94102
+    const BRONZE = 94103
+    const MORI = 94104
+    const POINT = 94199
+    const ceEvent = (overrides: Partial<EventPlannerEvent> = {}) =>
+      event({
+        shop: [
+          shopEntry(1, GOLD, { costName: '金の通貨', costAmount: 30, limitNum: 10 }),
+          shopEntry(2, SILVER, { costName: '銀の通貨', costAmount: 10, limitNum: 10 }),
+          shopEntry(3, BRONZE, { costName: '銅の通貨' }),
+          shopEntry(4, MORI, { costName: '盛りの通貨', costAmount: 25, limitNum: 10 }),
+        ],
+        farmingNodes: [
+          {
+            questId: 1,
+            name: '金のクエスト',
+            ap: 40,
+            drops: [
+              { itemId: GOLD, perRun: 10, countPerRun: 5 },
+              { itemId: POINT, perRun: 600, countPerRun: 3, name: 'ポイント' },
+            ],
+          },
+          { questId: 2, name: '盛りのクエスト', ap: 20, drops: [{ itemId: MORI, perRun: 10, countPerRun: 5 }] },
+        ],
+        bonusRarities: [
+          {
+            rarity: 5,
+            itemId: GOLD,
+            craftEssences: [{ id: 501, name: '金の礼装', face: 'https://static.atlasacademy.io/JP/Faces/f_5010.png' }],
+            bonus: { base: 1, max: 2 },
+          },
+          { rarity: 4, itemId: SILVER, craftEssences: [{ id: 401, name: '銀の礼装A' }, { id: 402, name: '銀の礼装B' }] },
+          { rarity: 3, itemId: BRONZE, craftEssences: [{ id: 301, name: '銅の礼装' }] },
+        ],
+        ...overrides,
+      })
+    const renderShop = (shopEvent: EventPlannerEvent) =>
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} pointItemId={POINT} />)
+    const bonusCard = () =>
+      screen.getByRole('heading', { name: 'ドロップ増加礼装' }).closest('div.rounded-md') as HTMLElement
+    const setValue = (label: string, value: string) =>
+      fireEvent.change(screen.getByLabelText(label), { target: { value } })
+    const select = (name: string, count: string) => setValue(`${name} の交換回数`, count)
+    /** 「枚数ごとの行」の入力（☆5 はデータの凸 +2・無凸 +1、無凸 2 枚、フレンド ☆5）と金の通貨の必要量 300。 */
+    const fillStar5 = () => {
+      select('素材1', '10')
+      setValue('☆5 無凸の所持枚数', '2')
+    }
+    const friend = (name: string) => screen.getByRole('radio', { name })
+    const tableRows = () =>
+      Array.from(screen.getByTestId('bonus-comparison').querySelectorAll('tbody tr')).map(row =>
+        Array.from(row.querySelectorAll('td'))
+          .slice(1)
+          .map(td => td.textContent),
+      )
+    const radio = (total: number) => screen.getByRole('radio', { name: `合計 ${total} 枚を使う` })
+
+    it('☆ ごとに礼装の名前・通貨の名前と増え方、初期値 0 の所持枚数の欄を出し、+N の欄はデータに +N が無い ☆ だけに出す', () => {
+      renderShop(ceEvent())
+      const star5 = screen.getByTestId('bonus-rarity-5')
+      expect(within(star5).getByText('金の礼装')).toBeInTheDocument()
+      expect(within(star5).getByText('金の通貨')).toBeInTheDocument()
+      expect(within(star5).getByText('無凸 +1／凸 +2')).toBeInTheDocument()
+      expect(within(star5).queryByLabelText('☆5 凸の +N')).not.toBeInTheDocument()
+      expect(within(star5).queryByLabelText('☆5 無凸の +N')).not.toBeInTheDocument()
+      expect(within(screen.getByTestId('bonus-rarity-4')).getByText('銀の礼装A／銀の礼装B')).toBeInTheDocument()
+      for (const [rarity, name] of [
+        [4, '銀の通貨'],
+        [3, '銅の通貨'],
+      ] as const) {
+        const fieldset = screen.getByTestId(`bonus-rarity-${rarity}`)
+        expect(within(fieldset).getByText(name)).toBeInTheDocument()
+        for (const label of ['凸の +N', '無凸の +N']) {
+          expect(within(fieldset).getByLabelText(`☆${rarity} ${label}`)).toHaveValue(0)
+        }
+      }
+      for (const rarity of [5, 4, 3]) {
+        for (const label of ['凸の所持枚数', '無凸の所持枚数']) {
+          expect(screen.getByLabelText(`☆${rarity} ${label}`)).toHaveValue(0)
+        }
+      }
+      const friends = within(screen.getByRole('radiogroup', { name: 'フレンドの礼装' }))
+      expect(friends.getAllByRole('radio').map(radio => radio.getAttribute('aria-label'))).toEqual([
+        'なし',
+        '金の礼装',
+        '銀の礼装A／銀の礼装B',
+        '銅の礼装',
+      ])
+      expect(friend('金の礼装')).toBeChecked()
+      expect(screen.getByLabelText('盛りの通貨 のドロップボーナス')).toHaveValue(0)
+      expect(screen.getByLabelText('ポイント のドロップボーナス')).toHaveValue(0)
+      for (const name of ['金の通貨', '銀の通貨', '銅の通貨']) {
+        expect(screen.queryByLabelText(`${name} のドロップボーナス`)).not.toBeInTheDocument()
+      }
+      expect(
+        within(bonusCard()).getByText('手持ちの礼装を入れると、枚数ごとの周回数と AP を比べ、選んだ編成で周回数を計算します'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('データの更新前のため、礼装の枚数を比べられません。')).not.toBeInTheDocument()
+    })
+
+    it('品目を選び ☆5 の値と所持を入れると、合計枚数ごとの行（周回数・AP・AP の減り）が出る', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      expect(tableRows()).toEqual([
+        ['1', '1', '0', '0', '15', '600', '-'],
+        ['2', '2', '0', '0', '12', '480', '120'],
+        ['3', '3', '0', '0', '10', '400', '80'],
+      ])
+    })
+
+    it('品目を選んでいないとき・所持数で足りているときは表を出さず、周回で集める通貨が無いことを出す', () => {
+      renderShop(ceEvent())
+      const NO_NEED = '周回で集める通貨が無いため、枚数の比較はありません。'
+      expect(screen.queryByTestId('bonus-comparison')).not.toBeInTheDocument()
+      expect(screen.getByText(NO_NEED)).toBeInTheDocument()
+
+      fillStar5()
+      expect(screen.getByTestId('bonus-comparison')).toBeInTheDocument()
+      setValue('金の通貨 の所持数', '1000')
+      expect(screen.queryByTestId('bonus-comparison')).not.toBeInTheDocument()
+      expect(screen.getByText(NO_NEED)).toBeInTheDocument()
+    })
+
+    it('周回では集められない通貨があるときは、表の近くにその旨を出す', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      select('素材2', '1')
+      expect(tableRows()[0]).toEqual(['1', '1', '0', '0', '15', '600', '-'])
+      expect(
+        within(bonusCard()).getByText('銀の通貨 は周回では集められないため、集められる通貨だけで比べています。'),
+      ).toBeInTheDocument()
+    })
+
+    it('対応が空のイベントでは ☆ ごとの欄もデータの更新前の1行も出さず、通貨ごとの欄を出す', () => {
+      renderShop(ceEvent({ bonusRarities: [] }))
+      expect(screen.queryByLabelText('フレンドの礼装')).not.toBeInTheDocument()
+      expect(screen.queryByText('データの更新前のため、礼装の枚数を比べられません。')).not.toBeInTheDocument()
+      for (const name of ['金の通貨', '銀の通貨', '銅の通貨', '盛りの通貨', 'ポイント']) {
+        expect(screen.getByLabelText(`${name} のドロップボーナス`)).toHaveValue(0)
+      }
+    })
+
+    it('AP 最少の行が選ばれ、別の行を選ぶと周回の内訳と合計が変わり、選んだ行が無くなると AP 最少の行に戻る', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      expect(radio(3)).toBeChecked()
+      expect(screen.getByText('10 周')).toBeInTheDocument()
+      expect(screen.getByText('合計 10 周・AP 400')).toBeInTheDocument()
+
+      fireEvent.click(radio(1))
+      expect(radio(1)).toBeChecked()
+      expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+
+      fireEvent.click(radio(3))
+      setValue('☆5 無凸の所持枚数', '1')
+      expect(screen.queryByRole('radio', { name: '合計 3 枚を使う' })).not.toBeInTheDocument()
+      expect(radio(2)).toBeChecked()
+      expect(screen.getByText('合計 12 周・AP 480')).toBeInTheDocument()
+    })
+
+    it('対応しない通貨の欄の値を、比較の表の各行と周回の内訳の両方に使う', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      select('素材4', '10')
+      setValue('盛りの通貨 のドロップボーナス', '3')
+      // 盛りは 10 + 5 × 3 = 25 で 10 周・200 AP。金は各行の編成で解く。
+      expect(tableRows().map(row => row.slice(0, 1).concat(row.slice(4, 6)))).toEqual([
+        ['1', '25', '800'],
+        ['2', '22', '680'],
+        ['3', '20', '600'],
+      ])
+      expect(screen.getByText('合計 20 周・AP 600')).toBeInTheDocument()
+    })
+
+    it('☆ ごとの欄に -3 と 2.5 を入れると 0 と 2 として扱う', () => {
+      renderShop(ceEvent())
+      setValue('☆4 凸の +N', '-3')
+      expect(screen.getByLabelText('☆4 凸の +N')).toHaveValue(0)
+      setValue('☆5 凸の所持枚数', '2.5')
+      expect(screen.getByLabelText('☆5 凸の所持枚数')).toHaveValue(2)
+    })
+
+    const savedEntry = () => {
+      const key = Object.keys(localStorage).find(k => k.startsWith('events/shopInputs/'))
+      return key === undefined ? undefined : { key, json: localStorage.getItem(key) ?? '' }
+    }
+    const totalLine = () => screen.getByText(/^合計 \d+ 周・AP \d+$/).textContent
+
+    it('☆ ごとの欄・フレンドの礼装・選んだ行は開き直しても残り、周回の内訳はその行の編成のまま', () => {
+      const { unmount } = renderShop(ceEvent())
+      fillStar5()
+      setValue('☆5 凸の所持枚数', '1')
+      setValue('☆4 凸の +N', '3')
+      fireEvent.click(friend('なし'))
+      fireEvent.click(radio(1))
+      const before = totalLine()
+      unmount()
+
+      renderShop(ceEvent())
+      expect(screen.getByLabelText('☆5 凸の所持枚数')).toHaveValue(1)
+      expect(screen.getByLabelText('☆5 無凸の所持枚数')).toHaveValue(2)
+      expect(screen.getByLabelText('☆4 凸の +N')).toHaveValue(3)
+      expect(friend('なし')).toBeChecked()
+      expect(radio(1)).toBeChecked()
+      expect(totalLine()).toBe(before)
+    })
+
+    it('表が消えてまた出ても、選んだ行は残る', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      fireEvent.click(radio(1))
+      setValue('金の通貨 の所持数', '1000')
+      expect(screen.queryByTestId('bonus-comparison')).not.toBeInTheDocument()
+      setValue('金の通貨 の所持数', '0')
+      expect(radio(1)).toBeChecked()
+      expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+    })
+
+    it('開いたときに保存した行が表に無ければ AP 最少の行を出し、対応に無いフレンドの ☆ は初期値にし、保存値は書き換えない', () => {
+      const { unmount } = renderShop(ceEvent())
+      fillStar5()
+      unmount()
+      const saved = savedEntry()
+      if (!saved) throw new Error('交換所の入力が保存されていない')
+      const stale = JSON.stringify({ ...JSON.parse(saved.json), selectedTotal: 7, friendRarity: 2 })
+      localStorage.setItem(saved.key, stale)
+
+      renderShop(ceEvent())
+      expect(radio(3)).toBeChecked()
+      expect(friend('金の礼装')).toBeChecked()
+      expect(screen.getByText('合計 10 周・AP 400')).toBeInTheDocument()
+      expect(localStorage.getItem(saved.key)).toBe(stale)
+    })
+
+    it('データに +N がある ☆ は、保存した +N を使わずデータの +N で比べる', () => {
+      const { unmount } = renderShop(ceEvent())
+      fillStar5()
+      unmount()
+      const saved = savedEntry()
+      if (!saved) throw new Error('交換所の入力が保存されていない')
+      const parsed = JSON.parse(saved.json) as { rarity: Record<string, Record<string, number>> }
+      localStorage.setItem(
+        saved.key,
+        JSON.stringify({ ...parsed, rarity: { ...parsed.rarity, 5: { ...parsed.rarity['5'], maxBonus: 9, baseBonus: 9 } } }),
+      )
+
+      renderShop(ceEvent())
+      expect(tableRows()).toEqual([
+        ['1', '1', '0', '0', '15', '600', '-'],
+        ['2', '2', '0', '0', '12', '480', '120'],
+        ['3', '3', '0', '0', '10', '400', '80'],
+      ])
+    })
+
+    it('ボーナス礼装の入力は、開いただけでは保存しない', () => {
+      renderShop(ceEvent())
+      expect(savedEntry()).toBeUndefined()
     })
   })
 })

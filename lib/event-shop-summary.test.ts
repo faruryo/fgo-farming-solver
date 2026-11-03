@@ -481,7 +481,7 @@ describe('交換回数の品目キー', () => {
 })
 
 describe('readShopSavedInputs', () => {
-  const empty = { counts: {}, owned: {}, bonus: {} }
+  const empty = { counts: {}, owned: {}, bonus: {}, rarity: {} }
 
   it('保存値全体が表でなければ空の3つの表として読む', () => {
     for (const value of [null, 'abc', 3, [1, 2], undefined]) expect(readShopSavedInputs(value)).toEqual(empty)
@@ -494,7 +494,25 @@ describe('readShopSavedInputs', () => {
         owned: { 10: -5, 11: 120, 12: Number.POSITIVE_INFINITY, 13: null },
         bonus: [2],
       }),
-    ).toEqual({ counts: { 'item:2:1:10:20:0': 2 }, owned: { 10: 0, 11: 120 }, bonus: {} })
+    ).toEqual({ counts: { 'item:2:1:10:20:0': 2 }, owned: { 10: 0, 11: 120 }, bonus: {}, rarity: {} })
+  })
+
+  it('☆ ごとの表は同じ規則で直し、フレンドの ☆ と選んだ合計枚数は 0 以上の整数（フレンドは null も）だけ使う', () => {
+    expect(
+      readShopSavedInputs({
+        rarity: { 5: { maxBonus: 2.5, baseOwned: -1, maxOwned: 'x' }, 4: 'broken' },
+        friendRarity: null,
+        selectedTotal: 3,
+      }),
+    ).toEqual({
+      ...empty,
+      rarity: { 5: { maxBonus: 2, baseOwned: 0 }, 4: {} },
+      friendRarity: null,
+      selectedTotal: 3,
+    })
+    for (const bad of [-1, 2.5, '5', Number.NaN, {}]) {
+      expect(readShopSavedInputs({ friendRarity: bad, selectedTotal: bad })).toEqual(empty)
+    }
   })
 
   it('番号の表から今の欄の番号だけを取り出す', () => {
