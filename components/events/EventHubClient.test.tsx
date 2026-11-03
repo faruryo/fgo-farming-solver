@@ -1333,9 +1333,28 @@ describe('EventHubClient', () => {
       renderShop(ceEvent())
       fillStar5()
       expect(tableRows()).toEqual([
-        ['1', '1', '0', '0', '15', '600', '-'],
-        ['2', '2', '0', '0', '12', '480', '120'],
-        ['3', '3', '0', '0', '10', '400', '80'],
+        ['1', '0＋フレンド1', '0', '0', '15', '600', '-'],
+        ['2', '1＋フレンド1', '0', '0', '12', '480', '120'],
+        ['3', '2＋フレンド1', '0', '0', '10', '400', '80'],
+      ])
+    })
+
+    it('フレンドの礼装を選んでいるときは、表の上にフレンドの1枚を含むことを出し、「なし」では出さず ☆ の列も自分の枚数だけにする', () => {
+      renderShop(ceEvent())
+      fillStar5()
+      const NOTE = '合計枚数には、フレンドから借りる ☆5 金の礼装（凸）1枚を含みます'
+      expect(within(bonusCard()).getByText(NOTE)).toBeInTheDocument()
+      fireEvent.click(friend('銀の礼装A／銀の礼装B'))
+      expect(
+        within(bonusCard()).getByText('合計枚数には、フレンドから借りる ☆4 銀の礼装A／銀の礼装B（凸）1枚を含みます'),
+      ).toBeInTheDocument()
+      expect(tableRows()[0].slice(0, 4)).toEqual(['1', '0', '0＋フレンド1', '0'])
+      fireEvent.click(friend('なし'))
+      expect(within(bonusCard()).queryByText(/^合計枚数には/)).not.toBeInTheDocument()
+      expect(tableRows().map(row => row.slice(0, 4))).toEqual([
+        ['0', '0', '0', '0'],
+        ['1', '1', '0', '0'],
+        ['2', '2', '0', '0'],
       ])
     })
 
@@ -1356,7 +1375,7 @@ describe('EventHubClient', () => {
       renderShop(ceEvent())
       fillStar5()
       select('素材2', '1')
-      expect(tableRows()[0]).toEqual(['1', '1', '0', '0', '15', '600', '-'])
+      expect(tableRows()[0]).toEqual(['1', '0＋フレンド1', '0', '0', '15', '600', '-'])
       expect(
         within(bonusCard()).getByText('銀の通貨 は周回では集められないため、集められる通貨だけで比べています。'),
       ).toBeInTheDocument()
@@ -1477,9 +1496,9 @@ describe('EventHubClient', () => {
 
       renderShop(ceEvent())
       expect(tableRows()).toEqual([
-        ['1', '1', '0', '0', '15', '600', '-'],
-        ['2', '2', '0', '0', '12', '480', '120'],
-        ['3', '3', '0', '0', '10', '400', '80'],
+        ['1', '0＋フレンド1', '0', '0', '15', '600', '-'],
+        ['2', '1＋フレンド1', '0', '0', '12', '480', '120'],
+        ['3', '2＋フレンド1', '0', '0', '10', '400', '80'],
       ])
     })
 

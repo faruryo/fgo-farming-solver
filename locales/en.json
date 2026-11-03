@@ -577,6 +577,8 @@
     "event-shop-ce-friend-none": "None",
     "event-shop-ce-col-select": "Use",
     "event-shop-ce-col-total": "Total CEs",
+    "event-shop-ce-friend-included": "The total includes 1 ★{{rarity}} {{name}} (MLB) borrowed from a friend",
+    "event-shop-ce-friend-cell": "{{own}} + friend 1",
     "event-shop-ce-col-laps": "Runs",
     "event-shop-ce-col-ap": "AP",
     "event-shop-ce-col-ap-drop": "AP saved",
