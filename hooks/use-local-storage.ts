@@ -52,6 +52,8 @@ export const useLocalStorage = <T>(
   // 保存値を読み終えたキー。値の setState と同じ effect で立てるので、
   // 3つ目の返り値が true の描画では値も保存値（無ければ初期値）になっている。
   // キーが変わった描画では、新しいキーを読み終えるまで false になる。
+  // ただし保存値の無いキーへ切り替えたときは前のキーの値が残るので、
+  // キーが変わり得る呼び出し側は key で作り直す（EventHubClient の EventShopList など）。
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
 
   const stateRef = useRef(state)
