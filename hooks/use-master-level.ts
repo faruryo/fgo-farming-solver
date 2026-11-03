@@ -22,8 +22,10 @@ export const useMasterLevel = (): {
   level: number
   setLevel: (level: number) => void
   maxAp: number
+  /** 保存値を読み終えたか。読む前の level は既定値。 */
+  loaded: boolean
 } => {
-  const [level, setLevel] = useLocalStorage<number>(
+  const [level, setLevel, loaded] = useLocalStorage<number>(
     MASTER_LEVEL_KEY,
     MAX_MASTER_LEVEL,
   )
@@ -34,5 +36,5 @@ export const useMasterLevel = (): {
   )
   const maxAp = useMemo(() => maxApForLevel(clamped), [clamped])
 
-  return { level: clamped, setLevel, maxAp }
+  return { level: clamped, setLevel, maxAp, loaded }
 }

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Link } from '../common/link'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 import {
@@ -486,7 +487,7 @@ const PlanBreakdown: React.FC<{
 /** 周回の合計 AP を回復するのに要る数（箱計画と同じ規則・同じ保存先の値）。 */
 const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp, partial }) => {
   const { t } = useTranslation('events')
-  const { maxAp, goldenFruitOwned } = useApBudgetProfile()
+  const { maxAp, goldenFruitOwned, loaded } = useApBudgetProfile()
   const apBudget = useMemo(() => computeApBudget(totalAp, maxAp, goldenFruitOwned), [totalAp, maxAp, goldenFruitOwned])
   return (
     <div data-testid="shop-ap-budget" className="flex flex-col gap-4">
@@ -494,12 +495,24 @@ const ShopApBudget: React.FC<{ totalAp: number; partial: boolean }> = ({ totalAp
         className="rounded-md flex flex-col gap-2 px-4 py-3"
         style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
       >
-        <ApBudgetBreakdown apBudget={apBudget} />
+        {loaded ? (
+          <ApBudgetBreakdown apBudget={apBudget} />
+        ) : (
+          <div aria-busy="true">
+            <Skeleton className="h-20 w-full" />
+          </div>
+        )}
         {partial && (
           <Message>{t('event-shop-ap-budget-partial', '周回で集められる通貨の分の AP で計算しています。')}</Message>
         )}
       </div>
-      <ApBudgetInputs />
+      {loaded ? (
+        <ApBudgetInputs />
+      ) : (
+        <div aria-busy="true">
+          <Skeleton className="h-40 w-full" />
+        </div>
+      )}
     </div>
   )
 }
@@ -627,23 +640,31 @@ const RosterLine: React.FC<{
   onReloadCatalog: () => void
 }> = ({ status, summary, catalogFailed, onReloadCatalog }) => {
   const { t } = useTranslation('events')
-  if (status === 'empty') {
-    return (
-      <p className="text-xs flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--text3)' }}>
-        <span>{t('event-shop-roster-empty', '育成対象を設定すると、足りている品目と要る分が分かります。')}</span>
-        <Link href="/material" className="font-semibold" style={{ color: 'var(--gold)' }}>
-          {t('event-shop-roster-link', '育成対象を設定する')}
-        </Link>
-      </p>
-    )
-  }
-  if (status === 'loading') return <Message>{t('event-shop-roster-loading', '育成計画を読み込み中...')}</Message>
-  if (status === 'error') {
-    return (
-      <p className="text-xs" style={{ color: 'var(--red)' }}>
-        {t('event-roster-material-error', '育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。')}
-      </p>
-    )
+  switch (status) {
+    case 'empty':
+      return (
+        <p className="text-xs flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--text3)' }}>
+          <span>{t('event-shop-roster-empty', '育成対象を設定すると、足りている品目と要る分が分かります。')}</span>
+          <Link href="/material" className="font-semibold" style={{ color: 'var(--gold)' }}>
+            {t('event-shop-roster-link', '育成対象を設定する')}
+          </Link>
+        </p>
+      )
+    case 'unread':
+    case 'loading':
+      return <Message>{t('event-shop-roster-loading', '育成計画を読み込み中...')}</Message>
+    case 'error':
+      return (
+        <p className="text-xs" style={{ color: 'var(--red)' }}>
+          {t('event-roster-material-error', '育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。')}
+        </p>
+      )
+    case 'ready':
+      break
+    default: {
+      const unhandled: never = status
+      return unhandled
+    }
   }
   return (
     <div data-testid="shop-shortfall-summary" className="flex flex-col items-start gap-1">
@@ -696,7 +717,7 @@ const NO_WANTED: Record<string, boolean> = {}
  * ほかの品目は「要る」だけを持ち、「要らない」に戻したらキーを消す。
  */
 const useWantedItems = (shop: EventShopItem[]) => {
-  const [wanted, setWanted] = useLocalStorage<Record<string, boolean>>(
+  const [wanted, setWanted, loaded] = useLocalStorage<Record<string, boolean>>(
     STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS,
     NO_WANTED,
     { lazyWrite: true, onGet: recordOrEmpty },
@@ -717,19 +738,19 @@ const useWantedItems = (shop: EventShopItem[]) => {
       if (isDefaultWanted(item)) return { ...rest, [key]: value }
       return value ? { ...rest, [key]: true } : rest
     })
-  return { wantedKeys, setItemWanted }
+  return { wantedKeys, setItemWanted, loaded }
 }
 
 /** 育成計画と実所持数から、品目の状態と不足素材のみの回数を出す。育成計画と所持数は読むだけ。 */
 const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchangeCounts) => void) => {
   const roster = useRosterNeed()
   // 周回目標（STORAGE_KEYS.ITEMS）ではなく実所持数を使う。
-  const [possession] = useLocalStorage<Record<string, number | undefined>>(
+  const [possession, , possessionLoaded] = useLocalStorage<Record<string, number | undefined>>(
     STORAGE_KEYS.POSSESSION,
     {},
     { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
   )
-  const { wantedKeys, setItemWanted } = useWantedItems(shop)
+  const { wantedKeys, setItemWanted, loaded: wantedLoaded } = useWantedItems(shop)
   const [planItemIds, setPlanItemIds] = useState<PlanItemIds>()
   const [unlimitedPrompt, setUnlimitedPrompt] = useState<ReadonlySet<number>>(() => new Set())
 
@@ -763,6 +784,8 @@ const useShopRosterPlan = (shop: EventShopItem[], setCounts: (counts: ShopExchan
 
   return {
     roster,
+    /** 所持数・「要る」・育成計画の保存値をすべて読み終えたか。 */
+    loaded: possessionLoaded && wantedLoaded && roster.status !== 'unread',
     /** 素材カタログは育成計画が使えるときだけ読む。 */
     loader: ready ? <PlanItemIdsLoader onChange={setPlanItemIds} /> : null,
     summary,
@@ -1037,6 +1060,24 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
   )
 }
 
+/**
+ * 保存値を読み終えるまでの交換所の表示。通貨ごとの表のおおよその高さを持たせ、読み終えた時のずれを小さくする。
+ * 育成計画の素材の読み込み（`loader`）は待たずに置く。
+ */
+const ShopLoadingSkeleton: React.FC<{ groups: ShopCurrencyGroup[]; loader: React.ReactNode }> = ({ groups, loader }) => (
+  <div className="flex flex-col gap-4">
+    {loader}
+    <div aria-busy="true" className="flex flex-col gap-4">
+      <Skeleton className="h-5 w-64" />
+      <Skeleton className="h-16 w-full" />
+      {groups.map(group => (
+        <Skeleton key={group.costItemId} className="w-full" style={{ height: 96 + group.items.length * 41 }} />
+      ))}
+      <Skeleton className="h-32 w-full" />
+    </div>
+  </div>
+)
+
 const EMPTY_SHOP_INPUTS: ShopSavedInputs = { counts: {}, owned: {}, bonus: {}, rarity: {} }
 
 /** 保存した ☆ の表から、凸・無凸の +N と所持枚数だけを取り出す（無い値は 0）。 */
@@ -1082,7 +1123,7 @@ interface ShopSavedState {
 /** 交換所の入力をイベントごとに端末へ保存して読む。保存値との競合で入れた値が消えないよう、書き込みはすべて関数形で行う。 */
 const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[], pointItemId: number | undefined) => {
   const { shop } = event
-  const [inputs, setInputs] = useLocalStorage<ShopSavedInputs>(eventShopInputsKey(event.id), EMPTY_SHOP_INPUTS, {
+  const [inputs, setInputs, loaded] = useLocalStorage<ShopSavedInputs>(eventShopInputsKey(event.id), EMPTY_SHOP_INPUTS, {
     lazyWrite: true,
     onGet: readShopSavedInputs,
   })
@@ -1109,7 +1150,7 @@ const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[
   const setOwned = (id: number, value: number) => edit(prev => ({ ...prev, owned: { ...prev.owned, [id]: value } }))
   const setBonus = (id: number, value: number) => edit(prev => ({ ...prev, bonus: { ...prev.bonus, [id]: value } }))
   const saved: ShopSavedState = { inputs, edit, edited }
-  return { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus, saved }
+  return { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus, saved, loaded }
 }
 
 /**
@@ -1126,7 +1167,7 @@ export const EventShopList: React.FC<{
 }> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
   const { shop } = event
   const groups = useMemo(() => groupShopByCurrency(shop), [shop])
-  const { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus, saved } = useShopSavedInputs(
+  const { counts, owned, bonus, updateCounts, replaceCounts, setOwned, setBonus, saved, loaded } = useShopSavedInputs(
     event,
     groups,
     pointItemId,
@@ -1142,6 +1183,9 @@ export const EventShopList: React.FC<{
 
   const labelOf = (id: number) => targets.find(target => target.itemId === id)?.label ?? `#${id}`
   const bonusApplied = [...effectiveBonus.values()].some(n => n > 0)
+
+  // 保存値を読む前の値は初期値（0・空）なので、読み終えるまで欄も計算結果も出さない。
+  if (!loaded || !rosterPlan.loaded) return <ShopLoadingSkeleton groups={groups} loader={rosterPlan.loader} />
 
   return (
     <div className="flex flex-col gap-4">

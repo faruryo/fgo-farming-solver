@@ -135,6 +135,15 @@ describe('EventCraftSection', () => {
     vi.restoreAllMocks()
   })
 
+  it('育成計画を読む前は未設定の案内を出さず、読み込み中にする', () => {
+    rosterMock = { status: 'unread' }
+    stubDrops(baseDrops)
+    render(<EventCraftSection items={items} />)
+    expect(screen.getByText('データを読み込み中...')).toBeInTheDocument()
+    expect(screen.queryByText(/育成対象のサーヴァントを設定すると/)).toBeNull()
+    expect(screen.queryByRole('link', { name: '育成対象を設定する' })).toBeNull()
+  })
+
   it('実所持数 POSSESSION で fullNeed を作り、周回目標 ITEMS とは独立', async () => {
     rosterMock = ready({ 6516: 10, 6517: 5 })
     setLs(STORAGE_KEYS.POSSESSION, { 6516: 3, 6517: 0 })

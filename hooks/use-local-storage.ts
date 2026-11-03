@@ -42,13 +42,17 @@ export const useLocalStorage = <T>(
     // （壊れていない端末のクラウド値を補正だけで上書きしない）。
     repairOnGet?: boolean
   }
-): [T, Dispatch<SetStateAction<T>>] => {
+): [T, Dispatch<SetStateAction<T>>, boolean] => {
   // Always initialize with initialState to avoid SSR/hydration mismatch.
   // Reading localStorage in the useState initializer causes the server to render
   // with initialState while the client renders with the stored value, which React
   // treats as a hydration error.
   const [state, setState] = useState<T>(initialState)
   const [isInitialized, setIsInitialized] = useState(false)
+  // 保存値を読み終えたキー。値の setState と同じ effect で立てるので、
+  // 3つ目の返り値が true の描画では値も保存値（無ければ初期値）になっている。
+  // キーが変わった描画では、新しいキーを読み終えるまで false になる。
+  const [loadedKey, setLoadedKey] = useState<string | null>(null)
 
   const stateRef = useRef(state)
   stateRef.current = state
@@ -77,6 +81,7 @@ export const useLocalStorage = <T>(
       }
     }
     setIsInitialized(true)
+    setLoadedKey(key)
   }, [key])
 
   // Persist state changes to localStorage (only after initialization to avoid
@@ -129,5 +134,5 @@ export const useLocalStorage = <T>(
     setState(value)
   }, [])
 
-  return [state, lazyWrite ? setEditedState : setState]
+  return [state, lazyWrite ? setEditedState : setState, loadedKey === key]
 }

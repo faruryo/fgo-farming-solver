@@ -385,3 +385,67 @@ describe('useLocalStorage repairOnGet', () => {
     expect(localStorage.getItem('test/repair-sync')).toBe('{"2":4}')
   })
 })
+
+describe('useLocalStorage の読み終えた印', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  /** 描画ごとの [値, 印] を順に残す。 */
+  const recordRenders = <T,>(key: () => string, initial: T, options?: { useInitial?: boolean; lazyWrite?: boolean }) => {
+    const renders: [T, boolean][] = []
+    const hook = renderHook(() => {
+      const result = useLocalStorage<T>(key(), initial, options)
+      renders.push([result[0], result[2]])
+      return result
+    })
+    return { renders, ...hook }
+  }
+
+  it('最初の描画では印が立たず初期値で、印が立った描画では値が保存値になっている', async () => {
+    localStorage.setItem('test/loaded', '{"count":5}')
+    const { renders, result } = recordRenders(() => 'test/loaded', { count: 0 })
+
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(renders[0]).toEqual([{ count: 0 }, false])
+    const loaded = renders.filter(([, flag]) => flag)
+    expect(loaded.length).toBeGreaterThan(0)
+    for (const [value] of loaded) expect(value).toEqual({ count: 5 })
+  })
+
+  it('保存値が無ければ、印が立った描画の値は初期値', async () => {
+    const { renders, result } = recordRenders(() => 'test/loaded-none', { count: 0 }, { lazyWrite: true })
+
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(renders[0]).toEqual([{ count: 0 }, false])
+    for (const [value] of renders.filter(([, flag]) => flag)) expect(value).toEqual({ count: 0 })
+    expect(localStorage.getItem('test/loaded-none')).toBeNull()
+  })
+
+  it('useInitial でもマウント後に印が立ち、値は初期値のまま', async () => {
+    localStorage.setItem('test/loaded-initial', '{"count":5}')
+    const { renders, result } = recordRenders(() => 'test/loaded-initial', { count: 0 }, { useInitial: true })
+
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(renders[0]).toEqual([{ count: 0 }, false])
+    expect(result.current[0]).toEqual({ count: 0 })
+  })
+
+  it('キーを変えた描画では印が立たず、新しいキーを読み終えると立つ', async () => {
+    localStorage.setItem('test/key-a', '1')
+    localStorage.setItem('test/key-b', '2')
+    let key = 'test/key-a'
+    const { renders, result, rerender } = recordRenders(() => key, 0, { lazyWrite: true })
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(result.current[0]).toBe(1)
+
+    const before = renders.length
+    key = 'test/key-b'
+    rerender()
+
+    expect(renders.at(before)).toEqual([1, false])
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(result.current[0]).toBe(2)
+    for (const [value] of renders.slice(before).filter(([, flag]) => flag)) expect(value).toBe(2)
+  })
+})
