@@ -2,13 +2,16 @@
 
 import { renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getMaterialsForServantIds } from '../lib/get-materials'
 import type { MaterialsForServants } from '../lib/get-materials'
+import type { MaterialCatalogV1 } from '../lib/material-catalog'
+import { loadMaterialCatalog } from './use-material-catalog'
 import { createChaldeaState, type ChaldeaState } from './create-chaldea-state'
 import { toAmounts, useRosterNeed } from './use-roster-need'
 
-vi.mock('../lib/get-materials', () => ({ getMaterialsForServantIds: vi.fn() }))
-const fetchMock = vi.mocked(getMaterialsForServantIds)
+vi.mock('./use-material-catalog', () => ({ loadMaterialCatalog: vi.fn() }))
+const fetchMock = vi.mocked(loadMaterialCatalog)
+const catalogOf = (materials: MaterialsForServants) =>
+  ({ schemaVersion: 1, updatedAt: 0, sources: {}, servants: [], items: [], materials }) as unknown as MaterialCatalogV1
 
 // 再臨 0→1 で素材 6001 ×5 と QP 1000。スキル・アペンドは対象外。
 const servantMaterials = (): MaterialsForServants[string] => ({
@@ -62,21 +65,25 @@ describe('useRosterNeed', () => {
       all: createChaldeaState(['all']).all,
       '3': createChaldeaState(['3'])['3'],
     })
-    fetchMock.mockResolvedValue({ '1': servantMaterials(), '2': servantMaterials() })
+    // カタログには育成対象外の 3・4 も入っている。
+    fetchMock.mockResolvedValue(
+      catalogOf({ '1': servantMaterials(), '2': servantMaterials(), '3': servantMaterials(), '4': servantMaterials() }),
+    )
     const setItem = vi.spyOn(Storage.prototype, 'setItem')
 
     const { result } = renderHook(() => useRosterNeed())
     await waitFor(() => expect(result.current.status).toBe('ready'))
 
-    expect(fetchMock).toHaveBeenCalledWith([1, 2])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     if (result.current.status !== 'ready') throw new Error('unreachable')
+    expect(Object.keys(result.current.materialsForServants)).toEqual(['1', '2'])
     expect(toAmounts(result.current.totalNeed)).toEqual({ '6001': 10, '1': 2000 })
     expect(setItem).not.toHaveBeenCalled()
   })
 
-  it('一部サーヴァントの素材が欠けたら error（計算しない）', async () => {
+  it('カタログに無いサーヴァントがいたら error（計算しない）', async () => {
     seedRoster(['1', '2'])
-    fetchMock.mockResolvedValue({ '1': servantMaterials() })
+    fetchMock.mockResolvedValue(catalogOf({ '1': servantMaterials() }))
     const { result } = renderHook(() => useRosterNeed())
     await waitFor(() => expect(result.current.status).toBe('error'))
   })
