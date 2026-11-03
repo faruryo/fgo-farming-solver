@@ -27,7 +27,7 @@
 
 ## Impact
 
-- `lib/refresh-event-data-compact.ts` の `compactShop`: Atlas の `priority` で並べ替えてから返す。保存するイベントデータ（KV `event_data_json`）の品目の並びが、取り込み直したイベントから変わる。品目の項目は増やさない
+- `lib/refresh-event-data-compact.ts` の `compactShop`: Atlas の `priority` で並べ替えてから返す。保存するイベントデータ（KV `event_data_json`）の品目の並びが、取り込み直したイベントから変わる。品目の項目は増やさない。イベントの通貨（`decideEventImport`）とボーナスの通貨の対応（`currencyIndividualities`）は、並べ替える前の Atlas の順の品目から決め、取り込み直しで変えない
 - 取り込みの定期ジョブは、開催中と終了後 30 日以内のイベントしか取り込み直さない。それより前に終わったイベントは、`refresh-event-data` の手動実行（`backfill_since`）で取り込み直すまで今の順で表示される
 - PR の preview は KV の今のデータを読むので、preview では新しい並び順を確かめられない（並びの変化は取り込みのテストと、取り込み直したデータを読ませた dev server で確かめる）
 - `lib/event-shop-summary.ts`: 1つの一覧の行（まとめた行を含む）を作る関数と、まとめた行の回数を通貨ごとの品目に分ける関数を足す。効率の順位付け（`orderShopByEfficiency`）を、通貨ごとではなく1つの一覧の行を並べるものに変える
