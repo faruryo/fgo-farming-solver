@@ -10,6 +10,7 @@ import {
   decideBonusRarities,
   decideEventImport,
   findPointItemId,
+  sortShopByPriority,
   tryCompact,
 } from './refresh-event-data-compact'
 import type {
@@ -182,6 +183,160 @@ describe('compactShop（サーヴァント扱いの交換）', () => {
       icon: 'a.png',
     })
     expect(item).not.toHaveProperty('kind')
+  })
+})
+
+describe('sortShopByPriority（ゲーム内の交換所の順）', () => {
+  const withOrder = (s: AtlasShopItem, priority: number | undefined, slot?: number): AtlasShopItem => ({
+    ...s,
+    ...(priority !== undefined ? { priority } : {}),
+    ...(slot !== undefined ? { slot } : {}),
+  })
+  const compactSorted = (shop: AtlasShopItem[]) => compactShop(sortShopByPriority(shop), itemMap, svtMap)
+  const tag = (s: EventShopItem) => `${s.itemId}:${s.costItemId}`
+
+  // 80632 の形: Atlas の配列では月より団子が先、priority ではサーヴァントコイン 10・20・30 → 団子 40・50・60
+  const COIN = 9000001
+  const coin = (cost: number, priority: number): AtlasShopItem =>
+    withOrder({ ...svtShop(COIN, cost, 16, 'サーヴァントコイン'), purchaseType: 'item', setNum: 10 }, priority, 1)
+  const atlas80632: AtlasShopItem[] = [
+    withOrder(svtShop(9306300, 94001, 2, '月より団子'), 40, 1),
+    withOrder(svtShop(9306300, 94002, 1, '月より団子'), 50, 1),
+    withOrder(svtShop(9306300, 94003, 1, '月より団子'), 60, 1),
+    coin(94001, 10),
+    coin(94002, 20),
+    coin(94003, 30),
+  ]
+
+  it('priority の順に並ぶ（80632 の形）', () => {
+    expect(compactSorted(atlas80632).map(tag)).toEqual([
+      `${COIN}:94001`,
+      `${COIN}:94002`,
+      `${COIN}:94003`,
+      '9306300:94001',
+      '9306300:94002',
+      '9306300:94003',
+    ])
+  })
+
+  it('slot の無い交換所データは1つの区分として priority の順に並ぶ', () => {
+    const shop = [
+      withOrder(atlasShop(94001, [100]), 30),
+      withOrder(atlasShop(94002, [100]), 10),
+      withOrder(atlasShop(94003, [100]), 20),
+    ]
+    expect(compactSorted(shop).map(s => s.costItemId)).toEqual([94002, 94003, 94001])
+  })
+
+  it('区分が複数あるとき、区分ごとに最小の priority の順でまとめ、区分の中は priority の順（80603 の形）', () => {
+    const entry = (cost: number, priority: number, slot: number) => withOrder(atlasShop(cost, [100]), priority, slot)
+    const shop = [
+      entry(1, 1002, 1),
+      entry(2, 1004, 1),
+      entry(3, 1001, 2),
+      entry(4, 1003, 2),
+      entry(5, 40, 3),
+      entry(6, 30, 3),
+    ]
+    expect(compactSorted(shop).map(s => s.costItemId)).toEqual([6, 5, 3, 4, 1, 2])
+  })
+
+  it('同じ priority の品目と1つの交換所データの複数の targetIds は元の順を保つ', () => {
+    const shop = [
+      withOrder(atlasShop(94003, [100]), 20),
+      withOrder(atlasShop(94001, [102, 100]), 10),
+      withOrder(atlasShop(94002, [100]), 10),
+    ]
+    expect(compactSorted(shop).map(s => `${s.itemId}:${s.costItemId}`)).toEqual([
+      '102:94001',
+      '100:94001',
+      '100:94002',
+      '100:94003',
+    ])
+  })
+
+  it('priority の無いデータがあると元の順のまま', () => {
+    const shop = [
+      withOrder(atlasShop(94003, [100]), 30),
+      withOrder(atlasShop(94001, [100]), undefined),
+      withOrder(atlasShop(94002, [100]), 10),
+    ]
+    expect(compactSorted(shop)).toEqual(compactShop(shop, itemMap, svtMap))
+  })
+
+  it('取り込まない交換所データの priority の有無は並べ替えに影響しない', () => {
+    const shop = [
+      withOrder(atlasShop(94003, [100]), 30),
+      { ...svtShop(8400990, 94001, 1, 'コマンドコード', 'commandCode') },
+      withOrder(atlasShop(94002, [100]), 10),
+    ]
+    expect(compactSorted(shop).map(s => s.costItemId)).toEqual([94002, 94003])
+  })
+
+  it('並べ替えで品目の数と各項目が変わらない', () => {
+    const sorted = compactSorted(atlas80632)
+    const unsorted = compactShop(atlas80632, itemMap, svtMap)
+    expect(sorted).toHaveLength(unsorted.length)
+    const byTag = (list: EventShopItem[]) => [...list].sort((a, b) => tag(a).localeCompare(tag(b)))
+    expect(byTag(sorted)).toEqual(byTag(unsorted))
+    for (const s of sorted) {
+      expect(s).not.toHaveProperty('priority')
+      expect(s).not.toHaveProperty('slot')
+    }
+  })
+})
+
+describe('並べ替えてもイベントの通貨と通貨の対応は変わらない', () => {
+  // 通貨 X と Y が同じ individuality を持ち、Atlas の順では X が先、priority の順では Y が先
+  const X = 95001
+  const Y = 95002
+  const orderItemMap: ItemMap = new Map([
+    [100, { name: '素材A', icon: 'a.png', type: 'skillLvUp' }],
+    [X, { name: '通貨X', icon: 'x.png', type: 'eventItem', individuality: [3001] }],
+    [Y, { name: '通貨Y', icon: 'y.png', type: 'eventItem', individuality: [3001] }],
+  ])
+  const atlas: AtlasShopItem[] = [
+    { ...atlasShop(X, [100]), priority: 20 },
+    { ...atlasShop(Y, [100]), priority: 10 },
+  ]
+  const atlasOrder = compactShop(atlas, orderItemMap)
+  const sorted = compactShop(sortShopByPriority(atlas), orderItemMap)
+  const ce: AtlasEquip = {
+    id: 1,
+    name: '礼装1',
+    rarity: 5,
+    skills: [
+      { condLimitCount: 0, functions: [{ funcType: 'eventDropUp', svals: [{ EventId: 80001, Individuality: 3001, AddCount: 1 }] }] },
+    ],
+  }
+
+  it('前提: Atlas の順と priority の順で最初の品目の通貨が違う', () => {
+    expect(atlasOrder[0].costItemId).toBe(X)
+    expect(sorted[0].costItemId).toBe(Y)
+  })
+
+  it('イベントの通貨は Atlas の順の品目から決まる', () => {
+    expect(decideEventImport(0, 0, atlasOrder, orderItemMap)).toMatchObject({ kind: 'shop', currency: { id: X } })
+  })
+
+  it('ボーナスの通貨の対応は、保存する交換所が並べ替え済みでも Atlas の順の品目から決まる', () => {
+    const event: EventPlannerEvent = {
+      id: 80001,
+      name: 'イベント',
+      type: 'eventQuest',
+      startedAt: 1,
+      endedAt: 2,
+      currency: { id: X, name: '通貨X', icon: 'x.png' },
+      unlimitedBoxes: false,
+      lotteries: [],
+      shop: sorted,
+      farmingNodes: [],
+    }
+    const withAtlasOrder = attachBonusRarities(event, [ce], orderItemMap, [], atlasOrder)
+    const unsortedEvent = attachBonusRarities({ ...event, shop: atlasOrder }, [ce], orderItemMap, [])
+    expect(withAtlasOrder.bonusRarities).toEqual(unsortedEvent.bonusRarities)
+    expect(withAtlasOrder.bonusRarities?.[0]?.itemId).toBe(X)
+    expect(withAtlasOrder.shop).toEqual(sorted)
   })
 })
 

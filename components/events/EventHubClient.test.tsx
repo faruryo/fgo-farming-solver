@@ -81,7 +81,7 @@ describe('EventHubClient', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => localStorage.clear())
 
-  it('ロトの無い交換所イベントでは交換所一覧を通貨ごとに出し、ボックス計画は出さない', () => {
+  it('ロトの無い交換所イベントでは交換所の品目を1つの一覧に出し、通貨ごとの全交換の合計を一覧の下に出し、ボックス計画は出さない', () => {
     const shopEvent = event({
       shop: [
         shopEntry(1, 94001, { costName: '武蔵うどん' }),
@@ -94,16 +94,18 @@ describe('EventHubClient', () => {
     expect(screen.queryByTestId('box-planner')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '交換所の周回計算' })).toBeInTheDocument()
 
-    const udon = screen.getByRole('heading', { name: '武蔵うどん' }).closest('div.rounded-md') as HTMLElement
-    expect(within(udon).getByText('全交換 350')).toBeInTheDocument()
-    expect(within(udon).getByText('素材1')).toBeInTheDocument()
-    expect(within(udon).getByText('素材3')).toBeInTheDocument()
-    expect(within(udon).queryByText('素材2')).not.toBeInTheDocument()
+    const list = screen.getByTestId('shop-item-list')
+    expect(bodyRows(list)).toEqual(['|素材1|', '|素材2|', '|素材3|'])
+    expect(within(rowOfItem('素材2')).getByText('上限なし')).toBeInTheDocument()
+    expect(within(rowOfItem('素材2')).getByText('江戸むすび')).toBeInTheDocument()
 
-    const musubi = screen.getByRole('heading', { name: '江戸むすび' }).closest('div.rounded-md') as HTMLElement
+    const udon = cardOf('武蔵うどん')
+    expect(within(udon).getByText('全交換 350')).toBeInTheDocument()
+    expect(within(udon).queryByText('素材1')).not.toBeInTheDocument()
+
+    const musubi = cardOf('江戸むすび')
     expect(within(musubi).getByText('全交換 0')).toBeInTheDocument()
     expect(within(musubi).getByText('＋上限なし 1 品目')).toBeInTheDocument()
-    expect(within(musubi).getByText('上限なし')).toBeInTheDocument()
   })
 
   it('通貨名を持たないデータでは、名前不明のアイテムであることと ID を見出しに出す', () => {
@@ -348,7 +350,7 @@ describe('EventHubClient', () => {
       { questId: 1, name: '上級', ap: 40, drops: [{ itemId: 94001, perRun: 10 }, { itemId: 94002, perRun: 10 }] },
     ]
 
-    it('AP 換算値の無い品目を元の順で前に、AP 換算値のある品目を効率の高い順に順位付きで並べる。区切りの線は出さない', () => {
+    it('AP 換算値のある品目を効率の高い順に順位付きで並べ、その後に AP 換算値の無い品目を元の順で並べる。区切りの線は出さない', () => {
       const shopEvent = event({
         shop: [
           shopEntry(1, 94001, { costName: '武蔵うどん', qty: 2, costAmount: 30 }),
@@ -369,19 +371,19 @@ describe('EventHubClient', () => {
         />,
       )
 
-      expect(bodyRows(cardOf('武蔵うどん'))).toEqual([
-        'AP 換算なし',
-        '|素材9|',
-        '|素材8|',
+      expect(bodyRows(screen.getByTestId('shop-item-list'))).toEqual([
         '効率順',
         '1|素材2|10',
         '2|素材1|4',
         '3|素材3|1.13',
+        'AP 換算なし',
+        '|素材9|',
+        '|素材8|',
       ])
       expect(screen.queryByRole('button', { name: '効率の良いところまで交換' })).not.toBeInTheDocument()
     })
 
-    it('全品目に AP 換算値の無いカードでは見出しも順位も出さず、元の順に並べる', () => {
+    it('通貨をまたいで効率の高い順に並べ、AP 換算値の無い品目は通貨によらず交換所の順で後に並べる', () => {
       const shopEvent = event({
         shop: [
           shopEntry(1, 94001, { costName: '武蔵うどん' }),
@@ -392,9 +394,27 @@ describe('EventHubClient', () => {
       })
       render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} shopApPrices={{ 1: 60 }} />)
 
-      const musubi = cardOf('江戸むすび')
-      expect(bodyRows(musubi)).toEqual(['|素材7|', '|素材6|'])
-      expect(within(cardOf('武蔵うどん')).queryByText('AP 換算なし')).not.toBeInTheDocument()
+      expect(bodyRows(screen.getByTestId('shop-item-list'))).toEqual([
+        '効率順',
+        '1|素材1|4',
+        'AP 換算なし',
+        '|素材7|',
+        '|素材6|',
+      ])
+    })
+
+    it('効率のある品目が無い交換所では見出しも順位も出さず、交換所の順に並べる', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(7, 94002, { costName: '江戸むすび' }),
+          shopEntry(1, 94001, { costName: '武蔵うどん' }),
+          shopEntry(6, 94002, { costName: '江戸むすび' }),
+        ],
+        farmingNodes,
+      })
+      render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+      expect(bodyRows(screen.getByTestId('shop-item-list'))).toEqual(['|素材7|', '|素材1|', '|素材6|'])
     })
 
     it('並べ替えた後も交換回数は品目に付いたままで、その通貨の必要量だけがその品目の対価 × 回数だけ増える', () => {
@@ -418,7 +438,7 @@ describe('EventHubClient', () => {
       )
       const musubi = cardOf('江戸むすび')
       const udon = cardOf('武蔵うどん')
-      expect(bodyRows(musubi)[0]).toBe('1|素材4|28.57')
+      expect(bodyRows(screen.getByTestId('shop-item-list'))[1]).toBe('1|素材4|28.57')
 
       fireEvent.change(screen.getByLabelText('素材4 の交換回数'), { target: { value: '3' } })
 
@@ -805,7 +825,9 @@ describe('EventHubClient', () => {
           expect(within(cellOf(name)).getByText('計画の対象外')).toBeInTheDocument()
           expect(within(toggleOf(name)).getByRole('radio', { name: '不要' })).toBeChecked()
         }
-        expect(screen.getAllByLabelText('完璧なお正月 の交換回数')).toHaveLength(2)
+        // 2つの通貨で交換できる礼装は1行にまとまる。
+        expect(screen.getAllByLabelText('完璧なお正月 の交換回数')).toHaveLength(1)
+        expect(within(cellOf('完璧なお正月')).getByText('計画の対象外')).toBeInTheDocument()
       })
 
       it('礼装を「必要」にすると svt:<番号> のキーで保存し、同じ番号のアイテムのキーは作らない', () => {
@@ -816,15 +838,13 @@ describe('EventHubClient', () => {
         expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
           'svt:9305420': true,
         })
-        for (const group of screen.getAllByRole('radiogroup', { name: '完璧なお正月 は必要か' })) {
-          expect(within(group).getByRole('radio', { name: '必要' })).toBeChecked()
-        }
+        expect(within(toggleOf('完璧なお正月')).getByRole('radio', { name: '必要' })).toBeChecked()
         expect(within(toggleOf('同じ番号のアイテム')).getByRole('radio', { name: '不要' })).toBeChecked()
 
         fireEvent.click(shortfallButton())
-        const [ceA, ceB] = screen.getAllByLabelText('完璧なお正月 の交換回数')
-        expect(ceA).toHaveValue(2)
-        expect(ceB).toHaveValue(1)
+        // まとめた行は2つの通貨の在庫上限の合計で、内訳に両方の通貨が出る。
+        expect(screen.getByLabelText('完璧なお正月 の交換回数')).toHaveValue(3)
+        expect(within(cellOf('完璧なお正月')).getByText('武蔵うどん 2・江戸むすび 1')).toBeInTheDocument()
         expect(screen.getByLabelText('同じ番号のアイテム の交換回数')).toHaveValue(0)
         expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(0)
       })
@@ -834,9 +854,7 @@ describe('EventHubClient', () => {
         fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
         expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(100)
         expect(screen.getByLabelText('星のフォウくん の交換回数')).toHaveValue(40)
-        const [ceA, ceB] = screen.getAllByLabelText('完璧なお正月 の交換回数')
-        expect(ceA).toHaveValue(2)
-        expect(ceB).toHaveValue(1)
+        expect(screen.getByLabelText('完璧なお正月 の交換回数')).toHaveValue(3)
       })
 
       it('育成計画が未設定のとき・素材の一覧を読み込めないときは切り替えを出さない', () => {
@@ -873,12 +891,16 @@ describe('EventHubClient', () => {
           expect(screen.getByRole('heading', { name: '交換所の品目' })).toBeInTheDocument()
           expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
 
-          const udon = screen.getByRole('heading', { name: '武蔵うどん' }).closest('div.rounded-md') as HTMLElement
-          const musubi = screen.getByRole('heading', { name: '江戸むすび' }).closest('div.rounded-md') as HTMLElement
-          expect(within(udon).getByText('叡智の大火')).toBeInTheDocument()
-          expect(within(udon).getByText('星のフォウくん')).toBeInTheDocument()
-          expect(within(musubi).getByText('完璧なお正月')).toBeInTheDocument()
-          expect(within(udon).getAllByRole('columnheader').map(th => th.textContent)).toEqual([
+          // 通貨ごとのカードに分けず、交換所の順の1つの一覧に並べる。
+          expect(screen.queryByRole('heading', { name: '武蔵うどん' })).not.toBeInTheDocument()
+          const list = screen.getByTestId('shop-item-list')
+          expect(Array.from(list.querySelectorAll<HTMLTableRowElement>('tbody tr')).map(tr => tr.cells[0]?.textContent)).toEqual([
+            '叡智の大火',
+            '星のフォウくん',
+            '完璧なお正月',
+          ])
+          expect(within(rowOf('完璧なお正月')).getByText('江戸むすび')).toBeInTheDocument()
+          expect(within(list).getAllByRole('columnheader').map(th => th.textContent)).toEqual([
             '品目',
             '個数',
             '上限',
@@ -892,6 +914,7 @@ describe('EventHubClient', () => {
           expect(fire.getByText('×1')).toBeInTheDocument()
           expect(fire.getByText('100')).toBeInTheDocument()
           expect(fire.getByText('10')).toBeInTheDocument()
+          expect(fire.getByText('武蔵うどん')).toBeInTheDocument()
           const fou = within(rowOf('星のフォウくん'))
           expect(fou.getByText('×3')).toBeInTheDocument()
           expect(fou.getByText('上限なし')).toBeInTheDocument()
@@ -1530,10 +1553,14 @@ describe('EventHubClient', () => {
   })
 })
 
+/** 一覧の下の通貨ごとの必要量の欄。 */
 const cardOf = (currency: string) =>
   screen.getByRole('heading', { name: currency }).closest('div.rounded-md') as HTMLElement
 
-/** カードの表の行を「順位|品目名|効率」か、見出しの行の文言にする。 */
+/** 交換回数の入力のある品目の行。 */
+const rowOfItem = (name: string) => screen.getByLabelText(`${name} の交換回数`).closest('tr') as HTMLElement
+
+/** 一覧の表の行を「順位|品目名|効率」か、見出しの行の文言にする。 */
 const bodyRows = (card: HTMLElement) =>
   Array.from(card.querySelectorAll<HTMLTableRowElement>('tbody tr')).map(tr => {
     const input = tr.querySelector('input')

@@ -16,8 +16,14 @@ import {
   groupShopByCurrency,
   isDefaultWanted,
   orderShopByEfficiency,
+  buildShopListRows,
+  rowCountOf,
+  rowLimit,
+  shopRowEntries,
+  splitRowCount,
   selectAllCurrenciesUpToLimit,
   selectAllUpToLimit,
+  type ShopListRow,
 } from './event-shop-summary'
 
 const entry = (
@@ -145,46 +151,189 @@ describe('selectAllCurrenciesUpToLimit', () => {
   })
 })
 
+// 80632 の形: 武蔵うどん・江戸むすび・東干し柿
+const UDON = 94001
+const MUSUBI = 94002
+const KAKI = 94003
+const DANGO = 9306300
+const CURRENCY_NAMES = new Map([
+  [UDON, '武蔵うどん'],
+  [MUSUBI, '江戸むすび'],
+  [KAKI, '東干し柿'],
+])
+const named = (costItemId: number) => CURRENCY_NAMES.get(costItemId) ?? ''
+const svt = (itemId: number, costItemId: number, costAmount: number, limitNum: number) =>
+  entry(itemId, costItemId, costAmount, limitNum, { kind: 'svt', costName: named(costItemId) })
+const shop80632: EventShopItem[] = [
+  svt(DANGO, UDON, 100, 2),
+  svt(DANGO, MUSUBI, 100, 1),
+  svt(DANGO, KAKI, 100, 1),
+  svt(9700100, UDON, 150, 1),
+  entry(6503, UDON, 5, 3),
+  svt(9700100, KAKI, 150, 1),
+  entry(6505, KAKI, 5, 3),
+]
+const rowIndices = (shop: EventShopItem[]) => buildShopListRows(shop).map(r => r.indices)
+/** 一覧の k 番目の行（無ければテストを落とす）。 */
+const rowAt = (shop: EventShopItem[], k: number): ShopListRow => {
+  const row = buildShopListRows(shop).at(k)
+  if (!row) throw new Error(`row ${k} not found`)
+  return row
+}
+
+describe('buildShopListRows', () => {
+  it('80632 の形: 月より団子（3通貨）とフォウくん（2通貨）は1行にまとまり、1通貨だけの品目はそのまま。行は交換所の順', () => {
+    expect(rowIndices(shop80632)).toEqual([[0, 1, 2], [3, 5], [4], [6]])
+    const [dango] = buildShopListRows(shop80632)
+    expect(dango?.items).toEqual([shop80632[0], shop80632[1], shop80632[2]])
+  })
+
+  it('在庫上限の無い品目（QP 3通貨）はまとめない', () => {
+    const shop = [entry(1, UDON, 2, 0), entry(1, MUSUBI, 50, 0), entry(1, KAKI, 50, 0)]
+    expect(rowIndices(shop)).toEqual([[0], [1], [2]])
+  })
+
+  it('同じ通貨だけで重なる品目はまとめない', () => {
+    expect(rowIndices([entry(1, UDON, 10, 2), entry(1, UDON, 20, 3)])).toEqual([[0], [1]])
+  })
+
+  it('在庫上限の無い品目が混ざる組と、同じ通貨が重なる組は、どの品目もまとめない', () => {
+    expect(rowIndices([entry(1, UDON, 10, 2), entry(1, MUSUBI, 10, 0)])).toEqual([[0], [1]])
+    expect(rowIndices([entry(2, UDON, 10, 1), entry(2, UDON, 10, 1), entry(2, MUSUBI, 10, 1)])).toEqual([
+      [0],
+      [1],
+      [2],
+    ])
+  })
+
+  it('対価が通貨で違う品目（伝承結晶 200・400）はまとめる', () => {
+    expect(rowIndices([entry(6999, UDON, 200, 1), entry(6999, MUSUBI, 400, 1)])).toEqual([[0, 1]])
+  })
+
+  it('サーヴァント扱いの品目と番号が同じアイテムの品目はまとめない', () => {
+    expect(rowIndices([svt(9305420, UDON, 10, 1), entry(9305420, MUSUBI, 10, 1)])).toEqual([[0], [1]])
+  })
+
+  it('1回の個数が違う品目はまとめない', () => {
+    expect(rowIndices([entry(1, UDON, 10, 1, { qty: 1 }), entry(1, MUSUBI, 10, 1, { qty: 10 })])).toEqual([[0], [1]])
+  })
+})
+
+describe('splitRowCount と rowCountOf', () => {
+  const dango = rowAt(shop80632, 0)
+  const sum = (m: Map<number, number>) => [...m.values()].reduce((a, b) => a + b, 0)
+  const withinLimits = (row: ShopListRow, m: Map<number, number>) =>
+    shopRowEntries(row).every(({ index, item }) => (m.get(index) ?? 0) <= item.limitNum)
+
+  it('月より団子 3: 合計 3 で、どの品目も在庫上限以下', () => {
+    const split = splitRowCount(dango, 3)
+    expect(sum(split)).toBe(3)
+    expect(withinLimits(dango, split)).toBe(true)
+    expect([...split.keys()]).toEqual([0, 1, 2])
+  })
+
+  it('サーヴァントコイン（16・16・16）20: 合計 20 で、どの品目も 16 以下', () => {
+    const coin = rowAt([entry(1, UDON, 10, 16), entry(1, MUSUBI, 10, 16), entry(1, KAKI, 10, 16)], 0)
+    const split = splitRowCount(coin, 20)
+    expect(sum(split)).toBe(20)
+    expect([...split.values()].every(n => n >= 0 && n <= 16 && Number.isInteger(n))).toBe(true)
+  })
+
+  it('月より団子 9 は在庫上限の合計で頭打ちになり 2・1・1、0 はすべて 0', () => {
+    expect([...splitRowCount(dango, 9).values()]).toEqual([2, 1, 1])
+    expect([...splitRowCount(dango, 0).values()]).toEqual([0, 0, 0])
+    expect([...splitRowCount(dango, -3).values()]).toEqual([0, 0, 0])
+    expect(sum(splitRowCount(dango, 2.7))).toBe(2)
+  })
+
+  it('まとめない行は品目の在庫上限で頭打ち、上限の無い品目は入れた回数', () => {
+    const shop = [entry(1, UDON, 10, 3), entry(2, UDON, 10, 0)]
+    expect([...splitRowCount(rowAt(shop, 0), 5)]).toEqual([[0, 3]])
+    expect([...splitRowCount(rowAt(shop, 1), 50)]).toEqual([[1, 50]])
+  })
+
+  it('保存値のような品目ごとの回数（0・1・0）は合計 1、内訳は江戸むすび 1', () => {
+    const { count, parts } = rowCountOf(dango, new Map([[0, 0], [1, 1], [2, 0]]))
+    expect(count).toBe(1)
+    expect(parts.map(p => [p.costName, p.count])).toEqual([['江戸むすび', 1]])
+  })
+
+  it('回数の無い品目は 0 として数え、在庫上限を超える値は上限で数える', () => {
+    const { count, parts } = rowCountOf(dango, new Map([[0, 5]]))
+    expect(count).toBe(2)
+    expect(parts.map(p => [p.costItemId, p.count])).toEqual([[UDON, 2]])
+  })
+
+  it('rowLimit はまとめた行で在庫上限の合計、上限の無い品目の行で 0', () => {
+    expect(rowLimit(dango)).toBe(4)
+    expect(rowLimit(rowAt([entry(1, UDON, 10, 0)], 0))).toBe(0)
+  })
+})
+
 describe('orderShopByEfficiency', () => {
-  const priced = (itemId: number, costAmount: number, qty = 1) => entry(itemId, 10, costAmount, 5, { qty })
+  const priced = (itemId: number, costAmount: number, qty = 1, costItemId = 10) =>
+    entry(itemId, costItemId, costAmount, 5, { qty })
+  const order = (shop: EventShopItem[], prices: Record<number, number>) =>
+    orderShopByEfficiency(buildShopListRows(shop), prices)
 
   it('効率は qty × AP 換算値 ÷ costAmount', () => {
     const items = [priced(1, 5, 2)]
-    const { ranked } = orderShopByEfficiency({ items }, { 1: 50 })
-    expect(ranked).toEqual([{ item: items[0], rank: 1, efficiency: 20 }])
+    const { ranked } = order(items, { 1: 50 })
+    expect(ranked.map(r => [r.row.items, r.rank, r.efficiency])).toEqual([[[items[0]], 1, 20]])
   })
 
-  it('効率の高い順に1からの順位を付け、同じ効率は元の順を保つ。品目は配列の要素の参照のまま', () => {
-    const items = [priced(1, 1), priced(2, 1), priced(3, 1), priced(4, 1)]
-    const { unpriced, ranked } = orderShopByEfficiency({ items }, { 1: 20, 2: 35, 3: 10, 4: 20 })
+  it('通貨の違う品目（7.72・7.63・9）を通貨をまたいで 9 → 7.72 → 7.63 の順位 1・2・3 で並べる', () => {
+    const shop = [priced(1, 100, 1, UDON), priced(2, 100, 1, MUSUBI), priced(3, 100, 1, KAKI)]
+    const { ranked, unpriced } = order(shop, { 1: 772, 2: 763, 3: 900 })
     expect(unpriced).toEqual([])
-    expect(ranked.map(r => [r.item.itemId, r.rank])).toEqual([[2, 1], [1, 2], [4, 3], [3, 4]])
-    expect(ranked[0]?.item).toBe(items[1])
+    expect(ranked.map(r => [r.row.items[0]?.itemId, r.rank, r.efficiency])).toEqual([
+      [3, 1, 9],
+      [1, 2, 7.72],
+      [2, 3, 7.63],
+    ])
   })
 
-  it('AP 換算値の無い品目と costAmount が 0 の品目は元の順で unpriced に入る', () => {
-    const items = [priced(1, 1), entry(9, 10, 1, 1), priced(2, 0), entry(8, 10, 1, 1)]
-    const { unpriced, ranked } = orderShopByEfficiency({ items }, { 1: 10, 2: 10 })
-    expect(unpriced).toEqual([items[1], items[2], items[3]])
-    expect(ranked.map(r => r.item)).toEqual([items[0]])
+  it('AP 換算値の無い品目は効率のある行の後に交換所の順で並ぶ', () => {
+    const shop = [entry(9, 10, 1, 1), priced(1, 1), entry(8, 10, 1, 1), priced(2, 0)]
+    const { ranked, unpriced } = order(shop, { 1: 10, 2: 10 })
+    expect(ranked.map(r => r.row.indices)).toEqual([[1]])
+    expect(unpriced.map(r => r.indices)).toEqual([[0], [2], [3]])
   })
 
-  it('AP 換算値のある品目が無ければ順位を返さない', () => {
-    const items = [entry(9, 10, 1, 1), entry(8, 10, 1, 1)]
-    expect(orderShopByEfficiency({ items }, {})).toEqual({ unpriced: items, ranked: [] })
+  it('対価が通貨で違うまとめた行（通貨 A 対価 5・通貨 B 対価 10、AP 換算値 50）の効率は 10 で、効率 7 の行より前', () => {
+    const shop = [priced(2, 1, 1, UDON), priced(1, 5, 1, UDON), priced(1, 10, 1, MUSUBI)]
+    const { ranked } = order(shop, { 1: 50, 2: 7 })
+    expect(ranked.map(r => [r.row.indices, r.rank, r.efficiency])).toEqual([
+      [[1, 2], 1, 10],
+      [[0], 2, 7],
+    ])
   })
 
-  it('サーヴァント扱いの品目は同じ番号の価格があっても効率と順位を持たず、前に並ぶ', () => {
-    const items = [priced(1, 1), entry(9305420, 10, 1, 1, { kind: 'svt' })]
-    const { unpriced, ranked } = orderShopByEfficiency({ items }, { 1: 10, 9305420: 50 })
-    expect(unpriced).toEqual([items[1]])
-    expect(ranked.map(r => r.item)).toEqual([items[0]])
+  it('効率が同じ行は交換所の順を保つ。行は配列の要素の参照のまま', () => {
+    const items = [priced(1, 1), priced(2, 1), priced(3, 1), priced(4, 1)]
+    const { ranked } = order(items, { 1: 20, 2: 35, 3: 10, 4: 20 })
+    expect(ranked.map(r => [r.row.items[0]?.itemId, r.rank])).toEqual([[2, 1], [1, 2], [4, 3], [3, 4]])
+    expect(ranked[0]?.row.items[0]).toBe(items[1])
   })
 
-  it('同じ itemId で対価の違う品目を別々に扱う', () => {
+  it('効率のある行が無いときは交換所の順のままで順位が無い', () => {
+    const items = [entry(9, 10, 1, 1), entry(8, 11, 1, 1)]
+    const { ranked, unpriced } = order(items, {})
+    expect(ranked).toEqual([])
+    expect(unpriced.map(r => r.items[0])).toEqual(items)
+  })
+
+  it('サーヴァント扱いの品目は同じ番号の価格があっても効率と順位を持たず、後に並ぶ', () => {
+    const items = [entry(9305420, 10, 1, 1, { kind: 'svt' }), priced(1, 1)]
+    const { unpriced, ranked } = order(items, { 1: 10, 9305420: 50 })
+    expect(unpriced.map(r => r.items[0])).toEqual([items[0]])
+    expect(ranked.map(r => r.row.items[0])).toEqual([items[1]])
+  })
+
+  it('同じ itemId で対価の違う品目（同じ通貨）を別々の行に扱う', () => {
     const items = [priced(1, 10), priced(1, 2)]
-    const { ranked } = orderShopByEfficiency({ items }, { 1: 10 })
-    expect(ranked.map(r => [r.item, r.efficiency])).toEqual([[items[1], 5], [items[0], 1]])
+    const { ranked } = order(items, { 1: 10 })
+    expect(ranked.map(r => [r.row.items[0], r.efficiency])).toEqual([[items[1], 5], [items[0], 1]])
   })
 })
 
