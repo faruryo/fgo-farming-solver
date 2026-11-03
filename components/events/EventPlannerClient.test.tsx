@@ -7,8 +7,19 @@ import type { EventPlannerEvent } from '../../lib/master-data/types'
 import { allocateShop, calcBoxLayer, runEventSolver } from '../../lib/event-plan'
 import { computeApBudget } from '../../lib/ap-budget'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import type { RosterNeed } from '../../hooks/use-roster-need'
 
 vi.mock('react-i18next', async () => (await import('./events-i18n-test-utils')).eventsTranslationMock())
+
+const rosterMock = vi.hoisted(() => ({
+  // undefined のときは実フック（未設定の育成計画 → empty）を使う。
+  value: undefined as RosterNeed | undefined,
+}))
+
+vi.mock('../../hooks/use-roster-need', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../hooks/use-roster-need')>()
+  return { ...actual, useRosterNeed: () => rosterMock.value ?? actual.useRosterNeed() }
+})
 
 // 1箱 250 通貨、1周 AP40 で 10 個落ちる → 25 周・AP 1,000。
 const boxEvent: EventPlannerEvent = {
@@ -245,5 +256,37 @@ describe('箱計画のドロップ増加礼装のボーナス', () => {
     setBonus('2.5')
     expect(bonusInputOf('武蔵うどん')?.value).toBe('2')
     expect(screen.getByText('15 周 / 600 AP')).toBeInTheDocument()
+  })
+})
+
+describe('育成計画を読む前の入力モード', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => {
+    localStorage.clear()
+    rosterMock.value = undefined
+  })
+
+  /** 入力モードの欄のボタン名・ボタンの見た目・未設定の説明の有無。 */
+  const modeView = (status: 'unread' | 'empty') => {
+    rosterMock.value = { status }
+    const { unmount } = render(<EventPlannerClient event={boxEvent} />)
+    const view = {
+      buttons: ['育成ロスター連動', '箱数直接指定', '欲しい素材で指定'].map(name => screen.queryByRole('button', { name })),
+      hasDescription: !!screen.queryByText(/サーヴァント一覧で育成ゴールを設定すると/),
+    }
+    const classNames = view.buttons.map(button => button?.className)
+    unmount()
+    return { present: view.buttons.map(button => !!button), classNames, hasDescription: view.hasDescription }
+  }
+
+  it('unread では育成計画のボタンを出さず、未設定の説明を empty と同じに出し、「箱数」で始まる', () => {
+    const unread = modeView('unread')
+    const empty = modeView('empty')
+
+    expect(unread.present).toEqual([false, true, true])
+    expect(unread.hasDescription).toBe(true)
+    expect(unread).toEqual(empty)
+    // 選ばれている「箱数」のボタンは、選ばれていない「欲しい素材」のボタンと見た目が違う。
+    expect(unread.classNames[1]).not.toBe(unread.classNames[2])
   })
 })

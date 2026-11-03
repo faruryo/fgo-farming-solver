@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
 import { ApBudgetBreakdown, ApBudgetInputs } from './ApBudget'
 import { computeApBudget } from '../../lib/ap-budget'
 
@@ -36,6 +37,23 @@ describe('ApBudgetInputs', () => {
 
     fireEvent.change(b.getByLabelText('マスターレベル'), { target: { value: '157' } })
     expect(a.getByLabelText('マスターレベル')).toHaveValue(157)
+  })
+
+  it('保存値を読む前は既定のマスターレベルと黄金の果実の 0 の欄を出さず、読み終えたら保存値の欄になる', () => {
+    localStorage.setItem('masterLevel', '157')
+    localStorage.setItem('events/goldenFruit', '5')
+
+    const container = document.createElement('div')
+    container.innerHTML = renderToString(<ApBudgetInputs />)
+    expect(within(container).queryByLabelText('マスターレベル')).toBeNull()
+    expect(within(container).queryByLabelText('所持 黄金の果実')).toBeNull()
+    expect(within(container).queryByDisplayValue('0')).toBeNull()
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
+
+    render(<ApBudgetInputs />)
+    expect(screen.getByLabelText('マスターレベル')).toHaveValue(157)
+    expect(screen.getByLabelText('所持 黄金の果実')).toHaveValue(5)
+    expect(document.querySelector('[aria-busy="true"]')).toBeNull()
   })
 
   it('アンマウントして描画し直しても、保存した値が出る', async () => {

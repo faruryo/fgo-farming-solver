@@ -48,6 +48,18 @@ describe('useRosterNeed', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('最初の描画では育成計画を読む前の unread で、保存値の無い端末で読み終えたら empty', async () => {
+    const statuses: string[] = []
+    const { result } = renderHook(() => {
+      const need = useRosterNeed()
+      statuses.push(need.status)
+      return need
+    })
+    expect(statuses[0]).toBe('unread')
+    await waitFor(() => expect(result.current.status).toBe('empty'))
+    expect(statuses.filter((status) => status !== 'unread').every((status) => status === 'empty')).toBe(true)
+  })
+
   it('全件取得できたら ready で総必要数を返す（all・disabled は要求しない）', async () => {
     seedRoster(['1', '2'], {
       all: createChaldeaState(['all']).all,

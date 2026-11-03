@@ -9,6 +9,8 @@ import { loadMaterialCatalog } from './use-material-catalog'
 import { computeTotalNeed } from '../lib/event-plan'
 
 export type RosterNeed =
+  /** 育成計画の保存値をまだ読んでいない（読む前は保存値が空に見えるので empty と区別する）。 */
+  | { status: 'unread' }
   | { status: 'empty' }
   | { status: 'loading' }
   | { status: 'error' }
@@ -28,7 +30,7 @@ type Fetched =
  * ドロップデータには依存しない(ボックス計画がドロップ取得の成否に左右されないため)。
  */
 export const useRosterNeed = (): RosterNeed => {
-  const [chaldeaState] = useLocalStorage<ChaldeaState>(
+  const [chaldeaState, , loaded] = useLocalStorage<ChaldeaState>(
     STORAGE_KEYS.MATERIAL,
     {},
     { lazyWrite: true },
@@ -78,6 +80,7 @@ export const useRosterNeed = (): RosterNeed => {
   }, [idsKey])
 
   return useMemo<RosterNeed>(() => {
+    if (!loaded) return { status: 'unread' }
     if (!idsKey) return { status: 'empty' }
     if (!fetched || fetched.ids !== idsKey) return { status: 'loading' }
     if (fetched.status === 'error') return { status: 'error' }
@@ -87,7 +90,7 @@ export const useRosterNeed = (): RosterNeed => {
       materialsForServants: fetched.materials,
       totalNeed: computeTotalNeed(chaldeaState, fetched.materials),
     }
-  }, [idsKey, fetched, chaldeaState])
+  }, [loaded, idsKey, fetched, chaldeaState])
 }
 
 export const toAmounts = (totalNeed: Map<number, number>): Record<string, number> =>
