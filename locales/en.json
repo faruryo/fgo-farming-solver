@@ -402,7 +402,8 @@
     "その他": "Other",
     "ストーム・ポッド消費なし期間中": "Storm Pod Free Period",
     "event-page-link": "Event Page",
-    "期限間近のタスク": "Upcoming Tasks"
+    "期限間近のタスク": "Upcoming Tasks",
+    "history-period-insufficient": "This period has one or fewer records"
   },
   "quests": {
     "クエスト効率": "Quest Efficiency",

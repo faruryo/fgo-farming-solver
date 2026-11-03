@@ -81,6 +81,37 @@ const PERIOD_OPTIONS: { label: string; value: PeriodRange }[] = [
   { label: '全期間', value: 'all' },
 ]
 
+const MIN_POINTS = 2
+
+const periodStart = (period: PeriodRange, now: Date): number => {
+  const start = new Date(now)
+  if (period === '1m') start.setMonth(now.getMonth() - 1)
+  else if (period === '3m') start.setMonth(now.getMonth() - 3)
+  else if (period === '6m') start.setMonth(now.getMonth() - 6)
+  else if (period === '1y') start.setFullYear(now.getFullYear() - 1)
+  else start.setFullYear(2015) // "all"
+  return start.getTime()
+}
+
+export const countPointsByPeriod = (history: HistoryItem[], now: Date): Map<PeriodRange, number> => {
+  const times = history.filter(h => h.total_ap > 0).map(h => parseUtcDate(h.created_at)?.getTime() ?? 0)
+  return new Map(
+    PERIOD_OPTIONS.map(({ value }) => {
+      const start = periodStart(value, now)
+      return [value, times.filter(t => t >= start).length]
+    }),
+  )
+}
+
+const hasEnoughPoints = (counts: Map<PeriodRange, number>, period: PeriodRange) =>
+  (counts.get(period) ?? 0) >= MIN_POINTS
+
+// 選んだ期間が2点未満なら、2点以上ある期間のうち一番短いものに寄せる。どれも無ければ選んだまま。
+export const resolvePeriod = (selected: PeriodRange, counts: Map<PeriodRange, number>): PeriodRange =>
+  hasEnoughPoints(counts, selected)
+    ? selected
+    : PERIOD_OPTIONS.find(o => hasEnoughPoints(counts, o.value))?.value ?? selected
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const timestamp = Number(label);
@@ -159,6 +190,9 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
     setIsMounted(true)
   }, [])
 
+  const pointCounts = useMemo(() => countPointsByPeriod(history, new Date()), [history])
+  const activePeriod = resolvePeriod(period, pointCounts)
+
   const { chartData, predictionDate, xDomain } = useMemo(() => {
     if (!history.length) return { chartData: [], predictionDate: null, xDomain: ['auto', 'auto'] as ['auto', 'auto'] };
 
@@ -166,12 +200,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
     const scoped = history;
 
     const now = new Date();
-    const startTime = new Date();
-    if (period === '1m') startTime.setMonth(now.getMonth() - 1);
-    else if (period === '3m') startTime.setMonth(now.getMonth() - 3);
-    else if (period === '6m') startTime.setMonth(now.getMonth() - 6);
-    else if (period === '1y') startTime.setFullYear(now.getFullYear() - 1);
-    else startTime.setFullYear(2015); // Fallback to "all"
+    const startTime = new Date(periodStart(activePeriod, now));
 
     const filtered = scoped
       .map(h => ({ h, time: parseUtcDate(h.created_at)?.getTime() ?? 0 }))
@@ -221,7 +250,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
       });
     }
 
-    const startX = period === 'all' ? baseData[0].timestamp : startTime.getTime();
+    const startX = activePeriod === 'all' ? baseData[0].timestamp : startTime.getTime();
     const endX = predTimestamp && predTimestamp > now.getTime() 
       ? Math.min(predTimestamp, now.getTime() + (now.getTime() - startX) * 0.4)
       : now.getTime();
@@ -231,7 +260,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
       predictionDate: predTimestamp ? new Date(predTimestamp) : null,
       xDomain: [startX, endX] as [number, number]
     };
-  }, [history, period, chartTab]);
+  }, [history, activePeriod, chartTab]);
 
   const cfg = CHART_CONFIG[chartTab];
 
@@ -257,10 +286,40 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
     </div>
   ) : null
 
-  if (!history.length || chartData.length < 2) {
+  // データ不足の画面でも出し、2点未満の期間は押せなくする(全期間なら見える人が3ヶ月の画面で詰まらないように)。
+  const periodButtons = (
+    <div className="flex w-fit self-start rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
+      {PERIOD_OPTIONS.map(opt => {
+        const selected = activePeriod === opt.value
+        const disabled = !hasEnoughPoints(pointCounts, opt.value)
+        return (
+          <button
+            key={opt.value}
+            onClick={() => setPeriod(opt.value)}
+            disabled={disabled}
+            title={disabled ? t('history-period-insufficient', 'この期間は記録が1件以下です') : undefined}
+            className="text-[10px] px-3 py-1 border-y border-r first:border-l transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: selected ? 'var(--gold)' : 'transparent',
+              color: selected ? 'white' : 'var(--text2)',
+              borderColor: 'var(--border)',
+              fontWeight: selected ? 'bold' : 'normal',
+            }}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  if (!hasEnoughPoints(pointCounts, activePeriod) || chartData.length < 2) {
     return (
       <div className="flex flex-col gap-4">
-        {stockToggle}
+        <div className="flex flex-wrap items-center gap-3">
+          {stockToggle}
+          {periodButtons}
+        </div>
         <div className="p-8 text-center rounded-xl" style={{ color: 'var(--gold-dim)', background: 'var(--panel2)' }}>
           <p className="text-sm">{t('履歴が不足しているためグラフを表示できません')}</p>
         </div>
@@ -273,23 +332,7 @@ export const FarmingHistoryChart: React.FC<FarmingHistoryChartProps> = ({
       <div className="flex justify-between flex-wrap gap-4">
         <div className="flex flex-wrap items-center gap-3">
           {stockToggle}
-          <div className="flex rounded-md overflow-hidden" style={{ background: 'var(--panel)' }}>
-          {PERIOD_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setPeriod(opt.value)}
-              className="text-[10px] px-3 py-1 border-y border-r first:border-l transition-colors"
-              style={{
-                background: period === opt.value ? 'var(--gold)' : 'transparent',
-                color: period === opt.value ? 'white' : 'var(--text2)',
-                borderColor: 'var(--border)',
-                fontWeight: period === opt.value ? 'bold' : 'normal',
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-          </div>
+          {periodButtons}
         </div>
 
         <div className="flex gap-1">
