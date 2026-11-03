@@ -205,60 +205,80 @@ export const BonusRarityInputs: React.FC<{
   </div>
 )
 
+/** 合計枚数にフレンドの1枚が入っていることを、表の上に1行で書く。 */
+const FriendIncludedNote: React.FC<{ friend: RarityTarget }> = ({ friend }) => {
+  const { t } = useTranslation('events')
+  return (
+    <p className="text-xs" style={{ color: 'var(--text2)' }}>
+      {t('event-shop-ce-friend-included', '合計枚数には、フレンドから借りる ☆{{rarity}} {{name}}（凸）1枚を含みます', {
+        rarity: friend.rarity,
+        name: ceNames(friend),
+      })}
+    </p>
+  )
+}
+
 /** 合計枚数ごとの最良の組み合わせの表。行を選ぶと、その編成で周回の内訳を求める。 */
 export const BonusComparisonTable: React.FC<{
-  rarities: BonusRarity[]
+  targets: RarityTarget[]
+  friendRarity: BonusRarity | null
   rows: BonusCraftEssenceRow[]
   selectedTotal: number | undefined
   onSelect: (total: number) => void
-}> = ({ rarities, rows, selectedTotal, onSelect }) => {
+}> = ({ targets, friendRarity, rows, selectedTotal, onSelect }) => {
   const { t } = useTranslation('events')
   const name = useId()
+  const friend = targets.find(target => target.rarity === friendRarity)
   const th ='font-medium px-1.5 py-1 whitespace-nowrap'
   const td = 'px-1.5 py-1 whitespace-nowrap tabular-nums text-right'
   return (
-    <div data-testid="bonus-comparison" className="overflow-x-auto">
-      <table className="w-full text-xs">
-        <thead>
-          <tr style={{ color: 'var(--text3)' }}>
-            <th className={`${th} text-left`}>{t('event-shop-ce-col-select', '選ぶ')}</th>
-            <th className={`${th} text-right`}>{t('event-shop-ce-col-total', '合計枚数')}</th>
-            {rarities.map(rarity => (
-              <th key={rarity} className={`${th} text-right`}>
-                ☆{rarity}
-              </th>
-            ))}
-            <th className={`${th} text-right`}>{t('event-shop-ce-col-laps', '周回数')}</th>
-            <th className={`${th} text-right`}>{t('event-shop-ce-col-ap', 'AP')}</th>
-            <th className={`${th} text-right`}>{t('event-shop-ce-col-ap-drop', 'AP の減り')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(row => (
-            <tr key={row.total} style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
-              <td className="px-1.5 py-1">
-                <input
-                  type="radio"
-                  name={name}
-                  checked={row.total === selectedTotal}
-                  onChange={() => onSelect(row.total)}
-                  aria-label={t('event-shop-ce-select-row', '合計 {{total}} 枚を使う', { total: row.total })}
-                  className="h-4 w-4 accent-[var(--gold)]"
-                />
-              </td>
-              <td className={td}>{row.total}</td>
-              {rarities.map(rarity => (
-                <td key={rarity} className={td}>
-                  {bonusRarityCount(row, rarity)}
-                </td>
+    <div className="flex flex-col gap-1.5">
+      {friend && <FriendIncludedNote friend={friend} />}
+      <div data-testid="bonus-comparison" className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr style={{ color: 'var(--text3)' }}>
+              <th className={`${th} text-left`}>{t('event-shop-ce-col-select', '選ぶ')}</th>
+              <th className={`${th} text-right`}>{t('event-shop-ce-col-total', '合計枚数')}</th>
+              {targets.map(({ rarity }) => (
+                <th key={rarity} className={`${th} text-right`}>
+                  ☆{rarity}
+                </th>
               ))}
-              <td className={td}>{row.laps.toLocaleString()}</td>
-              <td className={td}>{row.ap.toLocaleString()}</td>
-              <td className={td}>{row.apDrop === undefined ? '-' : row.apDrop.toLocaleString()}</td>
+              <th className={`${th} text-right`}>{t('event-shop-ce-col-laps', '周回数')}</th>
+              <th className={`${th} text-right`}>{t('event-shop-ce-col-ap', 'AP')}</th>
+              <th className={`${th} text-right`}>{t('event-shop-ce-col-ap-drop', 'AP の減り')}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.total} style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
+                <td className="px-1.5 py-1">
+                  <input
+                    type="radio"
+                    name={name}
+                    checked={row.total === selectedTotal}
+                    onChange={() => onSelect(row.total)}
+                    aria-label={t('event-shop-ce-select-row', '合計 {{total}} 枚を使う', { total: row.total })}
+                    className="h-4 w-4 accent-[var(--gold)]"
+                  />
+                </td>
+                <td className={td}>{row.total}</td>
+                {targets.map(({ rarity }) => (
+                  <td key={rarity} className={td}>
+                    {rarity === friend?.rarity
+                      ? t('event-shop-ce-friend-cell', '{{own}}＋フレンド1', { own: bonusRarityCount(row, rarity) - 1 })
+                      : bonusRarityCount(row, rarity)}
+                  </td>
+                ))}
+                <td className={td}>{row.laps.toLocaleString()}</td>
+                <td className={td}>{row.ap.toLocaleString()}</td>
+                <td className={td}>{row.apDrop === undefined ? '-' : row.apDrop.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
