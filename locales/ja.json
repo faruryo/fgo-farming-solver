@@ -441,6 +441,7 @@
     "event-shop-group-unpriced": "AP 換算なし",
     "event-shop-group-ranked": "効率順",
     "event-shop-count-label": "{{name}} の交換回数",
+    "event-shop-row-breakdown-part": "{{name}} {{n}}",
     "event-shop-select-all-currencies": "全部交換",
     "event-shop-select-all-hint": "上限のある品目をすべて上限まで",
     "event-shop-select-shortfall": "不足素材のみ",

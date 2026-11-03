@@ -40,19 +40,57 @@ export interface AtlasShopItem {
     amount: number
   }
   gifts?: unknown[]
+  /** ゲーム内の交換所の並び順（小さいほど前）。 */
+  priority?: number
+  /** ゲーム内の交換所の区分（タブ）。 */
+  slot?: number
+}
+
+/** 取り込む交換所データか（アイテム・サーヴァント扱いの交換で、対価がイベントアイテム、獲得物がある）。 */
+const isImportedShopEntry = (s: AtlasShopItem): boolean =>
+  (s.purchaseType === 'item' || s.purchaseType === 'servant') &&
+  s.payType === 'eventItem' &&
+  Array.isArray(s.targetIds) &&
+  s.targetIds.length > 0
+
+/**
+ * 取り込む交換所データを、ゲーム内の交換所の順に安定に並べる。
+ * 区分（slot。無いものは同じ1つの区分）ごとにまとめ、区分どうしはその区分の最小の priority の順、
+ * 区分の中は priority の順にする。区分の違うものを交互に並べないため。
+ * 取り込む交換所データのどれかに数の priority が無いときは、並べ替えずに元の順で返す。
+ */
+export function sortShopByPriority(shop: AtlasShopItem[]): AtlasShopItem[] {
+  const targets = shop.filter(isImportedShopEntry)
+  if (!targets.every(s => typeof s.priority === 'number' && Number.isFinite(s.priority))) return targets
+  const slotMin = new Map<number | undefined, number>()
+  for (const s of targets) {
+    const p = s.priority as number
+    const current = slotMin.get(s.slot)
+    if (current === undefined || p < current) slotMin.set(s.slot, p)
+  }
+  const slotOrder = [...slotMin].sort((a, b) => a[1] - b[1]).map(([slot]) => slot)
+  const slotRank = new Map(slotOrder.map((slot, i) => [slot, i]))
+  return targets
+    .map((s, index) => ({ s, index }))
+    .sort(
+      (a, b) =>
+        (slotRank.get(a.s.slot) as number) - (slotRank.get(b.s.slot) as number) ||
+        (a.s.priority as number) - (b.s.priority as number) ||
+        a.index - b.index,
+    )
+    .map(({ s }) => s)
 }
 
 /**
- * AtlasShopItem[] → EventShopItem[] の変換。
+ * AtlasShopItem[] → EventShopItem[] の変換（渡された順のまま）。
  * purchaseType が item（アイテム）と servant（種火・フォウくん・礼装など）で、対価がイベントアイテムのものを取る。
  * servant は kind='svt' にし、名前・レア度・アイコンを svtMap から付ける（無ければ見出しを名前にする）。
  */
 export function compactShop(shop: AtlasShopItem[], itemMap: ItemMap, svtMap?: SvtMap): EventShopItem[] {
   return shop
-    .filter(s => (s.purchaseType === 'item' || s.purchaseType === 'servant') && s.payType === 'eventItem')
+    .filter(isImportedShopEntry)
     .flatMap(s => {
       // gifts が空のときは targetIds × setNum で報酬を決定（Phase 0 確認済み）
-      if (!s.targetIds || s.targetIds.length === 0) return []
       const costMeta = itemMap.get(s.cost.item.id)
       const base = (itemId: number) => ({
         itemId,
@@ -462,6 +500,8 @@ export function decideBonusRarities(
 
 /**
  * 取り込んだ交換所イベントに ☆ と通貨の対応を付ける。
+ * 対応は atlasOrderShop（並べ替える前の Atlas の順の品目。省略時は event.shop）から決める。
+ * 交換所の並べ替えで対応が変わらないようにするため。
  * 礼装のデータが取れなかった（equips が undefined）ときは、既存のデータの同じ id のイベントが
  * 対応を持っていればそれを引き継ぎ、無ければ項目を付けない。
  */
@@ -470,9 +510,10 @@ export function attachBonusRarities(
   equips: AtlasEquip[] | undefined,
   itemMap: ItemMap,
   existingEvents: EventPlannerEvent[],
+  atlasOrderShop: EventShopItem[] = event.shop,
 ): EventPlannerEvent {
   if (equips) {
-    return { ...event, bonusRarities: decideBonusRarities(equips, event.id, event.shop, itemMap) }
+    return { ...event, bonusRarities: decideBonusRarities(equips, event.id, atlasOrderShop, itemMap) }
   }
   const previous = existingEvents.find(e => e.id === event.id)?.bonusRarities
   return previous ? { ...event, bonusRarities: previous } : event

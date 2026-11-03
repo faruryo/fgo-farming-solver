@@ -518,6 +518,7 @@
     "event-shop-group-unpriced": "No AP value",
     "event-shop-group-ranked": "By value",
     "event-shop-count-label": "Exchange count for {{name}}",
+    "event-shop-row-breakdown-part": "{{name}} {{n}}",
     "event-shop-select-all-currencies": "Exchange all",
     "event-shop-select-all-hint": "Every item with a limit, up to its limit",
     "event-shop-select-shortfall": "Shortfall only",

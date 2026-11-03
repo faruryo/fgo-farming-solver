@@ -54,6 +54,7 @@ import {
   compactShop,
   decideEventImport,
   findPointItemId,
+  sortShopByPriority,
   tryCompact,
 } from '../lib/refresh-event-data-compact'
 import type {
@@ -496,9 +497,11 @@ async function main() {
       validLotteries.push(vl.data)
     }
 
-    const shop = compactShop(event.shop, itemMap, svtMap)
+    // イベントの通貨とボーナスの対応は Atlas の順の品目から決め、保存はゲーム内の順にする
+    const atlasOrderShop = compactShop(event.shop, itemMap, svtMap)
+    const shop = compactShop(sortShopByPriority(event.shop), itemMap, svtMap)
 
-    const decision = decideEventImport(event.lotteries.length, validLotteries.length, shop, itemMap)
+    const decision = decideEventImport(event.lotteries.length, validLotteries.length, atlasOrderShop, itemMap)
     if (decision.kind === 'skip') {
       console.log(`  skip: ${decision.reason}`)
       continue
@@ -522,6 +525,7 @@ async function main() {
         equips,
         itemMap,
         existingEvents,
+        atlasOrderShop,
       )
       results.push(shopEvent)
       rewardsEntries.push(compactEventRewards(event, farmingNodes, itemMap))
