@@ -279,7 +279,8 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
       <td className="text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
         {ranked?.rank}
       </td>
-      <td className="px-1 py-1.5">
+      {/* 狭い幅で品目名が数文字ごとに折り返さないよう幅を取る（表は横スクロールする） */}
+      <td className="px-1 py-1.5 min-w-[8em]">
         <span className="flex items-center gap-1.5">
           <Icon src={first.icon} />
           <span>{name}</span>
