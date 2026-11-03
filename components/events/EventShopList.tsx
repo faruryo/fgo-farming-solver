@@ -125,7 +125,8 @@ const WantedToggle: React.FC<{ name: string; wanted: boolean; onChange: (wanted:
       role="radio"
       aria-checked={wanted === value}
       onClick={() => onChange(value)}
-      className="h-11 min-w-11 px-2 text-[11px] font-medium whitespace-nowrap"
+      // 見た目は文字に合わせて 24px、押せる範囲は疑似要素で上下に広げて 44px を保つ。
+      className="relative h-6 min-w-11 px-2 text-[11px] font-medium whitespace-nowrap first:rounded-l-[calc(var(--radius-md)_-_1px)] last:rounded-r-[calc(var(--radius-md)_-_1px)] before:absolute before:inset-x-0 before:-inset-y-2.5"
       style={
         wanted === value
           ? { background: 'var(--gold)', color: 'var(--bg)' }
@@ -139,7 +140,8 @@ const WantedToggle: React.FC<{ name: string; wanted: boolean; onChange: (wanted:
     <span
       role="radiogroup"
       aria-label={t('event-shop-wanted-label', '{{name}} は必要か', { name })}
-      className="inline-flex rounded-md overflow-hidden"
+      // overflow-hidden を付けると、ボタンの押せる範囲（疑似要素）が切られる。角はボタン側で丸める。
+      className="inline-flex rounded-md"
       style={{ border: '1px solid var(--border)' }}
     >
       {option(true, t('event-shop-wanted', '必要'))}
@@ -295,8 +297,9 @@ const ShopTable: React.FC<
   }
 
   // 狭い幅では表の中だけを横スクロールにし、カードの外へはみ出さない。
+  // overflow-y-hidden: 最後の行の「必要／不要」の押せる範囲が表の下へはみ出して、縦スクロールが出るのを防ぐ。
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overflow-y-hidden">
       <table className="w-full text-xs">
         <thead>
           <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
