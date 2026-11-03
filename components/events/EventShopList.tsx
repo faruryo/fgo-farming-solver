@@ -950,6 +950,7 @@ const BonusCraftEssenceSection: React.FC<{
       {rows.length > 0 && (
         <BonusComparisonTable
           targets={state.rarityTargets}
+          values={state.values}
           friendRarity={state.friendRarity}
           rows={rows}
           selectedTotal={state.selectedTotal}

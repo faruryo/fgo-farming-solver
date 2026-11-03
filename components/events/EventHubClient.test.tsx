@@ -1282,7 +1282,8 @@ describe('EventHubClient', () => {
       Array.from(screen.getByTestId('bonus-comparison').querySelectorAll('tbody tr')).map(row =>
         Array.from(row.querySelectorAll('td'))
           .slice(1)
-          .map(td => td.textContent),
+          // ☆ のセルはアイコンを並べるので、読み上げ用の文字で比べる。
+          .map(td => (td.querySelector('.sr-only') ?? td).textContent),
       )
     const radio = (total: number) => screen.getByRole('radio', { name: `合計 ${total} 枚を使う` })
 
@@ -1333,9 +1334,9 @@ describe('EventHubClient', () => {
       renderShop(ceEvent())
       fillStar5()
       expect(tableRows()).toEqual([
-        ['1', '0＋フレンド1', '0', '0', '15', '600', '-'],
-        ['2', '1＋フレンド1', '0', '0', '12', '480', '120'],
-        ['3', '2＋フレンド1', '0', '0', '10', '400', '80'],
+        ['1', '☆5 フレンド1枚', '0', '0', '15', '600', '-'],
+        ['2', '☆5 無凸1枚・フレンド1枚', '0', '0', '12', '480', '120'],
+        ['3', '☆5 無凸2枚・フレンド1枚', '0', '0', '10', '400', '80'],
       ])
     })
 
@@ -1348,14 +1349,33 @@ describe('EventHubClient', () => {
       expect(
         within(bonusCard()).getByText('合計枚数には、フレンドから借りる ☆4 銀の礼装A／銀の礼装B（凸）1枚を含みます'),
       ).toBeInTheDocument()
-      expect(tableRows()[0].slice(0, 4)).toEqual(['1', '0', '0＋フレンド1', '0'])
+      expect(tableRows()[0].slice(0, 4)).toEqual(['1', '0', '☆4 フレンド1枚', '0'])
       fireEvent.click(friend('なし'))
       expect(within(bonusCard()).queryByText(/^合計枚数には/)).not.toBeInTheDocument()
       expect(tableRows().map(row => row.slice(0, 4))).toEqual([
         ['0', '0', '0', '0'],
-        ['1', '1', '0', '0'],
-        ['2', '2', '0', '0'],
+        ['1', '☆5 無凸1枚', '0', '0'],
+        ['2', '☆5 無凸2枚', '0', '0'],
       ])
+    })
+
+    it('☆ の列は使う礼装を1枚ずつアイコンで並べ、凸を先に数えて凸・無凸・フレンドを見分け、表の上に印の凡例を出す', () => {
+      renderShop(ceEvent())
+      select('素材1', '10')
+      setValue('☆5 凸の所持枚数', '1')
+      setValue('☆5 無凸の所持枚数', '1')
+      expect(tableRows().map(row => row.slice(0, 2))).toEqual([
+        ['1', '☆5 フレンド1枚'],
+        ['2', '☆5 凸1枚・フレンド1枚'],
+        ['3', '☆5 凸1枚・無凸1枚・フレンド1枚'],
+      ])
+      const star5Cell = screen.getByTestId('bonus-comparison').querySelectorAll('tbody tr')[2].querySelectorAll('td')[2]
+      expect(star5Cell.querySelectorAll('span[aria-hidden]')).toHaveLength(3)
+      const card = within(bonusCard())
+      for (const label of ['無凸', 'フレンド（凸）']) expect(card.getByText(label)).toBeInTheDocument()
+      fireEvent.click(friend('なし'))
+      expect(card.queryByText('フレンド（凸）')).not.toBeInTheDocument()
+      expect(card.getByText('無凸')).toBeInTheDocument()
     })
 
     it('品目を選んでいないとき・所持数で足りているときは表を出さず、周回で集める通貨が無いことを出す', () => {
@@ -1375,7 +1395,7 @@ describe('EventHubClient', () => {
       renderShop(ceEvent())
       fillStar5()
       select('素材2', '1')
-      expect(tableRows()[0]).toEqual(['1', '0＋フレンド1', '0', '0', '15', '600', '-'])
+      expect(tableRows()[0]).toEqual(['1', '☆5 フレンド1枚', '0', '0', '15', '600', '-'])
       expect(
         within(bonusCard()).getByText('銀の通貨 は周回では集められないため、集められる通貨だけで比べています。'),
       ).toBeInTheDocument()
@@ -1496,9 +1516,9 @@ describe('EventHubClient', () => {
 
       renderShop(ceEvent())
       expect(tableRows()).toEqual([
-        ['1', '0＋フレンド1', '0', '0', '15', '600', '-'],
-        ['2', '1＋フレンド1', '0', '0', '12', '480', '120'],
-        ['3', '2＋フレンド1', '0', '0', '10', '400', '80'],
+        ['1', '☆5 フレンド1枚', '0', '0', '15', '600', '-'],
+        ['2', '☆5 無凸1枚・フレンド1枚', '0', '0', '12', '480', '120'],
+        ['3', '☆5 無凸2枚・フレンド1枚', '0', '0', '10', '400', '80'],
       ])
     })
 

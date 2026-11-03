@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import {
-  bonusRarityCount,
+  bonusRaritySlots,
   type BonusCraftEssenceRow,
   type BonusRarity,
   type BonusRarityInput,
@@ -205,6 +205,93 @@ export const BonusRarityInputs: React.FC<{
   </div>
 )
 
+type SlotKind = 'max' | 'base' | 'friend'
+
+type TranslateFn = ReturnType<typeof useTranslation>['t']
+
+/** 凸は金、フレンドは青の枠と印、無凸は細い枠だけ。 */
+const slotLook = (kind: SlotKind, t: TranslateFn): { color: string; mark?: string } => {
+  switch (kind) {
+    case 'max':
+      return { color: 'var(--gold)', mark: t('event-shop-ce-mark-max', '凸') }
+    case 'friend':
+      return { color: 'var(--steel)', mark: t('event-shop-ce-mark-friend', 'フ') }
+    default:
+      return { color: 'var(--border2)' }
+  }
+}
+
+const SlotIcon: React.FC<{ src?: string; kind: SlotKind }> = ({ src, kind }) => {
+  const { t } = useTranslation('events')
+  const { color, mark } = slotLook(kind, t)
+  return (
+    <span
+      aria-hidden
+      className="relative inline-block w-5 h-5 flex-shrink-0 rounded-sm overflow-hidden"
+      style={{ border: `${mark ? 2 : 1}px solid ${color}`, background: 'var(--panel)' }}
+    >
+      {src && <Image src={src} alt="" width={20} height={20} className="w-full h-full object-cover" />}
+      {mark && (
+        <span
+          className="absolute bottom-0 right-0 text-[8px] leading-none px-px font-bold"
+          style={{ background: color, color: 'var(--panel2)' }}
+        >
+          {mark}
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** 表の ☆ のセル: 使う礼装を1枚ずつアイコンで並べ、読み上げには枚数を文字で伝える。0 枚なら「0」。 */
+const RaritySlots: React.FC<{ target: RarityTarget; slots: { max: number; base: number; friend: number } }> = ({
+  target,
+  slots,
+}) => {
+  const { t } = useTranslation('events')
+  const kinds: SlotKind[] = [
+    ...Array<SlotKind>(slots.max).fill('max'),
+    ...Array<SlotKind>(slots.base).fill('base'),
+    ...Array<SlotKind>(slots.friend).fill('friend'),
+  ]
+  if (kinds.length === 0) return <>0</>
+  const parts = [
+    slots.max > 0 && t('event-shop-ce-slots-max', '凸{{count}}枚', { count: slots.max }),
+    slots.base > 0 && t('event-shop-ce-slots-base', '無凸{{count}}枚', { count: slots.base }),
+    slots.friend > 0 && t('event-shop-ce-slots-friend', 'フレンド{{count}}枚', { count: slots.friend }),
+  ].filter(Boolean)
+  // shortcut: 同じ ☆ に礼装が複数あるときは最初の礼装の絵を出す。どの礼装を使うかを分けて数えるようになったら直す。
+  const face = target.craftEssences[0]?.face
+  return (
+    <span className="inline-flex gap-0.5 align-middle">
+      {kinds.map((kind, i) => (
+        <SlotIcon key={i} src={face} kind={kind} />
+      ))}
+      <span className="sr-only">{`☆${target.rarity} ${parts.join('・')}`}</span>
+    </span>
+  )
+}
+
+/** アイコンの印の凡例。フレンドの印はフレンドの礼装を選んでいるときだけ出す。 */
+const SlotLegend: React.FC<{ face?: string; withFriend: boolean }> = ({ face, withFriend }) => {
+  const { t } = useTranslation('events')
+  const items: { kind: SlotKind; label: string }[] = [
+    { kind: 'max', label: t('event-shop-ce-legend-max', '凸') },
+    { kind: 'base', label: t('event-shop-ce-legend-base', '無凸') },
+    ...(withFriend ? [{ kind: 'friend' as const, label: t('event-shop-ce-legend-friend', 'フレンド（凸）') }] : []),
+  ]
+  return (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--text2)' }} aria-hidden>
+      {items.map(({ kind, label }) => (
+        <span key={kind} className="inline-flex items-center gap-1">
+          <SlotIcon src={face} kind={kind} />
+          {label}
+        </span>
+      ))}
+    </p>
+  )
+}
+
 /** 合計枚数にフレンドの1枚が入っていることを、表の上に1行で書く。 */
 const FriendIncludedNote: React.FC<{ friend: RarityTarget }> = ({ friend }) => {
   const { t } = useTranslation('events')
@@ -218,22 +305,69 @@ const FriendIncludedNote: React.FC<{ friend: RarityTarget }> = ({ friend }) => {
   )
 }
 
+const TD = 'px-1.5 py-1 whitespace-nowrap tabular-nums text-right'
+
+/** 比較の表の1行。☆ の列は使う礼装のアイコンを並べる。 */
+const ComparisonRow: React.FC<{
+  row: BonusCraftEssenceRow
+  targets: RarityTarget[]
+  values: ReadonlyMap<BonusRarity, RarityValues>
+  friendRarity: BonusRarity | null
+  name: string
+  checked: boolean
+  onSelect: (total: number) => void
+}> = ({ row, targets, values, friendRarity, name, checked, onSelect }) => {
+  const { t } = useTranslation('events')
+  return (
+    <tr style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
+      <td className="px-1.5 py-1">
+        <input
+          type="radio"
+          name={name}
+          checked={checked}
+          onChange={() => onSelect(row.total)}
+          aria-label={t('event-shop-ce-select-row', '合計 {{total}} 枚を使う', { total: row.total })}
+          className="h-4 w-4 accent-[var(--gold)]"
+        />
+      </td>
+      <td className={TD}>{row.total}</td>
+      {targets.map(target => (
+        <td key={target.rarity} className={TD}>
+          <RaritySlots
+            target={target}
+            slots={bonusRaritySlots(
+              row,
+              target.rarity,
+              (values.get(target.rarity) ?? EMPTY_RARITY_VALUES).maxOwned,
+              friendRarity,
+            )}
+          />
+        </td>
+      ))}
+      <td className={TD}>{row.laps.toLocaleString()}</td>
+      <td className={TD}>{row.ap.toLocaleString()}</td>
+      <td className={TD}>{row.apDrop === undefined ? '-' : row.apDrop.toLocaleString()}</td>
+    </tr>
+  )
+}
+
 /** 合計枚数ごとの最良の組み合わせの表。行を選ぶと、その編成で周回の内訳を求める。 */
 export const BonusComparisonTable: React.FC<{
   targets: RarityTarget[]
+  values: ReadonlyMap<BonusRarity, RarityValues>
   friendRarity: BonusRarity | null
   rows: BonusCraftEssenceRow[]
   selectedTotal: number | undefined
   onSelect: (total: number) => void
-}> = ({ targets, friendRarity, rows, selectedTotal, onSelect }) => {
+}> = ({ targets, values, friendRarity, rows, selectedTotal, onSelect }) => {
   const { t } = useTranslation('events')
   const name = useId()
   const friend = targets.find(target => target.rarity === friendRarity)
   const th ='font-medium px-1.5 py-1 whitespace-nowrap'
-  const td = 'px-1.5 py-1 whitespace-nowrap tabular-nums text-right'
   return (
     <div className="flex flex-col gap-1.5">
       {friend && <FriendIncludedNote friend={friend} />}
+      <SlotLegend face={(friend ?? targets[0])?.craftEssences[0]?.face} withFriend={!!friend} />
       <div data-testid="bonus-comparison" className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
@@ -252,29 +386,16 @@ export const BonusComparisonTable: React.FC<{
           </thead>
           <tbody>
             {rows.map(row => (
-              <tr key={row.total} style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
-                <td className="px-1.5 py-1">
-                  <input
-                    type="radio"
-                    name={name}
-                    checked={row.total === selectedTotal}
-                    onChange={() => onSelect(row.total)}
-                    aria-label={t('event-shop-ce-select-row', '合計 {{total}} 枚を使う', { total: row.total })}
-                    className="h-4 w-4 accent-[var(--gold)]"
-                  />
-                </td>
-                <td className={td}>{row.total}</td>
-                {targets.map(({ rarity }) => (
-                  <td key={rarity} className={td}>
-                    {rarity === friend?.rarity
-                      ? t('event-shop-ce-friend-cell', '{{own}}＋フレンド1', { own: bonusRarityCount(row, rarity) - 1 })
-                      : bonusRarityCount(row, rarity)}
-                  </td>
-                ))}
-                <td className={td}>{row.laps.toLocaleString()}</td>
-                <td className={td}>{row.ap.toLocaleString()}</td>
-                <td className={td}>{row.apDrop === undefined ? '-' : row.apDrop.toLocaleString()}</td>
-              </tr>
+              <ComparisonRow
+                key={row.total}
+                row={row}
+                targets={targets}
+                values={values}
+                friendRarity={friendRarity}
+                name={name}
+                checked={row.total === selectedTotal}
+                onSelect={onSelect}
+              />
             ))}
           </tbody>
         </table>

@@ -579,6 +579,22 @@ export const bonusRarityCount = (row: Pick<BonusCraftEssenceRow, 'counts'>, rari
   }
 }
 
+/**
+ * 行の ☆ の枚数を、凸・無凸・フレンドの1枚に分ける（表示用）。
+ * 計算と同じく、フレンドの1枠を除いた枚数を凸の所持枚数まで凸、残りを無凸として数える。
+ */
+export const bonusRaritySlots = (
+  row: Pick<BonusCraftEssenceRow, 'counts'>,
+  rarity: BonusRarity,
+  maxOwned: number,
+  friendRarity: BonusRarity | null,
+): { max: number; base: number; friend: number } => {
+  const friend = friendRarity === rarity ? 1 : 0
+  const own = Math.max(0, bonusRarityCount(row, rarity) - friend)
+  const max = Math.min(own, Math.max(0, maxOwned))
+  return { max, base: own - max, friend }
+}
+
 const isBetterRow = (a: BonusCraftEssenceRow, b: BonusCraftEssenceRow): boolean => {
   if (Math.abs(a.ap - b.ap) > AP_EPSILON) return a.ap < b.ap
   if (a.laps !== b.laps) return a.laps < b.laps
