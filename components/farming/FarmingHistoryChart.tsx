@@ -103,10 +103,10 @@ export const countPointsByPeriod = (history: HistoryItem[], now: Date): Map<Peri
   )
 }
 
-// 選んだ期間が2点未満なら、2点以上ある期間のうち一番短いものに寄せる。どれも無ければ選んだまま。
 const hasEnoughPoints = (counts: Map<PeriodRange, number>, period: PeriodRange) =>
   (counts.get(period) ?? 0) >= MIN_POINTS
 
+// 選んだ期間が2点未満なら、2点以上ある期間のうち一番短いものに寄せる。どれも無ければ選んだまま。
 export const resolvePeriod = (selected: PeriodRange, counts: Map<PeriodRange, number>): PeriodRange =>
   hasEnoughPoints(counts, selected)
     ? selected

@@ -113,11 +113,23 @@ describe('FarmingHistoryChart の期間ボタン', () => {
     expect(screen.queryByText('履歴が不足しているためグラフを表示できません')).toBeNull()
     const byLabel = (label: string) => screen.getByRole<HTMLButtonElement>('button', { name: label })
     expect(byLabel('1年').style.background).toBe('var(--gold)')
+    expect(byLabel('1ヶ月').disabled).toBe(true)
     expect(byLabel('3ヶ月').disabled).toBe(true)
     expect(byLabel('6ヶ月').disabled).toBe(true)
     expect(byLabel('全期間').disabled).toBe(false)
 
     await userEvent.click(byLabel('全期間'))
     expect(byLabel('全期間').style.background).toBe('var(--gold)')
+  })
+
+  it('親が history を差し替えると数え直し、初めに選んだ3ヶ月が足りればそこへ戻る', () => {
+    const { rerender } = render(<FarmingHistoryChart history={[item('1', '2026-02-01T00:00:00Z'), item('2', '2026-06-01T00:00:00Z')]} />)
+    const byLabel = (label: string) => screen.getByRole<HTMLButtonElement>('button', { name: label })
+    expect(byLabel('1年').style.background).toBe('var(--gold)')
+
+    rerender(<FarmingHistoryChart history={[item('3', '2026-09-01T00:00:00Z'), item('4', '2026-09-15T00:00:00Z')]} />)
+    expect(byLabel('3ヶ月').style.background).toBe('var(--gold)')
+    expect(byLabel('3ヶ月').disabled).toBe(false)
+    expect(byLabel('1ヶ月').disabled).toBe(true)
   })
 })
