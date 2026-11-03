@@ -74,7 +74,8 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     return out
   }, [possessionRaw])
 
-  const hasRoster = rosterNeed.status !== 'empty'
+  // 育成計画を読む前（unread）は未設定と同じに扱い、ボタン・説明・入力モードの初期値を変えない。
+  const hasRoster = rosterNeed.status !== 'empty' && rosterNeed.status !== 'unread'
   const materialsLoading = rosterNeed.status === 'loading'
 
   // ── Mode ────────────────────────────────────────────────────────────────────
