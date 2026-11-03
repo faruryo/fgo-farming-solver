@@ -6,6 +6,7 @@
  * - ポイント報酬・ミッション・イベントポイントの品目の整形と、イベントごとの KV キーの bulk put 行。
  */
 import type {
+  EventBonusCraftEssence,
   EventBonusRarity,
   EventCurrency,
   EventFarmingNode,
@@ -311,6 +312,8 @@ export function buildEventRewardsRows(entries: EventRewardsEntry[], updatedAt: n
 export interface AtlasEquipSval {
   EventId?: number
   Individuality?: number
+  /** ドロップ1つあたりの加算数（+N）。 */
+  AddCount?: number
 }
 
 export interface AtlasEquipFunction {
@@ -323,11 +326,13 @@ export interface AtlasEquipSkill {
   functions?: AtlasEquipFunction[]
 }
 
-/** Atlas nice_equip の1件（使う項目だけ）。 */
+/** Atlas nice_equip の1件（使う項目だけ）。face は extraAssets.faces.equip[id]。 */
 export interface AtlasEquip {
   id: number
+  name: string
   rarity: number
   skills?: AtlasEquipSkill[]
+  extraAssets?: { faces?: { equip?: Record<string, string> } }
 }
 
 const isBonusRarity = (r: number): r is EventBonusRarity['rarity'] => r === 3 || r === 4 || r === 5
@@ -349,6 +354,39 @@ function dropUpTargets(equip: AtlasEquip, eventId: number): Set<number> {
   return targets
 }
 
+/**
+ * 礼装の、そのイベントの eventDropUp の AddCount（+N）。
+ * condLimitCount 0（無凸、未指定も 0）が base、4（凸）が max。同じ礼装が持つ別イベントのスキルは見ない。
+ * スキルごとに EventId が一致する最初の sval の値を使う。
+ */
+function dropUpBonus(equip: AtlasEquip, eventId: number): { base?: number; max?: number } {
+  const addCountAt = (cond: number): number | undefined => {
+    for (const skill of equip.skills ?? []) {
+      if ((skill.condLimitCount ?? 0) !== cond) continue
+      for (const fn of skill.functions ?? []) {
+        if (fn.funcType !== 'eventDropUp') continue
+        const add = fn.svals?.find(sv => sv.EventId === eventId)?.AddCount
+        if (typeof add === 'number') return add
+      }
+    }
+    return undefined
+  }
+  return { base: addCountAt(0), max: addCountAt(4) }
+}
+
+/** その ☆ の数えた礼装すべてで base・max がそろい、礼装間で同じ値のときだけ { base, max }。 */
+function commonBonus(equips: AtlasEquip[], eventId: number): EventBonusRarity['bonus'] {
+  const [first, ...rest] = equips.map(e => dropUpBonus(e, eventId))
+  if (first?.base === undefined || first.max === undefined) return undefined
+  const { base, max } = first
+  return rest.every(b => b.base === base && b.max === max) ? { base, max } : undefined
+}
+
+const toCraftEssence = (e: AtlasEquip): EventBonusCraftEssence => {
+  const face = e.extraAssets?.faces?.equip?.[String(e.id)]
+  return { id: e.id, name: e.name, ...(face ? { face } : {}) }
+}
+
 /** 交換所の通貨の individuality → 通貨の id。 */
 function currencyIndividualities(shop: EventShopItem[], itemMap: ItemMap): Map<number, number> {
   const byIndividuality = new Map<number, number>()
@@ -361,15 +399,18 @@ function currencyIndividualities(shop: EventShopItem[], itemMap: ItemMap): Map<n
 }
 
 /**
- * ☆ ごとの「対象が1つだけでそれが交換所の通貨である礼装」の通貨の集合と、
+ * ☆ ごとの「対象が1つだけでそれが交換所の通貨である礼装」の通貨の集合とその礼装（入力順）、
  * 対象が2つ以上の礼装が対象にする交換所の通貨の集合。
  */
 function collectDropUpCurrencies(
   equips: AtlasEquip[],
   eventId: number,
   currencyByIndividuality: Map<number, number>,
-): { singles: Map<EventBonusRarity['rarity'], Set<number>>; multiTargeted: Set<number> } {
-  const singles = new Map<EventBonusRarity['rarity'], Set<number>>()
+): {
+  singles: Map<EventBonusRarity['rarity'], { currencies: Set<number>; equips: AtlasEquip[] }>
+  multiTargeted: Set<number>
+} {
+  const singles = new Map<EventBonusRarity['rarity'], { currencies: Set<number>; equips: AtlasEquip[] }>()
   const multiTargeted = new Set<number>()
   for (const equip of equips) {
     if (!isBonusRarity(equip.rarity)) continue
@@ -378,9 +419,10 @@ function collectDropUpCurrencies(
     if (currencies.length > 1) {
       for (const id of targeted) multiTargeted.add(id)
     } else if (targeted.length === 1) {
-      const set = singles.get(equip.rarity) ?? new Set<number>()
-      set.add(targeted[0])
-      singles.set(equip.rarity, set)
+      const entry = singles.get(equip.rarity) ?? { currencies: new Set<number>(), equips: [] }
+      entry.currencies.add(targeted[0])
+      entry.equips.push(equip)
+      singles.set(equip.rarity, entry)
     }
   }
   return { singles, multiTargeted }
@@ -393,6 +435,9 @@ function collectDropUpCurrencies(
  *   その通貨をほかの ☆ の礼装が対象にしないときだけ対応させる。
  * - 対象が1つでも交換所の通貨でない礼装は数えない。
  * - 対象が2つ以上の礼装が対象にする通貨は対応させない。ポイントを増やす効果（eventPointUp）は見ない。
+ *
+ * 各対応には、数えた礼装（craftEssences。入力順、name と face）と、礼装1枚あたりの +N（bonus）を付ける。
+ * bonus は数えた礼装すべてで無凸・凸の AddCount が取れて同じ値のときだけ付ける（食い違えば付けない）。
  */
 export function decideBonusRarities(
   equips: AtlasEquip[],
@@ -403,13 +448,14 @@ export function decideBonusRarities(
   const { singles, multiTargeted } = collectDropUpCurrencies(equips, eventId, currencyIndividualities(shop, itemMap))
   const result: EventBonusRarity[] = []
   for (const rarity of [5, 4, 3] as const) {
-    const set = singles.get(rarity)
-    if (!set || set.size !== 1) continue
-    const [itemId] = set
+    const entry = singles.get(rarity)
+    if (!entry || entry.currencies.size !== 1) continue
+    const [itemId] = entry.currencies
     if (multiTargeted.has(itemId)) continue
-    const usedByOther = [...singles].some(([r, other]) => r !== rarity && other.has(itemId))
+    const usedByOther = [...singles].some(([r, other]) => r !== rarity && other.currencies.has(itemId))
     if (usedByOther) continue
-    result.push({ rarity, itemId })
+    const bonus = commonBonus(entry.equips, eventId)
+    result.push({ rarity, itemId, craftEssences: entry.equips.map(toCraftEssence), ...(bonus ? { bonus } : {}) })
   }
   return result
 }

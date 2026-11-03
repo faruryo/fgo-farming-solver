@@ -182,10 +182,22 @@ export interface EventPlannerEvent {
   bonusRarities?: EventBonusRarity[]
 }
 
-/** ボーナス礼装の ☆ と、その ☆ の礼装がドロップを増やす交換所の通貨。 */
+/**
+ * ボーナス礼装の ☆ と、その ☆ の礼装がドロップを増やす交換所の通貨・その ☆ の礼装・礼装1枚あたりの +N。
+ * `bonus` は、その ☆ の礼装すべてで無凸（condLimitCount 0）と凸（4）の AddCount がそろって取れたときだけ持つ。
+ */
 export interface EventBonusRarity {
   rarity: 3 | 4 | 5
   itemId: number
+  craftEssences: EventBonusCraftEssence[]
+  bonus?: { base: number; max: number }
+}
+
+/** ボーナス礼装の1種（Atlas nice_equip の id・名前・face の URL）。 */
+export interface EventBonusCraftEssence {
+  id: number
+  name: string
+  face?: string
 }
 
 /**

@@ -1254,9 +1254,14 @@ describe('EventHubClient', () => {
           { questId: 2, name: '盛りのクエスト', ap: 20, drops: [{ itemId: MORI, perRun: 10, countPerRun: 5 }] },
         ],
         bonusRarities: [
-          { rarity: 5, itemId: GOLD },
-          { rarity: 4, itemId: SILVER },
-          { rarity: 3, itemId: BRONZE },
+          {
+            rarity: 5,
+            itemId: GOLD,
+            craftEssences: [{ id: 501, name: '金の礼装', face: 'https://static.atlasacademy.io/JP/Faces/f_5010.png' }],
+            bonus: { base: 1, max: 2 },
+          },
+          { rarity: 4, itemId: SILVER, craftEssences: [{ id: 401, name: '銀の礼装A' }, { id: 402, name: '銀の礼装B' }] },
+          { rarity: 3, itemId: BRONZE, craftEssences: [{ id: 301, name: '銅の礼装' }] },
         ],
         ...overrides,
       })
@@ -1267,13 +1272,12 @@ describe('EventHubClient', () => {
     const setValue = (label: string, value: string) =>
       fireEvent.change(screen.getByLabelText(label), { target: { value } })
     const select = (name: string, count: string) => setValue(`${name} の交換回数`, count)
-    /** 「枚数ごとの行」の入力（☆5 凸 +2・無凸 +1・無凸 2 枚、フレンド ☆5）と金の通貨の必要量 300。 */
+    /** 「枚数ごとの行」の入力（☆5 はデータの凸 +2・無凸 +1、無凸 2 枚、フレンド ☆5）と金の通貨の必要量 300。 */
     const fillStar5 = () => {
       select('素材1', '10')
-      setValue('☆5 凸の +N', '2')
-      setValue('☆5 無凸の +N', '1')
       setValue('☆5 無凸の所持枚数', '2')
     }
+    const friend = (name: string) => screen.getByRole('radio', { name })
     const tableRows = () =>
       Array.from(screen.getByTestId('bonus-comparison').querySelectorAll('tbody tr')).map(row =>
         Array.from(row.querySelectorAll('td'))
@@ -1282,21 +1286,38 @@ describe('EventHubClient', () => {
       )
     const radio = (total: number) => screen.getByRole('radio', { name: `合計 ${total} 枚を使う` })
 
-    it('☆ ごとに通貨の名前と初期値 0 の4つの欄、フレンドの礼装（☆5）を出し、対応しない通貨とポイントだけ通貨ごとの欄を出す', () => {
+    it('☆ ごとに礼装の名前・通貨の名前と増え方、初期値 0 の所持枚数の欄を出し、+N の欄はデータに +N が無い ☆ だけに出す', () => {
       renderShop(ceEvent())
-      const rarities = [
-        [5, '金の通貨'],
+      const star5 = screen.getByTestId('bonus-rarity-5')
+      expect(within(star5).getByText('金の礼装')).toBeInTheDocument()
+      expect(within(star5).getByText('金の通貨')).toBeInTheDocument()
+      expect(within(star5).getByText('無凸 +1／凸 +2')).toBeInTheDocument()
+      expect(within(star5).queryByLabelText('☆5 凸の +N')).not.toBeInTheDocument()
+      expect(within(star5).queryByLabelText('☆5 無凸の +N')).not.toBeInTheDocument()
+      expect(within(screen.getByTestId('bonus-rarity-4')).getByText('銀の礼装A／銀の礼装B')).toBeInTheDocument()
+      for (const [rarity, name] of [
         [4, '銀の通貨'],
         [3, '銅の通貨'],
-      ] as const
-      for (const [rarity, name] of rarities) {
+      ] as const) {
         const fieldset = screen.getByTestId(`bonus-rarity-${rarity}`)
         expect(within(fieldset).getByText(name)).toBeInTheDocument()
-        for (const label of ['凸の +N', '無凸の +N', '凸の所持枚数', '無凸の所持枚数']) {
+        for (const label of ['凸の +N', '無凸の +N']) {
           expect(within(fieldset).getByLabelText(`☆${rarity} ${label}`)).toHaveValue(0)
         }
       }
-      expect(screen.getByLabelText('フレンドの礼装')).toHaveValue('5')
+      for (const rarity of [5, 4, 3]) {
+        for (const label of ['凸の所持枚数', '無凸の所持枚数']) {
+          expect(screen.getByLabelText(`☆${rarity} ${label}`)).toHaveValue(0)
+        }
+      }
+      const friends = within(screen.getByRole('radiogroup', { name: 'フレンドの礼装' }))
+      expect(friends.getAllByRole('radio').map(radio => radio.getAttribute('aria-label'))).toEqual([
+        'なし',
+        '金の礼装',
+        '銀の礼装A／銀の礼装B',
+        '銅の礼装',
+      ])
+      expect(friend('金の礼装')).toBeChecked()
       expect(screen.getByLabelText('盛りの通貨 のドロップボーナス')).toHaveValue(0)
       expect(screen.getByLabelText('ポイント のドロップボーナス')).toHaveValue(0)
       for (const name of ['金の通貨', '銀の通貨', '銅の通貨']) {
@@ -1384,10 +1405,10 @@ describe('EventHubClient', () => {
 
     it('☆ ごとの欄に -3 と 2.5 を入れると 0 と 2 として扱う', () => {
       renderShop(ceEvent())
-      setValue('☆5 凸の +N', '-3')
-      expect(screen.getByLabelText('☆5 凸の +N')).toHaveValue(0)
-      setValue('☆5 凸の +N', '2.5')
-      expect(screen.getByLabelText('☆5 凸の +N')).toHaveValue(2)
+      setValue('☆4 凸の +N', '-3')
+      expect(screen.getByLabelText('☆4 凸の +N')).toHaveValue(0)
+      setValue('☆5 凸の所持枚数', '2.5')
+      expect(screen.getByLabelText('☆5 凸の所持枚数')).toHaveValue(2)
     })
 
     const savedEntry = () => {
@@ -1396,21 +1417,21 @@ describe('EventHubClient', () => {
     }
     const totalLine = () => screen.getByText(/^合計 \d+ 周・AP \d+$/).textContent
 
-    it('☆ ごとの欄・フレンドの ☆・選んだ行は開き直しても残り、周回の内訳はその行の編成のまま', () => {
+    it('☆ ごとの欄・フレンドの礼装・選んだ行は開き直しても残り、周回の内訳はその行の編成のまま', () => {
       const { unmount } = renderShop(ceEvent())
       fillStar5()
       setValue('☆5 凸の所持枚数', '1')
-      setValue('フレンドの礼装', '')
+      setValue('☆4 凸の +N', '3')
+      fireEvent.click(friend('なし'))
       fireEvent.click(radio(1))
       const before = totalLine()
       unmount()
 
       renderShop(ceEvent())
-      expect(screen.getByLabelText('☆5 凸の +N')).toHaveValue(2)
-      expect(screen.getByLabelText('☆5 無凸の +N')).toHaveValue(1)
       expect(screen.getByLabelText('☆5 凸の所持枚数')).toHaveValue(1)
       expect(screen.getByLabelText('☆5 無凸の所持枚数')).toHaveValue(2)
-      expect(screen.getByLabelText('フレンドの礼装')).toHaveValue('')
+      expect(screen.getByLabelText('☆4 凸の +N')).toHaveValue(3)
+      expect(friend('なし')).toBeChecked()
       expect(radio(1)).toBeChecked()
       expect(totalLine()).toBe(before)
     })
@@ -1437,9 +1458,29 @@ describe('EventHubClient', () => {
 
       renderShop(ceEvent())
       expect(radio(3)).toBeChecked()
-      expect(screen.getByLabelText('フレンドの礼装')).toHaveValue('5')
+      expect(friend('金の礼装')).toBeChecked()
       expect(screen.getByText('合計 10 周・AP 400')).toBeInTheDocument()
       expect(localStorage.getItem(saved.key)).toBe(stale)
+    })
+
+    it('データに +N がある ☆ は、保存した +N を使わずデータの +N で比べる', () => {
+      const { unmount } = renderShop(ceEvent())
+      fillStar5()
+      unmount()
+      const saved = savedEntry()
+      if (!saved) throw new Error('交換所の入力が保存されていない')
+      const parsed = JSON.parse(saved.json) as { rarity: Record<string, Record<string, number>> }
+      localStorage.setItem(
+        saved.key,
+        JSON.stringify({ ...parsed, rarity: { ...parsed.rarity, 5: { ...parsed.rarity['5'], maxBonus: 9, baseBonus: 9 } } }),
+      )
+
+      renderShop(ceEvent())
+      expect(tableRows()).toEqual([
+        ['1', '1', '0', '0', '15', '600', '-'],
+        ['2', '2', '0', '0', '12', '480', '120'],
+        ['3', '3', '0', '0', '10', '400', '80'],
+      ])
     })
 
     it('ボーナス礼装の入力は、開いただけでは保存しない', () => {

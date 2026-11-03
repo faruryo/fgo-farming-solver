@@ -838,10 +838,7 @@ const useBonusCraftEssences = (
 ) => {
   const mappings = event.bonusRarities
   const { inputs, edit, edited } = saved
-  const values: ReadonlyMap<BonusRarity, RarityValues> = useMemo(
-    () => new Map((mappings ?? []).map(m => [m.rarity, rarityValuesOf(inputs.rarity[m.rarity])])),
-    [mappings, inputs.rarity],
-  )
+  const values = useMemo(() => rarityValuesFor(mappings, inputs.rarity), [mappings, inputs.rarity])
   // 今の対応に無い ☆ の保存値は未選択として読む。
   const savedFriend = inputs.friendRarity
   const friendChoice = savedFriend === null ? null : mappings?.find(m => m.rarity === savedFriend)?.rarity
@@ -852,6 +849,8 @@ const useBonusCraftEssences = (
       (mappings ?? []).map(m => ({
         rarity: m.rarity,
         currency: targets.find(target => target.itemId === m.itemId) ?? { itemId: m.itemId, label: `#${m.itemId}` },
+        craftEssences: m.craftEssences,
+        bonus: m.bonus,
       })),
     [mappings, targets],
   )
@@ -887,8 +886,8 @@ const useBonusCraftEssences = (
     mappings,
     rarityTargets,
     values,
-    setRarityValues: (rarity: BonusRarity, value: RarityValues) =>
-      edit(prev => ({ ...prev, rarity: { ...prev.rarity, [rarity]: { ...value } } })),
+    setRarityValue: (rarity: BonusRarity, key: keyof RarityValues, value: number) =>
+      edit(prev => withRarityValue(prev, rarity, key, value)),
     friendRarity,
     setFriendRarity: (rarity: BonusRarity | null) => edit(prev => ({ ...prev, friendRarity: rarity })),
     comparison,
@@ -922,7 +921,7 @@ const BonusCraftEssenceSection: React.FC<{
         targets={state.rarityTargets}
         values={state.values}
         friendRarity={state.friendRarity}
-        onChange={state.setRarityValues}
+        onChange={state.setRarityValue}
         onFriendChange={state.setFriendRarity}
       />
       {rows.length > 0 && (
@@ -1047,6 +1046,31 @@ const rarityValuesOf = (table: Readonly<Record<string, number>> | undefined): Ra
   maxOwned: table?.maxOwned ?? 0,
   baseOwned: table?.baseOwned ?? 0,
 })
+
+/** ☆ ごとの入力値。データに +N がある ☆ は、保存した +N を使わずデータの値を使う。 */
+const rarityValuesFor = (
+  mappings: EventPlannerEvent['bonusRarities'],
+  saved: ShopSavedInputs['rarity'],
+): ReadonlyMap<BonusRarity, RarityValues> => {
+  const byRarity = new Map(Object.entries(saved))
+  return new Map(
+    (mappings ?? []).map(m => {
+      const v = rarityValuesOf(byRarity.get(String(m.rarity)))
+      return [m.rarity, m.bonus ? { ...v, maxBonus: m.bonus.max, baseBonus: m.bonus.base } : v]
+    }),
+  )
+}
+
+/** ☆ の保存値のうち1つの値だけを書き換える（データに +N がある ☆ でも、変えていない +N は書かない）。 */
+const withRarityValue = (
+  prev: ShopSavedInputs,
+  rarity: BonusRarity,
+  key: keyof RarityValues,
+  value: number,
+): ShopSavedInputs => {
+  const table = new Map(Object.entries(prev.rarity)).get(String(rarity))
+  return { ...prev, rarity: { ...prev.rarity, [rarity]: { ...table, [key]: value } } }
+}
 
 /** 保存した入力と、関数形で書き込む setter と、この画面で利用者が値を変えたか。 */
 interface ShopSavedState {
