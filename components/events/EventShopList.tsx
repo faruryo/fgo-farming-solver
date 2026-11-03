@@ -125,7 +125,8 @@ const WantedToggle: React.FC<{ name: string; wanted: boolean; onChange: (wanted:
       role="radio"
       aria-checked={wanted === value}
       onClick={() => onChange(value)}
-      className="h-11 min-w-11 px-2 text-[11px] font-medium whitespace-nowrap"
+      // 見た目は文字に合わせて 24px、押せる範囲は疑似要素で上下に広げて 44px を保つ。
+      className="relative h-6 min-w-11 px-2 text-[11px] font-medium whitespace-nowrap first:rounded-l-[5px] last:rounded-r-[5px] before:absolute before:inset-x-0 before:-inset-y-2.5"
       style={
         wanted === value
           ? { background: 'var(--gold)', color: 'var(--bg)' }
@@ -139,7 +140,8 @@ const WantedToggle: React.FC<{ name: string; wanted: boolean; onChange: (wanted:
     <span
       role="radiogroup"
       aria-label={t('event-shop-wanted-label', '{{name}} は必要か', { name })}
-      className="inline-flex rounded-md overflow-hidden"
+      // overflow-hidden を付けると、ボタンの押せる範囲（疑似要素）が切られる。角はボタン側で丸める。
+      className="inline-flex rounded-md"
       style={{ border: '1px solid var(--border)' }}
     >
       {option(true, t('event-shop-wanted', '必要'))}
