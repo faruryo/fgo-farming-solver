@@ -489,27 +489,29 @@ const goldSilverBronze: AtlasEquip[] = [
 
 const allCurrencies = [GOLD, SILVER, BRONZE, MORI_A, MORI_B, MORI_C]
 
+/** goldSilverBronze から決まる ☆5/☆4/☆3 と金/銀/銅の対応。 */
+const GOLD_SILVER_BRONZE = [
+  { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
+  { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
+  { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
+]
+
+const decide = (equips: AtlasEquip[], currencies = allCurrencies) =>
+  decideBonusRarities(equips, EVENT_ID, bonusShop(currencies), bonusItemMap)
+
 describe('decideBonusRarities', () => {
   it('☆5/☆4/☆3 が金/銀/銅だけを対象にするとき、3つの対応が出る（凸と無凸は1つに数える）', () => {
-    expect(decideBonusRarities(goldSilverBronze, EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([
-      { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
-      { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
-      { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
-    ])
+    expect(decide(goldSilverBronze)).toEqual(GOLD_SILVER_BRONZE)
   })
 
   it('☆5 の礼装が別の3種類の通貨を同時に対象にしても ☆5 と金は残り、3種類は対応しない', () => {
     const equips = [...goldSilverBronze, equip(7, 5, [1004, 1005, 1006])]
-    expect(decideBonusRarities(equips, EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([
-      { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
-      { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
-      { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
-    ])
+    expect(decide(equips)).toEqual(GOLD_SILVER_BRONZE)
   })
 
   it('☆5 の単一対象の礼装が別々の2つの通貨に効くとき、☆5 は対応しない', () => {
     const equips = [...goldSilverBronze, equip(7, 5, [1004])]
-    expect(decideBonusRarities(equips, EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([
+    expect(decide(equips)).toEqual([
       { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
       { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
     ])
@@ -517,31 +519,17 @@ describe('decideBonusRarities', () => {
 
   it('eventPointUp の礼装とイベントポイントは対応しない', () => {
     const equips = [...goldSilverBronze, equip(7, 5, [1007], { funcType: 'eventPointUp' })]
-    expect(
-      decideBonusRarities(equips, EVENT_ID, bonusShop([...allCurrencies, POINT]), bonusItemMap),
-    ).toEqual([
-      { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
-      { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
-      { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
-    ])
+    expect(decide(equips, [...allCurrencies, POINT])).toEqual(GOLD_SILVER_BRONZE)
   })
 
   it('別のイベントの EventId を持つ効果は数えない', () => {
     const equips = [...goldSilverBronze, equip(7, 5, [1004], { eventId: 80627 })]
-    expect(decideBonusRarities(equips, EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([
-      { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
-      { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
-      { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
-    ])
+    expect(decide(equips)).toEqual(GOLD_SILVER_BRONZE)
   })
 
   it('☆5 の礼装が交換所の通貨でないアイテム1つだけを対象にしても、☆5 と金の対応は残る', () => {
     const equips = [...goldSilverBronze, equip(7, 5, [1008])]
-    expect(decideBonusRarities(equips, EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([
-      { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
-      { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
-      { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
-    ])
+    expect(decide(equips)).toEqual(GOLD_SILVER_BRONZE)
   })
 
   it('name と face を持つ礼装を入力順に載せ、同じ礼装の別イベントの AddCount は無視して bonus を出す', () => {
@@ -555,7 +543,7 @@ describe('decideBonusRarities', () => {
       skills: [...other, ...own],
       extraAssets: { faces: { equip: { '9407560': 'https://example.com/f_94075600.png' } } },
     }
-    expect(decideBonusRarities([ce], EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([
+    expect(decide([ce])).toEqual([
       {
         rarity: 5,
         itemId: GOLD,
@@ -567,25 +555,25 @@ describe('decideBonusRarities', () => {
 
   it('同じ ☆ の礼装で AddCount が違うと bonus を省き、礼装は両方載せる', () => {
     const diff: AtlasEquip = { id: 2, name: '礼装2', rarity: 5, skills: dropUpSkills(EVENT_ID, 1001, [[0, 1], [4, 3]]) }
-    const [entry] = decideBonusRarities([equip(1, 5, [1001]), diff], EVENT_ID, bonusShop(allCurrencies), bonusItemMap)
+    const [entry] = decide([equip(1, 5, [1001]), diff])
     expect(entry.craftEssences).toEqual(ces(1, 2))
     expect(entry).not.toHaveProperty('bonus')
   })
 
   it('凸のスキルが無い礼装があると bonus を省く', () => {
     const noMax: AtlasEquip = { id: 1, name: '礼装1', rarity: 5, skills: dropUpSkills(EVENT_ID, 1001, [[0, 1]]) }
-    const [entry] = decideBonusRarities([noMax], EVENT_ID, bonusShop(allCurrencies), bonusItemMap)
+    const [entry] = decide([noMax])
     expect(entry).toMatchObject({ rarity: 5, itemId: GOLD, craftEssences: ces(1) })
     expect(entry).not.toHaveProperty('bonus')
   })
 
   it('face が無ければ face のキーを持たない', () => {
-    const [entry] = decideBonusRarities([equip(1, 5, [1001])], EVENT_ID, bonusShop(allCurrencies), bonusItemMap)
+    const [entry] = decide([equip(1, 5, [1001])])
     expect(entry.craftEssences[0]).not.toHaveProperty('face')
   })
 
   it('礼装が1つも無いイベントでは空の配列になる', () => {
-    expect(decideBonusRarities([], EVENT_ID, bonusShop(allCurrencies), bonusItemMap)).toEqual([])
+    expect(decide([])).toEqual([])
   })
 })
 
@@ -611,11 +599,7 @@ describe('attachBonusRarities', () => {
   })
 
   it('礼装のデータがあれば対応を付ける', () => {
-    expect(attachBonusRarities(shopEvent(), goldSilverBronze, bonusItemMap, []).bonusRarities).toEqual([
-      { rarity: 5, itemId: GOLD, craftEssences: ces(1, 2), bonus: BONUS },
-      { rarity: 4, itemId: SILVER, craftEssences: ces(3, 4), bonus: BONUS },
-      { rarity: 3, itemId: BRONZE, craftEssences: ces(5, 6), bonus: BONUS },
-    ])
+    expect(attachBonusRarities(shopEvent(), goldSilverBronze, bonusItemMap, []).bonusRarities).toEqual(GOLD_SILVER_BRONZE)
   })
 
   it('礼装のデータが無く前の対応も無いとき、項目を付けず交換所とドロップはそのまま取り込む', () => {
