@@ -1370,7 +1370,8 @@ describe('EventHubClient', () => {
         ['3', '☆5 凸1枚・無凸1枚・フレンド1枚'],
       ])
       const star5Cell = screen.getByTestId('bonus-comparison').querySelectorAll('tbody tr')[2].querySelectorAll('td')[2]
-      expect(star5Cell.querySelectorAll('span[aria-hidden]')).toHaveLength(3)
+      // 凸・無凸・フレンドの順に、印（無凸は印なし）で見分ける。
+      expect(Array.from(star5Cell.querySelectorAll('span[aria-hidden]')).map(icon => icon.textContent)).toEqual(['凸', '', 'フ'])
       const card = within(bonusCard())
       for (const label of ['無凸', 'フレンド（凸）']) expect(card.getByText(label)).toBeInTheDocument()
       fireEvent.click(friend('なし'))
