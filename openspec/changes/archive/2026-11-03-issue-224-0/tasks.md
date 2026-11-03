@@ -20,5 +20,5 @@
 
 ## 5. 確認
 
-- [ ] 5.1 `pnpm lint`、`pnpm lint:ratchet`、`pnpm type-check`、`pnpm vitest run` が通る <!-- verify-only -->
-- [ ] 5.2 `pnpm dev` を起動したブラウザで /events/80632 の交換所に交換回数・所持数・ボーナスを入れて読み込み直し、保存値が出る前に 0 が見えず読み込み中の表示になること、ロト計画のあるイベントで育成計画のボタンと入力モードの初期値が今までと同じであることを確かめる <!-- verify-only -->
+- [x] 5.1 `pnpm lint`、`pnpm lint:ratchet`、`pnpm type-check`、`pnpm vitest run` が通る <!-- verify-only -->
+- [x] 5.2 `pnpm dev` を起動したブラウザで /events/80632 の交換所に交換回数・所持数・ボーナスを入れて読み込み直し、保存値が出る前に 0 が見えず読み込み中の表示になること、ロト計画のあるイベントで育成計画のボタンと入力モードの初期値が今までと同じであることを確かめる <!-- verify-only -->
