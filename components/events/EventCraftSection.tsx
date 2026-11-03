@@ -28,11 +28,24 @@ const resolveBlockedView = (
   dropsEmpty: boolean,
   hasFullNeed: boolean,
 ): BlockedView | null => {
-  if (roster === 'empty') return 'empty'
-  if (roster === 'error') return 'roster-error'
-  if (roster === 'loading' || dropsLoading) return 'loading'
-  if (dropsEmpty) return 'drops-error'
-  return hasFullNeed ? null : 'data-missing'
+  switch (roster) {
+    case 'empty':
+      return 'empty'
+    case 'error':
+      return 'roster-error'
+    // 育成計画を読む前は保存値が空に見えるだけなので、未設定の案内ではなく読み込み中にする。
+    case 'unread':
+    case 'loading':
+      return 'loading'
+    case 'ready':
+      if (dropsLoading) return 'loading'
+      if (dropsEmpty) return 'drops-error'
+      return hasFullNeed ? null : 'data-missing'
+    default: {
+      const unhandled: never = roster
+      return unhandled
+    }
+  }
 }
 
 const Notice: React.FC<{ error?: boolean; children: React.ReactNode }> = ({ error, children }) => (
