@@ -14,7 +14,8 @@ vi.mock('./index', () => ({
 vi.mock('./material', () => ({ Material: () => <div>material-mounted</div> }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }) }))
 
-import { MaterialCatalogLoader } from './catalog-loader'
+// 素材カタログの取得はモジュール内で共有されるので、テストごとに読み直す。
+let MaterialCatalogLoader: typeof import('./catalog-loader').MaterialCatalogLoader
 
 const catalog = {
   schemaVersion: 1,
@@ -36,7 +37,11 @@ const deferred = <T,>() => {
 }
 
 describe('MaterialCatalogLoader', () => {
-  beforeEach(() => { localStorage.clear(); vi.unstubAllGlobals(); indexProps.current = null })
+  beforeEach(async () => {
+    localStorage.clear(); vi.unstubAllGlobals(); indexProps.current = null
+    vi.resetModules()
+    ;({ MaterialCatalogLoader } = await import('./catalog-loader'))
+  })
 
   it('does not mount stateful Material UI while catalog loading fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 503 })))

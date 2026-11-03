@@ -4,10 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ChaldeaState } from './create-chaldea-state'
 import { useLocalStorage } from './use-local-storage'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
-import {
-  getMaterialsForServantIds,
-  type MaterialsForServants,
-} from '../lib/get-materials'
+import type { MaterialsForServants } from '../lib/get-materials'
+import { loadMaterialCatalog } from './use-material-catalog'
 import { computeTotalNeed } from '../lib/event-plan'
 
 export type RosterNeed =
@@ -52,15 +50,21 @@ export const useRosterNeed = (): RosterNeed => {
     if (!idsKey) return
     let cancelled = false
     const ids = idsKey.split(',').map(Number)
-    getMaterialsForServantIds(ids)
-      .then((materials) => {
+    loadMaterialCatalog()
+      .then(({ materials: catalog }) => {
         if (cancelled) return
-        // getMaterialsForServantIds は個別の取得失敗を黙って落とすため、欠けたまま
-        // 集計すると不足数が過小になる。全件揃わなければエラーにする。
-        const complete = ids.every((id) => Reflect.has(materials, String(id)))
+        // カタログに無いサーヴァント（実装直後など）を落としたまま集計すると不足数が過小になる。
+        // 全件揃わなければエラーにする。
+        const keys = new Set(ids.map(String))
+        const materials = Object.fromEntries(Object.entries(catalog).filter(([id]) => keys.has(id)))
+        const complete = Object.keys(materials).length === keys.size
         setFetched(
           complete
-            ? { ids: idsKey, status: 'done', materials }
+            ? {
+                ids: idsKey,
+                status: 'done',
+                materials,
+              }
             : { ids: idsKey, status: 'error' },
         )
       })

@@ -701,7 +701,7 @@ export const reverseCalcBoxes = (
  * get-materials.ts の MaterialsForServants 構造を消費する。
  *
  * @param chaldeaState  useChaldeaState で得た育成目標（read-only）
- * @param materialsForServants  getMaterialsForServantIds の結果（事前に取得してインジェクト）
+ * @param materialsForServants  素材カタログから取り出したサーヴァント別素材（事前に取得してインジェクト）
  * @param possessionCounts  localStorage 'items' の atlasId → 所持数
  */
 export type ShortfallMap = Map<number, number>
@@ -793,11 +793,11 @@ export type RosterImpactResult = {
 /**
  * ロスターの育成インパクトを計算する（純粋関数）。
  *
- * 非同期データ（getMaterialsForServantIds）は呼び出し側で await して注入する。
+ * 非同期データ（素材カタログ）は呼び出し側で await して注入する。
  * この関数自体は同期で完結し、テスタビリティを最大化する。
  *
  * @param chaldeaState          育成目標（read-only, useChaldeaState から）
- * @param materialsForServants  getMaterialsForServantIds の結果
+ * @param materialsForServants  素材カタログから取り出したサーヴァント別素材
  * @param possessionCounts      atlasId → 所持数（localStorage 'items' から）
  * @param boxLayer              calcBoxLayer の結果（N 箱分の確定報酬）
  * @param shopAllocation        allocateShop の結果
