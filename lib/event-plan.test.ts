@@ -23,6 +23,7 @@ import {
   applyDropBonus,
   compareBonusCraftEssences,
   selectBonusCraftEssenceRow,
+  bonusRaritySlots,
   type BonusCraftEssenceRow,
   type BonusRarityInput,
 } from './event-plan'
@@ -878,5 +879,30 @@ describe('selectBonusCraftEssenceRow', () => {
 
   it('行が無ければ undefined', () => {
     expect(selectBonusCraftEssenceRow([], undefined)).toBeUndefined()
+  })
+})
+
+describe('bonusRaritySlots', () => {
+  const row = { counts: { 5: 3, 4: 1, 3: 0 } as const }
+
+  it('フレンドの1枠を除いた枚数を、凸の所持枚数まで凸、残りを無凸に分ける', () => {
+    expect(bonusRaritySlots(row, 5, 1, 5)).toEqual({ max: 1, base: 1, friend: 1 })
+  })
+
+  it('フレンドの ☆ でなければ、すべて自分の枚数として分ける', () => {
+    expect(bonusRaritySlots(row, 5, 1, 4)).toEqual({ max: 1, base: 2, friend: 0 })
+    expect(bonusRaritySlots(row, 5, 1, null)).toEqual({ max: 1, base: 2, friend: 0 })
+  })
+
+  it('凸の所持枚数が使う枚数より多ければ、すべて凸にする', () => {
+    expect(bonusRaritySlots(row, 4, 3, null)).toEqual({ max: 1, base: 0, friend: 0 })
+  })
+
+  it('フレンドの1枚だけの行は、凸・無凸とも 0', () => {
+    expect(bonusRaritySlots({ counts: { 5: 1, 4: 0, 3: 0 } }, 5, 2, 5)).toEqual({ max: 0, base: 0, friend: 1 })
+  })
+
+  it('0 枚の ☆ はすべて 0', () => {
+    expect(bonusRaritySlots(row, 3, 2, null)).toEqual({ max: 0, base: 0, friend: 0 })
   })
 })
