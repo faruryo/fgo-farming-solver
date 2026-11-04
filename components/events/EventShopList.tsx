@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -144,6 +144,25 @@ const Card: React.FC<{
 
 const COLUMN_COUNT = 7
 
+/** Tailwind の sm（40rem）。 */
+const SM_QUERY = '(min-width: 40rem)'
+
+/**
+ * 画面が sm 未満か。matchMedia の無い環境（サーバー描画・テスト）は sm 以上として扱う。
+ * CSS の出し分けで同じ部品を2回描くと「必要／不要」の切り替えが DOM に2つ並ぶので、JS で1か所に決める。
+ */
+const useNarrow = () =>
+  useSyncExternalStore(
+    onChange => {
+      if (typeof window.matchMedia !== 'function') return () => {}
+      const query = window.matchMedia(SM_QUERY)
+      query.addEventListener('change', onChange)
+      return () => query.removeEventListener('change', onChange)
+    },
+    () => typeof window.matchMedia === 'function' && !window.matchMedia(SM_QUERY).matches,
+    () => false,
+  )
+
 /** 育成計画から見た品目の行の表示。育成計画が使えないときは undefined。 */
 interface RowPlan {
   /** 状態なし（QP・見分けられない品目）は undefined。 */
@@ -238,6 +257,8 @@ interface ShopRowProps {
   counts: ShopExchangeCounts
   onRowCountChange: (row: ShopListRow, count: number) => void
   plan?: RowPlan
+  /** sm 未満では、育成計画の状態と「必要／不要」を品目のセルから出し、行の下の2段目に置く。 */
+  narrow: boolean
 }
 
 /** まとめた行の、回数が 1 以上の通貨ごとの回数（例: 武蔵うどん 2・江戸むすび 1）。 */
@@ -261,7 +282,24 @@ const RowBreakdown: React.FC<{
   )
 }
 
-const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange, plan }) => {
+/**
+ * sm 未満で品目の行の下に置く、状態と「必要／不要」の2段目。罫線を引かずに上の行へつなげる。
+ * 上の余白（行の 6px＋ここの 2px＋状態の上の 2px）は「必要／不要」の押せる範囲が上へ広がる 10px と同じで、上の行の入力欄に重ならない。
+ */
+const RowPlanRow: React.FC<{ name: string; plan: RowPlan; count: number; color: string }> = ({
+  name,
+  plan,
+  count,
+  color,
+}) => (
+  <tr style={{ color }}>
+    <td colSpan={COLUMN_COUNT} className="pl-1.5 pr-1.5 pt-0.5 pb-1.5">
+      <RowPlanLabel name={name} plan={plan} count={count} />
+    </td>
+  </tr>
+)
+
+const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange, plan, narrow }) => {
   const { t } = useTranslation('events')
   const [first] = row.items
   if (!first) return null
@@ -269,56 +307,55 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
   const { count, parts } = rowCountOf(row, counts)
   const limit = rowLimit(row)
   const dimmed = plan?.status?.kind === 'enough' || plan?.status?.kind === 'unused'
+  const color = dimmed ? 'var(--text3)' : 'var(--text2)'
   return (
-    <tr
-      style={{
-        borderTop: '1px solid var(--border)',
-        color: dimmed ? 'var(--text3)' : 'var(--text2)',
-      }}
-    >
-      <td className="hidden sm:table-cell text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
-        {ranked?.rank}
-      </td>
-      {/* 品目名が数文字ごとに折り返さないよう幅を取る。sm 未満は 375px でも横スクロールなしで収めるため、
-          順位の列を隠し、アイコンを名前の上に置いて名前に幅を回す。表は残りの幅を品目名に回すので、最小幅は
-          3文字分（4em）の下限に留め、他の列が広い交換所でもまず品目名の幅で吸収する。 */}
-      <td className="pl-1.5 pr-0.5 sm:px-1 py-1.5 min-w-[4em] sm:min-w-[8em]">
-        <span className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
-          <Icon src={first.icon} />
-          <span>{name}</span>
-        </span>
-        {row.items.length > 1 && <RowBreakdown parts={parts} />}
-        {plan && <RowPlanLabel name={name} plan={plan} count={count} />}
-      </td>
-      <td className="px-0.5 sm:px-1 py-1.5">
-        {/* 数字を周りの 12px（text-xs）に揃える。iOS Safari は 16px 未満の入力欄にフォーカスすると画面を拡大するので、
-            文字は 16px のまま 3/4 に縮めて 12px に見せる。縮めても配置の大きさは変わらないため、外側の箱で見た目の
-            大きさ（sm 未満 40px・sm 以上 48px × 28px）を決め、入力欄はその 4/3 倍の大きさで左上を基点に縮める。 */}
-        <div className="h-7 w-10 sm:w-12">
-          <Input
-            type="number"
-            min={0}
-            {...(limit > 0 ? { max: limit } : {})}
-            value={count}
-            onChange={e => onRowCountChange(row, toCount(e.target.value))}
-            aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
-              name,
-            })}
-            className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-1.5 text-base sm:px-2 md:text-base"
-          />
-        </div>
-      </td>
-      <td className="text-right px-0.5 sm:px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
-      <td className="text-right px-0.5 sm:px-1 py-1.5">
-        <LimitCell row={row} />
-      </td>
-      <td className="text-right px-0.5 sm:px-1 py-1.5">
-        <CostCell row={row} />
-      </td>
-      <td className="text-right pl-0.5 pr-1.5 sm:pl-1 sm:pr-3 py-1.5 whitespace-nowrap tabular-nums" style={{ color: 'var(--text2)' }}>
-        {ranked && formatEfficiency(ranked.efficiency)}
-      </td>
-    </tr>
+    <>
+      <tr style={{ borderTop: '1px solid var(--border)', color }}>
+        <td className="hidden sm:table-cell text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
+          {ranked?.rank}
+        </td>
+        {/* 品目名が数文字ごとに折り返さないよう幅を取る。sm 未満は 375px でも横スクロールなしで収めるため、
+            順位の列を隠し、アイコンを名前の上に置いて名前に幅を回す。表は残りの幅を品目名に回すので、最小幅は
+            3文字分（4em）の下限に留め、他の列が広い交換所でもまず品目名の幅で吸収する。 */}
+        <td className="pl-1.5 pr-0.5 sm:px-1 py-1.5 min-w-[4em] sm:min-w-[8em]">
+          <span className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
+            <Icon src={first.icon} />
+            <span>{name}</span>
+          </span>
+          {row.items.length > 1 && <RowBreakdown parts={parts} />}
+          {plan && !narrow && <RowPlanLabel name={name} plan={plan} count={count} />}
+        </td>
+        <td className="px-0.5 sm:px-1 py-1.5">
+          {/* 数字を周りの 12px（text-xs）に揃える。iOS Safari は 16px 未満の入力欄にフォーカスすると画面を拡大するので、
+              文字は 16px のまま 3/4 に縮めて 12px に見せる。縮めても配置の大きさは変わらないため、外側の箱で見た目の
+              大きさ（sm 未満 40px・sm 以上 48px × 28px）を決め、入力欄はその 4/3 倍の大きさで左上を基点に縮める。 */}
+          <div className="h-7 w-10 sm:w-12">
+            <Input
+              type="number"
+              min={0}
+              {...(limit > 0 ? { max: limit } : {})}
+              value={count}
+              onChange={e => onRowCountChange(row, toCount(e.target.value))}
+              aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
+                name,
+              })}
+              className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-1.5 text-base sm:px-2 md:text-base"
+            />
+          </div>
+        </td>
+        <td className="text-right px-0.5 sm:px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
+        <td className="text-right px-0.5 sm:px-1 py-1.5">
+          <LimitCell row={row} />
+        </td>
+        <td className="text-right px-0.5 sm:px-1 py-1.5">
+          <CostCell row={row} />
+        </td>
+        <td className="text-right pl-0.5 pr-1.5 sm:pl-1 sm:pr-3 py-1.5 whitespace-nowrap tabular-nums" style={{ color: 'var(--text2)' }}>
+          {ranked && formatEfficiency(ranked.efficiency)}
+        </td>
+      </tr>
+      {narrow && plan?.status && <RowPlanRow name={name} plan={plan} count={count} color={color} />}
+    </>
   )
 }
 
@@ -348,6 +385,7 @@ const ShopTable: React.FC<{
 }> = ({ rows, apPrices, counts, planOf, onRowCountChange }) => {
   const { t } = useTranslation('events')
   const { ranked, unpriced } = useMemo(() => orderShopByEfficiency(rows, apPrices), [rows, apPrices])
+  const narrow = useNarrow()
   const showLabels = unpriced.length > 0 && ranked.length > 0
   const row = (shopRow: ShopListRow, rankedRow?: { rank: number; efficiency: number }) => (
     <ShopRow
@@ -357,6 +395,7 @@ const ShopTable: React.FC<{
       counts={counts}
       onRowCountChange={onRowCountChange}
       plan={planOf(shopRow)}
+      narrow={narrow}
     />
   )
 
@@ -407,16 +446,19 @@ const OwnedInputs: React.FC<{
           <label key={group.costItemId} className="flex items-center gap-1.5">
             <Icon src={group.costIcon} />
             <span>{label(group)}</span>
-            <Input
-              type="number"
-              min={0}
-              value={owned.get(group.costItemId) ?? 0}
-              onChange={e => onOwnedChange(group.costItemId, toCount(e.target.value))}
-              aria-label={t('event-shop-owned-label', '{{name}} の所持数', {
-                name: label(group),
-              })}
-              className="h-7 w-24"
-            />
+            {/* 交換回数の入力欄と同じく、16px のまま 3/4 に縮めて周りの 12px に揃える（iOS Safari の拡大を避ける）。 */}
+            <span className="block h-7 w-24">
+              <Input
+                type="number"
+                min={0}
+                value={owned.get(group.costItemId) ?? 0}
+                onChange={e => onOwnedChange(group.costItemId, toCount(e.target.value))}
+                aria-label={t('event-shop-owned-label', '{{name}} の所持数', {
+                  name: label(group),
+                })}
+                className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-3.5 text-base md:text-base"
+              />
+            </span>
           </label>
         ))}
       </div>

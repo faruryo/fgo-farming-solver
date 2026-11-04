@@ -499,9 +499,15 @@ describe('EventHubClient', () => {
       mocks.useMaterialCatalog.mockClear()
       reload.mockClear()
       setLs(STORAGE_KEYS.POSSESSION, possession)
+      // 状態を品目のセルに置く sm 以上の幅にする（sm 未満は行の下の2段目。EventShopList.test.tsx で確かめる）。
+      vi.spyOn(window, 'matchMedia').mockImplementation(
+        query =>
+          ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }) as unknown as MediaQueryList,
+      )
     })
     afterEach(() => {
       mocks.roster = undefined
+      vi.mocked(window.matchMedia).mockRestore()
     })
 
     it('品目に「あと N 個」「足りている（交換不要）」「使わない」「計画の対象外」が出る', () => {
