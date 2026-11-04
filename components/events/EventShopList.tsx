@@ -276,19 +276,21 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
         color: dimmed ? 'var(--text3)' : 'var(--text2)',
       }}
     >
-      <td className="text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
+      <td className="text-right pl-1.5 pr-0.5 sm:pl-3 sm:pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
         {ranked?.rank}
       </td>
-      {/* 狭い幅で品目名が数文字ごとに折り返さないよう幅を取る（表は横スクロールする） */}
-      <td className="px-1 py-1.5 min-w-[8em]">
-        <span className="flex items-center gap-1.5">
+      {/* 品目名が数文字ごとに折り返さないよう幅を取る。sm 未満は 375px でも7列を横スクロールなしで収めるため、
+          アイコンを名前の上に置いて名前に幅を回す。表は残りの幅を品目名に回すので、最小幅は
+          3文字分（4em）の下限に留め、他の列が広い交換所でもまず品目名の幅で吸収する。 */}
+      <td className="px-0.5 sm:px-1 py-1.5 min-w-[4em] sm:min-w-[8em]">
+        <span className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
           <Icon src={first.icon} />
           <span>{name}</span>
         </span>
         {row.items.length > 1 && <RowBreakdown parts={parts} />}
         {plan && <RowPlanLabel name={name} plan={plan} count={count} />}
       </td>
-      <td className="px-1 py-1.5">
+      <td className="px-0.5 sm:px-1 py-1.5">
         <Input
           type="number"
           min={0}
@@ -301,14 +303,14 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
           className="h-7 w-12 px-1.5"
         />
       </td>
-      <td className="text-right px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
-      <td className="text-right px-1 py-1.5">
+      <td className="text-right px-0.5 sm:px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
+      <td className="text-right px-0.5 sm:px-1 py-1.5">
         <LimitCell row={row} />
       </td>
-      <td className="text-right px-1 py-1.5">
+      <td className="text-right px-0.5 sm:px-1 py-1.5">
         <CostCell row={row} />
       </td>
-      <td className="text-right pl-1 pr-3 py-1.5 whitespace-nowrap tabular-nums" style={{ color: 'var(--text2)' }}>
+      <td className="text-right pl-0.5 pr-1.5 sm:pl-1 sm:pr-3 py-1.5 whitespace-nowrap tabular-nums" style={{ color: 'var(--text2)' }}>
         {ranked && formatEfficiency(ranked.efficiency)}
       </td>
     </tr>
@@ -361,13 +363,13 @@ const ShopTable: React.FC<{
         <table className="w-full text-xs">
           <thead>
             <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
-              <th className="text-right font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
-              <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
-              <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
-              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
-              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
-              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '対価')}</th>
-              <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', 'AP/個')}</th>
+              <th className="text-right font-medium pl-1.5 pr-0.5 sm:pl-3 sm:pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
+              <th className="text-left font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
+              <th className="text-left font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
+              <th className="text-right font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
+              <th className="text-right font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
+              <th className="text-right font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-cost', '対価')}</th>
+              <th className="text-right font-medium pl-0.5 pr-1.5 sm:pl-1 sm:pr-3 py-1.5">{t('event-shop-col-efficiency', 'AP/個')}</th>
             </tr>
           </thead>
           <tbody>

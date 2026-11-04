@@ -335,6 +335,19 @@ describe('EventShopList の1つの一覧', () => {
     ])
   })
 
+  it('375px で7列が収まるよう、品目名の欄の 8em の最小幅は sm 以上だけに付け、sm 未満はアイコンを名前の上に置く（#240）', () => {
+    renderShop()
+    // jsdom では幅を測れないので、狭い幅の下限（4em）と広い幅の最小幅（8em）の付け分けを確かめる。
+    const itemCell = rowOf('月より団子').cells[1]
+    const classes = itemCell?.className.split(/\s+/) ?? []
+    expect(classes).toContain('min-w-[4em]')
+    expect(classes).toContain('sm:min-w-[8em]')
+    expect(classes).not.toContain('min-w-[8em]')
+    expect(itemCell?.firstElementChild?.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(['flex-col', 'sm:flex-row']),
+    )
+  })
+
   it('所持数の入力は表より前に、通貨ごとの必要量は表より後に、交換所に現れた通貨の順で並ぶ', () => {
     renderShop()
     const owned = screen.getByTestId('shop-owned-inputs')
