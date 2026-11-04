@@ -10,7 +10,7 @@ import { Link } from '../common/link'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 import {
   allocateShortfallOnly,
-  clampExchangeCount,
+  buildShopListRows,
   computeShopCurrencyNeeds,
   computeShopShortfall,
   countsFromItemKeys,
@@ -21,15 +21,19 @@ import {
   orderShopByEfficiency,
   pickIdTable,
   readShopSavedInputs,
+  rowCountOf,
+  rowLimit,
   selectAllCurrenciesUpToLimit,
   shopItemStatus,
+  shopRowEntries,
   shopWantedKey,
+  splitRowCount,
   summarizeShortfall,
-  type RankedShopItem,
   type ShopCurrencyGroup,
   type ShopCurrencyNeed,
   type ShopExchangeCounts,
   type ShopItemStatus,
+  type ShopListRow,
   type ShopSavedInputs,
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
@@ -68,34 +72,75 @@ const useCurrencyLabel = () => {
     group.costName || t('event-shop-currency-id', '名前不明のアイテム（ID {{id}}）', { id: group.costItemId })
 }
 
-const CurrencyHeader: React.FC<{ group: ShopCurrencyGroup; showTotal?: boolean }> = ({
-  group,
-  showTotal = true,
-}) => {
-  const { t } = useTranslation('events')
+type CurrencyRef = Pick<ShopCurrencyGroup, 'costItemId' | 'costName' | 'costIcon'>
+
+/** 通貨のアイコン（無ければ名前）。アイコンには通貨の名前を代替テキストに付ける。 */
+const CurrencyMark: React.FC<{ currency: CurrencyRef }> = ({ currency }) => {
   const label = useCurrencyLabel()
-  return (
-    <div
-      className="flex items-center justify-between gap-2 flex-wrap px-4 py-3"
-      style={{ borderBottom: '1px solid var(--border)' }}
-    >
-      <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text1)' }}>
-        <Icon src={group.costIcon} />
-        {label(group)}
-      </h3>
-      {showTotal && (
-        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text2)' }}>
-          <span>{t('event-shop-total', '全交換 {{total}}', { total: group.totalCost.toLocaleString() })}</span>
-          {group.unlimitedCount > 0 && (
-            <span style={{ color: 'var(--text3)' }}>
-              {t('event-shop-unlimited-count', '＋上限なし {{count}} 品目', { count: group.unlimitedCount })}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+  return currency.costIcon ? (
+    <Image
+      src={currency.costIcon}
+      alt={label(currency)}
+      title={label(currency)}
+      width={16}
+      height={16}
+      className="w-4 h-4 object-contain flex-shrink-0"
+    />
+  ) : (
+    <span className="whitespace-nowrap">{label(currency)}</span>
   )
 }
+
+/** 品目ごとの通貨と値（対価・在庫上限）を、通貨のアイコンまたは名前と並べる。 */
+const PerCurrencyValues: React.FC<{
+  items: EventShopItem[]
+  valueOf: (item: EventShopItem) => string
+  small?: boolean
+}> = ({ items, valueOf, small = false }) => (
+  <span className={`flex flex-col items-end gap-0.5 ${small ? 'text-[10px]' : ''}`}>
+    {items.map((item, k) => (
+      <span key={k} className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
+        <CurrencyMark currency={item} />
+        <span>{valueOf(item)}</span>
+      </span>
+    ))}
+  </span>
+)
+
+/** 行の在庫上限。まとめた行は合計と通貨ごとの在庫上限。 */
+const LimitCell: React.FC<{ row: ShopListRow }> = ({ row }) => {
+  const { t } = useTranslation('events')
+  const limit = rowLimit(row)
+  return (
+    <>
+      <span>{limit > 0 ? limit.toLocaleString() : t('event-shop-unlimited', '上限なし')}</span>
+      {row.items.length > 1 && (
+        <span style={{ color: 'var(--text3)' }}>
+          <PerCurrencyValues items={row.items} valueOf={item => item.limitNum.toLocaleString()} small />
+        </span>
+      )}
+    </>
+  )
+}
+
+/** 行の対価（通貨のアイコンまたは名前と数。まとめた行は通貨ごと）。 */
+const CostCell: React.FC<{ row: ShopListRow }> = ({ row }) => (
+  <PerCurrencyValues items={row.items} valueOf={item => item.costAmount.toLocaleString()} />
+)
+
+const Card: React.FC<{
+  children: React.ReactNode
+  className?: string
+  testId?: string
+}> = ({ children, className = '', testId }) => (
+  <div
+    data-testid={testId}
+    className={`rounded-md flex flex-col ${className}`}
+    style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
+  >
+    {children}
+  </div>
+)
 
 const COLUMN_COUNT = 7
 
@@ -187,48 +232,82 @@ const RowPlanLabel: React.FC<{ name: string; plan: RowPlan; count: number }> = (
 }
 
 interface ShopRowProps {
-  item: EventShopItem
-  /** 効率順の品目の順位と効率。AP 換算値の無い品目は undefined。 */
-  ranked?: Pick<RankedShopItem, 'rank' | 'efficiency'>
-  count: number
-  onCountChange: (count: number) => void
+  row: ShopListRow
+  /** 効率順の行の順位と効率。効率の無い行は undefined。 */
+  ranked?: { rank: number; efficiency: number }
+  counts: ShopExchangeCounts
+  onRowCountChange: (row: ShopListRow, count: number) => void
   plan?: RowPlan
 }
 
-const ShopRow: React.FC<ShopRowProps> = ({ item, ranked, count, onCountChange, plan }) => {
+/** まとめた行の、回数が 1 以上の通貨ごとの回数（例: 武蔵うどん 2・江戸むすび 1）。 */
+const RowBreakdown: React.FC<{
+  parts: ReturnType<typeof rowCountOf>['parts']
+}> = ({ parts }) => {
   const { t } = useTranslation('events')
-  const name = item.name || `#${item.itemId}`
+  const label = useCurrencyLabel()
+  if (parts.length === 0) return null
+  return (
+    <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text3)' }}>
+      {parts
+        .map(part =>
+          t('event-shop-row-breakdown-part', '{{name}} {{n}}', {
+            name: label(part),
+            n: part.count.toLocaleString(),
+          }),
+        )
+        .join('・')}
+    </span>
+  )
+}
+
+const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange, plan }) => {
+  const { t } = useTranslation('events')
+  const [first] = row.items
+  if (!first) return null
+  const name = first.name || `#${first.itemId}`
+  const { count, parts } = rowCountOf(row, counts)
+  const limit = rowLimit(row)
   const dimmed = plan?.status?.kind === 'enough' || plan?.status?.kind === 'unused'
   return (
     <tr
-      style={{ borderTop: '1px solid var(--border)', color: dimmed ? 'var(--text3)' : 'var(--text2)' }}
+      style={{
+        borderTop: '1px solid var(--border)',
+        color: dimmed ? 'var(--text3)' : 'var(--text2)',
+      }}
     >
       <td className="text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
         {ranked?.rank}
       </td>
-      <td className="px-1 py-1.5">
+      {/* 狭い幅で品目名が数文字ごとに折り返さないよう幅を取る（表は横スクロールする） */}
+      <td className="px-1 py-1.5 min-w-[8em]">
         <span className="flex items-center gap-1.5">
-          <Icon src={item.icon} />
+          <Icon src={first.icon} />
           <span>{name}</span>
         </span>
+        {row.items.length > 1 && <RowBreakdown parts={parts} />}
         {plan && <RowPlanLabel name={name} plan={plan} count={count} />}
       </td>
       <td className="px-1 py-1.5">
         <Input
           type="number"
           min={0}
-          {...(item.limitNum > 0 ? { max: item.limitNum } : {})}
+          {...(limit > 0 ? { max: limit } : {})}
           value={count}
-          onChange={e => onCountChange(clampExchangeCount(item, toCount(e.target.value)))}
-          aria-label={t('event-shop-count-label', '{{name}} の交換回数', { name })}
+          onChange={e => onRowCountChange(row, toCount(e.target.value))}
+          aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
+            name,
+          })}
           className="h-7 w-12 px-1.5"
         />
       </td>
-      <td className="text-right px-1 py-1.5 whitespace-nowrap">×{item.qty.toLocaleString()}</td>
+      <td className="text-right px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
       <td className="text-right px-1 py-1.5">
-        {item.limitNum > 0 ? item.limitNum.toLocaleString() : t('event-shop-unlimited', '上限なし')}
+        <LimitCell row={row} />
       </td>
-      <td className="text-right px-1 py-1.5 whitespace-nowrap">{item.costAmount.toLocaleString()}</td>
+      <td className="text-right px-1 py-1.5">
+        <CostCell row={row} />
+      </td>
       <td className="text-right pl-1 pr-3 py-1.5 whitespace-nowrap tabular-nums" style={{ color: 'var(--text2)' }}>
         {ranked && formatEfficiency(ranked.efficiency)}
       </td>
@@ -249,107 +328,139 @@ const GroupLabelRow: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   </tr>
 )
 
-interface CurrencyGroupCardProps {
-  group: ShopCurrencyGroup
+/**
+ * 交換所の品目の1つの一覧。効率のある行を通貨をまたいで効率の高い順（順位つき）に、その後に効率の無い行を交換所の順に並べる。
+ * 交換回数は交換所の配列全体の添字で品目に結び付ける（並べ替えた後の位置は使わない）。
+ */
+const ShopTable: React.FC<{
+  rows: ShopListRow[]
   apPrices: Readonly<Record<number, number>>
-  indexOf: (item: EventShopItem) => number
   counts: ShopExchangeCounts
-  planOf: (item: EventShopItem, index: number) => RowPlan | undefined
-  need?: ShopCurrencyNeed
-  owned: number
-  onCountChange: (index: number, count: number) => void
-  onOwnedChange: (owned: number) => void
-}
-
-const CurrencyGroupCard: React.FC<CurrencyGroupCardProps> = ({
-  group,
-  need,
-  owned,
-  onOwnedChange,
-  ...tableProps
-}) => (
-  <div className="rounded-md flex flex-col" style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}>
-    <CurrencyHeader group={group} />
-    <ShopTable group={group} {...tableProps} />
-    <CurrencyFooter group={group} need={need} owned={owned} onOwnedChange={onOwnedChange} />
-  </div>
-)
-
-const ShopTable: React.FC<
-  Pick<CurrencyGroupCardProps, 'group' | 'apPrices' | 'indexOf' | 'counts' | 'planOf' | 'onCountChange'>
-> = ({ group, apPrices, indexOf, counts, planOf, onCountChange }) => {
+  planOf: (row: ShopListRow) => RowPlan | undefined
+  onRowCountChange: (row: ShopListRow, count: number) => void
+}> = ({ rows, apPrices, counts, planOf, onRowCountChange }) => {
   const { t } = useTranslation('events')
-  const { unpriced, ranked } = useMemo(() => orderShopByEfficiency(group, apPrices), [group, apPrices])
+  const { ranked, unpriced } = useMemo(() => orderShopByEfficiency(rows, apPrices), [rows, apPrices])
   const showLabels = unpriced.length > 0 && ranked.length > 0
-  // 交換回数は交換所の配列全体の添字で品目に結び付ける（並べ替えた後の位置や通貨内の添字は使わない）。
-  const row = (item: EventShopItem, rankedItem?: RankedShopItem) => {
-    const index = indexOf(item)
-    return (
-      <ShopRow
-        key={index}
-        item={item}
-        ranked={rankedItem}
-        count={counts.get(index) ?? 0}
-        onCountChange={count => onCountChange(index, count)}
-        plan={planOf(item, index)}
-      />
-    )
-  }
+  const row = (shopRow: ShopListRow, rankedRow?: { rank: number; efficiency: number }) => (
+    <ShopRow
+      key={shopRow.indices[0]}
+      row={shopRow}
+      ranked={rankedRow}
+      counts={counts}
+      onRowCountChange={onRowCountChange}
+      plan={planOf(shopRow)}
+    />
+  )
 
   // 狭い幅では表の中だけを横スクロールにし、カードの外へはみ出さない。
   // overflow-y-hidden: 最後の行の「必要／不要」の押せる範囲が表の下へはみ出して、縦スクロールが出るのを防ぐ。
   return (
-    <div className="overflow-x-auto overflow-y-hidden">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
-            <th className="text-right font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
-            <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
-            <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
-            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
-            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
-            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '対価')}</th>
-            <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', 'AP/個')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {showLabels && <GroupLabelRow>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>}
-          {unpriced.map(item => row(item))}
-          {showLabels && <GroupLabelRow>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
-          {ranked.map(r => row(r.item, r))}
-        </tbody>
-      </table>
-    </div>
+    <Card testId="shop-item-list">
+      <div className="overflow-x-auto overflow-y-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
+              <th className="text-right font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
+              <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
+              <th className="text-left font-medium px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
+              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
+              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
+              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-cost', '対価')}</th>
+              <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-efficiency', 'AP/個')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {showLabels && <GroupLabelRow>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
+            {ranked.map(r => row(r.row, r))}
+            {showLabels && <GroupLabelRow>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>}
+            {unpriced.map(r => row(r))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   )
 }
 
-const CurrencyFooter: React.FC<
-  Pick<CurrencyGroupCardProps, 'group' | 'need' | 'owned' | 'onOwnedChange'>
-> = ({ group, need, owned, onOwnedChange }) => {
+/** 通貨ごとの所持数の入力を横1列に並べる（幅が足りなければ折り返す）。 */
+const OwnedInputs: React.FC<{
+  groups: ShopCurrencyGroup[]
+  owned: ReadonlyMap<number, number>
+  onOwnedChange: (costItemId: number, owned: number) => void
+}> = ({ groups, owned, onOwnedChange }) => {
   const { t } = useTranslation('events')
   const label = useCurrencyLabel()
   return (
-    <div
-      className="flex items-center justify-between gap-x-4 gap-y-2 flex-wrap px-4 py-3 text-xs"
-      style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}
-    >
-      <label className="flex items-center gap-2">
-        <span>{t('event-shop-owned', '所持数')}</span>
-        <Input
-          type="number"
-          min={0}
-          value={owned}
-          onChange={e => onOwnedChange(toCount(e.target.value))}
-          aria-label={t('event-shop-owned-label', '{{name}} の所持数', { name: label(group) })}
-          className="h-7 w-24"
-        />
-      </label>
-      <span>
-        {t('event-shop-selected-cost', '選んだ交換 {{cost}}', { cost: (need?.selectedCost ?? 0).toLocaleString() })}
+    <Card testId="shop-owned-inputs" className="px-4 py-3 gap-2">
+      <span className="text-xs font-semibold" style={{ color: 'var(--text1)' }}>
+        {t('event-shop-owned', '所持数')}
       </span>
-      <span className="font-semibold" style={{ color: 'var(--text1)' }}>
-        {t('event-shop-need', '必要量 {{need}}', { need: (need?.need ?? 0).toLocaleString() })}
-      </span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
+        {groups.map(group => (
+          <label key={group.costItemId} className="flex items-center gap-1.5">
+            <Icon src={group.costIcon} />
+            <span>{label(group)}</span>
+            <Input
+              type="number"
+              min={0}
+              value={owned.get(group.costItemId) ?? 0}
+              onChange={e => onOwnedChange(group.costItemId, toCount(e.target.value))}
+              aria-label={t('event-shop-owned-label', '{{name}} の所持数', {
+                name: label(group),
+              })}
+              className="h-7 w-24"
+            />
+          </label>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+/** 通貨ごとの選んだ交換の合計・必要量・全交換の合計と上限なしの品目の数（通貨は交換所に最初に現れた順）。 */
+const CurrencyNeeds: React.FC<{
+  groups: ShopCurrencyGroup[]
+  needs: ShopCurrencyNeed[]
+}> = ({ groups, needs }) => {
+  const { t } = useTranslation('events')
+  const label = useCurrencyLabel()
+  return (
+    <div data-testid="shop-currency-needs" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {groups.map(group => {
+        const need = needs.find(n => n.costItemId === group.costItemId)
+        return (
+          <Card key={group.costItemId} className="px-4 py-3 gap-1.5 text-xs">
+            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+              <Icon src={group.costIcon} />
+              {label(group)}
+            </h3>
+            <div className="flex items-center gap-x-4 gap-y-1 flex-wrap" style={{ color: 'var(--text2)' }}>
+              <span>
+                {t('event-shop-selected-cost', '選んだ交換 {{cost}}', {
+                  cost: (need?.selectedCost ?? 0).toLocaleString(),
+                })}
+              </span>
+              <span className="font-semibold" style={{ color: 'var(--text1)' }}>
+                {t('event-shop-need', '必要量 {{need}}', {
+                  need: (need?.need ?? 0).toLocaleString(),
+                })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap" style={{ color: 'var(--text3)' }}>
+              <span>
+                {t('event-shop-total', '全交換 {{total}}', {
+                  total: group.totalCost.toLocaleString(),
+                })}
+              </span>
+              {group.unlimitedCount > 0 && (
+                <span>
+                  {t('event-shop-unlimited-count', '＋上限なし {{count}} 品目', { count: group.unlimitedCount })}
+                </span>
+              )}
+            </div>
+          </Card>
+        )
+      })}
     </div>
   )
 }
@@ -1010,75 +1121,76 @@ const ShopBonusCard: React.FC<{
   )
 }
 
-/** 品目・個数・上限・対価だけの表。交換回数や効率は持たず、交換所の元の順に並べる。 */
-const CatalogTable: React.FC<{ group: ShopCurrencyGroup }> = ({ group }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
-            <th className="text-left font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
-            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
-            <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
-            <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-cost', '対価')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {group.items.map((item, index) => (
-            <tr key={index} style={{ borderTop: '1px solid var(--border)', color: 'var(--text2)' }}>
-              <td className="pl-3 pr-1 py-1.5">
-                <span className="flex items-center gap-1.5">
-                  <Icon src={item.icon} />
-                  <span>{item.name || `#${item.itemId}`}</span>
-                </span>
-              </td>
-              <td className="text-right px-1 py-1.5 whitespace-nowrap">×{item.qty.toLocaleString()}</td>
-              <td className="text-right px-1 py-1.5">
-                {item.limitNum > 0 ? item.limitNum.toLocaleString() : t('event-shop-unlimited', '上限なし')}
-              </td>
-              <td className="text-right pl-1 pr-3 py-1.5 whitespace-nowrap">{item.costAmount.toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/** 交換所の品目を対価の通貨ごとのカードに並べるだけの一覧。回数の入力や周回の計算はしない。 */
+/**
+ * 交換所の品目を交換所の順の1つの一覧に並べるだけの表示。回数の入力や周回の計算はしない。
+ * 複数の通貨で交換できる品目は周回計算の一覧と同じ規則で1行にまとめ、在庫上限の合計と通貨ごとの在庫上限・対価を出す。
+ */
 export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) => {
-  const groups = useMemo(() => groupShopByCurrency(shop), [shop])
+  const { t } = useTranslation('events')
+  const rows = useMemo(() => buildShopListRows(shop), [shop])
   return (
-    <div className="flex flex-col gap-4">
-      {groups.map(group => (
-        <div
-          key={group.costItemId}
-          className="rounded-md flex flex-col"
-          style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
-        >
-          <CurrencyHeader group={group} showTotal={false} />
-          <CatalogTable group={group} />
-        </div>
-      ))}
-    </div>
+    <Card testId="shop-item-list">
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
+              <th className="text-left font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
+              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
+              <th className="text-right font-medium px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
+              <th className="text-right font-medium pl-1 pr-3 py-1.5">{t('event-shop-col-cost', '対価')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => {
+              const [first] = row.items
+              if (!first) return null
+              return (
+                <tr
+                  key={row.indices[0]}
+                  style={{
+                    borderTop: '1px solid var(--border)',
+                    color: 'var(--text2)',
+                  }}
+                >
+                  <td className="pl-3 pr-1 py-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Icon src={first.icon} />
+                      <span>{first.name || `#${first.itemId}`}</span>
+                    </span>
+                  </td>
+                  <td className="text-right px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
+                  <td className="text-right px-1 py-1.5">
+                    <LimitCell row={row} />
+                  </td>
+                  <td className="text-right pl-1 pr-3 py-1.5">
+                    <CostCell row={row} />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   )
 }
 
 /**
- * 保存値を読み終えるまでの交換所の表示。通貨ごとの表のおおよその高さを持たせ、読み終えた時のずれを小さくする。
- * 育成計画の素材の読み込み（`loader`）は待たずに置く。
+ * 保存値を読み終えるまでの交換所の表示。所持数の欄・品目の一覧・通貨ごとの必要量のおおよその高さを持たせ、
+ * 読み終えた時のずれを小さくする。育成計画の素材の読み込み（`loader`）は待たずに置く。
  */
-const ShopLoadingSkeleton: React.FC<{ groups: ShopCurrencyGroup[]; loader: React.ReactNode }> = ({ groups, loader }) => (
+const ShopLoadingSkeleton: React.FC<{
+  rowCount: number
+  loader: React.ReactNode
+}> = ({ rowCount, loader }) => (
   <div className="flex flex-col gap-4">
     {loader}
     <div aria-busy="true" className="flex flex-col gap-4">
       <Skeleton className="h-5 w-64" />
       <Skeleton className="h-16 w-full" />
-      {groups.map(group => (
-        <Skeleton key={group.costItemId} className="w-full" style={{ height: 96 + group.items.length * 41 }} />
-      ))}
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="w-full" style={{ height: 32 + rowCount * 41 }} />
+      <Skeleton className="h-20 w-full" />
     </div>
   </div>
 )
@@ -1159,7 +1271,39 @@ const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[
 }
 
 /**
- * 交換所の品目を対価の通貨ごとにまとめて回数を選ばせ、通貨ごとの必要量と、それを満たす周回の内訳を出す。
+ * 交換所の品目の一覧の行と、行ごとの育成計画の表示・回数の入れ方。
+ * まとめた行は最初の品目の表示を使い、埋まらない不足は行のどの品目のものでも出す。
+ * 行に入れた回数は品目ごとの回数に分け直し、ほかの行の回数は変えない。
+ */
+const useShopListRows = (
+  shop: EventShopItem[],
+  itemPlanOf: (item: EventShopItem, index: number) => RowPlan | undefined,
+  updateCounts: (update: (prev: ShopExchangeCounts) => ShopExchangeCounts) => void,
+) => {
+  const rows = useMemo(() => buildShopListRows(shop), [shop])
+  const planOf = (row: ShopListRow): RowPlan | undefined => {
+    const plans = shopRowEntries(row).map(({ index, item }) => itemPlanOf(item, index))
+    const [first] = plans
+    if (!first) return undefined
+    const remainder = plans.find(p => p?.remainder !== undefined)?.remainder
+    return {
+      ...first,
+      ...(remainder !== undefined ? { remainder } : {}),
+      promptUnlimited: plans.some(p => p?.promptUnlimited),
+    }
+  }
+  const setRowCount = (row: ShopListRow, count: number) =>
+    updateCounts(prev => {
+      const next = new Map(prev)
+      for (const [index, n] of splitRowCount(row, count)) next.set(index, n)
+      return next
+    })
+  return { rows, planOf, setRowCount }
+}
+
+/**
+ * 交換所の品目を1つの一覧に並べて回数を選ばせ（複数の通貨で交換できる品目は1行にまとめる）、
+ * 通貨ごとの必要量と、それを満たす周回の内訳を出す。
  * 選んだ回数と所持数とドロップ増加礼装のボーナス（☆ ごとの欄・フレンドの ☆・比較の表で選んだ行を含む）は
  * イベントごとに端末へ保存する（開いただけでは書かない）。
  * 保存のキーがイベントで変わるため、呼び出し側はイベントごとに作り直すこと（`key={event.id}`）。
@@ -1185,32 +1329,22 @@ export const EventShopList: React.FC<{
   const bonused = useMemo(() => applyDropBonus(event, new Map(effectiveBonus)), [event, effectiveBonus])
   const plan = useMemo(() => planShopCurrencies(bonused.event, currencyNeed), [bonused, currencyNeed])
   const rosterPlan = useShopRosterPlan(shop, replaceCounts)
+  const { rows, planOf, setRowCount } = useShopListRows(shop, rosterPlan.planOf, updateCounts)
 
   const labelOf = (id: number) => targets.find(target => target.itemId === id)?.label ?? `#${id}`
   const bonusApplied = [...effectiveBonus.values()].some(n => n > 0)
 
   // 保存値を読む前の値は初期値（0・空）なので、読み終えるまで欄も計算結果も出さない。
-  if (!loaded || !rosterPlan.loaded) return <ShopLoadingSkeleton groups={groups} loader={rosterPlan.loader} />
+  if (!loaded || !rosterPlan.loaded) return <ShopLoadingSkeleton rowCount={rows.length} loader={rosterPlan.loader} />
 
   return (
     <div className="flex flex-col gap-4">
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
+      <OwnedInputs groups={groups} owned={owned} onOwnedChange={setOwned} />
       <SelectControls onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev))} rosterPlan={rosterPlan} />
-      {groups.map(group => (
-        <CurrencyGroupCard
-          key={group.costItemId}
-          group={group}
-          apPrices={apPrices}
-          indexOf={item => shop.indexOf(item)}
-          counts={counts}
-          planOf={rosterPlan.planOf}
-          need={needs.find(n => n.costItemId === group.costItemId)}
-          owned={owned.get(group.costItemId) ?? 0}
-          onCountChange={(index, count) => updateCounts(prev => new Map(prev).set(index, count))}
-          onOwnedChange={value => setOwned(group.costItemId, value)}
-        />
-      ))}
+      <ShopTable rows={rows} apPrices={apPrices} counts={counts} planOf={planOf} onRowCountChange={setRowCount} />
+      <CurrencyNeeds groups={groups} needs={needs} />
       <ShopBonusCard
         state={craftEssences}
         bonus={bonus}

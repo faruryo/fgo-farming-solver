@@ -37,7 +37,7 @@ export const groupShopByCurrency = (shop: EventShopItem[]): ShopCurrencyGroup[] 
 export type ShopExchangeCounts = ReadonlyMap<number, number>
 
 /** 入れた回数を0以上の整数にし、在庫上限のある品目は上限で頭打ちにする。 */
-export const clampExchangeCount = (item: EventShopItem, count: number): number => {
+export const clampExchangeCount = (item: Pick<EventShopItem, 'limitNum'>, count: number): number => {
   const n = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0
   return item.limitNum > 0 ? Math.min(n, item.limitNum) : n
 }
@@ -93,42 +93,148 @@ export const selectAllCurrenciesUpToLimit = (
   return next
 }
 
-export interface RankedShopItem {
-  item: EventShopItem
+/**
+ * 交換所の一覧の1行。複数の通貨で交換できる品目をまとめた行は品目を2つ以上持つ。
+ * `indices` は交換所の配列の添字（交換所の順）、`items` はその添字の品目。
+ */
+export interface ShopListRow {
+  indices: number[]
+  items: EventShopItem[]
+}
+
+/** まとめる組のキー（獲得物の種類・番号・1回の個数）。 */
+const mergeGroupKey = (item: EventShopItem): string =>
+  [item.kind === 'svt' ? 'svt' : 'item', item.itemId, item.qty].join(':')
+
+/**
+ * 交換所の品目から一覧の行を作る（交換所の順。まとめた行はまとめた品目のうち最初の品目の位置）。
+ * 獲得物の種類・番号・1回の個数が同じ品目の組が2つ以上の品目からなり、どの品目も在庫上限を持ち、
+ * 通貨がすべて異なるときだけ、その組を1行にまとめる。条件に合わない組はどの品目もまとめない。
+ */
+export const buildShopListRows = (shop: EventShopItem[]): ShopListRow[] => {
+  const groups = new Map<string, { index: number; item: EventShopItem }[]>()
+  shop.forEach((item, index) => {
+    const key = mergeGroupKey(item)
+    groups.set(key, [...(groups.get(key) ?? []), { index, item }])
+  })
+  const mergeable = (members: { item: EventShopItem }[]): boolean =>
+    members.length >= 2 &&
+    members.every(m => m.item.limitNum > 0) &&
+    new Set(members.map(m => m.item.costItemId)).size === members.length
+  const rows: ShopListRow[] = []
+  shop.forEach((item, index) => {
+    const members = groups.get(mergeGroupKey(item)) ?? []
+    if (!mergeable(members)) rows.push({ indices: [index], items: [item] })
+    else if (members[0]?.index === index) {
+      rows.push({ indices: members.map(m => m.index), items: members.map(m => m.item) })
+    }
+  })
+  return rows
+}
+
+/** 行の品目と、その交換所の配列の添字の組（交換所の順）。 */
+export const shopRowEntries = (row: ShopListRow): { index: number; item: EventShopItem }[] =>
+  row.items.flatMap((item, k) => {
+    const index = row.indices.at(k)
+    return index === undefined ? [] : [{ index, item }]
+  })
+
+/**
+ * 行に入れた回数を、行の品目ごとの交換回数に分ける（キーは交換所の配列の添字）。
+ * 回数は 0 以上の整数にし、行の在庫上限の合計で頭打ちにする。品目を交換所の順に見て、前の品目から在庫上限まで埋める。
+ * 在庫上限の無い品目（まとめない行）は入れた回数をそのまま使う。
+ */
+export const splitRowCount = (row: ShopListRow, count: number): Map<number, number> => {
+  const result = new Map<number, number>()
+  const entries = shopRowEntries(row)
+  const [single] = entries
+  if (entries.length === 1 && single) {
+    result.set(single.index, clampExchangeCount(single.item, count))
+    return result
+  }
+  const total = entries.reduce((acc, { item }) => acc + Math.max(0, item.limitNum), 0)
+  let left = clampExchangeCount({ limitNum: total }, count)
+  for (const { index, item } of entries) {
+    const n = Math.min(left, Math.max(0, item.limitNum))
+    result.set(index, n)
+    left -= n
+  }
+  return result
+}
+
+/** 行の在庫上限の合計。在庫上限の無い品目を含む行は 0（上限なし）。 */
+export const rowLimit = (row: ShopListRow): number =>
+  row.items.every(item => item.limitNum > 0) ? row.items.reduce((acc, item) => acc + item.limitNum, 0) : 0
+
+export interface ShopRowCountPart {
+  index: number
+  costItemId: number
+  costName?: string
+  costIcon?: string
+  count: number
+}
+
+/** 行の今の回数（品目ごとの回数の合計）と、回数が 1 以上の品目ごとの内訳（交換所の順）。 */
+export const rowCountOf = (
+  row: ShopListRow,
+  counts: ShopExchangeCounts,
+): { count: number; parts: ShopRowCountPart[] } => {
+  const parts = shopRowEntries(row).map(({ index, item }) => ({
+    index,
+    costItemId: item.costItemId,
+    ...(item.costName !== undefined ? { costName: item.costName } : {}),
+    ...(item.costIcon !== undefined ? { costIcon: item.costIcon } : {}),
+    count: clampExchangeCount(item, counts.get(index) ?? 0),
+  }))
+  return { count: parts.reduce((acc, p) => acc + p.count, 0), parts: parts.filter(p => p.count > 0) }
+}
+
+export interface RankedShopRow {
+  row: ShopListRow
   /** 1からの順位。 */
   rank: number
-  /** 通貨1個あたりの AP 換算値（`qty × AP 換算値 ÷ costAmount`）。 */
+  /** 通貨1個あたりの AP 換算値（行の品目の `qty × AP 換算値 ÷ costAmount` のうち最も高い値）。 */
   efficiency: number
 }
 
 export interface ShopEfficiencyOrder {
-  /** AP 換算値の無い品目（元の順）。 */
-  unpriced: EventShopItem[]
-  /** AP 換算値のある品目（効率の高い順、同じ効率は元の順）。 */
-  ranked: RankedShopItem[]
+  /** 効率のある行（効率の高い順、同じ効率は交換所の順）。 */
+  ranked: RankedShopRow[]
+  /** 効率の無い行（交換所の順）。 */
+  unpriced: ShopListRow[]
+}
+
+/** 品目の効率。サーヴァント扱い・AP 換算値の無い品目・対価 0 以下は undefined。 */
+const itemEfficiency = (item: EventShopItem, prices: ReadonlyMap<number, number>): number | undefined => {
+  // サーヴァント扱いの品目はドロップ表に現れないので、同じ番号のアイテムの価格を引かない。
+  const price = item.kind === 'svt' ? undefined : prices.get(item.itemId)
+  if (price === undefined || price <= 0 || item.costAmount <= 0) return undefined
+  return (item.qty * price) / item.costAmount
 }
 
 /**
- * 通貨のグループの品目を、AP 換算値の無い品目（元の順）と効率順の品目に分ける。
- * `apPrices` は atlasId → 素材1個の AP 換算値。
+ * 一覧の行（交換所の順）を、通貨をまたいだ1つの一覧として、効率のある行（効率の高い順に 1 からの順位）と
+ * 効率の無い行（交換所の順）に分ける。`apPrices` は atlasId → 素材1個の AP 換算値。
  */
 export const orderShopByEfficiency = (
-  group: Pick<ShopCurrencyGroup, 'items'>,
+  rows: ShopListRow[],
   apPrices: Readonly<Record<number, number>>,
 ): ShopEfficiencyOrder => {
   const prices = new Map(Object.entries(apPrices).map(([id, price]) => [Number(id), price]))
-  const unpriced: EventShopItem[] = []
-  const priced: { item: EventShopItem; efficiency: number }[] = []
-  for (const item of group.items) {
-    // サーヴァント扱いの品目はドロップ表に現れないので、同じ番号のアイテムの価格を引かない。
-    const price = item.kind === 'svt' ? undefined : prices.get(item.itemId)
-    if (price === undefined || price <= 0 || item.costAmount <= 0) unpriced.push(item)
-    else priced.push({ item, efficiency: (item.qty * price) / item.costAmount })
+  const unpriced: ShopListRow[] = []
+  const priced: { row: ShopListRow; efficiency: number }[] = []
+  for (const row of rows) {
+    const values = row.items.flatMap(item => {
+      const value = itemEfficiency(item, prices)
+      return value === undefined ? [] : [value]
+    })
+    if (values.length === 0) unpriced.push(row)
+    else priced.push({ row, efficiency: Math.max(...values) })
   }
-  // Array.prototype.sort は安定ソートなので、同じ効率の品目は元の順のまま。
+  // Array.prototype.sort は安定ソートなので、同じ効率の行は交換所の順のまま。
   priced.sort((a, b) => b.efficiency - a.efficiency)
   const ranked = priced.map((entry, i) => ({ ...entry, rank: i + 1 }))
-  return { unpriced, ranked }
+  return { ranked, unpriced }
 }
 
 /** 効率の表示。小数2桁までにし、末尾の0は出さない。 */
