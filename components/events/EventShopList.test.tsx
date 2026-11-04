@@ -285,6 +285,13 @@ const bodyRows = () =>
     return `${tr.cells[0]?.textContent}|${name}|${tr.cells[6]?.textContent}`
   })
 
+/** 画面の幅が sm（40rem）以上かを決める。戻すときは返り値の mockRestore を呼ぶ。 */
+const stubSm = (matches: boolean) =>
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    query =>
+      ({ matches, media: query, addEventListener: () => {}, removeEventListener: () => {} }) as unknown as MediaQueryList,
+  )
+
 const countInput = (name: string) => screen.getByLabelText(`${name} の交換回数`)
 const rowOf = (name: string) => countInput(name).closest('tr') as HTMLTableRowElement
 const enter = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } })
@@ -333,6 +340,41 @@ describe('EventShopList の1つの一覧', () => {
       '|QP|',
       '|QP|',
     ])
+  })
+
+  it('375px で7列が収まるよう、品目名の欄の 8em の最小幅は sm 以上だけに付け、sm 未満はアイコンを名前の上に置く（#240）', () => {
+    renderShop()
+    // jsdom では幅を測れないので、狭い幅の下限（4em）と広い幅の最小幅（8em）の付け分けを確かめる。
+    const itemCell = rowOf('月より団子').cells[1]
+    const classes = itemCell?.className.split(/\s+/) ?? []
+    expect(classes).toContain('min-w-[4em]')
+    expect(classes).toContain('sm:min-w-[8em]')
+    expect(classes).not.toContain('min-w-[8em]')
+    expect(itemCell?.firstElementChild?.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(['flex-col', 'sm:flex-row']),
+    )
+  })
+
+  it('sm 未満では順位の列を隠し、交換回数の入力欄を細くして品目名に幅を回す（#240）', () => {
+    renderShop()
+    const row = rowOf('月より団子')
+    const classesOf = (el: Element | null | undefined) => el?.className.split(/\s+/) ?? []
+    const rankHeader = within(screen.getByTestId('shop-item-list')).getAllByRole('columnheader')[0]
+    for (const rankCell of [rankHeader, row.cells[0]]) {
+      expect(classesOf(rankCell)).toEqual(expect.arrayContaining(['hidden', 'sm:table-cell']))
+    }
+    const box = countInput('月より団子').parentElement
+    expect(classesOf(box)).toEqual(expect.arrayContaining(['w-10', 'sm:w-12']))
+    expect(classesOf(box)).not.toContain('w-12')
+  })
+
+  it('交換回数の数字は 16px のまま 3/4 に縮めて周りの 12px に揃え、iOS Safari のフォーカス時の拡大を避ける（#240）', () => {
+    renderShop()
+    const classes = countInput('月より団子').className.split(/\s+/)
+    // 16px 未満の文字サイズ（text-sm・text-xs）にすると iOS Safari がフォーカス時に拡大する。
+    expect(classes).toEqual(expect.arrayContaining(['text-base', 'md:text-base', 'scale-75', 'origin-top-left']))
+    expect(classes).not.toContain('md:text-sm')
+    expect(classes).not.toContain('text-xs')
   })
 
   it('所持数の入力は表より前に、通貨ごとの必要量は表より後に、交換所に現れた通貨の順で並ぶ', () => {
@@ -418,21 +460,54 @@ describe('EventShopList の1つの一覧', () => {
     expect(countInput('サーヴァントコイン')).toHaveValue(48)
   })
 
-  it('巡霊の葉の不足が 800 のとき不足素材のみを押すと、行は 75 で「交換所では 50 個足りない」がその行に1つだけ出る', () => {
+  it('sm 以上で巡霊の葉の不足が 800 のとき不足素材のみを押すと、行は 75 で「交換所では 50 個足りない」がその行に1つだけ出る', () => {
     mocks.roster = {
       status: 'ready',
       chaldeaState: {},
       materialsForServants: {},
       totalNeed: new Map([[LEAF, 800]]),
     }
-    renderShop()
-    fireEvent.click(screen.getByRole('button', { name: '不足素材のみ' }))
+    const sm = stubSm(true)
+    try {
+      renderShop()
+      fireEvent.click(screen.getByRole('button', { name: '不足素材のみ' }))
 
-    expect(countInput('巡霊の葉')).toHaveValue(75)
-    const remainders = screen.getAllByText('交換所では 50 個足りない')
-    expect(remainders).toHaveLength(1)
-    expect(rowOf('巡霊の葉')).toContainElement(remainders.at(0) ?? null)
-    expect(within(rowOf('巡霊の葉')).getByText('あと 800 個')).toBeInTheDocument()
+      expect(countInput('巡霊の葉')).toHaveValue(75)
+      const remainders = screen.getAllByText('交換所では 50 個足りない')
+      expect(remainders).toHaveLength(1)
+      expect(rowOf('巡霊の葉')).toContainElement(remainders.at(0) ?? null)
+      expect(within(rowOf('巡霊の葉')).getByText('あと 800 個')).toBeInTheDocument()
+    } finally {
+      sm.mockRestore()
+    }
+  })
+
+  it('sm 未満では、状態と「必要／不要」を品目のセルから出し、行の直後に表の幅いっぱいの2段目として罫線なしで置く（#240）', () => {
+    mocks.roster = {
+      status: 'ready',
+      chaldeaState: {},
+      materialsForServants: {},
+      totalNeed: new Map([[LEAF, 800]]),
+    }
+    const sm = stubSm(false)
+    try {
+      renderShop()
+      fireEvent.click(screen.getByRole('button', { name: '不足素材のみ' }))
+
+      const row = rowOf('巡霊の葉')
+      expect(within(row).queryByText('あと 800 個')).not.toBeInTheDocument()
+      const second = row.nextElementSibling as HTMLTableRowElement
+      expect(second.cells).toHaveLength(1)
+      expect(second.cells[0]?.colSpan).toBe(7)
+      expect(second.style.borderTop).toBe('')
+      expect(within(second).getByText('あと 800 個')).toBeInTheDocument()
+      expect(within(second).getByText('交換所では 50 個足りない')).toBeInTheDocument()
+      // 状態の無い QP の行には2段目を出さない。
+      const qpRow = screen.getAllByLabelText('QP の交換回数').at(0)?.closest('tr')
+      expect(qpRow?.nextElementSibling?.querySelector('td[colspan]') ?? null).toBeNull()
+    } finally {
+      sm.mockRestore()
+    }
   })
 
   it('対価が通貨で違うまとめた行は効率 10 が1つだけ出て効率 7 の行より前に並び、効率の無い行が無ければ見出しを出さない', () => {
