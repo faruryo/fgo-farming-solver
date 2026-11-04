@@ -348,6 +348,19 @@ describe('EventShopList の1つの一覧', () => {
     )
   })
 
+  it('sm 未満では順位の列を隠し、交換回数の入力欄を細くして品目名に幅を回す（#240）', () => {
+    renderShop()
+    const row = rowOf('月より団子')
+    const classesOf = (el: Element | null | undefined) => el?.className.split(/\s+/) ?? []
+    const rankHeader = within(screen.getByTestId('shop-item-list')).getAllByRole('columnheader')[0]
+    for (const rankCell of [rankHeader, row.cells[0]]) {
+      expect(classesOf(rankCell)).toEqual(expect.arrayContaining(['hidden', 'sm:table-cell']))
+    }
+    const input = countInput('月より団子')
+    expect(classesOf(input)).toEqual(expect.arrayContaining(['w-10', 'sm:w-12']))
+    expect(classesOf(input)).not.toContain('w-12')
+  })
+
   it('所持数の入力は表より前に、通貨ごとの必要量は表より後に、交換所に現れた通貨の順で並ぶ', () => {
     renderShop()
     const owned = screen.getByTestId('shop-owned-inputs')

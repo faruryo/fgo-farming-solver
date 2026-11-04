@@ -276,13 +276,13 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
         color: dimmed ? 'var(--text3)' : 'var(--text2)',
       }}
     >
-      <td className="text-right pl-1.5 pr-0.5 sm:pl-3 sm:pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
+      <td className="hidden sm:table-cell text-right pl-3 pr-1 py-1.5 tabular-nums" style={{ color: 'var(--text3)' }}>
         {ranked?.rank}
       </td>
-      {/* 品目名が数文字ごとに折り返さないよう幅を取る。sm 未満は 375px でも7列を横スクロールなしで収めるため、
-          アイコンを名前の上に置いて名前に幅を回す。表は残りの幅を品目名に回すので、最小幅は
+      {/* 品目名が数文字ごとに折り返さないよう幅を取る。sm 未満は 375px でも横スクロールなしで収めるため、
+          順位の列を隠し、アイコンを名前の上に置いて名前に幅を回す。表は残りの幅を品目名に回すので、最小幅は
           3文字分（4em）の下限に留め、他の列が広い交換所でもまず品目名の幅で吸収する。 */}
-      <td className="px-0.5 sm:px-1 py-1.5 min-w-[4em] sm:min-w-[8em]">
+      <td className="pl-1.5 pr-0.5 sm:px-1 py-1.5 min-w-[4em] sm:min-w-[8em]">
         <span className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
           <Icon src={first.icon} />
           <span>{name}</span>
@@ -300,7 +300,7 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
           aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
             name,
           })}
-          className="h-7 w-12 px-1.5"
+          className="h-7 w-10 px-1 sm:w-12 sm:px-1.5"
         />
       </td>
       <td className="text-right px-0.5 sm:px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
@@ -363,8 +363,8 @@ const ShopTable: React.FC<{
         <table className="w-full text-xs">
           <thead>
             <tr className="whitespace-nowrap" style={{ color: 'var(--text3)' }}>
-              <th className="text-right font-medium pl-1.5 pr-0.5 sm:pl-3 sm:pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
-              <th className="text-left font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
+              <th className="hidden sm:table-cell text-right font-medium pl-3 pr-1 py-1.5">{t('event-shop-col-rank', '#')}</th>
+              <th className="text-left font-medium pl-1.5 pr-0.5 sm:px-1 py-1.5">{t('event-shop-col-item', '品目')}</th>
               <th className="text-left font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-count', '回数')}</th>
               <th className="text-right font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-qty', '個数')}</th>
               <th className="text-right font-medium px-0.5 sm:px-1 py-1.5">{t('event-shop-col-limit', '上限')}</th>
