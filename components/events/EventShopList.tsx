@@ -291,17 +291,22 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
         {plan && <RowPlanLabel name={name} plan={plan} count={count} />}
       </td>
       <td className="px-0.5 sm:px-1 py-1.5">
-        <Input
-          type="number"
-          min={0}
-          {...(limit > 0 ? { max: limit } : {})}
-          value={count}
-          onChange={e => onRowCountChange(row, toCount(e.target.value))}
-          aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
-            name,
-          })}
-          className="h-7 w-10 px-1 sm:w-12 sm:px-1.5"
-        />
+        {/* 数字を周りの 12px（text-xs）に揃える。iOS Safari は 16px 未満の入力欄にフォーカスすると画面を拡大するので、
+            文字は 16px のまま 3/4 に縮めて 12px に見せる。縮めても配置の大きさは変わらないため、外側の箱で見た目の
+            大きさ（sm 未満 40px・sm 以上 48px × 28px）を決め、入力欄はその 4/3 倍の大きさで左上を基点に縮める。 */}
+        <div className="h-7 w-10 sm:w-12">
+          <Input
+            type="number"
+            min={0}
+            {...(limit > 0 ? { max: limit } : {})}
+            value={count}
+            onChange={e => onRowCountChange(row, toCount(e.target.value))}
+            aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
+              name,
+            })}
+            className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-1.5 text-base sm:px-2 md:text-base"
+          />
+        </div>
       </td>
       <td className="text-right px-0.5 sm:px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
       <td className="text-right px-0.5 sm:px-1 py-1.5">

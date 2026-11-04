@@ -356,9 +356,18 @@ describe('EventShopList の1つの一覧', () => {
     for (const rankCell of [rankHeader, row.cells[0]]) {
       expect(classesOf(rankCell)).toEqual(expect.arrayContaining(['hidden', 'sm:table-cell']))
     }
-    const input = countInput('月より団子')
-    expect(classesOf(input)).toEqual(expect.arrayContaining(['w-10', 'sm:w-12']))
-    expect(classesOf(input)).not.toContain('w-12')
+    const box = countInput('月より団子').parentElement
+    expect(classesOf(box)).toEqual(expect.arrayContaining(['w-10', 'sm:w-12']))
+    expect(classesOf(box)).not.toContain('w-12')
+  })
+
+  it('交換回数の数字は 16px のまま 3/4 に縮めて周りの 12px に揃え、iOS Safari のフォーカス時の拡大を避ける（#240）', () => {
+    renderShop()
+    const classes = countInput('月より団子').className.split(/\s+/)
+    // 16px 未満の文字サイズ（text-sm・text-xs）にすると iOS Safari がフォーカス時に拡大する。
+    expect(classes).toEqual(expect.arrayContaining(['text-base', 'md:text-base', 'scale-75', 'origin-top-left']))
+    expect(classes).not.toContain('md:text-sm')
+    expect(classes).not.toContain('text-xs')
   })
 
   it('所持数の入力は表より前に、通貨ごとの必要量は表より後に、交換所に現れた通貨の順で並ぶ', () => {
