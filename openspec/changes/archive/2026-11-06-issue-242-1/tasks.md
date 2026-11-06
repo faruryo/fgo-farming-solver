@@ -26,5 +26,5 @@
 
 ## 5. 品質ゲートと実画面
 
-- [ ] 5.1 `pnpm lint`、`pnpm lint:ratchet`、`pnpm type-check`、`pnpm vitest run` が通る <!-- verify-only -->
-- [ ] 5.2 verify skill の手順で dev server（ポート 3187）を起動し、交換所（ロトの無い交換所イベントのページ）とアイテム一覧を 375px と 1280px で開いて、品目名のポップアップで「いらない」にした行が表の最後の「いらない品目」に畳まれ、表の下の合計と周回の合計から外れること、アイテム一覧で変えた設定が交換所に出ることを確かめ、変更前（main）と変更後のスクリーンショットを撮る <!-- verify-only -->
+- [x] 5.1 `pnpm lint`、`pnpm lint:ratchet`、`pnpm type-check`、`pnpm vitest run` が通る <!-- verify-only -->
+- [x] 5.2 verify skill の手順で dev server（ポート 3187）を起動し、交換所（ロトの無い交換所イベントのページ）とアイテム一覧を 375px と 1280px で開いて、品目名のポップアップで「いらない」にした行が表の最後の「いらない品目」に畳まれ、表の下の合計と周回の合計から外れること、アイテム一覧で変えた設定が交換所に出ることを確かめ、変更前（main）と変更後のスクリーンショットを撮る <!-- verify-only -->
