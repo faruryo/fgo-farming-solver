@@ -17,6 +17,10 @@ describe('storage-keys', () => {
     expect(isCloudSyncKey(eventShopInputsKey(80632))).toBe(false)
   })
 
+  it('syncs the per-item want setting', () => {
+    expect(isCloudSyncKey(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBe(true)
+  })
+
   it('strictly preserves the cloud sync keys in sequence', () => {
     expect(CLOUD_SYNC_KEYS).toEqual([
       'material',
@@ -41,6 +45,7 @@ describe('storage-keys', () => {
       'todoState',
       'todoSettings',
       'bondTracker',
+      'events/shopWantedItems',
     ])
   })
 

@@ -403,6 +403,41 @@ describe('EventHubClient', () => {
       ])
     })
 
+    it('「いらない」の行を除いて順位と見出しを付け、効率 9 の品目を「いらない」にすると次の行が順位 1 になる', () => {
+      const shopEvent = event({
+        shop: [
+          shopEntry(2, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10 }),
+          shopEntry(1, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10 }),
+          shopEntry(8, 94001, { costName: '武蔵うどん' }),
+          shopEntry(3, 94002, { costName: '江戸むすび', qty: 1, costAmount: 10 }),
+        ],
+        farmingNodes,
+      })
+      render(
+        <EventHubClient
+          summary={summary}
+          boxEvent={shopEvent}
+          features={['shop']}
+          shopApPrices={{ 1: 90, 2: 77.2, 3: 76.3 }}
+        />,
+      )
+      const list = () => screen.getByTestId('shop-item-list')
+      expect(bodyRows(list())).toEqual(['効率順', '1|素材1|9', '2|素材2|7.72', '3|素材3|7.63', 'AP 換算なし', '|素材8|'])
+
+      chooseWant('素材1', 'いらない')
+      expect(bodyRows(list())).toEqual(['効率順', '1|素材2|7.72', '2|素材3|7.63', 'AP 換算なし', '|素材8|'])
+
+      // 効率の無い行がすべて「いらない」なら見出しを出さない。
+      chooseWant('素材8', 'いらない')
+      expect(bodyRows(list())).toEqual(['1|素材2|7.72', '2|素材3|7.63'])
+      expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 2 件')
+
+      // 「欲しい」に戻すと、効率の順で決まる位置に戻る。
+      fireEvent.click(unwantedSummary() as HTMLElement)
+      chooseWant('素材1', '欲しい')
+      expect(bodyRows(list())).toEqual(['1|素材1|9', '2|素材2|7.72', '3|素材3|7.63'])
+    })
+
     it('効率のある品目が無い交換所では見出しも順位も出さず、交換所の順に並べる', () => {
       const shopEvent = event({
         shop: [
@@ -490,8 +525,10 @@ describe('EventHubClient', () => {
         <EventHubClient summary={summary} boxEvent={event({ shop, farmingNodes, ...overrides })} features={['shop']} />,
       )
     const cellOf = (name: string) => screen.getByLabelText(`${name} の交換回数`).closest('tr')?.cells[1] as HTMLElement
-    const toggleOf = (name: string) => screen.getByRole('radiogroup', { name: `${name} は必要か` })
-    const shortfallButton = () => screen.getByRole('button', { name: '不足素材のみ' })
+    const shortfallButton = () => screen.getByRole('button', { name: '優先素材' })
+    const storedWant = () => JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null') as unknown
+    const inputNames = () =>
+      screen.getAllByLabelText(/ の交換回数$/).map(input => input.getAttribute('aria-label')?.replace(' の交換回数', ''))
 
     beforeEach(() => {
       mocks.roster = ready({ 6516: 30, 6517: 30, 6519: 15 })
@@ -499,18 +536,12 @@ describe('EventHubClient', () => {
       mocks.useMaterialCatalog.mockClear()
       reload.mockClear()
       setLs(STORAGE_KEYS.POSSESSION, possession)
-      // 状態を品目のセルに置く sm 以上の幅にする（sm 未満は行の下の2段目。EventShopList.test.tsx で確かめる）。
-      vi.spyOn(window, 'matchMedia').mockImplementation(
-        query =>
-          ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }) as unknown as MediaQueryList,
-      )
     })
     afterEach(() => {
       mocks.roster = undefined
-      vi.mocked(window.matchMedia).mockRestore()
     })
 
-    it('品目に「あと N 個」「足りている（交換不要）」「使わない」「計画の対象外」が出る', () => {
+    it('品目に「あと N 個」「足りている（交換不要）」「使わない」「計画の対象外」が出て、行に切り替えは常には出ない', () => {
       renderShop()
 
       expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
@@ -518,32 +549,85 @@ describe('EventHubClient', () => {
       expect(within(cellOf('素材6518')).getByText('使わない')).toBeInTheDocument()
       expect(within(cellOf('素材4001')).getByText('計画の対象外')).toBeInTheDocument()
       expect(within(cellOf('素材94100')).getByText('計画の対象外')).toBeInTheDocument()
-      expect(within(cellOf('素材6516')).queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(unwantedSummary()).not.toBeInTheDocument()
     })
 
-    it('計画の対象外の品目の切り替えは初期値「不要」で、「必要」にしても交換回数は変わらない', () => {
+    it('品目名を押すと「欲しい」が選ばれたポップアップが出て、「いらない」を選ぶと行が表から消え「▸ いらない品目 1 件」が出る', () => {
       renderShop()
+      fireEvent.click(screen.getByRole('button', { name: '素材4001' }))
+      const group = screen.getByRole('radiogroup', { name: '素材4001 は欲しいか' })
+      expect(within(group).getByRole('radio', { name: '欲しい' })).toBeChecked()
+      expect(within(group).getByRole('radio', { name: 'いらない' })).not.toBeChecked()
 
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).not.toBeChecked()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
-      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
+      fireEvent.click(within(group).getByRole('radio', { name: 'いらない' }))
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('素材4001 の交換回数')).not.toBeInTheDocument()
+      expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 1 件')
+      expect(unwantedSummary()).toHaveAttribute('aria-expanded', 'false')
+      expect(storedWant()).toEqual({ 4001: false })
     })
 
-    it('「必要」は描き直しても残り、交換回数は開き直す前にそのイベントで入れていた回数のまま', () => {
-      const { unmount } = renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
+    it('畳んだ部分を開くと名前だけが出て、名前を押して「欲しい」を選ぶと行が元の位置に戻り、前に入れた回数が戻る', () => {
+      renderShop()
+      fireEvent.change(screen.getByLabelText('素材4001 の交換回数'), { target: { value: '3' } })
+      chooseWant('素材4001', 'いらない')
+
+      fireEvent.click(unwantedSummary() as HTMLElement)
+      expect(unwantedSummary()).toHaveAttribute('aria-expanded', 'true')
+      const section = screen.getByTestId('shop-unwanted-items')
+      expect(within(section).getByRole('button', { name: '素材4001' })).toBeInTheDocument()
+      expect(within(section).queryByRole('spinbutton')).not.toBeInTheDocument()
+      expect(within(section).queryByText('計画の対象外')).not.toBeInTheDocument()
+      expect(within(section).queryByText('武蔵うどん')).not.toBeInTheDocument()
+
+      fireEvent.click(within(section).getByRole('button', { name: '素材4001' }))
+      expect(
+        within(screen.getByRole('radiogroup', { name: '素材4001 は欲しいか' })).getByRole('radio', { name: 'いらない' }),
+      ).toBeChecked()
+      fireEvent.click(screen.getByRole('radio', { name: '欲しい' }))
+
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(3)
+      expect(inputNames()).toEqual(['素材6516', '素材6517', '素材6518', '素材6519', '素材4001', '素材94100'])
+      expect(unwantedSummary()).not.toBeInTheDocument()
+      expect(storedWant()).toEqual({ 4001: true })
+    })
+
+    it('「いらない」の品目の回数は、選んだ交換の合計・必要量・周回の合計に入らない。全交換の合計は変えない', () => {
+      renderShop()
+      fireEvent.change(screen.getByLabelText('素材4001 の交換回数'), { target: { value: '3' } })
+      fireEvent.change(screen.getByLabelText('素材6516 の交換回数'), { target: { value: '2' } })
+      const udon = cardOf('武蔵うどん')
+      expect(within(udon).getByText('選んだ交換 50')).toBeInTheDocument()
+      expect(within(udon).getByText('必要量 50')).toBeInTheDocument()
+      expect(screen.getByText('合計 5 周・AP 200')).toBeInTheDocument()
+
+      chooseWant('素材4001', 'いらない')
+      expect(within(udon).getByText('選んだ交換 20')).toBeInTheDocument()
+      expect(within(udon).getByText('必要量 20')).toBeInTheDocument()
+      expect(screen.getByText('合計 2 周・AP 80')).toBeInTheDocument()
+      expect(screen.getByTestId('shop-plan-summary')).toHaveTextContent('周回の合計 2 周・AP 80')
+      expect(within(udon).getByText('全交換 450')).toBeInTheDocument()
+    })
+
+    it('全部交換と優先素材は「いらない」の品目の保存した回数を変えない', () => {
+      const savedCount = () => {
+        const saved = JSON.parse(localStorage.getItem('events/shopInputs/80632') ?? '{}') as { counts?: Record<string, number> }
+        return Object.entries(saved.counts ?? {}).find(([key]) => key.startsWith('item:4001:'))?.[1]
+      }
+      renderShop()
+      fireEvent.change(screen.getByLabelText('素材4001 の交換回数'), { target: { value: '3' } })
+      chooseWant('素材4001', 'いらない')
+
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(10)
+      expect(savedCount()).toBe(3)
       fireEvent.click(shortfallButton())
-      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
-      unmount()
-
-      renderShop()
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
-      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(5)
+      expect(savedCount()).toBe(3)
     })
 
-    it('不足素材のみの後に開き直しても、操作の後の回数とその後に変えた回数のまま', () => {
+    it('優先素材の後に開き直しても、操作の後の回数とその後に変えた回数のまま', () => {
       const { unmount } = renderShop()
       fireEvent.click(shortfallButton())
       fireEvent.change(screen.getByLabelText('素材94100 の交換回数'), { target: { value: '3' } })
@@ -553,48 +637,60 @@ describe('EventHubClient', () => {
       expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(5)
       expect(screen.getByLabelText('素材6517 の交換回数')).toHaveValue(0)
       expect(screen.getByLabelText('素材6519 の交換回数')).toHaveValue(10)
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
       expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(3)
     })
 
-    it('別のイベントでも保存した「必要」を使い、「不要」に戻すと保存からその品目が消える', () => {
+    it('「いらない」は開き直しても、別のイベントでも使い、そのイベントで入れていた回数は計算に入らない', () => {
       const { unmount } = renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
+      chooseWant('素材4001', 'いらない')
       unmount()
 
+      setLs('events/shopInputs/80700', { counts: { 'item:4001:1:94002:30:0': 2 } })
       renderShop({ id: 80700, shop: [shopEntry(4001, 94002, { costName: '江戸むすび', qty: 1, limitNum: 3 })] })
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' })).toBeChecked()
+      expect(screen.queryByLabelText('素材4001 の交換回数')).not.toBeInTheDocument()
+      expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 1 件')
+      expect(within(cardOf('江戸むすび')).getByText('選んだ交換 0')).toBeInTheDocument()
 
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' }))
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
-        94100: true,
-      })
+      chooseWantFromCollapsed('素材4001', '欲しい')
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(2)
+      expect(within(cardOf('江戸むすび')).getByText('選んだ交換 60')).toBeInTheDocument()
     })
 
-    it('「必要」にした品目は品目 ID ごとに true として保存される', () => {
+    it('「いらない」は false、「欲しい」に戻すと true として品目 ID ごとに保存し、キーを消さない', () => {
       renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({ 4001: true })
+      chooseWant('素材4001', 'いらない')
+      chooseWant('素材94100', 'いらない')
+      expect(storedWant()).toEqual({ 4001: false, 94100: false })
 
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
-        4001: true,
-        94100: true,
-      })
+      chooseWantFromCollapsed('素材4001', '欲しい')
+      expect(storedWant()).toEqual({ 4001: true, 94100: false })
     })
 
-    it('保存済みの値で true の品目だけを「必要」にする', () => {
-      setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 94100: true })
+    it('保存済みの値で false の品目だけを「いらない」にし、true と保存の無い品目は「欲しい」にする', () => {
+      setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 94100: false, 4001: true })
       renderShop()
-      expect(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' })).toBeChecked()
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
+      expect(screen.queryByLabelText('素材94100 の交換回数')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('素材4001 の交換回数')).toBeInTheDocument()
+      expect(screen.getByLabelText('素材6516 の交換回数')).toBeInTheDocument()
+      expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 1 件')
     })
 
-    it.each([null, [94100], 'broken'])('保存した要る・要らないが壊れていても（%j）落ちず、全品目を「不要」として出す', stored => {
+    it('前の版の保存値（伝承結晶 false・呼符 true）で開くと、伝承結晶が畳まれ、呼符が表に出る', () => {
+      setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 6999: false, 4001: true })
+      renderShop({ shop: [...shop, shopEntry(6999, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 2 })] })
+      expect(screen.queryByLabelText('素材6999 の交換回数')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('素材4001 の交換回数')).toBeInTheDocument()
+      fireEvent.click(unwantedSummary() as HTMLElement)
+      expect(within(screen.getByTestId('shop-unwanted-items')).getByRole('button', { name: '素材6999' })).toBeInTheDocument()
+    })
+
+    it.each([null, [94100], 'broken'])('保存した欲しい・いらないが壊れていても（%j）落ちず、全品目を「欲しい」として出す', stored => {
       setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, stored)
       renderShop()
-      expect(within(toggleOf('素材94100')).getByRole('radio', { name: '不要' })).toBeChecked()
-      expect(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' })).toBeChecked()
+      expect(screen.getByLabelText('素材94100 の交換回数')).toBeInTheDocument()
+      expect(screen.getByLabelText('素材4001 の交換回数')).toBeInTheDocument()
+      expect(unwantedSummary()).not.toBeInTheDocument()
     })
 
     it.each([null, [25, 40], 'broken'])('保存した実所持数が壊れていても（%j）落ちず、所持 0 として出す', stored => {
@@ -608,11 +704,10 @@ describe('EventHubClient', () => {
       expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
     })
 
-    it('不足素材のみで不足の分と「必要」の在庫上限を入れ、周回の内訳を出し、その後も回数を変えられる', () => {
+    it('優先素材で不足の分と「欲しい」の計画の対象外の在庫上限を入れ、周回の内訳を出し、その後も回数を変えられる', () => {
       renderShop()
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '必要' }))
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
       expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
+      fireEvent.change(screen.getByLabelText('素材94100 の交換回数'), { target: { value: '3' } })
 
       fireEvent.click(shortfallButton())
 
@@ -623,14 +718,12 @@ describe('EventHubClient', () => {
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
       expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(0)
       expect(within(cellOf('素材94100')).getByText('上限なし: 回数を入れてください')).toBeInTheDocument()
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '不要' }))
-      expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
-      fireEvent.click(within(toggleOf('素材94100')).getByRole('radio', { name: '必要' }))
       expect(screen.getByText('必要量 200')).toBeInTheDocument()
       expect(screen.getByText('合計 20 周・AP 800')).toBeInTheDocument()
 
-      fireEvent.click(within(toggleOf('素材4001')).getByRole('radio', { name: '不要' }))
-      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+      chooseWant('素材4001', 'いらない')
+      expect(screen.getByText('必要量 150')).toBeInTheDocument()
+      expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
 
       fireEvent.change(screen.getByLabelText('素材94100 の交換回数'), { target: { value: '3' } })
       fireEvent.change(screen.getByLabelText('素材6516 の交換回数'), { target: { value: '1' } })
@@ -639,8 +732,14 @@ describe('EventHubClient', () => {
       expect(within(cellOf('素材94100')).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
 
       fireEvent.click(shortfallButton())
-      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(0)
+      expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(5)
+      expect(screen.getByLabelText('素材94100 の交換回数')).toHaveValue(0)
       expect(screen.getByText('合計 15 周・AP 600')).toBeInTheDocument()
+
+      // 「いらない」の間に優先素材を押しても、呼符の回数は変わっていない。
+      chooseWantFromCollapsed('素材4001', '欲しい')
+      expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(5)
+      expect(screen.getByText('合計 20 周・AP 800')).toBeInTheDocument()
     })
 
     it('在庫上限で埋まらない素材に「交換所では N 個足りない」を出し、要約の数が合う', () => {
@@ -651,7 +750,15 @@ describe('EventHubClient', () => {
       expect(screen.getByText('育成計画の不足 2 素材のうち、交換所で埋まるのは 1 素材')).toBeInTheDocument()
     })
 
-    it('育成計画が未設定なら、ラベル・切り替え・要約を出さず、不足素材のみを押せず、設定のリンクを出す', () => {
+    it('不足のある素材の品目を「いらない」にすると、その素材は埋まらない素材として数え、足りない数はどの行にも出さない', () => {
+      renderShop()
+      chooseWant('素材6516', 'いらない')
+      expect(screen.getByText('育成計画の不足 2 素材のうち、交換所で埋まるのは 0 素材')).toBeInTheDocument()
+      fireEvent.click(unwantedSummary() as HTMLElement)
+      expect(within(screen.getByTestId('shop-unwanted-items')).queryByText(/あと|交換所では/)).not.toBeInTheDocument()
+    })
+
+    it('育成計画が未設定なら、ラベル・要約を出さず、優先素材を押せず、設定のリンクを出し、品目名のポップアップは使える', () => {
       mocks.roster = { status: 'empty' }
       renderShop()
 
@@ -665,9 +772,14 @@ describe('EventHubClient', () => {
       fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
       expect(screen.getByLabelText('素材6516 の交換回数')).toHaveValue(10)
       expect(mocks.useMaterialCatalog).not.toHaveBeenCalled()
+
+      fireEvent.click(screen.getByRole('button', { name: '素材4001' }))
+      expect(screen.getByRole('radiogroup', { name: '素材4001 は欲しいか' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('radio', { name: 'いらない' }))
+      expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 1 件')
     })
 
-    it('育成計画の読み込みに失敗したとき・読み込み中は、不足素材のみを押せない', () => {
+    it('育成計画の読み込みに失敗したとき・読み込み中は、優先素材を押せず、品目名のポップアップは使える', () => {
       mocks.roster = { status: 'error' }
       const { unmount } = renderShop()
       expect(
@@ -675,6 +787,8 @@ describe('EventHubClient', () => {
       ).toBeInTheDocument()
       expect(screen.queryByText('あと 5 個')).not.toBeInTheDocument()
       expect(shortfallButton()).toBeDisabled()
+      fireEvent.click(screen.getByRole('button', { name: '素材4001' }))
+      expect(screen.getByRole('radiogroup', { name: '素材4001 は欲しいか' })).toBeInTheDocument()
       unmount()
 
       mocks.roster = { status: 'loading' }
@@ -682,6 +796,8 @@ describe('EventHubClient', () => {
       expect(screen.getByText('育成計画を読み込み中...')).toBeInTheDocument()
       expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
       expect(shortfallButton()).toBeDisabled()
+      fireEvent.click(screen.getByRole('button', { name: '素材4001' }))
+      expect(screen.getByRole('radiogroup', { name: '素材4001 は欲しいか' })).toBeInTheDocument()
     })
 
     it('素材の一覧を読み込めないと、必要数のある品目のラベルだけを出し、見分けられないことと再読み込みを出す', () => {
@@ -714,7 +830,7 @@ describe('EventHubClient', () => {
       expect(screen.queryByText(/見分けられません/)).not.toBeInTheDocument()
     })
 
-    describe('既定で交換する品目（伝承結晶・夢火）', () => {
+    describe('伝承結晶と夢火', () => {
       // 伝承結晶（6999）は育成計画で扱う素材、夢火（1000）は扱わない。
       const loreCatalog = {
         ...catalog,
@@ -735,64 +851,51 @@ describe('EventHubClient', () => {
         mocks.catalog = { catalog: loreCatalog, failed: false, reload }
       })
 
-      it('未選択の伝承結晶は「使わない」と「必要」の切り替えで出て、不足素材のみで在庫上限の回数が入る', () => {
+      it('使わない伝承結晶は「使わない」で出て優先素材で 0、夢火は「計画の対象外」で在庫上限まで入る', () => {
         renderShop({ shop: defaultShop })
 
         const [loreCell] = screen.getAllByLabelText('素材6999 の交換回数').map(input => input.closest('tr')?.cells[1])
         expect(within(loreCell as HTMLElement).getByText('使わない')).toBeInTheDocument()
-        const [loreToggle] = screen.getAllByRole('radiogroup', { name: '素材6999 は必要か' })
-        expect(within(loreToggle).getByRole('radio', { name: '必要' })).toBeChecked()
+        expect(within(cellOf('素材1000')).getByText('計画の対象外')).toBeInTheDocument()
 
         fireEvent.click(shortfallButton())
         const [limited, unlimited] = screen.getAllByLabelText('素材6999 の交換回数')
-        expect(limited).toHaveValue(2)
+        expect(limited).toHaveValue(0)
         expect(unlimited).toHaveValue(0)
-        expect(within(lastLoreCell()).getByText('上限なし: 回数を入れてください')).toBeInTheDocument()
+        expect(within(lastLoreCell()).queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
+        expect(screen.getByLabelText('素材1000 の交換回数')).toHaveValue(1)
         expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
       })
 
-      it('伝承結晶を「不要」にすると不足素材のみで 0 になり、選択は端末に false で残る', () => {
-        const { unmount } = renderShop({ shop: defaultShop })
-        fireEvent.click(within(screen.getAllByRole('radiogroup', { name: '素材6999 は必要か' })[0]).getByRole('radio', { name: '不要' }))
-        expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
-          6999: false,
-        })
-
-        fireEvent.click(shortfallButton())
-        for (const input of screen.getAllByLabelText('素材6999 の交換回数')) expect(input).toHaveValue(0)
-        expect(screen.queryByText('上限なし: 回数を入れてください')).not.toBeInTheDocument()
-        unmount()
-
-        renderShop({ id: 80700, shop: [shopEntry(6999, 94002, { costName: '江戸むすび', qty: 1, limitNum: 3 })] })
-        expect(within(toggleOf('素材6999')).getByRole('radio', { name: '不要' })).toBeChecked()
-      })
-
-      it('未選択の夢火は「計画の対象外」と「必要」で出て、不足素材のみで在庫上限まで入る', () => {
-        renderShop({ shop: defaultShop })
-
-        expect(within(cellOf('素材1000')).getByText('計画の対象外')).toBeInTheDocument()
-        expect(within(toggleOf('素材1000')).getByRole('radio', { name: '必要' })).toBeChecked()
-        fireEvent.click(shortfallButton())
-        expect(screen.getByLabelText('素材1000 の交換回数')).toHaveValue(1)
-      })
-
-      it('不足のある伝承結晶にも「あと N 個」と切り替えが出る', () => {
-        mocks.roster = ready({ 6999: 5 })
+      it('不足 1 の伝承結晶（在庫上限 2）には「あと 1 個」が出て、優先素材で 1 が入る', () => {
+        mocks.roster = ready({ 6999: 3 })
         setLs(STORAGE_KEYS.POSSESSION, { 6999: 2 })
         renderShop({ shop: [defaultShop[0]] })
 
-        expect(within(cellOf('素材6999')).getByText('あと 3 個')).toBeInTheDocument()
-        expect(within(toggleOf('素材6999')).getByRole('radio', { name: '必要' })).toBeChecked()
+        expect(within(cellOf('素材6999')).getByText('あと 1 個')).toBeInTheDocument()
+        fireEvent.click(shortfallButton())
+        expect(screen.getByLabelText('素材6999 の交換回数')).toHaveValue(1)
       })
 
-      it('素材の一覧を読み込めなくても、伝承結晶は「使わない」、夢火は「計画の対象外」と切り替えで出る', () => {
+      it('伝承結晶を「いらない」にすると畳まれ、端末に false で残り、別のイベントでも「いらない」', () => {
+        const { unmount } = renderShop({ shop: defaultShop })
+        chooseWant('素材6999', 'いらない')
+        expect(storedWant()).toEqual({ 6999: false })
+        expect(screen.queryByLabelText('素材6999 の交換回数')).not.toBeInTheDocument()
+        expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 2 件')
+        unmount()
+
+        renderShop({ id: 80700, shop: [shopEntry(6999, 94002, { costName: '江戸むすび', qty: 1, limitNum: 3 })] })
+        expect(screen.queryByLabelText('素材6999 の交換回数')).not.toBeInTheDocument()
+        expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 1 件')
+      })
+
+      it('素材の一覧を読み込めなくても、伝承結晶は「使わない」、夢火は「計画の対象外」と出る', () => {
         mocks.catalog = { catalog: null, failed: true, reload }
         renderShop({ shop: [defaultShop[0], defaultShop[1]] })
 
         expect(within(cellOf('素材6999')).getByText('使わない')).toBeInTheDocument()
         expect(within(cellOf('素材1000')).getByText('計画の対象外')).toBeInTheDocument()
-        expect(toggleOf('素材6999')).toBeInTheDocument()
-        expect(toggleOf('素材1000')).toBeInTheDocument()
       })
     })
 
@@ -820,7 +923,7 @@ describe('EventHubClient', () => {
       ]
       const renderSvtShop = () => renderShop({ shop: svtShop })
 
-      it('名前とアイコンとともに並び、「計画の対象外」と必要／不要の切り替えが出る', () => {
+      it('名前とアイコンとともに並び、「計画の対象外」が出て、切り替えは常には出ない', () => {
         renderSvtShop()
         for (const [id, name] of [
           [9770500, '叡智の大火'],
@@ -829,30 +932,37 @@ describe('EventHubClient', () => {
         ] as const) {
           expect(cellOf(name).querySelector('img')?.getAttribute('src')).toContain(encodeURIComponent(icon(id)))
           expect(within(cellOf(name)).getByText('計画の対象外')).toBeInTheDocument()
-          expect(within(toggleOf(name)).getByRole('radio', { name: '不要' })).toBeChecked()
         }
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
         // 2つの通貨で交換できる礼装は1行にまとまる。
         expect(screen.getAllByLabelText('完璧なお正月 の交換回数')).toHaveLength(1)
         expect(within(cellOf('完璧なお正月')).getByText('計画の対象外')).toBeInTheDocument()
       })
 
-      it('礼装を「必要」にすると svt:<番号> のキーで保存し、同じ番号のアイテムのキーは作らない', () => {
+      it('優先素材で「欲しい」の種火（在庫上限 100）とまとめた礼装は在庫上限になる', () => {
         renderSvtShop()
-        const [ce] = screen.getAllByRole('radiogroup', { name: '完璧なお正月 は必要か' })
-        fireEvent.click(within(ce).getByRole('radio', { name: '必要' }))
-
-        expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS) ?? 'null')).toEqual({
-          'svt:9305420': true,
-        })
-        expect(within(toggleOf('完璧なお正月')).getByRole('radio', { name: '必要' })).toBeChecked()
-        expect(within(toggleOf('同じ番号のアイテム')).getByRole('radio', { name: '不要' })).toBeChecked()
-
         fireEvent.click(shortfallButton())
+        expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(100)
         // まとめた行は2つの通貨の在庫上限の合計で、内訳に両方の通貨が出る。
         expect(screen.getByLabelText('完璧なお正月 の交換回数')).toHaveValue(3)
         expect(within(cellOf('完璧なお正月')).getByText('武蔵うどん 2・江戸むすび 1')).toBeInTheDocument()
-        expect(screen.getByLabelText('同じ番号のアイテム の交換回数')).toHaveValue(0)
-        expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(0)
+      })
+
+      it('礼装を「いらない」にすると svt:<番号> のキーで保存してまとめた行ごと畳み、同じ番号のアイテムは「欲しい」のまま', () => {
+        renderSvtShop()
+        fireEvent.change(screen.getByLabelText('完璧なお正月 の交換回数'), { target: { value: '2' } })
+        expect(within(cardOf('武蔵うどん')).getByText('選んだ交換 20')).toBeInTheDocument()
+        chooseWant('完璧なお正月', 'いらない')
+
+        expect(storedWant()).toEqual({ 'svt:9305420': false })
+        expect(screen.queryByLabelText('完璧なお正月 の交換回数')).not.toBeInTheDocument()
+        expect(screen.getByLabelText('同じ番号のアイテム の交換回数')).toBeInTheDocument()
+        expect(unwantedSummary()).toHaveTextContent('▸ いらない品目 1 件')
+        expect(within(cardOf('武蔵うどん')).getByText('選んだ交換 0')).toBeInTheDocument()
+
+        fireEvent.click(shortfallButton())
+        expect(screen.getByLabelText('同じ番号のアイテム の交換回数')).toHaveValue(3)
+        expect(screen.getByLabelText('叡智の大火 の交換回数')).toHaveValue(100)
       })
 
       it('全部交換を押すと在庫上限の回数になる', () => {
@@ -863,7 +973,7 @@ describe('EventHubClient', () => {
         expect(screen.getByLabelText('完璧なお正月 の交換回数')).toHaveValue(3)
       })
 
-      it('育成計画が未設定のとき・素材の一覧を読み込めないときは切り替えを出さない', () => {
+      it('育成計画が未設定のとき・素材の一覧を読み込めないときはラベルを出さない', () => {
         mocks.roster = { status: 'empty' }
         const { unmount } = renderSvtShop()
         expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
@@ -927,7 +1037,9 @@ describe('EventHubClient', () => {
 
           expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
           expect(screen.queryByRole('button', { name: '全部交換' })).not.toBeInTheDocument()
-          expect(screen.queryByRole('button', { name: '不足素材のみ' })).not.toBeInTheDocument()
+          expect(screen.queryByRole('button', { name: '優先素材' })).not.toBeInTheDocument()
+          expect(screen.queryByRole('button', { name: '叡智の大火' })).not.toBeInTheDocument()
+          expect(unwantedSummary()).not.toBeInTheDocument()
           expect(screen.queryByLabelText(/の所持数$/)).not.toBeInTheDocument()
           expect(screen.queryByText(/必要量/)).not.toBeInTheDocument()
           expect(screen.queryByLabelText(/のドロップボーナス$/)).not.toBeInTheDocument()
@@ -943,7 +1055,8 @@ describe('EventHubClient', () => {
           expect(mocks.useMaterialCatalog).not.toHaveBeenCalled()
         }
 
-        it('周回クエストが無いとき、品目の一覧だけを出す', () => {
+        it('周回クエストが無いとき、品目の一覧だけを出し、「いらない」にした品目も畳まない', () => {
+          setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 'svt:9770500': false })
           render(
             <EventHubClient
               summary={summary}
@@ -1565,6 +1678,28 @@ const cardOf = (currency: string) =>
 
 /** 交換回数の入力のある品目の行。 */
 const rowOfItem = (name: string) => screen.getByLabelText(`${name} の交換回数`).closest('tr') as HTMLElement
+
+/** 品目名を押してポップアップを出し、「欲しい」か「いらない」を選ぶ。 */
+const chooseWant = (name: string, choice: '欲しい' | 'いらない') => {
+  // 同じ品目の行が複数あっても設定は1つなので、最初の行の品目名を押す。
+  const [button] = screen.getAllByRole('button', { name })
+  if (!button) throw new Error(`no item name button: ${name}`)
+  fireEvent.click(button)
+  const group = screen.getByRole('radiogroup', { name: `${name} は欲しいか` })
+  fireEvent.click(within(group).getByRole('radio', { name: choice }))
+}
+
+/** 表の最後に畳んだ「いらない品目」の開閉のボタン。 */
+const unwantedSummary = () => screen.queryByRole('button', { name: /いらない品目 \d+ 件/ })
+
+/** 畳んだ「いらない品目」を開き（閉じていれば）、その中の名前からポップアップを出して選ぶ。 */
+const chooseWantFromCollapsed = (name: string, choice: '欲しい' | 'いらない') => {
+  const summaryButton = unwantedSummary()
+  if (summaryButton?.getAttribute('aria-expanded') === 'false') fireEvent.click(summaryButton)
+  fireEvent.click(within(screen.getByTestId('shop-unwanted-items')).getByRole('button', { name }))
+  const group = screen.getByRole('radiogroup', { name: `${name} は欲しいか` })
+  fireEvent.click(within(group).getByRole('radio', { name: choice }))
+}
 
 /** 一覧の表の行を「順位|品目名|効率」か、見出しの行の文言にする。 */
 const bodyRows = (card: HTMLElement) =>
