@@ -28,20 +28,7 @@ vi.mock('../../hooks/use-material-catalog', () => ({
   },
 }))
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string | Record<string, unknown>, options?: Record<string, unknown>) => {
-      const template = typeof fallback === 'string' ? fallback : key
-      const vars = typeof fallback === 'object' ? fallback : options
-      return vars
-        ? template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name: string) => {
-            const value: unknown = Reflect.get(vars, name)
-            return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
-          })
-        : template
-    },
-  }),
-}))
+vi.mock('react-i18next', async () => (await import('../i18n-test-utils')).translationMock())
 
 vi.mock('./EventPlannerClient', () => ({
   EventPlannerClient: () => <div data-testid="box-planner" />,

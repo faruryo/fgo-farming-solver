@@ -9,20 +9,7 @@ import type { Localized } from '../../lib/get-local-items'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string | Record<string, unknown>, options?: Record<string, unknown>) => {
-      const template = typeof fallback === 'string' ? fallback : key
-      const vars = typeof fallback === 'object' ? fallback : options
-      return vars
-        ? template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name: string) => {
-            const value: unknown = Reflect.get(vars, name)
-            return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
-          })
-        : template
-    },
-  }),
-}))
+vi.mock('react-i18next', async () => (await import('../i18n-test-utils')).translationMock())
 
 const item = (id: string, name: string, atlasId?: number): Localized<Item> => ({
   id,
