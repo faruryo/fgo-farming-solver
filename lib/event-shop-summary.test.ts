@@ -23,6 +23,8 @@ import {
   splitRowCount,
   selectAllCurrenciesUpToLimit,
   selectAllUpToLimit,
+  excludeUnwantedCounts,
+  shopWantedKey,
   type ShopListRow,
 } from './event-shop-summary'
 
@@ -105,6 +107,26 @@ describe('computeShopCurrencyNeeds', () => {
   })
 })
 
+describe('excludeUnwantedCounts', () => {
+  it('呼符 3 回×20・伝承結晶 2 回×200 で呼符をいらないにすると選んだ交換は 400、欲しいに戻すと 460', () => {
+    const shop = [entry(4001, 10, 20, 10), entry(6999, 10, 200, 2)]
+    const counts = new Map([[0, 3], [1, 2]])
+    const excluded = excludeUnwantedCounts(shop, counts, new Set(['4001']))
+    expect(computeShopCurrencyNeeds(shop, excluded, new Map())).toEqual([{ costItemId: 10, selectedCost: 400, need: 400 }])
+    expect(counts.get(0)).toBe(3)
+    expect(computeShopCurrencyNeeds(shop, excludeUnwantedCounts(shop, counts, new Set()), new Map())).toEqual([
+      { costItemId: 10, selectedCost: 460, need: 460 },
+    ])
+  })
+
+  it('サーヴァント扱いの品目のキーと番号が同じアイテムの品目を取り違えない', () => {
+    const shop = [entry(9305420, 10, 10, 3), entry(9305420, 10, 20, 2, { kind: 'svt' })]
+    const counts = new Map([[0, 1], [1, 1]])
+    expect([...excludeUnwantedCounts(shop, counts, new Set(['svt:9305420']))]).toEqual([[0, 1]])
+    expect([...excludeUnwantedCounts(shop, counts, new Set(['9305420']))]).toEqual([[1, 1]])
+  })
+})
+
 describe('selectAllUpToLimit', () => {
   it('その通貨で在庫上限のある品目を上限にし、上限の無い品目とほかの通貨は変えない', () => {
     const shop = [entry(1, 10, 20, 3), entry(2, 10, 5, 0), entry(3, 11, 100, 2), entry(4, 10, 1, 4)]
@@ -140,6 +162,24 @@ describe('selectAllCurrenciesUpToLimit', () => {
     expect(computeShopCurrencyNeeds(svtShop, next, new Map())).toEqual([
       { costItemId: 10, selectedCost: 850, need: 850 },
     ])
+  })
+
+  it('「いらない」の在庫上限 1 の聖杯は保存した 1 のままで、計算から除くと聖杯の対価は入らない', () => {
+    const grailShop = [entry(7999, 10, 300, 1), entry(100, 10, 5, 10), entry(101, 10, 1, 0)]
+    const unwanted = new Set([shopWantedKey({ itemId: 7999 })])
+    const next = selectAllCurrenciesUpToLimit(grailShop, new Map([[0, 1], [2, 3]]), unwanted)
+    expect(next.get(0)).toBe(1)
+    expect(next.get(1)).toBe(10)
+    expect(next.get(2)).toBe(3)
+    expect(computeShopCurrencyNeeds(grailShop, excludeUnwantedCounts(grailShop, next, unwanted), new Map())).toEqual([
+      { costItemId: 10, selectedCost: 53, need: 53 },
+    ])
+  })
+
+  it('「いらない」の品目に回数が無ければ、全部交換しても回数を持たない', () => {
+    const next = selectAllCurrenciesUpToLimit(shop, new Map(), new Set(['1']))
+    expect(next.has(0)).toBe(false)
+    expect(next.get(1)).toBe(10)
   })
 
   it('鍵は交換所の配列全体の添字で、通貨ごとに selectAllUpToLimit を当てた結果と同じ', () => {
@@ -348,15 +388,17 @@ describe('formatEfficiency', () => {
 
 const needOf = (need: Record<number, number>) => new Map(Object.entries(need).map(([k, v]) => [Number(k), v]))
 
-/** 不足と所持数から状態を決め、不足素材のみの回数を出す。 */
+/** 不足と所持数から状態を決め、優先素材の回数を出す。 */
 const allocate = (
   shop: EventShopItem[],
   need: Record<number, number>,
   possession: Record<string, number | undefined> = {},
-  /** 「要る」の保存のキー。数はアイテムの番号の文字列として扱う。 */
-  wanted: (number | string)[] = [],
+  /** 「いらない」の保存のキー。数はアイテムの番号の文字列として扱う。 */
+  unwanted: (number | string)[] = [],
   /** null は素材カタログを読めていないとき。 */
   planItemIds: ReadonlySet<number> | null = new Set(),
+  /** 操作の前の交換回数。 */
+  counts: ReadonlyMap<number, number> = new Map(),
 ) => {
   const totalNeed = needOf(need)
   const shortfall = computeShopShortfall(totalNeed, possession)
@@ -364,7 +406,8 @@ const allocate = (
     shop,
     shortfall,
     item => shopItemStatus(item, totalNeed, shortfall, planItemIds ?? undefined),
-    new Set(wanted.map(String)),
+    new Set(unwanted.map(String)),
+    counts,
   )
 }
 
@@ -414,7 +457,7 @@ describe('shopItemStatus', () => {
     expect(shopItemStatus({ itemId: 1000 }, totalNeed, shortfall, undefined)).toEqual({ kind: 'outside' })
   })
 
-  it('サーヴァント扱いの同じ番号の品目は既定で交換する品目に含まれない', () => {
+  it('サーヴァント扱いの同じ番号の品目は番号で扱いが決まる品目に含まれない', () => {
     expect(shopItemStatus({ itemId: 6999, kind: 'svt' }, totalNeed, shortfall, undefined)).toBeUndefined()
     expect(shopItemStatus({ itemId: 1000, kind: 'svt' }, totalNeed, shortfall, undefined)).toBeUndefined()
     expect(isDefaultWanted({ itemId: 6999 })).toBe(true)
@@ -457,37 +500,46 @@ describe('allocateShortfallOnly', () => {
     expect([...allocation.remainders]).toEqual([[2, 4]])
   })
 
-  it('足りている品目・使わない品目は 0 回', () => {
+  it('足りている品目・使わない品目は入れていた回数によらず 0 回', () => {
     const allocation = allocate(
       [entry(10, 90, 10, 10), entry(12, 90, 10, 10)],
       { 10: 30 },
       { 10: 40 },
-      [12],
+      [],
       new Set([10, 12]),
+      new Map([[0, 4], [1, 4]]),
     )
     expect(countsOf(allocation)).toEqual([0, 0])
     expect(allocation.remaining.size).toBe(0)
   })
 
-  it('「要る」の計画の対象外の品目は在庫上限ありで上限、在庫上限なしで 0 回にして挙げる。「要らない」は 0 回', () => {
-    const allocation = allocate(
-      [entry(5003, 90, 10, 1), entry(94100, 90, 10, 0), entry(4001, 90, 10, 5)],
-      {},
-      {},
-      [5003, 94100],
-    )
-    expect(countsOf(allocation)).toEqual([1, 0, 0])
-    expect([...allocation.unlimitedWanted]).toEqual([1])
+  it('計画の対象外の在庫上限 1 のコード・リムーバーと夢火は 1', () => {
+    expect(countsOf(allocate([entry(5003, 90, 10, 1), entry(1000, 90, 10, 1)], {}))).toEqual([1, 1])
   })
 
-  it('「要る」に入っていても、状態なし・使わない品目は 0 回、必要数のある品目は不足の分', () => {
-    const shop = [entry(4001, 90, 10, 5), entry(12, 90, 10, 5), entry(10, 90, 10, 10)]
-    expect(countsOf(allocate(shop, { 10: 3 }, {}, [4001, 12, 10], null))).toEqual([0, 0, 3])
-    expect(countsOf(allocate(shop, { 10: 3 }, {}, [4001, 12, 10], new Set([12])))).toEqual([5, 0, 3])
+  it('手で 5 を入れた在庫上限 10 の呼符は 10', () => {
+    expect(countsOf(allocate([entry(4001, 90, 10, 10)], {}, {}, [], new Set(), new Map([[0, 5]])))).toEqual([10])
+  })
+
+  it('在庫上限の無い計画の対象外の品目は 3 を入れていても 0 回にして、回数を入れるよう示す', () => {
+    const allocation = allocate([entry(94100, 90, 10, 0)], {}, {}, [], new Set(), new Map([[0, 3]]))
+    expect(countsOf(allocation)).toEqual([0])
+    expect([...allocation.unlimitedWanted]).toEqual([0])
+  })
+
+  it('素材の一覧を読めずにラベルの無い品目とサーヴァント扱いの品目は 0 回、必要数のある品目は不足の分', () => {
+    const shop = [
+      entry(4001, 90, 10, 5),
+      entry(12, 90, 10, 5),
+      entry(9770500, 90, 10, 100, { kind: 'svt' }),
+      entry(10, 90, 10, 10),
+    ]
+    expect(countsOf(allocate(shop, { 10: 3 }, {}, [], null))).toEqual([0, 0, 0, 3])
+    expect(countsOf(allocate(shop, { 10: 3 }, {}, [], new Set([12])))).toEqual([5, 0, 100, 3])
   })
 
   it('QP の品目は 0 回で要約に数えない', () => {
-    const allocation = allocate([entry(1, 90, 10, 10, { qty: 10000 })], { 1: 50000 }, {}, [1])
+    const allocation = allocate([entry(1, 90, 10, 10, { qty: 10000 })], { 1: 50000 })
     expect(countsOf(allocation)).toEqual([0])
     expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 0, filledMaterials: 0 })
   })
@@ -496,84 +548,90 @@ describe('allocateShortfallOnly', () => {
     const allocation = allocate(
       [entry(10, 90, 10, 10, { qty: 0 }), entry(10, 91, 10, 10), entry(4001, 90, 10, 0, { qty: 0 })],
       { 10: 4 },
-      {},
-      [4001],
     )
     expect(countsOf(allocation)).toEqual([0, 4, 0])
     expect(allocation.unlimitedWanted.size).toBe(0)
   })
 })
 
-describe('allocateShortfallOnly（既定で交換する品目）', () => {
+describe('allocateShortfallOnly（伝承結晶と夢火）', () => {
   const LORE = 6999
   const FIRE = 1000
   const planIds = new Set([LORE])
 
-  it('必要数 0 の伝承結晶の在庫上限 2・2・1 の3品目は 2・2・1', () => {
-    const shop = [entry(LORE, 90, 10, 2), entry(LORE, 90, 10, 2), entry(LORE, 91, 10, 1)]
-    expect(countsOf(allocate(shop, {}, {}, [LORE], planIds))).toEqual([2, 2, 1])
+  it('育成計画で使わない伝承結晶（在庫上限 2）は 0', () => {
+    expect(countsOf(allocate([entry(LORE, 90, 10, 2)], {}, {}, [], planIds))).toEqual([0])
   })
 
-  it('夢火の在庫上限 1 の品目は 1', () => {
-    expect(countsOf(allocate([entry(FIRE, 90, 10, 1)], {}, {}, [FIRE], planIds))).toEqual([1])
-  })
-
-  it('伝承結晶の不足 1・在庫上限 2 なら 2 で、残りは出ない', () => {
-    const allocation = allocate([entry(LORE, 90, 10, 2)], { [LORE]: 1 }, {}, [LORE], planIds)
-    expect(countsOf(allocation)).toEqual([2])
-    expect(allocation.remaining.get(LORE)).toBe(0)
+  it('不足 1 の伝承結晶（在庫上限 2）は 1 で、残りは出ない', () => {
+    const allocation = allocate([entry(LORE, 90, 10, 2)], { [LORE]: 1 }, {}, [], planIds)
+    expect(countsOf(allocation)).toEqual([1])
     expect(allocation.remainders.size).toBe(0)
   })
 
-  it('伝承結晶の不足 5・在庫上限 2 なら 2 で、残り 3', () => {
-    const allocation = allocate([entry(LORE, 90, 10, 2)], { [LORE]: 5 }, {}, [LORE], planIds)
-    expect(countsOf(allocation)).toEqual([2])
-    expect([...allocation.remainders]).toEqual([[0, 3]])
+  it('素材の一覧を読めないときも、使わない伝承結晶は 0、夢火は在庫上限', () => {
+    expect(countsOf(allocate([entry(LORE, 90, 10, 2), entry(FIRE, 90, 10, 1)], {}, {}, [], null))).toEqual([0, 1])
   })
+})
 
-  it('必要数 0 の伝承結晶の在庫上限なしの品目は 0 回で、手入力を促す', () => {
-    const allocation = allocate([entry(LORE, 90, 10, 0)], {}, {}, [LORE], planIds)
-    expect(countsOf(allocation)).toEqual([0])
-    expect([...allocation.unlimitedWanted]).toEqual([0])
-  })
-
-  it('不足 2 を在庫上限 2 の品目で埋めた後の在庫上限なしの品目は 0 回で、手入力を促す', () => {
+describe('allocateShortfallOnly（いらない品目）', () => {
+  it('いらない聖杯の保存した 1 は変わらず、ほかの欲しい品目だけを置き換える', () => {
     const allocation = allocate(
-      [entry(LORE, 90, 10, 2), entry(LORE, 91, 10, 0)],
-      { [LORE]: 2 },
+      [entry(7999, 90, 10, 1), entry(4001, 90, 10, 10)],
       {},
-      [LORE],
-      planIds,
+      {},
+      [7999],
+      new Set(),
+      new Map([[0, 1]]),
     )
-    expect(countsOf(allocation)).toEqual([2, 0])
-    expect([...allocation.unlimitedWanted]).toEqual([1])
+    expect([...allocation.counts]).toEqual([[0, 1], [1, 10]])
+  })
+
+  it('いらない品目に回数が無ければ回数を持たない', () => {
+    expect(allocate([entry(7999, 90, 10, 1)], {}, {}, [7999]).counts.has(0)).toBe(false)
+  })
+
+  it('不足 5 の素材のいらない品目は 3 のまま変わらず、不足は埋まらない', () => {
+    const allocation = allocate([entry(10, 90, 10, 10)], { 10: 5 }, {}, [10], new Set([10]), new Map([[0, 3]]))
+    expect([...allocation.counts]).toEqual([[0, 3]])
+    expect(allocation.remaining.get(10)).toBe(5)
+    expect(allocation.remainders.size).toBe(0)
+    expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 1, filledMaterials: 0 })
+  })
+
+  it('いらない品目しかない素材は埋まらない素材として数え、どの行にも足りない数を出さない', () => {
+    const allocation = allocate([entry(10, 90, 10, 10), entry(11, 90, 10, 10)], { 10: 5, 11: 2 }, {}, [10])
+    expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 2, filledMaterials: 1 })
     expect(allocation.remainders.size).toBe(0)
   })
 
-  it('「不要」の伝承結晶は不足 1・在庫上限 2 なら 1', () => {
-    expect(countsOf(allocate([entry(LORE, 90, 10, 2)], { [LORE]: 1 }, {}, [], planIds))).toEqual([1])
-  })
-
-  it('「不要」の伝承結晶（必要数 0）と夢火は 0', () => {
-    const allocation = allocate([entry(LORE, 90, 10, 2), entry(FIRE, 90, 10, 1)], {}, {}, [], planIds)
-    expect(countsOf(allocation)).toEqual([0, 0])
-    expect(allocation.unlimitedWanted.size).toBe(0)
+  it('最後の品目がいらないときは、前の「欲しい」の品目に 2 個足りないを出す', () => {
+    // 同じ素材の後の品目だけを「いらない」にするため、後の品目を別のキー（サーヴァント扱い）にし、状態は両方とも不足にする。
+    const shop = [entry(10, 90, 10, 3), entry(10, 91, 10, 10, { kind: 'svt' })]
+    const result = allocateShortfallOnly(
+      shop,
+      new Map([[10, 5]]),
+      () => ({ kind: 'short', shortfall: 5 }),
+      new Set(['svt:10']),
+    )
+    expect([...result.counts]).toEqual([[0, 3]])
+    expect([...result.remainders]).toEqual([[0, 2]])
   })
 })
 
 describe('allocateShortfallOnly（サーヴァント扱いの品目）', () => {
   const svt = (itemId: number, limitNum: number): EventShopItem => entry(itemId, 90, 10, limitNum, { kind: 'svt' })
 
-  it('在庫上限 100 の種火を「必要」、在庫上限 2 の礼装を「不要」にすると 100 と 0', () => {
-    const allocation = allocate([svt(9770500, 100), svt(9306300, 2)], {}, {}, ['svt:9770500'])
-    expect(countsOf(allocation)).toEqual([100, 0])
+  it('在庫上限 100 の種火は 100、いらない在庫上限 2 の礼装は回数を変えない', () => {
+    const allocation = allocate([svt(9770500, 100), svt(9306300, 2)], {}, {}, ['svt:9306300'], new Set(), new Map([[1, 2]]))
+    expect(countsOf(allocation)).toEqual([100, 2])
     expect(summarizeShortfall(allocation)).toEqual({ shortMaterials: 0, filledMaterials: 0 })
   })
 
-  it('番号が同じアイテムの品目と「必要」を取り違えない', () => {
+  it('番号が同じアイテムの品目と「いらない」を取り違えない', () => {
     const shop = [entry(9305420, 90, 10, 3), svt(9305420, 2)]
-    expect(countsOf(allocate(shop, {}, {}, ['svt:9305420']))).toEqual([0, 2])
-    expect(countsOf(allocate(shop, {}, {}, ['9305420']))).toEqual([3, 0])
+    expect([...allocate(shop, {}, {}, ['svt:9305420']).counts]).toEqual([[0, 3]])
+    expect([...allocate(shop, {}, {}, ['9305420']).counts]).toEqual([[1, 2]])
   })
 })
 

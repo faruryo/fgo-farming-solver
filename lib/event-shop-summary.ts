@@ -2,6 +2,14 @@
  * 交換所のエントリーを対価の通貨ごとにまとめ、通貨ごとの全交換に要る合計を出す純粋関数。
  */
 import type { EventShopItem } from './master-data/types'
+import { itemWantKey } from './item-want-setting'
+
+/**
+ * 「欲しい／いらない」の設定のキー。アイテムの品目は番号の文字列、サーヴァント扱いの品目は `svt:<番号>`
+ * （番号が同じアイテムの品目と取り違えないため）。
+ */
+export const shopWantedKey = (item: Pick<EventShopItem, 'itemId' | 'kind'>): string =>
+  item.kind === 'svt' ? `svt:${item.itemId}` : itemWantKey(item.itemId)
 
 export interface ShopCurrencyGroup {
   costItemId: number
@@ -36,6 +44,8 @@ export const groupShopByCurrency = (shop: EventShopItem[]): ShopCurrencyGroup[] 
 /** 品目ごとの交換回数。キーは交換所の配列の添字。 */
 export type ShopExchangeCounts = ReadonlyMap<number, number>
 
+const NO_KEYS: ReadonlySet<string> = new Set()
+
 /** 入れた回数を0以上の整数にし、在庫上限のある品目は上限で頭打ちにする。 */
 export const clampExchangeCount = (item: Pick<EventShopItem, 'limitNum'>, count: number): number => {
   const n = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0
@@ -68,28 +78,49 @@ export const computeShopCurrencyNeeds = (
   }))
 }
 
-/** その通貨で在庫上限のある品目をすべて上限の回数にした回数を返す。上限の無い品目は変えない。 */
+/**
+ * その通貨で在庫上限のある「欲しい」の品目をすべて上限の回数にした回数を返す。
+ * 上限の無い品目と「いらない」の品目（`unwanted` に `shopWantedKey` が入る品目）は変えない。
+ */
 export const selectAllUpToLimit = (
   shop: EventShopItem[],
   counts: ShopExchangeCounts,
   costItemId: number,
+  unwanted: ReadonlySet<string> = NO_KEYS,
 ): Map<number, number> => {
   const next = new Map(counts)
   shop.forEach((item, index) => {
-    if (item.costItemId === costItemId && item.limitNum > 0) next.set(index, item.limitNum)
+    if (item.costItemId === costItemId && item.limitNum > 0 && !unwanted.has(shopWantedKey(item))) {
+      next.set(index, item.limitNum)
+    }
   })
   return next
 }
 
-/** 交換所のすべての通貨で、在庫上限のある品目をすべて上限の回数にした回数を返す。上限の無い品目は変えない。 */
+/** 交換所のすべての通貨で、在庫上限のある「欲しい」の品目をすべて上限の回数にした回数を返す。上限の無い品目と「いらない」の品目は変えない。 */
 export const selectAllCurrenciesUpToLimit = (
   shop: EventShopItem[],
   counts: ShopExchangeCounts,
+  unwanted: ReadonlySet<string> = NO_KEYS,
 ): Map<number, number> => {
   let next = new Map(counts)
   for (const costItemId of new Set(shop.map(item => item.costItemId))) {
-    next = selectAllUpToLimit(shop, next, costItemId)
+    next = selectAllUpToLimit(shop, next, costItemId, unwanted)
   }
+  return next
+}
+
+/** 「いらない」の品目の回数を除いた回数（計算に使う）。保存値の回数は消さないので、計算に渡す前にだけ使う。 */
+export const excludeUnwantedCounts = (
+  shop: EventShopItem[],
+  counts: ShopExchangeCounts,
+  unwanted: ReadonlySet<string>,
+): ShopExchangeCounts => {
+  if (unwanted.size === 0) return counts
+  const next = new Map(counts)
+  shop.forEach((item, index) => {
+    if (unwanted.has(shopWantedKey(item))) next.delete(index)
+  })
   return next
 }
 
@@ -246,10 +277,13 @@ export const QP_ITEM_ID = 1
 /** 伝承結晶の atlasId。育成計画で扱う素材。 */
 const LORE_CRYSTAL_ITEM_ID = 6999
 
-/** 既定で「要る」とし、不足素材のみで在庫上限まで交換する品目の atlasId（伝承結晶・カルデアの夢火）。 */
+/**
+ * 育成計画で扱う素材の一覧を読めなくても、番号で扱いが決まる品目の atlasId（伝承結晶・カルデアの夢火）。
+ * ラベルの判定にだけ使い、交換回数の入れ方は変えない。
+ */
 export const DEFAULT_WANTED_ITEM_IDS: ReadonlySet<number> = new Set([LORE_CRYSTAL_ITEM_ID, 1000])
 
-/** 既定で交換する品目か。サーヴァント扱いの品目は番号が同じでも含めない。 */
+/** 番号で扱いが決まる品目か。サーヴァント扱いの品目は番号が同じでも含めない。 */
 export const isDefaultWanted = (item: Pick<EventShopItem, 'itemId' | 'kind'>): boolean =>
   item.kind !== 'svt' && DEFAULT_WANTED_ITEM_IDS.has(item.itemId)
 
@@ -272,16 +306,9 @@ export type ShopItemStatus =
   | { kind: 'outside' }
 
 /**
- * 「要る」の保存のキー。アイテムの品目は番号の文字列、サーヴァント扱いの品目は `svt:<番号>`
- * （番号が同じアイテムの品目と取り違えないため）。
- */
-export const shopWantedKey = (item: Pick<EventShopItem, 'itemId' | 'kind'>): string =>
-  item.kind === 'svt' ? `svt:${item.itemId}` : String(item.itemId)
-
-/**
  * 品目の状態を決める。QP は状態なし。必要数のある素材は `planItemIds` を見ない。
  * `planItemIds`（育成計画で扱う素材の集合）が undefined なら、必要数 0 の品目は見分けられないので状態なし。
- * ただし既定で交換する品目は、伝承結晶なら「使わない」、夢火なら「計画の対象外」にする。
+ * ただし番号で扱いが決まる品目は、伝承結晶なら「使わない」、夢火なら「計画の対象外」にする。
  * サーヴァント扱いの品目は育成計画の素材ではないので、番号を突き合わせずに計画の対象外にする。
  */
 export const shopItemStatus = (
@@ -298,7 +325,7 @@ export const shopItemStatus = (
     return n > 0 ? { kind: 'short', shortfall: n } : { kind: 'enough' }
   }
   if (!planItemIds) {
-    // 既定で交換する品目は番号で扱いが決まっているので、一覧が無くても見分けられる。
+    // 伝承結晶と夢火は番号で扱いが決まっているので、一覧が無くても見分けられる。
     if (!isDefaultWanted(item)) return undefined
     return itemId === LORE_CRYSTAL_ITEM_ID ? { kind: 'unused' } : { kind: 'outside' }
   }
@@ -306,60 +333,65 @@ export const shopItemStatus = (
 }
 
 export interface ShortfallAllocation {
-  /** 品目ごとの交換回数。キーは交換所の配列の添字で、すべての品目を持つ。 */
+  /**
+   * 品目ごとの交換回数。キーは交換所の配列の添字で、「欲しい」のすべての品目を持つ。
+   * 「いらない」の品目は入力の回数のまま（入力に無ければ持たない）。
+   */
   counts: Map<number, number>
-  /** 交換所に品目のある不足の素材ごとの、交換所で埋まらない残り（埋まるなら 0）。 */
+  /** 交換所に品目のある不足の素材ごとの、交換所で埋まらない残り（埋まるなら 0）。品目がすべて「いらない」の素材は不足のまま。 */
   remaining: Map<number, number>
-  /** 残りのある素材の、交換所の元の順で最後の品目の添字 → 残り。 */
+  /** 残りのある素材の、「欲しい」の品目のうち交換所の元の順で最後の品目の添字 → 残り。 */
   remainders: Map<number, number>
-  /** 在庫上限が無くて回数を入れなかった「要る」の品目の添字。 */
+  /** 在庫上限が無くて回数を入れなかった「欲しい」の計画の対象外の品目の添字。 */
   unlimitedWanted: Set<number>
 }
 
-/**
- * 不足のある素材の品目の交換回数。残りの不足 `left` を1回の個数で割って切り上げ、在庫上限で打ち切る。
- * 「要る」の既定で交換する品目は、在庫上限があれば不足に関わらず在庫上限の回数。
- */
-const shortCount = (item: EventShopItem, left: number, defaultWanted: boolean): number => {
-  if (item.qty <= 0) return 0
-  if (defaultWanted && item.limitNum > 0) return item.limitNum
-  if (left <= 0) return 0
+/** 不足のある素材の品目の交換回数。残りの不足 `left` を1回の個数で割って切り上げ、在庫上限で打ち切る。 */
+const shortCount = (item: EventShopItem, left: number): number => {
+  if (item.qty <= 0 || left <= 0) return 0
   const needed = Math.ceil(left / item.qty)
   return item.limitNum > 0 ? Math.min(needed, item.limitNum) : needed
 }
 
 /**
- * 不足の分と「要る」の計画の対象外の品目だけを交換する回数を出す。
- * 不足は交換所の元の順に品目へ割り当て、在庫上限で打ち切る。1回の個数が 0 以下の品目は割り当てない。
- * `wanted` は解決後の「要る」のキー（`shopWantedKey`）で、状態が「計画の対象外」の品目と既定で交換する品目にだけ使う。
- * 「要る」の既定で交換する品目は、在庫上限があれば状態に関わらず在庫上限まで交換し、得る個数を不足から差し引く。
- * 在庫上限が無ければ、残りの不足があればその分、無ければ 0 にして回数の手入力を促す。
+ * 優先素材の回数を出す。「欲しい」の品目だけを置き換え、「いらない」の品目（`unwanted` に `shopWantedKey` が入る品目）は
+ * `counts`（今の回数）のまま返す。
+ * 不足は交換所の元の順に「欲しい」の品目へ割り当て、在庫上限で打ち切る。1回の個数が 0 以下の品目は割り当てない。
+ * 状態が「計画の対象外」の品目は、在庫上限があれば在庫上限、無ければ 0 にして回数の手入力を促す。
+ * 足りている・使わない・状態なし（QP・見分けられない品目）の品目は 0。
  */
 export const allocateShortfallOnly = (
   shop: EventShopItem[],
   shortfall: ReadonlyMap<number, number>,
   statusOf: (item: EventShopItem) => ShopItemStatus | undefined,
-  wanted: ReadonlySet<string>,
+  unwanted: ReadonlySet<string>,
+  counts: ShopExchangeCounts = new Map(),
 ): ShortfallAllocation => {
-  const counts = new Map<number, number>()
+  const next = new Map<number, number>()
   const remaining = new Map<number, number>()
   const lastIndex = new Map<number, number>()
   const unlimitedWanted = new Set<number>()
   shop.forEach((item, index) => {
-    counts.set(index, 0)
     const status = statusOf(item)
+    if (unwanted.has(shopWantedKey(item))) {
+      const current = counts.get(index)
+      if (current !== undefined) next.set(index, current)
+      // 回数は入らないので、品目がすべて「いらない」の素材も埋まらない不足として数える。
+      if (status?.kind === 'short' && !remaining.has(item.itemId)) {
+        remaining.set(item.itemId, shortfall.get(item.itemId) ?? 0)
+      }
+      return
+    }
+    next.set(index, 0)
     if (!status) return
-    const isWanted = item.qty > 0 && wanted.has(shopWantedKey(item))
-    const defaultWanted = isWanted && isDefaultWanted(item)
     if (status.kind === 'short') {
       lastIndex.set(item.itemId, index)
       const left = remaining.get(item.itemId) ?? shortfall.get(item.itemId) ?? 0
-      const count = shortCount(item, left, defaultWanted)
-      counts.set(index, count)
+      const count = shortCount(item, left)
+      next.set(index, count)
       remaining.set(item.itemId, Math.max(0, left - count * item.qty))
-      if (defaultWanted && count === 0) unlimitedWanted.add(index)
-    } else if (defaultWanted || (status.kind === 'outside' && isWanted)) {
-      if (item.limitNum > 0) counts.set(index, item.limitNum)
+    } else if (status.kind === 'outside' && item.qty > 0) {
+      if (item.limitNum > 0) next.set(index, item.limitNum)
       else unlimitedWanted.add(index)
     }
   })
@@ -368,7 +400,7 @@ export const allocateShortfallOnly = (
     const index = lastIndex.get(itemId)
     if (left > 0 && index !== undefined) remainders.set(index, left)
   }
-  return { counts, remaining, remainders, unlimitedWanted }
+  return { counts: next, remaining, remainders, unlimitedWanted }
 }
 
 export interface ShortfallSummary {
