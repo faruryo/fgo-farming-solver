@@ -1399,4 +1399,3 @@ export const EventShopList: React.FC<{
     </div>
   )
 }
-

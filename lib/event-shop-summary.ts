@@ -305,7 +305,6 @@ export type ShopItemStatus =
   /** 育成計画で扱っていない品目。 */
   | { kind: 'outside' }
 
-
 /**
  * 品目の状態を決める。QP は状態なし。必要数のある素材は `planItemIds` を見ない。
  * `planItemIds`（育成計画で扱う素材の集合）が undefined なら、必要数 0 の品目は見分けられないので状態なし。
