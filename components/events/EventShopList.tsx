@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -135,8 +135,10 @@ const Card: React.FC<{
   children: React.ReactNode
   className?: string
   testId?: string
-}> = ({ children, className = '', testId }) => (
+  cardRef?: React.Ref<HTMLDivElement>
+}> = ({ children, className = '', testId, cardRef }) => (
   <div
+    ref={cardRef}
     data-testid={testId}
     className={`rounded-md flex flex-col ${className}`}
     style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
@@ -157,12 +159,21 @@ interface RowPlan {
   promptUnlimited: boolean
 }
 
-/** 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。 */
+/** 品目名のボタンに付ける、行の key（交換所の配列の添字の先頭）の属性。切り替えのあとのフォーカスの移し先を探す。 */
+const ROW_KEY_ATTR = 'data-shop-row-key'
+/** 畳んだ「いらない品目」の開閉の見出しに付ける属性。 */
+const UNWANTED_SUMMARY_ATTR = 'data-shop-unwanted-summary'
+
+/**
+ * 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。
+ * 呼び出し側へは、選んだ値とキーボードで選んだか（click の detail が 0）を渡す。
+ */
 const ItemWantPopover: React.FC<{
   name: string
   wanted: boolean
-  onChange: (wanted: boolean) => void
-}> = ({ name, wanted, onChange }) => {
+  rowKey: number
+  onChange: (wanted: boolean, viaKeyboard: boolean) => void
+}> = ({ name, wanted, rowKey, onChange }) => {
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -170,6 +181,7 @@ const ItemWantPopover: React.FC<{
         render={
           <button
             type="button"
+            {...{ [ROW_KEY_ATTR]: rowKey }}
             className="text-left underline decoration-dotted underline-offset-2 cursor-pointer"
             style={{ textDecorationColor: 'var(--text3)' }}
           />
@@ -181,8 +193,8 @@ const ItemWantPopover: React.FC<{
         <ItemWantToggle
           name={name}
           wanted={wanted}
-          onChange={value => {
-            onChange(value)
+          onChange={(value, event) => {
+            onChange(value, event.detail === 0)
             setOpen(false)
           }}
         />
@@ -231,7 +243,7 @@ interface ShopRowProps {
   ranked?: { rank: number; efficiency: number }
   counts: ShopExchangeCounts
   onRowCountChange: (row: ShopListRow, count: number) => void
-  onWantedChange: (row: ShopListRow, wanted: boolean) => void
+  onWantedChange: (row: ShopListRow, wanted: boolean, viaKeyboard: boolean) => void
   plan?: RowPlan
 }
 
@@ -278,7 +290,12 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
       <td className="pl-1.5 pr-0.5 sm:px-1 py-1.5 min-w-[4em] sm:min-w-[8em]">
         <span className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
           <Icon src={first.icon} />
-          <ItemWantPopover name={name} wanted onChange={wanted => onWantedChange(row, wanted)} />
+          <ItemWantPopover
+            name={name}
+            wanted
+            rowKey={row.indices[0]}
+            onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
+          />
         </span>
         {row.items.length > 1 && <RowBreakdown parts={parts} />}
         {plan && <RowPlanLabel plan={plan} count={count} />}
@@ -334,7 +351,7 @@ const GroupLabelRow: React.FC<{ children: React.ReactNode }> = ({ children }) =>
  */
 const UnwantedRows: React.FC<{
   rows: ShopListRow[]
-  onWantedChange: (row: ShopListRow, wanted: boolean) => void
+  onWantedChange: (row: ShopListRow, wanted: boolean, viaKeyboard: boolean) => void
 }> = ({ rows, onWantedChange }) => {
   const { t } = useTranslation('events')
   const [open, setOpen] = useState(false)
@@ -342,6 +359,7 @@ const UnwantedRows: React.FC<{
     <div data-testid="shop-unwanted-items" className="px-3 py-2 text-xs" style={{ borderTop: '1px solid var(--border)' }}>
       <button
         type="button"
+        {...{ [UNWANTED_SUMMARY_ATTR]: '' }}
         aria-expanded={open}
         onClick={() => setOpen(prev => !prev)}
         className="min-h-6 font-medium"
@@ -357,7 +375,12 @@ const UnwantedRows: React.FC<{
             if (!first) return null
             return (
               <li key={row.indices[0]}>
-                <ItemWantPopover name={rowName(first)} wanted={false} onChange={wanted => onWantedChange(row, wanted)} />
+                <ItemWantPopover
+                  name={rowName(first)}
+                  wanted={false}
+                  rowKey={row.indices[0]}
+                  onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
+                />
               </li>
             )
           })}
@@ -365,6 +388,65 @@ const UnwantedRows: React.FC<{
       )}
     </div>
   )
+}
+
+/**
+ * 切り替えで行が表と「いらない品目」の間を動くと、押した品目名が描き直しで消え、フォーカスが body に落ちる。
+ * 行き先を押した時点の並びで決めて1回だけ持ち、行が動いた描き直しのあとに移す。
+ * 「いらない」にしたときは次の行（無ければ前の行、表に行が残らなければ「いらない品目」の見出し）、
+ * 「欲しい」に戻したときは戻った行の品目名へ移す。タップやクリックで選んだときは画面をスクロールしない。
+ */
+const useFocusAfterWantedMove = (
+  rows: ShopListRow[],
+  ranked: ReturnType<typeof orderShopByEfficiency>['ranked'],
+  unpriced: ShopListRow[],
+  setRowWanted: (row: ShopListRow, wanted: boolean) => void,
+) => {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const pendingFocus = useRef<{
+    movedKey: number
+    wanted: boolean
+    target: number | 'unwanted-summary'
+    viaKeyboard: boolean
+  } | null>(null)
+  const onWantedChange = (shopRow: ShopListRow, wanted: boolean, viaKeyboard: boolean) => {
+    const key = shopRow.indices[0]
+    // 見出しの行は数えず、表に出ている順（効率順の後に AP 換算なし）。
+    const order = [...ranked.map(r => r.row), ...unpriced]
+    const index = order.findIndex(r => r.indices[0] === key)
+    const isWanted = index >= 0
+    if (wanted === isWanted) {
+      pendingFocus.current = null
+    } else if (wanted) {
+      pendingFocus.current = { movedKey: key, wanted, target: key, viaKeyboard }
+    } else {
+      const neighbor = order[index + 1] ?? order[index - 1]
+      pendingFocus.current = {
+        movedKey: key,
+        wanted,
+        target: neighbor ? neighbor.indices[0] : 'unwanted-summary',
+        viaKeyboard,
+      }
+    }
+    setRowWanted(shopRow, wanted)
+  }
+  useEffect(() => {
+    const pending = pendingFocus.current
+    if (!pending) return
+    // 設定の反映が遅れて行がまだ動いていなければ、動いた描き直しを待つ。
+    const moved = rows.some(r => r.indices[0] === pending.movedKey) === pending.wanted
+    if (!moved) return
+    pendingFocus.current = null
+    const selector =
+      pending.target === 'unwanted-summary' ? `[${UNWANTED_SUMMARY_ATTR}]` : `[${ROW_KEY_ATTR}="${pending.target}"]`
+    // 「いらない品目」の名前にも同じ key が付くので、行き先が品目の行なら表の中から探す。
+    const scope = pending.target === 'unwanted-summary' ? cardRef.current : cardRef.current?.querySelector('table')
+    const element = scope?.querySelector<HTMLElement>(selector)
+    if (!element) return
+    if (pending.viaKeyboard) element.focus()
+    else element.focus({ preventScroll: true })
+  }, [rows])
+  return { cardRef, onWantedChange }
 }
 
 /**
@@ -377,10 +459,11 @@ const ShopTable: React.FC<{
   apPrices: Readonly<Record<number, number>>
   counts: ShopExchangeCounts
 }> = ({ list, apPrices, counts }) => {
-  const { wantedRows: rows, unwantedRows, planOf, setRowCount: onRowCountChange, setRowWanted: onWantedChange } = list
+  const { wantedRows: rows, unwantedRows, planOf, setRowCount: onRowCountChange, setRowWanted } = list
   const { t } = useTranslation('events')
   const { ranked, unpriced } = useMemo(() => orderShopByEfficiency(rows, apPrices), [rows, apPrices])
   const showLabels = unpriced.length > 0 && ranked.length > 0
+  const { cardRef, onWantedChange } = useFocusAfterWantedMove(rows, ranked, unpriced, setRowWanted)
   const row = (shopRow: ShopListRow, rankedRow?: { rank: number; efficiency: number }) => (
     <ShopRow
       key={shopRow.indices[0]}
@@ -395,7 +478,7 @@ const ShopTable: React.FC<{
 
   // 狭い幅では表の中だけを横スクロールにし、カードの外へはみ出さない。
   return (
-    <Card testId="shop-item-list">
+    <Card testId="shop-item-list" cardRef={cardRef}>
       <div className="overflow-x-auto overflow-y-hidden">
         <table className="w-full text-xs">
           <thead>
