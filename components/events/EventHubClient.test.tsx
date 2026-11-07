@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { EventHubClient } from './EventHubClient'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 import type { RosterNeed } from '../../hooks/use-roster-need'
@@ -689,6 +689,151 @@ describe('EventHubClient', () => {
     it('選んだことの無い端末では、開いただけで要る・要らないの保存を作らない', () => {
       renderShop()
       expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
+    })
+
+    describe('切り替えたあとのフォーカスの移し先', () => {
+      const table = () => screen.getByTestId('shop-item-list').querySelector('table') as HTMLElement
+      /** 表の品目名のボタン。 */
+      const tableName = (name: string) => within(table()).getByRole('button', { name })
+      /** 開いた「いらない品目」の中の名前のボタン。 */
+      const collapsedName = (name: string) => {
+        const summaryButton = unwantedSummary()
+        if (summaryButton?.getAttribute('aria-expanded') === 'false') fireEvent.click(summaryButton)
+        return within(screen.getByTestId('shop-unwanted-items')).getByRole('button', { name })
+      }
+      // ポップアップの閉じたあとの後始末（フォーカスを戻す処理）は microtask やタイマーで走るので待つ。
+      const settle = () =>
+        act(async () => {
+          await new Promise(resolve => setTimeout(resolve, 0))
+        })
+      /** 品目名にフォーカスしてポップアップを開き、選ぶ。detail 0 はキーボード、1 はタップやクリックの click。 */
+      const choose = async (trigger: HTMLElement, choice: '欲しい' | 'いらない', detail = 0) => {
+        trigger.focus()
+        fireEvent.click(trigger, { detail })
+        await settle()
+        const group = screen.getByRole('radiogroup')
+        fireEvent.click(within(group).getByRole('radio', { name: choice }), { detail })
+        await settle()
+      }
+      const expectFocused = (element: HTMLElement | null) => {
+        expect(document.activeElement).not.toBe(document.body)
+        expect(document.activeElement).toBe(element)
+      }
+
+      it('「いらない」にすると、表で次にあった行の品目名へ移る', async () => {
+        renderShop()
+        await choose(tableName('素材6517'), 'いらない')
+        expect(screen.queryByLabelText('素材6517 の交換回数')).not.toBeInTheDocument()
+        expectFocused(tableName('素材6518'))
+      })
+
+      it('表の最後の行を「いらない」にすると、すぐ前の行の品目名へ移る', async () => {
+        renderShop()
+        await choose(tableName('素材94100'), 'いらない')
+        expectFocused(tableName('素材4001'))
+      })
+
+      it('「効率順」の最後の行を「いらない」にすると、「AP 換算なし」の最初の行の品目名へ移る', async () => {
+        render(
+          <EventHubClient
+            summary={summary}
+            boxEvent={event({ shop, farmingNodes })}
+            features={['shop']}
+            shopApPrices={{ 6516: 20, 6517: 10 }}
+          />,
+        )
+        expect(bodyRows(screen.getByTestId('shop-item-list'))[0]).toBe('効率順')
+        await choose(tableName('素材6517'), 'いらない')
+        expectFocused(tableName('素材6518'))
+      })
+
+      it('最後の「欲しい」の行を「いらない」にすると、「いらない品目」の見出しへ移る', async () => {
+        setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 6516: false, 6517: false, 6518: false, 6519: false, 4001: false })
+        renderShop()
+        await choose(tableName('素材94100'), 'いらない')
+        expect(screen.queryAllByLabelText(/ の交換回数$/)).toHaveLength(0)
+        expectFocused(unwantedSummary())
+      })
+
+      it('「いらない品目」から「欲しい」に戻すと、表に戻った行の品目名へ移る', async () => {
+        setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 6517: false, 4001: false })
+        renderShop()
+        await choose(collapsedName('素材6517'), '欲しい')
+        expect(unwantedSummary()).toHaveTextContent('いらない品目 1 件')
+        expectFocused(tableName('素材6517'))
+      })
+
+      it('最後の1件を「欲しい」に戻して「いらない品目」が消えても、表に戻った行の品目名へ移る', async () => {
+        setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 6517: false })
+        renderShop()
+        await choose(collapsedName('素材6517'), '欲しい')
+        expect(unwantedSummary()).not.toBeInTheDocument()
+        expectFocused(tableName('素材6517'))
+      })
+
+      it('タップで戻すと同じ品目名へ画面をスクロールせずに移り、キーボードではスクロールを止めない', async () => {
+        const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+        // 選ぶ前に品目名へ合わせた分は数えず、選んだあとにその要素へ移した呼び出しの options。
+        const focusOptionsOn = (element: HTMLElement) =>
+          focus.mock.calls.filter((_, i) => focus.mock.contexts.at(i) === element).map(([options]) => options ?? {})
+        try {
+          setLs(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS, { 6517: false, 4001: false })
+          renderShop()
+          await choose(collapsedName('素材6517'), '欲しい', 1)
+          const tapped = tableName('素材6517')
+          expectFocused(tapped)
+          expect(focusOptionsOn(tapped)).toEqual([{ preventScroll: true }])
+
+          focus.mockClear()
+          await choose(collapsedName('素材4001'), '欲しい', 0)
+          const typed = tableName('素材4001')
+          expectFocused(typed)
+          const typedOptions = focusOptionsOn(typed)
+          expect(typedOptions).toHaveLength(1)
+          expect(typedOptions[0]?.preventScroll).toBeUndefined()
+        } finally {
+          focus.mockRestore()
+        }
+      })
+
+      it('今と同じ設定を選ぶと、行は動かず押した品目名へ戻る', async () => {
+        renderShop()
+        await choose(tableName('素材4001'), '欲しい')
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+        expect(unwantedSummary()).not.toBeInTheDocument()
+        expectFocused(tableName('素材4001'))
+      })
+
+      it('Esc で閉じると、押した品目名へ戻る', async () => {
+        renderShop()
+        const trigger = tableName('素材4001')
+        trigger.focus()
+        fireEvent.click(trigger, { detail: 0 })
+        await settle()
+        fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+        await settle()
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+        expectFocused(tableName('素材4001'))
+      })
+
+      it('ポップアップを開いたまま別の行の回数の入力欄を押して閉じると、その入力欄に留まる', async () => {
+        renderShop()
+        const trigger = tableName('素材4001')
+        trigger.focus()
+        fireEvent.click(trigger, { detail: 0 })
+        await settle()
+        expect(screen.getByRole('radiogroup')).toBeInTheDocument()
+        const input = screen.getByLabelText('素材6516 の交換回数')
+        fireEvent.pointerDown(input)
+        fireEvent.mouseDown(input)
+        input.focus()
+        fireEvent.pointerUp(input)
+        fireEvent.mouseUp(input)
+        fireEvent.click(input)
+        await settle()
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+        expectFocused(input)
+      })
     })
 
     it('優先素材で不足の分と「欲しい」の計画の対象外の在庫上限を入れ、周回の内訳を出し、その後も回数を変えられる', () => {

@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next'
 export const ItemWantToggle: React.FC<{
   name: string
   wanted: boolean
-  onChange: (wanted: boolean) => void
+  /** 選んだ値と、ボタンの click（キーボードで押したかを `detail` で見分けられる）。 */
+  onChange: (wanted: boolean, event: React.MouseEvent<HTMLButtonElement>) => void
 }> = ({ name, wanted, onChange }) => {
   const { t } = useTranslation('common')
   const option = (value: boolean, label: string) => (
@@ -15,7 +16,7 @@ export const ItemWantToggle: React.FC<{
       type="button"
       role="radio"
       aria-checked={wanted === value}
-      onClick={() => onChange(value)}
+      onClick={e => onChange(value, e)}
       // 見た目は文字に合わせて 24px、押せる範囲は疑似要素で上下に広げて 44px を保つ。
       className="relative h-6 min-w-11 px-2 text-[11px] font-medium whitespace-nowrap first:rounded-l-[calc(var(--radius-md)_-_1px)] last:rounded-r-[calc(var(--radius-md)_-_1px)] before:absolute before:inset-x-0 before:-inset-y-2.5"
       style={
