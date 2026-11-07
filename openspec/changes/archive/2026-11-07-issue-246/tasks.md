@@ -8,5 +8,5 @@
 
 ## 2. 品質ゲートと実画面
 
-- [ ] 2.1 `pnpm lint`、`pnpm lint:ratchet`、`pnpm type-check`、`pnpm vitest run` が通る <!-- verify-only -->
-- [ ] 2.2 verify skill の手順で dev server（ポート 3187）を起動し、ロトの無い交換所イベントの交換所を 1280px と 375px で開いて、キーボード（Tab・Enter・Space）だけで、品目を「いらない」にすると次の行の品目名にフォーカスが移ること、「いらない品目」を開いて「欲しい」に戻すと表の戻った行の品目名にフォーカスが移って画面に見えていること、最後の1件を戻しても body に落ちないことを、`document.activeElement` とフォーカスの枠のスクリーンショットで確かめる。375px ではタップ（タッチの操作の再現）で「いらない品目」から戻し、画面がスクロールせず、フォーカスの枠が出ないことも確かめる <!-- verify-only -->
+- [x] 2.1 `pnpm lint`、`pnpm lint:ratchet`、`pnpm type-check`、`pnpm vitest run` が通る <!-- verify-only -->
+- [x] 2.2 verify skill の手順で dev server（ポート 3187）を起動し、ロトの無い交換所イベントの交換所を 1280px と 375px で開いて、キーボード（Tab・Enter・Space）だけで、品目を「いらない」にすると次の行の品目名にフォーカスが移ること、「いらない品目」を開いて「欲しい」に戻すと表の戻った行の品目名にフォーカスが移って画面に見えていること、最後の1件を戻しても body に落ちないことを、`document.activeElement` とフォーカスの枠のスクリーンショットで確かめる。375px ではタップ（タッチの操作の再現）で「いらない品目」から戻し、画面がスクロールせず、フォーカスの枠が出ないことも確かめる <!-- verify-only -->
