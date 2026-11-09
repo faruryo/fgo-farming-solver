@@ -451,7 +451,7 @@
     "event-shop-select-all-hint": "欲しい品目のうち、上限のある品目をすべて上限まで",
     "event-shop-select-priority": "優先素材",
     "event-shop-select-priority-hint": "欲しい品目に、育成計画で足りない分と、計画の対象外の品目を上限まで",
-    "event-shop-status-short": "育成にあと {{n}} 個",
+    "event-shop-status-short": "育成にあと {{n}}\u00a0個",
     "event-shop-status-enough": "足りている（交換不要）",
     "event-shop-status-unused": "使わない",
     "event-shop-status-outside": "計画の対象外",

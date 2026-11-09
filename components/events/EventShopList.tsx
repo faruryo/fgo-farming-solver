@@ -207,10 +207,11 @@ const RowPlanLabel: React.FC<{ plan: RowPlan; count: number }> = ({ plan, count 
   if (!status) return null
   return (
     <span className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[11px] mt-0.5">
-      <span className="whitespace-nowrap">
+      {/* 375px で品目の列を押し広げないよう折り返しを許す。数と「個」の間は NBSP で、「個」だけが次の行に残らない。 */}
+      <span>
         {status.kind === 'short' && (
           <span style={{ color: 'var(--text1)' }}>
-            {t('event-shop-status-short', '育成にあと {{n}} 個', { n: status.shortfall.toLocaleString() })}
+            {t('event-shop-status-short', '育成にあと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })}
           </span>
         )}
         {status.kind === 'enough' && <span>{t('event-shop-status-enough', '足りている（交換不要）')}</span>}
