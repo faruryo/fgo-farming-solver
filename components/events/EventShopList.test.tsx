@@ -544,7 +544,7 @@ describe('EventShopList の1つの一覧', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
-  it('図鑑番号を持たない品目（礼装でない品目・古いデータの礼装）のポップアップにはリンクを出さない', () => {
+  it('図鑑番号を持たない品目（旧データの礼装）のポップアップにはリンクを出さない', () => {
     renderShop()
     fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
     expect(screen.getByRole('radio', { name: 'いらない' })).toBeInTheDocument()
