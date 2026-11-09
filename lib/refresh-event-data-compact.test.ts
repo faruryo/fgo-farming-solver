@@ -162,6 +162,37 @@ describe('compactShop（サーヴァント扱いの交換）', () => {
     expect(entry).not.toHaveProperty('rarity')
   })
 
+  it('礼装（servantEquip）にだけ図鑑番号を付け、図鑑番号を持つサーヴァント・種火・フォウくん・図鑑番号の無い礼装・対応表に無い番号には付けない', () => {
+    const typed: SvtMap = new Map([
+      [9306300, { name: '月より団子', rarity: 5, face: 'f.png', type: 'servantEquip', collectionNo: 1234 }],
+      [9770500, { name: '叡智の大火', rarity: 5, face: 'f.png', type: 'combineMaterial', collectionNo: 0 }],
+      [9700300, { name: '星のフォウくん', rarity: 3, face: 'f.png', type: 'statusUp', collectionNo: 0 }],
+      [9300000, { name: '図鑑番号の無い礼装', rarity: 1, face: 'f.png', type: 'servantEquip', collectionNo: 0 }],
+      [100100, { name: '配布サーヴァント', rarity: 4, face: 'f.png', type: 'normal', collectionNo: 300 }],
+    ])
+    const shop = compactShop(
+      [
+        ...atlasShop80632,
+        svtShop(9300000, 94001, 1, '図鑑番号の無い礼装'),
+        svtShop(100100, 94001, 1, '配布サーヴァント'),
+        svtShop(9999999, 94001, 1, '不明'),
+      ],
+      itemMap,
+      typed,
+    )
+    expect(shop.filter(s => s.collectionNo !== undefined).map(s => [s.itemId, s.collectionNo])).toEqual([
+      [9306300, 1234],
+      [9306300, 1234],
+      [9306300, 1234],
+    ])
+    expect(shop.find(s => s.itemId === 9300000)).not.toHaveProperty('collectionNo')
+  })
+
+  it('対応表に種類と図鑑番号が無い（取得前の形の）ときは図鑑番号を付けない', () => {
+    const shop = compactShop(atlasShop80632, itemMap, svtMap)
+    expect(shop.some(s => 'collectionNo' in s)).toBe(false)
+  })
+
   it('対応表を渡さないときも見出しを名前にし、アイコンとレア度を付けない', () => {
     const shop = compactShop(atlasShop80632, itemMap)
     const fire = shop.find(s => s.itemId === 9770500)
