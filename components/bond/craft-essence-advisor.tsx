@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input'
 import { useMasterLevel } from '../../hooks/use-master-level'
 import {
   adviseBondCraftEssences,
+  adviseFriendCraftEssences,
   type CraftEssenceAdvice,
   type CraftEssenceAssignment,
+  type FriendCraftEssenceSuggestion,
 } from '../../lib/bond/craft-essence-advice'
 import type { BondQuestCandidate } from '../../lib/bond/quest-candidates'
 import { defaultSharedBondQuestId, sharedBondQuestCandidates } from '../../lib/bond/shared-quest-candidates'
@@ -171,8 +173,13 @@ function AssignmentRow({
 
 function AdviceResult({
   advice,
+  friends,
   servantsById,
-}: Readonly<{ advice: CraftEssenceAdvice; servantsById: ReadonlyMap<number, MaterialCatalogServant> }>) {
+}: Readonly<{
+  advice: CraftEssenceAdvice
+  friends: FriendCraftEssenceSuggestion[]
+  servantsById: ReadonlyMap<number, MaterialCatalogServant>
+}>) {
   const { t } = useTranslation('bond')
   const nameOf = (id: number) => servantsById.get(id)?.name ?? `#${id}`
   if (advice.kind === 'unknownCost')
@@ -201,7 +208,74 @@ function AdviceResult({
         ))}
       </ul>
       <AdviceTotals advice={advice} />
+      <FriendAdvice friends={friends} nameOf={nameOf} />
     </div>
+  )
+}
+
+function FriendRow({
+  rank,
+  friend: { essence, alternatives, rate, usesSupportRate, increase, total, stageNotes },
+  nameOf,
+}: Readonly<{ rank: number; friend: FriendCraftEssenceSuggestion; nameOf: (id: number) => string }>) {
+  const { t } = useTranslation('bond')
+  const stageName = useStageName()
+  const note = { className: 'text-[11px]', style: { color: 'var(--text3)' } }
+  return (
+    <li className="c-card flex flex-col gap-1 p-2 text-sm">
+      <span className="flex flex-wrap items-center gap-2">
+        <span className="font-semibold">{t('advisor-friend-rank', '{{rank}}.', { rank })}</span>
+        <EssenceFace essence={essence} size={32} />
+        {essence.name}
+        <EssenceEffect essence={{ ...essence, rate }} />
+        {usesSupportRate && <span {...note}>{t('advisor-friend-support-rate', '(サポート時)')}</span>}
+      </span>
+      <span>
+        {t('advisor-friend-increase', '1周 +{{increase}}(合計 {{total}})', {
+          increase: increase.toLocaleString(),
+          total: total.toLocaleString(),
+        })}
+      </span>
+      {stageNotes.map(n => (
+        <span key={n.servantId} {...note}>
+          {t('advisor-stage-applies', '{{name}}は{{stages}}で効く', {
+            name: nameOf(n.servantId),
+            stages: n.stages.map(stageName).join('・'),
+          })}
+          {' '}
+          {t('advisor-friend-counted-stage', '({{name}}は{{stage}}で数えた)', {
+            name: nameOf(n.servantId),
+            stage: stageName(n.countedStage),
+          })}
+        </span>
+      ))}
+      {alternatives.length > 0 && (
+        <span {...note}>
+          {t('advisor-alternatives', '同じ効果: {{names}}', { names: alternatives.map(e => e.name).join('、') })}
+        </span>
+      )}
+    </li>
+  )
+}
+
+function FriendAdvice({
+  friends,
+  nameOf,
+}: Readonly<{ friends: FriendCraftEssenceSuggestion[]; nameOf: (id: number) => string }>) {
+  const { t } = useTranslation('bond')
+  if (!friends.length) return null
+  return (
+    <section className="flex flex-col gap-2" data-testid="bond-advisor-friend">
+      <h3 className="text-sm font-semibold">{t('advisor-friend-heading', 'フレンドのサポートに付いていてほしい礼装')}</h3>
+      <ol className="flex flex-col gap-2">
+        {friends.map((friend, i) => (
+          <FriendRow key={friend.essence.id} rank={i + 1} friend={friend} nameOf={nameOf} />
+        ))}
+      </ol>
+      <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
+        {t('advisor-friend-note', 'フレンドのサーヴァントと礼装のコストは数えていません')}
+      </p>
+    </section>
   )
 }
 
@@ -239,19 +313,15 @@ function QuestAdvice({
   const servantsById = new Map(selected.map(s => [s.servant.id, s.servant]))
   if (!shared.length)
     return <Note alert>{t('advisor-no-shared-quest', '選んだサーヴァントで一緒に回せるクエストがありません')}</Note>
-  const advice = quest
-    ? adviseBondCraftEssences({
-        servants: selected.map(({ servant }) => ({
-          id: servant.id,
-          cost: servant.cost,
-          traits: servant.traits,
-          ascensionTraits: servant.ascensionTraits,
-        })),
-        basePoints: quest.bondPoints as number,
-        maxCost: maxCostForLevel(level),
-        essences,
-      })
-    : null
+  const servants = selected.map(({ servant }) => ({
+    id: servant.id,
+    cost: servant.cost,
+    traits: servant.traits,
+    ascensionTraits: servant.ascensionTraits,
+  }))
+  const basePoints = quest?.bondPoints as number
+  const advice = quest ? adviseBondCraftEssences({ servants, basePoints, maxCost: maxCostForLevel(level), essences }) : null
+  const friends = advice?.kind === 'ok' ? adviseFriendCraftEssences({ advice, servants, basePoints, essences }) : []
   return (
     <>
       <label className="flex flex-col gap-1 text-sm" htmlFor="bond-advisor-quest">
@@ -271,7 +341,7 @@ function QuestAdvice({
           ))}
         </select>
       </label>
-      {advice && <AdviceResult advice={advice} servantsById={servantsById} />}
+      {advice && <AdviceResult advice={advice} friends={friends} servantsById={servantsById} />}
     </>
   )
 }

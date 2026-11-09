@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MaterialCatalogBondUpCraftEssence } from '../material-catalog'
-import { adviseBondCraftEssences, type CraftEssenceAdviceServant } from './craft-essence-advice'
+import { adviseBondCraftEssences, adviseFriendCraftEssences, type CraftEssenceAdviceServant } from './craft-essence-advice'
 
 type Essence = MaterialCatalogBondUpCraftEssence
 
@@ -41,7 +41,8 @@ const REAL_ESSENCES: Essence[] = [
   ...range(99, 9).map(no => essence(5, 'party', 0, 50, no)),
   essence(5, 'self', 0, 50, 108, { name: '英霊肖像:ダレイオス三世' }),
   essence(12, 'party', 100, 0, 330, { name: 'カルデア・ランチタイム' }),
-  ...[910, 1080, 1121, 1149, 1410].map(no => essence(12, 'party', 50, 0, no, { name: no === 910 ? 'カルデア・ティータイム' : undefined })),
+  { ...essence(12, 'party', 50, 0, 910, { name: 'カルデア・ティータイム' }), supportRate: 150 },
+  ...[1080, 1121, 1149, 1410].map(no => essence(12, 'party', 50, 0, no)),
   ...[1565, 1605, 1726].map(no => essence(12, 'party', 25, 0, no)),
   essence(12, 'party', 200, 0, 1949, { appliesTo: [[BEAST]], name: 'ＮＦＦから愛をこめて' }),
   essence(12, 'party', 200, 0, 2020, { appliesTo: [[2654]] }),
@@ -301,5 +302,94 @@ describe('adviseBondCraftEssences', () => {
       })
       expect(advice.assignments[0]).toMatchObject({ points: 1200, countedStage: null, stageNotes: [] })
     })
+  })
+})
+
+describe('adviseFriendCraftEssences', () => {
+  const friend = (servants: CraftEssenceAdviceServant[], basePoints: number, maxCost: number, limit?: number) => {
+    const advice = okAdvice({ servants, basePoints, maxCost, essences: REAL_ESSENCES })
+    return { advice, friends: adviseFriendCraftEssences({ advice, servants, basePoints, essences: REAL_ESSENCES, limit }) }
+  }
+  const summary = (friends: ReturnType<typeof adviseFriendCraftEssences>) =>
+    friends.map(f => [f.essence.collectionNo, f.increase, f.total])
+
+  it('ranks the top three on top of the own combination when cost allows', () => {
+    const { advice, friends } = friend([1, 2, 3].map(id => servant(id, [CASTER])), 3797, 118)
+    expect(advice.total).toBe(15375)
+    expect(friends.map(f => f.essence.name)).toEqual(['手稿の翼', 'カルデア・ティータイム', 'カルデア・ランチタイム'])
+    expect(summary(friends)).toEqual([
+      [2124, 2280, 17655],
+      [910, 1710, 17085],
+      [330, 1140, 16515],
+    ])
+    expect(friends.map(f => [f.rate, f.usesSupportRate])).toEqual([[200, false], [150, true], [100, false]])
+    expect(friends.map(f => f.stageNotes)).toEqual([[], [], []])
+  })
+
+  it('does not count the cost of the friend essence', () => {
+    const { advice, friends } = friend([1, 2, 3].map(id => servant(id)), 3797, 56)
+    expect(advice.total).toBe(11541)
+    expect(summary(friends)).toEqual([
+      [910, 1707, 13248],
+      [330, 1137, 12678],
+      [1080, 567, 12108],
+    ])
+    expect(friends[2].alternatives.map(e => e.collectionNo)).toEqual([1121, 1149, 1410])
+  })
+
+  it('never suggests an essence that applies to itself', () => {
+    const { advice, friends } = friend([1, 2, 3].map(id => servant(id)), 400, 56)
+    expect(advice.total).toBe(1350)
+    expect(advice.assignments[0].essence?.collectionNo).toBe(99)
+    expect(summary(friends).map(([no, increase]) => [no, increase])).toEqual([
+      [910, 180],
+      [99, 150],
+      [330, 120],
+    ])
+    expect(friends[1].alternatives.map(e => e.collectionNo)).toEqual(range(100, 8))
+    expect(friends.flatMap(f => [f.essence, ...f.alternatives]).map(e => e.collectionNo)).not.toContain(108)
+  })
+
+  it('groups conditional essences with the same effect into one kind', () => {
+    const { advice, friends } = friend([1, 2, 3].map(id => servant(id, [CASTER, NEUTRAL])), 3797, 60)
+    expect(advice.total).toBe(13668)
+    expect(summary(friends).map(([no, increase]) => [no, increase])).toEqual([
+      [2124, 2277],
+      [910, 1707],
+      [330, 1140],
+    ])
+    expect(friends[0].alternatives.map(e => e.name)).toEqual(['記憶の大図書館'])
+  })
+
+  it('ranks essences that apply only at some stages', () => {
+    const UNRELATED = 9001
+    const servantA = servant(1, [UNRELATED], [
+      [UNRELATED, NEUTRAL],
+      [UNRELATED, NEUTRAL],
+      [UNRELATED, BEAST],
+      [UNRELATED, BEAST],
+    ])
+    const { advice, friends } = friend([servantA, servant(2, [UNRELATED]), servant(3, [UNRELATED])], 3797, 118)
+    expect(advice.total).toBe(13857)
+    expect(summary(friends).map(([no, increase]) => [no, increase])).toEqual([
+      [910, 1710],
+      [330, 1140],
+      [1949, 760],
+    ])
+    expect(friends[2].stageNotes).toEqual([{ servantId: 1, stages: [2, 3], countedStage: 2 }])
+    expect(friends.slice(0, 2).map(f => f.stageNotes)).toEqual([[], []])
+    const all = adviseFriendCraftEssences({ advice, servants: [servantA, servant(2, [UNRELATED]), servant(3, [UNRELATED])], basePoints: 3797, essences: REAL_ESSENCES, limit: 100 })
+    expect(all.map(f => f.essence.collectionNo)).not.toContain(2583)
+  })
+
+  it('chooses the stage again with the friend essence added', () => {
+    const lateNeutral = servant(1, [CASTER], [[CASTER], [CASTER], [CASTER, NEUTRAL], [CASTER, NEUTRAL]])
+    const { advice, friends } = friend([lateNeutral, servant(2, [CASTER]), servant(3, [CASTER])], 3797, 72, 4)
+    expect(chosenNames(advice)).toEqual(['カルデア・ランチタイム', '手稿の翼'])
+    expect(advice.total).toBe(14808)
+    expect(friends).toHaveLength(4)
+    expect(friends[3].essence.name).toBe('記憶の大図書館')
+    expect(friends[3].increase).toBe(759)
+    expect(friends[3].stageNotes).toEqual([{ servantId: 1, stages: [2, 3], countedStage: 2 }])
   })
 })
