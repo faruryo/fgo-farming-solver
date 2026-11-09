@@ -528,10 +528,10 @@ describe('EventHubClient', () => {
       mocks.roster = undefined
     })
 
-    it('品目に「あと N 個」「足りている（交換不要）」「使わない」「計画の対象外」が出て、行に切り替えは常には出ない', () => {
+    it('品目に「育成にあと N 個」「足りている（交換不要）」「使わない」「計画の対象外」が出て、行に切り替えは常には出ない', () => {
       renderShop()
 
-      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).getByText('育成にあと 5 個')).toBeInTheDocument()
       expect(within(cellOf('素材6517')).getByText('足りている（交換不要）')).toBeInTheDocument()
       expect(within(cellOf('素材6518')).getByText('使わない')).toBeInTheDocument()
       expect(within(cellOf('素材4001')).getByText('計画の対象外')).toBeInTheDocument()
@@ -575,7 +575,8 @@ describe('EventHubClient', () => {
       fireEvent.click(screen.getByRole('radio', { name: '欲しい' }))
 
       expect(screen.getByLabelText('素材4001 の交換回数')).toHaveValue(3)
-      expect(inputNames()).toEqual(['素材6516', '素材6517', '素材6518', '素材6519', '素材4001', '素材94100'])
+      // 不足のある 6516・6519 が上のグループ、残りが下のグループで、各グループの中は交換所の順。
+      expect(inputNames()).toEqual(['素材6516', '素材6519', '素材6517', '素材6518', '素材4001', '素材94100'])
       expect(unwantedSummary()).not.toBeInTheDocument()
       expect(storedWant()).toEqual({ 4001: true })
     })
@@ -683,7 +684,7 @@ describe('EventHubClient', () => {
     it.each([null, [25, 40], 'broken'])('保存した実所持数が壊れていても（%j）落ちず、所持 0 として出す', stored => {
       setLs(STORAGE_KEYS.POSSESSION, stored)
       renderShop()
-      expect(within(cellOf('素材6516')).getByText('あと 30 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).getByText('育成にあと 30 個')).toBeInTheDocument()
     })
 
     it('選んだことの無い端末では、開いただけで要る・要らないの保存を作らない', () => {
@@ -742,9 +743,39 @@ describe('EventHubClient', () => {
             shopApPrices={{ 6516: 20, 6517: 10 }}
           />,
         )
-        expect(bodyRows(screen.getByTestId('shop-item-list'))[0]).toBe('効率順')
+        // 各グループの中が「効率順」と「AP 換算なし」に分かれ、順位はグループに分ける前の番号のまま。
+        expect(bodyRows(screen.getByTestId('shop-item-list'))).toEqual([
+          '育成に足りない品目',
+          '効率順',
+          '1|素材6516|2',
+          'AP 換算なし',
+          '|素材6519|',
+          'そのほかの品目',
+          '効率順',
+          '2|素材6517|1',
+          'AP 換算なし',
+          '|素材6518|',
+          '|素材4001|',
+          '|素材94100|',
+        ])
         await choose(tableName('素材6517'), 'いらない')
         expectFocused(tableName('素材6518'))
+      })
+
+      it('「育成に足りない品目」の最後の行を「いらない」にすると、「そのほかの品目」の最初の行の品目名へ移る', async () => {
+        renderShop()
+        expect(bodyRows(screen.getByTestId('shop-item-list'))).toEqual([
+          '育成に足りない品目',
+          '|素材6516|',
+          '|素材6519|',
+          'そのほかの品目',
+          '|素材6517|',
+          '|素材6518|',
+          '|素材4001|',
+          '|素材94100|',
+        ])
+        await choose(tableName('素材6519'), 'いらない')
+        expectFocused(tableName('素材6517'))
       })
 
       it('最後の「欲しい」の行を「いらない」にすると、「いらない品目」の見出しへ移る', async () => {
@@ -874,12 +905,125 @@ describe('EventHubClient', () => {
       expect(screen.getByText('合計 20 周・AP 800')).toBeInTheDocument()
     })
 
-    it('在庫上限で埋まらない素材に「交換所では N 個足りない」を出し、要約の数が合う', () => {
+    it('在庫上限で埋まらない素材の行には「育成にあと N 個」だけを出して「交換所では N 個足りない」を出さず、要約で埋まらない素材に数える', () => {
       renderShop()
 
-      expect(within(cellOf('素材6519')).getByText('交換所では 5 個足りない')).toBeInTheDocument()
-      expect(within(cellOf('素材6516')).queryByText(/交換所では/)).not.toBeInTheDocument()
+      expect(within(cellOf('素材6519')).getByText('育成にあと 15 個')).toBeInTheDocument()
+      expect(screen.queryByText(/交換所では/)).not.toBeInTheDocument()
       expect(screen.getByText('育成計画の不足 2 素材のうち、交換所で埋まるのは 1 素材')).toBeInTheDocument()
+
+      fireEvent.click(shortfallButton())
+      expect(screen.getByLabelText('素材6519 の交換回数')).toHaveValue(10)
+      expect(within(cellOf('素材6519')).getByText('育成にあと 15 個')).toBeInTheDocument()
+      expect(screen.queryByText(/交換所では/)).not.toBeInTheDocument()
+    })
+
+    it('「足りている（交換不要）」「使わない」の行は回数 0 のときだけ薄い文字色で、回数を入れると「育成にあと N 個」の行と同じ色になる', () => {
+      renderShop()
+      const colorOf = (name: string) => rowOfItem(name).style.color
+      const shortColor = colorOf('素材6516')
+      expect(shortColor).toBe('var(--text2)')
+      expect(colorOf('素材6517')).toBe('var(--text3)')
+      expect(colorOf('素材6518')).toBe('var(--text3)')
+
+      fireEvent.change(screen.getByLabelText('素材6518 の交換回数'), { target: { value: '1' } })
+      expect(colorOf('素材6518')).toBe(shortColor)
+      expect(colorOf('素材6517')).toBe('var(--text3)')
+
+      fireEvent.change(screen.getByLabelText('素材6518 の交換回数'), { target: { value: '0' } })
+      expect(colorOf('素材6518')).toBe('var(--text3)')
+    })
+
+    describe('不足のある行を上にまとめる並び', () => {
+      const list = () => screen.getByTestId('shop-item-list')
+      const renderWithPrices = (shopApPrices: Record<number, number>, items: EventShopItem[] = shop) =>
+        render(
+          <EventHubClient
+            summary={summary}
+            boxEvent={event({ shop: items, farmingNodes })}
+            features={['shop']}
+            shopApPrices={shopApPrices}
+          />,
+        )
+
+      it('「育成にあと N 個」の行を「育成に足りない品目」に、残りを「そのほかの品目」にまとめ、順位は分ける前の番号のまま。回数を入れてもグループは変わらない', () => {
+        // 素材6517 は足りている、素材6516 は不足 189、素材6518 は使わない、素材6519 は不足 2。
+        mocks.roster = ready({ 6516: 214, 6517: 30, 6519: 2 })
+        const items = shop.slice(0, 4)
+        renderWithPrices({ 6517: 90, 6516: 77.2, 6518: 76.3, 6519: 50 }, items)
+        const expected = [
+          '育成に足りない品目',
+          '2|素材6516|7.72',
+          '4|素材6519|5',
+          'そのほかの品目',
+          '1|素材6517|9',
+          '3|素材6518|7.63',
+        ]
+        expect(bodyRows(list())).toEqual(expected)
+        expect(screen.queryByText('効率順')).not.toBeInTheDocument()
+        expect(screen.queryByText('AP 換算なし')).not.toBeInTheDocument()
+
+        fireEvent.change(screen.getByLabelText('素材6517 の交換回数'), { target: { value: '3' } })
+        expect(bodyRows(list())).toEqual(expected)
+      })
+
+      it('「効率順」「AP 換算なし」はグループごとに、そのグループに効率のある行と無い行の両方があるときだけ出す', () => {
+        mocks.roster = ready({ 6516: 30, 6999: 3 })
+        const items = [
+          shop[0],
+          shop[1],
+          shopEntry(6999, 94001, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 2 }),
+        ]
+        renderWithPrices({ 6516: 20, 6517: 10 }, items)
+        expect(bodyRows(list())).toEqual([
+          '育成に足りない品目',
+          '効率順',
+          '1|素材6516|2',
+          'AP 換算なし',
+          '|素材6999|',
+          'そのほかの品目',
+          '2|素材6517|1',
+        ])
+      })
+
+      it('グループの見出しは「効率順」「AP 換算なし」の見出しと見た目が違う', () => {
+        renderWithPrices({ 6516: 20, 6517: 10 })
+        const heading = (text: string) => within(list()).getAllByText(text)[0]
+        expect(heading('育成に足りない品目').className).not.toBe(heading('効率順').className)
+        expect(heading('育成に足りない品目').style.color).not.toBe(heading('効率順').style.color)
+      })
+
+      it('「育成にあと N 個」の行が無いときは、グループの見出しを出さず、育成計画が未設定のときと同じ並びにする', () => {
+        mocks.roster = ready({ 6517: 30 })
+        renderWithPrices({ 6516: 20, 6517: 10 })
+        expect(bodyRows(list())).toEqual([
+          '効率順',
+          '1|素材6516|2',
+          '2|素材6517|1',
+          'AP 換算なし',
+          '|素材6518|',
+          '|素材6519|',
+          '|素材4001|',
+          '|素材94100|',
+        ])
+      })
+
+      it('育成計画が使えないときは、グループに分けず、効率の高い順の後に効率の無い行を交換所の順で並べる', () => {
+        mocks.roster = { status: 'empty' }
+        renderWithPrices({ 6519: 20, 6517: 10 })
+        expect(bodyRows(list())).toEqual([
+          '効率順',
+          '1|素材6519|2',
+          '2|素材6517|1',
+          'AP 換算なし',
+          '|素材6516|',
+          '|素材6518|',
+          '|素材4001|',
+          '|素材94100|',
+        ])
+        expect(screen.queryByText('育成に足りない品目')).not.toBeInTheDocument()
+        expect(screen.queryByText('そのほかの品目')).not.toBeInTheDocument()
+      })
     })
 
     it('不足のある素材の品目を「いらない」にすると、その素材は埋まらない素材として数え、足りない数はどの行にも出さない', () => {
@@ -894,7 +1038,7 @@ describe('EventHubClient', () => {
       mocks.roster = { status: 'empty' }
       renderShop()
 
-      expect(screen.queryByText('あと 5 個')).not.toBeInTheDocument()
+      expect(screen.queryByText('育成にあと 5 個')).not.toBeInTheDocument()
       expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
       expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
       expect(screen.queryByTestId('shop-shortfall-summary')).not.toBeInTheDocument()
@@ -917,7 +1061,7 @@ describe('EventHubClient', () => {
       expect(
         screen.getByText('育成素材データの一部を取得できませんでした。時間をおいて再読み込みしてください。'),
       ).toBeInTheDocument()
-      expect(screen.queryByText('あと 5 個')).not.toBeInTheDocument()
+      expect(screen.queryByText('育成にあと 5 個')).not.toBeInTheDocument()
       expect(shortfallButton()).toBeDisabled()
       fireEvent.click(screen.getByRole('button', { name: '素材4001' }))
       expect(screen.getByRole('radiogroup', { name: '素材4001 は欲しいか' })).toBeInTheDocument()
@@ -936,7 +1080,7 @@ describe('EventHubClient', () => {
       mocks.catalog = { catalog: null, failed: true, reload }
       renderShop()
 
-      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).getByText('育成にあと 5 個')).toBeInTheDocument()
       expect(within(cellOf('素材6517')).getByText('足りている（交換不要）')).toBeInTheDocument()
       expect(screen.queryByText('使わない')).not.toBeInTheDocument()
       expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
@@ -955,7 +1099,7 @@ describe('EventHubClient', () => {
       mocks.catalog = { catalog: null, failed: false, reload }
       renderShop()
 
-      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).getByText('育成にあと 5 個')).toBeInTheDocument()
       expect(screen.queryByText('使わない')).not.toBeInTheDocument()
       expect(screen.queryByText('計画の対象外')).not.toBeInTheDocument()
       expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
@@ -999,12 +1143,12 @@ describe('EventHubClient', () => {
         expect(localStorage.getItem(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBeNull()
       })
 
-      it('不足 1 の伝承結晶（在庫上限 2）には「あと 1 個」が出て、優先素材で 1 が入る', () => {
+      it('不足 1 の伝承結晶（在庫上限 2）には「育成にあと 1 個」が出て、優先素材で 1 が入る', () => {
         mocks.roster = ready({ 6999: 3 })
         setLs(STORAGE_KEYS.POSSESSION, { 6999: 2 })
         renderShop({ shop: [defaultShop[0]] })
 
-        expect(within(cellOf('素材6999')).getByText('あと 1 個')).toBeInTheDocument()
+        expect(within(cellOf('素材6999')).getByText('育成にあと 1 個')).toBeInTheDocument()
         fireEvent.click(shortfallButton())
         expect(screen.getByLabelText('素材6999 の交換回数')).toHaveValue(1)
       })
@@ -1233,9 +1377,9 @@ describe('EventHubClient', () => {
       const before = localStorage.getItem(STORAGE_KEYS.POSSESSION)
       renderShop()
 
-      expect(within(cellOf('素材6516')).getByText('あと 5 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6516')).getByText('育成にあと 5 個')).toBeInTheDocument()
       expect(within(cellOf('素材6517')).getByText('足りている（交換不要）')).toBeInTheDocument()
-      expect(within(cellOf('素材6519')).getByText('あと 15 個')).toBeInTheDocument()
+      expect(within(cellOf('素材6519')).getByText('育成にあと 15 個')).toBeInTheDocument()
       fireEvent.click(shortfallButton())
       expect(localStorage.getItem(STORAGE_KEYS.POSSESSION)).toBe(before)
     })
