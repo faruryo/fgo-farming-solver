@@ -299,3 +299,82 @@ export const adviseBondCraftEssences = ({
     maxCost,
   }
 }
+
+export type FriendCraftEssenceSuggestion = {
+  /** 種類の中で図鑑番号の最も小さい礼装。 */
+  essence: Essence
+  /** 同じ種類のほかの礼装(図鑑番号の小さい順)。 */
+  alternatives: Essence[]
+  /** 数えた増加率(千分率)。サポート時の増加率を持つ礼装ではその値。 */
+  rate: number
+  /** 代表の礼装のサポート時の増加率を使ったか。 */
+  usesSupportRate: boolean
+  /** 自分の組み合わせの合計からの増える量。 */
+  increase: number
+  /** 自分の組み合わせにこの礼装を加えたときの合計。 */
+  total: number
+  /** 段階で効くかが変わるとき、効く相手として数えたサーヴァントごとの効く段階と、獲得絆を数えた段階(0 始まり)。 */
+  stageNotes: (CraftEssenceStageNote & { countedStage: number })[]
+}
+
+/** フレンドの礼装はコストを数えないので、コストを区別に使わずに種類にまとめる。 */
+const friendEffectTypes = (essences: readonly Essence[], servantStages: readonly ReadonlySet<number>[][]): EffectType[] => {
+  const byKey = new Map<string, EffectType>()
+  const sorted = [...essences].sort((a, b) => a.collectionNo - b.collectionNo || a.id - b.id)
+  for (const essence of sorted) {
+    const { appliesTo } = essence
+    // 自身に効く礼装はフレンドのサーヴァントにしか効かない。
+    if (!appliesTo || essence.target !== 'party') continue
+    const applies = servantStages.map(stages => stages.map(traits => matches(appliesTo, traits)))
+    if (!applies.some(row => row.includes(true))) continue
+    const rate = essence.supportRate ?? essence.rate
+    const key = `${rate}|${essence.add}|${appliesKey(applies)}`
+    const type = byKey.get(key)
+    if (type) type.essences.push(essence)
+    else byKey.set(key, { target: 'party', rate, add: essence.add, cost: 0, applies, essences: [essence] })
+  }
+  return [...byKey.values()]
+}
+
+/**
+ * 自分の組み合わせを変えずに、フレンドのサポートのサーヴァントに付いた礼装1枚を加えたときに増える量の大きい順に、
+ * パーティ全体に効く礼装の種類を limit 件まで返す。フレンドの礼装のコストは数えず、各サーヴァントの段階は選び直す。
+ */
+export const adviseFriendCraftEssences = ({
+  advice,
+  servants,
+  basePoints,
+  essences,
+  limit = 3,
+}: {
+  advice: Extract<CraftEssenceAdvice, { kind: 'ok' }>
+  servants: readonly CraftEssenceAdviceServant[]
+  basePoints: number
+  essences: readonly Essence[]
+  limit?: number
+}): FriendCraftEssenceSuggestion[] => {
+  const servantStages = servants.map(stageTraitsOf)
+  const own: Active[] = advice.assignments.flatMap(({ essence }, i) => {
+    const appliesTo = essence?.appliesTo
+    if (!essence || !appliesTo) return []
+    const applies = servantStages.map(stages => stages.map(traits => matches(appliesTo, traits)))
+    const type: EffectType = { target: essence.target, rate: essence.rate, add: essence.add, cost: essence.cost, applies, essences: [essence] }
+    return [{ type, count: 1, holders: [i] }]
+  })
+  const suggestions = friendEffectTypes(essences, servantStages).flatMap((type): FriendCraftEssenceSuggestion[] => {
+    const counted = servants.map((_, i) => servantPoints([...own, { type, count: 1, holders: [] }], basePoints, i))
+    const total = counted.reduce((sum, s) => sum + s.points, 0)
+    const increase = total - advice.total
+    const [essence, ...alternatives] = type.essences
+    if (increase <= 0 || !essence) return []
+    const stageNotes = servants.flatMap((servant, i) => {
+      const row = type.applies.at(i)
+      const stage = counted.at(i)?.stage ?? 0
+      if (!row?.at(stage) || !isStageDependent(row)) return []
+      return [{ servantId: servant.id, stages: row.flatMap((ok, s) => (ok ? [s] : [])), countedStage: stage }]
+    })
+    return [{ essence, alternatives, rate: type.rate, usesSupportRate: essence.supportRate !== undefined, increase, total, stageNotes }]
+  })
+  suggestions.sort((a, b) => b.increase - a.increase || a.essence.collectionNo - b.essence.collectionNo)
+  return suggestions.slice(0, limit)
+}

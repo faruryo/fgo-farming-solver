@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Quest } from '../../interfaces/fgodrop'
 import { bondQuestCandidates } from '../../lib/bond/quest-candidates'
@@ -127,34 +127,69 @@ describe('CraftEssenceAdvisor conditions', () => {
   })
   const portrait = makeBondUpCraftEssence({ id: 4, collectionNo: 99, cost: 5, rate: 0, add: 50, name: '英霊肖像' })
   const darius = makeBondUpCraftEssence({ id: 5, collectionNo: 108, cost: 5, rate: 0, add: 50, target: 'self', name: 'ダレイオス' })
+  // 自分の組み合わせの一覧(フレンドの上位3つは別の一覧)
+  const own = () => within(screen.getByTestId('bond-advisor-result').querySelector('ul') as HTMLElement)
 
   it('does not show an essence for casters when only a saber is selected', () => {
     render(<CraftEssenceAdvisor registered={[withTraits(1, [SABER])]} essences={[casterOnly, lunch]} />)
-    expect(screen.getByText('カルデア・ランチタイム')).toBeTruthy()
+    expect(own().getByText('カルデア・ランチタイム')).toBeTruthy()
     expect(screen.queryByText(/手稿の翼/)).toBeNull()
   })
 
   it('shows who each essence applies to and its effect, without stages when they do not matter', () => {
     render(<CraftEssenceAdvisor registered={[withTraits(1, [CASTER]), withTraits(2, [CASTER])]} essences={[casterOnly, lunch]} />)
-    expect(screen.getByText('〔キャスター〕に +20%')).toBeTruthy()
-    expect(screen.getByText('全員に +10%')).toBeTruthy()
-    expect(screen.queryByText(/で効く/)).toBeNull()
-    expect(screen.queryByText(/で数えた/)).toBeNull()
+    expect(own().getByText('〔キャスター〕に +20%')).toBeTruthy()
+    expect(own().getByText('全員に +10%')).toBeTruthy()
+    expect(own().queryByText(/で効く/)).toBeNull()
+    expect(own().queryByText(/で数えた/)).toBeNull()
   })
 
   it('shows fixed amounts for everyone and for the servant itself', () => {
     render(<CraftEssenceAdvisor registered={[withTraits(1, [SABER]), withTraits(2, [SABER])]} essences={[portrait, darius]} />)
-    expect(screen.getByText('全員に +50')).toBeTruthy()
+    expect(own().getByText('全員に +50')).toBeTruthy()
     expect(screen.getByText('自身に +50')).toBeTruthy()
   })
 
   it('shows the stages an essence applies at and the stage the servant was counted at', () => {
     const stageServant = withTraits(1, [SABER], [[SABER], [SABER], [SABER, BEAST], [SABER, BEAST]])
     render(<CraftEssenceAdvisor registered={[stageServant, withTraits(2, [SABER])]} essences={[beastOnly, lunch]} />)
-    expect(screen.getByText('〔ケモノ科のサーヴァント〕に +20%')).toBeTruthy()
-    expect(screen.getByText('サーヴァント1は第3再臨・最終再臨で効く')).toBeTruthy()
-    expect(screen.getAllByText('第3再臨で数えた')).toHaveLength(1)
-    expect(screen.getAllByText(/で効く/)).toHaveLength(1)
+    expect(own().getByText('〔ケモノ科のサーヴァント〕に +20%')).toBeTruthy()
+    expect(own().getByText('サーヴァント1は第3再臨・最終再臨で効く')).toBeTruthy()
+    expect(own().getAllByText('第3再臨で数えた')).toHaveLength(1)
+    expect(own().getAllByText(/で効く/)).toHaveLength(1)
+  })
+
+  describe('friend support', () => {
+    const tea = makeBondUpCraftEssence({ id: 6, collectionNo: 910, cost: 12, rate: 50, supportRate: 150, name: 'カルデア・ティータイム' })
+    const casters = [1, 2, 3].map(id => withTraits(id, [CASTER]))
+
+    it('shows the top three for a friend support below the own combination', () => {
+      render(<CraftEssenceAdvisor registered={casters} essences={[casterOnly, lunch, tea]} />)
+      const section = within(screen.getByTestId('bond-advisor-friend'))
+      expect(section.getByText('フレンドのサポートに付いていてほしい礼装')).toBeTruthy()
+      expect(section.getAllByRole('listitem').map(li => li.textContent)).toEqual([
+        '1.手稿の翼〔キャスター〕に +20%1周 +2,280(合計 17,655)',
+        '2.カルデア・ティータイム全員に +15%(サポート時)1周 +1,710(合計 17,085)',
+        '3.カルデア・ランチタイム全員に +10%1周 +1,140(合計 16,515)',
+      ])
+      expect(section.getByText('フレンドのサーヴァントと礼装のコストは数えていません')).toBeTruthy()
+      // 自分の組み合わせと同じ礼装でも重なるかの注記は出さない
+      expect(screen.queryByText(/重な/)).toBeNull()
+    })
+
+    it('shows the stages a friend essence applies at and the stage it was counted at', () => {
+      const stageServant = withTraits(1, [SABER], [[SABER], [SABER], [SABER, BEAST], [SABER, BEAST]])
+      render(<CraftEssenceAdvisor registered={[stageServant, withTraits(2, [SABER])]} essences={[beastOnly, lunch]} />)
+      const section = within(screen.getByTestId('bond-advisor-friend'))
+      expect(section.getByText(/サーヴァント1は第3再臨・最終再臨で効く/).textContent).toContain('(サーヴァント1は第3再臨で数えた)')
+    })
+
+    it('does not show the friend suggestion when servants exceed the cost limit', async () => {
+      localStorage.setItem(STORAGE_KEYS.MASTER_LEVEL, '1')
+      render(<CraftEssenceAdvisor registered={[1, 2, 3, 4].map(id => withTraits(id, [CASTER]))} essences={[casterOnly, lunch, tea]} />)
+      await waitFor(() => expect(screen.getByText(/コストの合計64が上限56を超えています/)).toBeTruthy())
+      expect(screen.queryByTestId('bond-advisor-friend')).toBeNull()
+    })
   })
 })
 

@@ -402,19 +402,45 @@ describe('EventShopList の1つの一覧', () => {
     expect(classes).not.toContain('text-xs')
   })
 
-  it('所持数の入力は表より前に、通貨ごとの必要量は表より後に、交換所に現れた通貨の順で並ぶ', () => {
+  it('一覧の上に所持数の入力は無く、表より後の通貨ごとのカードに、見出し・所持数と選んだ交換と必要量の段・全交換の段の順で並ぶ', () => {
     renderShop()
-    const owned = screen.getByTestId('shop-owned-inputs')
+    expect(screen.queryByTestId('shop-owned-inputs')).not.toBeInTheDocument()
     const list = screen.getByTestId('shop-item-list')
     const needs = screen.getByTestId('shop-currency-needs')
-    expect(owned.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(list.compareDocumentPosition(needs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(within(owned).getAllByRole('spinbutton').map(input => input.getAttribute('aria-label'))).toEqual([
-      '武蔵うどん の所持数',
-      '江戸むすび の所持数',
-      '東干し柿 の所持数',
-    ])
+    for (const input of screen.getAllByLabelText(/ の所持数$/)) {
+      expect(input.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    }
     expect(within(needs).getAllByRole('heading').map(h => h.textContent)).toEqual(['武蔵うどん', '江戸むすび', '東干し柿'])
+
+    const card = cardOf('江戸むすび')
+    const [heading, ownedRow, totalRow] = Array.from(card.children)
+    expect(heading?.textContent).toBe('江戸むすび')
+    expect(within(ownedRow as HTMLElement).getByLabelText('江戸むすび の所持数')).toBeInTheDocument()
+    expect(ownedRow?.textContent).toBe('所持数選んだ交換 0必要量 0')
+    expect(totalRow?.textContent).toMatch(/^全交換 /)
+  })
+
+  it('まとめた行の回数と、カードで入れた所持数から必要量を出す', () => {
+    renderShop()
+    enter(countInput('月より団子'), '4')
+    enter(screen.getByLabelText('武蔵うどん の所持数'), '50')
+    expect(within(cardOf('武蔵うどん')).getByText('選んだ交換 200')).toBeInTheDocument()
+    expect(within(cardOf('武蔵うどん')).getByText('必要量 150')).toBeInTheDocument()
+    expect(within(cardOf('江戸むすび')).getByText('選んだ交換 100')).toBeInTheDocument()
+    expect(within(cardOf('東干し柿')).getByText('選んだ交換 100')).toBeInTheDocument()
+  })
+
+  it('カードで入れた所持数は読み込み直しても残り、必要量はその値で出る', () => {
+    const { unmount } = renderShop()
+    enter(screen.getAllByLabelText('QP の交換回数').at(1) as HTMLElement, '6')
+    enter(screen.getByLabelText('江戸むすび の所持数'), '200')
+    expect(within(cardOf('江戸むすび')).getByText('必要量 100')).toBeInTheDocument()
+    unmount()
+
+    renderShop()
+    expect(screen.getByLabelText('江戸むすび の所持数')).toHaveValue(200)
+    expect(within(cardOf('江戸むすび')).getByText('必要量 100')).toBeInTheDocument()
   })
 
   it('まとめた行に在庫上限の合計と通貨ごとの在庫上限・対価が出て、1通貨だけの品目の対価には通貨と数が出る', () => {
@@ -485,7 +511,7 @@ describe('EventShopList の1つの一覧', () => {
     expect(countInput('サーヴァントコイン')).toHaveValue(48)
   })
 
-  it('巡霊の葉の不足が 800 のとき優先素材を押すと、行は 75 で「交換所では 50 個足りない」がその行に1つだけ出る', () => {
+  it('巡霊の葉の不足が 800 のとき優先素材を押すと、行は 75 で「育成にあと 800 個」だけが出て「交換所では 50 個足りない」は出ない', () => {
     mocks.roster = {
       status: 'ready',
       chaldeaState: {},
@@ -496,10 +522,8 @@ describe('EventShopList の1つの一覧', () => {
     fireEvent.click(screen.getByRole('button', { name: '優先素材' }))
 
     expect(countInput('巡霊の葉')).toHaveValue(75)
-    const remainders = screen.getAllByText('交換所では 50 個足りない')
-    expect(remainders).toHaveLength(1)
-    expect(rowOf('巡霊の葉')).toContainElement(remainders.at(0) ?? null)
-    expect(within(rowOf('巡霊の葉')).getByText('あと 800 個')).toBeInTheDocument()
+    expect(within(rowOf('巡霊の葉')).getByText('育成にあと 800 個')).toBeInTheDocument()
+    expect(screen.queryByText(/交換所では/)).not.toBeInTheDocument()
   })
 
   it('状態は品目のセルに出し、行の下に2段目も切り替えも置かない', () => {
@@ -512,7 +536,7 @@ describe('EventShopList の1つの一覧', () => {
     renderShop()
 
     const row = rowOf('巡霊の葉')
-    expect(within(row.cells[1] as HTMLElement).getByText('あと 800 個')).toBeInTheDocument()
+    expect(within(row.cells[1] as HTMLElement).getByText('育成にあと 800 個')).toBeInTheDocument()
     expect(row.nextElementSibling?.querySelector('td[colspan]') ?? null).toBeNull()
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
   })
@@ -530,6 +554,42 @@ describe('EventShopList の1つの一覧', () => {
     expect(JSON.parse(localStorage.getItem('events/shopWantedItems') ?? 'null')).toEqual({ [`svt:${DANGO}`]: false })
     expect(within(cardOf('江戸むすび')).getByText('選んだ交換 0')).toBeInTheDocument()
     expect(savedDangoCounts(event80632())).toEqual([2, 1, 1])
+  })
+
+  it('礼装の品目名を押すと、ポップアップに Atlas Academy DB の礼装のページを新しいタブで開く「アイテム詳細」ボタンが出る', () => {
+    const event = event80632()
+    event.shop = event.shop?.map(s => (s.itemId === DANGO ? { ...s, collectionNo: 1234 } : s))
+    renderShop(event)
+
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    const link = screen.getByRole('link', { name: '月より団子 のアイテム詳細を Atlas Academy DB で開く（新しいタブ）' })
+    expect(link).toHaveTextContent('アイテム詳細')
+    expect(link).toHaveAttribute('title', '月より団子 のアイテム詳細を Atlas Academy DB で開く（新しいタブ）')
+    expect(link).toHaveAttribute('href', 'https://apps.atlasacademy.io/db/JP/craft-essence/1234')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('図鑑番号を持たない品目（旧データの礼装）のポップアップにはリンクを出さない', () => {
+    renderShop()
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    expect(screen.getByRole('radio', { name: 'いらない' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Atlas Academy DB/ })).not.toBeInTheDocument()
+  })
+
+  it('「いらない」に畳んだ礼装の品目名のポップアップにもリンクが出る', () => {
+    const event = event80632()
+    event.shop = event.shop?.map(s => (s.itemId === DANGO ? { ...s, collectionNo: 1234 } : s))
+    renderShop(event)
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'いらない' }))
+
+    fireEvent.click(screen.getByRole('button', { name: /いらない品目 1 件/ }))
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    expect(screen.getByRole('link', { name: /Atlas Academy DB/ })).toHaveAttribute(
+      'href',
+      'https://apps.atlasacademy.io/db/JP/craft-essence/1234',
+    )
   })
 
   it('対価が通貨で違うまとめた行は効率 10 が1つだけ出て効率 7 の行より前に並び、効率の無い行が無ければ見出しを出さない', () => {
@@ -576,5 +636,21 @@ describe('EventShopCatalog（品目がすべてサーヴァント扱い）', () 
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
     expect(screen.queryByText(/全交換/)).not.toBeInTheDocument()
+  })
+
+  it('図鑑番号を持つ礼装は名前の横に Atlas Academy DB を開く「アイテム詳細」ボタンが出て名前は文字のまま、持たない品目にはボタンを出さない', () => {
+    render(
+      <EventShopCatalog
+        shop={[svt(9770500, '叡智の大火', UDON, 100), { ...svt(9311320, '英霊極点：アルトリア・ペンドラゴン', UDON, 1), collectionNo: 2513 }]}
+      />,
+    )
+    const links = screen.getAllByRole('link')
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAccessibleName('英霊極点：アルトリア・ペンドラゴン のアイテム詳細を Atlas Academy DB で開く（新しいタブ）')
+    expect(links[0]).toHaveTextContent('アイテム詳細')
+    expect(links[0]).toHaveAttribute('href', 'https://apps.atlasacademy.io/db/JP/craft-essence/2513')
+    expect(links[0]).toHaveAttribute('target', '_blank')
+    expect(links[0]).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(screen.getByText('英霊極点：アルトリア・ペンドラゴン').closest('a')).toBeNull()
   })
 })

@@ -3,7 +3,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import { ExternalLink } from 'lucide-react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -153,27 +155,49 @@ const COLUMN_COUNT = 7
 interface RowPlan {
   /** 状態なし（QP・見分けられない品目）は undefined。 */
   status?: ShopItemStatus
-  /** 交換所で埋まらない不足。 */
-  remainder?: number
   /** 在庫上限が無くて回数を入れなかった「欲しい」の計画の対象外の品目。 */
   promptUnlimited: boolean
 }
 
 /** 品目名のボタンに付ける、行の key（交換所の配列の添字の先頭）の属性。切り替えのあとのフォーカスの移し先を探す。 */
 const ROW_KEY_ATTR = 'data-shop-row-key'
+/** Atlas Academy DB の礼装のページ（図鑑番号で開く）。 */
+const atlasCraftEssenceUrl = (collectionNo: number): string =>
+  `https://apps.atlasacademy.io/db/JP/craft-essence/${collectionNo}`
+
+/** 礼装の「アイテム詳細」ボタン（高さ 24px）。行き先が Atlas Academy DB で新しいタブで開くことは aria-label と title で伝える。 */
+const AtlasDetailLink: React.FC<{ name: string; collectionNo: number }> = ({ name, collectionNo }) => {
+  const { t } = useTranslation('events')
+  const label = t('event-shop-atlas-detail-label', '{{name}} のアイテム詳細を Atlas Academy DB で開く（新しいタブ）', { name })
+  return (
+    <a
+      href={atlasCraftEssenceUrl(collectionNo)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className={cn(buttonVariants({ variant: 'outline', size: 'xs' }), 'flex-shrink-0')}
+    >
+      {t('event-shop-atlas-detail', 'アイテム詳細')}
+      <ExternalLink aria-hidden="true" />
+    </a>
+  )
+}
 /** 畳んだ「いらない品目」の開閉の見出しに付ける属性。 */
 const UNWANTED_SUMMARY_ATTR = 'data-shop-unwanted-summary'
 
 /**
  * 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。
  * 呼び出し側へは、選んだ値とキーボードで選んだか（click の detail が 0）を渡す。
+ * 礼装（図鑑番号を持つ品目）は、Atlas Academy DB の礼装のページを開く「アイテム詳細」ボタンも出す。
  */
 const ItemWantPopover: React.FC<{
   name: string
   wanted: boolean
   rowKey: number
+  collectionNo?: number
   onChange: (wanted: boolean, viaKeyboard: boolean) => void
-}> = ({ name, wanted, rowKey, onChange }) => {
+}> = ({ name, wanted, rowKey, collectionNo, onChange }) => {
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -189,7 +213,8 @@ const ItemWantPopover: React.FC<{
       >
         {name}
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-2">
+      {/* items-start: 縦並びの既定の stretch でトグルの枠がポップアップ幅まで伸び、「いらない」の右が空くのを防ぐ */}
+      <PopoverContent align="start" className="w-auto items-start p-2">
         <ItemWantToggle
           name={name}
           wanted={wanted}
@@ -198,6 +223,7 @@ const ItemWantPopover: React.FC<{
             setOpen(false)
           }}
         />
+        {collectionNo !== undefined && <AtlasDetailLink name={name} collectionNo={collectionNo} />}
       </PopoverContent>
     </Popover>
   )
@@ -209,10 +235,11 @@ const RowPlanLabel: React.FC<{ plan: RowPlan; count: number }> = ({ plan, count 
   if (!status) return null
   return (
     <span className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[11px] mt-0.5">
-      <span className="whitespace-nowrap">
+      {/* 375px で品目の列を押し広げないよう折り返しを許す。数と「個」の間は NBSP で、「個」だけが次の行に残らない。 */}
+      <span>
         {status.kind === 'short' && (
           <span style={{ color: 'var(--text1)' }}>
-            {t('event-shop-status-short', 'あと {{n}} 個', { n: status.shortfall.toLocaleString() })}
+            {t('event-shop-status-short', '育成にあと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })}
           </span>
         )}
         {status.kind === 'enough' && <span>{t('event-shop-status-enough', '足りている（交換不要）')}</span>}
@@ -221,13 +248,6 @@ const RowPlanLabel: React.FC<{ plan: RowPlan; count: number }> = ({ plan, count 
           <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
         )}
       </span>
-      {status.kind === 'short' && plan.remainder !== undefined && (
-        <span style={{ color: 'var(--red)' }}>
-          {t('event-shop-status-remainder', '交換所では {{n}} 個足りない', {
-            n: plan.remainder.toLocaleString(),
-          })}
-        </span>
-      )}
       {plan.promptUnlimited && count === 0 && (
         <span style={{ color: 'var(--red)' }}>
           {t('event-shop-unlimited-prompt', '上限なし: 回数を入れてください')}
@@ -277,7 +297,8 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
   const name = rowName(first)
   const { count, parts } = rowCountOf(row, counts)
   const limit = rowLimit(row)
-  const dimmed = plan?.status?.kind === 'enough' || plan?.status?.kind === 'unused'
+  // 足りている・使わない行も、回数を入れたら他の行と同じ色に戻す。
+  const dimmed = (plan?.status?.kind === 'enough' || plan?.status?.kind === 'unused') && count === 0
   const color = dimmed ? 'var(--text3)' : 'var(--text2)'
   return (
     <tr style={{ borderTop: '1px solid var(--border)', color }}>
@@ -294,6 +315,7 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
             name={name}
             wanted
             rowKey={row.indices[0]}
+            collectionNo={first.collectionNo}
             onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
           />
         </span>
@@ -332,18 +354,98 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
   )
 }
 
-const GroupLabelRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <tr style={{ borderTop: '1px solid var(--border)' }}>
-    <th
-      colSpan={COLUMN_COUNT}
-      scope="colgroup"
-      className="text-left font-medium px-3 py-1 text-[11px]"
-      style={{ color: 'var(--text3)', background: 'var(--panel)' }}
-    >
-      {children}
-    </th>
-  </tr>
-)
+/**
+ * 表の見出しの行。`group` は育成計画で分けたグループの見出しで、「効率順」「AP 換算なし」より強く出す。
+ * `indented` はグループの中の「効率順」「AP 換算なし」で、1段下げる。
+ */
+const GroupLabelRow: React.FC<{ children: React.ReactNode; group?: boolean; indented?: boolean }> = ({
+  children,
+  group = false,
+  indented = false,
+}) => {
+  const padding = indented ? 'pl-6 pr-3' : 'px-3'
+  const className = group
+    ? 'text-left font-semibold px-3 py-1.5 text-xs'
+    : `text-left font-medium py-1 text-[11px] ${padding}`
+  return (
+    <tr style={{ borderTop: '1px solid var(--border)' }}>
+      <th
+        colSpan={COLUMN_COUNT}
+        scope="colgroup"
+        className={className}
+        style={{ color: group ? 'var(--text1)' : 'var(--text3)', background: 'var(--panel)' }}
+      >
+        {children}
+      </th>
+    </tr>
+  )
+}
+
+type RankedShopRow = ReturnType<typeof orderShopByEfficiency>['ranked'][number]
+
+/** 表に出す行のまとまり。`kind` は育成計画で分けたグループで、グループの見出しを出すときだけ付く。 */
+interface ShopRowGroup {
+  kind?: 'short' | 'other'
+  ranked: RankedShopRow[]
+  unpriced: ShopListRow[]
+}
+
+/**
+ * 効率順に並べた行を、育成計画で不足のある行（上）とそれ以外（下）に分ける。各グループの中の順と順位は分ける前のまま。
+ * 育成計画が使えないときや、どちらかのグループが空のときは、1つのまとまり（グループの見出しなし）にする。
+ */
+const groupShopRows = (
+  ranked: RankedShopRow[],
+  unpriced: ShopListRow[],
+  planOf: (row: ShopListRow) => RowPlan | undefined,
+): ShopRowGroup[] => {
+  const whole: ShopRowGroup[] = [{ ranked, unpriced }]
+  if (![...ranked.map(r => r.row), ...unpriced].some(row => planOf(row) !== undefined)) return whole
+  const isShort = (row: ShopListRow) => planOf(row)?.status?.kind === 'short'
+  const short: ShopRowGroup = {
+    kind: 'short',
+    ranked: ranked.filter(r => isShort(r.row)),
+    unpriced: unpriced.filter(isShort),
+  }
+  const other: ShopRowGroup = {
+    kind: 'other',
+    ranked: ranked.filter(r => !isShort(r.row)),
+    unpriced: unpriced.filter(row => !isShort(row)),
+  }
+  const isEmpty = (g: ShopRowGroup) => g.ranked.length === 0 && g.unpriced.length === 0
+  return isEmpty(short) || isEmpty(other) ? whole : [short, other]
+}
+
+/**
+ * 1つのまとまりの見出しと行。グループの見出しは育成計画で分けたときだけ出し、
+ * 「効率順」「AP 換算なし」はそのまとまりに効率のある行と無い行の両方があるときだけ出す。
+ */
+const ShopRowGroupRows: React.FC<{
+  group: ShopRowGroup
+  row: (shopRow: ShopListRow, rankedRow?: RankedShopRow) => React.ReactNode
+}> = ({ group, row }) => {
+  const { t } = useTranslation('events')
+  const showLabels = group.unpriced.length > 0 && group.ranked.length > 0
+  const indented = group.kind !== undefined
+  return (
+    <>
+      {group.kind === 'short' && (
+        <GroupLabelRow group>{t('event-shop-group-short', '育成に足りない品目')}</GroupLabelRow>
+      )}
+      {group.kind === 'other' && <GroupLabelRow group>{t('event-shop-group-other', 'そのほかの品目')}</GroupLabelRow>}
+      {showLabels && <GroupLabelRow indented={indented}>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
+      {group.ranked.map(r => row(r.row, r))}
+      {showLabels && (
+        <GroupLabelRow indented={indented}>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>
+      )}
+      {group.unpriced.map(r => row(r))}
+    </>
+  )
+}
+
+/** 表に出ている行の順（見出しの行は数えない）。 */
+const displayOrder = (groups: ShopRowGroup[]): ShopListRow[] =>
+  groups.flatMap(g => [...g.ranked.map(r => r.row), ...g.unpriced])
 
 /**
  * 表の最後に畳んだ「いらない」の品目。開くと名前だけを並べ、名前を押すと品目名と同じポップアップを出す。
@@ -379,6 +481,7 @@ const UnwantedRows: React.FC<{
                   name={rowName(first)}
                   wanted={false}
                   rowKey={row.indices[0]}
+                  collectionNo={first.collectionNo}
                   onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
                 />
               </li>
@@ -398,8 +501,8 @@ const UnwantedRows: React.FC<{
  */
 const useFocusAfterWantedMove = (
   rows: ShopListRow[],
-  ranked: ReturnType<typeof orderShopByEfficiency>['ranked'],
-  unpriced: ShopListRow[],
+  /** 表に出ている「欲しい」の行の順（見出しの行は数えない）。 */
+  order: ShopListRow[],
   setRowWanted: (row: ShopListRow, wanted: boolean) => void,
 ) => {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -411,8 +514,6 @@ const useFocusAfterWantedMove = (
   } | null>(null)
   const onWantedChange = (shopRow: ShopListRow, wanted: boolean, viaKeyboard: boolean) => {
     const key = shopRow.indices[0]
-    // 見出しの行は数えず、表に出ている順（効率順の後に AP 換算なし）。
-    const order = [...ranked.map(r => r.row), ...unpriced]
     const index = order.findIndex(r => r.indices[0] === key)
     const isWanted = index >= 0
     if (wanted === isWanted) {
@@ -452,6 +553,7 @@ const useFocusAfterWantedMove = (
 /**
  * 交換所の品目の1つの一覧。「欲しい」の行のうち、効率のある行を通貨をまたいで効率の高い順（順位つき）に、
  * その後に効率の無い行を交換所の順に並べ、「いらない」の行は表の最後に畳む。
+ * 育成計画が使えるときは、不足のある行をまとめて上に、それ以外を下に並べる（順位は分ける前のまま）。
  * 交換回数は交換所の配列全体の添字で品目に結び付ける（並べ替えた後の位置は使わない）。
  */
 const ShopTable: React.FC<{
@@ -462,8 +564,8 @@ const ShopTable: React.FC<{
   const { wantedRows: rows, unwantedRows, planOf, setRowCount: onRowCountChange, setRowWanted } = list
   const { t } = useTranslation('events')
   const { ranked, unpriced } = useMemo(() => orderShopByEfficiency(rows, apPrices), [rows, apPrices])
-  const showLabels = unpriced.length > 0 && ranked.length > 0
-  const { cardRef, onWantedChange } = useFocusAfterWantedMove(rows, ranked, unpriced, setRowWanted)
+  const groups = groupShopRows(ranked, unpriced, planOf)
+  const { cardRef, onWantedChange } = useFocusAfterWantedMove(rows, displayOrder(groups), setRowWanted)
   const row = (shopRow: ShopListRow, rankedRow?: { rank: number; efficiency: number }) => (
     <ShopRow
       key={shopRow.indices[0]}
@@ -493,10 +595,9 @@ const ShopTable: React.FC<{
             </tr>
           </thead>
           <tbody>
-            {showLabels && <GroupLabelRow>{t('event-shop-group-ranked', '効率順')}</GroupLabelRow>}
-            {ranked.map(r => row(r.row, r))}
-            {showLabels && <GroupLabelRow>{t('event-shop-group-unpriced', 'AP 換算なし')}</GroupLabelRow>}
-            {unpriced.map(r => row(r))}
+            {groups.map(group => (
+              <ShopRowGroupRows key={group.kind ?? 'all'} group={group} row={row} />
+            ))}
           </tbody>
         </table>
       </div>
@@ -505,49 +606,16 @@ const ShopTable: React.FC<{
   )
 }
 
-/** 通貨ごとの所持数の入力を横1列に並べる（幅が足りなければ折り返す）。 */
-const OwnedInputs: React.FC<{
-  groups: ShopCurrencyGroup[]
-  owned: ReadonlyMap<number, number>
-  onOwnedChange: (costItemId: number, owned: number) => void
-}> = ({ groups, owned, onOwnedChange }) => {
-  const { t } = useTranslation('events')
-  const label = useCurrencyLabel()
-  return (
-    <Card testId="shop-owned-inputs" className="px-4 py-3 gap-2">
-      <span className="text-xs font-semibold" style={{ color: 'var(--text1)' }}>
-        {t('event-shop-owned', '所持数')}
-      </span>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
-        {groups.map(group => (
-          <label key={group.costItemId} className="flex items-center gap-1.5">
-            <Icon src={group.costIcon} />
-            <span>{label(group)}</span>
-            {/* 交換回数の入力欄と同じく、16px のまま 3/4 に縮めて周りの 12px に揃える（iOS Safari の拡大を避ける）。 */}
-            <span className="block h-7 w-24">
-              <Input
-                type="number"
-                min={0}
-                value={owned.get(group.costItemId) ?? 0}
-                onChange={e => onOwnedChange(group.costItemId, toCount(e.target.value))}
-                aria-label={t('event-shop-owned-label', '{{name}} の所持数', {
-                  name: label(group),
-                })}
-                className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-3.5 text-base md:text-base"
-              />
-            </span>
-          </label>
-        ))}
-      </div>
-    </Card>
-  )
-}
-
-/** 通貨ごとの選んだ交換の合計・必要量・全交換の合計と上限なしの品目の数（通貨は交換所に最初に現れた順）。 */
+/**
+ * 通貨ごとのカード（通貨は交換所に最初に現れた順）。見出しの下に所持数の入力・選んだ交換の合計・必要量の段、
+ * その下に全交換の合計と上限なしの品目の数の段を出す。
+ */
 const CurrencyNeeds: React.FC<{
   groups: ShopCurrencyGroup[]
   needs: ShopCurrencyNeed[]
-}> = ({ groups, needs }) => {
+  owned: ReadonlyMap<number, number>
+  onOwnedChange: (costItemId: number, owned: number) => void
+}> = ({ groups, needs, owned, onOwnedChange }) => {
   const { t } = useTranslation('events')
   const label = useCurrencyLabel()
   return (
@@ -561,6 +629,22 @@ const CurrencyNeeds: React.FC<{
               {label(group)}
             </h3>
             <div className="flex items-center gap-x-4 gap-y-1 flex-wrap" style={{ color: 'var(--text2)' }}>
+              <label className="flex items-center gap-1.5">
+                <span>{t('event-shop-owned', '所持数')}</span>
+                {/* 交換回数の入力欄と同じく、16px のまま 3/4 に縮めて周りの 12px に揃える（iOS Safari の拡大を避ける）。 */}
+                <span className="block h-7 w-24">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={owned.get(group.costItemId) ?? 0}
+                    onChange={e => onOwnedChange(group.costItemId, toCount(e.target.value))}
+                    aria-label={t('event-shop-owned-label', '{{name}} の所持数', {
+                      name: label(group),
+                    })}
+                    className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-3.5 text-base md:text-base"
+                  />
+                </span>
+              </label>
               <span>
                 {t('event-shop-selected-cost', '選んだ交換 {{cost}}', {
                   cost: (need?.selectedCost ?? 0).toLocaleString(),
@@ -987,7 +1071,6 @@ const useShopRosterPlan = (
     statusOf && allocation
       ? {
           status: statusOf.of(item),
-          remainder: allocation.remainders.get(index),
           promptUnlimited: unlimitedPrompt.has(index),
         }
       : undefined
@@ -1253,7 +1336,10 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
                   <td className="pl-3 pr-1 py-1.5">
                     <span className="flex items-center gap-1.5">
                       <Icon src={first.icon} />
-                      <span>{first.name || `#${first.itemId}`}</span>
+                      <span>{rowName(first)}</span>
+                      {first.collectionNo !== undefined && (
+                        <AtlasDetailLink name={rowName(first)} collectionNo={first.collectionNo} />
+                      )}
                     </span>
                   </td>
                   <td className="text-right px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
@@ -1274,7 +1360,7 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
 }
 
 /**
- * 保存値を読み終えるまでの交換所の表示。所持数の欄・品目の一覧・通貨ごとの必要量のおおよその高さを持たせ、
+ * 保存値を読み終えるまでの交換所の表示。操作の欄・品目の一覧・通貨ごとの所持数と必要量のおおよその高さを持たせ、
  * 読み終えた時のずれを小さくする。育成計画の素材の読み込み（`loader`）は待たずに置く。
  */
 const ShopLoadingSkeleton: React.FC<{
@@ -1286,9 +1372,8 @@ const ShopLoadingSkeleton: React.FC<{
     <div aria-busy="true" className="flex flex-col gap-4">
       <Skeleton className="h-5 w-64" />
       <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-16 w-full" />
       <Skeleton className="w-full" style={{ height: 32 + rowCount * 41 }} />
-      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-24 w-full" />
     </div>
   </div>
 )
@@ -1370,7 +1455,7 @@ const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[
 /**
  * 交換所の品目の一覧の行と、行ごとの育成計画の表示・回数の入れ方。
  * 行は「欲しい」の行と「いらない」の行に分ける（まとめた行は品目が同じなので最初の品目の設定を使う）。
- * まとめた行は最初の品目の表示を使い、埋まらない不足は行のどの品目のものでも出す。
+ * まとめた行は最初の品目の表示を使う。
  * 行に入れた回数は品目ごとの回数に分け直し、ほかの行の回数は変えない。
  */
 const useShopListRows = (
@@ -1388,10 +1473,8 @@ const useShopListRows = (
     const plans = shopRowEntries(row).map(({ index, item }) => itemPlanOf(item, index))
     const [first] = plans
     if (!first) return undefined
-    const remainder = plans.find(p => p?.remainder !== undefined)?.remainder
     return {
       ...first,
-      ...(remainder !== undefined ? { remainder } : {}),
       promptUnlimited: plans.some(p => p?.promptUnlimited),
     }
   }
@@ -1459,13 +1542,12 @@ export const EventShopList: React.FC<{
     <div className="flex flex-col gap-4">
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
-      <OwnedInputs groups={groups} owned={owned} onOwnedChange={setOwned} />
       <SelectControls
         onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev, unwanted))}
         rosterPlan={rosterPlan}
       />
       <ShopTable list={list} apPrices={apPrices} counts={counts} />
-      <CurrencyNeeds groups={groups} needs={needs} />
+      <CurrencyNeeds groups={groups} needs={needs} owned={owned} onOwnedChange={setOwned} />
       <ShopBonusCard
         state={craftEssences}
         bonus={bonus}
