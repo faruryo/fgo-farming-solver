@@ -167,10 +167,10 @@ const ROW_KEY_ATTR = 'data-shop-row-key'
 const atlasCraftEssenceUrl = (collectionNo: number): string =>
   `https://apps.atlasacademy.io/db/JP/craft-essence/${collectionNo}`
 
-/** 礼装の「詳細」ボタン（高さ 24px）。行き先が Atlas Academy DB で新しいタブで開くことは aria-label と title で伝える。 */
+/** 礼装の「アイテム詳細」ボタン（高さ 24px）。行き先が Atlas Academy DB で新しいタブで開くことは aria-label と title で伝える。 */
 const AtlasDetailLink: React.FC<{ name: string; collectionNo: number }> = ({ name, collectionNo }) => {
   const { t } = useTranslation('events')
-  const label = t('event-shop-atlas-detail-label', '{{name}} の詳細を Atlas Academy DB で開く（新しいタブ）', { name })
+  const label = t('event-shop-atlas-detail-label', '{{name}} のアイテム詳細を Atlas Academy DB で開く（新しいタブ）', { name })
   return (
     <a
       href={atlasCraftEssenceUrl(collectionNo)}
@@ -180,7 +180,7 @@ const AtlasDetailLink: React.FC<{ name: string; collectionNo: number }> = ({ nam
       title={label}
       className={cn(buttonVariants({ variant: 'outline', size: 'xs' }), 'flex-shrink-0')}
     >
-      {t('event-shop-atlas-detail', '詳細')}
+      {t('event-shop-atlas-detail', 'アイテム詳細')}
       <ExternalLink aria-hidden="true" />
     </a>
   )
@@ -191,7 +191,7 @@ const UNWANTED_SUMMARY_ATTR = 'data-shop-unwanted-summary'
 /**
  * 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。
  * 呼び出し側へは、選んだ値とキーボードで選んだか（click の detail が 0）を渡す。
- * 礼装（図鑑番号を持つ品目）は、Atlas Academy DB の礼装のページを開く「詳細」ボタンも出す。
+ * 礼装（図鑑番号を持つ品目）は、Atlas Academy DB の礼装のページを開く「アイテム詳細」ボタンも出す。
  */
 const ItemWantPopover: React.FC<{
   name: string
