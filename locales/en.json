@@ -533,6 +533,8 @@
     "event-shop-status-outside": "Not in plan",
     "event-shop-unlimited-prompt": "No limit: enter a count",
     "event-shop-unwanted-count": "Unwanted items: {{count}}",
+    "event-shop-atlas-detail": "Item details",
+    "event-shop-atlas-detail-label": "Open {{name}} item details on Atlas Academy DB (new tab)",
     "event-shop-roster-empty": "Set servants to train to see which items you have enough of and what you need.",
     "event-shop-roster-link": "Set training targets",
     "event-shop-roster-loading": "Loading your training plan...",

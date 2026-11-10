@@ -243,14 +243,22 @@ interface AtlasSvtEntry {
   name: string
   rarity: number
   face: string
+  type: string
+  collectionNo: number
 }
 
-/** Atlas basic_svt（全件、日本語）を取得して Map<id, {name, rarity, face}> を返す */
+/** Atlas basic_svt（全件、日本語）を取得して Map<id, {name, rarity, face, type, collectionNo}> を返す */
 async function fetchSvtMap(): Promise<SvtMap> {
   const svts = await fetchJson<AtlasSvtEntry[]>(`${origin}/export/${region}/basic_svt.json`)
   const map: SvtMap = new Map()
   for (const svt of svts) {
-    map.set(svt.id, { name: svt.name, rarity: svt.rarity, face: svt.face })
+    map.set(svt.id, {
+      name: svt.name,
+      rarity: svt.rarity,
+      face: svt.face,
+      type: svt.type,
+      collectionNo: svt.collectionNo,
+    })
   }
   return map
 }

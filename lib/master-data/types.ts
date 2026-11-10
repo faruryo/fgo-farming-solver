@@ -105,6 +105,8 @@ export interface EventShopItem {
   kind?: 'svt'
   /** 獲得物のレア度（kind='svt' で取得できたときのみ）。 */
   rarity?: number
+  /** 礼装の図鑑番号（kind='svt' の礼装で取得できたときのみ。旧 KV データには無い）。Atlas Academy DB の礼装ページに使う。 */
+  collectionNo?: number
   /** 1回の購入で得られる個数（Atlas setNum）。 */
   qty: number
   /** 対価となるイベント通貨の Atlas Academy item id。 */
