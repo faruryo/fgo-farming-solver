@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { ExternalLink } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -165,13 +166,32 @@ const ROW_KEY_ATTR = 'data-shop-row-key'
 /** Atlas Academy DB の礼装のページ（図鑑番号で開く）。 */
 const atlasCraftEssenceUrl = (collectionNo: number): string =>
   `https://apps.atlasacademy.io/db/JP/craft-essence/${collectionNo}`
+
+/** 礼装の「詳細」ボタン（高さ 24px）。行き先が Atlas Academy DB で新しいタブで開くことは aria-label と title で伝える。 */
+const AtlasDetailLink: React.FC<{ name: string; collectionNo: number }> = ({ name, collectionNo }) => {
+  const { t } = useTranslation('events')
+  const label = t('event-shop-atlas-detail-label', '{{name}} の詳細を Atlas Academy DB で開く（新しいタブ）', { name })
+  return (
+    <a
+      href={atlasCraftEssenceUrl(collectionNo)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className={cn(buttonVariants({ variant: 'outline', size: 'xs' }), 'flex-shrink-0')}
+    >
+      {t('event-shop-atlas-detail', '詳細')}
+      <ExternalLink aria-hidden="true" />
+    </a>
+  )
+}
 /** 畳んだ「いらない品目」の開閉の見出しに付ける属性。 */
 const UNWANTED_SUMMARY_ATTR = 'data-shop-unwanted-summary'
 
 /**
  * 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。
  * 呼び出し側へは、選んだ値とキーボードで選んだか（click の detail が 0）を渡す。
- * 礼装（図鑑番号を持つ品目）は、Atlas Academy DB の礼装のページへのリンクも出す。
+ * 礼装（図鑑番号を持つ品目）は、Atlas Academy DB の礼装のページを開く「詳細」ボタンも出す。
  */
 const ItemWantPopover: React.FC<{
   name: string
@@ -180,7 +200,6 @@ const ItemWantPopover: React.FC<{
   collectionNo?: number
   onChange: (wanted: boolean, viaKeyboard: boolean) => void
 }> = ({ name, wanted, rowKey, collectionNo, onChange }) => {
-  const { t } = useTranslation('events')
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -196,7 +215,8 @@ const ItemWantPopover: React.FC<{
       >
         {name}
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-2">
+      {/* items-start: 縦並びの既定の stretch でトグルの枠がポップアップ幅まで伸び、「いらない」の右が空くのを防ぐ */}
+      <PopoverContent align="start" className="w-auto items-start p-2">
         <ItemWantToggle
           name={name}
           wanted={wanted}
@@ -205,18 +225,7 @@ const ItemWantPopover: React.FC<{
             setOpen(false)
           }}
         />
-        {collectionNo !== undefined && (
-          <a
-            href={atlasCraftEssenceUrl(collectionNo)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-6 items-center gap-1 self-start text-xs underline"
-            style={{ color: 'var(--text2)' }}
-          >
-            {t('event-shop-atlas-craft-essence-link', 'Atlas Academy で見る')}
-            <ExternalLink size={12} aria-hidden="true" />
-          </a>
-        )}
+        {collectionNo !== undefined && <AtlasDetailLink name={name} collectionNo={collectionNo} />}
       </PopoverContent>
     </Popover>
   )
@@ -1240,22 +1249,6 @@ const ShopBonusCard: React.FC<{
   )
 }
 
-/** 一覧だけの表示の品目名。名前はボタンでないので、礼装は名前そのものを Atlas Academy DB へのリンクにする。 */
-const CatalogItemName: React.FC<{ item: EventShopItem }> = ({ item }) =>
-  item.collectionNo !== undefined ? (
-    <a
-      href={atlasCraftEssenceUrl(item.collectionNo)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 underline underline-offset-2"
-    >
-      {rowName(item)}
-      <ExternalLink size={10} aria-hidden="true" className="flex-shrink-0" />
-    </a>
-  ) : (
-    <span>{rowName(item)}</span>
-  )
-
 /**
  * 交換所の品目を交換所の順の1つの一覧に並べるだけの表示。回数の入力や周回の計算はしない。
  * 複数の通貨で交換できる品目は周回計算の一覧と同じ規則で1行にまとめ、在庫上限の合計と通貨ごとの在庫上限・対価を出す。
@@ -1290,7 +1283,10 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
                   <td className="pl-3 pr-1 py-1.5">
                     <span className="flex items-center gap-1.5">
                       <Icon src={first.icon} />
-                      <CatalogItemName item={first} />
+                      <span className="flex-1">{rowName(first)}</span>
+                      {first.collectionNo !== undefined && (
+                        <AtlasDetailLink name={rowName(first)} collectionNo={first.collectionNo} />
+                      )}
                     </span>
                   </td>
                   <td className="text-right px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
