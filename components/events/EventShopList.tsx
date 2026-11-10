@@ -1283,7 +1283,7 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
                   <td className="pl-3 pr-1 py-1.5">
                     <span className="flex items-center gap-1.5">
                       <Icon src={first.icon} />
-                      <span className="flex-1">{rowName(first)}</span>
+                      <span>{rowName(first)}</span>
                       {first.collectionNo !== undefined && (
                         <AtlasDetailLink name={rowName(first)} collectionNo={first.collectionNo} />
                       )}
