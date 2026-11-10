@@ -3,7 +3,7 @@ import React, { useLayoutEffect } from 'react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { EventShopCatalog, EventShopList } from './EventShopList'
+import { atlasDetailUrl, EventShopCatalog, EventShopList } from './EventShopList'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 import type { RosterNeed } from '../../hooks/use-roster-need'
 import { shopItemKeys } from '../../lib/event-shop-summary'
@@ -592,6 +592,16 @@ describe('EventShopList の1つの一覧', () => {
     )
   })
 
+  it('素材の品目名のポップアップに、Atlas Academy DB のアイテムのページを新しいタブで開く「アイテム詳細」ボタンが出る', () => {
+    renderShop()
+    fireEvent.click(screen.getByRole('button', { name: '鬼炎鬼灯' }))
+    const link = screen.getByRole('link', { name: '鬼炎鬼灯 のアイテム詳細を Atlas Academy DB で開く（新しいタブ）' })
+    expect(link).toHaveTextContent('アイテム詳細')
+    expect(link).toHaveAttribute('href', 'https://apps.atlasacademy.io/db/JP/item/6537')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
   it('対価が通貨で違うまとめた行は効率 10 が1つだけ出て効率 7 の行より前に並び、効率の無い行が無ければ見出しを出さない', () => {
     const event: EventPlannerEvent = {
       ...shopEvent(80611),
@@ -606,6 +616,16 @@ describe('EventShopList の1つの一覧', () => {
     expect(screen.getAllByLabelText('素材6600 の交換回数')).toHaveLength(1)
     expect(screen.queryByText('効率順')).not.toBeInTheDocument()
     expect(screen.queryByText('AP 換算なし')).not.toBeInTheDocument()
+  })
+})
+
+describe('atlasDetailUrl', () => {
+  it('アイテムは item id、礼装は図鑑番号のページで、図鑑番号の無い svt（種火・フォウくん）はページ無し', () => {
+    expect(atlasDetailUrl({ itemId: 6548 })).toBe('https://apps.atlasacademy.io/db/JP/item/6548')
+    expect(atlasDetailUrl({ itemId: 9407590, kind: 'svt', collectionNo: 1969 })).toBe(
+      'https://apps.atlasacademy.io/db/JP/craft-essence/1969',
+    )
+    expect(atlasDetailUrl({ itemId: 9570400, kind: 'svt' })).toBeUndefined()
   })
 })
 
