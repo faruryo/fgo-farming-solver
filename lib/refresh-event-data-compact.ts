@@ -24,8 +24,11 @@ import type {
  */
 export type ItemMap = Map<number, { name: string; icon: string; type: string; individuality?: number[] }>
 
-/** Atlas basic_svt の id → 表示名・レア度・アイコン（face の URL）。 */
-export type SvtMap = Map<number, { name: string; rarity: number; face: string }>
+/**
+ * Atlas basic_svt の id → 表示名・レア度・アイコン（face の URL）・種類（Atlas の type。servantEquip が礼装）・図鑑番号。
+ * type と collectionNo は礼装の詳細ページへのリンクに使う。
+ */
+export type SvtMap = Map<number, { name: string; rarity: number; face: string; type?: string; collectionNo?: number }>
 
 export interface AtlasShopItem {
   purchaseType: string
@@ -85,6 +88,7 @@ export function sortShopByPriority(shop: AtlasShopItem[]): AtlasShopItem[] {
  * AtlasShopItem[] → EventShopItem[] の変換（渡された順のまま）。
  * purchaseType が item（アイテム）と servant（種火・フォウくん・礼装など）で、対価がイベントアイテムのものを取る。
  * servant は kind='svt' にし、名前・レア度・アイコンを svtMap から付ける（無ければ見出しを名前にする）。
+ * 礼装（type が servantEquip で図鑑番号が正）にだけ図鑑番号（collectionNo）を付ける。
  */
 export function compactShop(shop: AtlasShopItem[], itemMap: ItemMap, svtMap?: SvtMap): EventShopItem[] {
   return shop
@@ -112,6 +116,9 @@ export function compactShop(shop: AtlasShopItem[], itemMap: ItemMap, svtMap?: Sv
             name: meta?.name ?? s.name ?? '',
             ...(meta?.face ? { icon: meta.face } : {}),
             ...(meta ? { rarity: meta.rarity } : {}),
+            ...(meta?.type === 'servantEquip' && meta.collectionNo && meta.collectionNo > 0
+              ? { collectionNo: meta.collectionNo }
+              : {}),
             ...costFields,
           }
         })

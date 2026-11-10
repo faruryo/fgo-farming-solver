@@ -556,6 +556,42 @@ describe('EventShopList の1つの一覧', () => {
     expect(savedDangoCounts(event80632())).toEqual([2, 1, 1])
   })
 
+  it('礼装の品目名を押すと、ポップアップに Atlas Academy DB の礼装のページを新しいタブで開く「アイテム詳細」ボタンが出る', () => {
+    const event = event80632()
+    event.shop = event.shop?.map(s => (s.itemId === DANGO ? { ...s, collectionNo: 1234 } : s))
+    renderShop(event)
+
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    const link = screen.getByRole('link', { name: '月より団子 のアイテム詳細を Atlas Academy DB で開く（新しいタブ）' })
+    expect(link).toHaveTextContent('アイテム詳細')
+    expect(link).toHaveAttribute('title', '月より団子 のアイテム詳細を Atlas Academy DB で開く（新しいタブ）')
+    expect(link).toHaveAttribute('href', 'https://apps.atlasacademy.io/db/JP/craft-essence/1234')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('図鑑番号を持たない品目（旧データの礼装）のポップアップにはリンクを出さない', () => {
+    renderShop()
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    expect(screen.getByRole('radio', { name: 'いらない' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Atlas Academy DB/ })).not.toBeInTheDocument()
+  })
+
+  it('「いらない」に畳んだ礼装の品目名のポップアップにもリンクが出る', () => {
+    const event = event80632()
+    event.shop = event.shop?.map(s => (s.itemId === DANGO ? { ...s, collectionNo: 1234 } : s))
+    renderShop(event)
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'いらない' }))
+
+    fireEvent.click(screen.getByRole('button', { name: /いらない品目 1 件/ }))
+    fireEvent.click(screen.getByRole('button', { name: '月より団子' }))
+    expect(screen.getByRole('link', { name: /Atlas Academy DB/ })).toHaveAttribute(
+      'href',
+      'https://apps.atlasacademy.io/db/JP/craft-essence/1234',
+    )
+  })
+
   it('対価が通貨で違うまとめた行は効率 10 が1つだけ出て効率 7 の行より前に並び、効率の無い行が無ければ見出しを出さない', () => {
     const event: EventPlannerEvent = {
       ...shopEvent(80611),
@@ -600,5 +636,21 @@ describe('EventShopCatalog（品目がすべてサーヴァント扱い）', () 
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
     expect(screen.queryByText(/全交換/)).not.toBeInTheDocument()
+  })
+
+  it('図鑑番号を持つ礼装は名前の横に Atlas Academy DB を開く「アイテム詳細」ボタンが出て名前は文字のまま、持たない品目にはボタンを出さない', () => {
+    render(
+      <EventShopCatalog
+        shop={[svt(9770500, '叡智の大火', UDON, 100), { ...svt(9311320, '英霊極点：アルトリア・ペンドラゴン', UDON, 1), collectionNo: 2513 }]}
+      />,
+    )
+    const links = screen.getAllByRole('link')
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAccessibleName('英霊極点：アルトリア・ペンドラゴン のアイテム詳細を Atlas Academy DB で開く（新しいタブ）')
+    expect(links[0]).toHaveTextContent('アイテム詳細')
+    expect(links[0]).toHaveAttribute('href', 'https://apps.atlasacademy.io/db/JP/craft-essence/2513')
+    expect(links[0]).toHaveAttribute('target', '_blank')
+    expect(links[0]).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(screen.getByText('英霊極点：アルトリア・ペンドラゴン').closest('a')).toBeNull()
   })
 })
