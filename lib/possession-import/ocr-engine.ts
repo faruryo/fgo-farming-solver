@@ -3,7 +3,7 @@
  * 動的 import で読み込み、`/material` の初回バンドルには含まれない
  * （design.md Decision 5, tasks.md 3.10）。
  */
-import { OcrLine } from './types'
+import { OcrBox, OcrLine } from './types'
 
 let servicePromise: Promise<import('ppu-paddle-ocr/web').PaddleOcrService> | null = null
 
@@ -35,5 +35,26 @@ export const recognizeCard = async (
   })
   return result.lines.flatMap((line) =>
     line.map((box) => ({ text: box.text, confidence: box.confidence }))
+  )
+}
+
+/**
+ * 画像全体を1回読み、文字・確からしさと画像の上の文字の枠（画像の座標）を返す。
+ * 交換所の画面の取り込みで、枠の位置から行を組み立てるのに使う。
+ */
+export const recognizeWithBoxes = async (
+  canvas: HTMLCanvasElement | OffscreenCanvas
+): Promise<OcrBox[]> => {
+  const service = await getService()
+  const result = await service.recognize(canvas, { noCache: true })
+  return result.lines.flatMap((line) =>
+    line.map(({ text, confidence, box }) => ({
+      text,
+      confidence,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+    }))
   )
 }

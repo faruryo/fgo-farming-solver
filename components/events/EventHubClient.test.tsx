@@ -6,6 +6,7 @@ import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/typ
 import type { RosterNeed } from '../../hooks/use-roster-need'
 import type { MaterialCatalogV1 } from '../../lib/material-catalog'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { shopItemKeys } from '../../lib/event-shop-summary'
 
 type CatalogState = { catalog: MaterialCatalogV1 | null; failed: boolean; reload: () => void }
 
@@ -1642,6 +1643,231 @@ describe('EventHubClient', () => {
       expect(ownedInput('武蔵うどん')).toHaveValue(0)
       expect(ownedInput('江戸むすび')).toHaveValue(120)
       expect(bonusInput('武蔵うどん')).toHaveValue(0)
+    })
+  })
+
+  describe('交換所の残り', () => {
+    const UDON = 94001
+    const MUSUBI = 94002
+    const KAKI = 94003
+    const savedKey = 'events/shopInputs/80632'
+    const fire = shopEntry(10, KAKI, { name: '叡智の業火', costName: '東干し柿', costAmount: 5, limitNum: 100, qty: 1 })
+    const leaf = shopEntry(20, UDON, { name: '巡霊の葉', costName: '武蔵うどん', costAmount: 10, limitNum: 25, qty: 10 })
+    const dangoOf = (costItemId: number, costName: string, limitNum: number) =>
+      shopEntry(30, costItemId, { name: '月より団子', costName, costIcon: `/${costItemId}.png`, costAmount: 100, limitNum, qty: 1 })
+    const dangoUdon = dangoOf(UDON, '武蔵うどん', 2)
+    const dangoMusubi = dangoOf(MUSUBI, '江戸むすび', 1)
+    const dangoKaki = dangoOf(KAKI, '東干し柿', 1)
+    const dango = [dangoUdon, dangoMusubi, dangoKaki]
+    const qp = shopEntry(1, UDON, { name: '10,000 QP', costName: '武蔵うどん', costAmount: 2, limitNum: 0, qty: 10000 })
+    const itemA = shopEntry(40, UDON, { name: '品目A', costName: '武蔵うどん', costAmount: 10, limitNum: 30 })
+    const itemB = shopEntry(41, MUSUBI, { name: '品目B', costName: '江戸むすび', costAmount: 10, limitNum: 10 })
+    const shop = [fire, leaf, ...dango, qp, itemA, itemB]
+    const keys = shopItemKeys(shop)
+    const keyOf = (item: EventShopItem) => keys.at(shop.indexOf(item)) ?? ''
+    const renderShop = () => render(<EventHubClient summary={summary} boxEvent={event({ shop })} features={['shop']} />)
+    const saved = () =>
+      JSON.parse(localStorage.getItem(savedKey) ?? '{}') as {
+        counts?: Record<string, number>
+        owned?: Record<string, number>
+        remaining?: Record<string, number>
+      }
+    const countInput = (name: string) => screen.getByLabelText(`${name} の交換回数`)
+    /** 行の上限の欄の文字（まとめた行は行の上限と通貨ごとの上限が続く）。 */
+    const limitCell = (name: string) => (rowOfItem(name) as HTMLTableRowElement).cells.item(4)?.textContent
+    const clearButton = () => screen.getByRole('button', { name: '残りをまとめて消す' })
+    const openPopover = (name: string) => {
+      const [button] = within(screen.getByRole('table')).getAllByRole('button', { name })
+      if (!button) throw new Error(`no item name button: ${name}`)
+      fireEvent.click(button)
+    }
+    const enter = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } })
+
+    it('開き直しても残る: 保存した残り 80 を上限に使い、全部交換で 80 回になり、上限の欄に残りと在庫上限を出す', () => {
+      localStorage.setItem(savedKey, JSON.stringify({ remaining: { [keyOf(fire)]: 80 } }))
+      const { unmount } = renderShop()
+      expect(limitCell('叡智の業火')).toBe('残り 80 / 上限 100')
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+      expect(countInput('叡智の業火')).toHaveValue(80)
+      expect(countInput('叡智の業火')).toHaveAttribute('max', '80')
+      unmount()
+
+      renderShop()
+      expect(limitCell('叡智の業火')).toBe('残り 80 / 上限 100')
+      expect(countInput('叡智の業火')).toHaveValue(80)
+      // 残りの無い品目は今までどおり在庫上限だけを出す
+      expect(limitCell('巡霊の葉')).toBe('25')
+      expect(limitCell('10,000 QP')).toBe('上限なし')
+    })
+
+    it('まとめた行は通貨ごとの品目の上限の欄に残りを出し、行の上限は効く上限の合計', () => {
+      localStorage.setItem(savedKey, JSON.stringify({ remaining: { [keyOf(dangoUdon)]: 1, [keyOf(dangoMusubi)]: 0 } }))
+      renderShop()
+      expect(limitCell('月より団子')).toBe('2残り 1 / 上限 2残り 0 / 上限 11')
+      fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+      expect(countInput('月より団子')).toHaveValue(2)
+      expect(saved().counts).toMatchObject({ [keyOf(dangoUdon)]: 1, [keyOf(dangoMusubi)]: 0, [keyOf(dangoKaki)]: 1 })
+    })
+
+    it('残りを消すと前の回数に戻る: 交換回数 20 に残り 5 なら 5 と出し、消すと 20 に戻り、所持数は変わらない', () => {
+      localStorage.setItem(
+        savedKey,
+        JSON.stringify({ counts: { [keyOf(itemA)]: 20 }, owned: { [UDON]: 300 }, remaining: { [keyOf(itemA)]: 5 } }),
+      )
+      renderShop()
+      expect(countInput('品目A')).toHaveValue(5)
+      expect(within(cardOf('武蔵うどん')).getByText('選んだ交換 50')).toBeInTheDocument()
+
+      fireEvent.click(clearButton())
+      expect(countInput('品目A')).toHaveValue(20)
+      expect(limitCell('品目A')).toBe('30')
+      expect(saved()).toMatchObject({ counts: { [keyOf(itemA)]: 20 }, owned: { [UDON]: 300 }, remaining: {} })
+      expect(screen.getByLabelText('武蔵うどん の所持数')).toHaveValue(300)
+      expect(clearButton()).toBeDisabled()
+    })
+
+    it('別の品目を変えても回数を書き換えない: 品目 B を変えたあとも保存値の品目 A は 20 で、残りを消すと 20 と出す', () => {
+      localStorage.setItem(savedKey, JSON.stringify({ counts: { [keyOf(itemA)]: 20 }, remaining: { [keyOf(itemA)]: 5 } }))
+      renderShop()
+      enter(countInput('品目B'), '3')
+      expect(saved().counts).toMatchObject({ [keyOf(itemA)]: 20, [keyOf(itemB)]: 3 })
+      expect(countInput('品目A')).toHaveValue(5)
+
+      fireEvent.click(clearButton())
+      expect(countInput('品目A')).toHaveValue(20)
+    })
+
+    it('残りを消す: 巡霊の葉の残り 10 を消すと上限は 25 に戻り、交換回数と所持数は変わらない', () => {
+      localStorage.setItem(
+        savedKey,
+        JSON.stringify({ counts: { [keyOf(leaf)]: 7 }, owned: { [UDON]: 50 }, remaining: { [keyOf(leaf)]: 10 } }),
+      )
+      renderShop()
+      expect(limitCell('巡霊の葉')).toBe('残り 10 / 上限 25')
+      fireEvent.click(clearButton())
+      expect(limitCell('巡霊の葉')).toBe('25')
+      expect(countInput('巡霊の葉')).toHaveValue(7)
+      expect(screen.getByLabelText('武蔵うどん の所持数')).toHaveValue(50)
+    })
+
+    it('残りが無いときは残りを消す操作を押せない。消す操作は文字の前にアイコンを持つ', () => {
+      renderShop()
+      expect(clearButton()).toBeDisabled()
+      expect(clearButton().querySelector('svg.lucide-eraser')).not.toBeNull()
+    })
+
+    describe('品目名のポップアップの残りの入力', () => {
+      it('残りを手で入れる: 叡智の業火に 30 を入れると上限は 30 になり、ポップアップは開いたまま', () => {
+        renderShop()
+        openPopover('叡智の業火')
+        const input = screen.getByLabelText('叡智の業火 の残り')
+        expect(input).toHaveValue(null)
+        enter(input, '30')
+        expect(screen.getByLabelText('叡智の業火 の残り')).toBeInTheDocument()
+        expect(screen.getByRole('radiogroup', { name: '叡智の業火 は欲しいか' })).toBeInTheDocument()
+        expect(limitCell('叡智の業火')).toBe('残り 30 / 上限 100')
+        expect(countInput('叡智の業火')).toHaveAttribute('max', '30')
+        expect(saved().remaining).toEqual({ [keyOf(fire)]: 30 })
+        // 残りを変えても交換回数は書かない
+        expect(saved().counts ?? {}).toEqual({})
+      })
+
+      it('読み取った残りを直す: 80 を 60 に直すと上限は 60 になる', () => {
+        localStorage.setItem(savedKey, JSON.stringify({ remaining: { [keyOf(fire)]: 80 } }))
+        renderShop()
+        openPopover('叡智の業火')
+        expect(screen.getByLabelText('叡智の業火 の残り')).toHaveValue(80)
+        enter(screen.getByLabelText('叡智の業火 の残り'), '60')
+        expect(limitCell('叡智の業火')).toBe('残り 60 / 上限 100')
+      })
+
+      it('残りを空にする: 残りが無くなり上限は在庫上限の 100 に戻る', () => {
+        localStorage.setItem(savedKey, JSON.stringify({ remaining: { [keyOf(fire)]: 80 } }))
+        renderShop()
+        openPopover('叡智の業火')
+        enter(screen.getByLabelText('叡智の業火 の残り'), '')
+        expect(limitCell('叡智の業火')).toBe('100')
+        expect(saved().remaining).toEqual({})
+      })
+
+      it('在庫上限を超える値: 巡霊の葉（在庫上限 25）に 40 を入れると残りは 25、小数は切り捨てる', () => {
+        renderShop()
+        openPopover('巡霊の葉')
+        const input = screen.getByLabelText('巡霊の葉 の残り')
+        enter(input, '40')
+        expect(saved().remaining).toEqual({ [keyOf(leaf)]: 25 })
+        fireEvent.blur(input)
+        expect(screen.getByLabelText('巡霊の葉 の残り')).toHaveValue(25)
+        enter(screen.getByLabelText('巡霊の葉 の残り'), '4.7')
+        expect(saved().remaining).toEqual({ [keyOf(leaf)]: 4 })
+      })
+
+      it('負の数を入れても残りにならない', () => {
+        renderShop()
+        openPopover('叡智の業火')
+        enter(screen.getByLabelText('叡智の業火 の残り'), '-1')
+        expect(limitCell('叡智の業火')).toBe('100')
+        expect(saved().remaining ?? {}).toEqual({})
+      })
+
+      it('まとめた行の残り: 通貨ごとの入力が並び、江戸むすびに 0 を入れると江戸むすびの月より団子だけが残り 0 になる', () => {
+        renderShop()
+        openPopover('月より団子')
+        const labels = ['武蔵うどん', '江戸むすび', '東干し柿'].map(currency =>
+          screen.getByLabelText(`月より団子（${currency}）の残り`),
+        )
+        expect(labels).toHaveLength(3)
+        enter(screen.getByLabelText('月より団子（江戸むすび）の残り'), '0')
+        expect(saved().remaining).toEqual({ [keyOf(dangoMusubi)]: 0 })
+        // 行の上限 3（2 + 0 + 1）と、通貨ごとの 2・残り 0 / 上限 1・1
+        expect(limitCell('月より団子')).toBe('32残り 0 / 上限 11')
+      })
+
+      it('上限の無い品目: 10,000 QP のポップアップには残りの入力を出さない', () => {
+        renderShop()
+        openPopover('10,000 QP')
+        expect(screen.getByRole('radiogroup', { name: '10,000 QP は欲しいか' })).toBeInTheDocument()
+        expect(screen.queryByLabelText('10,000 QP の残り')).not.toBeInTheDocument()
+      })
+
+      it('手で入れた残りも残る: 30 を入れて開き直すと、入力は 30 で上限も 30 のまま', () => {
+        const { unmount } = renderShop()
+        openPopover('叡智の業火')
+        enter(screen.getByLabelText('叡智の業火 の残り'), '30')
+        unmount()
+
+        renderShop()
+        expect(limitCell('叡智の業火')).toBe('残り 30 / 上限 100')
+        openPopover('叡智の業火')
+        expect(screen.getByLabelText('叡智の業火 の残り')).toHaveValue(30)
+      })
+
+      it('手で入れた残りも消す: 30 を入れたあと残りを消すと上限は 100 に戻る', () => {
+        renderShop()
+        openPopover('叡智の業火')
+        enter(screen.getByLabelText('叡智の業火 の残り'), '30')
+        fireEvent.keyDown(screen.getByLabelText('叡智の業火 の残り'), { key: 'Escape' })
+        fireEvent.click(clearButton())
+        expect(limitCell('叡智の業火')).toBe('100')
+      })
+
+      it('「欲しい／いらない」を選ぶと今までどおり閉じ、畳んだ「いらない品目」のポップアップにも残りの入力を出す', () => {
+        renderShop()
+        openPopover('叡智の業火')
+        enter(screen.getByLabelText('叡智の業火 の残り'), '30')
+        fireEvent.click(
+          within(screen.getByRole('radiogroup', { name: '叡智の業火 は欲しいか' })).getByRole('radio', { name: 'いらない' }),
+        )
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+
+        const summaryButton = unwantedSummary()
+        if (summaryButton) fireEvent.click(summaryButton)
+        fireEvent.click(within(screen.getByTestId('shop-unwanted-items')).getByRole('button', { name: '叡智の業火' }))
+        const input = screen.getByLabelText('叡智の業火 の残り')
+        expect(input).toHaveValue(30)
+        enter(input, '12')
+        expect(saved().remaining).toEqual({ [keyOf(fire)]: 12 })
+      })
     })
   })
 

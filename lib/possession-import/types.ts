@@ -16,6 +16,14 @@ export type OcrLine = {
   confidence: number
 }
 
+/** OCRが読み取った文字と、画像の上の文字の枠（画像座標系のピクセル矩形） */
+export type OcrBox = OcrLine & {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 /** 1カードのOCR結果から抽出した候補 */
 export type CardCandidate = {
   /** どの投稿画像由来か（0始まりのインデックス） */

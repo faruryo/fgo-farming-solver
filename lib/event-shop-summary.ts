@@ -11,22 +11,49 @@ import { itemWantKey } from './item-want-setting'
 export const shopWantedKey = (item: Pick<EventShopItem, 'itemId' | 'kind'>): string =>
   item.kind === 'svt' ? `svt:${item.itemId}` : itemWantKey(item.itemId)
 
+/** 品目ごとの交換回数。キーは交換所の配列の添字。 */
+export type ShopExchangeCounts = ReadonlyMap<number, number>
+
+/** 品目ごとの残り（ゲームの交換所の画面の「残り N回」。0 は売り切れ）。キーは交換所の配列の添字で、無い品目は残りが無い。 */
+export type ShopRemaining = ReadonlyMap<number, number>
+
+const NO_REMAINING: ShopRemaining = new Map()
+
+/**
+ * 品目の効く上限。在庫上限の無い品目は undefined（上限なし）、残りのある品目は在庫上限と残りの小さいほう（0 を含む）。
+ * 在庫上限 0 は上限なしだが残り 0 は売り切れなので、上限なしと回数を同じ数の 0 で表さない。
+ */
+export const effectiveLimit = (item: Pick<EventShopItem, 'limitNum'>, remaining?: number): number | undefined => {
+  if (item.limitNum <= 0) return undefined
+  return remaining === undefined ? item.limitNum : Math.max(0, Math.min(item.limitNum, remaining))
+}
+
+/** 交換所の配列の添字 `index` の品目の効く上限。 */
+const effectiveLimitAt = (
+  item: Pick<EventShopItem, 'limitNum'>,
+  index: number,
+  remaining: ShopRemaining,
+): number | undefined => effectiveLimit(item, remaining.get(index))
+
 export interface ShopCurrencyGroup {
   costItemId: number
   /** 対価の通貨の表示名。どのエントリーにも無ければ undefined（旧 KV データ）。 */
   costName?: string
   costIcon?: string
-  /** 在庫上限のある品目をすべて交換するのに要る通貨の合計（`costAmount × limitNum` の和）。 */
+  /** 在庫上限のある品目をすべて交換するのに要る通貨の合計（`costAmount × 効く上限` の和）。 */
   totalCost: number
-  /** 在庫上限の無い（`limitNum` が 0 の）品目の数。合計には含めない。 */
+  /** 在庫上限の無い（`limitNum` が 0 の）品目の数。合計には含めない。売り切れの品目は数えない。 */
   unlimitedCount: number
   items: EventShopItem[]
 }
 
-/** 通貨は最初に現れた順、品目は元の順で返す。 */
-export const groupShopByCurrency = (shop: EventShopItem[]): ShopCurrencyGroup[] => {
+/** 通貨は最初に現れた順、品目は元の順で返す。残りのある品目は効く上限で合計する。 */
+export const groupShopByCurrency = (
+  shop: EventShopItem[],
+  remaining: ShopRemaining = NO_REMAINING,
+): ShopCurrencyGroup[] => {
   const groups = new Map<number, ShopCurrencyGroup>()
-  for (const item of shop) {
+  shop.forEach((item, index) => {
     let group = groups.get(item.costItemId)
     if (!group) {
       group = { costItemId: item.costItemId, totalCost: 0, unlimitedCount: 0, items: [] }
@@ -34,23 +61,28 @@ export const groupShopByCurrency = (shop: EventShopItem[]): ShopCurrencyGroup[] 
     }
     group.costName ??= item.costName
     group.costIcon ??= item.costIcon
-    if (item.limitNum > 0) group.totalCost += item.costAmount * item.limitNum
+    const limit = effectiveLimitAt(item, index, remaining)
+    if (limit !== undefined) group.totalCost += item.costAmount * limit
     else group.unlimitedCount += 1
     group.items.push(item)
-  }
+  })
   return [...groups.values()]
 }
 
-/** 品目ごとの交換回数。キーは交換所の配列の添字。 */
-export type ShopExchangeCounts = ReadonlyMap<number, number>
-
 const NO_KEYS: ReadonlySet<string> = new Set()
 
-/** 入れた回数を0以上の整数にし、在庫上限のある品目は上限で頭打ちにする。 */
-export const clampExchangeCount = (item: Pick<EventShopItem, 'limitNum'>, count: number): number => {
+/** 入れた回数を0以上の整数にし、上限（undefined は上限なし）で頭打ちにする。 */
+const clampToLimit = (count: number, limit: number | undefined): number => {
   const n = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0
-  return item.limitNum > 0 ? Math.min(n, item.limitNum) : n
+  return limit === undefined ? n : Math.min(n, limit)
 }
+
+/**
+ * 入れた回数を0以上の整数にし、在庫上限のある品目は上限で頭打ちにする。
+ * `remaining` を渡すと効く上限（在庫上限と残りの小さいほう）で頭打ちにする。
+ */
+export const clampExchangeCount = (item: Pick<EventShopItem, 'limitNum'>, count: number, remaining?: number): number =>
+  clampToLimit(count, effectiveLimit(item, remaining))
 
 export interface ShopCurrencyNeed {
   costItemId: number
@@ -65,10 +97,11 @@ export const computeShopCurrencyNeeds = (
   shop: EventShopItem[],
   counts: ShopExchangeCounts,
   owned: ReadonlyMap<number, number>,
+  remaining: ShopRemaining = NO_REMAINING,
 ): ShopCurrencyNeed[] => {
   const costs = new Map<number, number>()
   shop.forEach((item, index) => {
-    const count = clampExchangeCount(item, counts.get(index) ?? 0)
+    const count = clampExchangeCount(item, counts.get(index) ?? 0, remaining.get(index))
     costs.set(item.costItemId, (costs.get(item.costItemId) ?? 0) + item.costAmount * count)
   })
   return [...costs].map(([costItemId, selectedCost]) => ({
@@ -79,7 +112,7 @@ export const computeShopCurrencyNeeds = (
 }
 
 /**
- * その通貨で在庫上限のある「欲しい」の品目をすべて上限の回数にした回数を返す。
+ * その通貨で在庫上限のある「欲しい」の品目をすべて効く上限の回数にした回数を返す（売り切れの品目は 0）。
  * 上限の無い品目と「いらない」の品目（`unwanted` に `shopWantedKey` が入る品目）は変えない。
  */
 export const selectAllUpToLimit = (
@@ -87,25 +120,28 @@ export const selectAllUpToLimit = (
   counts: ShopExchangeCounts,
   costItemId: number,
   unwanted: ReadonlySet<string> = NO_KEYS,
+  remaining: ShopRemaining = NO_REMAINING,
 ): Map<number, number> => {
   const next = new Map(counts)
   shop.forEach((item, index) => {
-    if (item.costItemId === costItemId && item.limitNum > 0 && !unwanted.has(shopWantedKey(item))) {
-      next.set(index, item.limitNum)
+    const limit = effectiveLimitAt(item, index, remaining)
+    if (item.costItemId === costItemId && limit !== undefined && !unwanted.has(shopWantedKey(item))) {
+      next.set(index, limit)
     }
   })
   return next
 }
 
-/** 交換所のすべての通貨で、在庫上限のある「欲しい」の品目をすべて上限の回数にした回数を返す。上限の無い品目と「いらない」の品目は変えない。 */
+/** 交換所のすべての通貨で、在庫上限のある「欲しい」の品目をすべて効く上限の回数にした回数を返す。上限の無い品目と「いらない」の品目は変えない。 */
 export const selectAllCurrenciesUpToLimit = (
   shop: EventShopItem[],
   counts: ShopExchangeCounts,
   unwanted: ReadonlySet<string> = NO_KEYS,
+  remaining: ShopRemaining = NO_REMAINING,
 ): Map<number, number> => {
   let next = new Map(counts)
   for (const costItemId of new Set(shop.map(item => item.costItemId))) {
-    next = selectAllUpToLimit(shop, next, costItemId, unwanted)
+    next = selectAllUpToLimit(shop, next, costItemId, unwanted, remaining)
   }
   return next
 }
@@ -172,30 +208,41 @@ export const shopRowEntries = (row: ShopListRow): { index: number; item: EventSh
 
 /**
  * 行に入れた回数を、行の品目ごとの交換回数に分ける（キーは交換所の配列の添字）。
- * 回数は 0 以上の整数にし、行の在庫上限の合計で頭打ちにする。品目を交換所の順に見て、前の品目から在庫上限まで埋める。
+ * 回数は 0 以上の整数にし、行の効く上限の合計で頭打ちにする。品目を交換所の順に見て、前の品目から効く上限まで埋める。
  * 在庫上限の無い品目（まとめない行）は入れた回数をそのまま使う。
  */
-export const splitRowCount = (row: ShopListRow, count: number): Map<number, number> => {
+export const splitRowCount = (
+  row: ShopListRow,
+  count: number,
+  remaining: ShopRemaining = NO_REMAINING,
+): Map<number, number> => {
   const result = new Map<number, number>()
   const entries = shopRowEntries(row)
   const [single] = entries
   if (entries.length === 1 && single) {
-    result.set(single.index, clampExchangeCount(single.item, count))
+    result.set(single.index, clampExchangeCount(single.item, count, remaining.get(single.index)))
     return result
   }
-  const total = entries.reduce((acc, { item }) => acc + Math.max(0, item.limitNum), 0)
-  let left = clampExchangeCount({ limitNum: total }, count)
-  for (const { index, item } of entries) {
-    const n = Math.min(left, Math.max(0, item.limitNum))
+  const limited = entries.map(({ index, item }) => ({ index, limit: effectiveLimitAt(item, index, remaining) ?? 0 }))
+  let left = clampToLimit(count, limited.reduce((acc, { limit }) => acc + limit, 0))
+  for (const { index, limit } of limited) {
+    const n = Math.min(left, limit)
     result.set(index, n)
     left -= n
   }
   return result
 }
 
-/** 行の在庫上限の合計。在庫上限の無い品目を含む行は 0（上限なし）。 */
-export const rowLimit = (row: ShopListRow): number =>
-  row.items.every(item => item.limitNum > 0) ? row.items.reduce((acc, item) => acc + item.limitNum, 0) : 0
+/** 行の効く上限の合計。在庫上限の無い品目を含む行は undefined（上限なし）。品目がすべて売り切れの行は 0。 */
+export const rowLimit = (row: ShopListRow, remaining: ShopRemaining = NO_REMAINING): number | undefined => {
+  let total = 0
+  for (const { index, item } of shopRowEntries(row)) {
+    const limit = effectiveLimitAt(item, index, remaining)
+    if (limit === undefined) return undefined
+    total += limit
+  }
+  return total
+}
 
 export interface ShopRowCountPart {
   index: number
@@ -209,13 +256,14 @@ export interface ShopRowCountPart {
 export const rowCountOf = (
   row: ShopListRow,
   counts: ShopExchangeCounts,
+  remaining: ShopRemaining = NO_REMAINING,
 ): { count: number; parts: ShopRowCountPart[] } => {
   const parts = shopRowEntries(row).map(({ index, item }) => ({
     index,
     costItemId: item.costItemId,
     ...(item.costName !== undefined ? { costName: item.costName } : {}),
     ...(item.costIcon !== undefined ? { costIcon: item.costIcon } : {}),
-    count: clampExchangeCount(item, counts.get(index) ?? 0),
+    count: clampExchangeCount(item, counts.get(index) ?? 0, remaining.get(index)),
   }))
   return { count: parts.reduce((acc, p) => acc + p.count, 0), parts: parts.filter(p => p.count > 0) }
 }
@@ -346,18 +394,18 @@ export interface ShortfallAllocation {
   unlimitedWanted: Set<number>
 }
 
-/** 不足のある素材の品目の交換回数。残りの不足 `left` を1回の個数で割って切り上げ、在庫上限で打ち切る。 */
-const shortCount = (item: EventShopItem, left: number): number => {
+/** 不足のある素材の品目の交換回数。残りの不足 `left` を1回の個数で割って切り上げ、効く上限（undefined は上限なし）で打ち切る。 */
+const shortCount = (item: EventShopItem, left: number, limit: number | undefined): number => {
   if (item.qty <= 0 || left <= 0) return 0
-  const needed = Math.ceil(left / item.qty)
-  return item.limitNum > 0 ? Math.min(needed, item.limitNum) : needed
+  return clampToLimit(Math.ceil(left / item.qty), limit)
 }
 
 /**
  * 優先素材の回数を出す。「欲しい」の品目だけを置き換え、「いらない」の品目（`unwanted` に `shopWantedKey` が入る品目）は
  * `counts`（今の回数）のまま返す。
- * 不足は交換所の元の順に「欲しい」の品目へ割り当て、在庫上限で打ち切る。1回の個数が 0 以下の品目は割り当てない。
- * 状態が「計画の対象外」の品目は、在庫上限があれば在庫上限、無ければ 0 にして回数の手入力を促す。
+ * 不足は交換所の元の順に「欲しい」の品目へ割り当て、効く上限（`itemRemaining` に残りのある品目は在庫上限と残りの小さいほう）で
+ * 打ち切る。1回の個数が 0 以下の品目は割り当てない。
+ * 状態が「計画の対象外」の品目は、在庫上限があれば効く上限、無ければ 0 にして回数の手入力を促す。
  * 足りている・使わない・状態なし（QP・見分けられない品目）の品目は 0。
  */
 export const allocateShortfallOnly = (
@@ -366,6 +414,7 @@ export const allocateShortfallOnly = (
   statusOf: (item: EventShopItem) => ShopItemStatus | undefined,
   unwanted: ReadonlySet<string>,
   counts: ShopExchangeCounts = new Map(),
+  itemRemaining: ShopRemaining = NO_REMAINING,
 ): ShortfallAllocation => {
   const next = new Map<number, number>()
   const remaining = new Map<number, number>()
@@ -384,14 +433,16 @@ export const allocateShortfallOnly = (
     }
     next.set(index, 0)
     if (!status) return
+    const limit = effectiveLimitAt(item, index, itemRemaining)
     if (status.kind === 'short') {
       lastIndex.set(item.itemId, index)
       const left = remaining.get(item.itemId) ?? shortfall.get(item.itemId) ?? 0
-      const count = shortCount(item, left)
+      const count = shortCount(item, left, limit)
       next.set(index, count)
       remaining.set(item.itemId, Math.max(0, left - count * item.qty))
     } else if (status.kind === 'outside' && item.qty > 0) {
-      if (item.limitNum > 0) next.set(index, item.limitNum)
+      // 売り切れ（効く上限 0）の品目は 0 回で、上限なしの品目として数えない。
+      if (limit !== undefined) next.set(index, limit)
       else unlimitedWanted.add(index)
     }
   })
@@ -458,7 +509,54 @@ export const countsFromItemKeys = (
 }
 
 /**
+ * 品目キーの残りの表を、今の交換所の添字のキーの残りにする（交換回数と同じ読み替え）。今の交換所に無い品目キーは捨てる。
+ * 残りは保存値の交換回数と違い頭打ちにしない（在庫上限との小さいほうは効く上限で取る）。
+ */
+export const remainingFromItemKeys = (
+  shop: EventShopItem[],
+  saved: Readonly<Record<string, number>>,
+): Map<number, number> => {
+  const remaining = new Map<number, number>()
+  const savedByKey = new Map(Object.entries(saved))
+  shopItemKeys(shop).forEach((key, index) => {
+    const value = savedByKey.get(key)
+    if (value !== undefined) remaining.set(index, value)
+  })
+  return remaining
+}
+
+/**
+ * 品目キーの残りの表のうち、`values`（交換所の配列の添字 → 残り。undefined は残りを除く）の品目だけを書き換えた表を返す。
+ * ほかの品目の残り（今の交換所に無い品目キーを含む）はそのまま残す。
+ */
+export const withRemainingValues = (
+  shop: EventShopItem[],
+  saved: Readonly<Record<string, number>>,
+  values: ReadonlyMap<number, number | undefined>,
+): Record<string, number> => {
+  const keys = shopItemKeys(shop)
+  const next = new Map(Object.entries(saved))
+  for (const [index, value] of values) {
+    const key = keys.at(index)
+    if (key === undefined) continue
+    if (value === undefined) next.delete(key)
+    else next.set(key, value)
+  }
+  return Object.fromEntries(next)
+}
+
+/**
+ * 利用者が入れた残りを、保存する値にする。小数は切り捨て、在庫上限を超える値は在庫上限にする。
+ * 有限の数でない値・負の数・在庫上限の無い品目は残りにしない（undefined）。
+ */
+export const normalizeRemainingInput = (item: Pick<EventShopItem, 'limitNum'>, value: number): number | undefined => {
+  if (!Number.isFinite(value) || value < 0 || item.limitNum <= 0) return undefined
+  return Math.min(Math.floor(value), item.limitNum)
+}
+
+/**
  * 交換所の周回計算でイベントごとに保存する入力。交換回数は品目キー、所持数とボーナスは通貨・品目の番号がキー。
+ * `remaining` は交換回数と同じ品目キーの残り（表に無い品目は残りが無い。0 は売り切れ）。
  * `rarity` はボーナス礼装の ☆ がキーで、凸・無凸の +N と所持枚数の表。
  * `friendRarity` はフレンドの礼装の ☆（`null` は「なし」、無ければ未選択）、`selectedTotal` は比較の表で選んだ行の合計枚数。
  */
@@ -467,6 +565,7 @@ export interface ShopSavedInputs {
   owned: Record<string, number>
   bonus: Record<string, number>
   rarity: Record<string, Record<string, number>>
+  remaining: Record<string, number>
   friendRarity?: number | null
   selectedTotal?: number
 }
@@ -483,10 +582,20 @@ const countTable = (value: unknown): Record<string, number> => {
   )
 }
 
+/** 残りの表。0 は売り切れなので、有限の数でない値と負の数は 0 にせず表から除く。小数は切り捨てる。 */
+const remainingTable = (value: unknown): Record<string, number> => {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, n]) =>
+      typeof n === 'number' && Number.isFinite(n) && n >= 0 ? [[key, Math.floor(n)]] : [],
+    ),
+  )
+}
+
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0
 
 /**
- * 保存値を読む。表でなければ空、有限の数でない値は捨て、小数は切り捨て、負の数は 0 にする。
+ * 保存値を読む。表でなければ空、有限の数でない値は捨て、小数は切り捨て、負の数は 0 にする（残りの負の数は捨てる）。
  * フレンドの ☆ は `null` か 0 以上の整数、選んだ合計枚数は 0 以上の整数のときだけ使い、それ以外は未選択として読む。
  */
 export const readShopSavedInputs = (value: unknown): ShopSavedInputs => {
@@ -499,6 +608,7 @@ export const readShopSavedInputs = (value: unknown): ShopSavedInputs => {
     owned: countTable(record.owned),
     bonus: countTable(record.bonus),
     rarity,
+    remaining: remainingTable(record.remaining),
     ...(record.friendRarity === null || isCount(record.friendRarity) ? { friendRarity: record.friendRarity } : {}),
     ...(isCount(record.selectedTotal) ? { selectedTotal: record.selectedTotal } : {}),
   }
