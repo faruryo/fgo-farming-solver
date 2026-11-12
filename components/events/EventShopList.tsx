@@ -161,17 +161,24 @@ interface RowPlan {
 
 /** 品目名のボタンに付ける、行の key（交換所の配列の添字の先頭）の属性。切り替えのあとのフォーカスの移し先を探す。 */
 const ROW_KEY_ATTR = 'data-shop-row-key'
-/** Atlas Academy DB の礼装のページ（図鑑番号で開く）。 */
-const atlasCraftEssenceUrl = (collectionNo: number): string =>
-  `https://apps.atlasacademy.io/db/JP/craft-essence/${collectionNo}`
+/**
+ * 品目の Atlas Academy DB のページ。アイテムは item id で、礼装は図鑑番号で開く。
+ * 種火・フォウくんなど礼装でない svt には品目のページが無い（敵の表示しか無い）ので、図鑑番号の無い svt は undefined。
+ */
+export const atlasDetailUrl = (item: Pick<EventShopItem, 'itemId' | 'kind' | 'collectionNo'>): string | undefined => {
+  if (item.kind !== 'svt') return `https://apps.atlasacademy.io/db/JP/item/${item.itemId}`
+  return item.collectionNo === undefined
+    ? undefined
+    : `https://apps.atlasacademy.io/db/JP/craft-essence/${item.collectionNo}`
+}
 
-/** 礼装の「アイテム詳細」ボタン（高さ 24px）。行き先が Atlas Academy DB で新しいタブで開くことは aria-label と title で伝える。 */
-const AtlasDetailLink: React.FC<{ name: string; collectionNo: number }> = ({ name, collectionNo }) => {
+/** 品目の「アイテム詳細」ボタン（高さ 24px）。行き先が Atlas Academy DB で新しいタブで開くことは aria-label と title で伝える。 */
+const AtlasDetailLink: React.FC<{ name: string; href: string }> = ({ name, href }) => {
   const { t } = useTranslation('events')
   const label = t('event-shop-atlas-detail-label', '{{name}} のアイテム詳細を Atlas Academy DB で開く（新しいタブ）', { name })
   return (
     <a
-      href={atlasCraftEssenceUrl(collectionNo)}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
@@ -189,15 +196,15 @@ const UNWANTED_SUMMARY_ATTR = 'data-shop-unwanted-summary'
 /**
  * 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。
  * 呼び出し側へは、選んだ値とキーボードで選んだか（click の detail が 0）を渡す。
- * 礼装（図鑑番号を持つ品目）は、Atlas Academy DB の礼装のページを開く「アイテム詳細」ボタンも出す。
+ * Atlas Academy DB にページがある品目（detailUrl を渡したもの）は、そのページを開く「アイテム詳細」ボタンも出す。
  */
 const ItemWantPopover: React.FC<{
   name: string
   wanted: boolean
   rowKey: number
-  collectionNo?: number
+  detailUrl?: string
   onChange: (wanted: boolean, viaKeyboard: boolean) => void
-}> = ({ name, wanted, rowKey, collectionNo, onChange }) => {
+}> = ({ name, wanted, rowKey, detailUrl, onChange }) => {
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -223,7 +230,7 @@ const ItemWantPopover: React.FC<{
             setOpen(false)
           }}
         />
-        {collectionNo !== undefined && <AtlasDetailLink name={name} collectionNo={collectionNo} />}
+        {detailUrl !== undefined && <AtlasDetailLink name={name} href={detailUrl} />}
       </PopoverContent>
     </Popover>
   )
@@ -315,7 +322,7 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
             name={name}
             wanted
             rowKey={row.indices[0]}
-            collectionNo={first.collectionNo}
+            detailUrl={atlasDetailUrl(first)}
             onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
           />
         </span>
@@ -481,7 +488,7 @@ const UnwantedRows: React.FC<{
                   name={rowName(first)}
                   wanted={false}
                   rowKey={row.indices[0]}
-                  collectionNo={first.collectionNo}
+                  detailUrl={atlasDetailUrl(first)}
                   onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
                 />
               </li>
@@ -1325,6 +1332,7 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
             {rows.map(row => {
               const [first] = row.items
               if (!first) return null
+              const detailUrl = atlasDetailUrl(first)
               return (
                 <tr
                   key={row.indices[0]}
@@ -1337,9 +1345,7 @@ export const EventShopCatalog: React.FC<{ shop: EventShopItem[] }> = ({ shop }) 
                     <span className="flex items-center gap-1.5">
                       <Icon src={first.icon} />
                       <span>{rowName(first)}</span>
-                      {first.collectionNo !== undefined && (
-                        <AtlasDetailLink name={rowName(first)} collectionNo={first.collectionNo} />
-                      )}
+                      {detailUrl !== undefined && <AtlasDetailLink name={rowName(first)} href={detailUrl} />}
                     </span>
                   </td>
                   <td className="text-right px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
