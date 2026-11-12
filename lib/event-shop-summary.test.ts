@@ -9,7 +9,11 @@ import {
   computeShopCurrencyNeeds,
   countsFromItemKeys,
   countsToItemKeys,
+  effectiveLimit,
+  normalizeRemainingInput,
   pickIdTable,
+  remainingFromItemKeys,
+  withRemainingValues,
   readShopSavedInputs,
   shopItemKeys,
   formatEfficiency,
@@ -304,9 +308,9 @@ describe('splitRowCount と rowCountOf', () => {
     expect(parts.map(p => [p.costItemId, p.count])).toEqual([[UDON, 2]])
   })
 
-  it('rowLimit はまとめた行で在庫上限の合計、上限の無い品目の行で 0', () => {
+  it('rowLimit はまとめた行で在庫上限の合計、上限の無い品目の行で undefined（上限なし）', () => {
     expect(rowLimit(dango)).toBe(4)
-    expect(rowLimit(rowAt([entry(1, UDON, 10, 0)], 0))).toBe(0)
+    expect(rowLimit(rowAt([entry(1, UDON, 10, 0)], 0))).toBeUndefined()
   })
 })
 
@@ -688,7 +692,7 @@ describe('交換回数の品目キー', () => {
 })
 
 describe('readShopSavedInputs', () => {
-  const empty = { counts: {}, owned: {}, bonus: {}, rarity: {} }
+  const empty = { counts: {}, owned: {}, bonus: {}, rarity: {}, remaining: {} }
 
   it('保存値全体が表でなければ空の3つの表として読む', () => {
     for (const value of [null, 'abc', 3, [1, 2], undefined]) expect(readShopSavedInputs(value)).toEqual(empty)
@@ -701,7 +705,7 @@ describe('readShopSavedInputs', () => {
         owned: { 10: -5, 11: 120, 12: Number.POSITIVE_INFINITY, 13: null },
         bonus: [2],
       }),
-    ).toEqual({ counts: { 'item:2:1:10:20:0': 2 }, owned: { 10: 0, 11: 120 }, bonus: {}, rarity: {} })
+    ).toEqual({ counts: { 'item:2:1:10:20:0': 2 }, owned: { 10: 0, 11: 120 }, bonus: {}, rarity: {}, remaining: {} })
   })
 
   it('☆ ごとの表は同じ規則で直し、フレンドの ☆ と選んだ合計枚数は 0 以上の整数（フレンドは null も）だけ使う', () => {
@@ -724,5 +728,192 @@ describe('readShopSavedInputs', () => {
 
   it('番号の表から今の欄の番号だけを取り出す', () => {
     expect(pickIdTable({ 10: 2, 99: 5 }, [10, 11])).toEqual(new Map([[10, 2]]))
+  })
+})
+
+describe('効く上限（残りを上限として使う）', () => {
+  // 80632 の巡霊の葉 ×10（3通貨・対価 10・在庫上限 25）と、月より団子（在庫上限 2・1・1）
+  const LEAF = 6503
+  const leaf = [
+    entry(LEAF, UDON, 10, 25, { qty: 10 }),
+    entry(LEAF, MUSUBI, 10, 25, { qty: 10 }),
+    entry(LEAF, KAKI, 10, 25, { qty: 10 }),
+  ]
+  const dangoShop = [svt(DANGO, UDON, 100, 2), svt(DANGO, MUSUBI, 100, 1), svt(DANGO, KAKI, 100, 1)]
+
+  it('在庫上限の無い品目は上限なし、残りがあれば在庫上限と残りの小さいほう、残り 0 は回数の 0', () => {
+    expect(effectiveLimit(entry(1, UDON, 2, 0))).toBeUndefined()
+    expect(effectiveLimit(entry(1, UDON, 2, 0), 3)).toBeUndefined()
+    expect(effectiveLimit(entry(1, UDON, 10, 25))).toBe(25)
+    expect(effectiveLimit(entry(1, UDON, 10, 25), 10)).toBe(10)
+    expect(effectiveLimit(entry(1, UDON, 10, 25), 40)).toBe(25)
+    expect(effectiveLimit(entry(1, UDON, 10, 25), 0)).toBe(0)
+  })
+
+  it('残りまで全部交換する: 武蔵うどんの巡霊の葉の残り 10 なら 10 回で、武蔵うどんの必要量に 10 回分の対価が加わる', () => {
+    const remaining = new Map([[0, 10]])
+    const next = selectAllCurrenciesUpToLimit(leaf, new Map(), new Set(), remaining)
+    expect(next.get(0)).toBe(10)
+    expect(next.get(1)).toBe(25)
+    const needs = computeShopCurrencyNeeds(leaf, next, new Map(), remaining)
+    expect(needs.find(n => n.costItemId === UDON)?.selectedCost).toBe(100)
+  })
+
+  it('売り切れの品目: 江戸むすびのコード・リムーバーの残り 0 なら上限 0 で、全部交換しても 0 回', () => {
+    const remover = [entry(5003, UDON, 20, 1), entry(5003, MUSUBI, 20, 1), entry(5003, KAKI, 20, 1)]
+    const remaining = new Map([[1, 0]])
+    expect(clampExchangeCount(entry(5003, MUSUBI, 20, 1), 1, 0)).toBe(0)
+    const next = selectAllCurrenciesUpToLimit(remover, new Map([[1, 1]]), new Set(), remaining)
+    expect([0, 1, 2].map(i => next.get(i))).toEqual([1, 0, 1])
+  })
+
+  it('まとめた行の上限: 月より団子の残りが 武蔵うどん 1・江戸むすび 0・東干し柿なし なら上限 2、全部交換で 1・0・1', () => {
+    const row = rowAt(dangoShop, 0)
+    const remaining = new Map([[0, 1], [1, 0]])
+    expect(rowLimit(row, remaining)).toBe(2)
+    const next = selectAllCurrenciesUpToLimit(dangoShop, new Map(), new Set(), remaining)
+    expect([0, 1, 2].map(i => next.get(i))).toEqual([1, 0, 1])
+    expect(rowCountOf(row, next, remaining).count).toBe(2)
+    // 行に入れた回数も効く上限で割り振り、売り切れの品目には入れない
+    expect([...splitRowCount(row, 9, remaining)]).toEqual([[0, 1], [1, 0], [2, 1]])
+  })
+
+  it('入れた回数が残りを超える: 在庫上限 30 に 20 回を入れたあと残り 5 なら、表示と必要量は 5 回分', () => {
+    const shop = [entry(1, UDON, 10, 30)]
+    const counts = new Map([[0, 20]])
+    const remaining = new Map([[0, 5]])
+    expect(rowCountOf(rowAt(shop, 0), counts, remaining).count).toBe(5)
+    expect(computeShopCurrencyNeeds(shop, counts, new Map(), remaining)).toEqual([
+      { costItemId: UDON, selectedCost: 50, need: 50 },
+    ])
+    // 保存値の読み込みは在庫上限で切り詰めるだけで、残りでは書き換えない
+    expect(countsFromItemKeys(shop, countsToItemKeys(shop, counts))).toEqual(new Map([[0, 20]]))
+  })
+
+  const allocateWithRemaining = (rest: number) => {
+    const totalNeed = needOf({ 10: 5 })
+    const shortfall = computeShopShortfall(totalNeed, {})
+    return allocateShortfallOnly(
+      [entry(10, 90, 10, 10)],
+      shortfall,
+      item => shopItemStatus(item, totalNeed, shortfall, new Set()),
+      new Set(),
+      new Map(),
+      new Map([[0, rest]]),
+    )
+  }
+
+  it('優先素材と埋まらない不足: 不足 5・在庫上限 10・残り 3 なら 3 回で、2 個が埋まらない', () => {
+    const allocation = allocateWithRemaining(3)
+    expect(countsOf(allocation)).toEqual([3])
+    expect(allocation.remaining.get(10)).toBe(2)
+    expect([...allocation.remainders]).toEqual([[0, 2]])
+  })
+
+  it('売り切れの品目は上限なしにならない: 残り 0 なら 0 回で、5 個が埋まらず上限なしの品目に数えない', () => {
+    const allocation = allocateWithRemaining(0)
+    expect(countsOf(allocation)).toEqual([0])
+    expect(allocation.remaining.get(10)).toBe(5)
+    expect(allocation.unlimitedWanted.size).toBe(0)
+  })
+
+  it('計画の対象外の売り切れの品目は 0 回で、上限なしの品目に数えない', () => {
+    const allocation = allocateShortfallOnly(
+      [entry(5003, 90, 20, 1)],
+      new Map(),
+      () => ({ kind: 'outside' }),
+      new Set(),
+      new Map([[0, 1]]),
+      new Map([[0, 0]]),
+    )
+    expect(countsOf(allocation)).toEqual([0])
+    expect(allocation.unlimitedWanted.size).toBe(0)
+  })
+
+  it('全交換の合計: 対価 10・在庫上限 25・残り 10 と、対価 5・在庫上限 20 の残りの無い品目なら 200', () => {
+    const shop = [entry(1, UDON, 10, 25), entry(2, UDON, 5, 20)]
+    const [group] = groupShopByCurrency(shop, new Map([[0, 10]]))
+    expect(group?.totalCost).toBe(200)
+    expect(group?.unlimitedCount).toBe(0)
+  })
+
+  it('売り切れの品目の全交換の合計: 残り 0 なら 100 で、上限なしの品目の数は増えない', () => {
+    const shop = [entry(1, UDON, 10, 25), entry(2, UDON, 5, 20)]
+    const [group] = groupShopByCurrency(shop, new Map([[0, 0]]))
+    expect(group?.totalCost).toBe(100)
+    expect(group?.unlimitedCount).toBe(0)
+  })
+
+  it('残りの無い品目は今までどおり在庫上限を使う', () => {
+    const shop = [entry(1, UDON, 10, 25), entry(2, UDON, 5, 0)]
+    const none = new Map<number, number>()
+    expect(groupShopByCurrency(shop, none)).toEqual(groupShopByCurrency(shop))
+    expect(groupShopByCurrency(shop, none)[0]?.totalCost).toBe(250)
+    expect(selectAllCurrenciesUpToLimit(shop, new Map(), new Set(), none)).toEqual(new Map([[0, 25]]))
+    expect(rowLimit(rowAt(shop, 0), none)).toBe(25)
+    // 在庫上限の無い品目は残りがあっても上限なし
+    expect(rowLimit(rowAt(shop, 1), new Map([[1, 3]]))).toBeUndefined()
+    expect(clampExchangeCount(entry(1, UDON, 10, 25), 40)).toBe(25)
+  })
+
+  it('残りで行の形（どの品目をまとめるか）は変わらない: すべて売り切れでもまとめたまま', () => {
+    expect(rowIndices(dangoShop)).toEqual([[0, 1, 2]])
+    const row = rowAt(dangoShop, 0)
+    const soldOut = new Map([[0, 0], [1, 0], [2, 0]])
+    expect(rowLimit(row, soldOut)).toBe(0)
+    expect([...splitRowCount(row, 3, soldOut)]).toEqual([[0, 0], [1, 0], [2, 0]])
+  })
+})
+
+describe('保存した残り', () => {
+  it('残りの値が壊れている: 文字列と -1 の品目は残りが無く、4.7 は 4 として読む。0 は売り切れとして残す', () => {
+    const read = readShopSavedInputs({
+      remaining: { 'item:1:1:10:20:0': 'x', 'item:2:1:10:20:0': -1, 'item:3:1:10:20:0': 4.7, 'item:4:1:10:20:0': 0 },
+    })
+    expect(read.remaining).toEqual({ 'item:3:1:10:20:0': 4, 'item:4:1:10:20:0': 0 })
+    const shop = [entry(1, 10, 20, 30), entry(2, 10, 20, 30), entry(3, 10, 20, 30), entry(4, 10, 20, 30)]
+    const remaining = remainingFromItemKeys(shop, read.remaining)
+    expect(shop.map((item, i) => effectiveLimit(item, remaining.get(i)))).toEqual([30, 30, 4, 0])
+    for (const bad of [Number.POSITIVE_INFINITY, Number.NaN, null, '3']) {
+      expect(readShopSavedInputs({ remaining: { a: bad } }).remaining).toEqual({})
+    }
+  })
+
+  it('保存値全体や残りの表が壊れていれば、どの品目にも残りが無い', () => {
+    for (const value of [null, 'abc', 3, [1, 2], { remaining: 'abc' }, { remaining: [3] }]) {
+      expect(readShopSavedInputs(value).remaining).toEqual({})
+    }
+  })
+
+  it('並びが変わっても同じ品目に使う: 前に加わった品目には残りが無く、今の交換所に無い品目の残りは使わない', () => {
+    const a = entry(1, 10, 20, 5)
+    const added = entry(2, 10, 10, 5)
+    const gone = entry(3, 10, 10, 5)
+    const saved = JSON.parse(JSON.stringify(countsToItemKeys([a, gone], new Map([[0, 3], [1, 2]])))) as Record<
+      string,
+      number
+    >
+    expect(remainingFromItemKeys([added, a], saved)).toEqual(new Map([[1, 3]]))
+  })
+
+  it('残りの書き換えは指定した品目だけを変え、undefined は除き、ほかの品目と今の交換所に無い品目の残りは残す', () => {
+    const shop = [entry(1, 10, 20, 5), entry(2, 10, 20, 5), entry(3, 10, 20, 5)]
+    const [k1, k2, k3] = shopItemKeys(shop)
+    const saved = { [k1 ?? '']: 3, [k2 ?? '']: 4, 'item:99:1:10:20:0': 1 }
+    expect(withRemainingValues(shop, saved, new Map([[0, undefined], [2, 0]]))).toEqual({
+      [k2 ?? '']: 4,
+      [k3 ?? '']: 0,
+      'item:99:1:10:20:0': 1,
+    })
+  })
+
+  it('入れた残りは小数を切り捨て、在庫上限で頭打ちにし、負の数や上限の無い品目は残りにしない', () => {
+    const leaf = entry(6503, 10, 10, 25)
+    expect(normalizeRemainingInput(leaf, 40)).toBe(25)
+    expect(normalizeRemainingInput(leaf, 4.7)).toBe(4)
+    expect(normalizeRemainingInput(leaf, 0)).toBe(0)
+    expect(normalizeRemainingInput(leaf, -1)).toBeUndefined()
+    expect(normalizeRemainingInput(leaf, Number.NaN)).toBeUndefined()
+    expect(normalizeRemainingInput(entry(1, 10, 2, 0), 3)).toBeUndefined()
   })
 })
