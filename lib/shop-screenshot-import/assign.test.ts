@@ -49,6 +49,8 @@ const row = (i: number, name: string, remaining: number | null, cost: number | n
   name,
   nameBox: { x: 200, y: 100 + i * 200, width: 300, height: 30 },
   remaining,
+  remainingBox: remaining === null ? null : { x: 700, y: 200 + i * 200, width: 90, height: 30 },
+  headingBox: { x: 200, y: 160 + i * 200, width: 240, height: 30 },
   cost,
   costBox: cost === null ? null : { x: 1000, y: 200 + i * 200, width: 40, height: 30 },
   band: { top: 100 + i * 200, bottom: 230 + i * 200 },
@@ -135,8 +137,41 @@ describe('assignShopRows', () => {
     ])
   })
 
-  it('アイコンを切り出せない: 伝承結晶の対価の数が読めなければ要確認', () => {
-    const results = assignShopRows([[row(0, '伝承結晶', 1, null)]], SHOP, icons({ '0:0': { kind: 'no-crop' } }))
+  it('対価が読めなくてもアイコンで決まる: 伝承結晶の売り切れの行は、名前だけで絞ってアイコンで江戸むすびに当てはまる', () => {
+    const iconOf = icons({ '0:0': matched(MUSUBI) })
+    const results = assignShopRows([[row(0, '伝承結晶', 0, null)]], SHOP, iconOf)
+    expect(results).toEqual([
+      {
+        shopIndex: 7,
+        candidates: [6, 7, 8],
+        values: [0],
+        review: false,
+        viaIcon: true,
+        iconCurrency: MUSUBI,
+        sources: [{ imageIndex: 0, rowIndex: 0 }],
+      },
+    ])
+    expect(iconOf).toHaveBeenCalledWith({ imageIndex: 0, rowIndex: 0 }, [UDON, MUSUBI, KAKI])
+  })
+
+  it('売り切れの暗い行でもアイコンで決まる: サーヴァントコインの売り切れの行が武蔵うどんに当てはまる', () => {
+    const results = assignShopRows([[row(0, 'サーヴァントコイン', 0, null)]], SHOP, icons({ '0:0': matched(UDON) }))
+    expect(results.map((r) => [r.shopIndex, r.values, r.review, r.viaIcon])).toEqual([[0, [0], false, true]])
+  })
+
+  it('アイコンが隠れている: 英霊結晶・流星のフォウくんの行は照合が要確認なら要確認', () => {
+    const results = assignShopRows(
+      [[row(0, '英霊結晶・流星のフォウくん', 0, null)]],
+      SHOP,
+      icons({ '0:0': { kind: 'review' } }),
+    )
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({ review: true, reason: 'icon-review', values: [0], candidates: [9, 10] })
+    expect(results[0].shopIndex).toBeUndefined()
+  })
+
+  it('アイコンを切り出せない: 切り出しが画像の外に出れば要確認', () => {
+    const results = assignShopRows([[row(0, '伝承結晶', 1, 200)]], SHOP, icons({ '0:0': { kind: 'no-crop' } }))
     expect(results).toHaveLength(1)
     expect(results[0]).toMatchObject({ review: true, reason: 'no-crop', values: [1], candidates: [6, 7, 8] })
     expect(results[0].shopIndex).toBeUndefined()
@@ -391,64 +426,64 @@ describe('assignShopRows', () => {
 
 describe('assignOwnedCounts', () => {
   const readings = (...values: number[]): OwnedReading[] =>
-    values.map((value, i) => ({ value, box: { x: 100 + i * 300, y: 150, width: 60, height: 30 } }))
+    values.map((value, i) => ({ value, box: { x: 100 + i * 300, y: 150, width: 60, height: 30 }, headingHeight: 39 }))
 
   const currencies = (decisions: Record<string, IconDecision>) =>
     vi.fn((source: OwnedSource): IconDecision => decisions[`${source.imageIndex}:${source.index}`] ?? { kind: 'review' })
 
-  it('アイコンで所持数を当てる: 469・288・214 を武蔵うどん・江戸むすび・東干し柿に当てる', () => {
+  it('アイコンで所持数を当てる: 上の段の 469・288 と下の段の 214 を東干し柿・江戸むすび・武蔵うどんに当てる', () => {
     const results = assignOwnedCounts(
       [readings(469, 288, 214)],
-      currencies({ '0:0': matched(UDON), '0:1': matched(MUSUBI), '0:2': matched(KAKI) }),
+      currencies({ '0:0': matched(KAKI), '0:1': matched(MUSUBI), '0:2': matched(UDON) }),
     )
     expect(results).toEqual([
-      { costItemId: UDON, values: [469], review: false, sources: [{ imageIndex: 0, index: 0 }] },
+      { costItemId: KAKI, values: [469], review: false, sources: [{ imageIndex: 0, index: 0 }] },
       { costItemId: MUSUBI, values: [288], review: false, sources: [{ imageIndex: 0, index: 1 }] },
-      { costItemId: KAKI, values: [214], review: false, sources: [{ imageIndex: 0, index: 2 }] },
+      { costItemId: UDON, values: [214], review: false, sources: [{ imageIndex: 0, index: 2 }] },
     ])
   })
 
   it('所持数のアイコンの差が小さい: 288 は要確認', () => {
     const results = assignOwnedCounts(
       [readings(469, 288, 214)],
-      currencies({ '0:0': matched(UDON), '0:1': { kind: 'review' }, '0:2': matched(KAKI) }),
+      currencies({ '0:0': matched(KAKI), '0:1': { kind: 'review' }, '0:2': matched(UDON) }),
     )
     expect(results).toEqual([
-      { costItemId: UDON, values: [469], review: false, sources: [{ imageIndex: 0, index: 0 }] },
+      { costItemId: KAKI, values: [469], review: false, sources: [{ imageIndex: 0, index: 0 }] },
       { values: [288], review: true, sources: [{ imageIndex: 0, index: 1 }] },
-      { costItemId: KAKI, values: [214], review: false, sources: [{ imageIndex: 0, index: 2 }] },
+      { costItemId: UDON, values: [214], review: false, sources: [{ imageIndex: 0, index: 2 }] },
     ])
   })
 
-  it('2つの数が同じ通貨に当たる: 469 と 288 がどちらも武蔵うどんなら、どちらも要確認', () => {
+  it('2つの数が同じ通貨に当たる: 469 と 288 がどちらも東干し柿なら、どちらも要確認', () => {
     const results = assignOwnedCounts(
       [readings(469, 288, 214)],
-      currencies({ '0:0': matched(UDON), '0:1': matched(UDON), '0:2': matched(KAKI) }),
+      currencies({ '0:0': matched(KAKI), '0:1': matched(KAKI), '0:2': matched(UDON) }),
     )
     expect(results).toEqual([
       { values: [469], review: true, sources: [{ imageIndex: 0, index: 0 }] },
       { values: [288], review: true, sources: [{ imageIndex: 0, index: 1 }] },
-      { costItemId: KAKI, values: [214], review: false, sources: [{ imageIndex: 0, index: 2 }] },
+      { costItemId: UDON, values: [214], review: false, sources: [{ imageIndex: 0, index: 2 }] },
     ])
   })
 
-  it('複数の画像で同じ所持数を読む: 5枚とも武蔵うどんに 469 なら1つにまとめ、要確認にしない', () => {
+  it('複数の画像で同じ所持数を読む: 5枚とも東干し柿に 469 なら1つにまとめ、要確認にしない', () => {
     const images = Array.from({ length: 5 }, () => readings(469))
-    const decisions = Object.fromEntries(images.map((_, i) => [`${i}:0`, matched(UDON)]))
+    const decisions = Object.fromEntries(images.map((_, i) => [`${i}:0`, matched(KAKI)]))
     const results = assignOwnedCounts(images, currencies(decisions))
     expect(results).toEqual([
-      { costItemId: UDON, values: [469], review: false, sources: images.map((_, i) => ({ imageIndex: i, index: 0 })) },
+      { costItemId: KAKI, values: [469], review: false, sources: images.map((_, i) => ({ imageIndex: i, index: 0 })) },
     ])
   })
 
-  it('画像によって所持数が違う: 469 と 459 なら武蔵うどんを要確認にして両方の値を返す', () => {
+  it('画像によって所持数が違う: 469 と 459 なら東干し柿を要確認にして両方の値を返す', () => {
     const results = assignOwnedCounts(
       [readings(469), readings(459)],
-      currencies({ '0:0': matched(UDON), '1:0': matched(UDON) }),
+      currencies({ '0:0': matched(KAKI), '1:0': matched(KAKI) }),
     )
     expect(results).toEqual([
       {
-        costItemId: UDON,
+        costItemId: KAKI,
         values: [469, 459],
         review: true,
         sources: [
