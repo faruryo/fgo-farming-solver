@@ -358,16 +358,16 @@ describe('スクリーンショットから取り込む', () => {
       expect(saved().remaining).toEqual({ [keyAt(LEAF_KAKI)]: 25 })
     })
 
-    it('当てた所持数を確定する: 武蔵うどんは 469 になり、取り込みに入れていない通貨の所持数は変わらない', async () => {
+    it('当てた所持数を確定する: 東干し柿は 469 になり、取り込みに入れていない通貨の所持数は変わらない', async () => {
       localStorage.setItem(savedKey, JSON.stringify({ owned: { [MUSUBI]: 100 } }))
       renderShop()
-      await importWith(analysisOf({ owned: [ownedOf(UDON, [469])] }))
+      await importWith(analysisOf({ owned: [ownedOf(KAKI, [469])] }))
       const row = screen.getByTestId('shop-import-owned-row')
       expect(within(row).getByRole('img', { name: '画像から切り抜いたアイコン' })).toBeInTheDocument()
-      expect(within(row).getByRole('img', { name: '武蔵うどん' })).toHaveAttribute('src', '/udon.png')
+      expect(within(row).getByRole('img', { name: '東干し柿' })).toHaveAttribute('src', '/kaki.png')
       confirm()
-      expect(saved().owned).toEqual({ [MUSUBI]: 100, [UDON]: 469 })
-      expect(screen.getByLabelText('武蔵うどん の所持数')).toHaveValue(469)
+      expect(saved().owned).toEqual({ [MUSUBI]: 100, [KAKI]: 469 })
+      expect(screen.getByLabelText('東干し柿 の所持数')).toHaveValue(469)
       expect(screen.getByLabelText('江戸むすび の所持数')).toHaveValue(100)
     })
 
@@ -393,10 +393,10 @@ describe('スクリーンショットから取り込む', () => {
 
     it('閉じる: 確定せずに閉じると、どの品目の残りも通貨の所持数も変わらない', async () => {
       renderShop()
-      await importWith(analysisOf({ remaining: [matched(FIRE, 80)], owned: [ownedOf(UDON, [469])] }))
+      await importWith(analysisOf({ remaining: [matched(FIRE, 80)], owned: [ownedOf(KAKI, [469])] }))
       fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
       expect(localStorage.getItem(savedKey)).toBeNull()
-      expect(screen.getByLabelText('武蔵うどん の所持数')).toHaveValue(0)
+      expect(screen.getByLabelText('東干し柿 の所持数')).toHaveValue(0)
     })
   })
 })

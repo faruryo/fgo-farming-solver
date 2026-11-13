@@ -13,15 +13,26 @@ import {
   type RemainingResult,
   type RowSource,
 } from './assign'
-import { bestCropIndex, decideCurrency, iconBaseRect, iconCropRects, iconPixelDiff } from './icon-match'
-import { cropDataUrl, loadCurrencyIcons, samplePixels } from './icon-pixels'
+import {
+  matchIconInImage,
+  OWNED_SEARCH,
+  ownedIconRect,
+  ROW_SEARCH,
+  rowIconRect,
+  type IconMatchResult,
+  type RgbaImage,
+  type SearchRange,
+} from './icon-match'
+import { canvasPixels, cropDataUrl, loadCurrencyIcons } from './icon-pixels'
 import { parseShopRows, readOwnedCounts } from './rows'
-import type { IconDecision, OwnedReading, Rect, ShopScreenRow } from './types'
+import type { OwnedReading, Rect, ShopScreenRow } from './types'
 
 export type AnalyzedImage = {
   rows: ShopScreenRow[]
   owned: OwnedReading[]
   canvas: HTMLCanvasElement
+  /** 画像全体の画素（照合で使う。画像ごとに1回だけ読む） */
+  pixels: RgbaImage
   width: number
   height: number
 }
@@ -29,7 +40,7 @@ export type AnalyzedImage = {
 export type ShopImportAnalysis = {
   /**
    * rowCropUrl: 最初に読んだ行の帯（画像の横幅いっぱい）の切り抜き。
-   * iconCropUrl: アイコンで照合した行の、切り出したアイコン（決めた通貨に一番近かった切り出し。決まらなければ基の位置）
+   * iconCropUrl: アイコンで照合した行の、切り出したアイコン（決めた通貨で一番近かった切り出し。決まらなければ一番近い通貨のもの）
    */
   remaining: (RemainingResult & { rowCropUrl?: string; iconCropUrl?: string })[]
   /** matchedCostItemId: 照合で一番近かった通貨（同じ画像で重なって「要確認」になった数も含む） */
@@ -54,7 +65,7 @@ const analyzeImage = async (file: File): Promise<AnalyzedImage> => {
   const canvas = document.createElement('canvas')
   canvas.width = img.naturalWidth
   canvas.height = img.naturalHeight
-  // アイコンの照合で画素を何度も読むので、読み出し向けの context にする
+  // 画素を配列に読むので、読み出し向けの context にする
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) throw new Error(`画像を描けませんでした: ${file.name}`)
   ctx.drawImage(img, 0, 0)
@@ -64,6 +75,7 @@ const analyzeImage = async (file: File): Promise<AnalyzedImage> => {
     rows: parseShopRows(boxes, canvas.height),
     owned: readOwnedCounts(boxes),
     canvas,
+    pixels: canvasPixels(canvas),
     width: canvas.width,
     height: canvas.height,
   }
@@ -78,35 +90,35 @@ const shopCurrencies = (shop: readonly EventShopItem[]): { costItemId: number; u
   return [...byId].map(([costItemId, url]) => ({ costItemId, url }))
 }
 
-type IconMatch = { decision: IconDecision; cropRect?: Rect }
+type IconMatch = IconMatchResult
 
 /**
- * 対価の数（または欄の数）の枠の左のアイコンを、`currencies` のアイコンと照合する。
- * 候補が1つなら照合しない。候補に読み込めなかった通貨があれば「要確認」。
+ * `base` のまわりのアイコンを `currencies` のアイコンと照合する。
+ * 切り出す基準が無ければ切り出せなかったものとする。候補が1つなら照合しない。候補に読み込めなかった通貨があれば「要確認」。
  */
 const matchIcon = (
-  canvas: HTMLCanvasElement,
-  costBox: Rect | null,
+  pixels: RgbaImage,
+  base: Rect | null,
+  range: SearchRange,
   currencies: readonly number[],
   icons: ReadonlyMap<number, Uint8ClampedArray>,
 ): IconMatch => {
-  if (!costBox) return { decision: { kind: 'no-crop' } }
+  if (!base) return { decision: { kind: 'no-crop' } }
   const only = currencies.at(0)
   if (currencies.length === 1 && only !== undefined) {
-    return { decision: { kind: 'matched', costItemId: only, best: 0, second: Infinity }, cropRect: iconBaseRect(costBox) }
+    return { decision: { kind: 'matched', costItemId: only, best: 0, second: Infinity }, cropRect: base }
   }
-  const refs = currencies.map((id) => ({ id, ref: icons.get(id) }))
-  if (refs.some(({ ref }) => !ref)) return { decision: { kind: 'review' }, cropRect: iconBaseRect(costBox) }
-  const rects = iconCropRects(costBox)
-  const crops = samplePixels(canvas, rects)
-  const diffs = new Map(
-    refs.map(({ id, ref }) => [id, crops.map((crop) => (ref ? iconPixelDiff(crop, ref) : Infinity))] as const),
-  )
-  const decision = decideCurrency(diffs)
-  const matchedDiffs = decision.kind === 'matched' ? diffs.get(decision.costItemId) : undefined
-  const cropRect = matchedDiffs ? rects.at(bestCropIndex(matchedDiffs)) : iconBaseRect(costBox)
-  return { decision, cropRect }
+  const refs = new Map<number, Uint8ClampedArray>()
+  for (const id of currencies) {
+    const ref = icons.get(id)
+    if (!ref) return { decision: { kind: 'review' }, cropRect: base }
+    refs.set(id, ref)
+  }
+  return matchIconInImage(pixels, base, range, refs)
 }
+
+const rowIconBase = (row: ShopScreenRow): Rect | null =>
+  row.remainingBox ? rowIconRect(row.remainingBox, row.headingBox) : null
 
 const rowCropRect = (image: AnalyzedImage, row: ShopScreenRow): Rect => {
   const padding = (row.band.bottom - row.band.top) * ROW_CROP_PADDING
@@ -183,7 +195,7 @@ export const analyzeShopScreenshots = async (
       const image = images.at(source.imageIndex)
       const row = image?.rows.at(source.rowIndex)
       if (!image || !row) return { kind: 'no-crop' }
-      const match = matchIcon(image.canvas, row.costBox, candidates, icons)
+      const match = matchIcon(image.pixels, rowIconBase(row), ROW_SEARCH, candidates, icons)
       iconMatches.set(rowKey(source), match)
       return match.decision
     },
@@ -200,8 +212,8 @@ export const analyzeShopScreenshots = async (
       // 所持数はすべての通貨と比べるので、どれかのアイコンを読み込めなければ「要確認」
       const match: IconMatch =
         failedIcons.length > 0
-          ? { decision: { kind: 'review' }, cropRect: iconBaseRect(reading.box) }
-          : matchIcon(image.canvas, reading.box, allCurrencies, icons)
+          ? { decision: { kind: 'review' }, cropRect: ownedIconRect(reading.box, reading.headingHeight) }
+          : matchIcon(image.pixels, ownedIconRect(reading.box, reading.headingHeight), OWNED_SEARCH, allCurrencies, icons)
       ownedMatches.set(ownedKey(source), match)
       return match.decision
     },

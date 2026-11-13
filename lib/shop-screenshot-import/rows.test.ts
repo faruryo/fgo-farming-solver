@@ -2,276 +2,221 @@ import { describe, expect, it } from 'vitest'
 import { parseShopRows, readOwnedCounts } from './rows'
 import type { OcrBox } from './types'
 
-const TEXT_HEIGHT = 30
-const IMAGE_HEIGHT = 2000
+/** 実物の画面（2796×1290）で測った枠の例から作る */
+const IMAGE_HEIGHT = 1290
 
-const box = (text: string, x: number, y: number, width = 160, height = TEXT_HEIGHT): OcrBox => ({
+const box = (text: string, x: number, y: number, width: number, height: number, confidence = 1): OcrBox => ({
   text,
-  confidence: 0.9,
+  confidence,
   x,
   y,
   width,
   height,
 })
 
-type RowSpec = {
-  name?: string
-  remaining?: string
-  period?: boolean
-  cost?: string
-  possession?: string
-}
-
-/**
- * 交換所の画面の1行の文字。左に名前、その下の文字の行に「交換期間」と右の「残り N回」、さらに下の文字の行に
- * 左の「所持 N」と右の対価の数を置く。
- */
-const shopRow = (top: number, spec: RowSpec): OcrBox[] => [
-  ...(spec.name ? [box(spec.name, 200, top + 30, 300)] : []),
-  ...(spec.period === false ? [] : [box('交換期間 11/20 12:59まで', 200, top + 80, 300)]),
-  ...(spec.remaining ? [box(spec.remaining, 800, top + 80)] : []),
-  ...(spec.possession ? [box(spec.possession, 200, top + 130)] : []),
-  ...(spec.cost ? [box(spec.cost, 1000, top + 130, 40)] : []),
+/** 残りのある行（月より団子・残り 1・対価 100） */
+const DANGO_ROW: OcrBox[] = [
+  box('月より団子', 1686, 459, 284, 57),
+  box('【復刻版価格】', 1713, 537, 209, 35, 0.98),
+  box('盈月剣風帖限定★5概念礼装へ交換', 1691, 572, 568, 40, 0.99),
+  box('交換期間あと', 1695, 616, 245, 35),
+  box('残り', 1988, 612, 96, 39),
+  box('8日', 1879, 660, 96, 56),
+  box('1回', 2110, 660, 92, 56, 0.98),
+  box('100', 2425, 664, 113, 44),
 ]
 
+/** 売り切れの行（「8日売り切れ」がつながり、品目のアイコンに「所持 850」が重なる） */
+const COIN_ROW: OcrBox[] = [
+  box('サーヴァントコイン(宮本伊織)', 1691, 415, 742, 57, 0.97),
+  box('【復刻版価格】', 1699, 489, 236, 44, 0.99),
+  box('サーヴァントコイン10個へ交換', 1691, 529, 524, 43, 0.99),
+  box('交換期間あと', 1686, 572, 297, 44),
+  box('残り', 1962, 572, 126, 40),
+  box('8日売り切れ', 1879, 625, 318, 43),
+  box('10', 2451, 616, 96, 61),
+  box('所持', 1402, 638, 158, 44, 0.99),
+  box('-850', 1542, 629, 136, 57, 0.96),
+]
+
+/** 名前が一覧の上に隠れた行（一覧の題と説明文だけが写る） */
+const HIDDEN_NAME_ROW: OcrBox[] = [
+  box('イベントアイテム交換報酬ー覧', 1739, 332, 585, 57, 0.98),
+  box('【スキル強化素材】へ交換', 1708, 437, 425, 39, 0.98),
+  box('交換期間あと', 1691, 494, 253, 39),
+  box('残り', 1966, 494, 118, 39),
+  box('8日', 1879, 546, 100, 44, 0.99),
+  box('売り切れ', 1992, 546, 205, 44),
+  box('20', 2451, 537, 92, 62),
+]
+
+/** 下の端で切れた行（名前が MENU に切られて2つの枠に分かれ、見出しが「残り」とつながる） */
+const CUT_ROW: OcrBox[] = [
+  box('サーヴァントコイン', 1686, 1088, 481, 57),
+  box('(宮本', 2176, 1097, 122, 43, 0.95),
+  box('【復刻版価格】', 1699, 1166, 232, 40, 0.99),
+  box('ヴァントコイン10個へ交換', 1752, 1201, 459, 40, 0.99),
+  box('交換期間あと残り', 1686, 1245, 402, 44),
+]
+
+/** 「獲得したイベントアイテム」の欄 */
+const OWNED_SECTION: OcrBox[] = [
+  box('獲得したイベントアイテム', 384, 944, 415, 39),
+  box('交換期限 残り8日', 913, 944, 284, 43, 0.95),
+  box('02', 367, 1022, 109, 61, 0.7),
+  box('469', 638, 1031, 105, 57),
+  box('4', 804, 1014, 127, 83, 0.39),
+  box('288', 1088, 1027, 109, 56),
+  box('214', 638, 1118, 109, 57),
+  box('180', 1538, 987, 144, 57),
+]
+
+/** 画面の上の帯に写る同じ所持数 */
+const TOP_BAR: OcrBox[] = [
+  box('469', 2119, 22, 78, 39),
+  box('4', 1590, 74, 96, 79, 0.91),
+  box('288', 1804, 92, 79, 39),
+  box('214', 2110, 92, 92, 39),
+]
+
+/** 行の文字を縦に `dy` ずらす */
+const shift = (boxes: readonly OcrBox[], dy: number): OcrBox[] => boxes.map((b) => ({ ...b, y: b.y + dy }))
+
 describe('parseShopRows', () => {
-  it('残りを読む: 名前・残り・対価の数とその枠を読む', () => {
-    const rows = parseShopRows(
-      shopRow(400, { name: '叡智の業火', remaining: '残り 80回', cost: '5', possession: '所持 12' }),
-      IMAGE_HEIGHT,
-    )
+  it('残りを読む: 名前・残り・対価の数を読み、「8日」の 8 は残りにしない', () => {
+    const rows = parseShopRows(DANGO_ROW, IMAGE_HEIGHT)
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
-      name: '叡智の業火',
-      remaining: 80,
-      cost: 5,
-      costBox: { x: 1000, y: 530, width: 40, height: TEXT_HEIGHT },
+      name: '月より団子',
+      remaining: 1,
+      cost: 100,
+      remainingBox: { x: 2110, y: 660, width: 92, height: 56 },
+      headingBox: { x: 1695, y: 616, width: 245, height: 35 },
+      costBox: { x: 2425, y: 664, width: 113, height: 44 },
     })
-    expect(rows[0].nameBox).toEqual({ x: 200, y: 430, width: 300, height: TEXT_HEIGHT })
   })
 
-  it('売り切れ: 残りを 0 として読む', () => {
-    const rows = parseShopRows(
-      shopRow(400, { name: 'コード・リムーバー', remaining: '売り切れ', cost: '20' }),
-      IMAGE_HEIGHT,
+  it('売り切れ: 「売り切れ」の枠があれば残り 0', () => {
+    const boxes = DANGO_ROW.map((b) => (b.text === '1回' ? { ...b, text: '売り切れ', width: 205 } : b))
+    expect(parseShopRows(boxes, IMAGE_HEIGHT).map((r) => [r.name, r.remaining])).toEqual([['月より団子', 0]])
+  })
+
+  it('日数と売り切れがつながって読める: 「8日売り切れ」は残り 0 で、その枠を残りの値の枠にする', () => {
+    const rows = parseShopRows(COIN_ROW, IMAGE_HEIGHT)
+    expect(rows.map((r) => [r.name, r.remaining])).toEqual([['サーヴァントコイン(宮本伊織)', 0]])
+    expect(rows[0].remainingBox).toEqual({ x: 1879, y: 625, width: 318, height: 43 })
+  })
+
+  it('1字読み違えた「売り切れ」も残り 0', () => {
+    const boxes = COIN_ROW.map((b) => (b.text === '8日売り切れ' ? { ...b, text: '8日売リ切れ' } : b))
+    expect(parseShopRows(boxes, IMAGE_HEIGHT).map((r) => r.remaining)).toEqual([0])
+  })
+
+  it('「8日1回」とつながっても「回」の直前の数字を残りにする', () => {
+    const boxes = DANGO_ROW.filter((b) => b.text !== '8日').map((b) =>
+      b.text === '1回' ? { ...b, text: '8日1回', x: 1879, width: 323 } : b,
     )
-    expect(rows.map((r) => [r.name, r.remaining])).toEqual([['コード・リムーバー', 0]])
+    expect(parseShopRows(boxes, IMAGE_HEIGHT).map((r) => r.remaining)).toEqual([1])
+  })
+
+  it('品目の「所持 850」を対価にも残りにもしない', () => {
+    const rows = parseShopRows(COIN_ROW, IMAGE_HEIGHT)
+    expect(rows.map((r) => [r.remaining, r.cost])).toEqual([[0, 10]])
+  })
+
+  it('説明文を名前にしない: 名前が一覧の上に隠れた行は結果に出ない', () => {
+    expect(parseShopRows(HIDDEN_NAME_ROW, IMAGE_HEIGHT)).toEqual([])
+  })
+
+  it('一覧の題が名前の範囲にあっても名前にしない', () => {
+    // 題の左端を見出しにそろえても「交換報酬」を含む枠は名前にしない
+    const boxes = HIDDEN_NAME_ROW.map((b) => (b.text.includes('交換報酬') ? { ...b, x: 1691 } : b))
+    expect(parseShopRows(boxes, IMAGE_HEIGHT)).toEqual([])
+  })
+
+  it('所持数の欄の「残り」: 「交換期限 残り8日」からは行ができない', () => {
+    expect(parseShopRows(OWNED_SECTION, IMAGE_HEIGHT)).toEqual([])
+    // 「交換期間」と読み違えても、数字を含むので見出しにしない
+    const misread = OWNED_SECTION.map((b) => (b.text.startsWith('交換期限') ? { ...b, text: '交換期間 残り8日' } : b))
+    expect(parseShopRows(misread, IMAGE_HEIGHT)).toEqual([])
+  })
+
+  it('対価が読めない行: 名前と「売り切れ」が読めれば残り 0 として読む', () => {
+    const boxes = COIN_ROW.filter((b) => b.text !== '10').map((b) =>
+      b.text.startsWith('サーヴァントコイン(') ? { ...b, text: '叡智の業火', width: 284 } : b,
+    )
+    const rows = parseShopRows(boxes, IMAGE_HEIGHT)
+    expect(rows.map((r) => [r.name, r.remaining, r.cost, r.costBox])).toEqual([['叡智の業火', 0, null, null]])
+  })
+
+  it('確からしさの低い数字は対価にしない', () => {
+    const boxes = DANGO_ROW.map((b) => (b.text === '100' ? { ...b, confidence: 0.9 } : b))
+    expect(parseShopRows(boxes, IMAGE_HEIGHT).map((r) => r.cost)).toEqual([null])
   })
 
   it('残りが読めない行: 真ん中の行の残りが読めなければ残りを null で出す', () => {
-    const rows = parseShopRows(
-      [
-        ...shopRow(400, { name: '月より団子', remaining: '残り 1回', cost: '100' }),
-        ...shopRow(600, { name: '伝承結晶', cost: '200' }),
-        ...shopRow(800, { name: '巡霊の葉', remaining: '残り 25回', cost: '10' }),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => [r.name, r.remaining, r.cost])).toEqual([
-      ['月より団子', 1, 100],
-      ['伝承結晶', null, 200],
-      ['巡霊の葉', 25, 10],
+    const middle = DANGO_ROW.filter((b) => b.text !== '1回').map((b) => (b.text === '月より団子' ? { ...b, text: '伝承結晶' } : b))
+    const rows = parseShopRows([...shift(COIN_ROW, -300), ...middle], IMAGE_HEIGHT)
+    expect(rows.map((r) => [r.name, r.remaining, r.remainingBox])).toEqual([
+      ['サーヴァントコイン(宮本伊織)', 0, expect.anything()],
+      ['伝承結晶', null, null],
     ])
   })
 
-  it('端で切れた行: 一番下の行が名前だけ写り残りが画像の外なら結果に出さない', () => {
-    const height = 1000
-    const rows = parseShopRows(
-      [
-        ...shopRow(600, { name: '叡智の業火', remaining: '残り 80回', cost: '5' }),
-        // 名前と「交換期間」だけ写り、「残り」と対価は画像の下で切れている
-        box('コード・リムーバー', 200, height - 90, 300),
-        box('交換期間 11/20 12:59まで', 200, height - 40, 300),
-      ],
-      height,
-    )
-    expect(rows.map((r) => r.name)).toEqual(['叡智の業火'])
+  it('端で切れた行: 名前と見出しだけ写り、残りの段が画像の外なら結果に出さない', () => {
+    const rows = parseShopRows([...DANGO_ROW, ...CUT_ROW], IMAGE_HEIGHT)
+    expect(rows.map((r) => r.name)).toEqual(['月より団子'])
   })
 
-  it('端で切れた行: 名前だけ写った行（目印が無い）も出さない', () => {
-    const height = 1000
+  it('「交換期間あと残り」とつながった見出しでも行ができ、MENU に切られた名前をつなぐ', () => {
+    // 同じ行を画像の上のほうに置き、値の段を足す
     const rows = parseShopRows(
-      [...shopRow(600, { name: '叡智の業火', remaining: '残り 80回', cost: '5' }), box('伝承結晶', 200, height - 35, 300)],
-      height,
-    )
-    expect(rows.map((r) => r.name)).toEqual(['叡智の業火'])
-  })
-
-  it('端で切れた行: 上の端で名前が切れ残りだけ写った行は出さない', () => {
-    const rows = parseShopRows(
-      [
-        box('交換期間 11/20 12:59まで', 200, 5, 300),
-        box('残り 2回', 800, 5),
-        ...shopRow(300, { name: '叡智の業火', remaining: '残り 80回', cost: '5' }),
-      ],
+      [...shift(CUT_ROW, -700), box('8日売り切れ', 1879, 1245 - 700 + 53, 318, 43)],
       IMAGE_HEIGHT,
     )
-    expect(rows.map((r) => r.name)).toEqual(['叡智の業火'])
+    expect(rows.map((r) => [r.name, r.remaining])).toEqual([['サーヴァントコイン(宮本', 0]])
   })
 
-  it('画像の端に近くても名前と残りの両方が読めた行は使う', () => {
-    const height = 1000
-    const rows = parseShopRows(
-      [box('伝承結晶', 200, height - 95, 300), box('交換期間 11/20 12:59まで', 200, height - 45, 300), box('残り 2回', 800, height - 45)],
-      height,
-    )
-    expect(rows.map((r) => [r.name, r.remaining])).toEqual([['伝承結晶', 2]])
-  })
-
-  it('名前の無い行は名前を空にして出す（あとで要確認になる）', () => {
-    const rows = parseShopRows(shopRow(400, { remaining: '残り 3回', cost: '10' }), IMAGE_HEIGHT)
-    expect(rows.map((r) => [r.name, r.remaining])).toEqual([['', 3]])
-  })
-
-  it('全角の数字・区切りのカンマ・「残り80回」の詰めた書き方を読む', () => {
-    const rows = parseShopRows(
-      [
-        ...shopRow(400, { name: '叡智の業火', remaining: '残り８０回', cost: '５' }),
-        ...shopRow(600, { name: '凶骨', remaining: '残り1,000回', cost: '1,200' }),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => [r.name, r.remaining, r.cost])).toEqual([
-      ['叡智の業火', 80, 5],
-      ['凶骨', 1000, 1200],
-    ])
-  })
-
-  it('「残り」と「80回」が別の枠に読まれても残りを読み、対価の数と取り違えない', () => {
-    const rows = parseShopRows(
-      [
-        box('叡智の業火', 200, 430, 300),
-        box('交換期間 11/20 12:59まで', 200, 480, 300),
-        box('残り', 800, 480, 60),
-        box('80', 870, 480, 40),
-        box('5', 1000, 530, 40),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => [r.remaining, r.cost])).toEqual([[80, 5]])
-  })
-
-  it('「所持」と数が別の枠に読まれても、その数を対価の数にしない', () => {
-    const rows = parseShopRows(
-      [
-        ...shopRow(400, { name: '叡智の業火', remaining: '残り 80回' }),
-        box('所持', 900, 530, 60),
-        box('12', 970, 530, 40),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => [r.remaining, r.cost])).toEqual([[80, null]])
-  })
-
-  it('名前と目印が同じ枠に読まれたときは名前を分けて読む', () => {
-    const rows = parseShopRows([box('叡智の業火 残り80回', 200, 480, 600), box('5', 1000, 530, 40)], IMAGE_HEIGHT)
-    expect(rows.map((r) => [r.name, r.remaining, r.cost])).toEqual([['叡智の業火', 80, 5]])
-  })
-
-  it('「交換期間」と「残り」が別の文字の行に写っても1つの行にまとめる', () => {
-    const rows = parseShopRows(
-      [
-        box('伝承結晶', 200, 400, 300),
-        box('残り 2回', 800, 400),
-        box('交換期間 11/20 12:59まで', 200, 440, 300),
-        box('200', 1000, 440, 60),
-        box('巡霊の葉', 200, 600, 300),
-        box('残り 25回', 800, 600),
-        box('交換期間 11/20 12:59まで', 200, 640, 300),
-        box('10', 1000, 640, 60),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => [r.name, r.remaining, r.cost])).toEqual([
-      ['伝承結晶', 2, 200],
-      ['巡霊の葉', 25, 10],
-    ])
-  })
-
-  it('目印から縦に離れすぎた名前は行に入れない', () => {
-    const rows = parseShopRows(
-      [box('叡智の業火', 200, 300, 300), box('交換期間 11/20 12:59まで', 200, 480, 300), box('残り 80回', 800, 480)],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => [r.name, r.remaining])).toEqual([['', 80]])
-  })
-
-  it('2つに分かれて読まれた名前をつなぐ', () => {
-    const rows = parseShopRows(
-      [
-        box('英霊結晶・流星の', 200, 430, 240),
-        box('フォウくん', 460, 430, 150),
-        box('交換期間 11/20 12:59まで', 200, 480, 300),
-        box('残り 1回', 800, 480),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => r.name)).toEqual(['英霊結晶・流星のフォウくん'])
-  })
-
-  it('行は上から順に並べ、行の縦の位置と帯を持つ', () => {
-    const rows = parseShopRows(
-      [
-        ...shopRow(800, { name: '巡霊の葉', remaining: '残り 25回', cost: '10' }),
-        ...shopRow(400, { name: '叡智の業火', remaining: '残り 80回', cost: '5' }),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => r.name)).toEqual(['叡智の業火', '巡霊の葉'])
-    expect(rows[0].band).toEqual({ top: 430, bottom: 560 })
-    expect(rows[0].y).toBe(495)
+  it('行は上から順に並べる', () => {
+    const rows = parseShopRows([...shift(DANGO_ROW, 300), ...shift(COIN_ROW, -300)], IMAGE_HEIGHT)
+    expect(rows.map((r) => r.name)).toEqual(['サーヴァントコイン(宮本伊織)', '月より団子'])
+    expect(rows[1].y).toBe(916 + 35 / 2)
   })
 
   it('文字が無ければ空', () => {
     expect(parseShopRows([], IMAGE_HEIGHT)).toEqual([])
   })
-
-  it('「獲得したイベントアイテム」の欄の数を交換所の行にしない', () => {
-    const rows = parseShopRows(
-      [
-        box('獲得したイベントアイテム', 100, 100, 400),
-        box('469', 160, 150, 60),
-        box('288', 460, 150, 60),
-        ...shopRow(400, { name: '叡智の業火', remaining: '残り 80回', cost: '5' }),
-      ],
-      IMAGE_HEIGHT,
-    )
-    expect(rows.map((r) => r.name)).toEqual(['叡智の業火'])
-  })
 })
 
 describe('readOwnedCounts', () => {
-  it('見出しの下の数を左から読む', () => {
-    const readings = readOwnedCounts([
-      box('獲得したイベントアイテム', 100, 100, 400),
-      box('214', 760, 150, 60),
-      box('469', 160, 150, 60),
-      box('288', 460, 150, 60),
-      ...shopRow(400, { name: '叡智の業火', remaining: '残り 80回', cost: '5' }),
-    ])
+  it('アイコンで所持数を当てる前に、欄の 469・288・214 を上の段から左から読む', () => {
+    const readings = readOwnedCounts(OWNED_SECTION)
     expect(readings.map((r) => r.value)).toEqual([469, 288, 214])
-    expect(readings[0].box).toEqual({ x: 160, y: 150, width: 60, height: TEXT_HEIGHT })
+    expect(readings[0]).toEqual({ value: 469, box: { x: 638, y: 1031, width: 105, height: 57 }, headingHeight: 39 })
   })
 
-  it('見出しと同じ文字の行の右の数も読む', () => {
-    const readings = readOwnedCounts([
-      box('獲得したイベントアイテム', 100, 100, 400),
-      box('×469', 600, 100, 80),
-      box('1,288', 800, 100, 80),
-    ])
-    expect(readings.map((r) => r.value)).toEqual([469, 1288])
+  it('画面の上の帯の所持数は読まない', () => {
+    expect(readOwnedCounts([...TOP_BAR, ...OWNED_SECTION]).map((r) => r.value)).toEqual([469, 288, 214])
   })
 
-  it('見出しから離れた交換所の行の対価の数は読まない', () => {
-    const readings = readOwnedCounts([
-      box('獲得したイベントアイテム', 100, 100, 400),
-      box('469', 160, 150, 60),
-      box('100', 1000, 260, 60),
-    ])
-    expect(readings.map((r) => r.value)).toEqual([469])
+  it('アイコンを数字と読み違えた文字（確からしさの低い「02」「4」）は読まない', () => {
+    const values = readOwnedCounts(OWNED_SECTION).map((r) => r.value)
+    expect(values).not.toContain(2)
+    expect(values).not.toContain(4)
+  })
+
+  it('一覧の品目の所持の数（右の 180）と「交換期限 残り8日」の日数は読まない', () => {
+    const values = readOwnedCounts(OWNED_SECTION).map((r) => r.value)
+    expect(values).not.toContain(180)
+    expect(values).not.toContain(8)
+  })
+
+  it('見出しの上端から 8H より下の数は読まない', () => {
+    const readings = readOwnedCounts([...OWNED_SECTION, box('100', 638, 944 + 39 * 8 + 1, 105, 57)])
+    expect(readings.map((r) => r.value)).toEqual([469, 288, 214])
   })
 
   it('見出しが無ければ空', () => {
-    expect(readOwnedCounts([box('469', 160, 150, 60)])).toEqual([])
+    expect(readOwnedCounts(OWNED_SECTION.filter((b) => !b.text.startsWith('獲得')))).toEqual([])
   })
 })
