@@ -56,7 +56,10 @@ const loadImage = (file: File): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error(`画像を読み込めませんでした: ${file.name}`))
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      reject(new Error(`画像を読み込めませんでした: ${file.name}`))
+    }
     img.src = URL.createObjectURL(file)
   })
 

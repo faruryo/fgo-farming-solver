@@ -159,7 +159,11 @@ const placeRow = (
     iconOf(source, unique(limited.map(costItemOf)).filter((c): c is number => c !== undefined)),
   )
   const placement: Placement = { source, y: row.y, remaining: row.remaining, candidates: limited, ...decided }
-  if (placement.shopIndex === undefined) return placement
+  if (placement.shopIndex === undefined) {
+    // 残りの値の枠が無いとアイコンも切り出せない。元の原因は残りが読めなかったことなので、その理由で出す
+    if (placement.reason === 'no-crop' && row.remaining === null) placement.reason = 'no-remaining'
+    return placement
+  }
   if (row.remaining === null) placement.reason = 'no-remaining'
   else if ((shop.at(placement.shopIndex)?.limitNum ?? 0) < row.remaining) unplace(placement, 'exceeds-limit')
   return placement

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { EventHubClient } from './EventHubClient'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 import type { ShopImportAnalysis } from '../../lib/shop-screenshot-import/analyze'
@@ -397,6 +397,29 @@ describe('スクリーンショットから取り込む', () => {
       fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
       expect(localStorage.getItem(savedKey)).toBeNull()
       expect(screen.getByLabelText('東干し柿 の所持数')).toHaveValue(0)
+    })
+
+    it('閉じる: 読み取り中に閉じると、あとから終わった読み取りの結果を出さない', async () => {
+      let finish: ((value: ShopImportAnalysis) => void) | undefined
+      analyzeMock.fn.mockImplementation(
+        () =>
+          new Promise<ShopImportAnalysis>(resolve => {
+            finish = resolve
+          }),
+      )
+      renderShop()
+      fireEvent.click(openButton())
+      chooseFiles([image('a.png')])
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: '読み取る' }))
+      })
+      await screen.findByText('読み取り中（0/1）')
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+      await waitFor(() => expect(screen.queryByText('読み取り中（0/1）')).not.toBeInTheDocument())
+      await act(async () => finish?.(analysisOf({ remaining: [matched(FIRE, 80)] })))
+      fireEvent.click(openButton())
+      expect(await screen.findByRole('button', { name: '読み取る' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '取り込む' })).not.toBeInTheDocument()
     })
   })
 })

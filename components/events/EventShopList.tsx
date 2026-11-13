@@ -251,7 +251,8 @@ const RemainingInput: React.FC<{
           const raw = e.target.value
           setDraft(raw)
           if (raw.trim() === '') {
-            onChange(field.index, undefined)
+            // 「-」だけなど数として読めない途中の入力も '' になる。空にしたときだけ残りを除く
+            if (!e.target.validity.badInput) onChange(field.index, undefined)
             return
           }
           const value = normalizeRemainingInput(field.item, Number(raw))

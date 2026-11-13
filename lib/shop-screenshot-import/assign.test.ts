@@ -170,6 +170,13 @@ describe('assignShopRows', () => {
     expect(results[0].shopIndex).toBeUndefined()
   })
 
+  it('残りが読めず切り出す基準も無い行は、残りを読めなかった行として要確認', () => {
+    const results = assignShopRows([[row(0, '伝承結晶', null, 200)]], SHOP, icons({ '0:0': { kind: 'no-crop' } }))
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({ review: true, reason: 'no-remaining', values: [], candidates: [6, 7, 8] })
+    expect(results[0].shopIndex).toBeUndefined()
+  })
+
   it('アイコンを切り出せない: 切り出しが画像の外に出れば要確認', () => {
     const results = assignShopRows([[row(0, '伝承結晶', 1, 200)]], SHOP, icons({ '0:0': { kind: 'no-crop' } }))
     expect(results).toHaveLength(1)

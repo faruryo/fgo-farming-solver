@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { ImageUp } from 'lucide-react'
@@ -148,7 +148,7 @@ const useReasonText = () => {
     'no-name': t('event-shop-import-reason-no-name', '名前の近い品目がありません'),
     'no-remaining': t('event-shop-import-reason-no-remaining', '残りを読めませんでした'),
     'icon-review': t('event-shop-import-reason-icon', '通貨のアイコンを見分けられませんでした'),
-    'no-crop': t('event-shop-import-reason-no-crop', '対価の数を読めず、通貨のアイコンを切り出せませんでした'),
+    'no-crop': t('event-shop-import-reason-no-crop', '通貨のアイコンを切り出せませんでした'),
     ambiguous: t('event-shop-import-reason-ambiguous', '品目を1つに絞れませんでした'),
     'exceeds-limit': t('event-shop-import-reason-exceeds-limit', '読み取った残りが在庫上限を超えています'),
     order: t('event-shop-import-reason-order', '画面の並び順と食い違っています'),
@@ -685,7 +685,10 @@ const useImportFlow = (shop: EventShopItem[]) => {
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [analysis, setAnalysis] = useState<ShopImportAnalysis>()
   const [error, setError] = useState<string | null>(null)
+  // 閉じたあとに終わった読み取りの結果を捨てるための、読み取りの回の番号
+  const runRef = useRef(0)
   const reset = () => {
+    runRef.current += 1
     setStage('upload')
     setFiles([])
     setSkippedNames([])
@@ -703,11 +706,18 @@ const useImportFlow = (shop: EventShopItem[]) => {
     setStage('analyzing')
     setError(null)
     setProgress({ current: 0, total: files.length })
+    const run = (runRef.current += 1)
+    const current = () => runRef.current === run
     try {
       const { analyzeShopScreenshots } = await import('../../lib/shop-screenshot-import/analyze')
-      setAnalysis(await analyzeShopScreenshots(files, shop, (current, total) => setProgress({ current, total })))
+      const result = await analyzeShopScreenshots(files, shop, (done, total) => {
+        if (current()) setProgress({ current: done, total })
+      })
+      if (!current()) return
+      setAnalysis(result)
       setStage('review')
     } catch (e) {
+      if (!current()) return
       setError(e instanceof Error ? e.message : String(e))
       setStage('upload')
     }

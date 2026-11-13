@@ -584,7 +584,7 @@
     "event-shop-import-reason-no-name": "No item with a similar name",
     "event-shop-import-reason-no-remaining": "Could not read the remaining count",
     "event-shop-import-reason-icon": "Could not tell the currency icon apart",
-    "event-shop-import-reason-no-crop": "Could not read the cost, so the currency icon could not be cropped",
+    "event-shop-import-reason-no-crop": "Could not crop the currency icon",
     "event-shop-import-reason-ambiguous": "Could not narrow down to one item",
     "event-shop-import-reason-exceeds-limit": "The read remaining count exceeds the stock limit",
     "event-shop-import-reason-order": "Does not match the order on the screen",
