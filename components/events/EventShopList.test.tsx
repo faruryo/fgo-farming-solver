@@ -109,7 +109,7 @@ const expectLoadingView = (root: HTMLElement) => {
   expect(fields.summary).toBeNull()
   expect(fields.perRun).toBeNull()
   expect(fields.busy).not.toBeNull()
-  expect(within(root).queryByText(/育成対象を設定すると/)).toBeNull()
+  expect(within(root).queryByRole('link', { name: '育成対象を設定' })).toBeNull()
 }
 
 /** 最初のクライアント描画（保存値を読む effect の前）の DOM を写し取る。 */
@@ -122,6 +122,18 @@ const FirstCommitProbe: React.FC<{ onCommit: (html: string) => void }> = ({ onCo
 
 const cardOf = (currency: string) =>
   screen.getByRole('heading', { name: currency }).closest('div.rounded-md') as HTMLElement
+
+/** 「⋯」のメニューを開く（開いたままなら何もしない）。 */
+const openShopMenu = () => {
+  if (!screen.queryByRole('menu')) fireEvent.click(screen.getByRole('button', { name: 'その他の操作' }))
+}
+/** まとめて入れる操作。回数が空のときの行のボタンがあればそれを、無ければ「⋯」のメニューの項目を返す。 */
+const bulkAction = (name: string): HTMLElement => {
+  const button = screen.queryByRole('button', { name })
+  if (button) return button
+  openShopMenu()
+  return screen.getByRole('menuitem', { name: accessible => accessible.startsWith(name) })
+}
 
 describe('EventShopList の保存値を読み終えるまでの表示', () => {
   beforeEach(() => {
@@ -216,7 +228,7 @@ describe('EventShopList の保存値を読み終えるまでの表示', () => {
     expect(localStorage.getItem(savedKey(80700))).toBeNull()
   })
 
-  it('育成計画の保存値を読む前は「育成対象を設定すると…」の案内を出さず、読み込み中にする', () => {
+  it('育成計画の保存値を読む前は「育成対象を設定」のリンクを出さず、読み込み中にする', () => {
     const event = shopEvent()
     mocks.roster = { status: 'unread' }
     const { container, unmount } = render(<EventShopList event={event} />)
@@ -224,10 +236,10 @@ describe('EventShopList の保存値を読み終えるまでの表示', () => {
     expectLoadingView(container)
     unmount()
 
-    // 保存値の無い端末で育成計画を読み終えたら、未設定の案内を出す。
+    // 保存値の無い端末で育成計画を読み終えたら、未設定のリンクを出す。
     mocks.roster = undefined
     render(<EventShopList event={event} />)
-    expect(screen.getByText('育成対象を設定すると、足りている品目と要る分が分かります。')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '育成対象を設定' })).toBeInTheDocument()
   })
 
   it('AP 予算の保存値を読む前は、周回の内訳に AP 予算の内訳と欄を出さず、読み込み中にする', () => {
@@ -505,13 +517,13 @@ describe('EventShopList の1つの一覧', () => {
 
   it('「全部交換」を押すと月より団子の行は 4 で内訳に3つの通貨が出て、サーヴァントコインの行は 48', () => {
     renderShop()
-    fireEvent.click(screen.getByRole('button', { name: '全部交換' }))
+    fireEvent.click(bulkAction('全部交換'))
     expect(countInput('月より団子')).toHaveValue(4)
     expect(within(rowOf('月より団子')).getByText('武蔵うどん 2・江戸むすび 1・東干し柿 1')).toBeInTheDocument()
     expect(countInput('サーヴァントコイン')).toHaveValue(48)
   })
 
-  it('巡霊の葉の不足が 800 のとき優先素材を押すと、行は 75 で「育成にあと 800 個」だけが出て「交換所では 50 個足りない」は出ない', () => {
+  it('巡霊の葉の不足が 800 のとき「足りない分だけ」を押すと、行は 75 で「育成にあと 800 個」だけが出て「交換所では 50 個足りない」は出ない', () => {
     mocks.roster = {
       status: 'ready',
       chaldeaState: {},
@@ -519,7 +531,7 @@ describe('EventShopList の1つの一覧', () => {
       totalNeed: new Map([[LEAF, 800]]),
     }
     renderShop()
-    fireEvent.click(screen.getByRole('button', { name: '優先素材' }))
+    fireEvent.click(bulkAction('足りない分だけ'))
 
     expect(countInput('巡霊の葉')).toHaveValue(75)
     expect(within(rowOf('巡霊の葉')).getByText('育成にあと 800 個')).toBeInTheDocument()

@@ -3,8 +3,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, MoreHorizontal } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -24,7 +31,9 @@ import {
   groupShopByCurrency,
   orderShopByEfficiency,
   pickIdTable,
+  normalizeRemainingInput,
   readShopSavedInputs,
+  remainingFromItemKeys,
   rowCountOf,
   rowLimit,
   selectAllCurrenciesUpToLimit,
@@ -33,11 +42,13 @@ import {
   shopWantedKey,
   splitRowCount,
   summarizeShortfall,
+  withRemainingValues,
   type ShopCurrencyGroup,
   type ShopCurrencyNeed,
   type ShopExchangeCounts,
   type ShopItemStatus,
   type ShopListRow,
+  type ShopRemaining,
   type ShopSavedInputs,
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
@@ -60,6 +71,7 @@ import type { Result } from '../../interfaces/api'
 import { computeApBudget } from '../../lib/ap-budget'
 import { ApBudgetBreakdown, ApBudgetInputs, useApBudgetProfile } from './ApBudget'
 import { DropBonusInputs, toCount, type BonusTarget } from './DropBonusInputs'
+import { ShopScreenshotImport, type ShopImportValues } from './ShopScreenshotImport'
 import {
   BonusComparisonTable,
   BonusRarityInputs,
@@ -112,16 +124,35 @@ const PerCurrencyValues: React.FC<{
   </span>
 )
 
-/** 行の在庫上限。まとめた行は合計と通貨ごとの在庫上限。 */
-const LimitCell: React.FC<{ row: ShopListRow }> = ({ row }) => {
+const NO_REMAINING: ShopRemaining = new Map()
+
+/**
+ * 行の上限。残りのある品目は「残り N / 上限 M」（在庫上限の M と残りの N）。
+ * まとめた行は効く上限の合計と、通貨ごとの品目の上限（残りのある品目は「残り N / 上限 M」）。
+ */
+const LimitCell: React.FC<{ row: ShopListRow; remaining?: ShopRemaining }> = ({ row, remaining = NO_REMAINING }) => {
   const { t } = useTranslation('events')
-  const limit = rowLimit(row)
+  const limit = rowLimit(row, remaining)
+  const indexOf = new Map(shopRowEntries(row).map(({ index, item }) => [item, index]))
+  const itemLimit = (item: EventShopItem): string => {
+    const index = indexOf.get(item)
+    const rest = index === undefined || item.limitNum <= 0 ? undefined : remaining.get(index)
+    return rest === undefined
+      ? item.limitNum.toLocaleString()
+      : t('event-shop-limit-remaining', '残り {{remaining}} / 上限 {{limit}}', {
+          remaining: rest.toLocaleString(),
+          limit: item.limitNum.toLocaleString(),
+        })
+  }
+  const [single] = row.items
+  const singleLimit = row.items.length === 1 && single ? itemLimit(single) : undefined
+  const total = limit === undefined ? t('event-shop-unlimited', '上限なし') : (singleLimit ?? limit.toLocaleString())
   return (
     <>
-      <span>{limit > 0 ? limit.toLocaleString() : t('event-shop-unlimited', '上限なし')}</span>
+      <span className="whitespace-nowrap">{total}</span>
       {row.items.length > 1 && (
         <span style={{ color: 'var(--text3)' }}>
-          <PerCurrencyValues items={row.items} valueOf={item => item.limitNum.toLocaleString()} small />
+          <PerCurrencyValues items={row.items} valueOf={itemLimit} small />
         </span>
       )}
     </>
@@ -193,19 +224,116 @@ const AtlasDetailLink: React.FC<{ name: string; href: string }> = ({ name, href 
 /** 畳んだ「いらない品目」の開閉の見出しに付ける属性。 */
 const UNWANTED_SUMMARY_ATTR = 'data-shop-unwanted-summary'
 
+/** 品目名のポップアップの残りの入力に渡す、行の品目（交換所の配列の添字）と今の残り。 */
+interface RemainingField {
+  index: number
+  item: EventShopItem
+  value?: number
+}
+
+/** 行の品目のうち、在庫上限のある品目の残りの入力の値（在庫上限の無い品目には残りが無い）。 */
+const remainingFieldsOf = (row: ShopListRow, remaining: ShopRemaining): RemainingField[] =>
+  shopRowEntries(row)
+    .filter(({ item }) => item.limitNum > 0)
+    .map(({ index, item }) => ({ index, item, value: remaining.get(index) }))
+
+/**
+ * 1品目の残りの入力。空にすると残りを除き、入れた値は小数を切り捨て、在庫上限で頭打ちにして保存する。
+ * 負の数など残りにならない値は保存しない。入力中は打った文字のまま出し、離れると保存した値に戻す。
+ */
+const RemainingInput: React.FC<{
+  label: string
+  field: RemainingField
+  onChange: (index: number, value: number | undefined) => void
+}> = ({ label, field, onChange }) => {
+  const [draft, setDraft] = useState<string>()
+  return (
+    <span className="block h-7 w-16">
+      <Input
+        type="number"
+        min={0}
+        max={field.item.limitNum}
+        value={draft ?? (field.value === undefined ? '' : String(field.value))}
+        onChange={e => {
+          const raw = e.target.value
+          setDraft(raw)
+          if (raw.trim() === '') {
+            // 「-」だけなど数として読めない途中の入力も '' になる。空にしたときだけ残りを除く
+            if (!e.target.validity.badInput) onChange(field.index, undefined)
+            return
+          }
+          const value = normalizeRemainingInput(field.item, Number(raw))
+          if (value !== undefined) onChange(field.index, value)
+        }}
+        onBlur={() => setDraft(undefined)}
+        aria-label={label}
+        className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-2 text-base md:text-base"
+      />
+    </span>
+  )
+}
+
+/** 品目名のポップアップの残りの入力。まとめた行は通貨ごとに、通貨のアイコンと名前を付けて並べる。 */
+const RemainingInputs: React.FC<{
+  name: string
+  fields: RemainingField[]
+  merged: boolean
+  onChange: (index: number, value: number | undefined) => void
+}> = ({ name, fields, merged, onChange }) => {
+  const { t } = useTranslation('events')
+  const label = useCurrencyLabel()
+  return (
+    <div className="flex flex-col gap-1 text-xs" style={{ color: 'var(--text2)' }}>
+      <span className="font-medium">{t('event-shop-remaining-title', 'ゲームの交換所の「残り」')}</span>
+      {fields.map(field => (
+        <label key={field.index} className="flex items-center gap-1.5">
+          {merged && (
+            <span className="inline-flex items-center gap-1 min-w-[6em]">
+              <CurrencyMark currency={field.item} />
+              {field.item.costIcon && <span>{label(field.item)}</span>}
+            </span>
+          )}
+          <RemainingInput
+            label={
+              merged
+                ? t('event-shop-remaining-currency-label', '{{name}}（{{currency}}）の残り', {
+                    name,
+                    currency: label(field.item),
+                  })
+                : t('event-shop-remaining-label', '{{name}} の残り', { name })
+            }
+            field={field}
+            onChange={onChange}
+          />
+          <span style={{ color: 'var(--text3)' }}>
+            {t('event-shop-remaining-limit', '/ 上限 {{limit}}', { limit: field.item.limitNum.toLocaleString() })}
+          </span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 /**
  * 品目名を押すと、その品目の「欲しい」と「いらない」を選べるポップアップを出す。選ぶとすぐに設定を変えて閉じる。
  * 呼び出し側へは、選んだ値とキーボードで選んだか（click の detail が 0）を渡す。
  * Atlas Academy DB にページがある品目（detailUrl を渡したもの）は、そのページを開く「アイテム詳細」ボタンも出す。
+ * 在庫上限のある品目は残りの入力も出す（まとめた行は通貨ごと）。残りを変えてもポップアップは閉じない。
  */
 const ItemWantPopover: React.FC<{
-  name: string
+  row: ShopListRow
   wanted: boolean
-  rowKey: number
-  detailUrl?: string
-  onChange: (wanted: boolean, viaKeyboard: boolean) => void
-}> = ({ name, wanted, rowKey, detailUrl, onChange }) => {
+  remaining: ShopRemaining
+  onChange: (row: ShopListRow, wanted: boolean, viaKeyboard: boolean) => void
+  onRemainingChange: (index: number, value: number | undefined) => void
+}> = ({ row, wanted, remaining, onChange, onRemainingChange }) => {
   const [open, setOpen] = useState(false)
+  const [first] = row.items
+  if (!first) return null
+  const name = rowName(first)
+  const rowKey = row.indices[0]
+  const detailUrl = atlasDetailUrl(first)
+  const fields = remainingFieldsOf(row, remaining)
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
@@ -226,11 +354,14 @@ const ItemWantPopover: React.FC<{
           name={name}
           wanted={wanted}
           onChange={(value, event) => {
-            onChange(value, event.detail === 0)
+            onChange(row, value, event.detail === 0)
             setOpen(false)
           }}
         />
         {detailUrl !== undefined && <AtlasDetailLink name={name} href={detailUrl} />}
+        {fields.length > 0 && (
+          <RemainingInputs name={name} fields={fields} merged={row.items.length > 1} onChange={onRemainingChange} />
+        )}
       </PopoverContent>
     </Popover>
   )
@@ -269,8 +400,10 @@ interface ShopRowProps {
   /** 効率順の行の順位と効率。効率の無い行は undefined。 */
   ranked?: { rank: number; efficiency: number }
   counts: ShopExchangeCounts
+  remaining: ShopRemaining
   onRowCountChange: (row: ShopListRow, count: number) => void
   onWantedChange: (row: ShopListRow, wanted: boolean, viaKeyboard: boolean) => void
+  onRemainingChange: (index: number, value: number | undefined) => void
   plan?: RowPlan
 }
 
@@ -297,13 +430,14 @@ const RowBreakdown: React.FC<{
 
 const rowName = (item: EventShopItem): string => item.name || `#${item.itemId}`
 
-const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange, onWantedChange, plan }) => {
+const ShopRow: React.FC<ShopRowProps> = props => {
+  const { row, ranked, counts, remaining, onRowCountChange, plan } = props
   const { t } = useTranslation('events')
   const [first] = row.items
   if (!first) return null
   const name = rowName(first)
-  const { count, parts } = rowCountOf(row, counts)
-  const limit = rowLimit(row)
+  const { count, parts } = rowCountOf(row, counts, remaining)
+  const limit = rowLimit(row, remaining)
   // 足りている・使わない行も、回数を入れたら他の行と同じ色に戻す。
   const dimmed = (plan?.status?.kind === 'enough' || plan?.status?.kind === 'unused') && count === 0
   const color = dimmed ? 'var(--text3)' : 'var(--text2)'
@@ -319,11 +453,11 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
         <span className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
           <Icon src={first.icon} />
           <ItemWantPopover
-            name={name}
+            row={row}
             wanted
-            rowKey={row.indices[0]}
-            detailUrl={atlasDetailUrl(first)}
-            onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
+            remaining={remaining}
+            onChange={props.onWantedChange}
+            onRemainingChange={props.onRemainingChange}
           />
         </span>
         {row.items.length > 1 && <RowBreakdown parts={parts} />}
@@ -337,19 +471,17 @@ const ShopRow: React.FC<ShopRowProps> = ({ row, ranked, counts, onRowCountChange
           <Input
             type="number"
             min={0}
-            {...(limit > 0 ? { max: limit } : {})}
+            {...(limit !== undefined ? { max: limit } : {})}
             value={count}
             onChange={e => onRowCountChange(row, toCount(e.target.value))}
-            aria-label={t('event-shop-count-label', '{{name}} の交換回数', {
-              name,
-            })}
+            aria-label={t('event-shop-count-label', '{{name}} の交換回数', { name })}
             className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-1.5 text-base sm:px-2 md:text-base"
           />
         </div>
       </td>
       <td className="text-right px-0.5 sm:px-1 py-1.5 whitespace-nowrap">×{first.qty.toLocaleString()}</td>
       <td className="text-right px-0.5 sm:px-1 py-1.5">
-        <LimitCell row={row} />
+        <LimitCell row={row} remaining={remaining} />
       </td>
       <td className="text-right px-0.5 sm:px-1 py-1.5">
         <CostCell row={row} />
@@ -460,8 +592,10 @@ const displayOrder = (groups: ShopRowGroup[]): ShopListRow[] =>
  */
 const UnwantedRows: React.FC<{
   rows: ShopListRow[]
+  remaining: ShopRemaining
   onWantedChange: (row: ShopListRow, wanted: boolean, viaKeyboard: boolean) => void
-}> = ({ rows, onWantedChange }) => {
+  onRemainingChange: (index: number, value: number | undefined) => void
+}> = ({ rows, remaining, onWantedChange, onRemainingChange }) => {
   const { t } = useTranslation('events')
   const [open, setOpen] = useState(false)
   return (
@@ -479,21 +613,17 @@ const UnwantedRows: React.FC<{
       </button>
       {open && (
         <ul className="flex flex-wrap gap-x-4 gap-y-2 mt-2" style={{ color: 'var(--text3)' }}>
-          {rows.map(row => {
-            const [first] = row.items
-            if (!first) return null
-            return (
-              <li key={row.indices[0]}>
-                <ItemWantPopover
-                  name={rowName(first)}
-                  wanted={false}
-                  rowKey={row.indices[0]}
-                  detailUrl={atlasDetailUrl(first)}
-                  onChange={(wanted, viaKeyboard) => onWantedChange(row, wanted, viaKeyboard)}
-                />
-              </li>
-            )
-          })}
+          {rows.map(row => (
+            <li key={row.indices[0]}>
+              <ItemWantPopover
+                row={row}
+                wanted={false}
+                remaining={remaining}
+                onChange={onWantedChange}
+                onRemainingChange={onRemainingChange}
+              />
+            </li>
+          ))}
         </ul>
       )}
     </div>
@@ -567,7 +697,9 @@ const ShopTable: React.FC<{
   list: Pick<ShopListRows, 'wantedRows' | 'unwantedRows' | 'planOf' | 'setRowCount' | 'setRowWanted'>
   apPrices: Readonly<Record<number, number>>
   counts: ShopExchangeCounts
-}> = ({ list, apPrices, counts }) => {
+  remaining: ShopRemaining
+  onRemainingChange: (index: number, value: number | undefined) => void
+}> = ({ list, apPrices, counts, remaining, onRemainingChange }) => {
   const { wantedRows: rows, unwantedRows, planOf, setRowCount: onRowCountChange, setRowWanted } = list
   const { t } = useTranslation('events')
   const { ranked, unpriced } = useMemo(() => orderShopByEfficiency(rows, apPrices), [rows, apPrices])
@@ -579,8 +711,10 @@ const ShopTable: React.FC<{
       row={shopRow}
       ranked={rankedRow}
       counts={counts}
+      remaining={remaining}
       onRowCountChange={onRowCountChange}
       onWantedChange={onWantedChange}
+      onRemainingChange={onRemainingChange}
       plan={planOf(shopRow)}
     />
   )
@@ -608,7 +742,14 @@ const ShopTable: React.FC<{
           </tbody>
         </table>
       </div>
-      {unwantedRows.length > 0 && <UnwantedRows rows={unwantedRows} onWantedChange={onWantedChange} />}
+      {unwantedRows.length > 0 && (
+        <UnwantedRows
+          rows={unwantedRows}
+          remaining={remaining}
+          onWantedChange={onWantedChange}
+          onRemainingChange={onRemainingChange}
+        />
+      )}
     </Card>
   )
 }
@@ -935,34 +1076,6 @@ const PerRunTable: React.FC<{
   )
 }
 
-const SelectAll: React.FC<{ onSelectAll: () => void }> = ({ onSelectAll }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Button size="sm" variant="outline" onClick={onSelectAll}>
-        {t('event-shop-select-all-currencies', '全部交換')}
-      </Button>
-      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t('event-shop-select-all-hint', '欲しい品目のうち、上限のある品目をすべて上限まで')}
-      </span>
-    </div>
-  )
-}
-
-const SelectShortfall: React.FC<{ onSelect?: () => void }> = ({ onSelect }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Button size="sm" variant="outline" onClick={onSelect} disabled={!onSelect}>
-        {t('event-shop-select-priority', '優先素材')}
-      </Button>
-      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t('event-shop-select-priority-hint', '欲しい品目に、育成計画で足りない分と、計画の対象外の品目を上限まで')}
-      </span>
-    </div>
-  )
-}
-
 /** 育成計画の状態か、交換所で埋まる不足の要約を1行で出す。 */
 const RosterLine: React.FC<{
   status: RosterNeed['status']
@@ -973,14 +1086,8 @@ const RosterLine: React.FC<{
   const { t } = useTranslation('events')
   switch (status) {
     case 'empty':
-      return (
-        <p className="text-xs flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--text3)' }}>
-          <span>{t('event-shop-roster-empty', '育成対象を設定すると、足りている品目と要る分が分かります。')}</span>
-          <Link href="/material" className="font-semibold" style={{ color: 'var(--gold)' }}>
-            {t('event-shop-roster-link', '育成対象を設定する')}
-          </Link>
-        </p>
-      )
+      // 未設定の案内は、回数が空のときの行のリンクとメニューの説明で出す。
+      return null
     case 'unread':
     case 'loading':
       return <Message>{t('event-shop-roster-loading', '育成計画を読み込み中...')}</Message>
@@ -1040,13 +1147,14 @@ const PlanItemIdsLoader: React.FC<{ onChange: (value: PlanItemIds | undefined) =
 }
 
 /**
- * 育成計画と実所持数から、品目の状態と優先素材の回数を出す。育成計画と所持数は読むだけ。
- * `unwanted` は「いらない」の品目のキー（`shopWantedKey`）で、優先素材はその品目の回数を変えない。
+ * 育成計画と実所持数から、品目の状態と「足りない分だけ」の回数を出す。育成計画と所持数は読むだけ。
+ * `unwanted` は「いらない」の品目のキー（`shopWantedKey`）で、「足りない分だけ」はその品目の回数を変えない。
  */
 const useShopRosterPlan = (
   shop: EventShopItem[],
   updateCounts: (update: (prev: ShopExchangeCounts) => ShopExchangeCounts) => void,
   unwanted: ReadonlySet<string>,
+  remaining: ShopRemaining,
 ) => {
   const roster = useRosterNeed()
   // 周回目標（STORAGE_KEYS.ITEMS）ではなく実所持数を使う。
@@ -1069,8 +1177,8 @@ const useShopRosterPlan = (
     }
   }, [ready, possession, catalogIds])
   const allocation = useMemo(
-    () => statusOf && allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, unwanted),
-    [shop, statusOf, unwanted],
+    () => statusOf && allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, unwanted, undefined, remaining),
+    [shop, statusOf, unwanted, remaining],
   )
   const summary = useMemo(() => allocation && summarizeShortfall(allocation), [allocation])
 
@@ -1092,36 +1200,150 @@ const useShopRosterPlan = (
     catalogFailed: !!ready && !!planItemIds?.failed,
     reloadCatalog: () => planItemIds?.reload(),
     planOf,
-    /** 「欲しい」の品目の交換回数を優先素材の回数で置き換える。育成計画が使えないときは undefined。 */
+    /** 「欲しい」の品目の交換回数を「足りない分だけ」の回数で置き換える。育成計画が使えないときは undefined。 */
     selectShortfall:
       statusOf && allocation
         ? () => {
             // 「いらない」の品目は今の回数のまま残すので、前の値に重ねる。
-            updateCounts(prev => allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, unwanted, prev).counts)
+            updateCounts(
+              prev => allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, unwanted, prev, remaining).counts,
+            )
             setUnlimitedPrompt(allocation.unlimitedWanted)
           }
         : undefined,
   }
 }
 
-/** 全部交換・優先素材のボタンと、育成計画から見た要約の1行。 */
+/** メニューの1項目。名前の下に説明を1行出す。 */
+const MenuAction: React.FC<{ label: string; description: string; onClick?: () => void }> = ({
+  label,
+  description,
+  onClick,
+}) => (
+  <DropdownMenuItem className="flex-col items-start gap-0" disabled={!onClick} onClick={onClick}>
+    <span>{label}</span>
+    <span className="text-xs text-muted-foreground">{description}</span>
+  </DropdownMenuItem>
+)
+
+/** 一覧の上の「⋯」のメニュー。全部交換・足りない分だけと、残りがあるときだけ残りを消す。 */
+const ShopActionsMenu: React.FC<{
+  selectAllLabel: string
+  shortfallLabel: string
+  onSelectAll: () => void
+  onSelectShortfall?: () => void
+  rosterEmpty: boolean
+  remainingCount: number
+  onClearRemaining?: () => void
+}> = ({ selectAllLabel, shortfallLabel, onSelectAll, onSelectShortfall, rosterEmpty, remainingCount, onClearRemaining }) => {
+  const { t } = useTranslation('events')
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            size="icon-sm"
+            variant="outline"
+            className="ml-auto shrink-0"
+            aria-label={t('event-shop-more-actions', 'その他の操作')}
+          />
+        }
+      >
+        <MoreHorizontal aria-hidden="true" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 max-w-[calc(100vw-1rem)]">
+        <MenuAction
+          label={selectAllLabel}
+          description={t('event-shop-select-all-hint', '欲しい品目を上限まで入れる')}
+          onClick={onSelectAll}
+        />
+        <MenuAction
+          label={shortfallLabel}
+          description={
+            rosterEmpty
+              ? t('event-shop-select-priority-disabled', '育成対象を設定すると使えます')
+              : t('event-shop-select-priority-hint', '育成に足りない分を入れる')
+          }
+          onClick={onSelectShortfall}
+        />
+        {onClearRemaining && (
+          <>
+            <DropdownMenuSeparator />
+            <MenuAction
+              label={t('event-shop-clear-remaining', '残りを消す（{{n}} 件）', { n: remainingCount })}
+              description={t('event-shop-clear-remaining-hint', '上限を在庫上限に戻す')}
+              onClick={onClearRemaining}
+            />
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/**
+ * スクリーンショットからの取り込みの主ボタンと、ほかの操作（全部交換・足りない分だけ・残りを消す）のメニュー。
+ * 交換回数がすべて 0 の間は、回数をまとめて入れるボタンの行も出す。その下に育成計画から見た要約の1行。
+ */
 const SelectControls: React.FC<{
   onSelectAll: () => void
   rosterPlan: ReturnType<typeof useShopRosterPlan>
-}> = ({ onSelectAll, rosterPlan }) => (
-  <div className="flex flex-col gap-2">
-    <div className="flex flex-wrap items-start gap-3">
-      <SelectAll onSelectAll={onSelectAll} />
-      <SelectShortfall onSelect={rosterPlan.selectShortfall} />
+  importEntry: React.ReactNode
+  /** 交換回数がすべて 0 か。 */
+  empty: boolean
+  /** 残りを持つ品目（品目×通貨）の件数。 */
+  remainingCount: number
+  onClearRemaining?: () => void
+}> = ({ onSelectAll, rosterPlan, importEntry, empty, remainingCount, onClearRemaining }) => {
+  const { t } = useTranslation('events')
+  const { selectShortfall } = rosterPlan
+  const rosterEmpty = rosterPlan.roster.status === 'empty'
+  const selectAllLabel = t('event-shop-select-all-currencies', '全部交換')
+  const shortfallLabel = t('event-shop-select-priority', '足りない分だけ')
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        {importEntry}
+        {remainingCount > 0 && (
+          <span data-testid="shop-remaining-applied" className="text-[11px]" style={{ color: 'var(--text3)' }}>
+            {t('event-shop-remaining-applied', '残り {{n}} 件を反映中', { n: remainingCount })}
+          </span>
+        )}
+        <ShopActionsMenu
+          selectAllLabel={selectAllLabel}
+          shortfallLabel={shortfallLabel}
+          onSelectAll={onSelectAll}
+          onSelectShortfall={selectShortfall}
+          rosterEmpty={rosterEmpty}
+          remainingCount={remainingCount}
+          onClearRemaining={onClearRemaining}
+        />
+      </div>
+      {empty && (
+        <div data-testid="shop-first-fill" className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text2)' }}>
+          <span>{t('event-shop-first-fill', 'まず回数を入れる')}</span>
+          <Button size="sm" variant="outline" onClick={onSelectAll}>
+            {selectAllLabel}
+          </Button>
+          <Button size="sm" variant="outline" onClick={selectShortfall} disabled={!selectShortfall}>
+            {shortfallLabel}
+          </Button>
+          {rosterEmpty && (
+            <Link href="/material" className="font-semibold" style={{ color: 'var(--gold)' }}>
+              {t('event-shop-roster-link', '育成対象を設定')}
+            </Link>
+          )}
+        </div>
+      )}
+      <RosterLine
+        status={rosterPlan.roster.status}
+        summary={rosterPlan.summary}
+        catalogFailed={rosterPlan.catalogFailed}
+        onReloadCatalog={rosterPlan.reloadCatalog}
+      />
     </div>
-    <RosterLine
-      status={rosterPlan.roster.status}
-      summary={rosterPlan.summary}
-      catalogFailed={rosterPlan.catalogFailed}
-      onReloadCatalog={rosterPlan.reloadCatalog}
-    />
-  </div>
-)
+  )
+}
 
 /** ボーナスの欄に並べる通貨と、交換所の通貨に無いイベントポイントの品目。 */
 const useBonusTargets = (
@@ -1384,7 +1606,7 @@ const ShopLoadingSkeleton: React.FC<{
   </div>
 )
 
-const EMPTY_SHOP_INPUTS: ShopSavedInputs = { counts: {}, owned: {}, bonus: {}, rarity: {} }
+const EMPTY_SHOP_INPUTS: ShopSavedInputs = { counts: {}, owned: {}, bonus: {}, rarity: {}, remaining: {} }
 
 /** 保存した ☆ の表から、凸・無凸の +N と所持枚数だけを取り出す（無い値は 0）。 */
 const rarityValuesOf = (table: Readonly<Record<string, number>> | undefined): RarityValues => ({
@@ -1459,6 +1681,28 @@ const useShopSavedInputs = (event: EventPlannerEvent, groups: ShopCurrencyGroup[
 }
 
 /**
+ * 品目ごとの残りの保存値の読み書き（取り込みの確定・ポップアップでの手直し・まとめて消す）。
+ * 残りは保存した交換回数を書き換えない（交換回数は表示と計算でだけ効く上限で切り詰める）。
+ */
+const useShopRemaining = (shop: EventShopItem[], { inputs, edit }: ShopSavedState) => {
+  const remaining = useMemo(() => remainingFromItemKeys(shop, inputs.remaining), [shop, inputs.remaining])
+  /** 品目ごとの残りを書き換える（undefined は残りを除く）。ほかの品目の残りと、交換回数などは変えない。 */
+  const updateRemaining = (values: ReadonlyMap<number, number | undefined>) =>
+    edit(prev => ({ ...prev, remaining: withRemainingValues(shop, prev.remaining, values) }))
+  return {
+    remaining,
+    setRemaining: (index: number, value: number | undefined) => updateRemaining(new Map([[index, value]])),
+    /** 残りのある品目が無ければ undefined（押せない）。 */
+    clearRemaining: remaining.size > 0 ? () => edit(prev => ({ ...prev, remaining: {} })) : undefined,
+    /** 取り込みの確定。入れた品目の残りと入れた通貨の所持数だけを書き換える。 */
+    applyImport: (values: ShopImportValues) => {
+      if (values.remaining.size > 0) updateRemaining(values.remaining)
+      if (values.owned.size > 0) edit(prev => ({ ...prev, owned: { ...prev.owned, ...Object.fromEntries(values.owned) } }))
+    },
+  }
+}
+
+/**
  * 交換所の品目の一覧の行と、行ごとの育成計画の表示・回数の入れ方。
  * 行は「欲しい」の行と「いらない」の行に分ける（まとめた行は品目が同じなので最初の品目の設定を使う）。
  * まとめた行は最初の品目の表示を使う。
@@ -1469,6 +1713,7 @@ const useShopListRows = (
   itemPlanOf: (item: EventShopItem, index: number) => RowPlan | undefined,
   updateCounts: (update: (prev: ShopExchangeCounts) => ShopExchangeCounts) => void,
   { unwanted, setWanted }: Pick<ReturnType<typeof useItemWantSetting>, 'unwanted' | 'setWanted'>,
+  remaining: ShopRemaining,
 ) => {
   const rows = useMemo(() => buildShopListRows(shop), [shop])
   const { wantedRows, unwantedRows } = useMemo(() => {
@@ -1487,7 +1732,7 @@ const useShopListRows = (
   const setRowCount = (row: ShopListRow, count: number) =>
     updateCounts(prev => {
       const next = new Map(prev)
-      for (const [index, n] of splitRowCount(row, count)) next.set(index, n)
+      for (const [index, n] of splitRowCount(row, count, remaining)) next.set(index, n)
       return next
     })
   /** 行の品目の設定を変える（まとめた行は品目が同じなので1つ）。 */
@@ -1515,17 +1760,18 @@ export const EventShopList: React.FC<{
   pointItemId?: number
 }> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
   const { shop } = event
-  const groups = useMemo(() => groupShopByCurrency(shop), [shop])
-  const { counts, owned, bonus, updateCounts, setOwned, setBonus, saved, loaded } = useShopSavedInputs(
-    event,
-    groups,
-    pointItemId,
-  )
+  const currencyGroups = useMemo(() => groupShopByCurrency(shop), [shop])
+  const savedInputs = useShopSavedInputs(event, currencyGroups, pointItemId)
+  const { counts, owned, bonus, updateCounts, setOwned, setBonus, saved, loaded } = savedInputs
+  const shopRemaining = useShopRemaining(shop, saved)
+  const { remaining } = shopRemaining
+  // 通貨ごとの全交換の合計は、残りのある品目では効く上限で数える。
+  const groups = useMemo(() => groupShopByCurrency(shop, remaining), [shop, remaining])
   const want = useItemWantSetting()
   const { unwanted } = want
   const needs = useMemo(
-    () => computeShopCurrencyNeeds(shop, excludeUnwantedCounts(shop, counts, unwanted), owned),
-    [shop, counts, unwanted, owned],
+    () => computeShopCurrencyNeeds(shop, excludeUnwantedCounts(shop, counts, unwanted), owned, remaining),
+    [shop, counts, unwanted, owned, remaining],
   )
   const currencyNeed = useMemo(() => new Map(needs.map(n => [n.costItemId, n.need])), [needs])
   const targets = useBonusTargets(event, groups, pointItemId)
@@ -1533,8 +1779,8 @@ export const EventShopList: React.FC<{
   const { effectiveBonus } = craftEssences
   const bonused = useMemo(() => applyDropBonus(event, new Map(effectiveBonus)), [event, effectiveBonus])
   const plan = useMemo(() => planShopCurrencies(bonused.event, currencyNeed), [bonused, currencyNeed])
-  const rosterPlan = useShopRosterPlan(shop, updateCounts, unwanted)
-  const list = useShopListRows(shop, rosterPlan.planOf, updateCounts, want)
+  const rosterPlan = useShopRosterPlan(shop, updateCounts, unwanted, remaining)
+  const list = useShopListRows(shop, rosterPlan.planOf, updateCounts, want, remaining)
 
   const labelOf = (id: number) => targets.find(target => target.itemId === id)?.label ?? `#${id}`
   const bonusApplied = [...effectiveBonus.values()].some(n => n > 0)
@@ -1549,10 +1795,14 @@ export const EventShopList: React.FC<{
       {rosterPlan.loader}
       <PlanSummary plan={plan} />
       <SelectControls
-        onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev, unwanted))}
+        onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev, unwanted, remaining))}
         rosterPlan={rosterPlan}
+        importEntry={<ShopScreenshotImport shop={shop} remaining={remaining} owned={owned} onConfirm={shopRemaining.applyImport} />}
+        empty={[...counts.values()].every(n => n === 0)}
+        remainingCount={remaining.size}
+        onClearRemaining={shopRemaining.clearRemaining}
       />
-      <ShopTable list={list} apPrices={apPrices} counts={counts} />
+      <ShopTable list={list} apPrices={apPrices} counts={counts} remaining={remaining} onRemainingChange={shopRemaining.setRemaining} />
       <CurrencyNeeds groups={groups} needs={needs} owned={owned} onOwnedChange={setOwned} />
       <ShopBonusCard
         state={craftEssences}
