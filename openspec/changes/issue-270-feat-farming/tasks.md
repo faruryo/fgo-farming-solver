@@ -2,7 +2,7 @@
 
 ## 1. 周回計算の API
 
-- [ ] 1.1 `app/api/solve/route.ts` で、ストック込みの計算であることを示す引数（`stockIncluded=true`）を受け取り、真のときだけ保存する計算の `params` に印を入れる。ストック込みの目標を別の引数（`itemsStock`）で受けて 2 件を保存する経路と、それだけが使う補助の関数を消し、その引数が来ても無視して 1 件を保存する。`app/api/solve/route.test.ts` に「引数が真なら保存した結果の印が真」「引数なし・真以外なら印なし」「`itemsStock` を送っても 1 件だけ保存され、応答に組の ID が無い」のテストを足し、`pnpm exec vitest run app/api/solve` が通ることで確かめる
+- [ ] 1.1 `app/api/solve/route.ts` で、ストック込みの計算であることを示す引数（`stockIncluded=true`）を受け取り、真のときだけ保存する計算の `params` に印を入れる。ストック込みの目標を別の引数（`itemsStock`）で受けて 2 件を保存する経路と、それだけが使う補助の関数を消し、その引数が来ても無視して 1 件を保存する。`app/api/solve/route.test.ts` に「引数が真なら保存した結果の印が真」「引数なし・真以外なら印なし」「`itemsStock` を送っても 1 件だけ保存され、応答に組の ID が無い」のテストを足し、`pnpm exec vitest run app/api/solve` が通ることで確かめる。今の `route.test.ts` には `GET` を通すテストが無いので、`getDrops`・`auth`・`getCloudflareContext`（DB の `prepare`/`bind`/`run`）のモックを足して `GET` を通す（真以外の値は `1`・`false`・空文字で試す）
 
 ## 2. 育成計算機からの送信
 
