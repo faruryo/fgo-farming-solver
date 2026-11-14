@@ -10,9 +10,11 @@ vi.mock('react-i18next', () => ({
   }),
 }))
 
+const dropsItem = vi.hoisted(() => ({ atlasId: 6501 }))
+
 vi.mock('../../hooks/use-drops', () => ({
   useDrops: () => ({
-    items: [{ id: 'item-1', name: '竜の牙', category: '銅素材', atlasId: 6501 }],
+    items: [{ id: 'item-1', name: '竜の牙', category: '銅素材', atlasId: dropsItem.atlasId }],
     quests: [{ id: 'quest-1', name: 'デミング', ap: 20 }],
     drop_rates: [{ quest_id: 'quest-1', item_id: 'item-1', drop_rate: 0.5 }],
     campaigns: [],
@@ -52,7 +54,10 @@ vi.mock('../../hooks/use-pod-free-quests', () => ({
 }))
 
 describe('NearGoalSection', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    dropsItem.atlasId = 6501
+  })
 
   it('renders section title and edit possession button if provided', async () => {
     const onOpenPossession = vi.fn()
@@ -73,7 +78,7 @@ describe('NearGoalSection', () => {
     expect(screen.queryByRole('button', { name: /所持数を編集/ })).not.toBeInTheDocument()
   })
 
-  // #262: 所持数は Atlas ID キー。params.items(短縮ID) は計算時点の残不足数なので目標として引かない。
+  // #262: 所持数は Atlas ID キー。育成必要数がある素材は、それを目標にして今の所持数を引く。
   it('育成必要数から Atlas ID キーの所持数を1回だけ引いた残りを出す', async () => {
     localStorage.setItem('material/result', JSON.stringify({ '6501': 30 }))
     localStorage.setItem('posession', JSON.stringify({ '6501': 25 }))
@@ -105,5 +110,14 @@ describe('NearGoalSection', () => {
     render(<NearGoalSection />)
 
     expect(await screen.findByText('あと6個')).toBeInTheDocument()
+  })
+
+  it('atlasId の無い素材は所持数を引けないので計算結果の残数をそのまま出す', async () => {
+    dropsItem.atlasId = undefined
+    localStorage.setItem('posession', JSON.stringify({ 'item-1': 4, '6501': 4 }))
+
+    render(<NearGoalSection />)
+
+    expect(await screen.findByText('あと10個')).toBeInTheDocument()
   })
 })

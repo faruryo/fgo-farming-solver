@@ -78,8 +78,9 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
     if (!targetItems?.length) return []
 
     // 目標から所持数を引いた不足度。「不足してない素材」は達成間近から外れる。
-    // params.items は計算時点の残不足数(短縮ID)、所持数は Atlas ID キーなので、
-    // 育成必要数(無ければ params.items)を Atlas ID に揃えてから今の所持数を1回だけ引く。
+    // 所持数は Atlas ID キー、params.items は短縮ID キー。育成必要数(material/result)を目標にし、
+    // それが無い素材だけ params.items を目標とみなして(/quests の mergeGoals と同じ扱い)、
+    // Atlas ID に揃えてから今の所持数を1回だけ引く。
     const need = buildNeedByApiItemId(
       mergeGoals(materialResult, params.items, dropItems),
       possession,
