@@ -10,7 +10,7 @@ vi.mock('react-i18next', () => ({
   }),
 }))
 
-const dropsItem = vi.hoisted(() => ({ atlasId: 6501 }))
+const dropsItem = vi.hoisted<{ atlasId?: number }>(() => ({ atlasId: 6501 }))
 
 vi.mock('../../hooks/use-drops', () => ({
   useDrops: () => ({
