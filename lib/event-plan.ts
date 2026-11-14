@@ -718,7 +718,7 @@ export const reverseCalcBoxes = (
  *
  * @param chaldeaState  useChaldeaState で得た育成目標（read-only）
  * @param materialsForServants  素材カタログから取り出したサーヴァント別素材（事前に取得してインジェクト）
- * @param possessionCounts  localStorage 'items' の atlasId → 所持数
+ * @param possessionCounts  atlasId → 所持数（localStorage 'posession' から）
  */
 export type ShortfallMap = Map<number, number>
 
@@ -814,7 +814,7 @@ export type RosterImpactResult = {
  *
  * @param chaldeaState          育成目標（read-only, useChaldeaState から）
  * @param materialsForServants  素材カタログから取り出したサーヴァント別素材
- * @param possessionCounts      atlasId → 所持数（localStorage 'items' から）
+ * @param possessionCounts      atlasId → 所持数（localStorage 'posession' から）
  * @param boxLayer              calcBoxLayer の結果（N 箱分の確定報酬）
  * @param shopAllocation        allocateShop の結果
  */

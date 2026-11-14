@@ -112,9 +112,9 @@ describe('箱計画の AP 予算', () => {
     expect(within(breakdown).getByText('回復の回数')).toBeInTheDocument()
   })
 
-  it('保存した周回目標が壊れていても（null）落ちずに描画する', async () => {
+  it('保存した所持数が壊れていても（null）落ちずに描画する', async () => {
     localStorage.setItem('masterLevel', '157')
-    localStorage.setItem(STORAGE_KEYS.ITEMS, 'null')
+    localStorage.setItem(STORAGE_KEYS.POSSESSION, 'null')
     render(<EventPlannerClient event={boxEvent} />)
 
     expect(await screen.findByText('最大AP 144')).toBeInTheDocument()
@@ -288,5 +288,56 @@ describe('育成計画を読む前の入力モード', () => {
     expect(unread).toEqual(empty)
     // 選ばれている「箱数」のボタンは、選ばれていない「欲しい素材」のボタンと見た目が違う。
     expect(unread.classNames[1]).not.toBe(unread.classNames[2])
+  })
+})
+
+describe('箱計画の育成インパクトの所持数 #267', () => {
+  // サーヴァント 1 の再臨 0→1 に素材 6001（Atlas ID）が 10 個要る。
+  const ready: RosterNeed = {
+    status: 'ready',
+    chaldeaState: {
+      '1': {
+        disabled: false,
+        targets: {
+          ascension: { disabled: false, ranges: [{ start: 0, end: 1 }] },
+          skill: { disabled: true, ranges: [{ start: 1, end: 1 }] },
+          appendSkill: { disabled: true, ranges: [{ start: 0, end: 0 }] },
+        },
+      },
+    },
+    materialsForServants: {
+      '1': {
+        ascensionMaterials: { '0': { items: [{ item: { id: 6001 }, amount: 10 }], qp: 0 } },
+        skillMaterials: {},
+        appendSkillMaterials: {},
+      },
+    } as unknown as Extract<RosterNeed, { status: 'ready' }>['materialsForServants'],
+    totalNeed: new Map([[6001, 10]]),
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    rosterMock.value = ready
+  })
+  afterEach(() => {
+    localStorage.clear()
+    rosterMock.value = undefined
+  })
+
+  it('実所持数（posession）で足りている素材は不足に数えない', async () => {
+    localStorage.setItem('masterLevel', '157')
+    localStorage.setItem(STORAGE_KEYS.POSSESSION, JSON.stringify({ '6001': 10 }))
+    render(<EventPlannerClient event={boxEvent} />)
+
+    expect(await screen.findByText('最大AP 144')).toBeInTheDocument()
+    expect(screen.queryByText('育成インパクト')).not.toBeInTheDocument()
+  })
+
+  it('実所持数が足りなければ不足に数え、周回目標（items）の値は所持数として読まない', async () => {
+    localStorage.setItem(STORAGE_KEYS.POSSESSION, JSON.stringify({ '6001': 3 }))
+    localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify({ '6001': '10' }))
+    render(<EventPlannerClient event={boxEvent} />)
+
+    expect(await screen.findByText('不足素材 1 種')).toBeInTheDocument()
   })
 })
