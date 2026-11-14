@@ -67,7 +67,7 @@ type MatCardProps = {
   owned: number | undefined
   deficiency: number
   rarityColor: string
-  onChange: (id: string, val: number) => void
+  onChange: (id: string, val: number | undefined) => void
   stockEnabled?: boolean
   stockBufferAmount?: number
 }
@@ -152,14 +152,12 @@ const MatCard = ({
             <input
               className="c-mat-count-input"
               type="number"
-              defaultValue={owned ?? 0}
+              defaultValue={owned ?? ''}
               min={0}
               autoFocus
               onBlur={(e) => {
-                onChange(
-                  item.id.toString(),
-                  parsePossessionInput(e.target.value) ?? 0,
-                )
+                // 空欄は未入力として扱い、0 個として保存しない。
+                onChange(item.id.toString(), parsePossessionInput(e.target.value))
                 setEditing(false)
               }}
               onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
@@ -177,7 +175,7 @@ const MatCard = ({
                 }
               }}
             >
-              {owned ?? 0}
+              {owned ?? '—'}
             </span>
           )}
         </div>
@@ -230,8 +228,10 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
     Record<string, number | undefined>
   >(
     STORAGE_KEYS.POSSESSION,
-    Object.fromEntries(trackedItems.map((item) => [item.id.toString(), 0])),
-    { onGet: countsOrEmpty, repairOnGet: true },
+    {},
+    // 開いただけで保存しない。未入力の素材を 0 個として書くと、
+    // 在庫確保の「未入力は対象外」の判定が効かなくなる。
+    { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
   )
 
   // 表示フィルタ: all=全て / short=不足(必要数未達) / stock=ストック不足(必要数+buffer未達)。
@@ -315,8 +315,15 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   }, [stockEnabled, filterMode])
 
   const onChange = useCallback(
-    (id: string, val: number) => {
-      setPossession((prev) => ({ ...prev, [id]: val }))
+    (id: string, val: number | undefined) => {
+      setPossession((prev) => {
+        if (Reflect.get(prev, id) === val) return prev
+        // 未入力はキーごと消す（undefined を残すと Object.hasOwn が入力済みと判定する）。
+        const rest = Object.fromEntries(
+          Object.entries(prev).filter(([key]) => key !== id),
+        )
+        return val === undefined ? rest : { ...rest, [id]: val }
+      })
     },
     [setPossession],
   )
