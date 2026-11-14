@@ -12,11 +12,13 @@ import { useDrops } from '../../hooks/use-drops'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
-import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
+import { useStockTarget } from '../../hooks/use-stock-target'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
 import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { computeEffectiveAp } from '../../lib/solver'
+import { buildNeedByApiItemId, mergeGoals } from '../../lib/quest-efficiency'
 import { isBothResult } from '../../interfaces/api'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -61,6 +63,12 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
     {},
     { onGet: countsOrEmpty, repairOnGet: true }
   )
+  const [materialResult] = useLocalStorage<Record<string, number>>(
+    STORAGE_KEYS.MATERIAL_RESULT,
+    {},
+    { onGet: recordOrEmpty, lazyWrite: true }
+  )
+  const { purpose, stockBuffer } = useStockTarget()
 
   const nearGoalEntries = useMemo(() => {
     if (!displayResult || !dropItems?.length) return []
@@ -70,8 +78,22 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
     if (!targetItems?.length) return []
 
     // 目標から所持数を引いた不足度。「不足してない素材」は達成間近から外れる。
-    const neededOf = (itemId: string): number =>
-      Math.max(0, (params.items[itemId] ?? 0) - (possession[itemId] ?? 0))
+    // params.items は計算時点の残不足数(短縮ID)、所持数は Atlas ID キーなので、
+    // 育成必要数(無ければ params.items)を Atlas ID に揃えてから今の所持数を1回だけ引く。
+    const need = buildNeedByApiItemId(
+      mergeGoals(materialResult, params.items, dropItems),
+      possession,
+      drops,
+      stockBuffer,
+      purpose,
+    )
+    const hasAtlasId = new Set(dropItems.filter(i => i.atlasId != null).map(i => i.id))
+    const neededOf = (itemId: string): number => {
+      const solved = params.items[itemId] ?? 0
+      if (solved <= 0) return 0
+      // atlasId の無い旧データは所持数を引けないので、計算時点の残数をそのまま使う。
+      return hasAtlasId.has(itemId) ? (need[itemId] ?? 0) : solved
+    }
 
     const allowedQuestIds = new Set<string>(params.quests ?? [])
     const originalApById = new Map(dropQuests?.map(q => [q.id, q.ap]) ?? [])
@@ -177,7 +199,7 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
         ...entry,
         originalAp: originalApById.get(entry.quest.id),
       }))
-  }, [dropItems, dropQuests, drops.drop_rates, displayResult, sortMode, activeCampaigns, podFree.isActive, podFree.questIds, possession])
+  }, [drops, dropItems, dropQuests, displayResult, sortMode, activeCampaigns, podFree.isActive, podFree.questIds, possession, materialResult, stockBuffer, purpose])
 
   // drops側のquestからaaQuestIdを補完してspot画像を取得
   const spotIcons = useSpotIcons(
