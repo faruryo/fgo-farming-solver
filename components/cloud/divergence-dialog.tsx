@@ -72,10 +72,16 @@ export const DivergenceDialog = ({
           <div className="rounded border p-2">
             <div className="mb-1 font-medium">{t('divergence-local', 'この端末')}</div>
             <div>{summarize(localStats, t('divergence-empty', 'データなし'))}</div>
+            {localStats != null && (
+              <div>{`${t('divergence-servant-levels', 'Lv・宝具Lv を持つサーヴァント')} ${localStats.leveledServants}`}</div>
+            )}
           </div>
           <div className="rounded border p-2">
             <div className="mb-1 font-medium">{t('divergence-cloud', 'クラウド')}</div>
             <div>{summarize(cloudStats, t('divergence-empty', 'データなし'))}</div>
+            {cloudStats != null && (
+              <div>{`${t('divergence-servant-levels', 'Lv・宝具Lv を持つサーヴァント')} ${cloudStats.leveledServants}`}</div>
+            )}
           </div>
         </div>
 

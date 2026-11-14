@@ -17,8 +17,8 @@ vi.mock('next/navigation', () => ({
 }))
 
 const pending = (overrides: Partial<PendingShrink> = {}): PendingShrink => ({
-  next: { servants: 0, possessions: 0 },
-  cloud: { servants: 461, possessions: 104 },
+  next: { servants: 0, possessions: 0, leveledServants: 0 },
+  cloud: { servants: 461, possessions: 104, leveledServants: 0 },
   missingKeys: [],
   force: false,
   ...overrides,
@@ -41,6 +41,32 @@ describe('ShrinkGuardDialog', () => {
     expect(screen.getByText('クラウドのデータが大きく減ります')).toBeInTheDocument()
     expect(screen.getByText('サーヴァント 0 / 所持素材の種類 0')).toBeInTheDocument()
     expect(screen.getByText('サーヴァント 461 / 所持素材の種類 104')).toBeInTheDocument()
+  })
+
+  // Lv・宝具Lv だけが減って止まったとき、ほかの数は両側で同じなので、この数が
+  // 無いと止まった理由が見えない。
+  it('shows the Lv / NP Lv servant counts on both sides', () => {
+    render(
+      <ShrinkGuardDialog
+        pending={pending({
+          next: { servants: 461, possessions: 104, leveledServants: 0 },
+          cloud: { servants: 461, possessions: 104, leveledServants: 300 },
+          missingKeys: ['servantLevels'],
+        })}
+        {...handlers()}
+      />,
+    )
+
+    expect(screen.getAllByText('サーヴァント 461 / 所持素材の種類 104')).toHaveLength(2)
+    expect(screen.getByText('Lv・宝具Lv を持つサーヴァント 0')).toBeInTheDocument()
+    expect(screen.getByText('Lv・宝具Lv を持つサーヴァント 300')).toBeInTheDocument()
+  })
+
+  it('does not show a Lv / NP Lv count for a cloud side that could not be read', () => {
+    render(<ShrinkGuardDialog pending={pending({ cloud: null })} {...handlers()} />)
+
+    expect(screen.getByText('読み取れません')).toBeInTheDocument()
+    expect(screen.getAllByText(/^Lv・宝具Lv を持つサーヴァント/)).toHaveLength(1)
   })
 
   it('renders nothing while there is no blocked save', () => {

@@ -363,8 +363,8 @@ describe('useCloudSync shrink guard', () => {
 
     expect(postCalls()).toHaveLength(0)
     expect(result.current.pendingShrink).toEqual({
-      next: { servants: 0, possessions: 0 },
-      cloud: { servants: CLOUD_SERVANTS, possessions: CLOUD_POSSESSIONS },
+      next: { servants: 0, possessions: 0, leveledServants: 0 },
+      cloud: { servants: CLOUD_SERVANTS, possessions: CLOUD_POSSESSIONS, leveledServants: 0 },
       missingKeys: [],
       force: false,
     })
@@ -453,6 +453,7 @@ describe('useCloudSync shrink guard', () => {
     expect(result.current.pendingShrink?.cloud).toEqual({
       servants: CLOUD_SERVANTS,
       possessions: CLOUD_POSSESSIONS,
+      leveledServants: 0,
     })
   })
 
@@ -500,6 +501,7 @@ describe('useCloudSync shrink guard', () => {
     expect(result.current.pendingShrink?.cloud).toEqual({
       servants: CLOUD_SERVANTS,
       possessions: CLOUD_POSSESSIONS,
+      leveledServants: 0,
     })
   })
 
@@ -866,5 +868,227 @@ describe('useCloudSync shrink guard', () => {
       })
       expect(postCalls()).toHaveLength(1)
     })
+  })
+})
+
+// サーヴァントごとの Lv・宝具Lv(servantLevels)も、ほかの同期するキーと同じ決まりで
+// 載せ・取り込む。キーごと・サーヴァントごとの合成はしない。
+describe('useCloudSync servant Lv / NP Lv', () => {
+  const SYNCED_AT = CLOUD_UPDATED_AT
+  const NEWER_CLOUD_AT = '2026-07-26T00:00:00.000Z'
+  const MATERIAL = JSON.stringify({ all: {}, '100100': { disabled: false } })
+  const POSESSION = JSON.stringify({ '6501': 3 })
+
+  let cloudPayload: { storage: Record<string, string>; metadata: { updatedAt: string; deviceId: string } }
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  const postBodies = () =>
+    fetchMock.mock.calls
+      .filter(([, init]) => (init as { method?: string } | undefined)?.method === 'POST')
+      .map(([, init]) => JSON.parse((init as { body: string }).body) as typeof cloudPayload)
+
+  const cloudWith = (storage: Record<string, string>, updatedAt = NEWER_CLOUD_AT) => ({
+    storage: { material: MATERIAL, posession: POSESSION, ...storage },
+    metadata: { updatedAt, deviceId: 'other-device' },
+  })
+
+  // 一度同期した端末。dirty なら最後の同期のあとに未同期の編集がある。
+  const setupDevice = ({
+    servantLevels,
+    dirty = false,
+  }: { servantLevels?: string; dirty?: boolean } = {}) => {
+    localStorage.setItem('fgo_auto_sync_enabled', 'true')
+    localStorage.setItem('material', MATERIAL)
+    localStorage.setItem('posession', POSESSION)
+    if (servantLevels !== undefined) localStorage.setItem('servantLevels', servantLevels)
+    localStorage.setItem(
+      'fgo_sync_metadata',
+      JSON.stringify({
+        updatedAt: dirty ? '2026-07-25T12:00:00.000Z' : SYNCED_AT,
+        deviceId: 'this-device',
+        lastSyncedAt: SYNCED_AT,
+      }),
+    )
+  }
+
+  // pending や取得の間引きはモジュールの変数なので、端末ごとに読み込み直す。
+  const renderDevice = async () => {
+    vi.resetModules()
+    const { useCloudSync: useCloudSyncFresh } = await import('./use-cloud-sync')
+    const { useServantLevels } = await import('./use-servant-levels')
+    const hook = renderHook(() => ({ sync: useCloudSyncFresh(), levels: useServantLevels() }))
+    await waitFor(() => {
+      expect(hook.result.current.sync.cloudData).not.toBeNull()
+    })
+    return hook
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    mocks.router.refresh.mockReset()
+    cloudPayload = cloudWith({}, SYNCED_AT)
+    fetchMock = vi.fn(async (_url: string, init?: { method?: string; body?: string }) => {
+      if (init?.method === 'POST') cloudPayload = JSON.parse(init.body ?? '{}') as typeof cloudPayload
+      return { ok: true, status: 200, json: async () => cloudPayload }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('carries Lv / NP Lv imported on one device to another device with no unsynced change', async () => {
+    // スマホ: 取り込みの確定から 5 秒後の自動保存で載る
+    setupDevice()
+    const phone = await renderDevice()
+    vi.useFakeTimers()
+    act(() => {
+      phone.result.current.levels.importLevels([{ id: 100100, lv: 90, npLv: 2 }])
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+    vi.useRealTimers()
+    await waitFor(() => {
+      expect(postBodies()).toHaveLength(1)
+    })
+    const imported = localStorage.getItem('servantLevels')
+    expect(imported).not.toBeNull()
+    expect(postBodies()[0].storage.servantLevels).toBe(imported)
+    phone.unmount()
+
+    // PC: 未同期の変更が無いので、開いたときに取り込まれてカードに出る
+    localStorage.clear()
+    setupDevice()
+    const pc = await renderDevice()
+    await waitFor(() => {
+      expect(localStorage.getItem('servantLevels')).toBe(imported)
+    })
+    expect(pc.result.current.levels.levels['100100']).toEqual({ lv: 90, npLv: 2 })
+  })
+
+  it('replaces this device Lv / NP Lv with the newer cloud copy and notifies the key', async () => {
+    const cloudLevels = JSON.stringify({ '100100': { lv: 90 } })
+    cloudPayload = cloudWith({ servantLevels: cloudLevels })
+    setupDevice({ servantLevels: JSON.stringify({ '100100': { lv: 80 }, '100200': { lv: 70 } }) })
+    const notified: unknown[] = []
+    const onSync = (e: Event) => notified.push((e as CustomEvent<{ key?: string } | null>).detail?.key)
+    window.addEventListener('ls-sync', onSync)
+
+    try {
+      const device = await renderDevice()
+
+      await waitFor(() => {
+        expect(localStorage.getItem('servantLevels')).toBe(cloudLevels)
+      })
+      expect(notified).toContain('servantLevels')
+      expect(device.result.current.levels.levels).toEqual({ '100100': { lv: 90 } })
+      expect(device.result.current.sync.hasConflict).toBe(false)
+    } finally {
+      window.removeEventListener('ls-sync', onSync)
+    }
+  })
+
+  it('treats a newer cloud copy as a conflict when this device has unsynced Lv / NP Lv', async () => {
+    const cloudLevels = JSON.stringify({ '100100': { lv: 90 } })
+    const localLevels = JSON.stringify({ '100200': { lv: 70 } })
+    cloudPayload = cloudWith({ servantLevels: cloudLevels })
+    setupDevice({ servantLevels: localLevels, dirty: true })
+    const device = await renderDevice()
+
+    await waitFor(() => {
+      expect(device.result.current.sync.hasConflict).toBe(true)
+    })
+    expect(localStorage.getItem('servantLevels')).toBe(localLevels)
+    // 自動保存もしない
+    await act(async () => {
+      await device.result.current.sync.handleSave()
+    })
+    expect(postBodies()).toHaveLength(0)
+
+    // この端末を選べば、この端末のものだけがまるごと載る
+    await act(async () => {
+      await device.result.current.sync.handleSave(true)
+    })
+    expect(postBodies()).toHaveLength(1)
+    expect(postBodies()[0].storage.servantLevels).toBe(localLevels)
+  })
+
+  it('keeps the cloud Lv / NP Lv as a whole when the user picks the cloud in a conflict', async () => {
+    const cloudLevels = JSON.stringify({ '100100': { lv: 90 } })
+    cloudPayload = cloudWith({ servantLevels: cloudLevels })
+    setupDevice({ servantLevels: JSON.stringify({ '100200': { lv: 70 } }), dirty: true })
+    const device = await renderDevice()
+    await waitFor(() => {
+      expect(device.result.current.sync.hasConflict).toBe(true)
+    })
+
+    act(() => {
+      device.result.current.sync.applyData(cloudPayload.storage, cloudPayload.metadata)
+    })
+
+    expect(localStorage.getItem('servantLevels')).toBe(cloudLevels)
+    expect(device.result.current.levels.levels).toEqual({ '100100': { lv: 90 } })
+  })
+
+  it('keeps this device Lv / NP Lv when the cloud copy has no such entry, and puts it back on the next save', async () => {
+    const localLevels = JSON.stringify({ '100100': { lv: 90, npLv: 2 } })
+    const newerMaterial = JSON.stringify({ all: {}, '100100': { disabled: false }, '100200': {} })
+    cloudPayload = cloudWith({ material: newerMaterial })
+    setupDevice({ servantLevels: localLevels })
+    const device = await renderDevice()
+
+    await waitFor(() => {
+      expect(localStorage.getItem('material')).toBe(newerMaterial)
+    })
+    expect(localStorage.getItem('servantLevels')).toBe(localLevels)
+
+    await act(async () => {
+      await device.result.current.sync.handleSave()
+    })
+    expect(postBodies()).toHaveLength(1)
+    expect(postBodies()[0].storage.servantLevels).toBe(localLevels)
+  })
+
+  // Lv・宝具Lv を同期するキーに持たない古い版は、保存内容のうち知っているキーだけを
+  // 読む。包みと既存のキーの中身が変わらなければ、新しいキーがあっても失敗しない。
+  it('keeps the payload wrapper and the existing entries as they were', async () => {
+    setupDevice({ servantLevels: JSON.stringify({ '100100': { lv: 90 } }) })
+    const device = await renderDevice()
+
+    await act(async () => {
+      await device.result.current.sync.handleSave()
+    })
+
+    const [body] = postBodies()
+    const sorted = (keys: string[]) => [...keys].sort((a, b) => a.localeCompare(b))
+    expect(sorted(Object.keys(body))).toEqual(['metadata', 'storage'])
+    expect(sorted(Object.keys(body.metadata))).toEqual(['deviceId', 'updatedAt'])
+    expect(Object.values(body.storage).every((value) => typeof value === 'string')).toBe(true)
+    const { servantLevels, ...existing } = body.storage
+    expect(servantLevels).toBe(localStorage.getItem('servantLevels'))
+    expect(existing).toEqual({ material: MATERIAL, posession: POSESSION })
+  })
+
+  it('does not drop fields this version does not know when the synced copy is saved again', async () => {
+    const cloudLevels = JSON.stringify({
+      '100100': { lv: 90, npLv: 2, bondLv: 10 },
+      '999999': { future: true },
+    })
+    cloudPayload = cloudWith({ servantLevels: cloudLevels })
+    setupDevice()
+    const device = await renderDevice()
+    await waitFor(() => {
+      expect(localStorage.getItem('servantLevels')).toBe(cloudLevels)
+    })
+
+    await act(async () => {
+      await device.result.current.sync.handleSave()
+    })
+
+    expect(postBodies()).toHaveLength(1)
+    expect(postBodies()[0].storage.servantLevels).toBe(cloudLevels)
   })
 })

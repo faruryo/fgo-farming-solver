@@ -409,3 +409,45 @@ describe('Index - event bonus filter', () => {
     }
   })
 })
+
+describe('Index - 保存されている Lv・宝具Lv のカードの表示', () => {
+  const LEVELS_KEY = 'servantLevels'
+  const level = () => screen.queryByTestId('servant-card-level')
+
+  it('保存値の無い状態で一覧を描いても、Lv・宝具Lv の保存値のキーを作らない', async () => {
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await makeOwned(user)
+    expect(level()).not.toBeInTheDocument()
+    expect(localStorage.getItem(LEVELS_KEY)).toBeNull()
+  })
+
+  it('未所持に戻したカード: Lv は出ず保存値は消えない。所持に戻すとまた出る', async () => {
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90 } })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    expect(level()).not.toBeInTheDocument()
+    await makeOwned(user)
+    expect(level()).toHaveTextContent(/^Lv 90$/)
+
+    await user.click(screen.getByRole('button', { name: '✓ 所持' }))
+    expect(level()).not.toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem(LEVELS_KEY) ?? 'null')).toEqual({ '1': { lv: 90 } })
+
+    await user.click(screen.getByRole('button', { name: '未所持' }))
+    expect(level()).toHaveTextContent(/^Lv 90$/)
+  })
+
+  it('別の端末で取り込んだ値を PC で見る: 保存値が書き換わりキーを指定した通知が出ると、開き直さずにカードに出る', async () => {
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await makeOwned(user)
+    expect(level()).not.toBeInTheDocument()
+
+    act(() => {
+      setLocalStorage(LEVELS_KEY, { '1': { lv: 100, npLv: 3 } })
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: LEVELS_KEY } }))
+    })
+    expect(level()).toHaveTextContent('Lv 100・宝具 3')
+  })
+})

@@ -3,6 +3,7 @@
 import { memo, useCallback, useRef, useState } from 'react'
 import Image from 'next/image'
 import NextLink from 'next/link'
+import { useTranslation } from 'react-i18next'
 import { ServantState } from '../../hooks/create-chaldea-state'
 import { TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialCatalogServant } from '../../lib/material-catalog'
@@ -26,6 +27,9 @@ type Props = {
     prevStart: number,
     newStart: number
   ) => void
+  /** 取り込んで保存されている Lv・宝具Lv（表示だけ。所持のカードにだけ出す） */
+  lv?: number
+  npLv?: number
 }
 
 const LONG_PRESS_MS = 500
@@ -72,7 +76,10 @@ const ServantCardComponent = ({
   setState,
   onWillStartChange,
   onStartChange,
+  lv,
+  npLv,
 }: Props) => {
+  const { t } = useTranslation('material')
   const cls = getClassInfo(servant.className)
   const cc = cls.color
 
@@ -213,6 +220,12 @@ const ServantCardComponent = ({
   }
 
   const face = servant.face
+  const levelText = owned
+    ? [
+        lv === undefined ? null : t('servant-card-lv', 'Lv {{lv}}', { lv }),
+        npLv === undefined ? null : t('servant-card-np-lv', '宝具 {{npLv}}', { npLv }),
+      ].filter(Boolean).join(t('servant-card-level-separator', '・'))
+    : ''
 
   return (
     <div id={`svt-${servant.id}`} className={`c-servant-card${state.disabled ? ' unowned' : ''}${tierClass ? ` ${tierClass}` : ''}`}>
@@ -246,7 +259,14 @@ const ServantCardComponent = ({
 
       <div className="c-servant-body">
         <div className="c-servant-name">{servant.name}</div>
-        <div className="c-servant-class-tag" style={{ color: cc }}>{cls.label}</div>
+        <div className="c-servant-class-tag" style={{ color: cc }}>
+          {cls.label}
+          {levelText && (
+            <span className="ml-1.5 tabular-nums" style={{ color: 'var(--text2)' }} data-testid="servant-card-level">
+              {levelText}
+            </span>
+          )}
+        </div>
       </div>
 
       {owned && (

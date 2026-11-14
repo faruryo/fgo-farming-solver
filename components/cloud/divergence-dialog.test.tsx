@@ -23,6 +23,7 @@ const stats = (overrides: Partial<Stats> = {}): Stats => ({
   silver: 3,
   gold: 2,
   fragments: 0,
+  leveledServants: 0,
   ...overrides,
 })
 
@@ -54,6 +55,23 @@ describe('DivergenceDialog', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('サーヴァント 1 騎 / 素材 10 個')).toBeInTheDocument()
     expect(screen.getByText('サーヴァント 3 騎 / 素材 1000 個')).toBeInTheDocument()
+  })
+
+  // 一度も同期していない端末にだけ取り込みがあるとき、クラウドを選ぶと
+  // Lv・宝具Lv が消えることが選ぶ前に分かるようにする。
+  it('shows the Lv / NP Lv servant counts of both sides', async () => {
+    const DivergenceDialog = await loadDialog()
+    render(
+      <DivergenceDialog
+        open
+        localStats={stats({ leveledServants: 300 })}
+        cloudStats={stats({ leveledServants: 0 })}
+        onRestore={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Lv・宝具Lv を持つサーヴァント 300').parentElement).toHaveTextContent('この端末')
+    expect(screen.getByText('Lv・宝具Lv を持つサーヴァント 0').parentElement).toHaveTextContent('クラウド')
   })
 
   // クラウドを上書きする選択肢はモーダルに置かない（取り返しがつかないため、

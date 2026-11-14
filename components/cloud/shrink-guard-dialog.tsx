@@ -40,6 +40,10 @@ export const ShrinkGuardDialog = ({
     scale == null
       ? t('shrink-guard-unknown', '読み取れません')
       : `${t('shrink-guard-servants', 'サーヴァント')} ${scale.servants} / ${t('shrink-guard-possessions', '所持素材の種類')} ${scale.possessions}`
+  // Lv・宝具Lv だけが減って止まったときは上の数が両側で同じになるので、別の行に出す。
+  // クラウド側が読めないときは上の「読み取れません」だけを出す。
+  const summarizeLevels = (scale: PendingShrink['next']) =>
+    `${t('shrink-guard-servant-levels', 'Lv・宝具Lv を持つサーヴァント')} ${scale.leveledServants}`
 
   return (
     <AlertDialog
@@ -68,12 +72,14 @@ export const ShrinkGuardDialog = ({
                 {t('shrink-guard-next', '保存しようとした内容')}
               </div>
               <div>{summarize(pending.next)}</div>
+              <div>{summarizeLevels(pending.next)}</div>
             </div>
             <div className="rounded border p-2">
               <div className="mb-1 font-medium">
                 {t('shrink-guard-cloud', 'クラウド')}
               </div>
               <div>{summarize(pending.cloud)}</div>
+              {pending.cloud != null && <div>{summarizeLevels(pending.cloud)}</div>}
             </div>
             {pending.missingKeys.length > 0 && (
               <div className="col-span-2 rounded border p-2">
