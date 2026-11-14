@@ -797,16 +797,13 @@ export const ShopScreenshotImport: React.FC<ImportTargetProps> = props => {
   const { t } = useTranslation('events')
   const [open, setOpen] = useState(false)
   return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+    <>
+      <Button size="sm" onClick={() => setOpen(true)}>
         <ImageUp aria-hidden="true" />
-        {t('event-shop-import-open', 'スクリーンショットから取り込む')}
+        {t('event-shop-import-open', 'スクショから読み取る')}
       </Button>
-      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t('event-shop-import-hint', 'ゲームの交換所の画面から、品目の残りと通貨の所持数を読み取る')}
-      </span>
       <ShopImportDialog open={open} onOpenChange={setOpen} {...props} />
-    </div>
+    </>
   )
 }
 

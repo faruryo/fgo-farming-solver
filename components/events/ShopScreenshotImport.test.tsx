@@ -120,7 +120,7 @@ const analysisOf = (overrides: Partial<ShopImportAnalysis>): ShopImportAnalysis 
 const image = (name: string) => new File(['x'], name, { type: 'image/png' })
 const renderShop = (boxEvent = event()) =>
   render(<EventHubClient summary={summary} boxEvent={boxEvent} features={['shop']} />)
-const openButton = () => screen.getByRole('button', { name: 'スクリーンショットから取り込む' })
+const openButton = () => screen.getByRole('button', { name: 'スクショから読み取る' })
 const chooseFiles = (files: File[]) =>
   fireEvent.change(screen.getByTestId('shop-import-file-input'), { target: { files } })
 /** 入口から画像を選んで読み取り、確かめの画面を出す。 */
@@ -149,16 +149,14 @@ describe('スクリーンショットから取り込む', () => {
   afterEach(() => localStorage.clear())
 
   describe('入口', () => {
-    it('「全部交換」「優先素材」の並びにあり、文字の前に「残りをまとめて消す」と違うアイコンを持つ', () => {
+    it('塗りの主ボタンで、文字の前にアイコンを持ち、下に説明文を付けず、同じ並びの右端に「⋯」のメニューのボタンがある', () => {
       renderShop()
       const icon = openButton().querySelector('svg')
-      const clearIcon = screen.getByRole('button', { name: '残りをまとめて消す' }).querySelector('svg')
       expect(icon).toHaveClass('lucide-image-up')
-      expect(clearIcon).toHaveClass('lucide-eraser')
       expect(openButton().firstElementChild).toBe(icon)
-      expect(screen.getByRole('button', { name: '全部交換' }).closest('div.flex-wrap')).toBe(
-        openButton().closest('div.flex-wrap'),
-      )
+      expect(openButton()).toHaveClass('bg-primary')
+      expect(screen.queryByText(/ゲームの交換所の画面から/)).toBeNull()
+      expect(screen.getByRole('button', { name: 'その他の操作' }).parentElement).toBe(openButton().parentElement)
     })
 
     it('画像を選ぶまで読み取りを始めない', () => {
@@ -205,7 +203,7 @@ describe('スクリーンショットから取り込む', () => {
     it('一覧だけの交換所（品目がすべてサーヴァント扱い）と、箱のあるイベントには入口を出さない', () => {
       const svtShop = shop.slice(0, 3).map(entry => ({ ...entry, kind: 'svt' as const }))
       const { unmount } = renderShop(event({ shop: svtShop }))
-      expect(screen.queryByRole('button', { name: 'スクリーンショットから取り込む' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'スクショから読み取る' })).not.toBeInTheDocument()
       unmount()
 
       render(
@@ -216,7 +214,7 @@ describe('スクリーンショットから取り込む', () => {
         />,
       )
       expect(screen.getByTestId('box-planner')).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'スクリーンショットから取り込む' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'スクショから読み取る' })).not.toBeInTheDocument()
     })
   })
 

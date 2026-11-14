@@ -3,8 +3,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import { Eraser, ExternalLink } from 'lucide-react'
+import { ExternalLink, MoreHorizontal } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -1069,50 +1076,6 @@ const PerRunTable: React.FC<{
   )
 }
 
-const SelectAll: React.FC<{ onSelectAll: () => void }> = ({ onSelectAll }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Button size="sm" variant="outline" onClick={onSelectAll}>
-        {t('event-shop-select-all-currencies', '全部交換')}
-      </Button>
-      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t('event-shop-select-all-hint', '欲しい品目のうち、上限のある品目をすべて上限まで')}
-      </span>
-    </div>
-  )
-}
-
-/** そのイベントの品目の残り（取り込んだものと手で入れたもの）をまとめて消すボタン。残りのある品目が無ければ押せない。 */
-const ClearRemaining: React.FC<{ onClear?: () => void }> = ({ onClear }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Button size="sm" variant="outline" onClick={onClear} disabled={!onClear}>
-        <Eraser aria-hidden="true" />
-        {t('event-shop-clear-remaining', '残りをまとめて消す')}
-      </Button>
-      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t('event-shop-clear-remaining-hint', '取り込んだ残りと手で入れた残りを消し、在庫上限だけを上限にする')}
-      </span>
-    </div>
-  )
-}
-
-const SelectShortfall: React.FC<{ onSelect?: () => void }> = ({ onSelect }) => {
-  const { t } = useTranslation('events')
-  return (
-    <div className="flex flex-col items-start gap-0.5">
-      <Button size="sm" variant="outline" onClick={onSelect} disabled={!onSelect}>
-        {t('event-shop-select-priority', '優先素材')}
-      </Button>
-      <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
-        {t('event-shop-select-priority-hint', '欲しい品目に、育成計画で足りない分と、計画の対象外の品目を上限まで')}
-      </span>
-    </div>
-  )
-}
-
 /** 育成計画の状態か、交換所で埋まる不足の要約を1行で出す。 */
 const RosterLine: React.FC<{
   status: RosterNeed['status']
@@ -1123,14 +1086,8 @@ const RosterLine: React.FC<{
   const { t } = useTranslation('events')
   switch (status) {
     case 'empty':
-      return (
-        <p className="text-xs flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--text3)' }}>
-          <span>{t('event-shop-roster-empty', '育成対象を設定すると、足りている品目と要る分が分かります。')}</span>
-          <Link href="/material" className="font-semibold" style={{ color: 'var(--gold)' }}>
-            {t('event-shop-roster-link', '育成対象を設定する')}
-          </Link>
-        </p>
-      )
+      // 未設定の案内は、回数が空のときの行のリンクとメニューの説明で出す。
+      return null
     case 'unread':
     case 'loading':
       return <Message>{t('event-shop-roster-loading', '育成計画を読み込み中...')}</Message>
@@ -1190,8 +1147,8 @@ const PlanItemIdsLoader: React.FC<{ onChange: (value: PlanItemIds | undefined) =
 }
 
 /**
- * 育成計画と実所持数から、品目の状態と優先素材の回数を出す。育成計画と所持数は読むだけ。
- * `unwanted` は「いらない」の品目のキー（`shopWantedKey`）で、優先素材はその品目の回数を変えない。
+ * 育成計画と実所持数から、品目の状態と「足りない分だけ」の回数を出す。育成計画と所持数は読むだけ。
+ * `unwanted` は「いらない」の品目のキー（`shopWantedKey`）で、「足りない分だけ」はその品目の回数を変えない。
  */
 const useShopRosterPlan = (
   shop: EventShopItem[],
@@ -1243,7 +1200,7 @@ const useShopRosterPlan = (
     catalogFailed: !!ready && !!planItemIds?.failed,
     reloadCatalog: () => planItemIds?.reload(),
     planOf,
-    /** 「欲しい」の品目の交換回数を優先素材の回数で置き換える。育成計画が使えないときは undefined。 */
+    /** 「欲しい」の品目の交換回数を「足りない分だけ」の回数で置き換える。育成計画が使えないときは undefined。 */
     selectShortfall:
       statusOf && allocation
         ? () => {
@@ -1257,28 +1214,136 @@ const useShopRosterPlan = (
   }
 }
 
-/** 全部交換・優先素材・スクリーンショットからの取り込み・残りを消すボタンと、育成計画から見た要約の1行。 */
+/** メニューの1項目。名前の下に説明を1行出す。 */
+const MenuAction: React.FC<{ label: string; description: string; onClick?: () => void }> = ({
+  label,
+  description,
+  onClick,
+}) => (
+  <DropdownMenuItem className="flex-col items-start gap-0" disabled={!onClick} onClick={onClick}>
+    <span>{label}</span>
+    <span className="text-xs text-muted-foreground">{description}</span>
+  </DropdownMenuItem>
+)
+
+/** 一覧の上の「⋯」のメニュー。全部交換・足りない分だけと、残りがあるときだけ残りを消す。 */
+const ShopActionsMenu: React.FC<{
+  selectAllLabel: string
+  shortfallLabel: string
+  onSelectAll: () => void
+  onSelectShortfall?: () => void
+  rosterEmpty: boolean
+  remainingCount: number
+  onClearRemaining?: () => void
+}> = ({ selectAllLabel, shortfallLabel, onSelectAll, onSelectShortfall, rosterEmpty, remainingCount, onClearRemaining }) => {
+  const { t } = useTranslation('events')
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            size="icon-sm"
+            variant="outline"
+            className="ml-auto shrink-0"
+            aria-label={t('event-shop-more-actions', 'その他の操作')}
+          />
+        }
+      >
+        <MoreHorizontal aria-hidden="true" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 max-w-[calc(100vw-1rem)]">
+        <MenuAction
+          label={selectAllLabel}
+          description={t('event-shop-select-all-hint', '欲しい品目を上限まで入れる')}
+          onClick={onSelectAll}
+        />
+        <MenuAction
+          label={shortfallLabel}
+          description={
+            rosterEmpty
+              ? t('event-shop-select-priority-disabled', '育成対象を設定すると使えます')
+              : t('event-shop-select-priority-hint', '育成に足りない分を入れる')
+          }
+          onClick={onSelectShortfall}
+        />
+        {onClearRemaining && (
+          <>
+            <DropdownMenuSeparator />
+            <MenuAction
+              label={t('event-shop-clear-remaining', '残りを消す（{{n}} 件）', { n: remainingCount })}
+              description={t('event-shop-clear-remaining-hint', '上限を在庫上限に戻す')}
+              onClick={onClearRemaining}
+            />
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/**
+ * スクリーンショットからの取り込みの主ボタンと、ほかの操作（全部交換・足りない分だけ・残りを消す）のメニュー。
+ * 交換回数がすべて 0 の間は、回数をまとめて入れるボタンの行も出す。その下に育成計画から見た要約の1行。
+ */
 const SelectControls: React.FC<{
   onSelectAll: () => void
   rosterPlan: ReturnType<typeof useShopRosterPlan>
   importEntry: React.ReactNode
+  /** 交換回数がすべて 0 か。 */
+  empty: boolean
+  /** 残りを持つ品目（品目×通貨）の件数。 */
+  remainingCount: number
   onClearRemaining?: () => void
-}> = ({ onSelectAll, rosterPlan, importEntry, onClearRemaining }) => (
-  <div className="flex flex-col gap-2">
-    <div className="flex flex-wrap items-start gap-3">
-      <SelectAll onSelectAll={onSelectAll} />
-      <SelectShortfall onSelect={rosterPlan.selectShortfall} />
-      {importEntry}
-      <ClearRemaining onClear={onClearRemaining} />
+}> = ({ onSelectAll, rosterPlan, importEntry, empty, remainingCount, onClearRemaining }) => {
+  const { t } = useTranslation('events')
+  const { selectShortfall } = rosterPlan
+  const rosterEmpty = rosterPlan.roster.status === 'empty'
+  const selectAllLabel = t('event-shop-select-all-currencies', '全部交換')
+  const shortfallLabel = t('event-shop-select-priority', '足りない分だけ')
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        {importEntry}
+        {remainingCount > 0 && (
+          <span data-testid="shop-remaining-applied" className="text-[11px]" style={{ color: 'var(--text3)' }}>
+            {t('event-shop-remaining-applied', '残り {{n}} 件を反映中', { n: remainingCount })}
+          </span>
+        )}
+        <ShopActionsMenu
+          selectAllLabel={selectAllLabel}
+          shortfallLabel={shortfallLabel}
+          onSelectAll={onSelectAll}
+          onSelectShortfall={selectShortfall}
+          rosterEmpty={rosterEmpty}
+          remainingCount={remainingCount}
+          onClearRemaining={onClearRemaining}
+        />
+      </div>
+      {empty && (
+        <div data-testid="shop-first-fill" className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text2)' }}>
+          <span>{t('event-shop-first-fill', 'まず回数を入れる')}</span>
+          <Button size="sm" variant="outline" onClick={onSelectAll}>
+            {selectAllLabel}
+          </Button>
+          <Button size="sm" variant="outline" onClick={selectShortfall} disabled={!selectShortfall}>
+            {shortfallLabel}
+          </Button>
+          {rosterEmpty && (
+            <Link href="/material" className="font-semibold" style={{ color: 'var(--gold)' }}>
+              {t('event-shop-roster-link', '育成対象を設定')}
+            </Link>
+          )}
+        </div>
+      )}
+      <RosterLine
+        status={rosterPlan.roster.status}
+        summary={rosterPlan.summary}
+        catalogFailed={rosterPlan.catalogFailed}
+        onReloadCatalog={rosterPlan.reloadCatalog}
+      />
     </div>
-    <RosterLine
-      status={rosterPlan.roster.status}
-      summary={rosterPlan.summary}
-      catalogFailed={rosterPlan.catalogFailed}
-      onReloadCatalog={rosterPlan.reloadCatalog}
-    />
-  </div>
-)
+  )
+}
 
 /** ボーナスの欄に並べる通貨と、交換所の通貨に無いイベントポイントの品目。 */
 const useBonusTargets = (
@@ -1733,6 +1798,8 @@ export const EventShopList: React.FC<{
         onSelectAll={() => updateCounts(prev => selectAllCurrenciesUpToLimit(shop, prev, unwanted, remaining))}
         rosterPlan={rosterPlan}
         importEntry={<ShopScreenshotImport shop={shop} remaining={remaining} owned={owned} onConfirm={shopRemaining.applyImport} />}
+        empty={[...counts.values()].every(n => n === 0)}
+        remainingCount={remaining.size}
         onClearRemaining={shopRemaining.clearRemaining}
       />
       <ShopTable list={list} apPrices={apPrices} counts={counts} remaining={remaining} onRemainingChange={shopRemaining.setRemaining} />

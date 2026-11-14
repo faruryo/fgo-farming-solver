@@ -401,7 +401,7 @@ const shortCount = (item: EventShopItem, left: number, limit: number | undefined
 }
 
 /**
- * 優先素材の回数を出す。「欲しい」の品目だけを置き換え、「いらない」の品目（`unwanted` に `shopWantedKey` が入る品目）は
+ * 「足りない分だけ」の回数を出す。「欲しい」の品目だけを置き換え、「いらない」の品目（`unwanted` に `shopWantedKey` が入る品目）は
  * `counts`（今の回数）のまま返す。
  * 不足は交換所の元の順に「欲しい」の品目へ割り当て、効く上限（`itemRemaining` に残りのある品目は在庫上限と残りの小さいほう）で
  * 打ち切る。1回の個数が 0 以下の品目は割り当てない。

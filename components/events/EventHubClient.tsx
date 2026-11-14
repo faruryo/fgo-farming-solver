@@ -115,7 +115,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
                 <p className="text-xs" style={{ color: 'var(--text2)' }}>
                   {t(
                     'event-shop-section-description',
-                    '交換したい品目の数を入れると、必要な通貨の数と、集めるのに要る周回数・AP を計算します',
+                    '交換したい数を入れると、要る周回数と AP が出ます',
                   )}
                 </p>
               </div>

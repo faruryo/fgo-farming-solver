@@ -392,7 +392,7 @@ describe('formatEfficiency', () => {
 
 const needOf = (need: Record<number, number>) => new Map(Object.entries(need).map(([k, v]) => [Number(k), v]))
 
-/** 不足と所持数から状態を決め、優先素材の回数を出す。 */
+/** 不足と所持数から状態を決め、「足りない分だけ」の回数を出す。 */
 const allocate = (
   shop: EventShopItem[],
   need: Record<number, number>,
@@ -803,7 +803,7 @@ describe('効く上限（残りを上限として使う）', () => {
     )
   }
 
-  it('優先素材と埋まらない不足: 不足 5・在庫上限 10・残り 3 なら 3 回で、2 個が埋まらない', () => {
+  it('「足りない分だけ」と埋まらない不足: 不足 5・在庫上限 10・残り 3 なら 3 回で、2 個が埋まらない', () => {
     const allocation = allocateWithRemaining(3)
     expect(countsOf(allocation)).toEqual([3])
     expect(allocation.remaining.get(10)).toBe(2)
