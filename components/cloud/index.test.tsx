@@ -38,12 +38,13 @@ const stats = (overrides: Partial<Stats> = {}): Stats => ({
   silver: 3,
   gold: 2,
   fragments: 0,
+  leveledServants: 0,
   ...overrides,
 })
 
 const pending = (overrides: Partial<PendingShrink> = {}): PendingShrink => ({
-  next: { servants: 0, possessions: 0 },
-  cloud: { servants: 461, possessions: 104 },
+  next: { servants: 0, possessions: 0, leveledServants: 0 },
+  cloud: { servants: 461, possessions: 104, leveledServants: 0 },
   missingKeys: [],
   force: false,
   ...overrides,
@@ -112,6 +113,25 @@ describe('Cloud page (shrink guard pending state)', () => {
     expect(screen.getByText('サーヴァント 461 / 所持素材の種類 104')).toBeInTheDocument()
   })
 
+  // Lv・宝具Lv だけが減って止まったとき、ほかの数は両側で同じなので、この数が
+  // 無いと止まった理由が見えない。
+  it('shows the Lv / NP Lv servant counts of the blocked save and the cloud', () => {
+    useCloudSync.mockReturnValue(
+      syncState(
+        blocked({
+          next: { servants: 461, possessions: 104, leveledServants: 0 },
+          cloud: { servants: 461, possessions: 104, leveledServants: 300 },
+          missingKeys: ['servantLevels'],
+        }),
+      ),
+    )
+    render(<Cloud />)
+
+    expect(screen.getAllByText('サーヴァント 461 / 所持素材の種類 104')).toHaveLength(2)
+    expect(screen.getByText('Lv・宝具Lv を持つサーヴァント 0')).toBeInTheDocument()
+    expect(screen.getByText('Lv・宝具Lv を持つサーヴァント 300')).toBeInTheDocument()
+  })
+
   it('says the cloud counts cannot be read instead of showing a number', () => {
     useCloudSync.mockReturnValue(syncState(blocked({ cloud: null })))
     render(<Cloud />)
@@ -139,6 +159,21 @@ describe('Cloud page (shrink guard pending state)', () => {
     expect(screen.getByText('900')).toBeInTheDocument()
     expect(screen.getByText('2/3/5')).toBeInTheDocument()
     expect(screen.getByText('40/50/60')).toBeInTheDocument()
+  })
+
+  it('compares the Lv / NP Lv servant counts of this device and the cloud', () => {
+    useCloudSync.mockReturnValue(
+      syncState({
+        ...blocked(),
+        localStats: stats({ leveledServants: 0 }),
+        cloudStats: stats({ leveledServants: 300 }),
+      }),
+    )
+    render(<Cloud />)
+
+    const label = screen.getByText('Lv・宝具Lv を持つサーヴァント')
+    const cells = [label.nextElementSibling, label.nextElementSibling?.nextElementSibling]
+    expect(cells.map((cell) => cell?.textContent)).toEqual(['0', '300'])
   })
 
   // いつ・どの端末から保存されたクラウドデータなのかは、復元するかの判断に直結する。

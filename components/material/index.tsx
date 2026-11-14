@@ -8,6 +8,9 @@ import { TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-catalog'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
+import { useServantLevels } from '../../hooks/use-servant-levels'
+import type { ServantLevelImportRow } from '../../lib/servant-levels'
+import { withOwnedServants } from '../../lib/servant-roster-owned'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
 import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
@@ -17,6 +20,7 @@ import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { ServantCard } from './servant-card'
+import { ServantRosterImport } from './servant-roster-import'
 import { PageHeader } from '../common/page-header'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -39,6 +43,8 @@ export const Index = ({
   const { t } = useTranslation('material')
   const ids = useMemo(() => servants.map(s => s.id.toString()), [servants])
   const [chaldeaState, setChaldeaState] = useChaldeaState(ids)
+  const { levels, importLevels } = useServantLevels()
+  const levelById = useMemo(() => new Map(Object.entries(levels)), [levels])
 
   const [selClass, setSelClass] = useState<ClassId>('all')
   const [selRarities, setSelRarities] = useState<number[]>([])
@@ -260,6 +266,15 @@ export const Index = ({
     [setChaldeaState]
   )
 
+  // 所持の印は、保存値を補ったあとの状態（一覧にいる全サーヴァントの ID を持つ）を前の値として書く
+  const handleRosterConfirm = useCallback(
+    (rows: ServantLevelImportRow[]) => {
+      importLevels(rows)
+      setChaldeaState(prev => withOwnedServants(prev, rows.map(r => r.id)))
+    },
+    [importLevels, setChaldeaState]
+  )
+
   const handleWillStartChange = useCallback(
     (id: string) =>
       (target: TargetKey, idx: number, prev: number, next: number): boolean =>
@@ -318,7 +333,7 @@ export const Index = ({
             </div>
           }
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/material/class-score"
               className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1 bg-primary/10 px-2.5 py-1 rounded-full transition-colors"
@@ -326,6 +341,12 @@ export const Index = ({
               <span>{t('class-score-link', 'クラススコア目標設定')}</span>
               <span>→</span>
             </Link>
+            <ServantRosterImport
+              servants={servants}
+              levels={levels}
+              chaldeaState={chaldeaState}
+              onConfirm={handleRosterConfirm}
+            />
           </div>
         </PageHeader>
 
@@ -594,6 +615,8 @@ export const Index = ({
                   setState={handleSetServantState(s.id.toString())}
                   onWillStartChange={handleWillStartChange(s.id.toString())}
                   onStartChange={handleOnStartChange(s.id.toString())}
+                  lv={levelById.get(s.id.toString())?.lv}
+                  npLv={levelById.get(s.id.toString())?.npLv}
                 />
               ))}
             </div>

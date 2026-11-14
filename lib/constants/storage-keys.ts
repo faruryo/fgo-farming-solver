@@ -29,6 +29,8 @@ export const STORAGE_KEYS = {
   TODO_STATE: 'todoState',
   TODO_SETTINGS: 'todoSettings',
   BOND_TRACKER: 'bondTracker',
+  /** 所持サーヴァントの Lv・宝具Lv（サーヴァントの ID ごと）。スクリーンショットから取り込む */
+  SERVANT_LEVELS: 'servantLevels',
 
   // Local/UI-only state and metadata
   TRACKING_MODE: 'material/tracking-mode',
@@ -91,6 +93,7 @@ export const CLOUD_SYNC_KEYS = [
   STORAGE_KEYS.TODO_SETTINGS,
   STORAGE_KEYS.BOND_TRACKER,
   STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS,
+  STORAGE_KEYS.SERVANT_LEVELS,
 ] as const
 
 export type CloudSyncKey = (typeof CLOUD_SYNC_KEYS)[number]

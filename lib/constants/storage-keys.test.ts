@@ -21,6 +21,11 @@ describe('storage-keys', () => {
     expect(isCloudSyncKey(STORAGE_KEYS.EVENTS_SHOP_WANTED_ITEMS)).toBe(true)
   })
 
+  it('syncs the servant Lv / NP Lv store', () => {
+    expect(STORAGE_KEYS.SERVANT_LEVELS).toBe('servantLevels')
+    expect(isCloudSyncKey(STORAGE_KEYS.SERVANT_LEVELS)).toBe(true)
+  })
+
   it('strictly preserves the cloud sync keys in sequence', () => {
     expect(CLOUD_SYNC_KEYS).toEqual([
       'material',
@@ -46,6 +51,7 @@ describe('storage-keys', () => {
       'todoSettings',
       'bondTracker',
       'events/shopWantedItems',
+      'servantLevels',
     ])
   })
 

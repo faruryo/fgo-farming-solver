@@ -44,10 +44,29 @@ const posession = (count: number, each = 30): string => {
   return JSON.stringify(entries)
 }
 
-const scale = (servants: number, possessions: number): PayloadScale => ({
+const scale = (
+  servants: number,
+  possessions: number,
+  leveledServants = 0,
+): PayloadScale => ({
   servants,
   possessions,
+  leveledServants,
 })
+
+// 測れることを確かめてから規模を返す。
+const measured = (storage: Record<string, string>): PayloadScale => {
+  const result = measurePayload(storage)
+  if (result === null) throw new Error('payload could not be measured')
+  return result
+}
+
+// servantLevels の JSON。count 騎ぶん Lv と宝具Lv を持たせる。
+const servantLevels = (count: number): string => {
+  const entries: Record<string, { lv: number; npLv: number }> = {}
+  for (let i = 0; i < count; i++) entries[`${100100 + i * 100}`] = { lv: 90, npLv: 2 }
+  return JSON.stringify(entries)
+}
 
 // 事故そのもの: クラウドは 465件中461有効・所持104種、ローカルは material の
 // 462件すべてが disabled:true で posession が空。
@@ -65,6 +84,7 @@ describe('measurePayload', () => {
     expect(measurePayload(ACCIDENT_CLOUD)).toEqual({
       servants: 461,
       possessions: 104,
+      leveledServants: 0,
     })
   })
 
@@ -108,6 +128,7 @@ describe('measurePayload', () => {
     expect(measurePayload({ posession: posession(3) })).toEqual({
       servants: 0,
       possessions: 3,
+      leveledServants: 0,
     })
   })
 
@@ -124,7 +145,11 @@ describe('measurePayload', () => {
   })
 
   it('両キーとも無いときは 0 件として測定できる(測定不能ではない)', () => {
-    expect(measurePayload({})).toEqual({ servants: 0, possessions: 0 })
+    expect(measurePayload({})).toEqual({
+      servants: 0,
+      possessions: 0,
+      leveledServants: 0,
+    })
   })
 
   // 測定不能(null)は保存を中止させる。パースできた値は、たとえ想定外の形でも
@@ -133,7 +158,39 @@ describe('measurePayload', () => {
     expect(measurePayload({ material: 'null', posession: '[]' })).toEqual({
       servants: 0,
       possessions: 0,
+      leveledServants: 0,
     })
+  })
+
+  it('servantLevels の Lv か宝具Lv を持つサーヴァントを leveledServants と数える', () => {
+    const entries = {
+      '100100': { lv: 90, npLv: 2 },
+      '100200': { lv: 80 },
+      '100300': { npLv: 5 },
+      // 範囲の外の値しか無い項目は数えない(保存値を読む関数と同じ見方)
+      '100400': { lv: 121, npLv: 0 },
+      '100500': { lv: 1.5 },
+      // この版が知らない欄だけの項目も数えない
+      '100600': { future: 1 },
+    }
+    expect(
+      measurePayload({ servantLevels: JSON.stringify(entries) })?.leveledServants,
+    ).toBe(3)
+  })
+
+  it('servantLevels が空文字・空の表なら leveledServants: 0 とする(測定不能ではない)', () => {
+    expect(measurePayload({ servantLevels: '' })?.leveledServants).toBe(0)
+    expect(measurePayload({ servantLevels: '{}' })?.leveledServants).toBe(0)
+  })
+
+  it('servantLevels が不正 JSON なら測定不能として null を返す', () => {
+    expect(
+      measurePayload({
+        material: material({ active: 3 }),
+        posession: posession(3),
+        servantLevels: '{"100100":',
+      }),
+    ).toBeNull()
   })
 })
 
@@ -171,8 +228,8 @@ describe('isDestructiveShrink — 発火する', () => {
   it('事故再現: 461/104 のクラウドに対し全 disabled + 空 posession を保存しようとすると発火する', () => {
     const cloud = measurePayload(ACCIDENT_CLOUD)
     const next = measurePayload(ACCIDENT_LOCAL)
-    expect(cloud).toEqual({ servants: 461, possessions: 104 })
-    expect(next).toEqual({ servants: 0, possessions: 0 })
+    expect(cloud).toEqual({ servants: 461, possessions: 104, leveledServants: 0 })
+    expect(next).toEqual({ servants: 0, possessions: 0, leveledServants: 0 })
     expect(isDestructiveShrink(next!, cloud!, [])).toBe(true)
   })
 
@@ -227,6 +284,37 @@ describe('isDestructiveShrink — 発火する', () => {
         'todoState',
         'quests',
       ]),
+    ).toBe(true)
+  })
+
+  // 片方の端末にだけ Lv・宝具Lv の取り込みがある。取り込みの無い端末は
+  // servantLevels のキーを持たないので、消えるキーは1個でほかの件数も変わらない。
+  it('Lv・宝具Lv を取り込んでいない端末が 300 騎ぶんのクラウドを上書きすると発火する', () => {
+    const cloudStorage = {
+      material: material({ active: 461 }),
+      posession: posession(104),
+      servantLevels: servantLevels(300),
+    }
+    const nextStorage = {
+      material: material({ active: 461 }),
+      posession: posession(104),
+    }
+    const cloud = measured(cloudStorage)
+    const next = measured(nextStorage)
+    expect(cloud).toEqual({ servants: 461, possessions: 104, leveledServants: 300 })
+    expect(next).toEqual({ servants: 461, possessions: 104, leveledServants: 0 })
+    const missingKeys = findMissingKeys(nextStorage, cloudStorage, [
+      'material',
+      'posession',
+      'servantLevels',
+    ])
+    expect(missingKeys).toEqual(['servantLevels'])
+    expect(isDestructiveShrink(next, cloud, missingKeys)).toBe(true)
+  })
+
+  it('Lv・宝具Lv の境界: C=10, N=0 で発火する', () => {
+    expect(
+      isDestructiveShrink(scale(461, 104, 0), scale(461, 104, SHRINK_MIN_DELTA), []),
     ).toBe(true)
   })
 })
@@ -310,5 +398,35 @@ describe('isDestructiveShrink — 発火しない(意図的に検知しない)',
         false,
       )
     })
+  })
+
+  // この変更の前に保存されたクラウドには servantLevels が無い。
+  it('Lv・宝具Lv の無いクラウドへの保存は、Lv・宝具Lv の件数を理由に検知しない', () => {
+    const cloud = measured({
+      material: material({ active: 461 }),
+      posession: posession(104),
+    })
+    const next = measured({
+      material: material({ active: 461 }),
+      posession: posession(104),
+      servantLevels: servantLevels(300),
+    })
+    expect([cloud.leveledServants, next.leveledServants]).toEqual([0, 300])
+    expect(isDestructiveShrink(next, cloud, [])).toBe(false)
+  })
+
+  it('Lv・宝具Lv が 300→320 に増える保存は検知しない', () => {
+    expect(
+      isDestructiveShrink(scale(461, 104, 320), scale(461, 104, 300), []),
+    ).toBe(false)
+  })
+
+  it('Lv・宝具Lv の境界: C=9, N=0 と 300→151 は検知しない', () => {
+    expect(
+      isDestructiveShrink(scale(461, 104, 0), scale(461, 104, SHRINK_MIN_DELTA - 1), []),
+    ).toBe(false)
+    expect(isDestructiveShrink(scale(461, 104, 151), scale(461, 104, 300), [])).toBe(
+      false,
+    )
   })
 })

@@ -6,6 +6,9 @@
 export type PayloadScale = {
   servants: number
   possessions: number
+  // Lv か宝具Lv の値を持つサーヴァントの数。片方の端末にだけ取り込みがあると
+  // 消えるキーは1個で、ほかの指標も減らないため、これが無いと黙って消える。
+  leveledServants: number
 }
 
 // 発火の下限。C - N がこれ未満なら、比率がどれだけ落ちても発火しない。
@@ -21,6 +24,7 @@ export const MISSING_KEYS_THRESHOLD = 2
 
 import { parseRecord } from './parse'
 import { STORAGE_KEYS } from '../constants/storage-keys'
+import { countServantLevels } from '../servant-levels'
 
 type ServantNode = {
   disabled?: boolean
@@ -33,7 +37,8 @@ type StorageLike = Record<string, string | null | undefined>
 export const measurePayload = (storage: StorageLike): PayloadScale | null => {
   const material = parseRecord(storage[STORAGE_KEYS.MATERIAL])
   const possession = parseRecord(storage[STORAGE_KEYS.POSSESSION])
-  if (material === null || possession === null) return null
+  const servantLevels = parseRecord(storage[STORAGE_KEYS.SERVANT_LEVELS])
+  if (material === null || possession === null || servantLevels === null) return null
 
   // stats-logic.ts の getStats と同じ除外条件。`disabled` 未定義は有効。
   const servants = Object.entries(material).filter(([id, node]) => {
@@ -45,7 +50,7 @@ export const measurePayload = (storage: StorageLike): PayloadScale | null => {
     (count) => typeof count === 'number' && count > 0,
   ).length
 
-  return { servants, possessions }
+  return { servants, possessions, leveledServants: countServantLevels(servantLevels) }
 }
 
 // 判定対象は keys ∩ cloud のみ。KEYS からキーを削除したときに、旧データを持つ
@@ -63,8 +68,8 @@ export const findMissingKeys = (
 const isShrunk = (next: number, cloud: number): boolean =>
   cloud - next >= SHRINK_MIN_DELTA && next <= cloud * SHRINK_RATIO
 
-// servants / possessions / missingKeys は独立に成立する。片方の指標定義を誤って
-// も、もう片方が事故を捕まえる。
+// servants / possessions / leveledServants / missingKeys は独立に成立する。どれか
+// の指標定義を誤っても、ほかの指標が事故を捕まえる。
 export const isDestructiveShrink = (
   next: PayloadScale,
   cloud: PayloadScale,
@@ -72,4 +77,5 @@ export const isDestructiveShrink = (
 ): boolean =>
   isShrunk(next.servants, cloud.servants) ||
   isShrunk(next.possessions, cloud.possessions) ||
+  isShrunk(next.leveledServants, cloud.leveledServants) ||
   missingKeys.length >= MISSING_KEYS_THRESHOLD

@@ -65,6 +65,9 @@ const Cloud = () => {
     scale == null
       ? t('shrink-guard-unknown', '読み取れません')
       : `${t('shrink-guard-servants', 'サーヴァント')} ${scale.servants} / ${t('shrink-guard-possessions', '所持素材の種類')} ${scale.possessions}`
+  // Lv・宝具Lv だけが減って止まったときは上の数が両側で同じになるので、別の行に出す。
+  const summarizeLevels = (scale: PayloadScale) =>
+    `${t('shrink-guard-servant-levels', 'Lv・宝具Lv を持つサーヴァント')} ${scale.leveledServants}`
 
   // クラウドのデータが「いつ・どの端末から」保存されたものかは、復元するかどうかの
   // 判断に直結する(端末間で保存が往復していた事故は、この 2 つで特定できた)。
@@ -270,12 +273,16 @@ const Cloud = () => {
                             {t('shrink-guard-next', '保存しようとした内容')}
                           </div>
                           <div style={{ color: 'var(--text)' }}>{summarizeScale(blockedShrink.next)}</div>
+                          <div style={{ color: 'var(--text)' }}>{summarizeLevels(blockedShrink.next)}</div>
                         </div>
                         <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)' }}>
                           <div className="mb-1 font-medium" style={{ color: 'var(--text2)' }}>
                             {t('shrink-guard-cloud', 'クラウド')}
                           </div>
                           <div style={{ color: 'var(--text)' }}>{summarizeScale(blockedShrink.cloud)}</div>
+                          {blockedShrink.cloud != null && (
+                            <div style={{ color: 'var(--text)' }}>{summarizeLevels(blockedShrink.cloud)}</div>
+                          )}
                         </div>
                       </div>
 
