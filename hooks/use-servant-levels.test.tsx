@@ -52,6 +52,48 @@ describe('useServantLevels', () => {
     )
   })
 
+  it('1騎の setter はその騎だけを欄のとおりに置き換え、未同期の編集の通知を出す', async () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ 100100: { lv: 90, npLv: 2, future: 'keep' }, 200100: { lv: 70 }, 999999: 'raw' }),
+    )
+    const { result } = renderHook(() => useServantLevels())
+    await waitFor(() => expect(result.current.levels).toEqual({ 100100: { lv: 90, npLv: 2 }, 200100: { lv: 70 } }))
+    onSync.mockClear()
+    act(() => result.current.setServantLevel(100100, { lv: 100, npLv: null }))
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(KEY) ?? 'null')).toEqual({
+        100100: { lv: 100, future: 'keep' },
+        200100: { lv: 70 },
+        999999: 'raw',
+      }),
+    )
+    expect(onSync).toHaveBeenCalledWith(expect.objectContaining({ detail: { key: KEY } }))
+    expect(result.current.levels).toEqual({ 100100: { lv: 100 }, 200100: { lv: 70 } })
+  })
+
+  it('1騎の setter で両方を消すと、その騎の項目が消える', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ 100100: { lv: 90, npLv: 2 }, 200100: { lv: 70 } }))
+    const { result } = renderHook(() => useServantLevels())
+    await waitFor(() => expect(result.current.levels[100100]).toEqual({ lv: 90, npLv: 2 }))
+    act(() => result.current.setServantLevel('100100', { lv: null, npLv: null }))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(KEY) ?? 'null')).toEqual({ 200100: { lv: 70 } }))
+    expect(result.current.levels).toEqual({ 200100: { lv: 70 } })
+  })
+
+  it('取り込みは setter を足しても変わらない: 空の種類は前の値を残す', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ 100100: { lv: 90, npLv: 2 } }))
+    const { result } = renderHook(() => useServantLevels())
+    await waitFor(() => expect(result.current.levels[100100]).toEqual({ lv: 90, npLv: 2 }))
+    act(() => result.current.importLevels([{ id: 100100, lv: null, npLv: 4 }, { id: 200100, lv: 80 }]))
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(KEY) ?? 'null')).toEqual({
+        100100: { lv: 90, npLv: 4 },
+        200100: { lv: 80 },
+      }),
+    )
+  })
+
   it('別の場所の書き込みの通知で読み直す', async () => {
     const { result } = renderHook(() => useServantLevels())
     await waitFor(() => expect(result.current.loaded).toBe(true))

@@ -27,6 +27,7 @@ const renderCard = (
     servant?: MaterialCatalogServant
     lv?: number
     npLv?: number
+    onEditLevel?: (servantId: number, button: HTMLButtonElement) => void
   } = {}
 ) => {
   const setState = vi.fn()
@@ -41,6 +42,7 @@ const renderCard = (
       onStartChange={opts.onStartChange}
       lv={opts.lv}
       npLv={opts.npLv}
+      onEditLevel={opts.onEditLevel}
     />
   )
   return { setState }
@@ -341,10 +343,11 @@ describe('ServantCard - owned toggle', () => {
   })
 })
 
-describe('ServantCard - 保存されている Lv・宝具Lv の表示', () => {
-  it('取り込んだ値がカードに出る: 所持のカードの名前の下、クラスの並びに「Lv 90・宝具 2」を出す', () => {
+describe('ServantCard - 保存されている Lv・宝具Lv のボタン', () => {
+  it('取り込んだ値がカードに出る: 所持のカードの名前の下、クラスの並びに「Lv 90・宝具 2」のボタンを出す', () => {
     renderCard(ownedState(), { lv: 90, npLv: 2 })
     const level = screen.getByTestId('servant-card-level')
+    expect(level.tagName).toBe('BUTTON')
     expect(level).toHaveTextContent('Lv 90・宝具 2')
     expect(level.parentElement).toHaveClass('c-servant-class-tag')
   })
@@ -360,19 +363,55 @@ describe('ServantCard - 保存されている Lv・宝具Lv の表示', () => {
     expect(screen.getByTestId('servant-card-level')).toHaveTextContent(/^宝具 5$/)
   })
 
-  it('値が無いカード: Lv・宝具Lv の表示を足さない', () => {
+  it('値が無い所持のカード: 「Lv –」のボタンを出し、数の値は出さない', () => {
     renderCard(ownedState())
-    expect(screen.queryByTestId('servant-card-level')).not.toBeInTheDocument()
+    const level = screen.getByTestId('servant-card-level')
+    expect(level.tagName).toBe('BUTTON')
+    expect(level).toHaveTextContent(/^Lv –$/)
+    expect(level).not.toHaveTextContent(/\d/)
   })
 
-  it('未所持のカードには、値が保存されていても出さない', () => {
+  it('未所持のカードには、値が保存されていてもボタンを出さない', () => {
     renderCard(createServantState(), { lv: 90, npLv: 2 })
     expect(screen.queryByTestId('servant-card-level')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lv・宝具Lv を入れる/ })).not.toBeInTheDocument()
   })
 
-  it('表示だけで、押しても状態を書き換えない', () => {
-    const { setState } = renderCard(ownedState(), { lv: 90, npLv: 2 })
-    fireEvent.click(screen.getByTestId('servant-card-level'))
+  it('未所持で値が無いカードにも「Lv –」を出さない', () => {
+    renderCard(createServantState())
+    expect(screen.queryByText('Lv –')).not.toBeInTheDocument()
+  })
+
+  it('押すとサーヴァントの ID と押したボタンでコールバックを呼び、育成の値は書き換えない', () => {
+    const onEditLevel = vi.fn()
+    const onStartChange = vi.fn()
+    const { setState } = renderCard(ownedState(), { lv: 90, npLv: 2, onEditLevel, onStartChange })
+    const level = screen.getByTestId('servant-card-level')
+    fireEvent.click(level)
+    expect(onEditLevel).toHaveBeenCalledTimes(1)
+    expect(onEditLevel).toHaveBeenCalledWith(servant.id, level)
     expect(setState).not.toHaveBeenCalled()
+    expect(onStartChange).not.toHaveBeenCalled()
+  })
+
+  it('「Lv –」を押してもコールバックを呼ぶ', () => {
+    const onEditLevel = vi.fn()
+    renderCard(ownedState(), { onEditLevel })
+    fireEvent.click(screen.getByTestId('servant-card-level'))
+    expect(onEditLevel).toHaveBeenCalledWith(servant.id, screen.getByTestId('servant-card-level'))
+  })
+
+  it('ボタンの名前に見えている文字とサーヴァント名の両方が入る', () => {
+    renderCard(ownedState(), { lv: 90, npLv: 2 })
+    expect(screen.getByRole('button', { name: 'Lv 90・宝具 2、サーヴァントA の Lv・宝具Lv を入れる' })).toBe(
+      screen.getByTestId('servant-card-level'),
+    )
+  })
+
+  it('「Lv –」のボタンの名前にも見えている文字とサーヴァント名が入る', () => {
+    renderCard(ownedState())
+    expect(screen.getByRole('button', { name: 'Lv –、サーヴァントA の Lv・宝具Lv を入れる' })).toBe(
+      screen.getByTestId('servant-card-level'),
+    )
   })
 })

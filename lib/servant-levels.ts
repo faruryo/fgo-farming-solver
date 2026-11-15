@@ -70,3 +70,25 @@ export const withServantLevels = (
   }
   return Object.fromEntries(next)
 }
+
+/** 1騎の手入力の値（数は置き換え、`null` はその欄を消す） */
+export type ServantLevelEdit = { lv: number | null; npLv: number | null }
+
+/**
+ * 1騎の Lv・宝具Lv を欄のとおりに置き換えた新しい保存値。前の保存値が表でなければ空の表に重ねる。
+ * その騎の項目が表でなければ空の表として扱う。`lv`・`npLv` 以外の欄と、ほかのサーヴァントの項目は残す。
+ * 残る欄が無くなった項目はキーごと消す。
+ */
+export const withServantLevel = (prev: unknown, id: string | number, edit: ServantLevelEdit): Record<string, unknown> => {
+  const key = String(id)
+  const next = new Map<string, unknown>(isRecord(prev) ? Object.entries(prev) : [])
+  const before = next.get(key)
+  const entry = new Map<string, unknown>(isRecord(before) ? Object.entries(before) : [])
+  if (edit.lv === null) entry.delete('lv')
+  else entry.set('lv', edit.lv)
+  if (edit.npLv === null) entry.delete('npLv')
+  else entry.set('npLv', edit.npLv)
+  if (entry.size === 0) next.delete(key)
+  else next.set(key, Object.fromEntries(entry))
+  return Object.fromEntries(next)
+}
