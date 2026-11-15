@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countServantLevels, readServantLevels, withServantLevels } from './servant-levels'
+import { countServantLevels, readServantLevels, withServantLevel, withServantLevels } from './servant-levels'
 
 describe('readServantLevels', () => {
   it('Lv 1〜120・宝具Lv 1〜5 の整数だけを通す', () => {
@@ -78,5 +78,61 @@ describe('withServantLevels', () => {
     expect(withServantLevels({}, [{ id: 1 }, { id: 2, lv: 121, npLv: 0 }])).toEqual({})
     expect(withServantLevels({ 1: 'broken' }, [{ id: 1, lv: 10 }])).toEqual({ 1: { lv: 10 } })
     expect(withServantLevels(null, [{ id: 1, npLv: 5 }])).toEqual({ 1: { npLv: 5 } })
+  })
+})
+
+describe('withServantLevel', () => {
+  it('数の欄は置き換える', () => {
+    expect(withServantLevel({ 100100: { lv: 90, npLv: 2 } }, 100100, { lv: 100, npLv: 2 })).toEqual({
+      100100: { lv: 100, npLv: 2 },
+    })
+    expect(withServantLevel({}, '100100', { lv: 80, npLv: 1 })).toEqual({ 100100: { lv: 80, npLv: 1 } })
+  })
+
+  it('null の欄は消す: 片方だけを消すともう片方が残る', () => {
+    expect(withServantLevel({ 100100: { lv: 90, npLv: 2 } }, 100100, { lv: 90, npLv: null })).toEqual({
+      100100: { lv: 90 },
+    })
+    expect(withServantLevel({ 100100: { lv: 90, npLv: 2 } }, 100100, { lv: null, npLv: 2 })).toEqual({
+      100100: { npLv: 2 },
+    })
+  })
+
+  it('両方を消すと残る欄の無い項目はキーごと消す', () => {
+    expect(withServantLevel({ 100100: { lv: 90, npLv: 2 }, 200100: { lv: 80 } }, 100100, { lv: null, npLv: null })).toEqual({
+      200100: { lv: 80 },
+    })
+    expect(withServantLevel({}, 100100, { lv: null, npLv: null })).toEqual({})
+  })
+
+  it('知らない欄を残す: 両方を消しても知らない欄があれば項目は残る', () => {
+    const prev = { 100100: { lv: 90, future: { a: [1] } } }
+    expect(withServantLevel(prev, 100100, { lv: null, npLv: null })).toEqual({ 100100: { future: { a: [1] } } })
+    expect(withServantLevel(prev, 100100, { lv: 100, npLv: 3 })).toEqual({ 100100: { lv: 100, npLv: 3, future: { a: [1] } } })
+  })
+
+  it('ほかの騎と知らない騎の項目を変えない', () => {
+    const prev = { 100100: { lv: 90 }, 200100: { lv: 70, npLv: 1 }, 999999: { lv: 'x', other: true }, 888888: 'raw' }
+    expect(withServantLevel(prev, 100100, { lv: 100, npLv: null })).toEqual({
+      100100: { lv: 100 },
+      200100: { lv: 70, npLv: 1 },
+      999999: { lv: 'x', other: true },
+      888888: 'raw',
+    })
+  })
+
+  it('前の保存値を書き換えない', () => {
+    const prev = { 100100: { lv: 90, npLv: 2 } }
+    withServantLevel(prev, 100100, { lv: null, npLv: null })
+    expect(prev).toEqual({ 100100: { lv: 90, npLv: 2 } })
+  })
+
+  it('壊れた前の値: 全体が表でなければ空の表に重ね、その騎の項目が表でなければ空の表として扱う', () => {
+    expect(withServantLevel(null, 1, { lv: 10, npLv: null })).toEqual({ 1: { lv: 10 } })
+    expect(withServantLevel([1, 2], 1, { lv: 10, npLv: null })).toEqual({ 1: { lv: 10 } })
+    expect(withServantLevel('x', 1, { lv: null, npLv: null })).toEqual({})
+    expect(withServantLevel({ 1: 'broken', 2: { lv: 5 } }, 1, { lv: null, npLv: 4 })).toEqual({ 1: { npLv: 4 }, 2: { lv: 5 } })
+    expect(withServantLevel({ 1: 42 }, 1, { lv: null, npLv: null })).toEqual({})
+    expect(withServantLevel({ 1: [90] }, 1, { lv: 90, npLv: null })).toEqual({ 1: { lv: 90 } })
   })
 })
