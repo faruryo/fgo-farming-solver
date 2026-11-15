@@ -27,9 +27,10 @@ vi.mock('react-i18next', () => ({
 }))
 
 const push = vi.fn()
+const search = vi.hoisted(() => ({ query: '' }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(search.query),
 }))
 
 const mockSession = vi.fn().mockReturnValue({ data: null, status: 'unauthenticated' })
@@ -106,6 +107,7 @@ const submitAndReadUrl = async () => {
 
 beforeEach(() => {
   localStorage.clear()
+  search.query = ''
   push.mockClear()
   vi.mocked(saveProgressSnapshot).mockClear()
 })
@@ -362,5 +364,77 @@ describe('goSolver — progress snapshot', () => {
     })
     await solveSuccessfully()
     expect(saveProgressSnapshot).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('所持数の保存 — 未入力を0個として書かない (#263)', () => {
+  // jsdom は scrollIntoView を持たない（MatCard が編集開始時に呼ぶ）。
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
+  })
+  const stored = () => localStorage.getItem('posession')
+  const storedCounts = () => JSON.parse(stored() ?? 'null') as unknown
+  const one = (root: ParentNode, selector: string) => {
+    const el = root.querySelector<HTMLElement>(selector)
+    if (!el) throw new Error(`not found: ${selector}`)
+    return el
+  }
+  const ownedCell = (root: ParentNode = document) =>
+    one(root, '.c-mat-count-val.owned')
+  const blurWith = async (value: string | null) => {
+    const user = userEvent.setup()
+    await user.click(ownedCell())
+    const input = one(document, '.c-mat-count-input')
+    if (value !== null) {
+      await user.clear(input)
+      if (value !== '') await user.type(input, value)
+    }
+    await user.tab()
+  }
+
+  it('必要数をクエリで受け取って開いただけでは保存しない', async () => {
+    search.query = '100=5&200=3'
+    render(<Result items={items} quests={quests} />)
+    await screen.findByText('金素材A')
+    expect(stored()).toBeNull()
+  })
+
+  it('未入力の欄を触って離しても保存しない', async () => {
+    setLocalStorage('material/result', { '100': 5 })
+    render(<Result items={items} quests={quests} />)
+    await screen.findByText('金素材A')
+    expect(ownedCell()).toHaveTextContent('—')
+    await blurWith(null)
+    expect(stored()).toBeNull()
+  })
+
+  it('入力済みの欄を空欄にすると品目ごと消える', async () => {
+    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    setLocalStorage('posession', { '100': 10, '200': 3 })
+    render(<Result items={items} quests={quests} />)
+    await screen.findByText('10')
+    await blurWith('')
+    await waitFor(() => expect(storedCounts()).toEqual({ '200': 3 }))
+  })
+
+  it('0 と入力すれば 0 個として保存する', async () => {
+    setLocalStorage('material/result', { '100': 5 })
+    render(<Result items={items} quests={quests} />)
+    await screen.findByText('金素材A')
+    await blurWith('0')
+    await waitFor(() => expect(storedCounts()).toEqual({ '100': 0 }))
+  })
+
+  it('reserveで空欄にした素材は、その場で不足の対象から外れる', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 5 })
+    setLocalStorage('posession', { '100': 0 })
+    render(<Result items={items} quests={quests} />)
+    expect(await screen.findByText('−60')).toBeInTheDocument()
+    const user = userEvent.setup()
+    await user.click(ownedCell())
+    await user.clear(one(document, '.c-mat-count-input'))
+    await user.tab()
+    await waitFor(() => expect(screen.queryByText('−60')).toBeNull())
   })
 })
