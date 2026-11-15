@@ -13,9 +13,9 @@
 
 ## 3. 品質ゲート
 
-- [ ] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm lint:ratchet`、`pnpm vitest run` がすべて通ることを確かめる <!-- verify-only -->
+- [x] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm lint:ratchet`、`pnpm vitest run` がすべて通ることを確かめる <!-- verify-only -->
 
 ## 4. 実機での確かめ（graph の後に呼び出し側が行う）
 
-- [ ] 4.1 dev サーバー（port 3191）の `/material` を Playwright で開き、画面内だけを撮って、値のある所持のカード・値の無い所持のカード（「Lv –」）・未所持のカード・小窓を開いた状態・範囲に無い値を入れた状態を確かめる。キーボード（Tab・Enter・Escape）で開閉と保存ができ、閉じたあとフォーカスが開いたボタンに戻ることを確かめる <!-- verify-only -->
-- [ ] 4.2 同じ dev の `/material` で、全騎が所持のときの `document.querySelectorAll('*').length` を数え、design.md の要素の数（全騎が所持で 29,689、増えるのは「Lv –」の最大 +474）から大きく外れていないことを確かめる <!-- verify-only -->
+- [x] 4.1 dev サーバー（port 3191）の `/material` を Playwright で開き、画面内だけを撮って、値のある所持のカード・値の無い所持のカード（「Lv –」）・未所持のカード・小窓を開いた状態・範囲に無い値を入れた状態を確かめる。キーボード（Tab・Enter・Escape）で開閉と保存ができ、閉じたあとフォーカスが開いたボタンに戻ることを確かめる <!-- verify-only -->
+- [x] 4.2 同じ dev の `/material` で、全騎が所持のときの `document.querySelectorAll('*').length` を数え、design.md の要素の数（全騎が所持で 29,689、増えるのは「Lv –」の最大 +474）から大きく外れていないことを確かめる <!-- verify-only -->
