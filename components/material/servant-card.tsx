@@ -268,7 +268,8 @@ const ServantCardComponent = ({
           {owned && (
             <button
               type="button"
-              className="ml-1.5 cursor-pointer rounded-sm tabular-nums outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring"
+              // 文字が 10px なので、押せる範囲だけを疑似要素で広げる（要素を増やさない）
+              className="relative ml-1.5 cursor-pointer rounded-sm tabular-nums outline-none after:absolute after:-inset-x-1 after:-inset-y-2 hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring"
               style={{ color: 'var(--text2)' }}
               data-testid="servant-card-level"
               aria-label={t('servant-card-level-edit', '{{text}}、{{name}} の Lv・宝具Lv を入れる', {
