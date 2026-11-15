@@ -18,4 +18,13 @@ describe('app/error', () => {
     expect(screen.getByRole('button', { name: '再読み込み' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'トップページへ戻る' })).toHaveAttribute('href', '/')
   })
+
+  // デプロイ直後の古いチャンクは読み直すだけで直るので、案内を一瞬も出さない
+  it('renders nothing for a ChunkLoadError while the page reloads', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const error = Object.assign(new Error('Loading chunk 12 failed'), { name: 'ChunkLoadError' })
+    const { container } = render(<GlobalError error={error} reset={vi.fn()} />)
+
+    expect(container).toBeEmptyDOMElement()
+  })
 })
