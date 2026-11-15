@@ -1,0 +1,634 @@
+{
+  // Migrated from eslint.config.mjs with @oxlint/migrate 1.90.0 (#283). Every rule is
+  // listed explicitly, so the default categories stay off.
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "nextjs",
+    "react"
+  ],
+  // sonarjs and security run through JS plugins (alpha) and receive no type information;
+  // keep oxlint / oxlint-tsgolint pinned and rebuild the ratchet baseline when bumping.
+  "jsPlugins": [
+    "eslint-plugin-sonarjs",
+    "eslint-plugin-security"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "options": {
+    "typeAware": true,
+    // There is no noInlineConfig equivalent; disable comments are banned by docs/automated-quality.md.
+    "reportUnusedDisableDirectives": "error"
+  },
+  "env": {
+    "builtin": true,
+    "es2026": true
+  },
+  "settings": {
+    "react": {
+      "version": "999.999.999"
+    }
+  },
+  "ignorePatterns": [
+    "next.config.js",
+    "postcss.config.mjs",
+    "sentry.client.config.js",
+    "sentry.server.config.js",
+    "pages/_error.js",
+    "next-env.d.ts",
+    ".open-next/",
+    ".wrangler/",
+    ".vercel/",
+    ".next/",
+    "public/",
+    "reports/",
+    ".claude/",
+    ".codex/",
+    ".agents/",
+    ".agent/",
+    ".next/**",
+    "out/**",
+    "build/**"
+  ],
+  "rules": {
+    "constructor-super": "error",
+    "for-direction": "error",
+    "getter-return": "error",
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    "no-class-assign": "error",
+    "no-compare-neg-zero": "error",
+    "no-cond-assign": "error",
+    "no-const-assign": "error",
+    "no-constant-binary-expression": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-delete-var": "error",
+    "no-dupe-class-members": "error",
+    "no-dupe-else-if": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-empty": "error",
+    "no-empty-character-class": "error",
+    "no-empty-pattern": "error",
+    "no-empty-static-block": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-fallthrough": "error",
+    "no-func-assign": "error",
+    "no-global-assign": "error",
+    "no-import-assign": "error",
+    "no-invalid-regexp": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-misleading-character-class": "error",
+    "no-new-native-nonconstructor": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-obj-calls": "error",
+    "no-prototype-builtins": "error",
+    "no-redeclare": "error",
+    "no-regex-spaces": "error",
+    "no-self-assign": "error",
+    "no-setter-return": "error",
+    "no-shadow-restricted-names": "error",
+    "no-sparse-arrays": "error",
+    "no-this-before-super": "error",
+    "no-unassigned-vars": "error",
+    "no-unreachable": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unused-labels": "error",
+    "no-unused-private-class-members": "error",
+    "no-unused-vars": [
+      "warn",
+      {
+        "ignoreRestSiblings": true
+      }
+    ],
+    "no-useless-backreference": "error",
+    "no-useless-catch": "error",
+    "no-useless-escape": "error",
+    "no-with": "error",
+    "preserve-caught-error": "error",
+    "require-yield": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+    "no-array-constructor": "error",
+    "no-unused-expressions": "error",
+    // SonarJS and security start as debt-ratcheted warnings: visible, and new findings fail pnpm lint:ratchet.
+    "sonarjs/class-name": "warn",
+    "sonarjs/no-fallthrough": "warn",
+    "sonarjs/no-equals-in-for-termination": "warn",
+    "sonarjs/no-extra-arguments": "warn",
+    "sonarjs/no-labels": "warn",
+    "sonarjs/no-nested-assignment": "warn",
+    "sonarjs/no-redundant-boolean": "warn",
+    "sonarjs/prefer-single-boolean-return": "warn",
+    "sonarjs/unused-import": "warn",
+    "sonarjs/fixme-tag": "warn",
+    "sonarjs/todo-tag": "warn",
+    "sonarjs/no-case-label-in-switch": "warn",
+    "sonarjs/no-parameter-reassignment": "warn",
+    "sonarjs/no-floating-point-equality": "warn",
+    "sonarjs/prefer-while": "warn",
+    "sonarjs/no-small-switch": "warn",
+    "sonarjs/no-hardcoded-ip": "warn",
+    "sonarjs/label-position": "warn",
+    "sonarjs/public-static-readonly": "warn",
+    "sonarjs/call-argument-line": "warn",
+    "sonarjs/max-switch-cases": "warn",
+    "sonarjs/no-unused-vars": "warn",
+    "sonarjs/function-inside-loop": "warn",
+    "sonarjs/code-eval": "warn",
+    "sonarjs/future-reserved-words": "warn",
+    "sonarjs/bitwise-operators": "warn",
+    "sonarjs/no-primitive-wrappers": "warn",
+    "sonarjs/no-skipped-tests": "warn",
+    "sonarjs/no-identical-expressions": "warn",
+    "sonarjs/constructor-for-side-effects": "warn",
+    "sonarjs/no-dead-store": "warn",
+    "sonarjs/no-identical-conditions": "warn",
+    "sonarjs/no-duplicated-branches": "warn",
+    "sonarjs/deprecation": "warn",
+    "sonarjs/no-inverted-boolean-check": "warn",
+    "sonarjs/misplaced-loop-counter": "warn",
+    "sonarjs/no-nested-functions": "warn",
+    "sonarjs/no-hardcoded-passwords": "warn",
+    "sonarjs/sql-queries": "warn",
+    "sonarjs/insecure-cookie": "warn",
+    "sonarjs/no-useless-increment": "warn",
+    "sonarjs/no-globals-shadowing": "warn",
+    "sonarjs/no-empty-test-file": "warn",
+    "sonarjs/no-ignored-return": "warn",
+    "sonarjs/arguments-order": "warn",
+    "sonarjs/pseudo-random": "warn",
+    "sonarjs/for-loop-increment-sign": "warn",
+    "sonarjs/null-dereference": "warn",
+    "sonarjs/no-selector-parameter": "warn",
+    "sonarjs/updated-loop-counter": "warn",
+    "sonarjs/block-scoped-var": "warn",
+    "sonarjs/no-ignored-exceptions": "warn",
+    "sonarjs/no-gratuitous-expressions": "warn",
+    "sonarjs/file-uploads": "warn",
+    "sonarjs/file-permissions": "warn",
+    "sonarjs/no-empty-character-class": "warn",
+    "sonarjs/no-unenclosed-multiline-block": "warn",
+    "sonarjs/index-of-compare-to-positive-number": "warn",
+    "sonarjs/assertions-in-tests": "warn",
+    "sonarjs/no-implicit-global": "warn",
+    "sonarjs/no-useless-catch": "warn",
+    "sonarjs/xml-parser-xxe": "warn",
+    "sonarjs/non-existent-operator": "warn",
+    "sonarjs/post-message": "warn",
+    "sonarjs/no-array-delete": "warn",
+    "sonarjs/no-alphabetical-sort": "warn",
+    "sonarjs/no-fixed-wait-in-tests": "warn",
+    "sonarjs/no-incomplete-assertions": "warn",
+    "sonarjs/no-global-this": "warn",
+    "sonarjs/new-operator-misuse": "warn",
+    "sonarjs/no-delete-var": "warn",
+    "sonarjs/cookie-no-httponly": "warn",
+    "sonarjs/no-nested-conditional": "warn",
+    "sonarjs/different-types-comparison": "warn",
+    "sonarjs/inverted-assertion-arguments": "warn",
+    "sonarjs/updated-const-var": "warn",
+    "sonarjs/no-invariant-returns": "warn",
+    "sonarjs/generator-without-yield": "warn",
+    "sonarjs/no-associative-arrays": "warn",
+    "sonarjs/comma-or-logical-or-case": "warn",
+    "sonarjs/no-redundant-jump": "warn",
+    "sonarjs/inconsistent-function-call": "warn",
+    "sonarjs/no-use-of-empty-return-value": "warn",
+    "sonarjs/void-use": "warn",
+    "sonarjs/cognitive-complexity": "warn",
+    "sonarjs/argument-type": "warn",
+    "sonarjs/in-operator-type-error": "warn",
+    "sonarjs/array-callback-without-return": "warn",
+    "sonarjs/function-return-type": "warn",
+    "sonarjs/no-all-duplicated-branches": "warn",
+    "sonarjs/no-same-line-conditional": "warn",
+    "sonarjs/no-collection-size-mischeck": "warn",
+    "sonarjs/no-unthrown-error": "warn",
+    "sonarjs/no-unused-collection": "warn",
+    "sonarjs/no-os-command-from-path": "warn",
+    "sonarjs/no-misleading-array-reverse": "warn",
+    "sonarjs/no-element-overwrite": "warn",
+    "sonarjs/no-identical-functions": "warn",
+    "sonarjs/no-empty-collection": "warn",
+    "sonarjs/no-redundant-assignments": "warn",
+    "sonarjs/prefer-type-guard": "warn",
+    "sonarjs/use-type-alias": "warn",
+    "sonarjs/no-useless-intersection": "warn",
+    "sonarjs/weak-ssl": "warn",
+    "sonarjs/no-weak-keys": "warn",
+    "sonarjs/csrf": "warn",
+    "sonarjs/production-debug": "warn",
+    "sonarjs/prefer-default-last": "warn",
+    "sonarjs/no-in-misuse": "warn",
+    "sonarjs/no-duplicate-in-composite": "warn",
+    "sonarjs/no-undefined-argument": "warn",
+    "sonarjs/no-nested-template-literals": "warn",
+    "sonarjs/prefer-promise-shorthand": "warn",
+    "sonarjs/no-redundant-optional": "warn",
+    "sonarjs/hashing": "warn",
+    "sonarjs/no-try-promise": "warn",
+    "sonarjs/unverified-certificate": "warn",
+    "sonarjs/cors": "warn",
+    "sonarjs/link-with-target-blank": "warn",
+    "sonarjs/disabled-auto-escaping": "warn",
+    "sonarjs/table-header": "warn",
+    "sonarjs/no-table-as-layout": "warn",
+    "sonarjs/table-header-reference": "warn",
+    "sonarjs/object-alt-content": "warn",
+    "sonarjs/no-clear-text-protocols": "warn",
+    "sonarjs/publicly-writable-directories": "warn",
+    "sonarjs/unverified-hostname": "warn",
+    "sonarjs/encryption-secure-mode": "warn",
+    "sonarjs/no-weak-cipher": "warn",
+    "sonarjs/insecure-jwt-token": "warn",
+    "sonarjs/x-powered-by": "warn",
+    "sonarjs/content-length": "warn",
+    "sonarjs/disabled-resource-integrity": "warn",
+    "sonarjs/content-security-policy": "warn",
+    "sonarjs/no-mime-sniff": "warn",
+    "sonarjs/no-referrer-policy": "warn",
+    "sonarjs/strict-transport-security": "warn",
+    "sonarjs/empty-string-repetition": "warn",
+    "sonarjs/regex-complexity": "warn",
+    "sonarjs/no-incompatible-assertion-types": "warn",
+    "sonarjs/anchor-precedence": "warn",
+    "sonarjs/slow-regex": "warn",
+    "sonarjs/no-invalid-regexp": "warn",
+    "sonarjs/unused-named-groups": "warn",
+    "sonarjs/no-same-argument-assert": "warn",
+    "sonarjs/no-misleading-character-class": "warn",
+    "sonarjs/duplicates-in-character-class": "warn",
+    "sonarjs/session-regeneration": "warn",
+    "sonarjs/prefer-specific-assertions": "warn",
+    "sonarjs/no-trivial-assertions": "warn",
+    "sonarjs/test-check-exception": "warn",
+    "sonarjs/stable-tests": "warn",
+    "sonarjs/parameterized-tests": "warn",
+    "sonarjs/no-empty-after-reluctant": "warn",
+    "sonarjs/single-character-alternation": "warn",
+    "sonarjs/no-code-after-done": "warn",
+    "sonarjs/disabled-timeout": "warn",
+    "sonarjs/chai-determinate-assertion": "warn",
+    "sonarjs/aws-s3-bucket-insecure-http": "warn",
+    "sonarjs/aws-s3-bucket-versioning": "warn",
+    "sonarjs/aws-s3-bucket-granted-access": "warn",
+    "sonarjs/no-angular-bypass-sanitization": "warn",
+    "sonarjs/aws-iam-public-access": "warn",
+    "sonarjs/aws-ec2-unencrypted-ebs-volume": "warn",
+    "sonarjs/aws-s3-bucket-public-access": "warn",
+    "sonarjs/aws-iam-all-privileges": "warn",
+    "sonarjs/aws-rds-unencrypted-databases": "warn",
+    "sonarjs/aws-opensearchservice-domain": "warn",
+    "sonarjs/aws-iam-privilege-escalation": "warn",
+    "sonarjs/aws-sagemaker-unencrypted-notebook": "warn",
+    "sonarjs/aws-restricted-ip-admin-access": "warn",
+    "sonarjs/no-empty-alternatives": "warn",
+    "sonarjs/no-control-regex": "warn",
+    "sonarjs/no-regex-spaces": "warn",
+    "sonarjs/aws-sns-unencrypted-topics": "warn",
+    "sonarjs/existing-groups": "warn",
+    "sonarjs/aws-ec2-rds-dms-public": "warn",
+    "sonarjs/aws-sqs-unencrypted-queue": "warn",
+    "sonarjs/no-empty-group": "warn",
+    "sonarjs/aws-efs-unencrypted": "warn",
+    "sonarjs/aws-apigateway-public-api": "warn",
+    "sonarjs/stateful-regex": "warn",
+    "sonarjs/concise-regex": "warn",
+    "sonarjs/single-char-in-character-classes": "warn",
+    "sonarjs/no-hardcoded-secrets": "warn",
+    "sonarjs/no-exclusive-tests": "warn",
+    "sonarjs/hardcoded-secret-signatures": "warn",
+    "sonarjs/jsx-no-leaked-render": "warn",
+    "sonarjs/no-hook-setter-in-body": "warn",
+    "sonarjs/no-useless-react-setstate": "warn",
+    "sonarjs/no-uniq-key": "warn",
+    "sonarjs/redundant-type-aliases": "warn",
+    "sonarjs/prefer-regexp-exec": "warn",
+    "sonarjs/no-internal-api-use": "warn",
+    "sonarjs/prefer-read-only-props": "warn",
+    "sonarjs/no-literal-call": "warn",
+    "sonarjs/reduce-initial-value": "warn",
+    "sonarjs/no-async-constructor": "warn",
+    "sonarjs/review-blockchain-mnemonic": "warn",
+    "sonarjs/dynamically-constructed-templates": "warn",
+    "sonarjs/no-session-cookies-on-static-assets": "warn",
+    "sonarjs/dompurify-unsafe-config": "warn",
+    "sonarjs/no-duplicate-test-title": "warn",
+    "sonarjs/async-test-assertions": "warn",
+    "sonarjs/no-empty-test-title": "warn",
+    "sonarjs/hooks-before-test-cases": "warn",
+    "sonarjs/no-forced-browser-interaction": "warn",
+    "sonarjs/assertions-in-test-cases": "warn",
+    "sonarjs/synchronous-suite-callback": "warn",
+    "sonarjs/super-linear-regex": "warn",
+    "sonarjs/prefer-native-lodash-alternative": "warn",
+    "sonarjs/no-default-utility-imports": "warn",
+    "sonarjs/memoize-cache-key": "warn",
+    "sonarjs/no-debug-commands-in-ui-tests": "warn",
+    "sonarjs/no-mixed-completion-style": "warn",
+    "sonarjs/no-interpolation-in-inline-snapshots": "warn",
+    "sonarjs/explicit-test-skip": "warn",
+    "security/detect-buffer-noassert": "warn",
+    "security/detect-child-process": "warn",
+    "security/detect-disable-mustache-escape": "warn",
+    "security/detect-eval-with-expression": "warn",
+    "security/detect-new-buffer": "warn",
+    "security/detect-no-csrf-before-method-override": "warn",
+    "security/detect-non-literal-fs-filename": "warn",
+    "security/detect-non-literal-regexp": "warn",
+    "security/detect-non-literal-require": "warn",
+    "security/detect-object-injection": "warn",
+    "security/detect-possible-timing-attacks": "warn",
+    "security/detect-pseudoRandomBytes": "warn",
+    "security/detect-unsafe-regex": "warn",
+    "security/detect-bidi-characters": "warn",
+    // Size and complexity debt is ratcheted. Tests are exempted in the override below.
+    "max-lines-per-function": [
+      "warn",
+      {
+        "max": 60,
+        "skipBlankLines": true,
+        "skipComments": true,
+        "IIFEs": true
+      }
+    ],
+    "complexity": [
+      "warn",
+      20
+    ],
+    "max-depth": [
+      "warn",
+      4
+    ],
+    "max-params": [
+      "warn",
+      6
+    ],
+    "max-nested-callbacks": [
+      "warn",
+      4
+    ],
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/set-state-in-effect": "warn",
+    "react/refs": "warn",
+    "react/immutability": "warn",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/triple-slash-reference": "error",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/no-unnecessary-type-assertion": "warn",
+    "typescript/no-unsafe-assignment": "warn",
+    "typescript/no-unsafe-call": "warn",
+    "typescript/no-unsafe-member-access": "warn",
+    "typescript/no-unsafe-argument": "warn",
+    // Zero-debt typed bug detectors.
+    "typescript/await-thenable": "error",
+    "typescript/consistent-type-assertions": "error",
+    "typescript/no-base-to-string": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": {
+          "attributes": false
+        }
+      }
+    ],
+    // eslint:recommended / react errors that Oxlint ships as nursery rules.
+    "no-useless-assignment": "error",
+    "react/require-render-return": "error",
+    // Stands in for sonarjs/deprecation and react/no-deprecated; new hits fail the ratchet.
+    "typescript/no-deprecated": "warn"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.{js,jsx,mjs,ts,tsx,mts,cts}"
+      ],
+      "rules": {
+        "react/display-name": "error",
+        "react/jsx-key": "error",
+        "react/jsx-no-comment-textnodes": "error",
+        "react/jsx-no-duplicate-props": "error",
+        "react/jsx-no-target-blank": "off",
+        "react/jsx-no-undef": "error",
+        "react/no-children-prop": "error",
+        "react/no-danger-with-children": "error",
+        "react/no-direct-mutation-state": "error",
+        "react/no-find-dom-node": "error",
+        "react/no-is-mounted": "error",
+        "react/no-render-return-value": "error",
+        "react/no-string-refs": "error",
+        "react/no-unescaped-entities": "error",
+        "react/no-unknown-property": "off",
+        "react/no-unsafe": "off",
+        "react/react-in-jsx-scope": "off",
+        "import/no-anonymous-default-export": "warn",
+        "jsx-a11y/alt-text": [
+          "warn",
+          {
+            "elements": [
+              "img"
+            ],
+            "img": [
+              "Image"
+            ]
+          }
+        ],
+        "jsx-a11y/aria-props": "warn",
+        "jsx-a11y/aria-proptypes": "warn",
+        "jsx-a11y/aria-unsupported-elements": "warn",
+        "jsx-a11y/role-has-required-aria-props": "warn",
+        "jsx-a11y/role-supports-aria-props": "warn",
+        "nextjs/google-font-display": "warn",
+        "nextjs/google-font-preconnect": "warn",
+        "nextjs/next-script-for-ga": "warn",
+        "nextjs/no-async-client-component": "warn",
+        "nextjs/no-before-interactive-script-outside-document": "warn",
+        "nextjs/no-css-tags": "warn",
+        "nextjs/no-head-element": "warn",
+        "nextjs/no-html-link-for-pages": "warn",
+        "nextjs/no-img-element": "warn",
+        "nextjs/no-page-custom-font": "warn",
+        "nextjs/no-styled-jsx-in-document": "warn",
+        "nextjs/no-sync-scripts": "warn",
+        "nextjs/no-title-in-document-head": "warn",
+        "nextjs/no-typos": "warn",
+        "nextjs/no-unwanted-polyfillio": "warn",
+        "nextjs/inline-script-id": "error",
+        "nextjs/no-assign-module-variable": "error",
+        "nextjs/no-duplicate-head": "error",
+        "nextjs/no-head-import-in-document": "error",
+        "nextjs/no-script-component-in-head": "error",
+        "react/static-components": "error",
+        "react/use-memo": "error",
+        "react/preserve-manual-memoization": "error",
+        "react/incompatible-library": "warn",
+        "react/globals": "error",
+        "react/error-boundaries": "error",
+        "react/purity": "error",
+        "react/set-state-in-render": "error",
+        "react/unsupported-syntax": "warn"
+      },
+      "plugins": [
+        "import",
+        "jsx-a11y"
+      ],
+      "env": {
+        "browser": true,
+        "node": true
+      }
+    },
+    {
+      "files": [
+        // typescript-eslint's eslint-recommended: core checks TypeScript already performs.
+        "**/*.{ts,tsx,mts,cts}"
+      ],
+      "rules": {
+        "constructor-super": "off",
+        "getter-return": "off",
+        "no-class-assign": "off",
+        "no-const-assign": "off",
+        "no-dupe-class-members": "off",
+        "no-dupe-keys": "off",
+        "no-func-assign": "off",
+        "no-import-assign": "off",
+        "no-new-native-nonconstructor": "off",
+        "no-obj-calls": "off",
+        "no-redeclare": "off",
+        "no-setter-return": "off",
+        "no-this-before-super": "off",
+        "no-unreachable": "off",
+        "no-unsafe-negation": "off",
+        "no-var": "error",
+        "no-with": "off",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        // JavaScript build helpers are linted without type-aware rules.
+        "**/*.mjs"
+      ],
+      "rules": {
+        "typescript/await-thenable": "off",
+        "typescript/no-base-to-string": "off",
+        "typescript/no-floating-promises": "off",
+        "typescript/no-misused-promises": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "no-undef": "error"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.{ts,tsx,js,jsx}",
+        "**/*.spec.{ts,tsx,js,jsx}"
+      ],
+      "rules": {
+        "max-lines-per-function": "off",
+        "max-nested-callbacks": "off"
+      }
+    },
+    {
+      "files": [
+        // Next Image cannot optimize object URLs or arbitrary Atlas Academy URLs.
+        "components/common/possession-import/PossessionImportDialog.tsx", // OCR crops use in-memory object URLs.
+        "components/dashboard/EventSection.tsx", // Atlas Academy event and item images are remote runtime data.
+        "components/dashboard/GachaSection.tsx", // Atlas Academy servant and summon images are remote runtime data.
+        "components/dashboard/RecentServantSection.tsx", // Atlas Academy servant faces are remote runtime data.
+        "components/events/EventPlanResultCard.tsx", // Event currency/item icons are remote runtime data.
+        "components/events/EventPlannerClient.tsx", // Event currency/item icons are remote runtime data.
+        "components/farming/progress-report-content.tsx" // Servant face URLs are selected dynamically at runtime.
+      ],
+      "rules": {
+        "nextjs/no-img-element": "off"
+      }
+    },
+    {
+      "files": [
+        "components/events/EventPlannerClient.tsx", // The joined servant ID key is the deliberate invalidation boundary.
+        "components/farming/index.tsx", // Legacy state adapters are not referentially stable; dependencies are intentionally narrowed.
+        "components/quests/QuestEfficiencyList.tsx", // Derived option primitives explicitly define the calculation boundary.
+        "hooks/use-dashboard-result.ts", // Transitive campaign inputs are listed as stable primitive invalidators.
+        "hooks/use-excluded-quests.ts", // Legacy migration effect must run exactly once regardless of questIds identity.
+        "hooks/use-local-storage.ts", // Storage subscriptions intentionally initialize only for the selected key.
+        "hooks/use-spot-icons.ts" // The normalized quest ID key is the deliberate request invalidation boundary.
+      ],
+      "rules": {
+        "react/exhaustive-deps": "off"
+      }
+    },
+    {
+      "files": [
+        // The 30-day NEW marker deliberately snapshots the wall clock in a memo.
+        "hooks/use-quest-tree.ts"
+      ],
+      "rules": {
+        "react/purity": "off"
+      }
+    },
+    {
+      "files": [
+        // Each memo re-anchors the period window to the wall clock when it recomputes;
+        // pinning "now" outside the memo would change which points are shown.
+        "components/farming/FarmingHistoryChart.tsx"
+      ],
+      "rules": {
+        "react/purity": "off"
+      }
+    },
+    {
+      "files": [
+        // This server page catches data-loading/DB failures before returning JSX;
+        // React's render-time error-boundary rule is not the boundary in use here.
+        "app/farming/results/*/page.tsx"
+      ],
+      "rules": {
+        "react/error-boundaries": "off"
+      }
+    },
+    {
+      "files": [
+        // jq has no node_modules binary; the test runs the setup-node composite
+        // action's jq filter with the PATH jq, as the CI runner does.
+        "scripts/pick-node-version.test.ts"
+      ],
+      "rules": {
+        "sonarjs/no-os-command-from-path": "off"
+      },
+      "jsPlugins": [
+        "eslint-plugin-sonarjs"
+      ]
+    }
+  ]
+}

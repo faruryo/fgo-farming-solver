@@ -1,15 +1,19 @@
-import { ESLint } from 'eslint'
+import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import process from 'node:process'
 
 import {
   collectInventory,
   compareInventory,
+  fromOxlintReport,
   mergeBaselineViolations,
   normalizeFile,
   parseCliArgs,
   toKey,
+  type LintResultLike,
   type LintViolation,
+  type OxlintReport,
 } from './lint-ratchet-inventory'
 
 const BASELINE_VERSION = 1
@@ -20,7 +24,25 @@ type BaselineFile = {
   violations: LintViolation[]
 }
 
-const formatErrors = (results: ESLint.LintResult[], cwd: string) =>
+// Oxlint has no Node API; its exit code is 1 whenever an error diagnostic
+// exists, so success is judged from the parsed report, not the status.
+const runOxlint = (targets: string[], fix: boolean): LintResultLike[] => {
+  const args = ['-f', 'json', ...(fix ? ['--fix'] : []), ...targets]
+  const result = spawnSync(path.resolve('node_modules/.bin/oxlint'), args, {
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+  })
+  if (result.error) throw result.error
+  try {
+    return fromOxlintReport(JSON.parse(result.stdout) as OxlintReport)
+  } catch {
+    throw new Error(
+      `oxlint did not produce a JSON report (exit ${result.status}):\n${result.stderr}${result.stdout}`,
+    )
+  }
+}
+
+const formatErrors = (results: LintResultLike[], cwd: string) =>
   results.flatMap((result) => {
     const file = normalizeFile(result.filePath, cwd)
     return result.messages
@@ -35,7 +57,7 @@ const reportLintErrors = (errors: string[]) => {
   if (errors.length === 0) return false
 
   console.error(
-    'Cannot evaluate the warning ratchet while ESLint errors exist:',
+    'Cannot evaluate the warning ratchet while lint errors exist:',
   )
   for (const error of errors) console.error(`- ${error}`)
   process.exitCode = 1
@@ -125,11 +147,7 @@ const run = async () => {
       ? new Set(files.map((file) => normalizeFile(file, cwd)))
       : null
 
-  // File cache does not invalidate when imported types change, so type-aware
-  // warning counts can be written stale into the baseline.
-  const eslint = new ESLint({ cwd, fix })
-  const results = await eslint.lintFiles(lintTargets)
-  if (fix) await ESLint.outputFixes(results)
+  const results = runOxlint(lintTargets, fix)
 
   if (reportLintErrors(formatErrors(results, cwd))) return
 

@@ -9,11 +9,43 @@ export type LintViolation = {
 export type LintMessage = {
   severity: number
   ruleId: string | null
+  line?: number
+  column?: number
+  message?: string
 }
 
 export type LintResultLike = {
   filePath: string
   messages: LintMessage[]
+}
+
+type OxlintDiagnostic = {
+  message: string
+  code?: string
+  severity: string
+  filename: string
+  labels?: { span: { line: number; column: number } }[]
+}
+
+export type OxlintReport = { diagnostics: OxlintDiagnostic[] }
+
+// `oxlint -f json` lists diagnostics flat; regroup them per file so the
+// inventory counts file/rule pairs. Syntax errors carry no rule code.
+export const fromOxlintReport = (report: OxlintReport): LintResultLike[] => {
+  const byFile = new Map<string, LintMessage[]>()
+  for (const diagnostic of report.diagnostics) {
+    const messages = byFile.get(diagnostic.filename) ?? []
+    const span = diagnostic.labels?.[0]?.span
+    messages.push({
+      severity: diagnostic.severity === 'error' ? 2 : 1,
+      ruleId: diagnostic.code || null,
+      line: span?.line,
+      column: span?.column,
+      message: diagnostic.message,
+    })
+    byFile.set(diagnostic.filename, messages)
+  }
+  return [...byFile].map(([filePath, messages]) => ({ filePath, messages }))
 }
 
 export type CliArgs = {

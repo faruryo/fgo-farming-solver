@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   collectInventory,
   compareInventory,
+  fromOxlintReport,
   mergeBaselineViolations,
   normalizeFile,
   parseCliArgs,
@@ -86,6 +87,49 @@ describe('collectInventory', () => {
     expect(collectInventory(results, cwd)).toEqual([
       warning('lib/a.ts', 'complexity', 2),
       warning('lib/b.ts', 'max-depth', 1),
+    ])
+  })
+})
+
+describe('fromOxlintReport', () => {
+  it('groups diagnostics per file and maps severity, rule and position', () => {
+    const results = fromOxlintReport({
+      diagnostics: [
+        {
+          message: 'unused',
+          code: 'eslint(no-unused-vars)',
+          severity: 'warning',
+          filename: 'lib/a.ts',
+          labels: [{ span: { line: 3, column: 7 } }],
+        },
+        {
+          message: 'floating',
+          code: 'typescript(no-floating-promises)',
+          severity: 'error',
+          filename: 'lib/a.ts',
+          labels: [{ span: { line: 9, column: 1 } }],
+        },
+        { message: 'Unexpected token', severity: 'error', filename: 'lib/b.ts' },
+      ],
+    })
+
+    expect(results).toEqual([
+      {
+        filePath: 'lib/a.ts',
+        messages: [
+          { severity: 1, ruleId: 'eslint(no-unused-vars)', line: 3, column: 7, message: 'unused' },
+          { severity: 2, ruleId: 'typescript(no-floating-promises)', line: 9, column: 1, message: 'floating' },
+        ],
+      },
+      {
+        filePath: 'lib/b.ts',
+        messages: [
+          { severity: 2, ruleId: null, line: undefined, column: undefined, message: 'Unexpected token' },
+        ],
+      },
+    ])
+    expect(collectInventory(results, '/repo')).toEqual([
+      warning('lib/a.ts', 'eslint(no-unused-vars)', 1),
     ])
   })
 })
