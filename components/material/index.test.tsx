@@ -453,8 +453,10 @@ describe('Index - 保存されている Lv・宝具Lv のカードの表示', ()
 })
 
 describe('Index - #svt- hash jump', () => {
+  const originalScrollIntoView = Element.prototype.scrollIntoView
   afterEach(() => {
     window.location.hash = ''
+    Element.prototype.scrollIntoView = originalScrollIntoView
   })
 
   // #126: smooth だと途中の数百枚を描かせて iOS のタブが落ちる
@@ -466,6 +468,7 @@ describe('Index - #svt- hash jump', () => {
 
     await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled())
     expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('svt-1'))
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'center' })
   })
 })
