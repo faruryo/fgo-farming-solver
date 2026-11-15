@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import { itemCountsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import {
   calcBoxLayer,
@@ -59,20 +59,12 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
 
   // ── Roster (read-only) ───────────────────────────────────────────────────────
   const rosterNeed = useRosterNeed()
-  const [possessionRaw] = useLocalStorage<Record<string, string | number>>(
-    STORAGE_KEYS.ITEMS,
+  // 周回目標（STORAGE_KEYS.ITEMS、短縮 ID キー）ではなく、Atlas ID キーの実所持数を使う。
+  const [possession] = useLocalStorage<Record<string, number>>(
+    STORAGE_KEYS.POSSESSION,
     {},
-    { lazyWrite: true, onGet: itemCountsOrEmpty, repairOnGet: true }
+    { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true }
   )
-
-  // Normalize possession to Record<string, number>
-  const possession = useMemo<Record<string, number>>(() => {
-    const out: Record<string, number> = {}
-    for (const [k, v] of Object.entries(possessionRaw)) {
-      out[k] = Number(v) || 0
-    }
-    return out
-  }, [possessionRaw])
 
   // 育成計画を読む前（unread）は未設定と同じに扱い、ボタン・説明・入力モードの初期値を変えない。
   const hasRoster = rosterNeed.status !== 'empty' && rosterNeed.status !== 'unread'
