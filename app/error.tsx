@@ -3,7 +3,8 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/common/page-header'
 
 const isChunkLoadError = (error: Error) =>
@@ -45,9 +46,9 @@ export default function GlobalError({
             <Button className="h-11 sm:flex-1" onClick={() => window.location.reload()}>
               {t('error-page-reload', '再読み込み')}
             </Button>
-            <Button className="h-11 sm:flex-1" variant="outline" render={<Link href="/" />}>
+            <Link href="/" className={cn(buttonVariants({ variant: 'outline' }), 'h-11 sm:flex-1')}>
               {t('error-page-top', 'トップページへ戻る')}
-            </Button>
+            </Link>
           </div>
         </div>
       </div>
