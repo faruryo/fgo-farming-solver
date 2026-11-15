@@ -11,6 +11,7 @@ import {
   metadataAfterApply,
   metadataAfterSave,
   normalizeLocalMetadata,
+  readLocalMetadata,
   shouldPublishFetchResult,
   shouldRefetchOnResume,
   LocalMetadata,
@@ -308,5 +309,39 @@ describe('shouldPublishFetchResult', () => {
     { case: 'same fetch published twice', seq: 2, published: 2, expected: false },
   ])('$case → $expected', ({ seq, published, expected }) => {
     expect(shouldPublishFetchResult(seq, published)).toBe(expected)
+  })
+})
+
+// #264: 壊れたメタデータを初期値(epoch)として扱うと、クラウドの自動適用で
+// ローカルが黙って上書きされる。読めないときは未同期の編集ありとして返す。
+describe('readLocalMetadata', () => {
+  const brokenFallback = {
+    updatedAt: T0,
+    deviceId: 'new-device',
+    lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+  }
+
+  it('returns stored metadata as is', () => {
+    expect(readLocalMetadata(JSON.stringify(localMeta()), 'new-device', T0)).toEqual(localMeta())
+  })
+
+  it('normalizes legacy epoch metadata without lastSyncedAt', () => {
+    const legacy = { updatedAt: INITIAL_SYNC_TIMESTAMP, deviceId: 'device-a' }
+    expect(readLocalMetadata(JSON.stringify(legacy), 'new-device', T0)).toEqual({
+      ...legacy,
+      lastSyncedAt: INITIAL_SYNC_TIMESTAMP,
+    })
+  })
+
+  it.each([
+    ['broken JSON', '{bad'],
+    ['JSON null', 'null'],
+    ['a number', '123'],
+    ['missing deviceId', JSON.stringify({ updatedAt: T0 })],
+    ['non-string updatedAt', JSON.stringify({ updatedAt: 1, deviceId: 'device-a' })],
+  ])('treats %s as a never-synced device with an unsynced edit', (_, raw) => {
+    const meta = readLocalMetadata(raw, 'new-device', T0)
+    expect(meta).toEqual(brokenFallback)
+    expect(decideSyncAction(meta, { updatedAt: at(60_000), deviceId: 'device-b' }, true)).toBe('divergent')
   })
 })

@@ -75,6 +75,15 @@ describe('/farming direct access (5.4 regression)', () => {
     ).toBeInTheDocument()
   })
 
+  // #264: 旧形式の入力キーが壊れていても、移行で落ちて画面が真っ白にならない
+  it('renders even when the legacy input key holds broken JSON', async () => {
+    localStorage.setItem(STORAGE_KEYS.INPUT, '{bad')
+    render(<Index items={items} quests={quests} />)
+
+    expect(await submitButton()).toBeInTheDocument()
+    expect(localStorage.getItem(STORAGE_KEYS.INPUT)).toBe('{bad')
+  })
+
   async function inputItemCountAndSolve(
     user: ReturnType<typeof userEvent.setup>,
     fetchMock: ReturnType<typeof stubFetch>,
