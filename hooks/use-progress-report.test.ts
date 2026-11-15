@@ -6,7 +6,7 @@
 // then returns the single finalized summary as `current` (design.md D2b:
 // selection is centralized in the hook, not the display component).
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { useProgressReport } from './use-progress-report'
 import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { Drops } from '../lib/get-drops'
@@ -227,6 +227,30 @@ describe('useProgressReport (D2: forwardPerDay/effortPerDay 最大の窓を選�
     // 所持数編集画面等での更新を想定(data/dropsは変化しない別更新経路)。
     localStorage.setItem('posession', JSON.stringify({ '100': 1500 }))
     rerender()
+
+    await waitFor(() => expect(result.current.current?.forwardLaps).toBeCloseTo(600))
+  })
+
+  // #262: ダッシュボードの所持数モーダルは親を再レンダーさせずに ls-sync だけを出す。
+  it('再レンダーが無くても ls-sync で所持数の変更を再計算する', async () => {
+    stubFetch({
+      d30: mkSummary('d30', { pastPosession: { '100': 900 }, elapsedMinutes: 30 * 1440 }),
+      d60: mkSummary('d60', { pastPosession: { '100': 900 }, elapsedMinutes: 60 * 1440 }),
+      d90: mkSummary('d90', { pastPosession: { '100': 900 }, elapsedMinutes: 90 * 1440 }),
+    })
+    setLocalStorage({
+      posession: { '100': 1000 },
+      targets: { '100': 100000 },
+      quests: ['q1'],
+    })
+
+    const { result } = renderHook(() => useProgressReport(null, drops))
+    await waitFor(() => expect(result.current.current?.forwardLaps).toBeCloseTo(100))
+
+    act(() => {
+      localStorage.setItem('posession', JSON.stringify({ '100': 1500 }))
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'posession' } }))
+    })
 
     await waitFor(() => expect(result.current.current?.forwardLaps).toBeCloseTo(600))
   })

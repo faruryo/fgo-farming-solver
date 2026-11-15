@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { ChaldeaState } from './create-chaldea-state'
@@ -116,6 +116,16 @@ export const useProgressReport = (
   // useMemo は data/drops のみを依存配列にしているため、localStorage の値そのものが
   // (data/drops を変えずに)更新された場合は再計算されない。ここで生文字列を読んで
   // 依存配列に含め、値が変わった際の再レンダリングで確実に再計算させる。
+  // 所持数モーダルなどは親を再レンダーさせずに ls-sync だけを出すので、通知で読み直す。
+  const [, rereadStorage] = useReducer((n: number) => n + 1, 0)
+  useEffect(() => {
+    window.addEventListener('ls-sync', rereadStorage)
+    window.addEventListener('storage', rereadStorage)
+    return () => {
+      window.removeEventListener('ls-sync', rereadStorage)
+      window.removeEventListener('storage', rereadStorage)
+    }
+  }, [])
   const rawPosession =
     typeof window !== 'undefined'
       ? localStorage.getItem(STORAGE_KEYS.POSSESSION)
