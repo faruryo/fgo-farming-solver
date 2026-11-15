@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { Loader2, Info } from 'lucide-react'
+import { Loader2, Info, ArrowRight } from 'lucide-react'
 import NextLink from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -9,8 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { QuestIdentity } from '../common/QuestIdentity'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
-import { useLocalStorage } from '../../hooks/use-local-storage'
-import { ChaldeaState } from '../../hooks/create-chaldea-state'
+import { recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
@@ -20,14 +19,21 @@ import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
 import { isBothResult, Quest } from '../../interfaces/api'
 import { questConsumesPod } from '../../lib/quest-consumes-pod'
-import { getRecommendedQuestPriorityLaps } from '../../lib/recommended-quest-priority'
+import {
+  getRecommendedQuestEmptyGuide,
+  getRecommendedQuestPriorityLaps,
+} from '../../lib/recommended-quest-priority'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 const SORT_MODE_STORAGE_KEY = STORAGE_KEYS.DASHBOARD_RECOMMENDED_QUEST_SORT_MODE
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
-  const [chaldea] = useLocalStorage<ChaldeaState>(STORAGE_KEYS.MATERIAL, {})
+  const [materialResult] = useLocalStorage<Record<string, number>>(
+    STORAGE_KEYS.MATERIAL_RESULT,
+    {},
+    { onGet: recordOrEmpty, lazyWrite: true }
+  )
   const drops = useDrops()
   const { items, quests, drop_rates, isLoading: dropsLoading } = drops
   const { result: recentResult, loading: resultLoading } = useRecentResult()
@@ -87,29 +93,14 @@ export const RecommendedQuest: React.FC = () => {
       }
     }
 
-    const targetServantIds = Object.keys(chaldea)
-    if (targetServantIds.length === 0) return []
-
-    return items.slice(0, 3).map(item => {
-      const bestRate = drop_rates.filter(dr => dr.item_id === item.id).sort((a, b) => b.drop_rate - a.drop_rate)[0]
-      const quest = bestRate ? quests.find(q => q.id === bestRate.quest_id) : null
-      const questDrops = quest
-        ? drop_rates
-            .filter(dr => dr.quest_id === quest.id)
-            .sort((a, b) => b.drop_rate - a.drop_rate)
-            .slice(0, 5)
-            .map(dr => items.find(i => i.id === dr.item_id))
-            .filter((x): x is NonNullable<typeof x> => Boolean(x))
-        : [item]
-      return { id: quest?.id || item.id, topItems: questDrops, quest, rate: bestRate?.drop_rate, lap: 0, isRecent: false, tier: undefined as number | undefined }
-    }).filter(r => r.quest)
-  }, [items, quests, drop_rates, chaldea, dropsLoading, displayResult, sortMode, podFree.isActive, podFree.questIds])
+    return []
+  }, [items, quests, drop_rates, dropsLoading, displayResult, sortMode, podFree.isActive, podFree.questIds])
 
   // aaQuestId comes from drops quests (result quests may not carry it)
   const spotIcons = useSpotIcons(
     recommendations.map(r => {
       if (!r.quest) return null
-      const aaQuestId = r.quest.aaQuestId ?? quests?.find(q => q.id === r.quest!.id)?.aaQuestId
+      const aaQuestId = r.quest.aaQuestId ?? quests?.find(q => q.id === r.quest.id)?.aaQuestId
       return { id: r.quest.id, aaQuestId }
     })
   )
@@ -128,24 +119,52 @@ export const RecommendedQuest: React.FC = () => {
     )
   }
 
+  // 周回計算の結果が無いときは不足を見ないクエストを出さず、目標入力か周回計算へ誘導する (#262)
+  if (!recentResult) {
+    const guide = getRecommendedQuestEmptyGuide(materialResult)
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="u-section-header">
+          <h2 className="u-section-header-title">{t('推奨周回クエスト')}</h2>
+          <div className="u-section-header-line" />
+        </div>
+        <div className="u-fgo-card flex flex-col items-start gap-3 py-4 px-4 rounded-md">
+          <p className="text-sm" style={{ color: 'var(--text2)' }}>
+            {guide === 'solve'
+              ? t('recommended-quest-empty-solve', '周回数を求めると、ここにおすすめのクエストが出ます。')
+              : t('recommended-quest-empty-goal', '育成目標を入れると、ここにおすすめのクエストが出ます。')}
+          </p>
+          <NextLink
+            href={guide === 'solve' ? '/material/result' : '/material'}
+            className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-md text-[13px] font-semibold no-underline hover:no-underline"
+            style={{ background: 'var(--gold)', color: 'white' }}
+          >
+            {guide === 'solve'
+              ? t('recommended-quest-empty-solve-cta', '周回数を求める')
+              : t('recommended-quest-empty-goal-cta', '育成目標を入れる')}
+            <ArrowRight size={14} />
+          </NextLink>
+        </div>
+      </div>
+    )
+  }
+
   if (recommendations.length === 0) return null
 
   return (
     <div className="flex flex-col gap-3">
       <div className="u-section-header">
         <h2 className="u-section-header-title">
-          {recentResult ? t('周回予定クエスト') : t('推奨周回クエスト')}
+          {t('周回予定クエスト')}
         </h2>
         <Tooltip>
           <TooltipTrigger className="flex-shrink-0 -ml-2 cursor-default" style={{ color: 'var(--text3)' }}>
             <Info size={13} />
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[240px] text-left leading-relaxed">
-            {recentResult
-              ? sortMode === 'ap'
-                ? '直近の計算結果のクエスト Top 4。AP割引対象クエストを最上位、その他をその下に並べ、同優先度内は予定周回数が多い順。'
-                : '直近の計算結果のクエスト Top 4。優先順：冠位研鑽戦 → オーディール・コール → その他。ストームポッド消費を促す並びです。同優先度内は予定周回数が多い順。'
-              : '不足素材ごとに最もドロップ率の高いクエスト Top 4。'}
+            {sortMode === 'ap'
+              ? '直近の計算結果のクエスト Top 4。AP割引対象クエストを最上位、その他をその下に並べ、同優先度内は予定周回数が多い順。'
+              : '直近の計算結果のクエスト Top 4。優先順：冠位研鑽戦 → オーディール・コール → その他。ストームポッド消費を促す並びです。同優先度内は予定周回数が多い順。'}
             <span className="block mt-1 opacity-75">AP半減などのキャンペーン情報は最大30分程度の遅れで反映されます。</span>
           </TooltipContent>
         </Tooltip>
@@ -185,7 +204,7 @@ export const RecommendedQuest: React.FC = () => {
           const { id, topItems, quest, rate, lap, tier } = r
           const originalAp = quest?.id ? quests?.find(q => q.id === quest.id)?.ap : undefined
           const prevTier = index > 0 ? recommendations[index - 1].tier : undefined
-          const showDivider = tier !== undefined && prevTier !== undefined && tier !== prevTier
+          const showDivider = prevTier !== undefined && tier !== prevTier
           const dividerLabel =
             sortMode === 'ap'
               ? (tier === 2 ? 'その他' : null)
