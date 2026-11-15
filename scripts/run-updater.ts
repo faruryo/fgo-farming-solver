@@ -11,7 +11,8 @@
  *
  * ローカル検証: DRY_RUN=1 で KV 書き込みをスキップし、読み込みは
  * /tmp/adj2.json(all_drops_json)・/tmp/nwaa.json(nice_war_aaquests)が
- * あればそれを使う。
+ * あればそれを使う。servant_face_icons だけは KV の代わりに cache/servant-face-icons.json を
+ * 読み書きする。
  */
 import { fetchAndTransformData } from '../lib/master-data/update'
 import { fetchDashboardMeta } from '../lib/master-data/dashboard'
@@ -27,6 +28,9 @@ import { waveCountSeedFrom } from '../lib/master-data/wave-count'
 import { kvGet, kvPut, dryRunLocalFiles } from './kv-rest'
 import { getUrl } from '../lib/get-url'
 import { runMaterialCatalogPhase } from '../lib/material-catalog-phase'
+import { runServantFaceIconsPhase } from '../lib/servant-face-icons/phase'
+import { SERVANT_FACE_ICONS_KEY, SERVANT_FACE_ICONS_LOCAL_PATH } from '../lib/servant-face-icons/face-icons'
+import { mkdir, writeFile } from 'node:fs/promises'
 
 const MASTER_DATA_KEY = 'all_drops_json'
 const DASHBOARD_META_KEY = 'dashboard_meta'
@@ -36,6 +40,17 @@ const NICE_WAR_CACHE_KEY = 'nice_war_aaquests'
 const DRY_RUN = process.env.DRY_RUN === '1'
 dryRunLocalFiles[MASTER_DATA_KEY] = '/tmp/adj2.json'
 dryRunLocalFiles[NICE_WAR_CACHE_KEY] = '/tmp/nwaa.json'
+// 顔のアイコンの照合用のデータは、DRY_RUN では KV の代わりにローカルのファイル(repo の根から
+// の相対パス)を読み書きする。KV の値が無い dev server の /api/servant-face-icons がこれを読む
+Object.assign(dryRunLocalFiles, { [SERVANT_FACE_ICONS_KEY]: SERVANT_FACE_ICONS_LOCAL_PATH })
+
+const putFaceIcons = async (key: string, value: string) => {
+  if (!DRY_RUN) return kvPut(key, value)
+  // SERVANT_FACE_ICONS_LOCAL_PATH と同じパス(fs に渡すパスは文字列のリテラルにする)
+  await mkdir('cache', { recursive: true })
+  await writeFile('cache/servant-face-icons.json', value, 'utf8')
+  console.log(`[dry-run] ${key} -> ${SERVANT_FACE_ICONS_LOCAL_PATH}`)
+}
 
 const niceWarCache: NiceWarCache = {
   async get() {
@@ -96,6 +111,15 @@ async function main() {
     eventUrl: getUrl('basic_event', 'ja'),
   })
   failed ||= materialCatalog.failed
+
+  // servant_face_icons: スクリーンショットの顔の照合用に、顔のアイコンを 16×16 に縮めたデータ。
+  // 育成の素材の一覧の段の条件付き取得は顔を1枚しか持たないので、nice_servant は自分で取る。
+  const faceIcons = await runServantFaceIconsPhase({
+    get: kvGet,
+    put: putFaceIcons,
+    servantUrl: getUrl('nice_servant', 'ja'),
+  })
+  failed ||= faceIcons.failed
 
   // drops (all_drops_json)
   let dropsData: MasterData | null = null

@@ -17,7 +17,8 @@ export const SyncStatus = ({ localStats, cloudStats, showComparison, onToggleCom
     localStats.appendTotal === cloudStats.appendTotal &&
     localStats.gold === cloudStats.gold &&
     localStats.silver === cloudStats.silver &&
-    localStats.bronze === cloudStats.bronze
+    localStats.bronze === cloudStats.bronze &&
+    localStats.leveledServants === cloudStats.leveledServants
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

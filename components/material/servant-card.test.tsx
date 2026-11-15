@@ -7,6 +7,8 @@ import { TargetKey } from '../../interfaces/atlas-academy'
 import { makeMaterialCatalogServant } from './test-fixtures'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 
+vi.mock('react-i18next', async () => (await import('../i18n-test-utils')).translationMock())
+
 const servant = makeMaterialCatalogServant()
 
 const ownedState = (): ServantState => ({
@@ -23,6 +25,8 @@ const renderCard = (
     onWillStartChange?: WillStartChangeFn
     onStartChange?: StartChangeFn
     servant?: MaterialCatalogServant
+    lv?: number
+    npLv?: number
   } = {}
 ) => {
   const setState = vi.fn()
@@ -35,6 +39,8 @@ const renderCard = (
       setState={(update) => setState(update(state))}
       onWillStartChange={opts.onWillStartChange}
       onStartChange={opts.onStartChange}
+      lv={opts.lv}
+      npLv={opts.npLv}
     />
   )
   return { setState }
@@ -332,5 +338,41 @@ describe('ServantCard - owned toggle', () => {
     const next = setState.mock.calls[0][0] as ServantState
     expect(next.disabled).toBe(true)
     expect(next.targets).toBe(state.targets)
+  })
+})
+
+describe('ServantCard - 保存されている Lv・宝具Lv の表示', () => {
+  it('取り込んだ値がカードに出る: 所持のカードの名前の下、クラスの並びに「Lv 90・宝具 2」を出す', () => {
+    renderCard(ownedState(), { lv: 90, npLv: 2 })
+    const level = screen.getByTestId('servant-card-level')
+    expect(level).toHaveTextContent('Lv 90・宝具 2')
+    expect(level.parentElement).toHaveClass('c-servant-class-tag')
+  })
+
+  it('片方の値だけ: Lv 100 だけが保存されていれば Lv 100 だけを出し、宝具Lv は出さない', () => {
+    renderCard(ownedState(), { lv: 100 })
+    expect(screen.getByTestId('servant-card-level')).toHaveTextContent(/^Lv 100$/)
+    expect(screen.queryByText(/宝具/)).not.toBeInTheDocument()
+  })
+
+  it('宝具Lv だけが保存されていれば宝具Lv だけを出す', () => {
+    renderCard(ownedState(), { npLv: 5 })
+    expect(screen.getByTestId('servant-card-level')).toHaveTextContent(/^宝具 5$/)
+  })
+
+  it('値が無いカード: Lv・宝具Lv の表示を足さない', () => {
+    renderCard(ownedState())
+    expect(screen.queryByTestId('servant-card-level')).not.toBeInTheDocument()
+  })
+
+  it('未所持のカードには、値が保存されていても出さない', () => {
+    renderCard(createServantState(), { lv: 90, npLv: 2 })
+    expect(screen.queryByTestId('servant-card-level')).not.toBeInTheDocument()
+  })
+
+  it('表示だけで、押しても状態を書き換えない', () => {
+    const { setState } = renderCard(ownedState(), { lv: 90, npLv: 2 })
+    fireEvent.click(screen.getByTestId('servant-card-level'))
+    expect(setState).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,6 @@
 import { EnrichedItem } from '../../../lib/get-items'
 import { STORAGE_KEYS } from '../../../lib/constants/storage-keys'
+import { countServantLevels } from '../../../lib/servant-levels'
 
 export interface Stats {
   ownedCount: number
@@ -9,6 +10,8 @@ export interface Stats {
   silver: number
   gold: number
   fragments: number
+  // Lv か宝具Lv の値を持つサーヴァントの数
+  leveledServants: number
 }
 
 interface ServantNode {
@@ -30,6 +33,8 @@ export const getStats = (storage: Record<string, string | null>, items: Enriched
     
     const material = (materialRaw ? JSON.parse(materialRaw) : {}) as Record<string, ServantNode>
     const possession = (possessionRaw ? JSON.parse(possessionRaw) : {}) as Record<string, number | null>
+    const servantLevelsRaw = storage[STORAGE_KEYS.SERVANT_LEVELS]
+    const leveledServants = countServantLevels(servantLevelsRaw ? JSON.parse(servantLevelsRaw) : {})
     
     let ownedCount = 0
     let skillTotal = 0
@@ -66,7 +71,7 @@ export const getStats = (storage: Record<string, string | null>, items: Enriched
       }
     })
     
-    return { ownedCount, skillTotal, appendTotal, bronze, silver, gold, fragments }
+    return { ownedCount, skillTotal, appendTotal, bronze, silver, gold, fragments, leveledServants }
   } catch (e) {
     console.error('Failed to get stats', e)
     return null

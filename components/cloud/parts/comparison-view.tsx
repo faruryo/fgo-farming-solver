@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Stats } from './stats-logic'
 
 interface ComparisonViewProps {
@@ -8,6 +9,7 @@ interface ComparisonViewProps {
 }
 
 export const ComparisonView = ({ localStats, cloudStats, show }: ComparisonViewProps) => {
+  const { t } = useTranslation('common')
   return (
     <AnimatePresence>
       {show && (
@@ -34,6 +36,11 @@ export const ComparisonView = ({ localStats, cloudStats, show }: ComparisonViewP
 
             <MetricRow label="Servants" local={localStats.ownedCount} cloud={cloudStats.ownedCount} />
             <MetricRow label="Skill Lv" local={localStats.skillTotal} cloud={cloudStats.skillTotal} />
+            <MetricRow
+              label={t('cloud-compare-servant-levels', 'Lv・宝具Lv を持つサーヴァント')}
+              local={localStats.leveledServants}
+              cloud={cloudStats.leveledServants}
+            />
             <MetricRow 
               label="Items (G/S/B)" 
               local={`${localStats.gold}/${localStats.silver}/${localStats.bronze}`} 
