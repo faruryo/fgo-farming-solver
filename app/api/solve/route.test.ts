@@ -21,6 +21,7 @@ import { GET, resolveSolveVisibility } from './route'
 import { auth } from '../../../lib/auth'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { getDrops } from '../../../lib/get-drops'
+import type { BothResult } from '../../../interfaces/api'
 
 describe('resolveSolveVisibility', () => {
   it('returns error for anonymous users requesting private visibility (fail-closed)', () => {
@@ -80,9 +81,9 @@ describe('GET /api/solve', () => {
     GET(new NextRequest(`http://localhost/api/solve?${query}`))
 
   /** 保存した 1 件の result_data(7 番目の bind 引数)を取り出す。 */
-  const savedResultData = () => {
+  const savedResultData = (): BothResult => {
     expect(bind).toHaveBeenCalledTimes(1)
-    return JSON.parse(bind.mock.calls[0][6] as string)
+    return JSON.parse(bind.mock.calls[0][6] as string) as BothResult
   }
 
   it('stockIncluded=true なら保存した結果に印が付く', async () => {
@@ -116,7 +117,7 @@ describe('GET /api/solve', () => {
     const saved = savedResultData()
     expect(saved.ap.params.items).toEqual({ i1: 10 })
     expect(saved.ap.params.stockIncluded).toBeUndefined()
-    const body = (await res.json()) as Record<string, unknown>
+    const body: Record<string, unknown> = await res.json()
     expect(typeof body.id).toBe('string')
     expect(body).not.toHaveProperty('batchId')
   })
