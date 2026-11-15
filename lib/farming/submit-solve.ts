@@ -2,7 +2,7 @@ import { saveProgressSnapshot } from '../progress/snapshot-client'
 import { STORAGE_KEYS } from '../constants/storage-keys'
 
 /**
- * `items=`(または `itemsStock=`)クエリが送信可能な内容を持つか。
+ * `items=` クエリが送信可能な内容を持つか。
  * `/farming` の `inputToQuery` が返す `items` 文字列（空なら全欄未入力）に対して判定する。
  */
 export const hasSubmittableItems = (itemsQuery: string): boolean =>
