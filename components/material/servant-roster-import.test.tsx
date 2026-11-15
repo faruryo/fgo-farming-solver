@@ -6,6 +6,9 @@ import { makeItem, makeMaterialCatalogServant, makeMaterials } from './test-fixt
 import type { ChaldeaState, ServantState } from '../../hooks/create-chaldea-state'
 import type { RosterImportResult, RosterProgress, RosterRow } from '../../lib/servant-roster-import/types'
 
+// 一覧をまるごと描くので、全ファイルを同時に流す実行では1件が既定の 5 秒を超えることがある。
+vi.setConfig({ testTimeout: 30_000 })
+
 const analyzeMock = vi.hoisted(() => ({ fn: vi.fn() }))
 
 // 文字認識と顔の照合はモックし、入口・確かめの画面・保存値への書き込みだけを見る。
