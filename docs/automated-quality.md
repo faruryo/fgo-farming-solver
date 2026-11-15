@@ -25,7 +25,7 @@ CI、lint、開発ツール、agent規約、文書、PR templateだけを変更�
 3. baseline diffが減少だけであることを確認する。増加を受け入れるためにupdateしてはならない。
 4. ルールの在庫がゼロになったら、`eslint.config.mjs` でwarningからerrorへ昇格し、baselineから消す。
 
-`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `eslint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint` と `pnpm run lint:ratchet` が担う。既存警告の掃除はコミットの必須条件ではない。
+`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `eslint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint:ratchet` が担う。ratchet は ESLint のエラーが1件でもあれば警告を数える前に失敗するので、CI では `pnpm run lint` を別に走らせず、型を使う ESLint を1回で済ませる。既存警告の掃除はコミットの必須条件ではない。
 
 ## Report-only structural audits
 
