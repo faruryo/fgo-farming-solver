@@ -76,7 +76,7 @@ AP 予算（マスターレベル・黄金の果実）は端末の同じ保存�
 
 #### 交換所タブのデータ
 
-`app/events/[id]/page.tsx` は、交換所の品目がサーヴァント扱いだけでない交換所があれば、ロトの有無によらず AP 換算値とイベントポイントの品目を読む。ボックスのあるイベントは取り込みで ☆ と通貨の対応（`bonusRarities`）を持たないので、交換所タブのボーナスは通貨ごとの +N の手入力になる（`event-drop-bonus` の「☆ と対応しない通貨」の規則のまま）。交換所タブの入力は `event-shop-saved-inputs` のとおりイベントごとに保存する。ボックスのあるイベントは今まで保存値が無いので、初めて開いたときは 0 から始まる。
+`app/events/[id]/page.tsx` は、交換所の品目がサーヴァント扱いだけでない交換所があれば、ロトの有無によらず AP 換算値とイベントポイントの品目を読む。ボックスのあるイベントは取り込みで ☆ と通貨の対応（`bonusRarities`）を持たないので、交換所タブのボーナスは通貨ごとの +N の手入力になる（`event-drop-bonus` の「☆ と対応しない通貨」の規則のまま）。取り込み直しても対応を持たないので、「データの更新前のため礼装の枚数を比べられません」は出さない（`event-drop-bonus` の「ボーナス礼装の枚数の入力」を MODIFIED にする）。交換所タブの入力は `event-shop-saved-inputs` のとおりイベントごとに保存する。ボックスのあるイベントは今まで保存値が無いので、初めて開いたときは 0 から始まる。
 
 #### タブを切り替えても入力を残す
 
@@ -84,7 +84,7 @@ AP 予算（マスターレベル・黄金の果実）は端末の同じ保存�
 
 #### 不足の求め方を1か所にする
 
-`useRosterNeed` の `totalNeed` に、クラススコアの目標の必要分（`sumClassScoreMaterials`、`readClassScoreState` と同じ読み方で書き込まない）を足す。育成計算機の `calculateTotalRequiredMaterials` と同じ合算（`mergeMaterials`）を使い、合計を食い違わせない。サーヴァントの育成対象が無くてもクラススコアの目標があれば `ready` にする（素材カタログが要らないので読み込みを待たない）。ボックス計画の `computeShortfall`・`computeRosterImpact` は、`chaldeaState` と `materialsForServants` から求め直さず、この `totalNeed` を受け取る形に変える。
+`useRosterNeed` の `totalNeed` に、クラススコアの目標の必要分（`sumClassScoreMaterials`）を足す。クラススコアの保存値は書き込まずに読み、育成計画と同じく `useLocalStorage` の読み終わりを待って、読み終えるまでは `unread` にする（`readClassScoreState` を描画の中で同期に読むと hydration が食い違い、effect で後から読むと、クラススコアの目標だけの利用者に一瞬「育成対象を設定」が出て `event-shop-saved-inputs` の「育成計画と AP 予算も初期値を見せない」に反するため）。育成計算機の `calculateTotalRequiredMaterials` と同じ合算（`mergeMaterials`）を使い、合計を食い違わせない。サーヴァントの育成対象が無くてもクラススコアの目標があれば `ready` にする（素材カタログが要らないので読み込みを待たない）。ボックス計画の `computeShortfall`・`computeRosterImpact` は、`chaldeaState` と `materialsForServants` から求め直さず、この `totalNeed` から下の周回目的で求めた実効不足を受け取る形に変える（`totalNeed` と所持数だけを渡すと「今の育成」の不足にしかならず、ボックス計画が「新規サーヴァントに備える」に追従しないため）。
 
 周回目的は `useStockTarget` を読み、`lib/quest-efficiency.ts` の `computeFiniteTarget`（「新規サーヴァントに備える」では必要数と在庫基準の大きい方）で実効必要数を出す。所持数を入れていない素材を対象外にする規則は、料理作成の `buildNeedByApiItemId`・`positiveNeedAtlasIds` と同じにする。在庫基準はカテゴリとレアリティで決まるので、ボックスと交換所のタブでも素材の分類が要る。ページで料理作成と同じ `getItems` を、ボックスか交換所があるときにも読む。「素材全体の効率を見る」は料理作成と同じく「今の育成」で求め、注記は短く「不足は今の育成で計算」とする。
 
@@ -92,7 +92,7 @@ AP 予算（マスターレベル・黄金の果実）は端末の同じ保存�
 
 #### 交換所の各 capability の範囲の読み替え
 
-交換所の各 capability は、要件の本文で対象を「ロトの無い交換所イベントの交換所」と書いている。中身は変えずに対象だけを「イベントページの交換所タブ」へ広げるため、その句を含む要件だけを MODIFIED にし、句だけを置き換えた（`event-shop-ap-budget`・`event-shop-efficiency`・`event-shop-remaining-import`・`event-shop-saved-inputs`・`event-shop-single-list`・`event-drop-bonus`・`item-want-setting`）。取り込みの要件（`event-drop-bonus` の ☆ と通貨の対応の取り込み、`event-shop-servant-exchange` のサーヴァント扱いの交換の取り込みと一覧）は取り込みの範囲の話なので変えない。各 spec の Purpose の「ロトの無い交換所イベント」は delta では変えられないので、archive のときに直す。`event-planner` の要件「ロトの無い交換所イベントの周回計画」は、`item-want-setting`・`event-shop-servant-exchange` が名前で参照しているので名前を変えず、本文で交換所タブ全体に当てる。
+交換所の各 capability は、要件の本文で対象を「ロトの無い交換所イベントの交換所」と書いている。中身は変えずに対象だけを「イベントページの交換所タブ」へ広げるため、その句を含む要件だけを MODIFIED にし、句だけを置き換えた（`event-shop-ap-budget`・`event-shop-efficiency`・`event-shop-remaining-import`・`event-shop-saved-inputs`・`event-shop-single-list`・`event-drop-bonus`・`event-shop-servant-exchange`・`item-want-setting`）。`event-shop-servant-exchange` の「品目がすべてサーヴァント扱いの交換所の一覧」は表示の要件で、交換所の他の要件より優先すると定めているので、対象を交換所タブに広げる。取り込みの要件（`event-drop-bonus` の ☆ と通貨の対応の取り込み、`event-shop-servant-exchange` のサーヴァント扱いの交換の取り込み）は取り込みの範囲の話なので変えない。各 spec の Purpose の「ロトの無い交換所イベント」は delta では変えられないので、archive のときに直す。`event-planner` の要件「ロトの無い交換所イベントの周回計画」は、`item-want-setting`・`event-shop-servant-exchange` が名前で参照しているので名前を変えず、本文で交換所タブ全体に当てる。
 
 ## Risks / Trade-offs
 
