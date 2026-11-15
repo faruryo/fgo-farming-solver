@@ -88,7 +88,7 @@ const importWith = async (result: RosterImportResult, files = [image('a.png')]) 
   })
 }
 
-const expandMatched = () => fireEvent.click(screen.getByRole('button', { name: /^当てた行（/ }))
+const expandMatched = () => fireEvent.click(screen.getByRole('button', { name: /^読み取れたサーヴァント（/ }))
 const rowOf = (checkboxName: string): HTMLElement => {
   const row = screen.getByRole('checkbox', { name: checkboxName }).closest('li')
   if (!row) throw new Error(`row ${checkboxName} not found`)
@@ -203,7 +203,7 @@ describe('取り込む前の確かめ', () => {
       }),
     )
     expect(screen.getByText('12枚を読みました')).toBeInTheDocument()
-    expect(screen.getByText('当てた 3 騎 / 要確認 1 行')).toBeInTheDocument()
+    expect(screen.getByText('読み取れた 3 騎 / 要確認 1 件')).toBeInTheDocument()
     expect(screen.getByText('新しく所持になる 2 騎')).toBeInTheDocument()
     expect(screen.getByText('読めなかった画像: 1枚（IMG_0412.png）')).toBeInTheDocument()
     expect(screen.getByText('並びを読めなかった画像: 1枚（この画像は並び順の検査をしていません）')).toBeInTheDocument()

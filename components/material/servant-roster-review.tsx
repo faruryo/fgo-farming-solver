@@ -248,7 +248,7 @@ const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: num
     <div className="flex flex-col gap-1 text-xs" style={{ color: 'var(--text2)' }} data-testid="roster-import-summary">
       <p className="flex flex-wrap gap-x-3 tabular-nums" style={{ color: 'var(--text1)' }}>
         <span>{t('roster-import-summary-images', '{{count}}枚を読みました', { count: result.imageCount })}</span>
-        <span>{t('roster-import-summary-rows', '当てた {{matched}} 騎 / 要確認 {{review}} 行', { matched, review })}</span>
+        <span>{t('roster-import-summary-rows', '読み取れた {{matched}} 騎 / 要確認 {{review}} 件', { matched, review })}</span>
         <span>{t('roster-import-summary-newly-owned', '新しく所持になる {{count}} 騎', { count: newlyOwned })}</span>
       </p>
       {newlyOwned > 0 && (
@@ -335,7 +335,7 @@ const MatchedSection: React.FC<{ count: number; children: () => React.ReactNode 
         aria-expanded={open}
       >
         {open ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
-        {t('roster-import-matched-heading', '当てた行（{{count}}）', { count })}
+        {t('roster-import-matched-heading', '読み取れたサーヴァント（{{count}}）', { count })}
       </button>
       {open && <ul>{children()}</ul>}
     </section>
