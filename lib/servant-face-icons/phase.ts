@@ -3,6 +3,7 @@
  * KV に置く。通信と KV は引数で受け取る。
  */
 import { downscaleIcon } from '../shop-screenshot-import/icon-match'
+import { FACE_MATCH } from '../servant-roster-import/constants'
 import type { FaceIconEntry } from '../servant-roster-import/types'
 import {
   SERVANT_FACE_ICONS_KEY,
@@ -27,7 +28,7 @@ const fetchIcon = async (fetchSource: typeof fetch, source: FaceIconSource): Pro
     if (!response.ok) return { ok: false, url: source.url, reason: `HTTP ${response.status}` }
     const decoded = decodeFaceIconPng(new Uint8Array(await response.arrayBuffer()))
     if (!decoded.ok) return { ok: false, url: source.url, reason: decoded.reason }
-    const pixels = Buffer.from(downscaleIcon(decoded.image).buffer).toString('base64')
+    const pixels = Buffer.from(downscaleIcon(decoded.image, FACE_MATCH.size).buffer).toString('base64')
     return { ok: true, entry: { servantId: source.servantId, url: source.url, pixels } }
   } catch (error) {
     return { ok: false, url: source.url, reason: error instanceof Error ? error.message : String(error) }
