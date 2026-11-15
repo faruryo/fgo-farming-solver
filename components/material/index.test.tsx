@@ -451,3 +451,21 @@ describe('Index - 保存されている Lv・宝具Lv のカードの表示', ()
     expect(level()).toHaveTextContent('Lv 100・宝具 3')
   })
 })
+
+describe('Index - #svt- hash jump', () => {
+  afterEach(() => {
+    window.location.hash = ''
+  })
+
+  // #126: smooth だと途中の数百枚を描かせて iOS のタブが落ちる
+  it('jumps to the hashed servant card without smooth scrolling', async () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    window.location.hash = '#svt-1'
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled())
+    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('svt-1'))
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'center' })
+  })
+})

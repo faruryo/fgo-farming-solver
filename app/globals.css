@@ -244,20 +244,6 @@ body {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px; margin-top: 8px;
 }
 
-/* ===== COMPLETION ANIMATIONS ===== */
-@keyframes gold-shine {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-@keyframes prismatic-pulse {
-  0%,100% { filter: brightness(1); box-shadow: 0 0 0 1px rgba(192,144,48,0.25), 0 0 0 3px rgba(192,144,48,0.08), 0 6px 28px rgba(192,144,48,0.22), inset 0 0 20px rgba(200,168,75,0.06); }
-  50%     { filter: brightness(1.04); box-shadow: 0 0 0 1px rgba(192,144,48,0.35), 0 0 0 3px rgba(192,144,48,0.12), 0 8px 32px rgba(192,144,48,0.3), inset 0 0 24px rgba(200,168,75,0.08); }
-}
-@keyframes sparkle {
-  0%,100% { opacity: 0.5; transform: scale(0.85); }
-  50%     { opacity: 1;   transform: scale(1.2); }
-}
-
 .c-servant-card {
   background: var(--panel); border: 1px solid var(--border);
   box-shadow: 0 1px 3px rgba(30,46,74,0.06);
@@ -293,21 +279,21 @@ body {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, transparent, #1e8050, #60c890, #1e8050, transparent);
 }
-/* Tier 3 — アペンドMAX */
+/* Tier 3 — アペンドMAX
+   無限アニメーションは付けない: 数百枚が同時に動くと iOS の WebContent が落ちる (#126) */
 .c-servant-card.tier-full {
   border-color: var(--gold2);
   background: linear-gradient(155deg, rgba(200,168,75,0.09) 0%, rgba(240,220,130,0.03) 35%, var(--panel) 55%);
-  animation: prismatic-pulse 3.5s ease-in-out infinite;
+  box-shadow: 0 0 0 1px rgba(192,144,48,0.25), 0 0 0 3px rgba(192,144,48,0.08), 0 6px 28px rgba(192,144,48,0.22), inset 0 0 20px rgba(200,168,75,0.06);
 }
 .c-servant-card.tier-full::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: linear-gradient(90deg, #9a7224, #e8d080, #f0e050, #c09030, #e8d080, #9a7224);
-  background-size: 200% 100%; animation: gold-shine 2.5s linear infinite;
 }
 .c-servant-card.tier-full::after {
   content: '✦ ✦'; position: absolute; top: 5px; right: 6px;
   font-size: 7px; color: var(--gold2); letter-spacing: 2px;
-  animation: sparkle 2s ease-in-out infinite; pointer-events: none;
+  opacity: 0.8; pointer-events: none;
 }
 .c-servant-card.tier-full .c-servant-name { color: var(--navy); font-weight: 700; }
 
@@ -784,7 +770,7 @@ button, select { font-family: var(--sans); }
 /* Dim surrounding cards when one is highlighted */
 .c-servant-grid:has(.u-highlight) .c-servant-card:not(.u-highlight) {
   opacity: 0.3;
-  filter: grayscale(0.8) blur(1.5px);
+  filter: grayscale(0.8);
   pointer-events: none;
   transition: all 0.5s ease;
 }
