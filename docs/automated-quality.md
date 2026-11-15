@@ -4,13 +4,13 @@
 
 ## Required gates
 
-| Gate            | Command                              | Role                                                        |
-| --------------- | ------------------------------------ | ----------------------------------------------------------- |
-| ESLint errors   | `pnpm run lint`                      | 新規に許容しない決定的な型・Promise・Hook・構文エラーを拒否 |
-| Warning ratchet | `pnpm run lint:ratchet`              | 既存負債をファイル・ルール単位で固定し、増加を拒否          |
-| TypeScript      | `pnpm run type-check`                | `strict` 型検査                                             |
-| Tests           | `pnpm test --run` / `pnpm test:perf` | 振る舞い・回帰・性能境界                                    |
-| OpenSpec        | 該当change/specのvalidate            | 製品/runtime挙動を変更する場合だけ仕様と実装を同期          |
+| Gate            | Command                                   | Role                                                        |
+| --------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| ESLint errors   | `pnpm run lint`（CI は ratchet が兼ねる） | 新規に許容しない決定的な型・Promise・Hook・構文エラーを拒否 |
+| Warning ratchet | `pnpm run lint:ratchet`                   | 既存負債をファイル・ルール単位で固定し、増加を拒否          |
+| TypeScript      | `pnpm run type-check`                     | `strict` 型検査                                             |
+| Tests           | `pnpm test --run` / `pnpm test:perf`      | 振る舞い・回帰・性能境界                                    |
+| OpenSpec        | 該当change/specのvalidate                 | 製品/runtime挙動を変更する場合だけ仕様と実装を同期          |
 
 `eslint.config.mjs` の例外はファイル別allowlistに理由付きで置く。ソース内の `eslint-disable`、`@ts-ignore`、`@ts-expect-error` は使わない。
 
