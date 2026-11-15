@@ -52,12 +52,14 @@ describe('RecommendedQuest', () => {
   })
 
   it('with a goal but no farming result, guides to the solver and shows no quest', () => {
+    // 旧フォールバックは material にサーヴァントがあると先頭品目のクエストを出していた
+    localStorage.setItem(STORAGE_KEYS.MATERIAL, JSON.stringify({ '100100': { disabled: false, targets: {} } }))
     localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify({ '6503': 12 }))
     render(<RecommendedQuest />)
 
+    expect(screen.queryByText('ダラス')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /周回数を求める/ })).toHaveAttribute('href', '/material/result')
     expect(screen.queryByRole('link', { name: /育成目標を入れる/ })).not.toBeInTheDocument()
-    expect(screen.queryByText('ダラス')).not.toBeInTheDocument()
   })
 
   it('with a farming result, lists the planned quests as before', () => {
