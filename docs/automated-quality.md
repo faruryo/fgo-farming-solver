@@ -4,13 +4,13 @@
 
 ## Required gates
 
-| Gate            | Command                              | Role                                                        |
-| --------------- | ------------------------------------ | ----------------------------------------------------------- |
-| ESLint errors   | `pnpm run lint`                      | 新規に許容しない決定的な型・Promise・Hook・構文エラーを拒否 |
-| Warning ratchet | `pnpm run lint:ratchet`              | 既存負債をファイル・ルール単位で固定し、増加を拒否          |
-| TypeScript      | `pnpm run type-check`                | `strict` 型検査                                             |
-| Tests           | `pnpm test --run` / `pnpm test:perf` | 振る舞い・回帰・性能境界                                    |
-| OpenSpec        | 該当change/specのvalidate            | 製品/runtime挙動を変更する場合だけ仕様と実装を同期          |
+| Gate            | Command                                   | Role                                                        |
+| --------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| ESLint errors   | `pnpm run lint`（CI は ratchet が兼ねる） | 新規に許容しない決定的な型・Promise・Hook・構文エラーを拒否 |
+| Warning ratchet | `pnpm run lint:ratchet`                   | 既存負債をファイル・ルール単位で固定し、増加を拒否          |
+| TypeScript      | `pnpm run type-check`                     | `strict` 型検査                                             |
+| Tests           | `pnpm test --run` / `pnpm test:perf`      | 振る舞い・回帰・性能境界                                    |
+| OpenSpec        | 該当change/specのvalidate                 | 製品/runtime挙動を変更する場合だけ仕様と実装を同期          |
 
 `eslint.config.mjs` の例外はファイル別allowlistに理由付きで置く。ソース内の `eslint-disable`、`@ts-ignore`、`@ts-expect-error` は使わない。
 
@@ -25,7 +25,7 @@ CI、lint、開発ツール、agent規約、文書、PR templateだけを変更�
 3. baseline diffが減少だけであることを確認する。増加を受け入れるためにupdateしてはならない。
 4. ルールの在庫がゼロになったら、`eslint.config.mjs` でwarningからerrorへ昇格し、baselineから消す。
 
-`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `eslint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint` と `pnpm run lint:ratchet` が担う。既存警告の掃除はコミットの必須条件ではない。
+`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `eslint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint:ratchet` が担う。ratchet は ESLint のエラーが1件でもあれば警告を数える前に失敗するので、CI では `pnpm run lint` を別に走らせず、型を使う ESLint を1回で済ませる。既存警告の掃除はコミットの必須条件ではない。
 
 ## Report-only structural audits
 

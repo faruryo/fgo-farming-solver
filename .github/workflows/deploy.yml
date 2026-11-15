@@ -39,10 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Enforce lint warning ratchet
+      # One type-aware ESLint pass: the ratchet fails on any ESLint error
+      # (same as `pnpm run lint`) and on any file/rule warning increase.
+      - name: Lint (errors and warning ratchet)
         run: pnpm run lint:ratchet
 
       - name: Type check
