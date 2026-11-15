@@ -7,6 +7,7 @@ import {
   collectInventory,
   compareInventory,
   fromOxlintReport,
+  isTrustedOxlintExit,
   mergeBaselineViolations,
   normalizeFile,
   parseCliArgs,
@@ -24,22 +25,37 @@ type BaselineFile = {
   violations: LintViolation[]
 }
 
-// Oxlint has no Node API; its exit code is 1 whenever an error diagnostic
-// exists, so success is judged from the parsed report, not the status.
+// Oxlint has no Node API, so the CLI runs as a child process. The bin script is
+// run with the current Node so it does not depend on the .bin shim per OS.
 const runOxlint = (targets: string[], fix: boolean): LintResultLike[] => {
-  const args = ['-f', 'json', ...(fix ? ['--fix'] : []), ...targets]
-  const result = spawnSync(path.resolve('node_modules/.bin/oxlint'), args, {
+  const bin = path.resolve('node_modules/oxlint/bin/oxlint')
+  // lint-staged may pass only ignored files (e.g. next.config.js); without the
+  // flag oxlint prints a plain-text notice before the JSON and exits 1.
+  const args = [
+    bin,
+    '-f',
+    'json',
+    '--no-error-on-unmatched-pattern',
+    ...(fix ? ['--fix'] : []),
+    ...targets,
+  ]
+  const result = spawnSync(process.execPath, args, {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
   })
   if (result.error) throw result.error
+  let results: LintResultLike[] | null = null
   try {
-    return fromOxlintReport(JSON.parse(result.stdout) as OxlintReport)
+    results = fromOxlintReport(JSON.parse(result.stdout) as OxlintReport)
   } catch {
+    // Reported below together with the exit status and stderr.
+  }
+  if (results === null || !isTrustedOxlintExit(result.status, results)) {
     throw new Error(
-      `oxlint did not produce a JSON report (exit ${result.status}):\n${result.stderr}${result.stdout}`,
+      `oxlint did not produce a trustworthy JSON report (exit ${result.status}, signal ${result.signal}):\n${result.stderr}${result.stdout}`,
     )
   }
+  return results
 }
 
 const formatErrors = (results: LintResultLike[], cwd: string) =>

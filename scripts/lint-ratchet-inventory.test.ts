@@ -5,6 +5,7 @@ import {
   collectInventory,
   compareInventory,
   fromOxlintReport,
+  isTrustedOxlintExit,
   mergeBaselineViolations,
   normalizeFile,
   parseCliArgs,
@@ -131,6 +132,23 @@ describe('fromOxlintReport', () => {
     expect(collectInventory(results, '/repo')).toEqual([
       warning('lib/a.ts', 'eslint(no-unused-vars)', 1),
     ])
+  })
+})
+
+describe('isTrustedOxlintExit', () => {
+  const withSeverity = (severity: number): LintResultLike[] => [
+    { filePath: 'lib/a.ts', messages: [{ severity, ruleId: 'eslint(x)' }] },
+  ]
+
+  it.each([
+    { name: 'clean run exits 0', status: 0, results: [], expected: true },
+    { name: 'warnings only exit 0', status: 0, results: withSeverity(1), expected: true },
+    { name: 'errors exit 1', status: 1, results: withSeverity(2), expected: true },
+    { name: 'non-zero exit without an error diagnostic', status: 1, results: withSeverity(1), expected: false },
+    { name: 'killed by a signal', status: null, results: [], expected: false },
+    { name: 'unexpected exit code with errors', status: 2, results: withSeverity(2), expected: false },
+  ])('$name', ({ status, results, expected }) => {
+    expect(isTrustedOxlintExit(status, results)).toBe(expected)
   })
 })
 

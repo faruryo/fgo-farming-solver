@@ -54,6 +54,19 @@ export type CliArgs = {
   files: string[]
 }
 
+// Oxlint exits 1 exactly when an error diagnostic exists. Any other status
+// (a crash, a signal, a type-aware pass that failed outside the report) means
+// the JSON cannot be trusted to be complete.
+export const isTrustedOxlintExit = (
+  status: number | null,
+  results: LintResultLike[],
+): boolean => {
+  const hasError = results.some((result) =>
+    result.messages.some((message) => message.severity === 2),
+  )
+  return status === (hasError ? 1 : 0)
+}
+
 export const toKey = ({ file, rule }: Pick<LintViolation, 'file' | 'rule'>) =>
   `${file}\0${rule}`
 
