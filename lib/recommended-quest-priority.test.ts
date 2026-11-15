@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRecommendedQuestPriorityLaps } from './recommended-quest-priority'
+import { getRecommendedQuestEmptyGuide, getRecommendedQuestPriorityLaps } from './recommended-quest-priority'
 
 describe('getRecommendedQuestPriorityLaps', () => {
   it('returns tier 0 when quest is in pod-free Set', () => {
@@ -31,5 +31,25 @@ describe('getRecommendedQuestPriorityLaps', () => {
     expect(getRecommendedQuestPriorityLaps({ id: 'Q1', area: '冠位戴冠戦：Saber' }, new Set())).toBe(1)
     expect(getRecommendedQuestPriorityLaps({ id: 'Q2', area: 'オーディール・コール' }, new Set())).toBe(2)
     expect(getRecommendedQuestPriorityLaps({ id: 'Q3', area: 'その他' }, new Set())).toBe(3)
+  })
+})
+
+describe('getRecommendedQuestEmptyGuide', () => {
+  it('guides to goal input when there is no material result', () => {
+    expect(getRecommendedQuestEmptyGuide(undefined)).toBe('set-goal')
+    expect(getRecommendedQuestEmptyGuide(null)).toBe('set-goal')
+    expect(getRecommendedQuestEmptyGuide({})).toBe('set-goal')
+  })
+
+  it('guides to goal input when every needed count is zero', () => {
+    expect(getRecommendedQuestEmptyGuide({ '6501': 0, '6502': 0 })).toBe('set-goal')
+  })
+
+  it('guides to the solver when any needed count is positive', () => {
+    expect(getRecommendedQuestEmptyGuide({ '6501': 0, '6502': 1 })).toBe('solve')
+  })
+
+  it('ignores broken non-numeric values', () => {
+    expect(getRecommendedQuestEmptyGuide({ '6501': '3' as unknown as number })).toBe('set-goal')
   })
 })

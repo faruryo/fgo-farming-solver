@@ -20,3 +20,12 @@ export const getRecommendedQuestPriorityLaps = (
   if (area.includes('オーディール・コール')) return 2
   return 3
 }
+
+/**
+ * 周回計算の結果が無いときに RecommendedQuest が出す案内。
+ * 育成必要数（`material/result`）に正の値が1つも無ければ目標入力へ、あれば周回計算へ誘導する。
+ */
+export const getRecommendedQuestEmptyGuide = (
+  materialResult: Record<string, number> | null | undefined,
+): 'set-goal' | 'solve' =>
+  Object.values(materialResult ?? {}).some((n) => typeof n === 'number' && n > 0) ? 'solve' : 'set-goal'
