@@ -250,7 +250,8 @@ export const Index = ({
       const elementId = currentHash.substring(1)
       const el = document.getElementById(elementId)
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // smooth にしない: 途中の数百枚を描かせると iOS の描画負荷が増える (#126)
+        el.scrollIntoView({ behavior: 'auto', block: 'center' })
         el.classList.add('u-highlight')
         processedHash.current = currentHash // Mark as processed
         setTimeout(() => el.classList.remove('u-highlight'), 5000)
