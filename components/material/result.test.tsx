@@ -181,6 +181,25 @@ describe('goSolver — goal A/B transport (5.1)', () => {
   })
 })
 
+describe('goSolver — ストック込みの印', () => {
+  it('reserveで送った要求には stockIncluded=true が付く', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'reserve')
+    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    setLocalStorage('posession', { '100': 0, '200': 3 })
+    const url = await submitAndReadUrl()
+    expect(url.searchParams.get('stockIncluded')).toBe('true')
+  })
+
+  it('trainingで送った要求には stockIncluded が付かない', async () => {
+    setLocalStorage('efficiency/farmingPurpose', 'training')
+    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    setLocalStorage('posession', { '100': 0, '200': 3 })
+    const url = await submitAndReadUrl()
+    expect(url.searchParams.get('items')).toBe('20:5')
+    expect(url.searchParams.has('stockIncluded')).toBe(false)
+  })
+})
+
 describe('goSolver — quest exclusion (5.2)', () => {
   it('sends only the checked (non-excluded) quest ids, as full ids not prefixes', async () => {
     setLocalStorage('efficiency/stockEnabled', false)

@@ -222,6 +222,51 @@ describe('build-solve-params', () => {
       expect(res.params?.get('itemsStock')).toBeNull()
     })
 
+    describe('stockIncluded', () => {
+      const base = {
+        solverItems: [item1],
+        amounts: { '100': 10 },
+        possession: { '100': 2 },
+        resolvedStockBuffer: {
+          ...defaultBuffer,
+          normal: { ...defaultBuffer.normal, gold: 5 },
+        },
+        items,
+        checkedQuests: ['q1'],
+      }
+
+      it('reserve なら stockIncluded=true を付ける', () => {
+        const res = buildSolveParams({ ...base, purpose: 'reserve' })
+        expect(res.params?.get('stockIncluded')).toBe('true')
+      })
+
+      it('旧呼び出しの stockEnabled でも stockIncluded=true を付ける', () => {
+        const res = buildSolveParams({ ...base, stockEnabled: true })
+        expect(res.params?.get('stockIncluded')).toBe('true')
+      })
+
+      it.each(['training', 'all'] as const)('%s なら stockIncluded を付けない', (purpose) => {
+        const res = buildSolveParams({ ...base, purpose })
+        expect(res.params).not.toBeNull()
+        expect(res.params?.has('stockIncluded')).toBe(false)
+      })
+
+      it('在庫基準が効かず目標が同じでも reserve なら付ける', () => {
+        const training = buildSolveParams({
+          ...base,
+          resolvedStockBuffer: defaultBuffer,
+          purpose: 'training',
+        })
+        const reserve = buildSolveParams({
+          ...base,
+          resolvedStockBuffer: defaultBuffer,
+          purpose: 'reserve',
+        })
+        expect(reserve.params?.get('items')).toBe(training.params?.get('items'))
+        expect(reserve.params?.get('stockIncluded')).toBe('true')
+      })
+    })
+
     it('omits unsupported items where toApiItemId returns empty string from query targets', () => {
       const qpItem: EnrichedItem = {
         ...makeItem(1, 'QP', 'その他', 'その他'),
