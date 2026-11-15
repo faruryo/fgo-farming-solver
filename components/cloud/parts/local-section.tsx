@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
+import { migrateFarmingPurposeStorage } from '../../../lib/farming-purpose'
 
 interface BackupData {
   metadata: {
@@ -36,7 +37,8 @@ export const LocalSection = ({ exportLocal }: LocalSectionProps) => {
         return
       }
 
-      const storage = backup.storage || {}
+      // 旧形式のバックアップの在庫設定を、クラウド復元と同じく育成目的へ移す
+      const storage = migrateFarmingPurposeStorage(backup.storage || {})
       Object.entries(storage).forEach(([key, value]) => {
         if (value && typeof value === 'string') {
           localStorage.setItem(key, value)

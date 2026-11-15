@@ -109,6 +109,23 @@ describe('useCloudSync first-device restore', () => {
     expect(result.current.hasConflict).toBe(false)
   })
 
+  // #264: 壊れたメタデータは同期の履歴が読めない。初期値として扱うとクラウドが
+  // 黙ってローカルを上書きするので、未同期の編集ありとして利用者に選ばせる。
+  it('treats corrupt sync metadata as an unsynced local edit instead of throwing', async () => {
+    localStorage.setItem('material', JSON.stringify(DEFAULT_MATERIAL))
+    localStorage.setItem('fgo_sync_metadata', '{bad')
+
+    const { result } = renderHook(() => useCloudSync())
+
+    await waitFor(() => {
+      expect(result.current.hasConflict).toBe(true)
+    })
+    expect(localStorage.getItem('material')).toBe(JSON.stringify(DEFAULT_MATERIAL))
+    const meta = JSON.parse(localStorage.getItem('fgo_sync_metadata') ?? '{}') as Record<string, string>
+    expect(meta.lastSyncedAt).toBe(INITIAL_SYNC_TIMESTAMP)
+    expect(meta.updatedAt).not.toBe(INITIAL_SYNC_TIMESTAMP)
+  })
+
   it('migrates a legacy cloud stock setting after the local default was created', async () => {
     localStorage.setItem('efficiency/farmingPurpose', '"training"')
     const { result } = renderHook(() => useCloudSync())

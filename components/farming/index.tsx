@@ -22,6 +22,7 @@ import { CheckboxTree } from '../common/checkbox-tree'
 import { PageHeader } from '../common/page-header'
 import { ItemFieldset } from './item-fieldset'
 import { ResetAlertDialog } from './reset-alert-dialog'
+import { parseRecord } from '../../lib/cloud-sync/parse'
 
 export type FarmingIndexProps = {
   items: Localized<Item>[]
@@ -58,12 +59,12 @@ const migrateLocalInput = () => {
   if (json == null || json == 'undefined') {
     return
   }
-  const input = JSON.parse(json) as unknown
-  if (typeof input == 'object' && input != null) {
-    Object.entries(input).forEach(([key, value]) =>
-      localStorage.setItem(key, JSON.stringify(value))
-    )
-  }
+  const input = parseRecord(json)
+  // 読めない値は移せない。消すと手で直す余地もなくなるので残して終える
+  if (input === null) return
+  Object.entries(input).forEach(([key, value]) =>
+    localStorage.setItem(key, JSON.stringify(value))
+  )
   localStorage.removeItem(STORAGE_KEYS.INPUT)
 }
 const hasItems = (arg: unknown): arg is { items: unknown } =>

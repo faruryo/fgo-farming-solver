@@ -16,7 +16,7 @@ import {
   markDirty,
   metadataAfterApply,
   metadataAfterSave,
-  normalizeLocalMetadata,
+  readLocalMetadata,
   shouldPublishFetchResult,
   shouldRefetchOnResume,
 } from '../lib/cloud-sync/decision'
@@ -39,6 +39,8 @@ export const KEYS = CLOUD_SYNC_KEYS
 export const MOCK_CLOUD_KEY = STORAGE_KEYS.MOCK_CLOUD
 export const AUTO_SYNC_KEY = STORAGE_KEYS.AUTO_SYNC
 export const LOCAL_METADATA_KEY = STORAGE_KEYS.LOCAL_METADATA
+
+const newDeviceId = () => Math.random().toString(36).substring(2, 10)
 
 // Module-scoped (not per-instance refs) because the hook is mounted by
 // several components (nav, cloud-indicator, /cloud) while the events it
@@ -181,19 +183,15 @@ export const useCloudSync = () => {
     if (typeof window === 'undefined') return createInitialLocalMetadata('server')
     const raw = localStorage.getItem(LOCAL_METADATA_KEY)
     if (raw) {
-      const stored = JSON.parse(raw) as unknown as LocalMetadata
-      const normalized = normalizeLocalMetadata(stored)
-      if (normalized !== stored) {
-        localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(normalized))
-      }
-      return normalized
+      const meta = readLocalMetadata(raw, newDeviceId(), new Date().toISOString())
+      const json = JSON.stringify(meta)
+      if (json !== raw) localStorage.setItem(LOCAL_METADATA_KEY, json)
+      return meta
     }
 
     // A new device starts clean at epoch. This lets a newer cloud save restore
     // safely while a later real edit still breaks updatedAt === lastSyncedAt.
-    const meta = createInitialLocalMetadata(
-      Math.random().toString(36).substring(2, 10)
-    )
+    const meta = createInitialLocalMetadata(newDeviceId())
     localStorage.setItem(LOCAL_METADATA_KEY, JSON.stringify(meta))
     return meta
   }, [])

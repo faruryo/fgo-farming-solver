@@ -35,6 +35,30 @@ export const normalizeLocalMetadata = (
     ? { ...metadata, lastSyncedAt: INITIAL_SYNC_TIMESTAMP }
     : metadata
 
+const isLocalMetadata = (value: unknown): value is LocalMetadata =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof Reflect.get(value, 'updatedAt') === 'string' &&
+  typeof Reflect.get(value, 'deviceId') === 'string'
+
+// 保存されたメタデータを読む。読めないときは同期の履歴が分からないので、一度も
+// 同期していない端末の未同期の編集として返す（クラウドにデータがあれば divergent
+// になり利用者が選ぶ）。初期値(epoch)にするとクラウドの自動適用でローカルが黙って
+// 上書きされる。
+export const readLocalMetadata = (
+  raw: string,
+  fallbackDeviceId: string,
+  now: string
+): LocalMetadata => {
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (isLocalMetadata(parsed)) return normalizeLocalMetadata(parsed)
+  } catch {
+    // 下の既定値に倒す
+  }
+  return { ...createInitialLocalMetadata(fallbackDeviceId), updatedAt: now }
+}
+
 // Tolerated clock difference between devices before cloud counts as "newer".
 export const CLOCK_SKEW_MS = 1000
 
