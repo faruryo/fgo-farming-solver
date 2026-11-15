@@ -113,6 +113,18 @@ describe('/farming direct access (5.4 regression)', () => {
     expect(url.searchParams.get('isPublic')).toBe('true')
   })
 
+  it('手入力の送信には周回目的が reserve でも stockIncluded が付かない', async () => {
+    localStorage.setItem('efficiency/farmingPurpose', JSON.stringify('reserve'))
+    const fetchMock = stubFetch()
+    const user = userEvent.setup()
+
+    render(<Index items={items} quests={quests} />)
+
+    const url = await inputItemCountAndSolve(user, fetchMock, '3')
+    expect(url.searchParams.get('items')).toBe('100:3')
+    expect(url.searchParams.has('stockIncluded')).toBe(false)
+  })
+
   function setupAuthenticatedFarming() {
     mockSession.mockReturnValue({
       data: { user: { id: 'test-user', name: 'Tester' } },

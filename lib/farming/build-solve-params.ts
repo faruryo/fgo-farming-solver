@@ -86,11 +86,12 @@ export const buildSolveParams = (
     input.possession,
     input.items,
   )
+  const purpose = input.purpose ?? (input.stockEnabled ? 'reserve' : 'training')
   const queryItemsB = buildQueryItemsB(
     input.solverItems,
     input.amounts,
     input.possession,
-    input.purpose ?? (input.stockEnabled ? 'reserve' : 'training'),
+    purpose,
     input.resolvedStockBuffer,
     input.items,
   )
@@ -116,6 +117,8 @@ export const buildSolveParams = (
     quests: input.checkedQuests.join(','),
     fields: 'id',
   })
+  // 「新規サーヴァントに備える」で解いた計算は、目標の中身にかかわらずストック込みとして記録させる。
+  if (purpose === 'reserve') params.set('stockIncluded', 'true')
 
   return {
     queryItemsA: selectedItems,

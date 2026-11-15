@@ -30,7 +30,7 @@ const buildQuestSelection = (
   })
 }
 
-/** `items=` / `itemsStock=` クエリ文字列をパースして { [id]: count } マップを返す。 */
+/** `items=` クエリ文字列をパースして { [id]: count } マップを返す。 */
 const parseItemCounts = (raw: string): Record<string, number> =>
   Object.fromEntries(
     raw.split(',').filter(Boolean).map((pair) => {
@@ -38,13 +38,6 @@ const parseItemCounts = (raw: string): Record<string, number> =>
       return [id, parseInt(count, 10) || 0]
     })
   )
-
-/** 2つのアイテムマップが全キー・全値で一致するか(B==A 早期判定)。 */
-const itemMapsEqual = (a: Record<string, number>, b: Record<string, number>): boolean => {
-  const keysA = Object.keys(a)
-  if (keysA.length !== Object.keys(b).length) return false
-  return keysA.every((k) => a[k] === b[k])
-}
 
 export type VisibilityResult =
   | { ok: true; isPublic: number }
@@ -68,17 +61,13 @@ export const resolveSolveVisibility = (
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams
   const itemsRaw = searchParams.get('items') || ''
-  const itemsStockRaw = searchParams.get('itemsStock') || ''
   const questsRaw = searchParams.get('quests') || ''
   const apCoefficients = searchParams.get('ap_coefficients') || ''
   const isPublicParam = searchParams.get('isPublic')
+  // 印は付けないほうが安全な側なので、文字列 `true` のときだけ真とする。
+  const stockIncluded = searchParams.get('stockIncluded') === 'true'
 
   const itemCounts = parseItemCounts(itemsRaw)
-  const itemCountsStock = itemsStockRaw ? parseItemCounts(itemsStockRaw) : null
-
-  // B==A のときはバッチ不要(無駄 solve を回避する早期判定)。
-  const hasBatch =
-    itemCountsStock !== null && !itemMapsEqual(itemCounts, itemCountsStock)
 
   const allowedQuests = questsRaw.split(',').filter(Boolean)
 
@@ -114,64 +103,14 @@ export async function GET(req: NextRequest) {
   }
   const isPublic = visibility.isPublic
 
-  if (hasBatch) {
-    // 2目標(目標A=必要分 / 目標B=ストック込み)の同時計算・2行保存。
-    const paramsA: Params = { objective: 'both', items: itemCounts, quests: allowedQuests }
-    const paramsB: Params = {
-      objective: 'both',
-      items: itemCountsStock,
-      quests: allowedQuests,
-      stockIncluded: true,
-    }
-
-    // Saved farming results must use nominal (campaign-free) AP so downstream KPIs
-    // (calculation history, progress comparisons) stay stable across campaign periods.
-    const [resultA, resultB] = [
-      solveBoth(drops, paramsA, { applyCampaigns: false }),
-      solveBoth(drops, paramsB, { applyCampaigns: false }),
-    ]
-
-    const batchId = crypto.randomUUID()
-    const idA = crypto.randomUUID()
-    const idB = crypto.randomUUID()
-
-    if (db) {
-      try {
-        await db.batch([
-          db.prepare(
-            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-          ).bind(
-            idA, userId, 'both',
-            JSON.stringify(itemCounts),
-            resultA.ap.total_ap, resultA.lap.total_lap,
-            JSON.stringify(resultA),
-            questSelectionJson,
-            batchId,
-            isPublic,
-          ),
-          db.prepare(
-            'INSERT INTO farming_results (id, user_id, objective, target_items, total_ap, total_lap, result_data, quest_selection, batch_id, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-          ).bind(
-            idB, userId, 'both',
-            JSON.stringify(itemCountsStock),
-            resultB.ap.total_ap, resultB.lap.total_lap,
-            JSON.stringify(resultB),
-            questSelectionJson,
-            batchId,
-            isPublic,
-          ),
-        ])
-      } catch (e) {
-        console.error('Failed to save batch to D1:', e)
-      }
-    }
-
-    // 着地は目標A行(進捗アンカー)。batchId をレスポンスに含める。
-    return Response.json({ ...resultA, id: idA, batchId, isPublic: isPublic === 1 })
+  const params: Params = {
+    objective: 'both',
+    items: itemCounts,
+    quests: allowedQuests,
+    ...(stockIncluded ? { stockIncluded: true } : {}),
   }
-
-  // 従来どおり: 単独目標(stockEnabled=OFF / B==A)は batch_id=NULL の1行。
-  const params: Params = { objective: 'both', items: itemCounts, quests: allowedQuests }
+  // Saved farming results must use nominal (campaign-free) AP so downstream KPIs
+  // (calculation history, progress comparisons) stay stable across campaign periods.
   const result = solveBoth(drops, params, { applyCampaigns: false })
   const id = crypto.randomUUID()
 
