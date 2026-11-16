@@ -414,11 +414,11 @@ describe('Index - 保存されている Lv・宝具Lv のカードの表示', ()
   const LEVELS_KEY = 'servantLevels'
   const level = () => screen.queryByTestId('servant-card-level')
 
-  it('保存値の無い状態で一覧を描いても、Lv・宝具Lv の保存値のキーを作らない', async () => {
+  it('保存値の無い状態で一覧を描いても、Lv・宝具Lv の保存値のキーを作らない。値の無い所持のカードには「Lv –」を出す', async () => {
     const user = userEvent.setup()
     render(<Index servants={[servant]} materials={materials} items={items} />)
     await makeOwned(user)
-    expect(level()).not.toBeInTheDocument()
+    expect(level()).toHaveTextContent(/^Lv –$/)
     expect(localStorage.getItem(LEVELS_KEY)).toBeNull()
   })
 
@@ -442,13 +442,153 @@ describe('Index - 保存されている Lv・宝具Lv のカードの表示', ()
     const user = userEvent.setup()
     render(<Index servants={[servant]} materials={materials} items={items} />)
     await makeOwned(user)
-    expect(level()).not.toBeInTheDocument()
+    expect(level()).toHaveTextContent(/^Lv –$/)
 
     act(() => {
       setLocalStorage(LEVELS_KEY, { '1': { lv: 100, npLv: 3 } })
       window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: LEVELS_KEY } }))
     })
     expect(level()).toHaveTextContent('Lv 100・宝具 3')
+  })
+})
+
+describe('Index - カードから Lv・宝具Lv を手で入れる', () => {
+  const LEVELS_KEY = 'servantLevels'
+  const servantB = makeMaterialCatalogServant({ id: 2, collectionNo: 2, name: 'サーヴァントB' })
+  const bothMaterials = { ...materials, '2': makeMaterials() }
+  const ownedTargets = (skillEnd: number) => ({
+    ascension: { disabled: false, ranges: [{ start: 1, end: 4 }] },
+    skill: { disabled: false, ranges: [{ start: 2, end: skillEnd }, { start: 1, end: skillEnd }, { start: 1, end: skillEnd }] },
+    appendSkill: { disabled: false, ranges: Array.from({ length: 5 }, () => ({ start: 0, end: 10 })) },
+  })
+  const setOwned = () =>
+    setLocalStorage('material', {
+      all: { disabled: true, targets: ownedTargets(10) },
+      '1': { disabled: false, targets: ownedTargets(10) },
+      '2': { disabled: false, targets: ownedTargets(10) },
+    })
+  const cardLevel = (id: number): HTMLButtonElement => {
+    const button = document.getElementById(`svt-${id}`)?.querySelector<HTMLButtonElement>('[data-testid="servant-card-level"]')
+    if (!button) throw new Error(`no level button for ${id}`)
+    return button
+  }
+  const storedLevels = () => JSON.parse(localStorage.getItem(LEVELS_KEY) ?? 'null')
+  const dialog = () => screen.queryByRole('dialog')
+  const lvInput = () => screen.getByLabelText('Lv')
+  const npLvInput = () => screen.getByLabelText('宝具Lv')
+  const openFor = async (user: ReturnType<typeof userEvent.setup>, id: number) => {
+    await user.click(cardLevel(id))
+    await vi.waitFor(() => expect(lvInput()).toHaveFocus())
+  }
+
+  it('小窓を開く前は一覧に Lv・宝具Lv の入力欄が無い', () => {
+    setOwned()
+    render(<Index servants={[servant, servantB]} materials={bothMaterials} items={items} />)
+    expect(cardLevel(1)).toBeInTheDocument()
+    expect(dialog()).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Lv')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('宝具Lv')).not.toBeInTheDocument()
+    expect(document.querySelector('.c-servant-grid input')).toBeNull()
+  })
+
+  it('カードのボタンで小窓が開き、保存するとそのカードの表示が開き直さずに変わる。ほかの値は変えない', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90, npLv: 2 }, '2': { lv: 70 }, '999': { lv: 50, x: 1 } })
+    const materialBefore = localStorage.getItem('material')
+    const user = userEvent.setup()
+    render(<Index servants={[servant, servantB]} materials={bothMaterials} items={items} />)
+    expect(cardLevel(1)).toHaveTextContent('Lv 90・宝具 2')
+
+    await openFor(user, 1)
+    expect(screen.getByRole('dialog', { name: 'サーヴァントA' })).toBeInTheDocument()
+    expect(lvInput()).toHaveValue('90')
+    expect(npLvInput()).toHaveValue('2')
+    await user.clear(lvInput())
+    await user.type(lvInput(), '100')
+    await user.click(screen.getByRole('button', { name: '保存' }))
+
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    expect(cardLevel(1)).toHaveTextContent('Lv 100・宝具 2')
+    expect(cardLevel(2)).toHaveTextContent(/^Lv 70$/)
+    expect(storedLevels()).toEqual({ '1': { lv: 100, npLv: 2 }, '2': { lv: 70 }, '999': { lv: 50, x: 1 } })
+    expect(localStorage.getItem('material')).toBe(materialBefore)
+  })
+
+  it('両方を空にして保存すると「Lv –」になる', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90, npLv: 2 } })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await openFor(user, 1)
+    await user.clear(lvInput())
+    await user.clear(npLvInput())
+    await user.click(screen.getByRole('button', { name: '保存' }))
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    expect(cardLevel(1)).toHaveTextContent(/^Lv –$/)
+    expect(storedLevels()).toEqual({})
+  })
+
+  it('キャンセルと Escape では書かず、閉じたあとフォーカスが開いたボタンにある', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90 } })
+    const user = userEvent.setup()
+    render(<Index servants={[servant, servantB]} materials={bothMaterials} items={items} />)
+
+    await openFor(user, 1)
+    await user.type(lvInput(), '5')
+    await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    await vi.waitFor(() => expect(cardLevel(1)).toHaveFocus())
+
+    await openFor(user, 2)
+    await user.type(lvInput(), '80')
+    await user.keyboard('{Escape}')
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    await vi.waitFor(() => expect(cardLevel(2)).toHaveFocus())
+
+    expect(storedLevels()).toEqual({ '1': { lv: 90 } })
+    expect(cardLevel(1)).toHaveTextContent(/^Lv 90$/)
+    expect(cardLevel(2)).toHaveTextContent(/^Lv –$/)
+  })
+
+  it('値の無い所持のカードで、両方を空のまま保存しても保存値を作らない', async () => {
+    setOwned()
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await openFor(user, 1)
+    await user.click(screen.getByRole('button', { name: '保存' }))
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    expect(localStorage.getItem(LEVELS_KEY)).toBeNull()
+  })
+
+  it('キーボードで「Lv –」から保存して値が出たあとも、両方を空にして「Lv –」に戻ったあとも、フォーカスが同じボタンにある', async () => {
+    setOwned()
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    const button = cardLevel(1)
+    expect(button).toHaveTextContent(/^Lv –$/)
+
+    button.focus()
+    await user.keyboard('{Enter}')
+    await vi.waitFor(() => expect(lvInput()).toHaveFocus())
+    await user.keyboard('80')
+    await user.tab()
+    await user.keyboard('1{Enter}')
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    expect(cardLevel(1)).toBe(button)
+    expect(button).toHaveTextContent('Lv 80・宝具 1')
+    await vi.waitFor(() => expect(button).toHaveFocus())
+    expect(storedLevels()).toEqual({ '1': { lv: 80, npLv: 1 } })
+
+    await user.keyboard('{Enter}')
+    await vi.waitFor(() => expect(lvInput()).toHaveFocus())
+    await user.clear(lvInput())
+    await user.clear(npLvInput())
+    await user.keyboard('{Enter}')
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+    expect(cardLevel(1)).toBe(button)
+    expect(button).toHaveTextContent(/^Lv –$/)
+    await vi.waitFor(() => expect(button).toHaveFocus())
   })
 })
 

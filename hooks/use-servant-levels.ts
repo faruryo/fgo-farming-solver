@@ -2,7 +2,13 @@
 
 import { useCallback, useMemo } from 'react'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
-import { readServantLevels, withServantLevels, type ServantLevelImportRow } from '../lib/servant-levels'
+import {
+  readServantLevels,
+  withServantLevel,
+  withServantLevels,
+  type ServantLevelEdit,
+  type ServantLevelImportRow,
+} from '../lib/servant-levels'
 import { recordOrEmpty, useLocalStorage } from './use-local-storage'
 
 const EMPTY: Record<string, unknown> = {}
@@ -22,5 +28,10 @@ export const useServantLevels = () => {
     (rows: readonly ServantLevelImportRow[]) => setStored(prev => withServantLevels(prev, rows)),
     [setStored],
   )
-  return { levels, importLevels, loaded }
+  /** 1騎の Lv・宝具Lv を欄のとおりに置き換える（`null` の欄は消す）。値が変わらないかの判定は呼ぶ側で行う */
+  const setServantLevel = useCallback(
+    (id: string | number, edit: ServantLevelEdit) => setStored(prev => withServantLevel(prev, id, edit)),
+    [setStored],
+  )
+  return { levels, importLevels, setServantLevel, loaded }
 }

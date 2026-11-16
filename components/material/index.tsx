@@ -21,6 +21,7 @@ import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
 import { ServantCard } from './servant-card'
 import { ServantRosterImport } from './servant-roster-import'
+import { ServantLevelDialog } from './servant-level-dialog'
 import { PageHeader } from '../common/page-header'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -43,8 +44,19 @@ export const Index = ({
   const { t } = useTranslation('material')
   const ids = useMemo(() => servants.map(s => s.id.toString()), [servants])
   const [chaldeaState, setChaldeaState] = useChaldeaState(ids)
-  const { levels, importLevels } = useServantLevels()
+  const { levels, importLevels, setServantLevel } = useServantLevels()
   const levelById = useMemo(() => new Map(Object.entries(levels)), [levels])
+  // 小窓の開閉と、直しているサーヴァント・開いたボタンは分けて持つ。後者は閉じ終わるまで残す
+  // （閉じる途中で見出しが空になったり、フォーカスの戻り先が無くなったりしないため）
+  const [levelDialogOpen, setLevelDialogOpen] = useState(false)
+  const [levelEditing, setLevelEditing] = useState<{ servantId: number; button: HTMLButtonElement } | null>(null)
+  const handleEditLevel = useCallback((servantId: number, button: HTMLButtonElement) => {
+    setLevelEditing({ servantId, button })
+    setLevelDialogOpen(true)
+  }, [])
+  const handleLevelDialogOpenChangeComplete = useCallback((open: boolean) => {
+    if (!open) setLevelEditing(null)
+  }, [])
 
   const [selClass, setSelClass] = useState<ClassId>('all')
   const [selRarities, setSelRarities] = useState<number[]>([])
@@ -302,6 +314,7 @@ export const Index = ({
   }
 
   const globalState = chaldeaState.all ?? DEFAULT_SERVANT_STATE
+  const levelEditingServant = levelEditing ? servantsById[levelEditing.servantId.toString()] : undefined
 
   const showSuggestionBanner =
     mounted &&
@@ -618,12 +631,23 @@ export const Index = ({
                   onStartChange={handleOnStartChange(s.id.toString())}
                   lv={levelById.get(s.id.toString())?.lv}
                   npLv={levelById.get(s.id.toString())?.npLv}
+                  onEditLevel={handleEditLevel}
                 />
               ))}
             </div>
           </>
         )}
       </div>
+
+      <ServantLevelDialog
+        open={levelDialogOpen}
+        servant={levelEditingServant ? { id: levelEditingServant.id, name: levelEditingServant.name } : null}
+        level={levelEditing ? levelById.get(levelEditing.servantId.toString()) : undefined}
+        onOpenChange={setLevelDialogOpen}
+        onOpenChangeComplete={handleLevelDialogOpenChangeComplete}
+        finalFocus={() => levelEditing?.button ?? null}
+        onSave={setServantLevel}
+      />
 
       {/* Fixed calculate footer */}
       <div className="c-calc-footer">

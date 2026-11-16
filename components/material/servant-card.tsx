@@ -27,9 +27,11 @@ type Props = {
     prevStart: number,
     newStart: number
   ) => void
-  /** 取り込んで保存されている Lv・宝具Lv（表示だけ。所持のカードにだけ出す） */
+  /** 保存されている Lv・宝具Lv（所持のカードにだけ出す） */
   lv?: number
   npLv?: number
+  /** 所持のカードの Lv・宝具Lv のボタンが押された（押されたボタンを戻り先のフォーカスに使う） */
+  onEditLevel?: (servantId: number, button: HTMLButtonElement) => void
 }
 
 const LONG_PRESS_MS = 500
@@ -78,6 +80,7 @@ const ServantCardComponent = ({
   onStartChange,
   lv,
   npLv,
+  onEditLevel,
 }: Props) => {
   const { t } = useTranslation('material')
   const cls = getClassInfo(servant.className)
@@ -220,12 +223,13 @@ const ServantCardComponent = ({
   }
 
   const face = servant.face
-  const levelText = owned
-    ? [
-        lv === undefined ? null : t('servant-card-lv', 'Lv {{lv}}', { lv }),
-        npLv === undefined ? null : t('servant-card-np-lv', '宝具 {{npLv}}', { npLv }),
-      ].filter(Boolean).join(t('servant-card-level-separator', '・'))
-    : ''
+  const levelText =
+    [
+      lv === undefined ? null : t('servant-card-lv', 'Lv {{lv}}', { lv }),
+      npLv === undefined ? null : t('servant-card-np-lv', '宝具 {{npLv}}', { npLv }),
+    ]
+      .filter(Boolean)
+      .join(t('servant-card-level-separator', '・')) || t('servant-card-level-empty', 'Lv –')
 
   return (
     <div id={`svt-${servant.id}`} className={`c-servant-card${state.disabled ? ' unowned' : ''}${tierClass ? ` ${tierClass}` : ''}`}>
@@ -261,10 +265,21 @@ const ServantCardComponent = ({
         <div className="c-servant-name">{servant.name}</div>
         <div className="c-servant-class-tag" style={{ color: cc }}>
           {cls.label}
-          {levelText && (
-            <span className="ml-1.5 tabular-nums" style={{ color: 'var(--text2)' }} data-testid="servant-card-level">
+          {owned && (
+            <button
+              type="button"
+              // 文字が 10px なので、押せる範囲だけを疑似要素で広げる（要素を増やさない）
+              className="relative ml-1.5 cursor-pointer rounded-sm tabular-nums outline-none after:absolute after:-inset-x-1 after:-inset-y-2 hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring"
+              style={{ color: 'var(--text2)' }}
+              data-testid="servant-card-level"
+              aria-label={t('servant-card-level-edit', '{{text}}、{{name}} の Lv・宝具Lv を入れる', {
+                text: levelText,
+                name: servant.name,
+              })}
+              onClick={e => onEditLevel?.(servant.id, e.currentTarget)}
+            >
               {levelText}
-            </span>
+            </button>
           )}
         </div>
       </div>
