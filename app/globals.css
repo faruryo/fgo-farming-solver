@@ -430,6 +430,8 @@ body {
 /* shadcn Input - FGO themed */
 [data-slot="input"] { background: var(--panel2); border-color: var(--border2); }
 [data-slot="input"]:focus { border-color: var(--gold-dim); outline: none; box-shadow: 0 0 0 2px rgba(154,114,36,0.2); }
+/* 上の2つは layer の外で Tailwind の aria-invalid: を打ち消すので、範囲外の欄はここで示す */
+[data-slot="input"][aria-invalid="true"] { border-color: var(--red); box-shadow: 0 0 0 2px rgba(176,48,48,0.2); }
 
 /* ===== FOOTERS ===== */
 .c-calc-footer {
