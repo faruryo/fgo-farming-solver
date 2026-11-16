@@ -6,13 +6,13 @@
 
 | Gate            | Command                                   | Role                                                        |
 | --------------- | ----------------------------------------- | ----------------------------------------------------------- |
-| ESLint errors   | `pnpm run lint`（CI は ratchet が兼ねる） | 新規に許容しない決定的な型・Promise・Hook・構文エラーを拒否 |
+| Lint errors     | `pnpm run lint`（CI は ratchet が兼ねる） | 新規に許容しない決定的な型・Promise・Hook・構文エラーを拒否 |
 | Warning ratchet | `pnpm run lint:ratchet`                   | 既存負債をファイル・ルール単位で固定し、増加を拒否          |
 | TypeScript      | `pnpm run type-check`                     | `strict` 型検査                                             |
 | Tests           | `pnpm test --run` / `pnpm test:perf`      | 振る舞い・回帰・性能境界                                    |
 | OpenSpec        | 該当change/specのvalidate                 | 製品/runtime挙動を変更する場合だけ仕様と実装を同期          |
 
-`eslint.config.mjs` の例外はファイル別allowlistに理由付きで置く。ソース内の `eslint-disable`、`@ts-ignore`、`@ts-expect-error` は使わない。
+lint は Oxlint（`.oxlintrc.json`）で行う。型を使うルールは `oxlint-tsgolint`、sonarjs と security は Oxlint の JS plugins（alpha）で動かすので、`oxlint`・`oxlint-tsgolint` の版は固定し、上げるときは公開から2週間以上たった版を選んで warning ratchet の baseline を作り直す。例外は `.oxlintrc.json` の `overrides` にファイル別allowlistとして理由付きで置く。ソース内の `oxlint-disable`・`eslint-disable`、`@ts-ignore`、`@ts-expect-error` は使わない。Oxlint には ESLint の `noInlineConfig` に当たる設定が無く、disable コメントは機械では拒否されない（使われていない disable コメントだけは `reportUnusedDisableDirectives` でエラーになる）。
 
 CI、lint、開発ツール、agent規約、文書、PR templateだけを変更し、製品/runtime挙動を変えない場合はOpenSpec changeを作らない。両者を含む変更では、製品/runtime側だけをOpenSpecへ反映する。
 
@@ -23,9 +23,9 @@ CI、lint、開発ツール、agent規約、文書、PR templateだけを変更�
 1. まず `pnpm run lint:ratchet` で増加がないことを確認する。
 2. 警告を直したら、`pnpm run lint:ratchet:update` を実行する。特定ファイルだけ直したときは `pnpm run lint:ratchet:update -- path/to/file.ts` でそのファイルの在庫だけを書き換える。
 3. baseline diffが減少だけであることを確認する。増加を受け入れるためにupdateしてはならない。
-4. ルールの在庫がゼロになったら、`eslint.config.mjs` でwarningからerrorへ昇格し、baselineから消す。
+4. ルールの在庫がゼロになったら、`.oxlintrc.json` でwarningからerrorへ昇格し、baselineから消す。
 
-`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `eslint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint:ratchet` が担う。ratchet は ESLint のエラーが1件でもあれば警告を数える前に失敗するので、CI では `pnpm run lint` を別に走らせず、型を使う ESLint を1回で済ませる。既存警告の掃除はコミットの必須条件ではない。
+`.husky/pre-commit` は `lint-staged` 経由で、ステージ済みの JS/TS だけを `oxlint --fix` し、同じファイルの warning 在庫が baseline を超えていないかを見る。リポジトリ全体の lint は CI の `pnpm run lint:ratchet` が担う。ratchet は lint のエラーが1件でもあれば警告を数える前に失敗するので、CI では `pnpm run lint` を別に走らせず、型を使う Oxlint を1回で済ませる。baseline のルール名は Oxlint の表記（`typescript(no-explicit-any)` など）で記録する。既存警告の掃除はコミットの必須条件ではない。
 
 ## Report-only structural audits
 

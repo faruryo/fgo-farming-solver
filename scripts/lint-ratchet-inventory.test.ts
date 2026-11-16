@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
   collectInventory,
   compareInventory,
+  fromOxlintReport,
+  isTrustedOxlintExit,
   mergeBaselineViolations,
   normalizeFile,
   parseCliArgs,
@@ -87,6 +89,66 @@ describe('collectInventory', () => {
       warning('lib/a.ts', 'complexity', 2),
       warning('lib/b.ts', 'max-depth', 1),
     ])
+  })
+})
+
+describe('fromOxlintReport', () => {
+  it('groups diagnostics per file and maps severity, rule and position', () => {
+    const results = fromOxlintReport({
+      diagnostics: [
+        {
+          message: 'unused',
+          code: 'eslint(no-unused-vars)',
+          severity: 'warning',
+          filename: 'lib/a.ts',
+          labels: [{ span: { line: 3, column: 7 } }],
+        },
+        {
+          message: 'floating',
+          code: 'typescript(no-floating-promises)',
+          severity: 'error',
+          filename: 'lib/a.ts',
+          labels: [{ span: { line: 9, column: 1 } }],
+        },
+        { message: 'Unexpected token', severity: 'error', filename: 'lib/b.ts' },
+      ],
+    })
+
+    expect(results).toEqual([
+      {
+        filePath: 'lib/a.ts',
+        messages: [
+          { severity: 1, ruleId: 'eslint(no-unused-vars)', line: 3, column: 7, message: 'unused' },
+          { severity: 2, ruleId: 'typescript(no-floating-promises)', line: 9, column: 1, message: 'floating' },
+        ],
+      },
+      {
+        filePath: 'lib/b.ts',
+        messages: [
+          { severity: 2, ruleId: null, line: undefined, column: undefined, message: 'Unexpected token' },
+        ],
+      },
+    ])
+    expect(collectInventory(results, '/repo')).toEqual([
+      warning('lib/a.ts', 'eslint(no-unused-vars)', 1),
+    ])
+  })
+})
+
+describe('isTrustedOxlintExit', () => {
+  const withSeverity = (severity: number): LintResultLike[] => [
+    { filePath: 'lib/a.ts', messages: [{ severity, ruleId: 'eslint(x)' }] },
+  ]
+
+  it.each([
+    { name: 'clean run exits 0', status: 0, results: [], expected: true },
+    { name: 'warnings only exit 0', status: 0, results: withSeverity(1), expected: true },
+    { name: 'errors exit 1', status: 1, results: withSeverity(2), expected: true },
+    { name: 'non-zero exit without an error diagnostic', status: 1, results: withSeverity(1), expected: false },
+    { name: 'killed by a signal', status: null, results: [], expected: false },
+    { name: 'unexpected exit code with errors', status: 2, results: withSeverity(2), expected: false },
+  ])('$name', ({ status, results, expected }) => {
+    expect(isTrustedOxlintExit(status, results)).toBe(expected)
   })
 })
 

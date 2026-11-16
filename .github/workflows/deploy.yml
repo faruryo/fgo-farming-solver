@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # One type-aware ESLint pass: the ratchet fails on any ESLint error
+      # One type-aware Oxlint pass: the ratchet fails on any lint error
       # (same as `pnpm run lint`) and on any file/rule warning increase.
       - name: Lint (errors and warning ratchet)
         run: pnpm run lint:ratchet

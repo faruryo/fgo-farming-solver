@@ -30,7 +30,7 @@
 - `pnpm dev` — local dev server
 - `pnpm run build` — Next.js build + OpenNext Cloudflare build
 - `pnpm run deploy` — build + `wrangler deploy` to Cloudflare Workers
-- `pnpm run lint` — ESLint
+- `pnpm run lint` — Oxlint（型を使うルールと sonarjs・security の JS plugins を含む）
 - `pnpm run lint:ratchet` — 既存lint警告のファイル・ルール別ベースラインから増加がないことを確認。pre-commit はステージ済みファイルだけを同じ判定で見る（全体 lint は CI）
 - `pnpm run audit:duplicates` — jscpd重複レポート（report-only）
 - `pnpm run audit:dead-code` — Knip未使用候補レポート（report-only）
@@ -73,7 +73,7 @@ Repository-only maintenance that does not change product/runtime behavior—such
   - `docs:` や `openspec/` 配下のファイルのみを変更している PR（仕様策定・文書フェーズ）では、差分に含まれない既存コード（`app/`, `lib/` 等）への指摘を行わない。仕様ドキュメント内の論理的一貫性とエッジケースのみを検証する。
   - 製品/runtime 挙動を変更しない PR（CI、lint、開発ツール、agent 規約、文書、PR template 等）に対して OpenSpec 不足を指摘しない（OpenSpec は製品/runtime 挙動変更時のみ必須）。
 - **No Mechanical Linting (CI 領域の除外)**:
-  - ESLint、Prettier、TypeScript strict (`tsc --noEmit`)、warning ratchet (`pnpm run lint:ratchet`)、jscpd (`audit:duplicates`)、Knip (`audit:dead-code`) などの CI で機械的に検知できる事項（構文、フォーマット、使われていない変数、既存警告の残高等）は指摘しない。ドメイン不変条件、データ安全性、同期・状態整合性に集中すること。
+  - Oxlint、Prettier、TypeScript strict (`tsc --noEmit`)、warning ratchet (`pnpm run lint:ratchet`)、jscpd (`audit:duplicates`)、Knip (`audit:dead-code`) などの CI で機械的に検知できる事項（構文、フォーマット、使われていない変数、既存警告の残高等）は指摘しない。ドメイン不変条件、データ安全性、同期・状態整合性に集中すること。
 - **Review Language (レビュー言語は日本語)**:
   - レビューサマリー、インラインコメント、指摘の見出し・本文・修正提案は原則としてすべて**日本語**で記述すること。英語でのレビュー出力は禁止する。
   - コード識別子（関数名、変数名、型名など）、ファイル名、パス、CLI コマンド、コミットハッシュなどの技術的固有名詞はそのままで構わないが、解説や推論は英語ではなく日本語で行うこと。

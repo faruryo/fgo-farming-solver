@@ -25,7 +25,6 @@ next-env.d.ts
 
 # debug
 npm-debug.log*
-.eslintcache
 yarn-debug.log*
 yarn-error.log*
 

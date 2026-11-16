@@ -16,7 +16,7 @@ type Mocks = {
 
 // Explicit return type (not an `as` assertion) so `session` stays widened to
 // `| null` for the sign-out tests below -- `as` here gets stripped by
-// eslint --fix's no-unnecessary-type-assertion as "redundant."
+// the linter's --fix (no-unnecessary-type-assertion) as "redundant."
 const mocks = vi.hoisted(
   (): Mocks => ({
     getItems: vi.fn(async () => []),

@@ -1,15 +1,20 @@
-import { ESLint } from 'eslint'
+import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import process from 'node:process'
 
 import {
   collectInventory,
   compareInventory,
+  fromOxlintReport,
+  isTrustedOxlintExit,
   mergeBaselineViolations,
   normalizeFile,
   parseCliArgs,
   toKey,
+  type LintResultLike,
   type LintViolation,
+  type OxlintReport,
 } from './lint-ratchet-inventory'
 
 const BASELINE_VERSION = 1
@@ -20,7 +25,40 @@ type BaselineFile = {
   violations: LintViolation[]
 }
 
-const formatErrors = (results: ESLint.LintResult[], cwd: string) =>
+// Oxlint has no Node API, so the CLI runs as a child process. The bin script is
+// run with the current Node so it does not depend on the .bin shim per OS.
+const runOxlint = (targets: string[], fix: boolean): LintResultLike[] => {
+  const bin = path.resolve('node_modules/oxlint/bin/oxlint')
+  // lint-staged may pass only ignored files (e.g. next.config.js); without the
+  // flag oxlint prints a plain-text notice before the JSON and exits 1.
+  const args = [
+    bin,
+    '-f',
+    'json',
+    '--no-error-on-unmatched-pattern',
+    ...(fix ? ['--fix'] : []),
+    ...targets,
+  ]
+  const result = spawnSync(process.execPath, args, {
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+  })
+  if (result.error) throw result.error
+  let results: LintResultLike[] | null = null
+  try {
+    results = fromOxlintReport(JSON.parse(result.stdout) as OxlintReport)
+  } catch {
+    // Reported below together with the exit status and stderr.
+  }
+  if (results === null || !isTrustedOxlintExit(result.status, results)) {
+    throw new Error(
+      `oxlint did not produce a trustworthy JSON report (exit ${result.status}, signal ${result.signal}):\n${result.stderr}${result.stdout}`,
+    )
+  }
+  return results
+}
+
+const formatErrors = (results: LintResultLike[], cwd: string) =>
   results.flatMap((result) => {
     const file = normalizeFile(result.filePath, cwd)
     return result.messages
@@ -35,7 +73,7 @@ const reportLintErrors = (errors: string[]) => {
   if (errors.length === 0) return false
 
   console.error(
-    'Cannot evaluate the warning ratchet while ESLint errors exist:',
+    'Cannot evaluate the warning ratchet while lint errors exist:',
   )
   for (const error of errors) console.error(`- ${error}`)
   process.exitCode = 1
@@ -125,11 +163,7 @@ const run = async () => {
       ? new Set(files.map((file) => normalizeFile(file, cwd)))
       : null
 
-  // File cache does not invalidate when imported types change, so type-aware
-  // warning counts can be written stale into the baseline.
-  const eslint = new ESLint({ cwd, fix })
-  const results = await eslint.lintFiles(lintTargets)
-  if (fix) await ESLint.outputFixes(results)
+  const results = runOxlint(lintTargets, fix)
 
   if (reportLintErrors(formatErrors(results, cwd))) return
 
