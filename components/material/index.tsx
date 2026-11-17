@@ -339,7 +339,7 @@ export const Index = ({
     hasPossessionInput
 
   const clearButton = (
-    <button type="button" className="c-filter-select" onClick={clearFilters}>
+    <button type="button" className="c-hide-toggle" onClick={clearFilters}>
       {t('clear-filters', '絞り込みを解除')}
     </button>
   )
