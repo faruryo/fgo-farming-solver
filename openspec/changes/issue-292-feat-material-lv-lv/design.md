@@ -28,9 +28,11 @@
 
 - 落とす処理は `lib/servant-roster-review.ts` に純粋関数として置き、2つの画面で使う。`readField` は変えない（数字だけの値でも範囲の判定は要る）
 - 変換中かは `compositionstart`/`compositionend`（または `nativeEvent.isComposing`）で判定し、変換中の `onChange` では値をそのまま持ち、確定で落とす。変換中に落とすと IME の変換中の文字が壊れるため
+- 変換の確定で半角の数字が1つも残らなかったときは、変換を始める前（`compositionstart` の時点）の欄の値に戻す。小窓では空の欄は保存値を消すので、全角で打ち替えた人の保存値が黙って消えるのを防ぐ。確かめ画面も同じ部品の振る舞いにそろえる
 - 確かめ画面の欄から `type="number"`・`min`・`max`・`step` を外し、`type="text"`・`inputMode="numeric"` にそろえる。候補のボタンで入る値は今までどおり
 
 ## Risks / Trade-offs
 
-- IME の確定のイベントの順序はブラウザで違う（Safari は `compositionend` の後に `input` が来ない場合がある）→ `compositionend` の時点でも落とす処理を当てる
-- 全角で打った人には値が消えて見える → オーナー決定どおり。数字のキーボードと欄の見た目で半角の入力を促す
+- `input` と `compositionend` の前後はブラウザで違う（Chrome は `compositionend` の前に `input`、WebKit は後に `isComposing=false` の `input`）→ どちらの時点でも落とす処理を当て、どちらの順序でも確定後に半角の数字以外が残らないようにする
+- カーソルの途中に不正な文字を打つと、制御された欄なのでカーソルが末尾へ動く → 値は正しいので今回は扱わない
+- 全角で打った人には打った文字が消えて見える（打ち替えなら前の値に戻る） → オーナー決定どおり。数字のキーボードと欄の見た目で半角の入力を促す
