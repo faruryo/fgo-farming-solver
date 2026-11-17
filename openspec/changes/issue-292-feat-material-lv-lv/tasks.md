@@ -5,9 +5,9 @@
 
 ## 2. 欄
 
-- [ ] 2.1 `components/material/servant-level-dialog.tsx` の Lv・宝具Lv の欄で、入力のたびに 1.1 を当てる。日本語入力の変換中は当てず、変換の確定（`compositionend`）で当てる。確定で数字が1つも残らなければ変換を始める前の値に戻す（`input` と `compositionend` のどちらの順序でも。確定直後の `input` が戻した値を空で上書きしない）
-- [ ] 2.2 `components/material/servant-roster-review.tsx` の Lv・宝具Lv の欄を `type="text"`・`inputMode="numeric"` にし（`min`・`max`・`step` を外す）、2.1 と同じく 1.1 を当てる
-- [ ] 2.3 2.1・2.2 の部品テストを足す（貼り付け「Lv 90」で 90、変換中は値を残し確定で落とす（`input` と `compositionend` のどちらの順序でも）、値 90 の欄を全角で打ち替えて確定すると 90 に戻り保存しても消えない（`input` と `compositionend` のどちらの順序でも）、121 は範囲外の表示で保存・取り込みに入れない）
+- [ ] 2.1 `components/material/servant-level-dialog.tsx` の Lv・宝具Lv の欄で、入力のたびに 1.1 を当てる。日本語入力の変換中は当てず、変換の確定（`compositionend`）で当てる。確定で数字が1つも残らなければ変換を始める前の値に戻す（`input` と `compositionend` のどちらの順序でも。確定直後の `input` が戻した値を空で上書きしない。持った値は確定由来の `input` でだけ使い、それ以外の入力で捨てる）
+- [ ] 2.2 `components/material/servant-roster-review.tsx` の Lv・宝具Lv の欄を `type="text"`・`inputMode="numeric"` にし（`min`・`max`・`step` を外す）、2.1 と同じく 1.1 を当て、確定で数字が残らないときに前の値に戻す
+- [ ] 2.3 2.1・2.2 の部品テストを足す（貼り付け「Lv 90」で 90、変換中は値を残し確定で落とす（`input` と `compositionend` のどちらの順序でも）、値 90 の欄を全角で打ち替えて確定すると 90 に戻り保存しても消えない（`input` と `compositionend` のどちらの順序でも）、Chrome の順序で戻した後に Backspace で欄を空にすると空になる、確かめ画面でも打ち替えで前の値に戻る、121 は範囲外の表示で保存・取り込みに入れない）
 
 ## 3. 確かめ
 
