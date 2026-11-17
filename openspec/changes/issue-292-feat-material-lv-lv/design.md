@@ -33,6 +33,6 @@
 
 ## Risks / Trade-offs
 
-- `input` と `compositionend` の前後はブラウザで違う（Chrome は `compositionend` の前に `input`、WebKit は後に `isComposing=false` の `input`）→ どちらの時点でも落とす処理を当て、どちらの順序でも確定後に半角の数字以外が残らないようにする
+- `input` と `compositionend` の前後はブラウザで違う（Chrome は `compositionend` の前に `input`、WebKit は後に `isComposing=false` の `input`）→ どちらの時点でも落とす処理を当て、どちらの順序でも確定後に半角の数字以外が残らないようにする。前の値に戻す処理も、どちらの順序でも効かせる（変換を始める前の値を確定直後の `input` まで持ち、WebKit で `compositionend` の後に来る `input` が戻した値を空で上書きしないようにする）
 - カーソルの途中に不正な文字を打つと、制御された欄なのでカーソルが末尾へ動く → 値は正しいので今回は扱わない
 - 全角で打った人には打った文字が消えて見える（打ち替えなら前の値に戻る） → オーナー決定どおり。数字のキーボードと欄の見た目で半角の入力を促す

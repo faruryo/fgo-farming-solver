@@ -5,12 +5,12 @@
 
 ## 2. 欄
 
-- [ ] 2.1 `components/material/servant-level-dialog.tsx` の Lv・宝具Lv の欄で、入力のたびに 1.1 を当てる。日本語入力の変換中は当てず、変換の確定（`compositionend`）で当てる。確定で数字が1つも残らなければ変換を始める前の値に戻す
+- [ ] 2.1 `components/material/servant-level-dialog.tsx` の Lv・宝具Lv の欄で、入力のたびに 1.1 を当てる。日本語入力の変換中は当てず、変換の確定（`compositionend`）で当てる。確定で数字が1つも残らなければ変換を始める前の値に戻す（`input` と `compositionend` のどちらの順序でも。確定直後の `input` が戻した値を空で上書きしない）
 - [ ] 2.2 `components/material/servant-roster-review.tsx` の Lv・宝具Lv の欄を `type="text"`・`inputMode="numeric"` にし（`min`・`max`・`step` を外す）、2.1 と同じく 1.1 を当てる
-- [ ] 2.3 2.1・2.2 の部品テストを足す（貼り付け「Lv 90」で 90、変換中は値を残し確定で落とす（`input` と `compositionend` のどちらの順序でも）、値 90 の欄を全角で打ち替えて確定すると 90 に戻り保存しても消えない、121 は範囲外の表示で保存・取り込みに入れない）
+- [ ] 2.3 2.1・2.2 の部品テストを足す（貼り付け「Lv 90」で 90、変換中は値を残し確定で落とす（`input` と `compositionend` のどちらの順序でも）、値 90 の欄を全角で打ち替えて確定すると 90 に戻り保存しても消えない（`input` と `compositionend` のどちらの順序でも）、121 は範囲外の表示で保存・取り込みに入れない）
 
 ## 3. 確かめ
 
 - [ ] 3.1 型検査・lint・単体テストを通す <!-- verify-only -->
 - [ ] 3.2 dev server で、小窓と確かめ画面の欄に「Lv 90」を貼る・「1e2」を打つ・121 を入れることを実画面で確かめる <!-- verify-only -->
-- [ ] 3.3 実機で、デスクトップの日本語入力のまま「９０」を打つ・iPhone で数字のキーボードが出ることを確かめる（人が行う） <!-- verify-only -->
+- [ ] 3.3 実機で、デスクトップの Chrome と Safari で日本語入力のまま「９０」を打つ・値のある欄を「１００」に打ち替える・iPhone で数字のキーボードが出ることを確かめる（人が行う） <!-- verify-only -->
