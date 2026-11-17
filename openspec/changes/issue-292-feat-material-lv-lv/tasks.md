@@ -1,16 +1,16 @@
-## 1. 数字だけに絞る処理
+## 1. 部品と範囲の判定
 
-- [ ] 1.1 `lib/servant-roster-review.ts` に、文字列から半角の数字（0〜9）以外を落とす純粋関数を足す（全角の数字・`e`・`+`・`-`・小数点・空白・ほかの文字を落とし、残った数字の順を保つ）
-- [ ] 1.2 1.1 の単体テストを足す（「９０」→空、「Lv 90」→「90」、「1e2」→「12」、「-5」→「5」、「1.5」→「15」、「90」→「90」、空→空、「90/90」→「9090」）
+- [ ] 1.1 `components/ui/` に Base UI の `NumberField` の薄い包みを足す（`Root` と `Input` だけ。桁区切り無し、`allowOutOfRange`、`inputMode="numeric"`、ほかの `components/ui` の欄と同じ見た目、`aria-invalid` を渡せる）
+- [ ] 1.2 `lib/servant-roster-review.ts` に、欄の値（`number | null`）を Lv・宝具Lv の範囲で読む関数を足す（`null` は値なし、範囲内の整数は値、範囲外と整数でない値は不正）。単体テストを足す（Lv の 1・120・0・121・1.5・`null`、宝具Lv の 1・5・6）
 
 ## 2. 欄
 
-- [ ] 2.1 `components/material/servant-level-dialog.tsx` の Lv・宝具Lv の欄で、入力のたびに 1.1 を当てる。日本語入力の変換中は当てず、変換の確定（`compositionend`）で当てる。確定で数字が1つも残らなければ変換を始める前の値に戻す（`input` と `compositionend` のどちらの順序でも。確定直後の `input` が戻した値を空で上書きしない。持った値は確定由来の `input` でだけ使い、それ以外の入力で捨てる）
-- [ ] 2.2 `components/material/servant-roster-review.tsx` の Lv・宝具Lv の欄を `type="text"`・`inputMode="numeric"` にし（`min`・`max`・`step` を外す）、2.1 と同じく 1.1 を当て、確定で数字が残らないときに前の値に戻す
-- [ ] 2.3 2.1・2.2 の部品テストを足す（貼り付け「Lv 90」で 90、変換中は値を残し確定で落とす（`input` と `compositionend` のどちらの順序でも）、値 90 の欄を全角で打ち替えて確定すると 90 に戻り保存しても消えない（`input` と `compositionend` のどちらの順序でも）、Chrome の順序で戻した後に Backspace で欄を空にすると空になる、確かめ画面でも打ち替えで前の値に戻る、121 は範囲外の表示で保存・取り込みに入れない）
+- [ ] 2.1 `components/material/servant-level-dialog.tsx` の Lv・宝具Lv の欄を 1.1 の包みにし、範囲の判定を 1.2 にする。範囲外の欄は今までどおり赤枠で示し保存できないようにする
+- [ ] 2.2 `components/material/servant-roster-review.tsx` の Lv・宝具Lv の欄を 1.1 の包みにし（`type="number"`・`min`・`max`・`step` を外す）、範囲の判定を 1.2 にする。候補のボタンで入る値は今までどおり
+- [ ] 2.3 2.1・2.2 の部品テストを足す（「９０」を打つか貼ると 90 で保存できる、値 90 の欄に「Lv 90」を貼っても 90 のまま、121・0・宝具Lv 6 は丸められず範囲外の表示で保存・取り込みに入れない、1.5 も範囲外、欄を空にして保存すると値が消える、値 90 の欄で英字を打っても 90 のまま）
 
 ## 3. 確かめ
 
 - [ ] 3.1 型検査・lint・単体テストを通す <!-- verify-only -->
-- [ ] 3.2 dev server で、小窓と確かめ画面の欄に「Lv 90」を貼る・「1e2」を打つ・121 を入れることを実画面で確かめる <!-- verify-only -->
+- [ ] 3.2 dev server で、小窓と確かめ画面の欄に「９０」「Lv 90」を貼る・121 を入れて Enter を押すことを実画面で確かめる <!-- verify-only -->
 - [ ] 3.3 実機で、デスクトップの Chrome と Safari で日本語入力のまま「９０」を打つ・値のある欄を「１００」に打ち替える・iPhone で数字のキーボードが出ることを確かめる（人が行う） <!-- verify-only -->
