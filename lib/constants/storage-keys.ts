@@ -39,6 +39,8 @@ export const STORAGE_KEYS = {
   AUTO_SYNC: 'fgo_auto_sync_enabled',
   LOCAL_METADATA: 'fgo_sync_metadata',
   PUSH_ENABLED: 'fgo_push_enabled',
+  /** 育成計画ページの絞り込みと並び順。端末ごとの見え方なのでクラウド同期しない。 */
+  MATERIAL_VIEW: 'material/view',
   MATERIAL_SELECTION_ADVISOR: 'material/selection-advisor-config',
   EVENT_CRAFT_ADVISOR: 'material/event-craft-advisor-config',
   DASHBOARD_NEAR_GOAL_SORT_MODE: 'dashboard.nearGoal.sortMode',
