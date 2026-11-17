@@ -2,46 +2,62 @@
  * サーヴァント強化の選択画面のスクリーンショットから取り込むときの、確かめの画面の入力を扱う純粋関数。
  * 行ごとに、利用者が決めたサーヴァント・Lv・宝具Lv と「取り込みに入れる」印を持ち、取り込める行・重なり・取り込む値を決める。
  */
-import { isValidServantLv, isValidServantNpLv, type ServantLevelImportRow } from './servant-levels'
+import {
+  isValidServantLv,
+  isValidServantNpLv,
+  SERVANT_LV_MAX,
+  SERVANT_LV_MIN,
+  SERVANT_NP_LV_MAX,
+  SERVANT_NP_LV_MIN,
+  type ServantLevelImportRow,
+} from './servant-levels'
 import type { RosterRow } from './servant-roster-import/types'
 
 export type LevelField = 'lv' | 'npLv'
 
+/** 欄が受ける値の範囲 */
+export const levelFieldRange = (field: LevelField): { min: number; max: number } =>
+  field === 'lv' ? { min: SERVANT_LV_MIN, max: SERVANT_LV_MAX } : { min: SERVANT_NP_LV_MIN, max: SERVANT_NP_LV_MAX }
+
 /** 確かめの画面の1行の入力 */
 export type RosterRowEdit = {
   servantId: number | null
-  lv: string
-  npLv: string
+  lv: number | null
+  npLv: number | null
   included: boolean
 }
 
-/** 欄の入力の読み。空は 'empty'、1〜120（宝具Lv は 1〜5）の整数でなければ 'invalid' */
+/** 欄の値の読み。空は 'empty'、1〜120（宝具Lv は 1〜5）の整数でなければ 'invalid' */
 export type FieldValue = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'value'; value: number }
 
 const isValid = (field: LevelField, value: number): boolean =>
   field === 'lv' ? isValidServantLv(value) : isValidServantNpLv(value)
 
-export const readField = (field: LevelField, raw: string): FieldValue => {
-  const text = raw.trim()
-  if (text === '') return { kind: 'empty' }
-  if (!/^\d+$/.test(text)) return { kind: 'invalid' }
-  const value = Number(text)
+/** 欄の値（空の欄は null）を Lv・宝具Lv の範囲で読む */
+export const readLevelField = (field: LevelField, value: number | null): FieldValue => {
+  if (value === null) return { kind: 'empty' }
   return isValid(field, value) ? { kind: 'value', value } : { kind: 'invalid' }
 }
 
-const rawOf = (edit: RosterRowEdit, field: LevelField): string => (field === 'lv' ? edit.lv : edit.npLv)
+/** 欄の値のうち、範囲に入る値だけ（空と範囲に無い値は null） */
+export const levelFieldValue = (field: LevelField, value: number | null): number | null => {
+  const read = readLevelField(field, value)
+  return read.kind === 'value' ? read.value : null
+}
+
+const valueOfEdit = (edit: RosterRowEdit, field: LevelField): number | null => (field === 'lv' ? edit.lv : edit.npLv)
 
 /** 読み取りの結果から作る初めの入力。「要確認」の行は印を外して出す */
 export const initialRowEdit = (row: RosterRow): RosterRowEdit => ({
   servantId: row.servantId,
-  lv: row.lv === null ? '' : String(row.lv),
-  npLv: row.npLv === null ? '' : String(row.npLv),
+  lv: row.lv,
+  npLv: row.npLv,
   included: row.review === null,
 })
 
 /** 範囲に無い値が入っている欄があるか */
 export const hasInvalidField = (edit: RosterRowEdit): boolean =>
-  readField('lv', edit.lv).kind === 'invalid' || readField('npLv', edit.npLv).kind === 'invalid'
+  readLevelField('lv', edit.lv).kind === 'invalid' || readLevelField('npLv', edit.npLv).kind === 'invalid'
 
 /**
  * 取り込みに入れられる行か。サーヴァントが決まり、範囲に無い値が無く、「要確認」で空にした欄に値が入っていること。
@@ -50,7 +66,7 @@ export const hasInvalidField = (edit: RosterRowEdit): boolean =>
 export const isRowDecided = (row: RosterRow, edit: RosterRowEdit): boolean => {
   if (edit.servantId === null || hasInvalidField(edit)) return false
   const undecided = row.review?.undecided ?? []
-  return undecided.every(field => readField(field, rawOf(edit, field)).kind === 'value')
+  return undecided.every(field => readLevelField(field, valueOfEdit(edit, field)).kind === 'value')
 }
 
 /**
@@ -79,15 +95,10 @@ export const overlappingServants = (rows: readonly RosterRow[], edits: readonly 
   return new Set([...counts].filter(([, n]) => n > 1).map(([id]) => id))
 }
 
-const valueOf = (field: LevelField, raw: string): number | null => {
-  const read = readField(field, raw)
-  return read.kind === 'value' ? read.value : null
-}
-
 /** 取り込む行（取り込みに入る行だけ。値が無い種類は null で、保存されている値を残す） */
 export const importRows = (rows: readonly RosterRow[], edits: readonly RosterRowEdit[]): ServantLevelImportRow[] =>
   rows.flatMap((row, index) => {
     const edit = edits.at(index)
     if (!edit || edit.servantId === null || !isRowIncluded(row, edit)) return []
-    return [{ id: edit.servantId, lv: valueOf('lv', edit.lv), npLv: valueOf('npLv', edit.npLv) }]
+    return [{ id: edit.servantId, lv: levelFieldValue('lv', edit.lv), npLv: levelFieldValue('npLv', edit.npLv) }]
   })
