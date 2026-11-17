@@ -166,6 +166,16 @@ describe('ServantLevelDialog', () => {
     expect(onSave).not.toHaveBeenCalled()
   })
 
+  it('値 90 の欄で Home・End・上下の矢印を押しても 90 のまま（min/max に寄せない）', async () => {
+    const user = userEvent.setup()
+    const { onSave } = renderDialog({ lv: 90 })
+    await waitFor(() => expect(lvInput()).toHaveFocus())
+    await user.keyboard('{Home}{End}{ArrowUp}{ArrowDown}')
+    expect(lvInput()).toHaveValue('90')
+    await user.click(saveButton())
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
   it('値 90 の欄で「九」を確定すると範囲に無い値になり、保存できない', async () => {
     const { onSave } = renderDialog({ lv: 90 })
     await waitFor(() => expect(lvInput()).toHaveFocus())
