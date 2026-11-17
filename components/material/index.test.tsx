@@ -612,3 +612,33 @@ describe('Index - #svt- hash jump', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'center' })
   })
 })
+
+describe('Index - saved view (material/view)', () => {
+  afterEach(() => {
+    window.location.hash = ''
+  })
+
+  it('restores the saved filter and offers clearing it, keeping the sort order', async () => {
+    setLocalStorage('material/view', { class: 'archer', rarities: [], servantFilter: 'all', sortMode: 'new' })
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+
+    expect(await screen.findByText('条件に一致するサーヴァントはいません')).toBeInTheDocument()
+    await userEvent.setup().click(screen.getAllByRole('button', { name: '絞り込みを解除' })[0])
+
+    expect(document.getElementById('svt-1')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '絞り込みを解除' })).toBeNull()
+    expect(JSON.parse(localStorage.getItem('material/view') ?? '{}')).toMatchObject({ class: 'all', sortMode: 'new' })
+  })
+
+  it('shows a hashed servant hidden by the saved filter without rewriting the saved value', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    const saved = JSON.stringify({ class: 'archer', rarities: [5], servantFilter: 'hide-done', sortMode: 'new' })
+    localStorage.setItem('material/view', saved)
+    window.location.hash = '#svt-1'
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+
+    await vi.waitFor(() => expect(document.getElementById('svt-1')).not.toBeNull())
+    expect(screen.queryByRole('button', { name: '絞り込みを解除' })).toBeNull()
+    expect(localStorage.getItem('material/view')).toBe(saved)
+  })
+})
