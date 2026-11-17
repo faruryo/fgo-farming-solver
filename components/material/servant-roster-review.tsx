@@ -8,6 +8,7 @@ import { DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { NumberField } from '@/components/ui/number-field'
 import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 import type { ServantLevel, ServantLevelImportRow, ServantLevels } from '../../lib/servant-levels'
@@ -19,8 +20,9 @@ import {
   initialRowEdit,
   isRowDecided,
   isRowIncluded,
+  levelFieldRange,
   overlappingServants,
-  readField,
+  readLevelField,
   type LevelField,
   type RosterRowEdit,
 } from '../../lib/servant-roster-review'
@@ -127,39 +129,35 @@ const ServantPicker: React.FC<{
 const LevelInput: React.FC<{
   field: LevelField
   name: string
-  raw: string
+  value: number | null
   stored?: number
   candidates: readonly number[]
   range: ValueRange | null
-  onChange: (raw: string) => void
-}> = ({ field, name, raw, stored, candidates, range, onChange }) => {
+  onChange: (value: number | null) => void
+}> = ({ field, name, value, stored, candidates, range, onChange }) => {
   const { t } = useTranslation('material')
   const rangeText = useRangeText()(range)
   const isLv = field === 'lv'
   const label = isLv ? t('roster-import-lv', 'Lv') : t('roster-import-np-lv', '宝具Lv')
-  const invalid = readField(field, raw).kind === 'invalid'
+  const invalid = readLevelField(field, value).kind === 'invalid'
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       <span>{label}</span>
       <span className="tabular-nums">{stored ?? '—'}</span>
       <span aria-hidden="true">→</span>
       <span className="block h-7 w-16">
-        <Input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={isLv ? 120 : 5}
-          step={1}
-          value={raw}
-          onChange={e => onChange(e.target.value)}
+        <NumberField
+          {...levelFieldRange(field)}
+          value={value}
+          onValueChange={next => onChange(next)}
           aria-label={t('roster-import-value-label', '{{name}} の {{label}}', { name, label })}
           aria-invalid={invalid || undefined}
           className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-2 text-base md:text-base"
         />
       </span>
-      {candidates.map(value => (
-        <Button key={value} size="xs" variant="outline" onClick={() => onChange(String(value))}>
-          {value}
+      {candidates.map(candidate => (
+        <Button key={candidate} size="xs" variant="outline" onClick={() => onChange(candidate)}>
+          {candidate}
         </Button>
       ))}
       {rangeText && <span>{rangeText}</span>}
@@ -215,7 +213,7 @@ const RosterReviewRow: React.FC<{
         <LevelInput
           field="lv"
           name={name}
-          raw={edit.lv}
+          value={edit.lv}
           stored={stored?.lv}
           candidates={review?.lvCandidates ?? []}
           range={review?.lvRange ?? null}
@@ -224,7 +222,7 @@ const RosterReviewRow: React.FC<{
         <LevelInput
           field="npLv"
           name={name}
-          raw={edit.npLv}
+          value={edit.npLv}
           stored={stored?.npLv}
           candidates={review?.npLvCandidates ?? []}
           range={review?.npLvRange ?? null}

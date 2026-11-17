@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Index } from './index'
 import { makeItem, makeMaterialCatalogServant, makeMaterials } from './test-fixtures'
 import type { ChaldeaState, ServantState } from '../../hooks/create-chaldea-state'
@@ -295,9 +296,9 @@ describe('取り込む前の確かめ', () => {
     const row = reviewRowAt(0)
     expect(within(row).getByText('並び順に合わない')).toBeInTheDocument()
     const input = within(row).getByLabelText('アルトリア の 宝具Lv')
-    expect(input).toHaveValue(null)
+    expect(input).toHaveValue('')
     fireEvent.click(within(row).getByRole('button', { name: '5' }))
-    expect(input).toHaveValue(5)
+    expect(input).toHaveValue('5')
     expect(within(row).getByRole('checkbox')).toBeChecked()
     fireEvent.click(confirmButton())
     expect(storedLevels()).toEqual({ [ARTORIA]: { lv: 90, npLv: 5 } })
@@ -363,6 +364,64 @@ describe('取り込む前の確かめ', () => {
     fireEvent.click(confirmButton())
     expect(storedLevels()).toEqual({ [MERLIN]: { lv: 90, npLv: 5 } })
     expect(servantOf(storedMaterial(), MASH)?.disabled).toBe(true)
+  })
+
+  it('全角の数字を貼る: 空の Lv の欄に「９０」を貼ると 90 が入り、Lv 90 で取り込む', async () => {
+    const user = userEvent.setup()
+    renderIndex()
+    await importWith(done([needsReview('r1', { servantId: ARTORIA, npLv: 2 }, { reasons: ['sort-order'], undecided: ['lv'] })]))
+    const row = reviewRowAt(0)
+    const input = within(row).getByLabelText('アルトリア の Lv')
+    expect(input).toHaveAttribute('inputmode', 'numeric')
+    expect(input).toHaveAttribute('type', 'text')
+    await user.click(input)
+    await user.paste('９０')
+    expect(within(row).getByRole('checkbox')).toBeChecked()
+    fireEvent.click(confirmButton())
+    expect(storedLevels()).toEqual({ [ARTORIA]: { lv: 90, npLv: 2 } })
+  })
+
+  it('全角の数字を打つ: 空の宝具Lv の欄に「５」を打つと 5 が入る', async () => {
+    const user = userEvent.setup()
+    renderIndex()
+    await importWith(done([needsReview('r1', { servantId: ARTORIA, lv: 90 }, { reasons: ['sort-order'], undecided: ['npLv'] })]))
+    const row = reviewRowAt(0)
+    await user.type(within(row).getByLabelText('アルトリア の 宝具Lv'), '５')
+    expect(within(row).getByRole('checkbox')).toBeChecked()
+    fireEvent.click(confirmButton())
+    expect(storedLevels()).toEqual({ [ARTORIA]: { lv: 90, npLv: 5 } })
+  })
+
+  it('文字の混じった値を貼る: 値 90 の欄に「Lv 90」を貼っても 90 のまま', async () => {
+    const user = userEvent.setup()
+    renderIndex()
+    await importWith(done([matched(MERLIN, 90, 2)]))
+    expandMatched()
+    const input = screen.getByLabelText('マーリン の Lv')
+    await user.click(input)
+    await user.paste('Lv 90')
+    expect(input).toHaveValue('90')
+    fireEvent.click(confirmButton())
+    expect(storedLevels()).toEqual({ [MERLIN]: { lv: 90, npLv: 2 } })
+  })
+
+  it.each([
+    ['Lv', '0', 'Lv は 1〜120 の整数で入れてください'],
+    ['Lv', '1.5', 'Lv は 1〜120 の整数で入れてください'],
+    ['宝具Lv', '6', '宝具Lv は 1〜5 の整数で入れてください'],
+  ])('範囲に無い値は丸めない（%s に %s）: 欄はそのままで、取り込みに入れられない', async (label, raw, message) => {
+    const user = userEvent.setup()
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1)]))
+    expandMatched()
+    const input = screen.getByLabelText(`マシュ の ${label}`)
+    await user.clear(input)
+    await user.type(input, raw)
+    expect(input).toHaveValue(raw)
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText(message)).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'マシュ を取り込みに入れる' })).not.toBeChecked()
+    expect(confirmButton()).toBeDisabled()
   })
 
   it('閉じる: 確定せずに閉じると保存値を何も変えない', async () => {
