@@ -16,6 +16,8 @@ import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate
 import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
 import { groupActiveEventBonuses, nextEventBonusBoundary, type ActiveEventBonuses, type EventBonusGroup } from '../../lib/event-bonus'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { useLocalStorage } from '../../hooks/use-local-storage'
+import { applyViewPatch, DEFAULT_MATERIAL_VIEW, hasViewFilter, parseMaterialView, type MaterialView, type ServantFilter, type ServantSortMode } from '../../lib/material-view'
 import Image from 'next/image'
 import { CLASS_LIST, ClassId } from '../../constants/classes'
 import { getClassIconUrl } from '../../lib/get-class-icon-url'
@@ -58,9 +60,19 @@ export const Index = ({
     if (!open) setLevelEditing(null)
   }, [])
 
-  const [selClass, setSelClass] = useState<ClassId>('all')
-  const [selRarities, setSelRarities] = useState<number[]>([])
-  const [servantFilter, setServantFilter] = useState<'all' | 'hide-unowned' | 'only-unowned' | 'hide-done' | 'only-done'>('all')
+  const [savedView, setSavedView, viewLoaded] = useLocalStorage(STORAGE_KEYS.MATERIAL_VIEW, DEFAULT_MATERIAL_VIEW, { onGet: parseMaterialView })
+  // #svt-<id> で隠れた騎へ飛んだ表示の間だけ、保存した絞り込みを書き換えずに外す
+  const [hashOverride, setHashOverride] = useState(false)
+  const view = applyViewPatch(hashOverride, savedView, () => ({}))
+  const { class: selClass, rarities: selRarities, servantFilter, sortMode } = view
+  // 外した表示の上で操作したら、見えている状態（初期値）から変えて保存する
+  const updateView = (patch: (v: MaterialView) => Partial<MaterialView>) => {
+    setSavedView(prev => applyViewPatch(hashOverride, prev, patch))
+    setHashOverride(false)
+  }
+  const setSelClass = (c: ClassId) => updateView(() => ({ class: c }))
+  const setServantFilter = (f: ServantFilter) => updateView(() => ({ servantFilter: f }))
+  const setSortMode = (m: ServantSortMode) => updateView(() => ({ sortMode: m }))
   // '' は指定なし、'all' は開催中の全イベント、'event:<id>' はそのイベント、それ以外は EventBonusGroup.key。
   const [eventBonusFilter, setEventBonusFilter] = useState('')
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000))
@@ -101,8 +113,6 @@ export const Index = ({
       {t('event-bonus-option', '{{label}}（{{count}}）', { label: eventBonusLabel(g), count: g.servantIds.size })}
     </option>
   ))
-  type ServantSortMode = 'collectionNo' | 'new' | 'rarity-desc' | 'rarity-asc'
-  const [sortMode, setSortMode] = useState<ServantSortMode>('collectionNo')
   const [showGlobal, setShowGlobal] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -132,7 +142,10 @@ export const Index = ({
   const [currentHash, setCurrentHash] = useState('')
   const processedHash = useRef('')
   useEffect(() => {
-    const handleHashChange = () => setCurrentHash(window.location.hash)
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash)
+      if (!window.location.hash.startsWith('#svt-')) setHashOverride(false)
+    }
     window.addEventListener('hashchange', handleHashChange)
     setCurrentHash(window.location.hash)
     return () => window.removeEventListener('hashchange', handleHashChange)
@@ -179,7 +192,13 @@ export const Index = ({
   }, [servants, chaldeaState, gtAsc, gtSkill, gtAppend])
 
   const toggleRarity = (r: number) =>
-    setSelRarities(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r])
+    updateView(v => ({ rarities: v.rarities.includes(r) ? v.rarities.filter(x => x !== r) : [...v.rarities, r] }))
+
+  const hasActiveFilter = hasViewFilter(view) || activeEventBonusFilter !== ''
+  const clearFilters = () => {
+    updateView(() => ({ class: 'all', rarities: [], servantFilter: 'all' }))
+    setEventBonusFilter('')
+  }
 
   const filtered = useMemo(() =>
     servants.filter(s => {
@@ -248,11 +267,8 @@ export const Index = ({
     if (!isVisible) {
       const targetExists = servants.some(s => s.id === svtId)
       if (targetExists) {
-        setSelClass('all')
-        setSelRarities([])
-        setServantFilter('all')
+        setHashOverride(true)
         setEventBonusFilter('')
-        setSortMode('collectionNo')
         return // Effect will re-run after state update
       }
     }
@@ -322,7 +338,13 @@ export const Index = ({
     !trackingDismissed &&
     hasPossessionInput
 
-  if (!mounted) return <div className="c-page" />
+  const clearButton = (
+    <button type="button" className="c-filter-select" onClick={clearFilters}>
+      {t('clear-filters', '絞り込みを解除')}
+    </button>
+  )
+
+  if (!mounted || !viewLoaded) return <div className="c-page" />
 
   return (
     <div className="c-page">
@@ -599,7 +621,7 @@ export const Index = ({
             <select
               className={`c-filter-select${servantFilter !== 'all' ? ' active' : ''}`}
               value={servantFilter}
-              onChange={e => setServantFilter(e.target.value as typeof servantFilter)}
+              onChange={e => setServantFilter(e.target.value as ServantFilter)}
             >
               <option value="all">全表示</option>
               <option value="hide-unowned">未所持を隠す</option>
@@ -607,6 +629,7 @@ export const Index = ({
               <option value="hide-done">育成完了を隠す</option>
               <option value="only-done">育成完了のみ</option>
             </select>
+            {hasActiveFilter && clearButton}
           </div>
         </div>
 
@@ -615,6 +638,7 @@ export const Index = ({
           <div className="c-empty">
             <div className="c-empty-icon">◎</div>
             <div className="c-empty-msg">条件に一致するサーヴァントはいません</div>
+            {hasActiveFilter && clearButton}
           </div>
         ) : (
           <>

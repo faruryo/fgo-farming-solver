@@ -243,6 +243,7 @@
     "advisor-section-heading": "Ticket and exchange advisor",
     "submit-need-item-target": "Input at least 1 number of items.",
     "submit-need-quest-selection": "Select at least 1 quest.",
+    "clear-filters": "Clear filters",
     "event-bonus-filter": "Event bonus",
     "event-bonus-all": "All bonus servants ({{count}})",
     "event-bonus-option": "{{label}} ({{count}})",
