@@ -9,8 +9,8 @@
 
 ## 3. 全体の確かめ
 
-- [ ] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run components/material` が通ることを確かめる <!-- verify-only -->
-- [ ] 3.2 dev server で `/material` を開き、所持・未所持が混ざる一覧の見た目と `#svt-<id>` へ飛んだときの位置を 1280px と 375px で確かめ、一覧の DOM 要素数（`document.querySelectorAll('*').length`）を、外す前は main のチェックアウト、外した後はこのブランチで、同じ所持データ・同じ絞り込みのもとで数えて実装 PR に書く <!-- verify-only -->
+- [x] 3.1 `pnpm type-check`、`pnpm lint`、`pnpm vitest run components/material` が通ることを確かめる <!-- verify-only -->
+- [x] 3.2 dev server で `/material` を開き、所持・未所持が混ざる一覧の見た目と `#svt-<id>` へ飛んだときの位置を 1280px と 375px で確かめ、一覧の DOM 要素数（`document.querySelectorAll('*').length`）を、外す前は main のチェックアウト、外した後はこのブランチで、同じ所持データ・同じ絞り込みのもとで数えて実装 PR に書く <!-- verify-only -->
 
 
 ## Auditor Feedback
