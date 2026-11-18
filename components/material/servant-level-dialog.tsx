@@ -19,10 +19,12 @@ type Props = {
   level: ServantLevel | undefined
   onOpenChange: (open: boolean) => void
   onOpenChangeComplete?: (open: boolean) => void
-  /** 閉じたときにフォーカスを戻す要素 */
-  finalFocus?: () => HTMLElement | null
+  /** 閉じたときにフォーカスを戻す要素（false を返すとフォーカスを動かさない） */
+  finalFocus?: () => HTMLElement | null | false
   /** 欄のとおりに置き換える（値が今の保存値と同じときは呼ばない） */
   onSave: (servantId: number, edit: ServantLevelEdit) => void
+  /** 未所持に戻す（欄の書きかけは保存しない） */
+  onMarkUnowned?: (servantId: number) => void
 }
 
 const fieldsOf = (level: ServantLevel | undefined): Fields => ({
@@ -90,6 +92,7 @@ export const ServantLevelDialog = ({
   onOpenChangeComplete,
   finalFocus,
   onSave,
+  onMarkUnowned,
 }: Props) => {
   const { t } = useTranslation('material')
   const lvInputRef = useRef<HTMLInputElement>(null)
@@ -100,6 +103,12 @@ export const ServantLevelDialog = ({
     e.preventDefault()
     if (!servant || lvInvalid || npLvInvalid) return
     if (edit.lv !== (level?.lv ?? null) || edit.npLv !== (level?.npLv ?? null)) onSave(servant.id, edit)
+    onOpenChange(false)
+  }
+
+  const handleMarkUnowned = () => {
+    if (!servant) return
+    onMarkUnowned?.(servant.id)
     onOpenChange(false)
   }
 
@@ -131,6 +140,10 @@ export const ServantLevelDialog = ({
           </div>
           <DialogDescription>{t('servant-level-dialog-note', '空にして保存すると消えます')}</DialogDescription>
           <DialogFooter>
+            {/* 所持の操作なので、値を決める「保存」「キャンセル」から離して左端に置く */}
+            <Button type="button" variant="ghost" className="sm:mr-auto" onClick={handleMarkUnowned}>
+              {t('servant-level-dialog-mark-unowned', '未所持に戻す')}
+            </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('servant-level-dialog-cancel', 'キャンセル')}
             </Button>

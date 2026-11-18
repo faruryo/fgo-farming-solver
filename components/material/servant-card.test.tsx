@@ -321,25 +321,32 @@ describe('ServantCard - long press / right click decrement', () => {
 })
 
 describe('ServantCard - owned toggle', () => {
-  it('toggling the owned button flips `disabled` via setState and does not touch start values', () => {
-    const state = ownedState()
-    const setState = vi.fn()
+  it('所持済みのカードに所持を切り替えるボタンが無い', () => {
+    renderCard(ownedState())
+    expect(screen.queryByRole('button', { name: '✓ 所持' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '未所持' })).not.toBeInTheDocument()
+    expect(document.querySelector('.c-owned-btn')).toBeNull()
+    expect(document.querySelector('.c-servant-controls')).toBeNull()
+  })
+
+  it('未所持のカードの「未所持」を押すと所持になり、ボタンが消える（現在値は変えない）', () => {
+    let state: ServantState = { ...createServantState(), disabled: true }
+    const before = state
     const globalState = createServantState()
-    render(
-      <ServantCard
-        servant={servant}
-        state={state}
-        globalState={globalState}
-        setState={(update) => setState(update(state))}
-      />
+    const setState = (update: (prev: ServantState) => ServantState) => {
+      state = update(state)
+    }
+    const { rerender } = render(
+      <ServantCard servant={servant} state={state} globalState={globalState} setState={setState} />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '✓ 所持' }))
+    fireEvent.click(screen.getByRole('button', { name: '未所持' }))
 
-    expect(setState).toHaveBeenCalledTimes(1)
-    const next = setState.mock.calls[0][0] as ServantState
-    expect(next.disabled).toBe(true)
-    expect(next.targets).toBe(state.targets)
+    expect(state.disabled).toBe(false)
+    expect(state.targets).toBe(before.targets)
+    rerender(<ServantCard servant={servant} state={state} globalState={globalState} setState={setState} />)
+    expect(screen.queryByRole('button', { name: '未所持' })).not.toBeInTheDocument()
+    expect(document.querySelector('.c-owned-btn')).toBeNull()
   })
 })
 
