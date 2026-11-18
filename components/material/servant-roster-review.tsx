@@ -251,7 +251,7 @@ const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: num
       </p>
       {newlyOwned > 0 && (
         <p>
-          {t('roster-import-newly-owned-note', '（確定すると、育成計算機の {{count}} 騎のカードが「✓ 所持」になり、必要な素材の合計に入る）', {
+          {t('roster-import-newly-owned-note', '（確定すると、育成計算機で {{count}} 騎が所持になり、必要な素材の合計に入る）', {
             count: newlyOwned,
           })}
         </p>
