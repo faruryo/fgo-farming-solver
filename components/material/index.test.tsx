@@ -430,7 +430,9 @@ describe('Index - 保存されている Lv・宝具Lv のカードの表示', ()
     await makeOwned(user)
     expect(level()).toHaveTextContent(/^Lv 90$/)
 
-    await user.click(screen.getByRole('button', { name: '✓ 所持' }))
+    await user.click(screen.getByTestId('servant-card-level'))
+    await user.click(await screen.findByRole('button', { name: '未所持に戻す' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(level()).not.toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem(LEVELS_KEY) ?? 'null')).toEqual({ '1': { lv: 90 } })
 
@@ -589,6 +591,101 @@ describe('Index - カードから Lv・宝具Lv を手で入れる', () => {
     expect(cardLevel(1)).toBe(button)
     expect(button).toHaveTextContent(/^Lv –$/)
     await vi.waitFor(() => expect(button).toHaveFocus())
+  })
+})
+
+describe('Index - 小窓から未所持に戻す', () => {
+  const LEVELS_KEY = 'servantLevels'
+  const ownedTargets = () => ({
+    ascension: { disabled: false, ranges: [{ start: 2, end: 4 }] },
+    skill: { disabled: false, ranges: [{ start: 6, end: 9 }, { start: 4, end: 10 }, { start: 1, end: 10 }] },
+    appendSkill: { disabled: false, ranges: Array.from({ length: 5 }, (_, i) => ({ start: i === 1 ? 3 : 0, end: 10 })) },
+  })
+  const setOwned = () =>
+    setLocalStorage('material', {
+      all: { disabled: true, targets: ownedTargets() },
+      '1': { disabled: false, targets: ownedTargets() },
+    })
+  const storedMaterial = (): Record<string, unknown> => JSON.parse(localStorage.getItem('material') ?? 'null') as Record<string, unknown>
+  const storedLevels = () => JSON.parse(localStorage.getItem(LEVELS_KEY) ?? 'null')
+  const card = () => document.getElementById('svt-1')
+  const dialog = () => screen.queryByRole('dialog')
+  const lvInput = () => screen.getByLabelText('Lv')
+  const openDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByTestId('servant-card-level'))
+    await vi.waitFor(() => expect(lvInput()).toHaveFocus())
+  }
+  const markUnowned = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: '未所持に戻す' }))
+    await vi.waitFor(() => expect(dialog()).not.toBeInTheDocument())
+  }
+
+  it('カードが未所持になり、Lv・宝具Lv と現在値・目標値が残る。フォーカスが「未所持」ボタンへ移る', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90, npLv: 2 } })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    expect(card()).not.toHaveClass('unowned')
+
+    await openDialog(user)
+    await markUnowned(user)
+
+    expect(card()).toHaveClass('unowned')
+    const ownedButton = screen.getByRole('button', { name: '未所持' })
+    await vi.waitFor(() => expect(ownedButton).toHaveFocus())
+    expect(storedLevels()).toEqual({ '1': { lv: 90, npLv: 2 } })
+    expect(storedMaterial()['1']).toEqual({ disabled: true, targets: ownedTargets() })
+  })
+
+  it('書きかけの Lv は保存されない', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90 } })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await openDialog(user)
+    await user.clear(lvInput())
+    await user.type(lvInput(), '100')
+    await markUnowned(user)
+    expect(storedLevels()).toEqual({ '1': { lv: 90 } })
+  })
+
+  it('再び「未所持」で所持にすると前の現在値が出る', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90 } })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    const skillChips = () => [...document.querySelectorAll('.c-sum-card.sk')].map(c => c.textContent)
+    const litPips = () => document.querySelectorAll('.c-sum-pip.lit').length
+    expect(skillChips()).toEqual(['6', '4', '1'])
+    expect(litPips()).toBe(2)
+
+    await openDialog(user)
+    await markUnowned(user)
+    expect(skillChips()).toEqual([])
+
+    await user.click(screen.getByRole('button', { name: '未所持' }))
+    expect(skillChips()).toEqual(['6', '4', '1'])
+    expect(litPips()).toBe(2)
+    expect(screen.getByTestId('servant-card-level')).toHaveTextContent(/^Lv 90$/)
+    expect(storedMaterial()['1']).toEqual({ disabled: false, targets: ownedTargets() })
+  })
+
+  it('「未所持を隠す」の絞り込み中はカードが一覧から外れ、値が残り、フォーカスが絞り込みの選択欄へ移る', async () => {
+    setOwned()
+    setLocalStorage(LEVELS_KEY, { '1': { lv: 90, npLv: 2 } })
+    setLocalStorage('material/view', { class: 'all', rarities: [], servantFilter: 'hide-unowned', sortMode: 'collectionNo' })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    expect(card()).not.toBeNull()
+    const filterSelect = screen.getByDisplayValue('未所持を隠す')
+
+    await openDialog(user)
+    await markUnowned(user)
+
+    expect(card()).toBeNull()
+    await vi.waitFor(() => expect(filterSelect).toHaveFocus())
+    expect(storedLevels()).toEqual({ '1': { lv: 90, npLv: 2 } })
+    expect(storedMaterial()['1']).toEqual({ disabled: true, targets: ownedTargets() })
   })
 })
 

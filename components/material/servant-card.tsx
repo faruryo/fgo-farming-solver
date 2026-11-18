@@ -107,8 +107,8 @@ const ServantCardComponent = ({
     ? 'tier-asc'
     : ''
 
-  const toggleOwned = useCallback(
-    () => setState(s => ({ ...s, disabled: !s.disabled })),
+  const markOwned = useCallback(
+    () => setState(s => ({ ...s, disabled: false })),
     [setState]
   )
 
@@ -334,14 +334,14 @@ const ServantCardComponent = ({
         </div>
       )}
 
-      <div className="c-servant-controls">
-        <button
-          className={`c-owned-btn${owned ? ' on' : ''}`}
-          onClick={toggleOwned}
-        >
-          {owned ? '✓ 所持' : '未所持'}
-        </button>
-      </div>
+      {/* 所持から未所持へ戻すのは Lv・宝具Lv の小窓で行うので、所持のカードにはボタンを出さない */}
+      {!owned && (
+        <div className="c-servant-controls">
+          <button type="button" className="c-owned-btn" onClick={markOwned}>
+            {t('servant-card-not-owned', '未所持')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

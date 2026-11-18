@@ -56,9 +56,20 @@ export const Index = ({
     setLevelEditing({ servantId, button })
     setLevelDialogOpen(true)
   }, [])
+  // 小窓から未所持に戻した騎。開いた Lv 表示のボタンはカードから消えるので、閉じ終わってから
+  // そのカードの「未所持」ボタン（絞り込みで隠れたら絞り込みの選択欄）へフォーカスを移す
+  const markedUnownedRef = useRef<number | null>(null)
+  const servantFilterRef = useRef<HTMLSelectElement>(null)
   const handleLevelDialogOpenChangeComplete = useCallback((open: boolean) => {
-    if (!open) setLevelEditing(null)
+    if (open) return
+    setLevelEditing(null)
+    const id = markedUnownedRef.current
+    if (id === null) return
+    markedUnownedRef.current = null
+    const ownedButton = document.getElementById(`svt-${id}`)?.querySelector<HTMLButtonElement>('.c-owned-btn')
+    ;(ownedButton ?? servantFilterRef.current)?.focus()
   }, [])
+  const handleLevelDialogFinalFocus = () => (markedUnownedRef.current === null ? levelEditing?.button ?? null : false)
 
   const [savedView, setSavedView, viewLoaded] = useLocalStorage(STORAGE_KEYS.MATERIAL_VIEW, DEFAULT_MATERIAL_VIEW, { onGet: parseMaterialView })
   // #svt-<id> で隠れた騎へ飛んだ表示の間だけ、保存した絞り込みを書き換えずに外す
@@ -293,6 +304,16 @@ export const Index = ({
       setChaldeaState(prev => ({ ...prev, [id]: update(prev[id]) }))
     },
     [setChaldeaState]
+  )
+
+  // 所持の印だけを未所持にする（Lv・宝具Lv と育成計画の値は残す）
+  const handleMarkUnowned = useCallback(
+    (servantId: number) => {
+      markedUnownedRef.current = servantId
+      // 小窓は所持済みのカードからしか開けないので、該当の state は必ずある
+      handleSetServantState(servantId.toString())(prev => ({ ...prev, disabled: true }))
+    },
+    [handleSetServantState]
   )
 
   // 所持の印は、保存値を補ったあとの状態（一覧にいる全サーヴァントの ID を持つ）を前の値として書く
@@ -619,6 +640,7 @@ export const Index = ({
               <option value="rarity-asc">レアリティ↑</option>
             </select>
             <select
+              ref={servantFilterRef}
               className={`c-filter-select${servantFilter !== 'all' ? ' active' : ''}`}
               value={servantFilter}
               onChange={e => setServantFilter(e.target.value as ServantFilter)}
@@ -669,8 +691,9 @@ export const Index = ({
         level={levelEditing ? levelById.get(levelEditing.servantId.toString()) : undefined}
         onOpenChange={setLevelDialogOpen}
         onOpenChangeComplete={handleLevelDialogOpenChangeComplete}
-        finalFocus={() => levelEditing?.button ?? null}
+        finalFocus={handleLevelDialogFinalFocus}
         onSave={setServantLevel}
+        onMarkUnowned={handleMarkUnowned}
       />
 
       {/* Fixed calculate footer */}
