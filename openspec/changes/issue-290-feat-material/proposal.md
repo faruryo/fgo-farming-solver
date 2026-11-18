@@ -22,6 +22,6 @@
 ## Impact
 
 - 変わる画面: `/material` のサーヴァントカード（所持済みのカードの下端のボタンが無くなり、カードが低くなる）と、Lv・宝具Lv の小窓のボタン列
-- 変わるコード: `components/material/servant-card.tsx`、`components/material/servant-level-dialog.tsx`、`components/material/index.tsx`（小窓の呼び出し）、`app/globals.css` の `.c-owned-btn.on`、関連するテスト
+- 変わるコード: `components/material/servant-card.tsx`、`components/material/servant-level-dialog.tsx`、`components/material/index.tsx`（小窓の呼び出し）、`app/globals.css` の `.c-owned-btn.on`、`locales/ja.json`・`locales/en.json`（「未所持に戻す」の文言）、関連するテスト
 - データの形・保存先・同期は変えない。所持の印の値（未所持かどうか）を書き換える経路が増えるだけで、どのサーヴァントが計算の対象になるかの条件は変えないため、件数は数えない
 - PR #296 と同じ `servant-level-dialog.tsx` を触る。欄ではなくボタン列だけを変えるので、競合はボタン列の数行に限られる見込み
