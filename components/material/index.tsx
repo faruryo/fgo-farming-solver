@@ -310,10 +310,10 @@ export const Index = ({
   const handleMarkUnowned = useCallback(
     (servantId: number) => {
       markedUnownedRef.current = servantId
-      const id = servantId.toString()
-      setChaldeaState(prev => (prev[id] ? { ...prev, [id]: { ...prev[id], disabled: true } } : prev))
+      // 小窓は所持済みのカードからしか開けないので、該当の state は必ずある
+      handleSetServantState(servantId.toString())(prev => ({ ...prev, disabled: true }))
     },
-    [setChaldeaState]
+    [handleSetServantState]
   )
 
   // 所持の印は、保存値を補ったあとの状態（一覧にいる全サーヴァントの ID を持つ）を前の値として書く

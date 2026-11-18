@@ -80,6 +80,32 @@ const useLevelFields = (open: boolean, level: ServantLevel | undefined) => {
   return { fields, setField, lvInvalid, npLvInvalid, edit }
 }
 
+const LevelDialogFooter = ({
+  saveDisabled,
+  onMarkUnowned,
+  onCancel,
+}: {
+  saveDisabled: boolean
+  onMarkUnowned: () => void
+  onCancel: () => void
+}) => {
+  const { t } = useTranslation('material')
+  return (
+    <DialogFooter>
+      {/* 所持の操作なので、値を決める「保存」「キャンセル」から離して左端に置く */}
+      <Button type="button" variant="ghost" className="sm:mr-auto" onClick={onMarkUnowned}>
+        {t('servant-level-dialog-mark-unowned', '未所持に戻す')}
+      </Button>
+      <Button type="button" variant="outline" onClick={onCancel}>
+        {t('servant-level-dialog-cancel', 'キャンセル')}
+      </Button>
+      <Button type="submit" disabled={saveDisabled}>
+        {t('servant-level-dialog-save', '保存')}
+      </Button>
+    </DialogFooter>
+  )
+}
+
 /**
  * 1騎の Lv・宝具Lv を手で入れる小窓。欄の入力はこの部品の中に持ち、開いたときの保存値で始める
  * （開いている間に同期で保存値が変わっても、打っている欄は書き換えない）。
@@ -106,11 +132,7 @@ export const ServantLevelDialog = ({
     onOpenChange(false)
   }
 
-  const handleMarkUnowned = () => {
-    if (!servant) return
-    onMarkUnowned?.(servant.id)
-    onOpenChange(false)
-  }
+  const handleMarkUnowned = () => servant && (onMarkUnowned?.(servant.id), onOpenChange(false))
 
   return (
     <Dialog open={open} onOpenChange={next => onOpenChange(next)} onOpenChangeComplete={onOpenChangeComplete}>
@@ -139,18 +161,11 @@ export const ServantLevelDialog = ({
             />
           </div>
           <DialogDescription>{t('servant-level-dialog-note', '空にして保存すると消えます')}</DialogDescription>
-          <DialogFooter>
-            {/* 所持の操作なので、値を決める「保存」「キャンセル」から離して左端に置く */}
-            <Button type="button" variant="ghost" className="sm:mr-auto" onClick={handleMarkUnowned}>
-              {t('servant-level-dialog-mark-unowned', '未所持に戻す')}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t('servant-level-dialog-cancel', 'キャンセル')}
-            </Button>
-            <Button type="submit" disabled={lvInvalid || npLvInvalid}>
-              {t('servant-level-dialog-save', '保存')}
-            </Button>
-          </DialogFooter>
+          <LevelDialogFooter
+            saveDisabled={lvInvalid || npLvInvalid}
+            onMarkUnowned={handleMarkUnowned}
+            onCancel={() => onOpenChange(false)}
+          />
         </form>
       </DialogContent>
     </Dialog>
