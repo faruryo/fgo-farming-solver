@@ -12,10 +12,18 @@ const servant = { id: 100100, name: 'サーヴァントA' }
 const renderDialog = (level: ServantLevel | undefined) => {
   const onSave = vi.fn()
   const onOpenChange = vi.fn()
+  const onMarkUnowned = vi.fn()
   const utils = render(
-    <ServantLevelDialog open servant={servant} level={level} onOpenChange={onOpenChange} onSave={onSave} />,
+    <ServantLevelDialog
+      open
+      servant={servant}
+      level={level}
+      onOpenChange={onOpenChange}
+      onSave={onSave}
+      onMarkUnowned={onMarkUnowned}
+    />,
   )
-  return { onSave, onOpenChange, ...utils }
+  return { onSave, onOpenChange, onMarkUnowned, ...utils }
 }
 
 const lvInput = () => screen.getByLabelText('Lv')
@@ -43,11 +51,33 @@ describe('ServantLevelDialog', () => {
     await waitFor(() => expect(lvInput()).toHaveFocus())
   })
 
-  it('× ボタンを出さない: ボタンは保存とキャンセルだけ', async () => {
+  it('× ボタンを出さない: ボタンは未所持に戻す・キャンセル・保存だけ', async () => {
     renderDialog(undefined)
     const dialog = await screen.findByRole('dialog')
     expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument()
-    expect([...dialog.querySelectorAll('button')].map(b => b.textContent)).toEqual(['キャンセル', '保存'])
+    expect([...dialog.querySelectorAll('button')].map(b => b.textContent)).toEqual(['未所持に戻す', 'キャンセル', '保存'])
+  })
+
+  it('「未所持に戻す」を押すと未所持の通知が1回出て、保存の通知は出ずに閉じる', async () => {
+    const user = userEvent.setup()
+    const { onSave, onOpenChange, onMarkUnowned } = renderDialog({ lv: 90, npLv: 2 })
+    await waitFor(() => expect(lvInput()).toHaveFocus())
+    await user.click(screen.getByRole('button', { name: '未所持に戻す' }))
+    expect(onMarkUnowned).toHaveBeenCalledTimes(1)
+    expect(onMarkUnowned).toHaveBeenCalledWith(100100)
+    expect(onSave).not.toHaveBeenCalled()
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
+  })
+
+  it.each([['100'], ['121']])('書きかけの Lv（%s）があっても「未所持に戻す」では保存しない', async raw => {
+    const user = userEvent.setup()
+    const { onSave, onMarkUnowned } = renderDialog({ lv: 90 })
+    await waitFor(() => expect(lvInput()).toHaveFocus())
+    await user.clear(lvInput())
+    await user.type(lvInput(), raw)
+    await user.click(screen.getByRole('button', { name: '未所持に戻す' }))
+    expect(onMarkUnowned).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('保存で setter を欄のとおりの値で1回呼び、閉じる', async () => {

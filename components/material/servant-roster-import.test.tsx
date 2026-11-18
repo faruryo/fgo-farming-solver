@@ -446,7 +446,7 @@ describe('所持と Lv・宝具Lv の保存', () => {
     const card = document.getElementById(`svt-${MASH}`)
     if (!card) throw new Error('card not found')
     expect(within(card).getByText('Lv 90・宝具 2')).toBeInTheDocument()
-    expect(within(card).getByRole('button', { name: '✓ 所持' })).toBeInTheDocument()
+    expect(within(card).queryByRole('button', { name: '未所持' })).not.toBeInTheDocument()
   })
 
   it('保存値にまだ無いサーヴァント: 所持になり、新しく所持になる数に含まれる', async () => {
@@ -480,7 +480,7 @@ describe('所持と Lv・宝具Lv の保存', () => {
     const card = document.getElementById(`svt-${MASH}`)
     if (!card) throw new Error('card not found')
     expect(within(card).getByText('Lv 90・宝具 2')).toBeInTheDocument()
-    expect(within(card).getByRole('button', { name: '✓ 所持' })).toBeInTheDocument()
+    expect(within(card).queryByRole('button', { name: '未所持' })).not.toBeInTheDocument()
   })
 
   it('確定が未同期の編集になる: `material` と `servantLevels` のそれぞれにキーを指定した変更の通知が出る', async () => {
