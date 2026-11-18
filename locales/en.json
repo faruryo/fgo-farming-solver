@@ -339,6 +339,7 @@
     "servant-level-dialog-save": "Save",
     "servant-level-dialog-cancel": "Cancel",
     "servant-level-dialog-mark-unowned": "Mark as not owned",
+    "servant-card-not-owned": "Not owned",
     "roster-import-open": "Import from screenshots",
     "roster-import-title": "Import from screenshots",
     "roster-import-description": "Reads your servants and their Lv and NP Lv from screenshots of the servant selection screen of Servant Enhancement. Images are read in your browser and never sent anywhere.",

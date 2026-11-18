@@ -338,7 +338,7 @@ const ServantCardComponent = ({
       {!owned && (
         <div className="c-servant-controls">
           <button type="button" className="c-owned-btn" onClick={markOwned}>
-            未所持
+            {t('servant-card-not-owned', '未所持')}
           </button>
         </div>
       )}

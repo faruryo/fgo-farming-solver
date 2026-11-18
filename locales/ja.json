@@ -281,6 +281,7 @@
     "servant-level-dialog-save": "保存",
     "servant-level-dialog-cancel": "キャンセル",
     "servant-level-dialog-mark-unowned": "未所持に戻す",
+    "servant-card-not-owned": "未所持",
     "roster-import-open": "スクリーンショットから取り込む",
     "roster-import-title": "スクリーンショットから取り込む",
     "roster-import-description": "サーヴァント強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv を読み取ります。画像はブラウザの中で読み取り、外へは送りません。",
