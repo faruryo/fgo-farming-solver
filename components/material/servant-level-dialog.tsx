@@ -4,12 +4,12 @@ import { useId, useRef, useState, type RefObject, type SubmitEvent } from 'react
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { NumberField } from '@/components/ui/number-field'
 import { Label } from '@/components/ui/label'
 import type { ServantLevel, ServantLevelEdit } from '../../lib/servant-levels'
-import { readField, type LevelField } from '../../lib/servant-roster-review'
+import { levelFieldRange, levelFieldValue, readLevelField, type LevelField } from '../../lib/servant-roster-review'
 
-type Fields = Record<LevelField, string>
+type Fields = Record<LevelField, number | null>
 
 type Props = {
   open: boolean
@@ -26,17 +26,13 @@ type Props = {
 }
 
 const fieldsOf = (level: ServantLevel | undefined): Fields => ({
-  lv: level?.lv === undefined ? '' : String(level.lv),
-  npLv: level?.npLv === undefined ? '' : String(level.npLv),
+  lv: level?.lv ?? null,
+  npLv: level?.npLv ?? null,
 })
-
-const valueOf = (field: LevelField, raw: string): number | null => {
-  const read = readField(field, raw)
-  return read.kind === 'value' ? read.value : null
-}
 
 /** ラベルつきの数字の欄（範囲に無い値は aria-invalid で示す） */
 const LevelInput = ({
+  field,
   id,
   label,
   value,
@@ -44,23 +40,22 @@ const LevelInput = ({
   inputRef,
   onChange,
 }: {
+  field: LevelField
   id: string
   label: string
-  value: string
+  value: number | null
   invalid: boolean
   inputRef?: RefObject<HTMLInputElement | null>
-  onChange: (raw: string) => void
+  onChange: (value: number | null) => void
 }) => (
   <div className="flex flex-col gap-1.5">
     <Label htmlFor={id}>{label}</Label>
-    <Input
+    <NumberField
       id={id}
       ref={inputRef}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
+      {...levelFieldRange(field)}
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onValueChange={next => onChange(next)}
       aria-invalid={invalid || undefined}
       className="tabular-nums"
     />
@@ -75,11 +70,11 @@ const useLevelFields = (open: boolean, level: ServantLevel | undefined) => {
     setPrevOpen(open)
     if (open) setFields(fieldsOf(level))
   }
-  const setField = (field: LevelField, raw: string) =>
-    setFields(prev => (field === 'lv' ? { ...prev, lv: raw } : { ...prev, npLv: raw }))
-  const lvInvalid = readField('lv', fields.lv).kind === 'invalid'
-  const npLvInvalid = readField('npLv', fields.npLv).kind === 'invalid'
-  const edit: ServantLevelEdit = { lv: valueOf('lv', fields.lv), npLv: valueOf('npLv', fields.npLv) }
+  const setField = (field: LevelField, value: number | null) =>
+    setFields(prev => (field === 'lv' ? { ...prev, lv: value } : { ...prev, npLv: value }))
+  const lvInvalid = readLevelField('lv', fields.lv).kind === 'invalid'
+  const npLvInvalid = readLevelField('npLv', fields.npLv).kind === 'invalid'
+  const edit: ServantLevelEdit = { lv: levelFieldValue('lv', fields.lv), npLv: levelFieldValue('npLv', fields.npLv) }
   return { fields, setField, lvInvalid, npLvInvalid, edit }
 }
 
@@ -117,19 +112,21 @@ export const ServantLevelDialog = ({
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <LevelInput
+              field="lv"
               id={`${id}-lv`}
               label={t('servant-level-dialog-lv', 'Lv')}
               value={fields.lv}
               invalid={lvInvalid}
               inputRef={lvInputRef}
-              onChange={raw => setField('lv', raw)}
+              onChange={value => setField('lv', value)}
             />
             <LevelInput
+              field="npLv"
               id={`${id}-npLv`}
               label={t('servant-level-dialog-np-lv', '宝具Lv')}
               value={fields.npLv}
               invalid={npLvInvalid}
-              onChange={raw => setField('npLv', raw)}
+              onChange={value => setField('npLv', value)}
             />
           </div>
           <DialogDescription>{t('servant-level-dialog-note', '空にして保存すると消えます')}</DialogDescription>
