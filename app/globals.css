@@ -241,7 +241,7 @@ body {
 /* ===== SERVANT GRID ===== */
 .c-servant-hint { font-size: 10px; color: var(--text3); margin-top: 24px; }
 .c-servant-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px; margin-top: 8px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr)); gap: 16px; margin-top: 8px;
 }
 
 .c-servant-card {
@@ -381,6 +381,8 @@ body {
   cursor: pointer;
   transition: all 0.2s;
 }
+/* スマホ幅では 2 桁の値が 8 枚並ぶとカードの幅を超えるので、左右の余白を詰める (#298) */
+@media (max-width: 480px) { .c-sum-card { padding: 0 2px; } }
 .c-sum-card:hover { transform: translateY(-1px); background: rgba(255,255,255,0.05); border-color: var(--gold-dim); }
 .c-sum-card:active { transform: scale(0.94); }
 /* 長押し中（-1ジェスチャー判定中）の視覚フィードバック */
