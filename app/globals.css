@@ -381,8 +381,12 @@ body {
   cursor: pointer;
   transition: all 0.2s;
 }
-/* スマホ幅では 2 桁の値が 8 枚並ぶとカードの幅を超えるので、左右の余白を詰める (#298) */
-@media (max-width: 480px) { .c-sum-card { padding: 0 2px; } }
+/* スマホ幅（320px まで）では 2 桁の値が 8 枚並ぶとカードの幅を超えるので、間隔と枠の幅を詰める (#298) */
+@media (max-width: 480px) {
+  .c-summary-compact { gap: 2px; padding: 2px 4px; }
+  .c-sum-div { margin: 0 2px; }
+  .c-sum-card { min-width: 20px; padding: 0; }
+}
 .c-sum-card:hover { transform: translateY(-1px); background: rgba(255,255,255,0.05); border-color: var(--gold-dim); }
 .c-sum-card:active { transform: scale(0.94); }
 /* 長押し中（-1ジェスチャー判定中）の視覚フィードバック */
