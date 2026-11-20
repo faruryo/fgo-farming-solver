@@ -2280,7 +2280,7 @@ describe('EventHubClient のタブ', () => {
     expect(screen.getByRole('heading', { name: '交換所の周回計算' })).toBeInTheDocument()
   })
 
-  it('交換所と料理作成: 「交換所」「クラフト」のタブがこの順に出て、交換所が開く', () => {
+  it('交換所とクラフト: 「交換所」「クラフト」のタブがこの順に出て、交換所が開く', () => {
     render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop', 'craft']} items={items} />)
 
     expect(tabNames()).toEqual(['交換所', 'クラフト'])

@@ -48,7 +48,7 @@ export default async function EventDetailPage({ params, searchParams }: Props) {
   }
 
   const features = featuresFor(eventId, kvEvent)
-  // 不足の在庫基準（周回目的が「新規サーヴァントに備える」）に素材の分類を使うので、ボックス・交換所・料理作成のどれかがあれば読む。
+  // 不足の在庫基準（周回目的が「新規サーヴァントに備える」）に素材の分類を使うので、ボックス・交換所・クラフトのどれかがあれば読む。
   const needsItems = features.includes('box') || features.includes('shop') || features.includes('craft')
   const items = needsItems ? await getItems('ja') : undefined
   // ロトの有無によらず交換所の周回計算を出す。品目がすべてサーヴァント扱いの交換所は一覧だけを出すので、周回計算用のデータを読まない。
