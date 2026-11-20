@@ -94,19 +94,20 @@ const ServantPicker: React.FC<{
     setQuery('')
   }
   return (
-    <span className="inline-flex flex-col gap-1">
-      <span className="inline-flex items-center gap-1">
+    // 名前が長くても切り抜きの横に残るよう、名前の段とボタンの段を縦に積む（#308）
+    <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
+      <span className="flex items-center gap-1">
         <SmallIcon src={current?.face} alt={current?.name ?? ''} />
         {current && <ClassIcon servant={current} size={18} />}
         <span style={{ color: 'var(--text1)' }}>
           {current?.name ?? t('roster-import-no-servant', 'サーヴァントを選んでいません')}
         </span>
-        <Button size="xs" variant="outline" onClick={() => setOpen(v => !v)} aria-expanded={open}>
-          {t('roster-import-choose-servant', 'サーヴァントを選ぶ')}
-        </Button>
       </span>
+      <Button size="xs" variant="outline" onClick={() => setOpen(v => !v)} aria-expanded={open}>
+        {t('roster-import-choose-servant', 'サーヴァントを選ぶ')}
+      </Button>
       {open && (
-        <span className="flex flex-col gap-1">
+        <span className="flex w-full flex-col gap-1">
           <Input
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -116,7 +117,7 @@ const ServantPicker: React.FC<{
           />
           <span className="flex flex-wrap gap-1">
             {options.map(s => (
-              <Button key={s.id} size="xs" variant="outline" onClick={() => choose(s.id)}>
+              <Button key={s.id} size="xs" variant="outline" className="h-auto max-w-full whitespace-normal text-left" onClick={() => choose(s.id)}>
                 <ClassIcon servant={s} size={16} />
                 {s.name}
               </Button>
@@ -210,7 +211,7 @@ const RosterReviewRow: React.FC<{
           candidates={review?.servantCandidates ?? []}
           onChange={servantId => onChange({ servantId })}
         />
-        {review && <span style={{ color: '#d97706' }}>{reasonText(review.reasons)}</span>}
+        {review && <span className="basis-full" style={{ color: '#d97706' }}>{reasonText(review.reasons)}</span>}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <LevelInput
