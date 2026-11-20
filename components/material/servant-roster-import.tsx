@@ -9,6 +9,7 @@ import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 import type { ServantLevelImportRow, ServantLevels } from '../../lib/servant-levels'
 import type { RosterImportResult, RosterProgress } from '../../lib/servant-roster-import/types'
+import { currentSkillsById } from '../../lib/servant-roster-owned'
 import { RosterReviewStage } from './servant-roster-review'
 
 type Stage = 'upload' | 'analyzing' | 'review'
@@ -35,6 +36,12 @@ const FileDropZone: React.FC<{ onAdd: (files: FileList | File[]) => void }> = ({
         )}
       </p>
       <p>{t('roster-import-guide-lv-sort', '「Lv.順」の画像も読めますが、その画像からは Lv だけを取り込みます。')}</p>
+      <p>
+        {t(
+          'roster-import-guide-skill',
+          '「サーヴァントスキル強化」でサーヴァントを選ぶ画面は、7列の表示で同じように撮ってください。宝具Lv とスキルLv を読み取り、スキルLv は育成計算機のスキルの「今」に入れます。5列の表示は読み取れません。',
+        )}
+      </p>
       <label className="self-center">
         <span className="inline-flex items-center h-8 px-3 rounded-lg border cursor-pointer text-sm" style={{ borderColor: 'var(--border)' }}>
           {t('roster-import-choose', '画像を選ぶ（複数可）')}
@@ -140,7 +147,7 @@ const IconsUnavailableStage: React.FC<{ onCancel: () => void }> = ({ onCancel })
  * 選ぶ・読み取る・確かめるの3段の状態。読み取りのモジュール（文字認識と照合用のデータの読み込み）は、
  * 画像を選んで読み取りを始めたときに動的 import するので、それまで読み込まない。
  */
-const useRosterImportFlow = (servants: readonly MaterialCatalogServant[], levels: ServantLevels) => {
+const useRosterImportFlow = (servants: readonly MaterialCatalogServant[], levels: ServantLevels, chaldeaState: ChaldeaState) => {
   const [stage, setStage] = useState<Stage>('upload')
   const [files, setFiles] = useState<File[]>([])
   const [skippedNames, setSkippedNames] = useState<string[]>([])
@@ -175,6 +182,7 @@ const useRosterImportFlow = (servants: readonly MaterialCatalogServant[], levels
       const next = await analyzeRosterScreenshots(files, {
         servants: servants.map(s => ({ id: s.id, rarity: s.rarity })),
         stored: levels,
+        storedSkills: currentSkillsById(chaldeaState),
         onProgress: p => {
           if (current()) setProgress(p)
         },
@@ -196,7 +204,7 @@ type ImportProps = {
   levels: ServantLevels
   /** 育成計算機の画面が使っている、保存値を補ったあとの状態（新しく所持になる数を数える） */
   chaldeaState: ChaldeaState
-  /** 確定した行（取り込みに入れた行だけ）。所持の印と Lv・宝具Lv を書くのは呼び出し側 */
+  /** 確定した行（取り込みに入れた行だけ）。所持の印と Lv・宝具Lv・スキルの「今」を書くのは呼び出し側 */
   onConfirm: (rows: ServantLevelImportRow[]) => void
 }
 
@@ -209,7 +217,7 @@ const RosterImportDialog: React.FC<ImportProps & { open: boolean; onOpenChange: 
   onConfirm,
 }) => {
   const { t } = useTranslation('material')
-  const flow = useRosterImportFlow(servants, levels)
+  const flow = useRosterImportFlow(servants, levels, chaldeaState)
   const handleOpenChange = (next: boolean) => {
     if (!next) flow.reset()
     onOpenChange(next)
@@ -223,7 +231,7 @@ const RosterImportDialog: React.FC<ImportProps & { open: boolean; onOpenChange: 
           <DialogDescription>
             {t(
               'roster-import-description',
-              'サーヴァント強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv を読み取ります。画像はブラウザの中で読み取り、外へは送りません。',
+              'サーヴァント強化・サーヴァントスキル強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv・スキルLv を読み取ります。画像はブラウザの中で読み取り、外へは送りません。',
             )}
           </DialogDescription>
         </DialogHeader>
@@ -258,7 +266,7 @@ const RosterImportDialog: React.FC<ImportProps & { open: boolean; onOpenChange: 
 }
 
 /**
- * サーヴァント強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv を取り込む入口とダイアログ。
+ * サーヴァント強化・サーヴァントスキル強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv・スキルLv を取り込む入口とダイアログ。
  * 画像はブラウザの中で読み取り、外へは送らない。確定せずに閉じたときは何も渡さない。
  */
 export const ServantRosterImport: React.FC<ImportProps> = props => {

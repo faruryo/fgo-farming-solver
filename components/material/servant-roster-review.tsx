@@ -9,12 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { NumberField } from '@/components/ui/number-field'
-import type { ChaldeaState } from '../../hooks/create-chaldea-state'
+import type { ChaldeaState, ServantState } from '../../hooks/create-chaldea-state'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 import type { ServantLevel, ServantLevelImportRow, ServantLevels } from '../../lib/servant-levels'
 import type { ReviewReason, RosterImportResult, RosterRow, ValueRange } from '../../lib/servant-roster-import/types'
+import { SKILL_LV_RANGE } from '../../lib/servant-roster-import/constants'
 import { ClassIcon } from '../bond/servant-card'
-import { countNewlyOwned } from '../../lib/servant-roster-owned'
+import { countNewlyOwned, currentSkills } from '../../lib/servant-roster-owned'
 import {
   applyRowEdit,
   importRows,
@@ -24,6 +25,7 @@ import {
   levelFieldRange,
   overlappingServants,
   readLevelField,
+  readSkillField,
   type LevelField,
   type RosterRowEdit,
 } from '../../lib/servant-roster-review'
@@ -176,6 +178,71 @@ const LevelInput: React.FC<{
   )
 }
 
+/** スキル1〜3の欄（スキル強化の画面から読んだ行だけ）。育成計算機のスキルの今の値、入れる値、候補（押すと欄に入る）を並べる */
+const SkillInputs: React.FC<{
+  name: string
+  values: readonly (number | null)[]
+  /** 育成計算機のスキルの今の値（サーヴァントが決まっていなければ無い） */
+  stored?: readonly number[]
+  candidates: readonly (readonly number[])[]
+  onChange: (values: (number | null)[]) => void
+}> = ({ name, values, stored, candidates, onChange }) => {
+  const { t } = useTranslation('material')
+  const invalid = values.some(value => readSkillField(value).kind === 'invalid')
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {values.map((value, index) => {
+        const label = t('roster-import-skill', 'スキル{{n}}', { n: index + 1 })
+        const change = (next: number | null) => onChange(values.map((v, i) => (i === index ? next : v)))
+        return (
+          <span key={label} className="inline-flex flex-wrap items-center gap-1">
+            <span>{label}</span>
+            <span className="tabular-nums">{stored?.at(index) ?? '—'}</span>
+            <span aria-hidden="true">→</span>
+            <span className="block h-7 w-12">
+              <NumberField
+                {...SKILL_LV_RANGE}
+                value={value}
+                onValueChange={change}
+                aria-label={t('roster-import-value-label', '{{name}} の {{label}}', { name, label })}
+                aria-invalid={readSkillField(value).kind === 'invalid' || undefined}
+                className="h-[133.333%] w-[133.333%] origin-top-left scale-75 px-2 text-base md:text-base"
+              />
+            </span>
+            {(candidates.at(index) ?? []).map(candidate => (
+              <Button key={candidate} size="xs" variant="outline" onClick={() => change(candidate)}>
+                {candidate}
+              </Button>
+            ))}
+          </span>
+        )
+      })}
+      {invalid && (
+        <span style={{ color: 'var(--red)' }}>{t('roster-import-skill-invalid', 'スキルLv は 1〜10 の整数で入れてください')}</span>
+      )}
+    </div>
+  )
+}
+
+/** スキル強化の画面から読んだ行のスキルの欄（スキルLv を読んでいない行は何も出さない） */
+const RowSkills: React.FC<{
+  row: RosterRow
+  edit: RosterRowEdit
+  name: string
+  /** 決めたサーヴァントの育成計算機の状態 */
+  servantState?: ServantState
+  onChange: (patch: Partial<RosterRowEdit>) => void
+}> = ({ row, edit, name, servantState, onChange }) =>
+  row.skills === null ? null : (
+    <SkillInputs
+      name={name}
+      values={edit.skills}
+      stored={edit.servantId === null ? undefined : currentSkills(servantState)}
+      candidates={row.review?.skillCandidates ?? []}
+      onChange={skills => onChange({ skills })}
+    />
+  )
+
 /** 確かめの画面の1行（当てた行か「要確認」の行） */
 const RosterReviewRow: React.FC<{
   row: RosterRow
@@ -183,9 +250,11 @@ const RosterReviewRow: React.FC<{
   servants: readonly MaterialCatalogServant[]
   byId: ServantById
   stored?: ServantLevel
+  /** 決めたサーヴァントの育成計算機の状態（スキルの今の値を出す） */
+  servantState?: ServantState
   overlap: boolean
   onChange: (patch: Partial<RosterRowEdit>) => void
-}> = ({ row, edit, servants, byId, stored, overlap, onChange }) => {
+}> = ({ row, edit, servants, byId, stored, servantState, overlap, onChange }) => {
   const { t } = useTranslation('material')
   const reasonText = useReasonText()
   const review = row.review
@@ -233,12 +302,13 @@ const RosterReviewRow: React.FC<{
           onChange={npLv => onChange({ npLv })}
         />
       </div>
+      <RowSkills row={row} edit={edit} name={name} servantState={servantState} onChange={onChange} />
       {overlap && <p style={{ color: 'var(--red)' }}>{t('roster-import-overlap-row', 'ほかの行と同じサーヴァントに決まっています')}</p>}
     </li>
   )
 }
 
-/** 読み取りのまとめ（読んだ枚数・当てた数・要確認の数・新しく所持になる数・読めなかった画像・撮り漏れ） */
+/** 読み取りのまとめ（読んだ枚数・当てた数・要確認の数・新しく所持になる数・読めなかった画像・5列の表示の画像・撮り漏れ） */
 const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: number; newlyOwned: number }> = ({
   result,
   matched,
@@ -265,6 +335,13 @@ const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: num
           {t('roster-import-unreadable', '読めなかった画像: {{count}}枚（{{names}}）', {
             count: result.unreadableImages.length,
             names: result.unreadableImages.join(t('list-separator', '、')),
+          })}
+        </p>
+      )}
+      {result.fiveColumnImages.length > 0 && (
+        <p style={{ color: 'var(--red)' }}>
+          {t('roster-import-five-column', '5列の表示は読み取れません。7列の表示で撮ってください: {{names}}', {
+            names: result.fiveColumnImages.join(t('list-separator', '、')),
           })}
         </p>
       )}
@@ -344,11 +421,20 @@ const MatchedSection: React.FC<{ count: number; children: () => React.ReactNode 
   )
 }
 
+/** 行の表示で引く、サーヴァント・保存値・育成計算機の状態（ID 引き） */
+const useReviewLookups = (servants: readonly MaterialCatalogServant[], levels: ServantLevels, chaldeaState: ChaldeaState) => ({
+  byId: useMemo(() => new Map(servants.map(s => [s.id, s])), [servants]),
+  storedById: useMemo(() => new Map(Object.entries(levels)), [levels]),
+  chaldeaById: useMemo(() => new Map(Object.entries(chaldeaState)), [chaldeaState]),
+})
+
+const lookupByServant = <T,>(map: ReadonlyMap<string, T>, servantId: number | null): T | undefined =>
+  servantId === null ? undefined : map.get(String(servantId))
+
 /** 確かめの段。「要確認」の行を先にまとめ、当てた行は畳んで件数を出す。重なりがあれば確定させない */
 export const RosterReviewStage: React.FC<ReviewProps> = ({ result, servants, levels, chaldeaState, onCancel, onConfirm }) => {
   const { t } = useTranslation('material')
-  const byId = useMemo(() => new Map(servants.map(s => [s.id, s])), [servants])
-  const storedById = useMemo(() => new Map(Object.entries(levels)), [levels])
+  const { byId, storedById, chaldeaById } = useReviewLookups(servants, levels, chaldeaState)
   const review = useRosterReview(result, chaldeaState)
   const renderRow = (index: number) => {
     const row = result.rows.at(index)
@@ -361,7 +447,8 @@ export const RosterReviewStage: React.FC<ReviewProps> = ({ result, servants, lev
         edit={edit}
         servants={servants}
         byId={byId}
-        stored={edit.servantId === null ? undefined : storedById.get(String(edit.servantId))}
+        stored={lookupByServant(storedById, edit.servantId)}
+        servantState={lookupByServant(chaldeaById, edit.servantId)}
         overlap={edit.servantId !== null && isRowIncluded(row, edit) && review.overlaps.has(edit.servantId)}
         onChange={patch => review.update(index, patch)}
       />

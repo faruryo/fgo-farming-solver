@@ -5,9 +5,9 @@
  */
 import type { CardValues, FaceMatch } from './types'
 
-/** 「今の値/上限」の形の値が1つでも読めた（範囲で値を決めなかった読みも含む） */
+/** 「今の値/上限」の形の値かスキルLv が1つでも読めた（範囲で値を決めなかった読みも含む） */
 export const hasCardValue = (values: CardValues): boolean =>
-  values.lv !== null || values.npLv !== null || values.failures.length > 0
+  values.lv !== null || values.npLv !== null || values.skills !== null || values.failures.length > 0
 
 /** matched: 当てたカード、review: 「要確認」のカード、discard: カードが無い位置 */
 export type CardPositionKind = 'matched' | 'review' | 'discard'

@@ -16,8 +16,16 @@ export type ServantLevel = { lv?: number; npLv?: number }
 /** 読んだ保存値（サーヴァントの ID → 値。Lv も宝具Lv も無い ID は入れない） */
 export type ServantLevels = Record<string, ServantLevel>
 
-/** 取り込む1行（値が無い種類は前の保存値を残す） */
-export type ServantLevelImportRow = { id: string | number; lv?: number | null; npLv?: number | null }
+/**
+ * 取り込む1行（値が無い種類は前の保存値を残す）。
+ * `skills` はスキル1〜3の Lv（`null` の欄は書かない）。保存値ではなく育成計算機のスキルの「今」に書く
+ */
+export type ServantLevelImportRow = {
+  id: string | number
+  lv?: number | null
+  npLv?: number | null
+  skills?: readonly (number | null)[]
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)

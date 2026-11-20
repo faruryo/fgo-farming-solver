@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { RgbaImage } from '../shop-screenshot-import/icon-match'
 import { FACE_MATCH, ROSTER_LAYOUT } from './constants'
 import { faceCandidates, matchFace } from './face-match'
-import { faceRect, gridFromHeading, gridTopY } from './grid'
+import { faceRect, fiveColumnGrid, gridFromHeading, gridTopY } from './grid'
 import { findRowTops, locateRoster, scanFaceTops } from './row-search'
-import type { FaceIconData, OcrBox } from './types'
+import type { FaceIconData, OcrBox, RosterGrid } from './types'
 
 const SIZE = FACE_MATCH.size
 
@@ -41,7 +41,9 @@ const encode = (pixels: Uint8ClampedArray): string => btoa(String.fromCharCode(.
 const iconData = (icons: readonly { servantId: number; pixels: Uint8ClampedArray }[]): FaceIconData => ({
   icons: icons.map(({ servantId, pixels }) => ({ servantId, url: `https://example.test/${servantId}.png`, pixels: encode(pixels) })),
 })
-const CANDIDATES = faceCandidates(iconData(ICONS), new Set(ICONS.map((i) => i.servantId)))
+const IDS = new Set(ICONS.map((i) => i.servantId))
+const CANDIDATES = faceCandidates(iconData(ICONS), IDS)
+const SCREENS = { enhance: CANDIDATES, skill: faceCandidates(iconData(ICONS), IDS, 'skill') }
 
 const blank = (height: number): RgbaImage => {
   const data = new Uint8ClampedArray(WIDTH * height * 4)
@@ -53,8 +55,8 @@ const blank = (height: number): RgbaImage => {
  * アイコンを一辺 GRID.side に拡大して (left, top) に貼る（画像の外は描かない）。
  * 升目の境は切り出しを縮めるときと同じく、いちばん近い画素に丸める。
  */
-const paste = (image: RgbaImage, icon: Uint8ClampedArray, left: number, top: number): void => {
-  const edges = (start: number) => Array.from({ length: SIZE + 1 }, (_, i) => Math.round(start + (GRID.side * i) / SIZE))
+const paste = (image: RgbaImage, icon: Uint8ClampedArray, left: number, top: number, side = GRID.side): void => {
+  const edges = (start: number) => Array.from({ length: SIZE + 1 }, (_, i) => Math.round(start + (side * i) / SIZE))
   const xs = edges(left)
   const ys = edges(top)
   for (let cy = 0; cy < SIZE; cy++) {
@@ -210,13 +212,60 @@ describe('findRowTops', () => {
 
 describe('locateRoster', () => {
   it('段が1つも無い画像は読めなかった画像になる', () => {
-    expect(locateRoster([HEADING], blank(360), CANDIDATES)).toEqual({ kind: 'unreadable' })
+    expect(locateRoster([HEADING], blank(360), SCREENS)).toEqual({ kind: 'unreadable' })
   })
 
   it('見出しの無い画像は、段があっても読めなかった画像になる', () => {
     const image = blank(360)
     pasteRow(image, scanTop(0), 1)
-    expect(locateRoster([], image, CANDIDATES)).toEqual({ kind: 'unreadable' })
-    expect(locateRoster([HEADING], image, CANDIDATES)).toMatchObject({ kind: 'located', rowTops: [scanTop(0)] })
+    expect(locateRoster([], image, SCREENS)).toEqual({ kind: 'unreadable' })
+    expect(locateRoster([HEADING], image, SCREENS)).toMatchObject({ kind: 'located', rowTops: [scanTop(0)] })
+  })
+})
+
+describe('locateRoster（サーヴァントスキル強化の画面）', () => {
+  // 見出しの枠が HEADING（上端 10・高さ 20）に換算される、1行目と2行目の枠（行の間隔 960/57、換算の上端 10）
+  const GAP = (20 * 48) / 57
+  const SKILL_Y = 10 - (GAP * 13) / 48
+  const SKILL_BOXES: OcrBox[] = [
+    { text: 'スキルを強化するサーヴァントを選択してください', confidence: 1, x: 70, y: SKILL_Y, width: 300, height: 15 },
+    { text: '強化には各種素材アイテムが必要です', confidence: 1, x: 70, y: SKILL_Y + GAP, width: 300, height: 15 },
+  ]
+  const SKILL_GRID: RosterGrid = gridFromHeading(HEADING, 'skill')
+  const FIVE = fiveColumnGrid(SKILL_GRID)
+  const fiveTop = (k: number) => scanFaceTops(FIVE, 10_000).at(k) ?? NaN
+
+  /** `grid` の列に、サーヴァント 1 から順のアイコンを貼った段 */
+  const pasteGridRow = (image: RgbaImage, grid: RosterGrid, top: number) => {
+    grid.columnXs.forEach((x, column) => {
+      const icon = ICONS.at(column)?.pixels
+      if (icon) paste(image, icon, x, top, grid.side)
+    })
+  }
+
+  it('7列の表示: 段が見つかり、スキル強化の画面の格子で located になる', () => {
+    const image = blank(360)
+    const top = scanTop(12)
+    pasteGridRow(image, SKILL_GRID, top)
+    const located = locateRoster(SKILL_BOXES, image, SCREENS)
+    expect(located).toMatchObject({ kind: 'located', rowTops: [top] })
+    expect(located.kind === 'located' && located.grid.screen).toBe('skill')
+  })
+
+  it('5列の表示: 同じ見出しでも、5列の格子で顔が当たるなら five-column（読み取らない）', () => {
+    const image = blank(520)
+    pasteGridRow(image, FIVE, fiveTop(12))
+    pasteGridRow(image, FIVE, fiveTop(12 + Math.round(ROW_STEPS * 1.41)))
+    expect(locateRoster(SKILL_BOXES, image, SCREENS)).toEqual({ kind: 'five-column' })
+  })
+
+  it('サーヴァント強化の画面は、5列の位置に顔があっても five-column にしない', () => {
+    const image = blank(520)
+    pasteGridRow(image, FIVE, fiveTop(12))
+    expect(locateRoster([HEADING], image, SCREENS).kind).not.toBe('five-column')
+  })
+
+  it('スキル強化の画面で顔がどこにも当たらない画像は読めなかった画像になる', () => {
+    expect(locateRoster(SKILL_BOXES, blank(360), SCREENS)).toEqual({ kind: 'unreadable' })
   })
 })

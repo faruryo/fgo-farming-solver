@@ -1,5 +1,5 @@
 /**
- * 「サーヴァント強化」の選択画面のスクリーンショットを読み取るブラウザの部分。
+ * 「サーヴァント強化」と「サーヴァントスキル強化」（7列の表示）の選択画面のスクリーンショットを読み取るブラウザの部分。
  * 照合用の顔のアイコンは画像を選んだあとに1回だけ取得し、取得できなければ画像を1枚も読まない。
  * 画像は1枚ずつ読み、カードの切り抜きだけを残して、canvas と画素の配列は次の画像に進む前に手放す。
  * 画像はブラウザの中だけで処理し、外へ送るのは照合用のデータの取得の要求だけ。
@@ -8,7 +8,7 @@ import { recognizeWithBoxes } from '../possession-import/ocr-engine'
 import type { ServantLevels } from '../servant-levels'
 import { canvasPixels } from '../shop-screenshot-import/icon-pixels'
 import { BAND_SCALE, CARD_CROP_WIDTH } from './constants'
-import { faceCandidates, matchFace } from './face-match'
+import { faceCandidates, matchFace, type ScreenCandidates } from './face-match'
 import { cardBandRects, cardRect, clipRect, faceRect } from './grid'
 import { headerRects, readOwnedCount, readSortKey, readSortOrder } from './header'
 import { classifyCardPosition } from './positions'
@@ -16,13 +16,13 @@ import { locateRoster } from './row-search'
 import { summarizeRoster } from './summarize'
 import type {
   CardReading,
-  FaceCandidate,
   FaceIconData,
   ImageReading,
   OcrBox,
   Rect,
   RosterImportResult,
   RosterProgress,
+  StoredSkills,
 } from './types'
 import { readCardValues } from './values'
 
@@ -33,6 +33,8 @@ export type AnalyzeRosterOptions = {
   servants: readonly RosterServant[]
   /** 前に取り込んだ Lv・宝具Lv の保存値（読んだもの） */
   stored: ServantLevels
+  /** 育成計算機のスキルの今の値（これより低く読んだスキルは「要確認」にする） */
+  storedSkills: StoredSkills
   onProgress?: (progress: RosterProgress) => void
 }
 
@@ -99,8 +101,15 @@ const cardCropUrl = (source: HTMLCanvasElement, rect: Rect): string | null => {
   return url
 }
 
-/** 1枚の画像を読む。見出しが無いか段が1つも見つからない画像（画像として読めないファイルを含む）は null */
-const readImage = async (file: File, imageIndex: number, candidates: readonly FaceCandidate[]): Promise<ImageReading | null> => {
+/**
+ * 1枚の画像を読む。見出しが無いか段が1つも見つからない画像（画像として読めないファイルを含む）は null、
+ * スキル強化の画面の5列の表示は 'five-column'
+ */
+const readImage = async (
+  file: File,
+  imageIndex: number,
+  screens: ScreenCandidates,
+): Promise<ImageReading | 'five-column' | null> => {
   const img = await loadImage(file)
   if (!img) return null
   const canvas = document.createElement('canvas')
@@ -118,22 +127,25 @@ const readImage = async (file: File, imageIndex: number, candidates: readonly Fa
     const boxes = await recognizeWithBoxes(canvas)
     // 画素の配列は画像ごとに1回だけ読み、この画像を読み終えたら手放す
     const pixels = canvasPixels(canvas)
-    const located = locateRoster(boxes, pixels, candidates)
+    const located = locateRoster(boxes, pixels, screens)
+    if (located.kind === 'five-column') return 'five-column'
     if (located.kind === 'unreadable') return null
     const { grid, rowTops } = located
+    const candidates = screens[grid.screen]
     const rows: CardReading[][] = []
     for (const [row, top] of rowTops.entries()) {
       const cards: CardReading[] = []
       for (const [column, x] of grid.columnXs.entries()) {
         const square = faceRect(grid, x, top)
         const face = matchFace(pixels, square, candidates)
-        const bands = cardBandRects(square, grid.unit)
+        const bands = cardBandRects(square, grid.unit, grid.screen)
         const values = readCardValues(
           await recognizeRect(canvas, bands.top, BAND_SCALE),
           await recognizeRect(canvas, bands.bottom, BAND_SCALE),
+          grid.screen,
         )
         if (classifyCardPosition(face, values) === 'discard') continue
-        cards.push({ imageIndex, row, column, face, values, crop: cardCropUrl(canvas, cardRect(square, grid.unit)) })
+        cards.push({ imageIndex, screen: grid.screen, row, column, face, values, crop: cardCropUrl(canvas, cardRect(square, grid.unit)) })
       }
       rows.push(cards)
     }
@@ -141,6 +153,7 @@ const readImage = async (file: File, imageIndex: number, candidates: readonly Fa
     return {
       imageIndex,
       name: file.name,
+      screen: grid.screen,
       ownedCount: readOwnedCount(await recognizeRect(canvas, header.owned, 1)),
       sortKey: readSortKey(await recognizeRect(canvas, header.sortKey, 1)),
       sortOrder: readSortOrder(await recognizeRect(canvas, header.sortOrder, 1)),
@@ -159,18 +172,23 @@ export const analyzeRosterScreenshots = async (
   files: readonly File[],
   options: AnalyzeRosterOptions,
 ): Promise<RosterImportResult> => {
-  const { servants, stored, onProgress } = options
+  const { servants, stored, storedSkills, onProgress } = options
   onProgress?.({ phase: 'icons' })
   const data = await fetchFaceIcons()
-  const candidates = data ? faceCandidates(data, new Set(servants.map((s) => s.id))) : []
-  if (candidates.length === 0) return { kind: 'icons-unavailable' }
+  const ids = new Set(servants.map((s) => s.id))
+  const screens: ScreenCandidates = data
+    ? { enhance: faceCandidates(data, ids), skill: faceCandidates(data, ids, 'skill') }
+    : { enhance: [], skill: [] }
+  if (screens.enhance.length === 0) return { kind: 'icons-unavailable' }
 
   const images: ImageReading[] = []
   const unreadableImages: string[] = []
+  const fiveColumnImages: string[] = []
   for (const [index, file] of files.entries()) {
     onProgress?.({ phase: 'image', current: index + 1, total: files.length })
-    const reading = await readImage(file, index, candidates)
-    if (reading) images.push(reading)
+    const reading = await readImage(file, index, screens)
+    if (reading === 'five-column') fiveColumnImages.push(file.name)
+    else if (reading) images.push(reading)
     else unreadableImages.push(file.name)
   }
 
@@ -178,6 +196,7 @@ export const analyzeRosterScreenshots = async (
   const { rows, unsortedImageCount, shortfall } = summarizeRoster(images, {
     rarityOf: (id: number) => rarities.get(id),
     stored,
+    storedSkills,
   })
-  return { kind: 'done', imageCount: files.length, unreadableImages, unsortedImageCount, shortfall, rows }
+  return { kind: 'done', imageCount: files.length, unreadableImages, fiveColumnImages, unsortedImageCount, shortfall, rows }
 }

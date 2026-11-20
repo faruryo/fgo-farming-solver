@@ -9,25 +9,26 @@
  */
 import { coarseRects, cropCells, integralImage, rawPixelDiff, type RgbaImage } from '../shop-screenshot-import/icon-match'
 import { FACE_MATCH } from './constants'
-import type { FaceCandidate, FaceIconData, FaceMatch, Rect } from './types'
+import type { FaceCandidate, FaceIconData, FaceMatch, Rect, RosterScreen } from './types'
 
 const CELL_COUNT = FACE_MATCH.size * FACE_MATCH.size
 
-const comparedCell = (cell: number): boolean => {
+const comparedCell = (cell: number, screen: RosterScreen): boolean => {
   const row = Math.floor(cell / FACE_MATCH.size)
   const column = cell % FACE_MATCH.size
+  const rows = screen === 'skill' ? FACE_MATCH.skillCellRows : FACE_MATCH.cellRows
   return (
-    row >= FACE_MATCH.cellRows.from &&
-    row <= FACE_MATCH.cellRows.to &&
+    row >= rows.from &&
+    row <= rows.to &&
     column >= FACE_MATCH.cellColumns.from &&
     column <= FACE_MATCH.cellColumns.to
   )
 }
 
-/** 比べない升目を透明にした写し */
-export const maskFaceCells = (pixels: Uint8ClampedArray): Uint8ClampedArray => {
+/** 比べない升目を透明にした写し（比べる升目は画面の種類で決める） */
+export const maskFaceCells = (pixels: Uint8ClampedArray, screen: RosterScreen = 'enhance'): Uint8ClampedArray => {
   const masked = new Uint8ClampedArray(pixels)
-  for (let cell = 0; cell < CELL_COUNT; cell++) if (!comparedCell(cell)) masked[cell * 4 + 3] = 0
+  for (let cell = 0; cell < CELL_COUNT; cell++) if (!comparedCell(cell, screen)) masked[cell * 4 + 3] = 0
   return masked
 }
 
@@ -44,12 +45,19 @@ export const decodeFacePixels = (base64: string): Uint8ClampedArray | null => {
 }
 
 /** 照合用のデータから、`servantIds`（育成計算機の一覧にいるサーヴァント）のアイコンだけを候補にする */
-export const faceCandidates = (data: FaceIconData, servantIds: ReadonlySet<number>): FaceCandidate[] =>
+export const faceCandidates = (
+  data: FaceIconData,
+  servantIds: ReadonlySet<number>,
+  screen: RosterScreen = 'enhance',
+): FaceCandidate[] =>
   data.icons.flatMap((icon) => {
     if (!servantIds.has(icon.servantId)) return []
     const pixels = decodeFacePixels(icon.pixels)
-    return pixels ? [{ servantId: icon.servantId, pixels: maskFaceCells(pixels) }] : []
+    return pixels ? [{ servantId: icon.servantId, pixels: maskFaceCells(pixels, screen) }] : []
   })
+
+/** 画面の種類ごとの候補 */
+export type ScreenCandidates = Readonly<Record<RosterScreen, readonly FaceCandidate[]>>
 
 /** 縮めた切り出しと、いちばん近い候補の差 */
 export const nearestCandidateDiff = (crop: Uint8ClampedArray, candidates: readonly FaceCandidate[]): number => {

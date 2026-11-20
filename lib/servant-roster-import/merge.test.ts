@@ -3,7 +3,7 @@ import type { ServantLevels } from '../servant-levels'
 import { checkReadingValues, readingKey, type ReadingCheck } from './checks'
 import { mergeRoster } from './merge'
 import { card, type CardSpec } from './test-fixtures'
-import type { CardReading } from './types'
+import type { CardReading, SkillLevels, StoredSkills } from './types'
 
 const SERVANT = 100
 
@@ -17,14 +17,19 @@ const checksOf = (readings: readonly CardReading[], extra: [CardReading, Reading
     ...extra.map(([r, c]): [string, ReadingCheck] => [readingKey(r), c]),
   ])
 
-const merge = (readings: CardReading[], stored: ServantLevels = {}, extra: [CardReading, ReadingCheck][] = []) =>
-  mergeRoster(readings, checksOf(readings, extra), stored)
+const merge = (
+  readings: CardReading[],
+  stored: ServantLevels = {},
+  extra: [CardReading, ReadingCheck][] = [],
+  storedSkills: StoredSkills = {},
+) => mergeRoster(readings, checksOf(readings, extra), stored, storedSkills)
 
-const accepted = (lv: number | null, npLv: number | null, crop = 'crop-0-0-0') => ({
+const accepted = (lv: number | null, npLv: number | null, crop = 'crop-0-0-0', skills: (number | null)[] | null = null) => ({
   key: `servant-${SERVANT}`,
   servantId: SERVANT,
   lv,
   npLv,
+  skills,
   review: null,
   crop,
 })
@@ -83,6 +88,7 @@ describe('mergeRoster: 複数の画像のまとめ', () => {
         servantId: SERVANT,
         lv: null,
         npLv: 5,
+        skills: null,
         review: {
           reasons: ['out-of-range'],
           undecided: ['lv'],
@@ -91,6 +97,8 @@ describe('mergeRoster: 複数の画像のまとめ', () => {
           npLvCandidates: [],
           lvRange: null,
           npLvRange: null,
+          undecidedSkills: [],
+          skillCandidates: [[], [], []],
         },
         crop: 'crop-0-0-0',
       },
@@ -180,6 +188,7 @@ describe('mergeRoster: 顔が「要確認」のカード', () => {
       servantId: null,
       lv: 90,
       npLv: 2,
+      skills: null,
       review: {
         reasons: ['ambiguous-face'],
         undecided: [],
@@ -188,6 +197,8 @@ describe('mergeRoster: 顔が「要確認」のカード', () => {
         npLvCandidates: [],
         lvRange: null,
         npLvRange: null,
+        undecidedSkills: [],
+        skillCandidates: [[], [], []],
       },
       crop: 'crop-0-1-2',
     })
@@ -223,6 +234,8 @@ describe('mergeRoster: 前に取り込んだ保存値との比較', () => {
       npLvCandidates: [],
       lvRange: null,
       npLvRange: null,
+      undecidedSkills: [],
+      skillCandidates: [[], [], []],
     })
   })
 
@@ -259,5 +272,119 @@ describe('mergeRoster: 前に取り込んだ保存値との比較', () => {
   it('読みに無い種類と保存値の無い種類は比べない', () => {
     expect(merge(readingsOf({ lv: [80, 80] }), { [SERVANT]: { npLv: 5 } })).toEqual([accepted(80, null)])
     expect(merge(readingsOf({ lv: [80, 80], np: [1, 5] }), { 999: { lv: 120 } })).toEqual([accepted(80, 1)])
+  })
+})
+
+describe('mergeRoster: スキルLv（サーヴァントスキル強化の画面）', () => {
+  it('サーヴァント強化の Lv・宝具Lv と、スキル強化のスキルLv を1つの行にまとめる', () => {
+    const rows = merge(readingsOf({ lv: [90, 90], np: [2, 5] }, { np: [2, 5], skills: [9, 10, 9], screen: 'skill' }))
+    expect(rows).toEqual([accepted(90, 2, 'crop-0-0-0', [9, 10, 9])])
+  })
+
+  it('スキル強化の画像だけ: Lv は無く（保存値を残す）、宝具Lv とスキルLv を取り込む', () => {
+    expect(merge(readingsOf({ np: [3, 5], skills: [10, 10, 10], screen: 'skill' }))).toEqual([accepted(null, 3, 'crop-0-0-0', [10, 10, 10])])
+  })
+
+  it('スキルLv だけが読めた行も値のある行になる（宝具Lv は読めなかった）', () => {
+    expect(merge(readingsOf({ skills: [1, 1, 1] }))).toEqual([accepted(null, null, 'crop-0-0-0', [1, 1, 1])])
+  })
+
+  it('宝具Lv がスキル強化の画像のほうが高くても、サーヴァント強化の画像の Lv は捨てない', () => {
+    const rows = merge(readingsOf({ lv: [90, 90], np: [2, 5] }, { np: [3, 5], skills: [9, 10, 9], screen: 'skill' }))
+    expect(rows).toEqual([accepted(90, 3, 'crop-1-0-0', [9, 10, 9])])
+  })
+
+  it.each([
+    ['合計が高い読みを使う', [9, 10, 9], [10, 10, 9], [10, 10, 9]],
+    ['順を入れ替えても同じ', [10, 10, 9], [9, 10, 9], [10, 10, 9]],
+    ['合計が同じなら先の読み', [9, 10, 8], [10, 9, 8], [9, 10, 8]],
+  ] as [string, SkillLevels, SkillLevels, SkillLevels][])('スキル強化の画像が2枚で読みが違う: %s', (_name, a, b, expected) => {
+    const rows = merge(readingsOf({ np: [2, 5], skills: a }, { np: [2, 5], skills: b }))
+    expect(rows.map((r) => r.skills)).toEqual([expected])
+  })
+
+  it('スキルLv の無い読みはスキルLv を打ち消さない', () => {
+    expect(merge(readingsOf({ np: [2, 5], skills: [9, 10, 9] }, { lv: [90, 90], np: [2, 5] }))[0].skills).toEqual([9, 10, 9])
+  })
+
+  it('宝具Lv が検査に通らない読みでも、スキルLv はその行に残る', () => {
+    const [row] = merge(readingsOf({ failures: [{ kind: 'npLv', current: 51, max: 5 }], skills: [9, 10, 9] }))
+    expect(row.skills).toEqual([9, 10, 9])
+    expect(row.review).toMatchObject({ reasons: ['out-of-range'], undecided: ['npLv'] })
+  })
+
+  it('顔が「要確認」のカードの行にもスキルLv を持たせる', () => {
+    const [row] = merge([card(0, 0, 0, { servant: null, np: [2, 5], skills: [10, 10, 10] })])
+    expect(row).toMatchObject({ servantId: null, npLv: 2, skills: [10, 10, 10] })
+    expect(row.review?.reasons).toEqual(['ambiguous-face'])
+  })
+})
+
+describe('mergeRoster: Lv を読まないスキル強化の読みから Lv を借りる条件', () => {
+  it('サーヴァント強化の読みだけなら、選んだ読みに Lv が無くても、ほかの読みの Lv を借りない', () => {
+    // 宝具Lv 2 だけの読みと Lv 90 だけの読み: 強いのは宝具Lv のある読みで、その Lv は無いまま
+    expect(merge(readingsOf({ np: [2, 5] }, { lv: [90, 90] }))).toEqual([accepted(null, 2, 'crop-0-0-0')])
+  })
+
+  it('選んだ読みがスキル強化の画像のものなら、サーヴァント強化の読みの Lv を使う', () => {
+    expect(merge(readingsOf({ np: [3, 5], screen: 'skill' }, { lv: [90, 90], np: [2, 5] }))).toEqual([
+      accepted(90, 3, 'crop-0-0-0'),
+    ])
+  })
+})
+
+describe('mergeRoster: 育成計算機のスキルの今の値との比較', () => {
+  const SAVED_SKILLS = [9, 10, 9]
+  const SAVED: StoredSkills = { [SERVANT]: SAVED_SKILLS }
+  const skillRows = (skills: SkillLevels, extra: Omit<CardSpec, 'servant' | 'skills'> = { np: [2, 5] }, stored: ServantLevels = {}) =>
+    merge(readingsOf({ ...extra, skills, screen: 'skill' }), stored, [], SAVED)
+
+  it.each([
+    ['同じ', [9, 10, 9], SAVED],
+    ['高い', [10, 10, 10], SAVED],
+    ['別のサーヴァントの値だけ渡された', [1, 1, 1], { 999: [10, 10, 10] }],
+  ] as [string, SkillLevels, StoredSkills][])('スキルLv が今の値と%sなら「要確認」にしない', (_name, skills, storedSkills) => {
+    const [row] = merge(readingsOf({ np: [2, 5], skills, screen: 'skill' }), {}, [], storedSkills)
+    expect(row.review).toBeNull()
+    expect(row.skills).toEqual(skills)
+  })
+
+  it.each([
+    ['スキル3だけ今の値より 1 低い', [9, 10, 8], [2]],
+    ['すべて低い', [8, 9, 8], [0, 1, 2]],
+  ] as [string, SkillLevels, number[]][])('%s: 低いスキルの欄を空にして候補に読んだ値と今の値を出し、「要確認」にする', (_name, skills, low) => {
+    const [row] = skillRows(skills)
+    expect(row.skills).toEqual(skills.map((v, i) => (low.includes(i) ? null : v)))
+    expect(row.review).toMatchObject({ reasons: ['lower-than-saved'], undecided: [], undecidedSkills: low })
+    expect(row.review?.skillCandidates).toEqual([0, 1, 2].map((i) => (low.includes(i) ? [skills.at(i), SAVED_SKILLS.at(i)] : [])))
+    expect(row).toMatchObject({ lv: null, npLv: 2 })
+  })
+
+  it('Lv も低いとき: 理由は1つにまとめ、Lv とスキルの両方を空にする', () => {
+    const [row] = skillRows([9, 10, 8], { lv: [80, 80], np: [2, 5] }, { [SERVANT]: { lv: 90 } })
+    expect(row).toMatchObject({ lv: null, npLv: 2, skills: [9, 10, null] })
+    expect(row.review).toMatchObject({ reasons: ['lower-than-saved'], undecided: ['lv'], undecidedSkills: [2] })
+  })
+
+  it('宝具Lv が範囲外で「要確認」の行でも、スキルの低さを重ねて出す', () => {
+    const [row] = merge(
+      readingsOf({ failures: [{ kind: 'npLv', current: 51, max: 5 }], skills: [9, 10, 8], screen: 'skill' }),
+      {},
+      [],
+      SAVED,
+    )
+    expect(row.review).toMatchObject({ reasons: ['out-of-range', 'lower-than-saved'], undecided: ['npLv'], undecidedSkills: [2] })
+    expect(row.skills).toEqual([9, 10, null])
+  })
+
+  it('スキルLv しか読めない行も、今の値より低ければ「要確認」にする', () => {
+    const [row] = merge(readingsOf({ skills: [1, 10, 9], screen: 'skill' }), {}, [], SAVED)
+    expect(row).toMatchObject({ lv: null, npLv: null, skills: [null, 10, 9] })
+    expect(row.review).toMatchObject({ reasons: ['lower-than-saved'], undecidedSkills: [0] })
+  })
+
+  it('スキルLv の無い行と、今の値が渡されていないときは比べない', () => {
+    expect(merge(readingsOf({ lv: [90, 90], np: [2, 5] }), {}, [], SAVED)[0].review).toBeNull()
+    expect(merge(readingsOf({ np: [2, 5], skills: [1, 1, 1], screen: 'skill' }))[0].review).toBeNull()
   })
 })
