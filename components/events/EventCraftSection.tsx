@@ -124,7 +124,7 @@ const BlockedNotice: React.FC<{ view: BlockedView; gaps: CraftDataGap[]; items: 
   if (view === 'empty') {
     return (
       <Notice>
-        <p>{t('event-craft-roster-empty', '育成対象のサーヴァントを設定すると、不足素材から料理の配分を計算できます。')}</p>
+        <p>{t('event-craft-roster-empty', '育成対象のサーヴァントを設定すると、不足素材からクラフトの配分を計算できます。')}</p>
         <Link href="/material" className="self-start font-semibold" style={{ color: 'var(--gold)' }}>
           {t('event-craft-roster-link', '育成対象を設定する')}
         </Link>
