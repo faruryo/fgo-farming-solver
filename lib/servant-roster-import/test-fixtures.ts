@@ -22,6 +22,8 @@ export type CardSpec = {
   skills?: SkillLevels
   failures?: ValueFailure[]
   nearest?: number[]
+  /** 読んだ選択画面（省略は enhance） */
+  screen?: RosterScreen
 }
 
 export const face = (servant: number | null, nearest: number[] = []): FaceMatch =>
@@ -38,6 +40,7 @@ export const values = (spec: Omit<CardSpec, 'servant'>): CardValues => ({
 
 export const card = (imageIndex: number, row: number, column: number, spec: CardSpec): CardReading => ({
   imageIndex,
+  screen: spec.screen ?? 'enhance',
   row,
   column,
   face: face(spec.servant, spec.nearest),
@@ -60,5 +63,7 @@ export const image = (
   ownedCount: sort.owned ?? null,
   sortKey: sort.key,
   sortOrder: sort.order,
-  rows: rows.map((specs, row) => specs.map((spec, column) => card(imageIndex, row, column, spec))),
+  rows: rows.map((specs, row) =>
+    specs.map((spec, column) => card(imageIndex, row, column, { screen: sort.screen, ...spec })),
+  ),
 })

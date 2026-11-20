@@ -12,22 +12,27 @@ const rectOf = (box: OcrBox): Rect => ({ x: box.x, y: box.y, width: box.width, h
 
 /**
  * 見出しの枠と画面の種類。スキル強化の見出し（「強化するサーヴァントを選択」を含む）を先に見て、
- * その枠はサーヴァント強化の見出しの枠に換算する。どちらも無ければ null
+ * その枠はサーヴァント強化の見出しの枠に換算する。「スキルを」が分かれたり読み違えたりして
+ * サーヴァント強化の見出しの文字しか当たらなくても、すぐ下に2行目「強化には各種素材アイテムが必要です」があればスキル強化の画面にする。
+ * どちらも無ければ null
  */
 export const findRosterHeading = (boxes: readonly OcrBox[]): { screen: RosterScreen; heading: Rect } | null => {
-  const skill = boxes.find((b) => normalize(b.text).includes(SKILL_HEADING.text))
-  if (skill) {
-    // 2行目は1行目のすぐ下（1行目の枠の高さの 3 倍まで）にあるものだけを使う
-    const second = boxes.find(
-      (b) => normalize(b.text).includes(SKILL_HEADING.secondLineText) && b.y > skill.y && b.y - skill.y < skill.height * 3,
-    )
-    const gap = second ? second.y - skill.y : null
-    const unit = gap ? gap * SKILL_HEADING.unitPerLineGap : skill.height * SKILL_HEADING.unitPerHeight
-    const down = gap ? gap * SKILL_HEADING.downPerLineGap : skill.height * SKILL_HEADING.downPerHeight
-    return { screen: 'skill', heading: { x: skill.x, y: skill.y + down, width: skill.width, height: unit } }
-  }
-  const box = boxes.find((b) => normalize(b.text).includes(ROSTER_HEADING_TEXT))
-  return box ? { screen: 'enhance', heading: rectOf(box) } : null
+  const matched =
+    boxes.find((b) => normalize(b.text).includes(SKILL_HEADING.text)) ??
+    boxes.find((b) => normalize(b.text).includes(ROSTER_HEADING_TEXT))
+  if (!matched) return null
+  // 2行目は1行目のすぐ下（1行目の枠の高さの 3 倍まで）にあるものだけを使う
+  const second = boxes.find(
+    (b) =>
+      normalize(b.text).includes(SKILL_HEADING.secondLineText) &&
+      b.y > matched.y &&
+      b.y - matched.y < matched.height * 3,
+  )
+  if (!second && !normalize(matched.text).includes(SKILL_HEADING.text)) return { screen: 'enhance', heading: rectOf(matched) }
+  const gap = second ? second.y - matched.y : null
+  const unit = gap ? gap * SKILL_HEADING.unitPerLineGap : matched.height * SKILL_HEADING.unitPerHeight
+  const down = gap ? gap * SKILL_HEADING.downPerLineGap : matched.height * SKILL_HEADING.downPerHeight
+  return { screen: 'skill', heading: { x: matched.x, y: matched.y + down, width: matched.width, height: unit } }
 }
 
 /** 見出しの枠から決めた格子 */

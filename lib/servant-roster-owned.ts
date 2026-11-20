@@ -1,4 +1,4 @@
-import type { ChaldeaState } from '../hooks/create-chaldea-state'
+import type { ChaldeaState, ServantState } from '../hooks/create-chaldea-state'
 
 /**
  * スクリーンショットから取り込むサーヴァントの所持の印と、スキルの「今」のLv を書く純粋関数。
@@ -35,6 +35,18 @@ export const withOwnedServants = (prev: ChaldeaState, ids: readonly (string | nu
 
 const SKILL_COUNT = 3
 const SKILL_END_DEFAULT = 10
+
+/** 育成計算機のスキル1〜3の今の値（`start`。欄が足りなければ 1） */
+export const currentSkills = (state: ServantState | undefined): number[] =>
+  Array.from({ length: SKILL_COUNT }, (_, i) => state?.targets.skill.ranges.at(i)?.start ?? 1)
+
+/** サーヴァントごとのスキルの今の値（`all` は除く） */
+export const currentSkillsById = (state: ChaldeaState): Record<string, number[]> =>
+  Object.fromEntries(
+    Object.entries(state)
+      .filter(([id]) => id !== ALL_KEY)
+      .map(([id, s]) => [id, currentSkills(s)]),
+  )
 
 /**
  * 取り込む行のスキル1〜3の Lv を、育成計算機のスキルの「今」（`start`）に書いた新しい状態。

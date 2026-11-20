@@ -92,6 +92,25 @@ describe('summarizeRoster', () => {
       expect(result).toMatchObject({ unsortedImageCount: 0, shortfall: null })
     })
 
+    it('サーヴァント強化の画像とスキル強化の画像は別々につなぐ: 撮り漏れは画面ごとの枚数で比べる', () => {
+      // 片方の画面だけでは所持数 4 に足りない（2 + 2 を1つの並びに数えると撮り漏れに気づけない）
+      const enhance = image(0, [[np(1, 5), np(2, 5)]], { key: 'npLv', order: 'desc', owned: 4 })
+      const skill = image(1, [[skillCard(3, 5, [9, 10, 9]), skillCard(4, 5, [9, 10, 9])]], {
+        key: 'npLv',
+        order: 'desc',
+        owned: 4,
+        screen: 'skill',
+      })
+      expect(summarizeRoster([enhance, skill], ctx).shortfall).toEqual({ owned: 4, read: 2 })
+    })
+
+    it('育成計算機のスキルの今の値より低く読んだスキルは、空にして「要確認」にする', () => {
+      const skill = image(0, [[skillCard(1, 5, [9, 10, 8])]], { key: 'npLv', order: 'desc', owned: 1, screen: 'skill' })
+      const [row] = summarizeRoster([skill], { ...ctx, storedSkills: { '1': [9, 10, 9] } }).rows
+      expect(row).toMatchObject({ servantId: 1, npLv: 5, skills: [9, 10, null] })
+      expect(row.review).toMatchObject({ reasons: ['lower-than-saved'], undecidedSkills: [2], skillCandidates: [[], [], [8, 9]] })
+    })
+
     it('スキル強化の画像だけ: Lv が無くても「要確認」にならず、保存済みの Lv は取り込む値にしない', () => {
       const skill = image(0, [[skillCard(1, 5, [9, 10, 9])]], { key: 'npLv', order: 'desc', owned: 1, screen: 'skill' })
       const [row] = summarizeRoster([skill], { ...ctx, stored: { '1': { lv: 100, npLv: 5 } } }).rows

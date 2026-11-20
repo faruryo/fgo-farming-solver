@@ -63,6 +63,8 @@ export type SkillLevels = [number, number, number]
 /** 1枚の画像の1枚のカードの読み */
 export type CardReading = {
   imageIndex: number
+  /** 読んだ選択画面（skill のカードは Lv を読まない） */
+  screen: RosterScreen
   /** 画像の中の段の順（上から 0） */
   row: number
   /** 列（左から 0〜6） */
@@ -99,6 +101,9 @@ export type ReviewReason =
   | 'sort-order'
   | 'lower-than-saved'
 
+/** 育成計算機のスキルの今の値（サーヴァントの ID → スキル1〜3） */
+export type StoredSkills = Readonly<Record<string, readonly number[]>>
+
 /** 推定した値の範囲（片側だけのこともある） */
 export type ValueRange = { min?: number; max?: number }
 
@@ -110,8 +115,11 @@ export type RosterRow = {
   /** 取り込む値。「要確認」で空にした欄と、読めなかった種類は null */
   lv: number | null
   npLv: number | null
-  /** スキル強化の画面から読んだスキル1〜3の Lv。読めなかった行は null */
-  skills: SkillLevels | null
+  /**
+   * スキル強化の画面から読んだスキル1〜3の Lv。読めなかった行は null。
+   * 育成計算機のスキルの今の値より低かったスキルの欄は、利用者が決めるまで空（null）にする
+   */
+  skills: (number | null)[] | null
   /** 「要確認」でなければ null */
   review: {
     reasons: ReviewReason[]
@@ -123,6 +131,10 @@ export type RosterRow = {
     npLvCandidates: number[]
     lvRange: ValueRange | null
     npLvRange: ValueRange | null
+    /** 育成計算機のスキルの今の値より低いので空にしたスキルの欄（0 始まり。利用者が決めるまで取り込まない） */
+    undecidedSkills: number[]
+    /** スキルごとの候補（空にしたスキルだけ、読んだ値と今の値） */
+    skillCandidates: number[][]
   } | null
   crop: string | null
 }

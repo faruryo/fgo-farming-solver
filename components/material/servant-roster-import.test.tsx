@@ -66,6 +66,8 @@ const needsReview = (key: string, row: Partial<Omit<RosterRow, 'review'>>, revie
     npLvCandidates: [],
     lvRange: null,
     npLvRange: null,
+    undecidedSkills: [],
+    skillCandidates: [[], [], []],
     ...review,
   },
 })
@@ -165,10 +167,16 @@ describe('スクリーンショットから取り込む入口', () => {
     expect(screen.getByText('照合用のデータを読み込んでいます…')).toBeInTheDocument()
     act(() => progress?.({ phase: 'image', current: 2, total: 3 }))
     expect(screen.getByText('画像を読み取っています 2 / 3')).toBeInTheDocument()
-    const [files, options] = analyzeMock.fn.mock.calls[0] as [File[], { servants: unknown[]; stored: unknown }]
+    const [files, options] = analyzeMock.fn.mock.calls[0] as [
+      File[],
+      { servants: unknown[]; stored: unknown; storedSkills: Record<string, number[]> },
+    ]
     expect(files.map(f => f.name)).toEqual(['1.png', '2.png', '3.png'])
     expect(options.servants).toHaveLength(20)
     expect(options.servants[0]).toEqual({ id: 1, rarity: 5 })
+    // 育成計算機のスキルの今の値（一度も操作していないサーヴァントは 1・1・1）を渡す
+    expect(options.storedSkills['1']).toEqual([1, 1, 1])
+    expect(options.storedSkills).not.toHaveProperty('all')
     await act(async () => finish?.(done([matched(MASH, 90, 2)], { imageCount: 3 })))
     expect(screen.getByText('3枚を読みました')).toBeInTheDocument()
     expect(confirmButton()).toBeEnabled()
@@ -531,6 +539,56 @@ describe('スキルLv（サーヴァントスキル強化の画面）', () => {
     expect(checkbox).toHaveAttribute('data-disabled')
     fireEvent.click(confirmButton())
     expect(skillStarts(MASH)).toEqual([1, 1, 1])
+  })
+
+  it('育成計算機のスキルの今の値を欄の横に出し、読み取りにも渡す', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1, [9, 10, 9])]))
+    const options = (analyzeMock.fn.mock.calls[0] as [File[], { storedSkills: Record<string, number[]> }])[1]
+    expect(options.storedSkills[String(MASH)]).toEqual([6, 7, 8])
+    expandMatched()
+    const row = rowOf('マシュ を取り込みに入れる')
+    // planned のスキルの今の値は 6・7・8
+    for (const stored of ['6', '7', '8']) expect(within(row).getByText(stored)).toBeInTheDocument()
+  })
+
+  it('今の値より低く読んだスキル: 欄を空にして「要確認」で出し、候補を押して決めるまで書かない', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(
+      done([
+        needsReview(
+          'r1',
+          { servantId: MASH, npLv: 3, skills: [9, null, 10] },
+          { reasons: ['lower-than-saved'], undecidedSkills: [1], skillCandidates: [[], [3, 7], []] },
+        ),
+      ]),
+    )
+    const row = reviewRowAt(0)
+    expect(within(row).getByText('前に取り込んだ値より低い')).toBeInTheDocument()
+    expect(within(row).getByLabelText('マシュ の スキル2')).toHaveValue('')
+    expect(within(row).getByRole('checkbox')).toHaveAttribute('data-disabled')
+    expect(within(row).getByRole('checkbox')).not.toBeChecked()
+    expect(confirmButton()).toBeDisabled()
+    fireEvent.click(within(row).getByRole('button', { name: '7' }))
+    expect(within(row).getByLabelText('マシュ の スキル2')).toHaveValue('7')
+    expect(within(row).getByRole('checkbox')).toBeChecked()
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MASH)).toEqual([9, 7, 10])
+  })
+
+  it('今の値より低く読んだスキルを決めずに確定する: その行は取り込まず、今の値を変えない', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(
+      done([
+        matched(MERLIN, 90, 2),
+        needsReview('r1', { servantId: MASH, skills: [9, null, 10] }, { reasons: ['lower-than-saved'], undecidedSkills: [1], skillCandidates: [[], [3, 7], []] }),
+      ]),
+    )
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MASH)).toEqual([6, 7, 8])
   })
 
   it('「要確認」の行も、サーヴァントを選んで決めればスキルLv を書く', async () => {

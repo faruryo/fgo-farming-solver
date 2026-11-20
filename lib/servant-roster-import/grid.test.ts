@@ -98,6 +98,21 @@ describe('findRosterHeading（サーヴァントスキル強化）', () => {
     expect(above?.heading.y).toBeCloseTo(48, 6)
   })
 
+  it('「スキルを」が分かれて読めず、サーヴァント強化の見出しの文字しか当たらなくても、すぐ下に2行目があればスキル強化の画面にする', () => {
+    const found = findRosterHeading([
+      box('強化するサーヴァントを選択してください', 568, 35, 869, 44),
+      box(SECOND_LINE, 568, 83, 700, 44),
+    ])
+    expect(found).toEqual({ screen: 'skill', heading: { x: 568, y: 48, width: 869, height: 57 } })
+  })
+
+  it('サーヴァント強化の見出しの下に2行目が無い、遠い、上にあるときは、サーヴァント強化の画面のまま', () => {
+    const enhance = (second: OcrBox) => findRosterHeading([box('強化するサーヴァントを選択してください', 568, 35, 869, 44), second])
+    expect(enhance(box('所持サーヴァント:', 568, 83, 700, 44))?.screen).toBe('enhance')
+    expect(enhance(box(SECOND_LINE, 568, 35 + 44 * 3, 700, 44))?.screen).toBe('enhance')
+    expect(enhance(box(SECOND_LINE, 568, 5, 700, 44))?.screen).toBe('enhance')
+  })
+
   it('換算した見出しの枠の格子は、サーヴァント強化の画面と同じ列の位置になる', () => {
     const skill = readRosterGrid([box(SKILL_TEXT, 568, 35, 869, 44), box(SECOND_LINE, 568, 83, 700, 44)])
     const enhance = readRosterGrid([HEADING])

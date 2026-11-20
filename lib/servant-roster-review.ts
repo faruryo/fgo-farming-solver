@@ -73,13 +73,17 @@ export const hasInvalidField = (edit: RosterRowEdit): boolean =>
   edit.skills.some(value => readSkillField(value).kind === 'invalid')
 
 /**
- * 取り込みに入れられる行か。サーヴァントが決まり、範囲に無い値が無く、「要確認」で空にした欄に値が入っていること。
+ * 取り込みに入れられる行か。サーヴァントが決まり、範囲に無い値が無く、「要確認」で空にした欄（スキルを含む）に値が入っていること。
  * 読めなかった種類の空の欄は、保存されている値を残すので決めなくてよい。
  */
 export const isRowDecided = (row: RosterRow, edit: RosterRowEdit): boolean => {
   if (edit.servantId === null || hasInvalidField(edit)) return false
   const undecided = row.review?.undecided ?? []
-  return undecided.every(field => readLevelField(field, valueOfEdit(edit, field)).kind === 'value')
+  const undecidedSkills = row.review?.undecidedSkills ?? []
+  return (
+    undecided.every(field => readLevelField(field, valueOfEdit(edit, field)).kind === 'value') &&
+    undecidedSkills.every(index => readSkillField(edit.skills.at(index) ?? null).kind === 'value')
+  )
 }
 
 /**

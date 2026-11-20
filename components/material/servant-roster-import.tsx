@@ -9,6 +9,7 @@ import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 import type { ServantLevelImportRow, ServantLevels } from '../../lib/servant-levels'
 import type { RosterImportResult, RosterProgress } from '../../lib/servant-roster-import/types'
+import { currentSkillsById } from '../../lib/servant-roster-owned'
 import { RosterReviewStage } from './servant-roster-review'
 
 type Stage = 'upload' | 'analyzing' | 'review'
@@ -146,7 +147,7 @@ const IconsUnavailableStage: React.FC<{ onCancel: () => void }> = ({ onCancel })
  * 選ぶ・読み取る・確かめるの3段の状態。読み取りのモジュール（文字認識と照合用のデータの読み込み）は、
  * 画像を選んで読み取りを始めたときに動的 import するので、それまで読み込まない。
  */
-const useRosterImportFlow = (servants: readonly MaterialCatalogServant[], levels: ServantLevels) => {
+const useRosterImportFlow = (servants: readonly MaterialCatalogServant[], levels: ServantLevels, chaldeaState: ChaldeaState) => {
   const [stage, setStage] = useState<Stage>('upload')
   const [files, setFiles] = useState<File[]>([])
   const [skippedNames, setSkippedNames] = useState<string[]>([])
@@ -181,6 +182,7 @@ const useRosterImportFlow = (servants: readonly MaterialCatalogServant[], levels
       const next = await analyzeRosterScreenshots(files, {
         servants: servants.map(s => ({ id: s.id, rarity: s.rarity })),
         stored: levels,
+        storedSkills: currentSkillsById(chaldeaState),
         onProgress: p => {
           if (current()) setProgress(p)
         },
@@ -215,7 +217,7 @@ const RosterImportDialog: React.FC<ImportProps & { open: boolean; onOpenChange: 
   onConfirm,
 }) => {
   const { t } = useTranslation('material')
-  const flow = useRosterImportFlow(servants, levels)
+  const flow = useRosterImportFlow(servants, levels, chaldeaState)
   const handleOpenChange = (next: boolean) => {
     if (!next) flow.reset()
     onOpenChange(next)

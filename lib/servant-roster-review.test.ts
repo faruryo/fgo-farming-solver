@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyRowEdit,
   hasInvalidField,
   importRows,
   initialRowEdit,
@@ -96,6 +97,8 @@ describe('確かめの画面の行', () => {
       npLvCandidates: [],
       lvRange: null,
       npLvRange: null,
+      undecidedSkills: [],
+      skillCandidates: [[], [], []],
     }
     const reviewRow = row({ npLv: null, review })
     expect(isRowDecided(reviewRow, edit({ npLv: null }))).toBe(false)
@@ -139,3 +142,42 @@ describe('確かめの画面のスキルLv', () => {
     expect(importRows([row()], [edit()])[0]).not.toHaveProperty('skills')
   })
 })
+
+describe('育成計算機のスキルの今の値より低くて空にしたスキル', () => {
+  const lowerSkill: NonNullable<RosterRow['review']> = {
+    reasons: ['lower-than-saved'],
+    undecided: [],
+    servantCandidates: [],
+    lvCandidates: [],
+    npLvCandidates: [],
+    lvRange: null,
+    npLvRange: null,
+    undecidedSkills: [1],
+    skillCandidates: [[], [7, 9], []],
+  }
+  const reviewRow = row({ skills: [9, null, 9], review: lowerSkill })
+
+  it('「要確認」の行は印を外して出し、空のスキルの欄は空のまま', () => {
+    const initial = initialRowEdit(reviewRow)
+    expect(initial.included).toBe(false)
+    expect(initial.skills).toEqual([9, null, 9])
+  })
+
+  it('空にしたスキルの欄に範囲に入る値が入るまで決まらない（ほかのスキルの値では決まらない）', () => {
+    expect(isRowDecided(reviewRow, edit({ skills: [9, null, 9] }))).toBe(false)
+    expect(isRowDecided(reviewRow, edit({ skills: [9, 11, 9] }))).toBe(false)
+    expect(isRowDecided(reviewRow, edit({ skills: [9, 7, 9] }))).toBe(true)
+  })
+
+  it('決めるまで取り込みに入れない。候補を入れて決めれば、その値で取り込む', () => {
+    expect(importRows([reviewRow], [edit({ skills: [9, null, 9] })])).toEqual([])
+    expect(importRows([reviewRow], [edit({ skills: [9, 7, 9] })])).toEqual([{ id: 1, lv: 90, npLv: 2, skills: [9, 7, 9] }])
+  })
+
+  it('決めた行へ変えた時点で印が自動で付く', () => {
+    const prev = initialRowEdit(reviewRow)
+    expect(applyRowEdit(reviewRow, prev, { skills: [9, 9, 9] }).included).toBe(true)
+    expect(applyRowEdit(reviewRow, prev, { skills: [9, null, 10] }).included).toBe(false)
+  })
+})
+

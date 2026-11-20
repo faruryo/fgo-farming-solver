@@ -1,13 +1,14 @@
 /**
  * 画像ごとのカードの読みを、サーヴァントごとの確かめの画面の行にまとめる純粋関数。
  * 同じサーヴァントの読みは、検査に通ったもののうち一番強い組（宝具Lv、同じなら Lv が高いもの）を1つ取り込む値にする。
- * スキルLv（スキル強化の画面だけに出る）は、検査とは別に、読めた読みのうち合計が高いものを使う。
+ * スキルLv（スキル強化の画面だけに出る）は、検査とは別に、読めた読みのうち合計が高いものを使い、
+ * 育成計算機のスキルの今の値より低いスキルは Lv と同じく欄を空にして「要確認」にする。
  * 顔が「要確認」のカードは1枚ごとに1つの行にする。
  */
 
 import { isValidServantLv, isValidServantNpLv, type ServantLevel, type ServantLevels } from '../servant-levels'
 import { PASSED_CHECK, readingKey, valueOfKind, type ReadingCheck, type ValueKind } from './checks'
-import type { CardReading, FaceMatch, RosterRow, SkillLevels, ValueRange } from './types'
+import type { CardReading, FaceMatch, RosterRow, SkillLevels, StoredSkills, ValueRange } from './types'
 
 type Level = { lv: number | null; npLv: number | null }
 type Entry = { reading: CardReading; check: ReadingCheck }
@@ -68,6 +69,8 @@ const emptyReview = (): Review => ({
   npLvCandidates: [],
   lvRange: null,
   npLvRange: null,
+  undecidedSkills: [],
+  skillCandidates: [[], [], []],
 })
 
 /** 検査に通らなかった種類の欄を空にした行の値と「要確認」 */
@@ -111,39 +114,70 @@ const compareWithStored = (level: Level, saved: ServantLevel | undefined) => {
   }
 }
 
-const servantRow = (servantId: number, entries: readonly Entry[], stored: ServantLevels): RosterRow => {
+const SKILL_INDICES = [0, 1, 2]
+
+/** 読んだスキルLv を育成計算機のスキルの今の値と比べ、低いスキルがあれば欄を空にして「要確認」にする */
+const compareSkillsWithStored = (skills: SkillLevels | null, saved: readonly number[] | undefined) => {
+  const lower = skills && saved ? SKILL_INDICES.filter((i) => (skills.at(i) ?? 0) < (saved.at(i) ?? 0)) : []
+  if (!skills || lower.length === 0) return { skills, review: null }
+  return {
+    skills: skills.map((v, i) => (lower.includes(i) ? null : v)),
+    review: {
+      ...emptyReview(),
+      reasons: ['lower-than-saved' as const],
+      undecidedSkills: lower,
+      skillCandidates: SKILL_INDICES.map((i) => (lower.includes(i) ? unique([skills.at(i) ?? null, saved?.at(i) ?? null]) : [])),
+    },
+  }
+}
+
+/** 2つの「要確認」を1つにする（どちらかが無ければもう一方） */
+const combineReviews = (a: Review | null, b: Review | null): Review | null => {
+  if (!a || !b) return a ?? b
+  return {
+    reasons: [...new Set([...a.reasons, ...b.reasons])],
+    undecided: [...a.undecided, ...b.undecided],
+    servantCandidates: [...a.servantCandidates, ...b.servantCandidates],
+    lvCandidates: [...a.lvCandidates, ...b.lvCandidates],
+    npLvCandidates: [...a.npLvCandidates, ...b.npLvCandidates],
+    lvRange: a.lvRange ?? b.lvRange,
+    npLvRange: a.npLvRange ?? b.npLvRange,
+    undecidedSkills: [...a.undecidedSkills, ...b.undecidedSkills],
+    skillCandidates: a.skillCandidates.map((c, i) => [...c, ...(b.skillCandidates.at(i) ?? [])]),
+  }
+}
+
+const servantRow = (
+  servantId: number,
+  entries: readonly Entry[],
+  stored: ServantLevels,
+  storedSkills: StoredSkills,
+): RosterRow => {
   const passed = entries.filter((e) => e.check.reasons.length === 0)
   const valued = passed.filter((e) => hasValue(usableLevel(e)))
   const failed = entries.filter((e) => e.check.reasons.length > 0)
-  const base = { key: `servant-${servantId}`, servantId, skills: bestSkills(entries) }
+  const skillCheck = compareSkillsWithStored(bestSkills(entries), storedSkills[String(servantId)])
+  const base = { key: `servant-${servantId}`, servantId, skills: skillCheck.skills }
   if (valued.length > 0) {
     const chosen = strongest(valued)
-    // スキル強化の画面の読みは Lv が無いので、選んだ読みに Lv が無ければほかの読みの Lv を使う
+    // スキル強化の画面の読みは Lv を読まないので、その読みを選んだときだけ、ほかの読みの Lv を使う
     const picked = usableLevel(chosen)
-    const lvs = valued.flatMap((e) => usableLevel(e).lv ?? [])
+    const lvs = chosen.reading.screen === 'skill' ? valued.flatMap((e) => usableLevel(e).lv ?? []) : []
     const { level, review } = compareWithStored(
       { ...picked, lv: picked.lv ?? (lvs.length > 0 ? Math.max(...lvs) : null) },
       stored[String(servantId)],
     )
-    return { ...base, ...level, review, crop: chosen.reading.crop }
+    return { ...base, ...level, review: combineReviews(review, skillCheck.review), crop: chosen.reading.crop }
   }
   if (failed.length > 0) {
     const chosen = strongest(failed)
     const failedRow = failedReview(chosen)
     // 検査に通った種類の値も、保存値より低ければ欄を空にする（利用者が空の欄を埋めたときに黙って下げないため）
     const lower = compareWithStored(failedRow.level, stored[String(servantId)])
-    const review = lower.review
-      ? {
-          ...failedRow.review,
-          reasons: [...failedRow.review.reasons, ...lower.review.reasons],
-          undecided: [...failedRow.review.undecided, ...lower.review.undecided],
-          lvCandidates: [...failedRow.review.lvCandidates, ...lower.review.lvCandidates],
-          npLvCandidates: [...failedRow.review.npLvCandidates, ...lower.review.npLvCandidates],
-        }
-      : failedRow.review
+    const review = combineReviews(combineReviews(failedRow.review, lower.review), skillCheck.review)
     return { ...base, ...lower.level, review, crop: chosen.reading.crop }
   }
-  return { ...base, lv: null, npLv: null, review: null, crop: entries[0].reading.crop }
+  return { ...base, lv: null, npLv: null, review: skillCheck.review, crop: entries[0].reading.crop }
 }
 
 type ReviewFace = Extract<FaceMatch, { kind: 'review' }>
@@ -169,6 +203,7 @@ export const mergeRoster = (
   readings: readonly CardReading[],
   checks: ReadonlyMap<string, ReadingCheck>,
   stored: ServantLevels,
+  storedSkills: StoredSkills = {},
 ): RosterRow[] => {
   const groups = new Map<number, Entry[]>()
   const order: ({ kind: 'servant'; servantId: number } | { kind: 'card'; entry: Entry; face: ReviewFace })[] = []
@@ -190,6 +225,6 @@ export const mergeRoster = (
   return order.map((unit) =>
     unit.kind === 'card'
       ? faceReviewRow(unit.entry, unit.face)
-      : servantRow(unit.servantId, groups.get(unit.servantId) ?? [], stored),
+      : servantRow(unit.servantId, groups.get(unit.servantId) ?? [], stored, storedSkills),
   )
 }

@@ -22,6 +22,7 @@ import type {
   Rect,
   RosterImportResult,
   RosterProgress,
+  StoredSkills,
 } from './types'
 import { readCardValues } from './values'
 
@@ -32,6 +33,8 @@ export type AnalyzeRosterOptions = {
   servants: readonly RosterServant[]
   /** 前に取り込んだ Lv・宝具Lv の保存値（読んだもの） */
   stored: ServantLevels
+  /** 育成計算機のスキルの今の値（これより低く読んだスキルは「要確認」にする） */
+  storedSkills: StoredSkills
   onProgress?: (progress: RosterProgress) => void
 }
 
@@ -142,7 +145,7 @@ const readImage = async (
           grid.screen,
         )
         if (classifyCardPosition(face, values) === 'discard') continue
-        cards.push({ imageIndex, row, column, face, values, crop: cardCropUrl(canvas, cardRect(square, grid.unit)) })
+        cards.push({ imageIndex, screen: grid.screen, row, column, face, values, crop: cardCropUrl(canvas, cardRect(square, grid.unit)) })
       }
       rows.push(cards)
     }
@@ -169,7 +172,7 @@ export const analyzeRosterScreenshots = async (
   files: readonly File[],
   options: AnalyzeRosterOptions,
 ): Promise<RosterImportResult> => {
-  const { servants, stored, onProgress } = options
+  const { servants, stored, storedSkills, onProgress } = options
   onProgress?.({ phase: 'icons' })
   const data = await fetchFaceIcons()
   const ids = new Set(servants.map((s) => s.id))
@@ -193,6 +196,7 @@ export const analyzeRosterScreenshots = async (
   const { rows, unsortedImageCount, shortfall } = summarizeRoster(images, {
     rarityOf: (id: number) => rarities.get(id),
     stored,
+    storedSkills,
   })
   return { kind: 'done', imageCount: files.length, unreadableImages, fiveColumnImages, unsortedImageCount, shortfall, rows }
 }
