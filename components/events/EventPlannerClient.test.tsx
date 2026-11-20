@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { EventPlannerClient, collectSelectableItems } from './EventPlannerClient'
 import { EventPlanResultCard } from './EventPlanResultCard'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import { allocateShop, calcBoxLayer, runEventSolver } from '../../lib/event-plan'
+import { calcBoxLayer, runEventSolver } from '../../lib/event-plan'
 import { computeApBudget } from '../../lib/ap-budget'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import type { RosterNeed } from '../../hooks/use-roster-need'
@@ -36,16 +36,17 @@ const boxEvent: EventPlannerEvent = {
 }
 
 describe('collectSelectableItems', () => {
-  it('交換所のサーヴァント扱いの品目を候補に出さず、同じ番号のアイテムの候補名はアイテムの名前のまま', () => {
+  it('箱の内容だけを候補に出し、交換所の品目（アイテム・サーヴァント扱いとも）は出さない', () => {
     const items = collectSelectableItems({
       ...boxEvent,
+      lotteries: [{ boxIndex: 0, costPerBox: 250, contents: [{ itemId: 6501, num: 5, name: '英雄の証' }], rareRewards: [] }],
       shop: [
         { itemId: 9305420, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 50, limitNum: 2, name: '完璧なお正月' },
         { itemId: 9770500, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 10, limitNum: 100, name: '叡智の大火' },
         { itemId: 9305420, qty: 1, costItemId: 94001, costAmount: 10, limitNum: 10, name: 'お正月のアイテム' },
       ],
     })
-    expect(items).toEqual([{ id: 9305420, name: 'お正月のアイテム', icon: undefined }])
+    expect(items).toEqual([{ id: 6501, name: '英雄の証', icon: undefined }])
   })
 })
 
@@ -59,7 +60,6 @@ const renderCard = (needCurrency: number) => {
     <EventPlanResultCard
       event={boxEvent}
       boxLayer={boxLayer}
-      shopAllocation={allocateShop([], new Map())}
       solverResult={solverResult}
       apBudget={apBudget}
       dropSource="atlas"
@@ -339,5 +339,93 @@ describe('箱計画の育成インパクトの所持数 #267', () => {
     render(<EventPlannerClient event={boxEvent} />)
 
     expect(await screen.findByText('不足素材 1 種')).toBeInTheDocument()
+  })
+})
+
+describe('箱計画から交換所を外す', () => {
+  // 交換所の対価は箱の通貨（武蔵うどん）と別の通貨。素材 6502 は箱の内容に無い。
+  const shopEvent: EventPlannerEvent = {
+    ...boxEvent,
+    shop: [
+      { itemId: 6502, qty: 1, costItemId: 94002, costAmount: 10, limitNum: 5, name: '虚影の塵', costName: '金の団子' },
+    ],
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    rosterMock.value = {
+      status: 'ready',
+      chaldeaState: {},
+      materialsForServants: {},
+      totalNeed: new Map([[6502, 20]]),
+    }
+  })
+  afterEach(() => {
+    localStorage.clear()
+    rosterMock.value = undefined
+  })
+
+  it('育成ロスターで交換所の品目に不足があっても、交換所の行・在庫上限の警告を出さず、必要通貨は箱の分だけ', () => {
+    render(<EventPlannerClient event={shopEvent} />)
+
+    expect(screen.getByText('育成インパクト')).toBeInTheDocument()
+    expect(screen.queryByText(/^交換所/)).not.toBeInTheDocument()
+    expect(screen.queryByText('交換所の在庫上限に達したアイテムがあります')).not.toBeInTheDocument()
+    expect(screen.getByText('250')).toBeInTheDocument()
+  })
+
+  it('欲しい素材指定の候補に交換所の品目は出ない', () => {
+    render(<EventPlannerClient event={shopEvent} />)
+    fireEvent.click(screen.getByText('欲しい素材で指定'))
+
+    expect(screen.queryByText('虚影の塵')).not.toBeInTheDocument()
+  })
+})
+
+describe('箱計画の不足（クラススコアと周回目的）', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => {
+    localStorage.clear()
+    rosterMock.value = undefined
+  })
+
+  it('育成対象のサーヴァントがいなくても、クラススコアの目標があれば「育成ロスター連動」が出る', async () => {
+    localStorage.setItem(STORAGE_KEYS.CLASS_SCORE, JSON.stringify({ classes: { saber: 'target' } }))
+    render(<EventPlannerClient event={boxEvent} />)
+
+    expect(await screen.findByRole('button', { name: '育成ロスター連動' })).toBeInTheDocument()
+    expect(screen.queryByText(/サーヴァント一覧で育成ゴールを設定すると/)).not.toBeInTheDocument()
+  })
+
+  it('周回目的を「新規サーヴァントに備える」に変えると、在庫基準の分が不足に加わり、表示もその目的になる', async () => {
+    // 素材 6001（金素材）は必要数 10・所持 10 で、今の育成では足りている。金素材の在庫基準は既定で 60。
+    rosterMock.value = { status: 'ready', chaldeaState: {}, materialsForServants: {}, totalNeed: new Map([[6001, 10]]) }
+    localStorage.setItem(STORAGE_KEYS.POSSESSION, JSON.stringify({ '6001': 10 }))
+    const items = [{ id: 6001, category: '金素材', largeCategory: '強化素材' }]
+    render(<EventPlannerClient event={boxEvent} items={items} />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '今の育成を進める' })).toBeInTheDocument())
+    expect(screen.queryByText('育成インパクト')).not.toBeInTheDocument()
+
+    act(() => {
+      localStorage.setItem(STORAGE_KEYS.FARMING_PURPOSE, JSON.stringify('reserve'))
+      window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.FARMING_PURPOSE } }))
+    })
+
+    expect(await screen.findByText('不足素材 1 種')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '新規サーヴァントに備える' })).toBeInTheDocument()
+    expect(screen.queryByText('不足は今の育成で計算')).not.toBeInTheDocument()
+  })
+
+  it('周回目的が「素材全体の効率を見る」のときは今の育成で求め、その旨を入力モードの欄に出す', async () => {
+    rosterMock.value = { status: 'ready', chaldeaState: {}, materialsForServants: {}, totalNeed: new Map([[6001, 10]]) }
+    localStorage.setItem(STORAGE_KEYS.POSSESSION, JSON.stringify({ '6001': 4 }))
+    localStorage.setItem(STORAGE_KEYS.FARMING_PURPOSE, JSON.stringify('all'))
+    const items = [{ id: 6001, category: '金素材', largeCategory: '強化素材' }]
+    render(<EventPlannerClient event={boxEvent} items={items} />)
+
+    expect(await screen.findByText('不足は今の育成で計算')).toBeInTheDocument()
+    expect(screen.getByText('不足素材 1 種')).toBeInTheDocument()
+    expect(localStorage.getItem(STORAGE_KEYS.FARMING_PURPOSE)).toBe(JSON.stringify('all'))
   })
 })
