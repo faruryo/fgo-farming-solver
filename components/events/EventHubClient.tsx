@@ -169,7 +169,7 @@ export const resolveEventTab = (sections: readonly Pick<TabSection, 'id'>[], req
 const writeTabQuery = (tab: string) => {
   const url = new URL(window.location.href)
   url.searchParams.set('tab', tab)
-  window.history.replaceState(window.history.state, '', url)
+  window.history.replaceState(null, '', url)
 }
 
 const SectionBody: React.FC<{ section: TabSection; withTitle: boolean }> = ({ section, withTitle }) => (
