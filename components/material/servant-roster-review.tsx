@@ -211,7 +211,7 @@ const RosterReviewRow: React.FC<{
           candidates={review?.servantCandidates ?? []}
           onChange={servantId => onChange({ servantId })}
         />
-        {review && <span style={{ color: '#d97706' }}>{reasonText(review.reasons)}</span>}
+        {review && <span className="basis-full" style={{ color: '#d97706' }}>{reasonText(review.reasons)}</span>}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <LevelInput
