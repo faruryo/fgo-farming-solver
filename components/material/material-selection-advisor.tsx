@@ -423,7 +423,7 @@ export const MaterialSelectionAdvisor = ({
           >
             {t(
               'advisor-craft-event-link',
-              '水着2026の料理作成はイベントページへ',
+              '水着2026のクラフトはイベントページへ',
             )}
           </Link>
         )}

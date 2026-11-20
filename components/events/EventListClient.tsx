@@ -44,7 +44,7 @@ export const EventListClient: React.FC<Props> = ({ events }) => {
         <div className="flex flex-col gap-6">
           <PageHeader backLabel={t('ダッシュボードへ戻る')} en={t('event-planner-eyebrow', 'EVENT PLANNER')} title={t('event-list-title', 'イベント一覧')}>
             <p className="text-sm" style={{ color: 'var(--text3)' }}>
-              {t('event-list-description', 'イベントごとのボックス計画・料理作成などの計画ツールを開きます。')}
+              {t('event-list-description', 'イベントごとのボックス計画・クラフトなどの計画ツールを開きます。')}
             </p>
           </PageHeader>
 
@@ -128,7 +128,7 @@ const FeatureBadges: React.FC<{ features: EventSummaryWithFeatures['features'] }
       case 'shop':
         return t('event-feature-shop', '交換所')
       case 'craft':
-        return t('event-feature-craft', '料理作成')
+        return t('event-feature-craft', 'クラフト')
     }
   }
   return (

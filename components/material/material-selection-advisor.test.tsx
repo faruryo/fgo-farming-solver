@@ -126,7 +126,7 @@ describe('MaterialSelectionAdvisor Component', () => {
     expect(screen.queryByText('イベント食材所持数')).toBeNull()
 
     const link = screen.getByRole('link', {
-      name: '水着2026の料理作成はイベントページへ',
+      name: '水着2026のクラフトはイベントページへ',
     })
     expect(link).toHaveAttribute('href', `/events/${latestCraftEventId()}`)
     expect(latestCraftEventId()).toBeDefined()
