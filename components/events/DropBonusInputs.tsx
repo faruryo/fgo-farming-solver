@@ -47,11 +47,11 @@ export const DropBonusInputs: React.FC<{
       </p>
       {children}
       {targets.length > 0 && (
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: 'var(--text2)' }}>
           {targets.map(target => (
             <label key={target.itemId} className="flex items-center gap-1.5 min-w-0">
               <Icon src={target.icon} />
-              <span className="truncate">{target.label}</span>
+              <span className="min-w-0 break-words">{target.label}</span>
               <span className="flex-shrink-0">+</span>
               <Input
                 type="number"
