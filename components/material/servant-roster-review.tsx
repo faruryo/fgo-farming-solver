@@ -13,6 +13,7 @@ import type { ChaldeaState } from '../../hooks/create-chaldea-state'
 import type { MaterialCatalogServant } from '../../lib/material-catalog'
 import type { ServantLevel, ServantLevelImportRow, ServantLevels } from '../../lib/servant-levels'
 import type { ReviewReason, RosterImportResult, RosterRow, ValueRange } from '../../lib/servant-roster-import/types'
+import { ClassIcon } from '../bond/servant-card'
 import { countNewlyOwned } from '../../lib/servant-roster-owned'
 import {
   applyRowEdit,
@@ -96,6 +97,7 @@ const ServantPicker: React.FC<{
     <span className="inline-flex flex-col gap-1">
       <span className="inline-flex items-center gap-1">
         <SmallIcon src={current?.face} alt={current?.name ?? ''} />
+        {current && <ClassIcon servant={current} size={18} />}
         <span style={{ color: 'var(--text1)' }}>
           {current?.name ?? t('roster-import-no-servant', 'サーヴァントを選んでいません')}
         </span>
@@ -115,6 +117,7 @@ const ServantPicker: React.FC<{
           <span className="flex flex-wrap gap-1">
             {options.map(s => (
               <Button key={s.id} size="xs" variant="outline" onClick={() => choose(s.id)}>
+                <ClassIcon servant={s} size={16} />
                 {s.name}
               </Button>
             ))}
