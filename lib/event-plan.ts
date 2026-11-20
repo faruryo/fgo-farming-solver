@@ -3,22 +3,19 @@
  *
  * イベント（ロト型）計画の純粋関数群。React フック不使用。UI 層が hook 経由でデータを注入する。
  *
- * Task 9  — ボックス層（決定論）: calcBoxLayer
- * Task 10 — 交換所配分（limitNum 上限付き貪欲法）: allocateShop
- * Task 11 — ソルバーアダプタ: buildEventDrops / runEventSolver
- * Task 12 — 逆算（欲しいアイテム数 → 最小箱数）: reverseCalcBoxes
- * Task 13 — ロスター育成インパクト（純粋、ChaldeaState を引数で受け取る）: computeRosterImpact
+ * ボックス層（決定論）: calcBoxLayer
+ * ソルバーアダプタ: buildEventDrops / runEventSolver
+ * 逆算（欲しいアイテム数 → 最小箱数）: reverseCalcBoxes
+ * 育成インパクト（実効不足を引数で受け取る）: computeRosterImpact
+ *
+ * ボックス計画は箱の確定報酬と周回だけで計算し、交換所の品目は扱わない（交換所の計算は交換所の画面で行う）。
  */
 
-import type {
-  EventPlannerEvent,
-  EventShopItem,
-} from './master-data/types'
+import type { EventPlannerEvent } from './master-data/types'
 import type { Drops } from './get-drops'
 import type { Params, Result } from '../interfaces/api'
 import { solve } from './solver'
-import type { ChaldeaState } from '../hooks/create-chaldea-state'
-import type { MaterialsForServants } from './get-materials'
+import type { EffectiveShortfall } from './effective-shortfall'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 内部ユーティリティ
@@ -44,7 +41,7 @@ const addToMap = (
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task 9 — ボックス層
+// ボックス層
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -123,84 +120,7 @@ export const calcBoxLayer = (
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task 10 — 交換所配分
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type ShopAllocationItem = {
-  shopItem: EventShopItem
-  /** 実際に購入する回数（limitNum で打ち切り済み）。 */
-  allocated: number
-  /** 取得できる素材総数（= allocated × shopItem.qty）。 */
-  totalQty: number
-  /** 要求が limitNum を超えたかどうか（警告フラグ）。 */
-  cappedByLimit: boolean
-  /** limitNum を超えた要求数（cappedByLimit=true のとき > 0）。 */
-  overflow: number
-}
-
-export type ShopAllocationResult = {
-  allocations: ShopAllocationItem[]
-  /** 交換に必要な通貨総量（各アイテムの costAmount × allocated の和）。 */
-  totalCurrencyUsed: number
-  /** 1 件以上の上限超過警告がある */
-  hasOverflow: boolean
-}
-
-/**
- * 交換所アイテムを指定個数まで配分する。
- * limitNum で上限打ち切り + 超過分は overflow に記録（US-6）。
- * サーヴァント扱いの品目（kind='svt'）は素材ではないので配分の対象から除く。
- *
- * @param shop       EventShopItem[]
- * @param demand     atlasId → 欲しい素材個数（0 以下は無視）
- */
-export const allocateShop = (
-  shop: EventShopItem[],
-  demand: Map<number, number>,
-): ShopAllocationResult => {
-  const allocations: ShopAllocationItem[] = []
-  let totalCurrencyUsed = 0
-  let hasOverflow = false
-
-  for (const shopItem of shop) {
-    if (shopItem.kind === 'svt') continue
-    const wanted = demand.get(shopItem.itemId) ?? 0
-    if (wanted <= 0) {
-      allocations.push({
-        shopItem,
-        allocated: 0,
-        totalQty: 0,
-        cappedByLimit: false,
-        overflow: 0,
-      })
-      continue
-    }
-
-    // 欲しい個数から必要購入回数（ceil）を求め limitNum で打ち切り
-    const wantedPurchases = Math.ceil(wanted / shopItem.qty)
-    const cappedPurchases = Math.min(wantedPurchases, shopItem.limitNum)
-    const cappedByLimit = wantedPurchases > shopItem.limitNum
-    const overflow = cappedByLimit ? (wantedPurchases - shopItem.limitNum) * shopItem.qty : 0
-
-    if (cappedByLimit) hasOverflow = true
-
-    const totalQty = cappedPurchases * shopItem.qty
-    totalCurrencyUsed += cappedPurchases * shopItem.costAmount
-
-    allocations.push({
-      shopItem,
-      allocated: cappedPurchases,
-      totalQty,
-      cappedByLimit,
-      overflow,
-    })
-  }
-
-  return { allocations, totalCurrencyUsed, hasOverflow }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Task 11 — ソルバーアダプタ
+// ソルバーアダプタ
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -621,15 +541,14 @@ export const selectBonusCraftEssenceRow = (
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task 12 — 逆算（欲しいアイテム数 → 最小箱数）
+// 逆算（欲しいアイテム数 → 最小箱数）
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * 欲しい素材の個数（atlas ID キー）から、それを満たす最小箱数を逆算する。
- * 交換所の limitNum も考慮する。
+ * 欲しい素材の個数（atlas ID キー）から、箱の確定報酬でそれを満たす最小箱数を逆算する。
  *
  * @param event       EventPlannerEvent
- * @param itemDemand  atlasId → 欲しい個数（ボックス確定報酬 or 交換所で得たい）
+ * @param itemDemand  atlasId → 欲しい個数
  * @param ownedCurrency 所持イベント通貨数
  */
 export type ReverseCalcResult = {
@@ -637,17 +556,28 @@ export type ReverseCalcResult = {
   minBoxes: number
   /** その箱数でのボックス層結果 */
   boxLayer: BoxLayerResult
-  /** 交換所配分結果 */
-  shopAllocation: ShopAllocationResult
   /**
-   * ボックス確定報酬 + 交換所では満たせなかった残余需要（atlasId → 個数）。
+   * ボックス確定報酬では満たせなかった残余需要（atlasId → 個数）。
    * これが > 0 の場合は周回ドロップが必要。
    */
   residualDemand: Map<number, number>
 }
 
+/** 箱の確定報酬で充当しきれない残り（atlasId → 個数。0 のものは持たない）。 */
+const residualAfterBoxes = (
+  demand: ReadonlyMap<number, number>,
+  confirmedMaterials: ReadonlyMap<number, number>,
+): Map<number, number> => {
+  const residual = new Map<number, number>()
+  for (const [atlasId, qty] of demand) {
+    const remaining = Math.max(0, qty - (confirmedMaterials.get(atlasId) ?? 0))
+    if (remaining > 0) residual.set(atlasId, remaining)
+  }
+  return residual
+}
+
 /**
- * 指定したボックス数におけるボックス確定報酬＋交換所配分後の残余需要を評価する。
+ * 指定したボックス数におけるボックス確定報酬充当後の残余需要を評価する。
  */
 export const evaluateBoxes = (
   event: EventPlannerEvent,
@@ -656,28 +586,7 @@ export const evaluateBoxes = (
   itemDemand: Map<number, number>,
 ): Omit<ReverseCalcResult, 'minBoxes'> => {
   const boxLayer = calcBoxLayer(event, boxCount, ownedCurrency)
-
-  // 交換所配分: itemDemand から ボックス確定報酬で充当済みの分を引いた残りを交換所に
-  const residualAfterBoxes = new Map<number, number>()
-  for (const [atlasId, qty] of itemDemand) {
-    const fromBoxes = boxLayer.confirmedMaterials.get(atlasId) ?? 0
-    const remaining = Math.max(0, qty - fromBoxes)
-    if (remaining > 0) residualAfterBoxes.set(atlasId, remaining)
-  }
-
-  const shopAllocation = allocateShop(event.shop, residualAfterBoxes)
-
-  // 交換所配分後の残余需要
-  const residualDemand = new Map<number, number>()
-  for (const [atlasId, qty] of residualAfterBoxes) {
-    const fromShop = shopAllocation.allocations.find(
-      (a) => a.shopItem.itemId === atlasId,
-    )?.totalQty ?? 0
-    const remaining = Math.max(0, qty - fromShop)
-    if (remaining > 0) residualDemand.set(atlasId, remaining)
-  }
-
-  return { boxLayer, shopAllocation, residualDemand }
+  return { boxLayer, residualDemand: residualAfterBoxes(itemDemand, boxLayer.confirmedMaterials) }
 }
 
 export const reverseCalcBoxes = (
@@ -690,13 +599,7 @@ export const reverseCalcBoxes = (
   // 最小箱数を線形探索（ロト箱は最大でも 10〜20 程度なので O(N)で十分）
   for (let n = 0; n <= maxBoxes; n++) {
     const evaluation = evaluateBoxes(event, n, ownedCurrency, itemDemand)
-
-    // このボックス数で全需要が（ボックス + 交換所で）充足できるか判定
-    const allSatisfied = Array.from(itemDemand.keys()).every((atlasId) => {
-      return (evaluation.residualDemand.get(atlasId) ?? 0) === 0
-    })
-
-    if (allSatisfied) {
+    if (evaluation.residualDemand.size === 0) {
       return { minBoxes: n, ...evaluation }
     }
   }
@@ -709,90 +612,22 @@ export const reverseCalcBoxes = (
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task 13 — ロスター育成インパクト
+// 育成インパクト
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * 指定サーヴァント・目標・所持から不足素材マップを構築する（atlasId キー）。
- * get-materials.ts の MaterialsForServants 構造を消費する。
- *
- * @param chaldeaState  useChaldeaState で得た育成目標（read-only）
- * @param materialsForServants  素材カタログから取り出したサーヴァント別素材（事前に取得してインジェクト）
- * @param possessionCounts  atlasId → 所持数（localStorage 'posession' から）
- */
+/** 不足素材（atlasId → 個数）。 */
 export type ShortfallMap = Map<number, number>
 
-export const computeTotalNeed = (
-  chaldeaState: ChaldeaState,
-  materialsForServants: MaterialsForServants,
-): Map<number, number> => {
-  const totalNeed = new Map<number, number>()
-
-  for (const [servantIdStr, servantState] of Object.entries(chaldeaState)) {
-    if (servantState.disabled) continue
-    if (servantIdStr === 'all') continue
-
-    const servantMaterials = materialsForServants[servantIdStr]
-    if (!servantMaterials) continue
-
-    // ascension / skill / appendSkill それぞれの目標を合算
-    for (const [targetKey, targetState] of Object.entries(servantState.targets) as [string, { disabled: boolean; ranges: { start: number; end: number }[] }][]) {
-      if (targetState.disabled) continue
-
-      const materials = targetKey === 'appendSkill'
-        ? servantMaterials.appendSkillMaterials
-        : targetKey === 'skill'
-        ? servantMaterials.skillMaterials
-        : servantMaterials.ascensionMaterials
-      if (!materials) continue
-
-      for (const range of targetState.ranges) {
-        const { start, end } = range
-        if (start >= end) continue
-
-        for (let lv = start; lv < end; lv++) {
-          const step = materials[lv.toString()]
-          if (!step) continue
-          for (const { item, amount } of step.items) {
-            const atlasId = item.id
-            totalNeed.set(atlasId, (totalNeed.get(atlasId) ?? 0) + amount)
-          }
-          // QP (atlasId=1) も加算
-          if (step.qp) {
-            totalNeed.set(1, (totalNeed.get(1) ?? 0) + step.qp)
-          }
-        }
-      }
-    }
-  }
-
-  return totalNeed
-}
-
-export const computeShortfall = (
-  chaldeaState: ChaldeaState,
-  materialsForServants: MaterialsForServants,
-  possessionCounts: Record<string, number>,
-): ShortfallMap => {
-  const totalNeed = computeTotalNeed(chaldeaState, materialsForServants)
-
-  // 所持数を差し引いて不足マップを生成
-  const shortfall: ShortfallMap = new Map()
-  for (const [atlasId, needed] of totalNeed) {
-    const owned = possessionCounts[String(atlasId)] ?? 0
-    const deficit = Math.max(0, needed - owned)
-    if (deficit > 0) shortfall.set(atlasId, deficit)
-  }
-
-  return shortfall
-}
+/** 周回目的で求めた実効不足から、不足のある素材だけを取り出す。 */
+export const computeShortfall = (effective: Pick<EffectiveShortfall, 'shortfall'>): ShortfallMap =>
+  new Map([...effective.shortfall].filter(([, deficit]) => deficit > 0))
 
 export type RosterImpactResult = {
   /** 総不足素材（atlasId → 個数）*/
   shortfall: ShortfallMap
   /**
-   * ボックス確定報酬 + 交換所が不足をどれだけ充当するか（atlasId → 充当数）。
-   * 充当 = min(不足数, ボックス報酬数 + 交換所取得数)。
+   * ボックス確定報酬が不足をどれだけ充当するか（atlasId → 充当数）。
+   * 充当 = min(不足数, ボックス報酬数)。
    */
   coverage: Map<number, number>
   /**
@@ -807,34 +642,16 @@ export type RosterImpactResult = {
 }
 
 /**
- * ロスターの育成インパクトを計算する（純粋関数）。
+ * 育成インパクトを計算する（純粋関数）。充当は箱の確定報酬だけで、交換所の品目は含めない。
  *
- * 非同期データ（素材カタログ）は呼び出し側で await して注入する。
- * この関数自体は同期で完結し、テスタビリティを最大化する。
- *
- * @param chaldeaState          育成目標（read-only, useChaldeaState から）
- * @param materialsForServants  素材カタログから取り出したサーヴァント別素材
- * @param possessionCounts      atlasId → 所持数（localStorage 'posession' から）
- * @param boxLayer              calcBoxLayer の結果（N 箱分の確定報酬）
- * @param shopAllocation        allocateShop の結果
+ * @param effective 周回目的で求めた実効不足（`computeEffectiveShortfall`）
+ * @param boxLayer  calcBoxLayer の結果（N 箱分の確定報酬）
  */
 export const computeRosterImpact = (
-  chaldeaState: ChaldeaState,
-  materialsForServants: MaterialsForServants,
-  possessionCounts: Record<string, number>,
+  effective: Pick<EffectiveShortfall, 'shortfall'>,
   boxLayer: BoxLayerResult,
-  shopAllocation: ShopAllocationResult,
 ): RosterImpactResult => {
-  const shortfall = computeShortfall(chaldeaState, materialsForServants, possessionCounts)
-
-  // ボックス + 交換所の素材マップを合算（atlasId → 総取得数）
-  const eventSupply = new Map<number, number>(boxLayer.confirmedMaterials)
-  for (const alloc of shopAllocation.allocations) {
-    if (alloc.totalQty > 0) {
-      const id = alloc.shopItem.itemId
-      eventSupply.set(id, (eventSupply.get(id) ?? 0) + alloc.totalQty)
-    }
-  }
+  const shortfall = computeShortfall(effective)
 
   let totalShortfall = 0
   let totalCovered = 0
@@ -842,7 +659,7 @@ export const computeRosterImpact = (
   const residualShortfall = new Map<number, number>()
 
   for (const [atlasId, deficit] of shortfall) {
-    const supply = eventSupply.get(atlasId) ?? 0
+    const supply = boxLayer.confirmedMaterials.get(atlasId) ?? 0
     const covered = Math.min(deficit, supply)
     const residual = deficit - covered
 

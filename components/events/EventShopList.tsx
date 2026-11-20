@@ -23,7 +23,6 @@ import {
   allocateShortfallOnly,
   buildShopListRows,
   computeShopCurrencyNeeds,
-  computeShopShortfall,
   countsFromItemKeys,
   countsToItemKeys,
   excludeUnwantedCounts,
@@ -52,12 +51,16 @@ import {
   type ShopSavedInputs,
   type ShortfallSummary,
 } from '../../lib/event-shop-summary'
-import { useRosterNeed, type RosterNeed } from '../../hooks/use-roster-need'
-import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
+import type { RosterNeed } from '../../hooks/use-roster-need'
+import { useEffectiveShortfall } from '../../hooks/use-effective-shortfall'
+import { useLocalStorage } from '../../hooks/use-local-storage'
+import type { StockItemInfo } from '../../lib/effective-shortfall'
+import type { FarmingPurpose } from '../../lib/farming-purpose'
+import { EventPurposeIndicator } from './EventPurposeIndicator'
 import { useItemWantSetting } from '../../hooks/use-item-want-setting'
 import { useMaterialCatalog } from '../../hooks/use-material-catalog'
 import { materialCatalogItemIds } from '../../lib/material-catalog'
-import { STORAGE_KEYS, eventShopInputsKey } from '../../lib/constants/storage-keys'
+import { eventShopInputsKey } from '../../lib/constants/storage-keys'
 import {
   applyDropBonus,
   compareBonusCraftEssences,
@@ -186,6 +189,8 @@ const COLUMN_COUNT = 7
 interface RowPlan {
   /** 状態なし（QP・見分けられない品目）は undefined。 */
   status?: ShopItemStatus
+  /** 不足を求めた周回目的（「素材全体の効率を見る」は training）。 */
+  purpose: 'training' | 'reserve'
   /** 在庫上限が無くて回数を入れなかった「欲しい」の計画の対象外の品目。 */
   promptUnlimited: boolean
 }
@@ -377,11 +382,14 @@ const RowPlanLabel: React.FC<{ plan: RowPlan; count: number }> = ({ plan, count 
       <span>
         {status.kind === 'short' && (
           <span style={{ color: 'var(--text1)' }}>
-            {t('event-shop-status-short', '育成にあと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })}
+            {plan.purpose === 'reserve'
+              ? t('event-shop-status-short-reserve', 'あと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })
+              : t('event-shop-status-short', '育成にあと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })}
           </span>
         )}
         {status.kind === 'enough' && <span>{t('event-shop-status-enough', '足りている（交換不要）')}</span>}
         {status.kind === 'unused' && <span>{t('event-shop-status-unused', '使わない')}</span>}
+        {status.kind === 'unentered' && <span>{t('event-shop-status-unentered', '所持数が未入力')}</span>}
         {status.kind === 'outside' && (
           <span style={{ color: 'var(--text3)' }}>{t('event-shop-status-outside', '計画の対象外')}</span>
         )}
@@ -438,8 +446,9 @@ const ShopRow: React.FC<ShopRowProps> = props => {
   const name = rowName(first)
   const { count, parts } = rowCountOf(row, counts, remaining)
   const limit = rowLimit(row, remaining)
-  // 足りている・使わない行も、回数を入れたら他の行と同じ色に戻す。
-  const dimmed = (plan?.status?.kind === 'enough' || plan?.status?.kind === 'unused') && count === 0
+  // 足りている・使わない・所持数が未入力の行も、回数を入れたら他の行と同じ色に戻す。
+  const dimKind = plan?.status?.kind
+  const dimmed = (dimKind === 'enough' || dimKind === 'unused' || dimKind === 'unentered') && count === 0
   const color = dimmed ? 'var(--text3)' : 'var(--text2)'
   return (
     <tr style={{ borderTop: '1px solid var(--border)', color }}>
@@ -1076,13 +1085,14 @@ const PerRunTable: React.FC<{
   )
 }
 
-/** 育成計画の状態か、交換所で埋まる不足の要約を1行で出す。 */
+/** 育成計画の状態か、交換所で埋まる不足の要約を1行で出す。要約の近くに不足を求めた周回目的を出す。 */
 const RosterLine: React.FC<{
   status: RosterNeed['status']
+  purpose: FarmingPurpose
   summary?: ShortfallSummary
   catalogFailed: boolean
   onReloadCatalog: () => void
-}> = ({ status, summary, catalogFailed, onReloadCatalog }) => {
+}> = ({ status, purpose, summary, catalogFailed, onReloadCatalog }) => {
   const { t } = useTranslation('events')
   switch (status) {
     case 'empty':
@@ -1104,18 +1114,29 @@ const RosterLine: React.FC<{
       return unhandled
     }
   }
+  // 在庫基準の分は育成の不足ではないので、備えるときは「育成計画の」を付けない。
+  const reserve = purpose === 'reserve'
+  const counts = summary && { short: summary.shortMaterials, filled: summary.filledMaterials }
+  const summaryText = (): string => {
+    if (counts && counts.short > 0) {
+      return reserve
+        ? t('event-shop-shortfall-summary-reserve', '不足 {{short}} 素材のうち、交換所で埋まるのは {{filled}} 素材', counts)
+        : t('event-shop-shortfall-summary', '育成計画の不足 {{short}} 素材のうち、交換所で埋まるのは {{filled}} 素材', counts)
+    }
+    return reserve
+      ? t('event-shop-shortfall-none-reserve', '交換所に並ぶ素材に、不足はありません')
+      : t('event-shop-shortfall-none', '交換所に並ぶ素材に、育成計画の不足はありません')
+  }
   return (
     <div data-testid="shop-shortfall-summary" className="flex flex-col items-start gap-1">
-      {summary && (
-        <p className="text-xs" style={{ color: 'var(--text2)' }}>
-          {summary.shortMaterials > 0
-            ? t('event-shop-shortfall-summary', '育成計画の不足 {{short}} 素材のうち、交換所で埋まるのは {{filled}} 素材', {
-                short: summary.shortMaterials,
-                filled: summary.filledMaterials,
-              })
-            : t('event-shop-shortfall-none', '交換所に並ぶ素材に、育成計画の不足はありません')}
-        </p>
-      )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {summary && (
+          <p className="text-xs" style={{ color: 'var(--text2)' }}>
+            {summaryText()}
+          </p>
+        )}
+        <EventPurposeIndicator purpose={purpose} />
+      </div>
       {catalogFailed && (
         <p className="text-xs flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--red)' }}>
           <span>{t('event-shop-catalog-error', '素材の一覧を読み込めず、計画の対象外の品目を見分けられません。')}</span>
@@ -1147,7 +1168,8 @@ const PlanItemIdsLoader: React.FC<{ onChange: (value: PlanItemIds | undefined) =
 }
 
 /**
- * 育成計画と実所持数から、品目の状態と「足りない分だけ」の回数を出す。育成計画と所持数は読むだけ。
+ * 育成計画（サーヴァントとクラススコア）・実所持数・周回目的から、品目の状態と「足りない分だけ」の回数を出す。
+ * 育成計画・所持数・周回目的は読むだけ。
  * `unwanted` は「いらない」の品目のキー（`shopWantedKey`）で、「足りない分だけ」はその品目の回数を変えない。
  */
 const useShopRosterPlan = (
@@ -1155,27 +1177,23 @@ const useShopRosterPlan = (
   updateCounts: (update: (prev: ShopExchangeCounts) => ShopExchangeCounts) => void,
   unwanted: ReadonlySet<string>,
   remaining: ShopRemaining,
+  items: readonly StockItemInfo[] | undefined,
 ) => {
-  const roster = useRosterNeed()
-  // 周回目標（STORAGE_KEYS.ITEMS）ではなく実所持数を使う。
-  const [possession, , possessionLoaded] = useLocalStorage<Record<string, number | undefined>>(
-    STORAGE_KEYS.POSSESSION,
-    {},
-    { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true },
-  )
+  const { roster, possessionLoaded, purpose, effective } = useEffectiveShortfall(items)
   const [planItemIds, setPlanItemIds] = useState<PlanItemIds>()
   const [unlimitedPrompt, setUnlimitedPrompt] = useState<ReadonlySet<number>>(() => new Set())
 
   const ready = roster.status === 'ready' ? roster : undefined
   const catalogIds = ready ? planItemIds?.ids : undefined
   const statusOf = useMemo(() => {
-    if (!ready) return undefined
-    const shortfall = computeShopShortfall(ready.totalNeed, possession)
+    if (!effective) return undefined
+    const { required, shortfall, unentered } = effective
     return {
       shortfall,
-      of: (item: EventShopItem) => shopItemStatus(item, ready.totalNeed, shortfall, catalogIds),
+      purpose: effective.purpose,
+      of: (item: EventShopItem) => shopItemStatus(item, required, shortfall, catalogIds, unentered),
     }
-  }, [ready, possession, catalogIds])
+  }, [effective, catalogIds])
   const allocation = useMemo(
     () => statusOf && allocateShortfallOnly(shop, statusOf.shortfall, statusOf.of, unwanted, undefined, remaining),
     [shop, statusOf, unwanted, remaining],
@@ -1186,12 +1204,14 @@ const useShopRosterPlan = (
     statusOf && allocation
       ? {
           status: statusOf.of(item),
+          purpose: statusOf.purpose,
           promptUnlimited: unlimitedPrompt.has(index),
         }
       : undefined
 
   return {
     roster,
+    purpose,
     /** 所持数・育成計画の保存値をすべて読み終えたか。 */
     loaded: possessionLoaded && roster.status !== 'unread',
     /** 素材カタログは育成計画が使えるときだけ読む。 */
@@ -1337,6 +1357,7 @@ const SelectControls: React.FC<{
       )}
       <RosterLine
         status={rosterPlan.roster.status}
+        purpose={rosterPlan.purpose}
         summary={rosterPlan.summary}
         catalogFailed={rosterPlan.catalogFailed}
         onReloadCatalog={rosterPlan.reloadCatalog}
@@ -1431,6 +1452,8 @@ const useBonusCraftEssences = (
 
   return {
     mappings,
+    // ロトのあるイベントは取り込みで ☆ と通貨の対応を持たないので、対応が無くても更新前とは扱わない。
+    stale: !mappings && event.lotteries.length === 0,
     rarityTargets,
     values,
     setRarityValue: (rarity: BonusRarity, key: keyof RarityValues, value: number) =>
@@ -1446,7 +1469,10 @@ const useBonusCraftEssences = (
   }
 }
 
-/** ☆ ごとの欄・比較の表、または対応を持たないデータであることの1行。対応が空なら何も出さない。 */
+/**
+ * ☆ ごとの欄・比較の表、または対応を持たないデータであることの1行。
+ * 対応が空のとき・ロトのあるイベントで対応を持たないときは何も出さない。
+ */
 const BonusCraftEssenceSection: React.FC<{
   state: ReturnType<typeof useBonusCraftEssences>
   hasNeed: boolean
@@ -1454,6 +1480,7 @@ const BonusCraftEssenceSection: React.FC<{
 }> = ({ state, hasNeed, nameOf }) => {
   const { t } = useTranslation('events')
   if (!state.mappings) {
+    if (!state.stale) return null
     return (
       <p className="text-xs" style={{ color: 'var(--text3)' }}>
         {t('event-shop-ce-stale', 'データの更新前のため、礼装の枚数を比べられません。')}
@@ -1758,7 +1785,9 @@ export const EventShopList: React.FC<{
   apPrices?: Readonly<Record<number, number>>
   /** イベントポイントの品目の atlasId。あればボーナスの欄と1周の獲得量の列に出す。 */
   pointItemId?: number
-}> = ({ event, apPrices = NO_AP_PRICES, pointItemId }) => {
+  /** 在庫基準を決める素材の分類（周回目的が「新規サーヴァントに備える」のときに使う）。 */
+  items?: readonly StockItemInfo[]
+}> = ({ event, apPrices = NO_AP_PRICES, pointItemId, items }) => {
   const { shop } = event
   const currencyGroups = useMemo(() => groupShopByCurrency(shop), [shop])
   const savedInputs = useShopSavedInputs(event, currencyGroups, pointItemId)
@@ -1779,7 +1808,7 @@ export const EventShopList: React.FC<{
   const { effectiveBonus } = craftEssences
   const bonused = useMemo(() => applyDropBonus(event, new Map(effectiveBonus)), [event, effectiveBonus])
   const plan = useMemo(() => planShopCurrencies(bonused.event, currencyNeed), [bonused, currencyNeed])
-  const rosterPlan = useShopRosterPlan(shop, updateCounts, unwanted, remaining)
+  const rosterPlan = useShopRosterPlan(shop, updateCounts, unwanted, remaining, items)
   const list = useShopListRows(shop, rosterPlan.planOf, updateCounts, want, remaining)
 
   const labelOf = (id: number) => targets.find(target => target.itemId === id)?.label ?? `#${id}`

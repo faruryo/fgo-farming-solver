@@ -2,7 +2,7 @@
 import React, { useLayoutEffect } from 'react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { atlasDetailUrl, EventShopCatalog, EventShopList } from './EventShopList'
 import type { EventPlannerEvent, EventShopItem } from '../../lib/master-data/types'
 import type { RosterNeed } from '../../hooks/use-roster-need'
@@ -684,5 +684,152 @@ describe('EventShopCatalog（品目がすべてサーヴァント扱い）', () 
     expect(links[0]).toHaveAttribute('target', '_blank')
     expect(links[0]).toHaveAttribute('rel', 'noopener noreferrer')
     expect(screen.getByText('英霊極点：アルトリア・ペンドラゴン').closest('a')).toBeNull()
+  })
+})
+
+describe('EventShopList の不足（周回目的とクラススコア）', () => {
+  // 金素材（通常素材）の在庫基準を 20 にする。6518 は所持数を入れていない。
+  const GOLD = { category: '金素材', largeCategory: '強化素材' }
+  const items = [6516, 6517, 6518, 6519].map(id => ({ id, ...GOLD }))
+  const event = (): EventPlannerEvent => ({
+    ...shopEvent(80700),
+    shop: [6516, 6517, 6518, 6519].map(id =>
+      shopEntry(id, UDON, { costName: '武蔵うどん', qty: 1, costAmount: 10, limitNum: 10 }),
+    ),
+  })
+  const renderShop = () => render(<EventShopList event={event()} items={items} />)
+  const setPurpose = (purpose: string) => {
+    localStorage.setItem('efficiency/farmingPurpose', JSON.stringify(purpose))
+    window.dispatchEvent(new CustomEvent('ls-sync', { detail: { key: 'efficiency/farmingPurpose' } }))
+  }
+  const labelOf = (name: string) => rowOf(name).cells[1] as HTMLElement
+  const summary = () => screen.getByTestId('shop-shortfall-summary')
+
+  beforeEach(() => {
+    localStorage.clear()
+    localStorage.setItem('efficiency/stockBuffer', JSON.stringify({ normal: { gold: 20 } }))
+    localStorage.setItem('posession', JSON.stringify({ 6516: 12, 6517: 25, 6519: 0 }))
+    mocks.roster = {
+      status: 'ready',
+      chaldeaState: {},
+      materialsForServants: {},
+      totalNeed: new Map([
+        [6516, 3],
+        [6517, 30],
+        [6518, 4],
+      ]),
+    }
+  })
+  afterEach(() => {
+    localStorage.clear()
+    mocks.roster = undefined
+  })
+
+  it('備えるとき: 必要数 3・在庫基準 20・所持 12 の素材は「あと 8 個」、要約は「不足 3 素材のうち…」で、近くに周回目的を出す', () => {
+    localStorage.setItem('efficiency/farmingPurpose', JSON.stringify('reserve'))
+    renderShop()
+
+    expect(within(labelOf('素材6516')).getByText('あと 8 個')).toBeInTheDocument()
+    expect(within(labelOf('素材6517')).getByText('あと 5 個')).toBeInTheDocument()
+    expect(within(labelOf('素材6519')).getByText('あと 20 個')).toBeInTheDocument()
+    expect(within(summary()).getByText('不足 3 素材のうち、交換所で埋まるのは 2 素材')).toBeInTheDocument()
+    expect(within(summary()).getByRole('button', { name: '新規サーヴァントに備える' })).toBeInTheDocument()
+    expect(screen.queryByText(/育成にあと/)).not.toBeInTheDocument()
+  })
+
+  it('備えるとき: 所持数を入れていない素材は「所持数が未入力」で薄く、「足りない分だけ」で 0 になり、回数を入れると薄くしない', () => {
+    localStorage.setItem('efficiency/farmingPurpose', JSON.stringify('reserve'))
+    renderShop()
+
+    expect(within(labelOf('素材6518')).getByText('所持数が未入力')).toBeInTheDocument()
+    expect(rowOf('素材6518').style.color).toBe('var(--text3)')
+    enter(countInput('素材6518'), '3')
+    expect(rowOf('素材6518').style.color).toBe('var(--text2)')
+
+    fireEvent.click(bulkAction('足りない分だけ'))
+    expect(countInput('素材6518')).toHaveValue(0)
+    expect(countInput('素材6516')).toHaveValue(8)
+    expect(countInput('素材6519')).toHaveValue(10)
+  })
+
+  it('今の育成: 今までの文言で、所持数を入れていない素材も 0 個として不足に数える', () => {
+    renderShop()
+
+    expect(within(labelOf('素材6516')).getByText('足りている（交換不要）')).toBeInTheDocument()
+    expect(within(labelOf('素材6518')).getByText('育成にあと 4 個')).toBeInTheDocument()
+    expect(within(summary()).getByText('育成計画の不足 2 素材のうち、交換所で埋まるのは 2 素材')).toBeInTheDocument()
+    expect(within(summary()).getByRole('button', { name: '今の育成を進める' })).toBeInTheDocument()
+    expect(screen.queryByText('不足は今の育成で計算')).not.toBeInTheDocument()
+  })
+
+  it('素材全体の効率を見る: 今の育成と同じ不足で、要約の近くに今の育成で計算していることを出す', () => {
+    localStorage.setItem('efficiency/farmingPurpose', JSON.stringify('all'))
+    renderShop()
+
+    expect(within(labelOf('素材6518')).getByText('育成にあと 4 個')).toBeInTheDocument()
+    expect(within(summary()).getByText('育成計画の不足 2 素材のうち、交換所で埋まるのは 2 素材')).toBeInTheDocument()
+    expect(within(summary()).getByText('不足は今の育成で計算')).toBeInTheDocument()
+  })
+
+  it('周回目的を変えると、ラベルと要約は求め直し、入れ終えた交換回数は変えない', () => {
+    renderShop()
+    fireEvent.click(bulkAction('足りない分だけ'))
+    expect(countInput('素材6517')).toHaveValue(5)
+    expect(countInput('素材6518')).toHaveValue(4)
+
+    act(() => setPurpose('reserve'))
+
+    expect(within(labelOf('素材6516')).getByText('あと 8 個')).toBeInTheDocument()
+    expect(within(labelOf('素材6518')).getByText('所持数が未入力')).toBeInTheDocument()
+    expect(within(summary()).getByText('不足 3 素材のうち、交換所で埋まるのは 2 素材')).toBeInTheDocument()
+    expect(countInput('素材6516')).toHaveValue(0)
+    expect(countInput('素材6517')).toHaveValue(5)
+    expect(countInput('素材6518')).toHaveValue(4)
+  })
+
+  it('育成対象のサーヴァントがいなくても、クラススコアの目標があれば「足りない分だけ」を押せる', async () => {
+    mocks.roster = undefined
+    localStorage.setItem('classScore', JSON.stringify({ classes: { saber: 'target' } }))
+    // 英雄の証（6503）はセイバーのクラススコアで 70 個要る。
+    render(
+      <EventShopList
+        event={{
+          ...shopEvent(80701),
+          shop: [shopEntry(6503, UDON, { name: '英雄の証', costName: '武蔵うどん', qty: 1, limitNum: 100 })],
+        }}
+      />,
+    )
+
+    expect(await screen.findByText('育成にあと 70 個')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '育成対象を設定' })).not.toBeInTheDocument()
+    const button = bulkAction('足りない分だけ')
+    expect(button).toBeEnabled()
+    fireEvent.click(button)
+    expect(countInput('英雄の証')).toHaveValue(70)
+  })
+})
+
+describe('EventShopList のボーナス礼装の更新前の表示', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('ロトのあるイベントでは、☆ と通貨の対応が無くても更新前の表示を出さず、通貨ごとの +N の欄だけを出す', () => {
+    const boxEvent: EventPlannerEvent = {
+      ...shopEvent(80549),
+      lotteries: [{ boxIndex: 0, costPerBox: 100, contents: [], rareRewards: [] }],
+    }
+    render(<EventShopList event={boxEvent} />)
+
+    expect(screen.queryByText('データの更新前のため、礼装の枚数を比べられません。')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('武蔵うどん のドロップボーナス')).toHaveValue(0)
+    expect(screen.getByLabelText('江戸むすび のドロップボーナス')).toHaveValue(0)
+    expect(screen.queryByText('凸の所持枚数')).not.toBeInTheDocument()
+  })
+
+  it('ロトの無い交換所イベントでは、☆ と通貨の対応が無ければ今までどおり更新前の表示を出す', () => {
+    render(<EventShopList event={shopEvent(80632)} />)
+
+    expect(screen.getByText('データの更新前のため、礼装の枚数を比べられません。')).toBeInTheDocument()
+    expect(screen.getByLabelText('武蔵うどん のドロップボーナス')).toHaveValue(0)
   })
 })

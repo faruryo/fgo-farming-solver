@@ -6,37 +6,37 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
-import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import type { StockItemInfo } from '../../lib/effective-shortfall'
 import {
   calcBoxLayer,
-  allocateShop,
   computeShortfall,
   computeRosterImpact,
   reverseCalcBoxes,
   runEventSolver,
   applyDropBonus,
   type BoxLayerResult,
-  type ShopAllocationResult,
   type RosterImpactResult,
   type EventSolverResult,
 } from '../../lib/event-plan'
-import { useRosterNeed } from '../../hooks/use-roster-need'
+import { useEffectiveShortfall } from '../../hooks/use-effective-shortfall'
 import { EventPlanResultCard } from './EventPlanResultCard'
+import { EventPurposeIndicator } from './EventPurposeIndicator'
 import { ApBudgetInputs, useApBudgetProfile } from './ApBudget'
 import { computeApBudget } from '../../lib/ap-budget'
 import { DropBonusInputs } from './DropBonusInputs'
 
 interface Props {
   event: EventPlannerEvent
+  /** 在庫基準を決める素材の分類（周回目的が「新規サーヴァントに備える」のときに使う）。 */
+  items?: readonly StockItemInfo[]
 }
 
 type InputMode = 'roster' | 'boxes' | 'items'
 
 /**
- * 直接指定モードで選べる素材候補 (通常箱の確定報酬 + 交換所アイテムの atlasId を集約)。
+ * 直接指定モードで選べる素材候補 (通常箱の確定報酬の atlasId を集約)。
  * rareRewards（サーヴァント・聖杯・伝承結晶など一発もの）は周回計画の対象外なので除外する。
- * 交換所のサーヴァント扱いの品目（kind='svt'。種火・フォウくん・礼装など）も素材ではないので除外する。
+ * 交換所の品目はボックス計画で扱わないので含めない。
  */
 export const collectSelectableItems = (event: EventPlannerEvent): { id: number; name: string; icon?: string }[] => {
   const map = new Map<number, { name: string; icon?: string }>()
@@ -45,26 +45,17 @@ export const collectSelectableItems = (event: EventPlannerEvent): { id: number; 
       if (!map.has(c.itemId)) map.set(c.itemId, { name: c.name, icon: c.icon })
     }
   }
-  for (const s of event.shop) {
-    if (s.kind === 'svt') continue
-    if (!map.has(s.itemId)) map.set(s.itemId, { name: s.name ?? '', icon: s.icon })
-  }
   return Array.from(map.entries())
     .sort(([a], [b]) => a - b)
     .map(([id, meta]) => ({ id, ...meta }))
 }
 
-export const EventPlannerClient: React.FC<Props> = ({ event }) => {
+export const EventPlannerClient: React.FC<Props> = ({ event, items }) => {
   const { t } = useTranslation('events')
 
   // ── Roster (read-only) ───────────────────────────────────────────────────────
-  const rosterNeed = useRosterNeed()
-  // 周回目標（STORAGE_KEYS.ITEMS、短縮 ID キー）ではなく、Atlas ID キーの実所持数を使う。
-  const [possession] = useLocalStorage<Record<string, number>>(
-    STORAGE_KEYS.POSSESSION,
-    {},
-    { lazyWrite: true, onGet: countsOrEmpty, repairOnGet: true }
-  )
+  // 育成計画（サーヴァントとクラススコア）・実所持数・周回目的から求めた実効不足。
+  const { roster: rosterNeed, purpose, effective } = useEffectiveShortfall(items)
 
   // 育成計画を読む前（unread）は未設定と同じに扱い、ボタン・説明・入力モードの初期値を変えない。
   const hasRoster = rosterNeed.status !== 'empty' && rosterNeed.status !== 'unread'
@@ -147,50 +138,20 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
   }, [effectiveEvent, effectiveBoxes, ownedCurrency, openedBoxes])
 
   // 不足素材(育成ロスター)。roster モードでのみ算出。
-  const shortfall = useMemo<Map<number, number>>(() => {
-    if (inputMode !== 'roster' || rosterNeed.status !== 'ready') return new Map()
-    return computeShortfall(rosterNeed.chaldeaState, rosterNeed.materialsForServants, possession)
-  }, [inputMode, rosterNeed, possession])
+  const shortfallSize = useMemo(
+    () => (inputMode === 'roster' && effective ? computeShortfall(effective).size : 0),
+    [inputMode, effective],
+  )
 
-  // 交換所配分(全モード共通)。
-  //  - roster: 不足素材 − ボックス確定報酬 を交換所に充当(limitNum で打ち切り)。
-  //  - items : reverseCalcBoxes が算出した交換所配分をそのまま採用。
-  //  - boxes : 交換所需要なし。
-  const shopAllocation = useMemo<ShopAllocationResult>(() => {
-    if (inputMode === 'items' && reverseResult) {
-      return reverseResult.shopAllocation
-    }
-    if (inputMode === 'roster' && shortfall.size > 0) {
-      // 不足から箱確定報酬を差し引いた残りを交換所需要にする。
-      const residualAfterBoxes = new Map<number, number>()
-      for (const [atlasId, deficit] of shortfall) {
-        const fromBoxes = boxLayer.confirmedMaterials.get(atlasId) ?? 0
-        const remaining = Math.max(0, deficit - fromBoxes)
-        if (remaining > 0) residualAfterBoxes.set(atlasId, remaining)
-      }
-      return allocateShop(effectiveEvent.shop, residualAfterBoxes)
-    }
-    return allocateShop(effectiveEvent.shop, new Map<number, number>())
-  }, [inputMode, reverseResult, shortfall, boxLayer.confirmedMaterials, effectiveEvent.shop])
-
-  // 育成インパクト: 実際の交換所配分を反映して充当率を算出。
+  // 育成インパクト: 箱の確定報酬で不足をどれだけ充当するか。交換所の品目は充当に使わない。
   const rosterImpact = useMemo<RosterImpactResult | null>(() => {
-    if (inputMode !== 'roster' || shortfall.size === 0 || rosterNeed.status !== 'ready') return null
-    return computeRosterImpact(
-      rosterNeed.chaldeaState,
-      rosterNeed.materialsForServants,
-      possession,
-      boxLayer,
-      shopAllocation
-    )
-  }, [inputMode, shortfall.size, rosterNeed, possession, boxLayer, shopAllocation])
+    if (inputMode !== 'roster' || shortfallSize === 0 || !effective) return null
+    return computeRosterImpact(effective, boxLayer)
+  }, [inputMode, shortfallSize, effective, boxLayer])
 
   const solverResult = useMemo<EventSolverResult | null>(() => {
-    const currencyDemand = boxLayer.remainingCurrency
-    const shopCurrencyDemand = shopAllocation.totalCurrencyUsed
-
-    // Total currency demand (boxes + shop)
-    const totalCurrency = Math.max(0, currencyDemand + shopCurrencyDemand)
+    // 箱を開ける通貨だけを集める。交換所の対価は足さない。
+    const totalCurrency = Math.max(0, boxLayer.remainingCurrency)
 
     // roster モードの残余不足を直接ドロップ需要としてソルバーに渡す。
     const extraItemDemand =
@@ -209,7 +170,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
     } catch {
       return null
     }
-  }, [effectiveEvent, boxLayer.remainingCurrency, shopAllocation.totalCurrencyUsed, inputMode, rosterImpact, reverseResult])
+  }, [effectiveEvent, boxLayer.remainingCurrency, inputMode, rosterImpact, reverseResult])
 
   // ── AP予算（マスターレベル → 最大AP → 黄金の果実 → 聖晶石 → 課金額）───────────
   const { maxAp, goldenFruitOwned } = useApBudgetProfile()
@@ -264,6 +225,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                     {t('ロスター未設定時の説明')}
                   </p>
                 )}
+                {inputMode === 'roster' && <EventPurposeIndicator purpose={purpose} />}
                 {inputMode === 'roster' && materialsLoading && (
                   <p className="text-xs" style={{ color: 'var(--text3)' }}>
                     {t('素材データ読み込み中')}
@@ -482,7 +444,6 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
               <EventPlanResultCard
                 event={effectiveEvent}
                 boxLayer={boxLayer}
-                shopAllocation={shopAllocation}
                 solverResult={solverResult}
                 apBudget={apBudget}
                 dropSource={
@@ -498,32 +459,6 @@ export const EventPlannerClient: React.FC<Props> = ({ event }) => {
                     '入れたドロップ増加礼装のボーナス（1ドロップにつき +N）を足して計算しています。',
                   )}
                 </p>
-              )}
-
-              {/* Overflow warnings (US-6) */}
-              {shopAllocation.hasOverflow && (
-                <div
-                  className="rounded-lg p-3 text-xs"
-                  style={{
-                    background: 'rgba(234,179,8,0.1)',
-                    border: '1px solid rgba(234,179,8,0.4)',
-                    color: 'var(--text2)',
-                  }}
-                >
-                  <p className="font-semibold mb-1" style={{ color: 'rgb(202,138,4)' }}>
-                    {t('交換所在庫上限警告タイトル')}
-                  </p>
-                  {shopAllocation.allocations
-                    .filter(a => a.cappedByLimit)
-                    .map((a, i) => (
-                      <p key={i}>
-                        {t('交換所在庫上限警告', {
-                          item: `ID:${a.shopItem.itemId}`,
-                          overflow: a.overflow,
-                        })}
-                      </p>
-                    ))}
-                </div>
               )}
             </div>
           </div>

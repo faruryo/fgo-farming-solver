@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useSyncExternalStore } from 'react'
+import React, { useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../common/page-header'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { EventFeature } from '../../data/event-features'
-import { isServantOnlyShop, isShopOnlyEvent, type EventSummary } from '../../lib/event-features'
+import { isServantOnlyShop, type EventSummary } from '../../lib/event-features'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
 import type { EnrichedItem } from '../../lib/get-items'
 import { EventPlannerClient } from './EventPlannerClient'
@@ -20,8 +21,10 @@ interface Props {
   features: EventFeature[]
   /** 交換所の品目の atlasId → 素材1個の AP 換算値。 */
   shopApPrices?: Readonly<Record<number, number>>
-  /** イベントポイントの品目の atlasId（ロトの無い交換所イベントで、あるときだけ）。 */
+  /** イベントポイントの品目の atlasId（交換所の周回計算があり、ポイントの品目があるときだけ）。 */
   pointItemId?: number
+  /** URL のクエリ `tab` で指定されたタブ。無い・そのイベントに無いタブなら並びの最初のタブを開く。 */
+  initialTab?: string
 }
 
 const noopSubscribe = () => () => {}
@@ -73,61 +76,166 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </h2>
 )
 
-export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, features, shopApPrices, pointItemId }) => {
+const SectionDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p className="text-xs" style={{ color: 'var(--text2)' }}>
+    {children}
+  </p>
+)
+
+type TFunction = ReturnType<typeof useTranslation>['t']
+
+/** 1つの機能の欄。タブの列を出すときは見出しを出さず、説明の1行と中身だけを出す。 */
+interface TabSection {
+  /** タブの名前（URL のクエリ `tab` の値と同じ）。 */
+  id: EventFeature
+  tabLabel: string
+  /** タブが1つだけのときに出す見出し。 */
+  title: string
+  description?: string
+  content: React.ReactNode
+}
+
+interface TabContext {
+  t: TFunction
+  props: Props
+}
+
+/**
+ * タブの並びの表。この順にタブを並べ、`build` が undefined を返す機能のタブは出さない。
+ * 機能を足すときは、この表に1行足す。
+ */
+const TAB_TABLE: { id: EventFeature; build: (ctx: TabContext) => Omit<TabSection, 'id'> | undefined }[] = [
+  {
+    id: 'box',
+    build: ({ t, props: { features, boxEvent, items } }) => {
+      if (!features.includes('box') || !boxEvent) return undefined
+      return {
+        tabLabel: t('event-tab-box', 'ボックス'),
+        title: t('ロト計画'),
+        content: <EventPlannerClient event={boxEvent} items={items} />,
+      }
+    },
+  },
+  {
+    id: 'shop',
+    build: ({ t, props: { features, boxEvent, items, shopApPrices, pointItemId } }) => {
+      if (!features.includes('shop') || !boxEvent || boxEvent.shop.length === 0) return undefined
+      const tabLabel = t('event-tab-shop', '交換所')
+      if (isServantOnlyShop(boxEvent.shop)) {
+        return {
+          tabLabel,
+          title: t('event-shop-catalog-title', '交換所の品目'),
+          description: t(
+            'event-shop-catalog-description',
+            'この交換所には礼装などしか並ばないため、周回数は計算せず、品目と対価だけを並べます',
+          ),
+          content: <EventShopCatalog shop={boxEvent.shop} />,
+        }
+      }
+      return {
+        tabLabel,
+        title: t('event-shop-section-title', '交換所の周回計算'),
+        description: t('event-shop-section-description', '交換したい数を入れると、要る周回数と AP が出ます'),
+        content: (
+          <EventShopList
+            key={boxEvent.id}
+            event={boxEvent}
+            apPrices={shopApPrices}
+            pointItemId={pointItemId}
+            items={items}
+          />
+        ),
+      }
+    },
+  },
+  {
+    id: 'craft',
+    build: ({ t, props: { features, items } }) => {
+      if (!features.includes('craft') || !items) return undefined
+      return {
+        tabLabel: t('event-tab-craft', 'クラフト'),
+        title: t('event-craft-section-title', 'クラフト'),
+        content: <EventCraftSection items={items} />,
+      }
+    },
+  },
+]
+
+/** 指定されたタブがあればそれ、無ければ並びの最初のタブ。 */
+export const resolveEventTab = (sections: readonly Pick<TabSection, 'id'>[], requested: string | undefined) =>
+  sections.find(section => section.id === requested)?.id ?? sections[0]?.id
+
+/** 開いたタブを、履歴を増やさずに URL のクエリ `tab` へ書く。 */
+const writeTabQuery = (tab: string) => {
+  const url = new URL(window.location.href)
+  url.searchParams.set('tab', tab)
+  window.history.replaceState(window.history.state, '', url)
+}
+
+const SectionBody: React.FC<{ section: TabSection; withTitle: boolean }> = ({ section, withTitle }) => (
+  <section className="flex flex-col gap-4">
+    {(withTitle || section.description) && (
+      <div className="flex flex-col gap-1">
+        {withTitle && <SectionTitle>{section.title}</SectionTitle>}
+        {section.description && <SectionDescription>{section.description}</SectionDescription>}
+      </div>
+    )}
+    {section.content}
+  </section>
+)
+
+/**
+ * 機能ごとのタブ。タブの中身は初めて開いたときに描き、その後は切り替えても描いたまま隠す
+ * （ボックス計画の入力は保存しないので、外すと消える）。
+ */
+const EventTabs: React.FC<{ sections: TabSection[]; initialTab?: string }> = ({ sections, initialTab }) => {
+  const [active, setActive] = useState(() => resolveEventTab(sections, initialTab))
+  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set(active ? [active] : []))
+  const current = resolveEventTab(sections, active)
+  const select = (value: unknown) => {
+    const next = sections.find(section => section.id === value)?.id
+    if (!next || next === current) return
+    setActive(next)
+    setOpened(prev => new Set(prev).add(next))
+    writeTabQuery(next)
+  }
+  return (
+    <Tabs value={current} onValueChange={select} className="gap-4">
+      <TabsList>
+        {sections.map(section => (
+          <TabsTrigger key={section.id} value={section.id} className="px-3">
+            {section.tabLabel}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {sections.map(section => (
+        <TabsContent key={section.id} value={section.id} keepMounted>
+          {(opened.has(section.id) || section.id === current) && <SectionBody section={section} withTitle={false} />}
+        </TabsContent>
+      ))}
+    </Tabs>
+  )
+}
+
+export const EventHubClient: React.FC<Props> = props => {
+  const { summary, boxEvent, features, initialTab } = props
   const { t } = useTranslation('events')
   const box = features.includes('box') ? boxEvent : undefined
-  const craftItems = features.includes('craft') ? items : undefined
-  const shopOnly = isShopOnlyEvent(features, boxEvent) ? boxEvent : undefined
-  const catalogOnly = shopOnly ? isServantOnlyShop(shopOnly.shop) : false
+  const sections = TAB_TABLE.flatMap(({ id, build }) => {
+    const section = build({ t, props })
+    return section ? [{ id, ...section }] : []
+  })
+  const [single] = sections
 
   return (
     <div className="c-page">
       <div className="c-page-inner">
         <div className="flex flex-col gap-6">
           <Header summary={summary} box={box} />
-
-          {box && (
-            <section className="flex flex-col gap-4">
-              <SectionTitle>{t('ロト計画')}</SectionTitle>
-              <EventPlannerClient event={box} />
-            </section>
-          )}
-
-          {shopOnly && catalogOnly && (
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <SectionTitle>{t('event-shop-catalog-title', '交換所の品目')}</SectionTitle>
-                <p className="text-xs" style={{ color: 'var(--text2)' }}>
-                  {t(
-                    'event-shop-catalog-description',
-                    'この交換所には礼装などしか並ばないため、周回数は計算せず、品目と対価だけを並べます',
-                  )}
-                </p>
-              </div>
-              <EventShopCatalog shop={shopOnly.shop} />
-            </section>
-          )}
-
-          {shopOnly && !catalogOnly && (
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <SectionTitle>{t('event-shop-section-title', '交換所の周回計算')}</SectionTitle>
-                <p className="text-xs" style={{ color: 'var(--text2)' }}>
-                  {t(
-                    'event-shop-section-description',
-                    '交換したい数を入れると、要る周回数と AP が出ます',
-                  )}
-                </p>
-              </div>
-              <EventShopList key={shopOnly.id} event={shopOnly} apPrices={shopApPrices} pointItemId={pointItemId} />
-            </section>
-          )}
-
-          {craftItems && (
-            <section className="flex flex-col gap-4">
-              <SectionTitle>{t('event-craft-section-title', 'クラフト')}</SectionTitle>
-              <EventCraftSection items={craftItems} />
-            </section>
+          {sections.length > 1 ? (
+            <EventTabs sections={sections} initialTab={initialTab} />
+          ) : (
+            single && <SectionBody section={single} withTitle />
           )}
         </div>
       </div>
