@@ -833,3 +833,25 @@ describe('EventShopList のボーナス礼装の更新前の表示', () => {
     expect(screen.getByLabelText('武蔵うどん のドロップボーナス')).toHaveValue(0)
   })
 })
+
+describe('EventShopList 1周の獲得量の見出し', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('アイコンのある通貨は、スマホ幅向けのアイコン（通貨名の代替テキスト）と広い幅向けの通貨名を出し、アイコンの無い通貨は名前だけを出す', () => {
+    const base = shopEvent()
+    const event: EventPlannerEvent = {
+      ...base,
+      shop: [
+        shopEntry(1, UDON, { costName: '武蔵うどん', costIcon: '/udon.png' }),
+        shopEntry(2, MUSUBI, { costName: '江戸むすび', costAmount: 10, limitNum: 10 }),
+      ],
+    }
+    render(<EventShopList event={event} />)
+    const head = within(screen.getByTestId('shop-per-run')).getAllByRole('columnheader')
+    const [, udon, musubi] = head
+    expect(within(udon).getByRole('img', { name: '武蔵うどん' })).toHaveClass('sm:hidden')
+    expect(within(udon).getByText('武蔵うどん')).toHaveClass('hidden', 'sm:inline')
+    expect(musubi).toHaveTextContent('江戸むすび')
+    expect(musubi.querySelector('img')).toBeNull()
+  })
+})
