@@ -94,19 +94,20 @@ const ServantPicker: React.FC<{
     setQuery('')
   }
   return (
-    <span className="inline-flex flex-col gap-1">
-      <span className="inline-flex items-center gap-1">
+    // 名前が長くても切り抜きの横に残るよう、名前の段とボタンの段を縦に積む（#308）
+    <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
+      <span className="flex items-center gap-1">
         <SmallIcon src={current?.face} alt={current?.name ?? ''} />
         {current && <ClassIcon servant={current} size={18} />}
         <span style={{ color: 'var(--text1)' }}>
           {current?.name ?? t('roster-import-no-servant', 'サーヴァントを選んでいません')}
         </span>
-        <Button size="xs" variant="outline" onClick={() => setOpen(v => !v)} aria-expanded={open}>
-          {t('roster-import-choose-servant', 'サーヴァントを選ぶ')}
-        </Button>
       </span>
+      <Button size="xs" variant="outline" onClick={() => setOpen(v => !v)} aria-expanded={open}>
+        {t('roster-import-choose-servant', 'サーヴァントを選ぶ')}
+      </Button>
       {open && (
-        <span className="flex flex-col gap-1">
+        <span className="flex w-full flex-col gap-1">
           <Input
             value={query}
             onChange={e => setQuery(e.target.value)}
