@@ -125,7 +125,7 @@ export const EventHubClient: React.FC<Props> = ({ summary, boxEvent, items, feat
 
           {craftItems && (
             <section className="flex flex-col gap-4">
-              <SectionTitle>{t('event-craft-section-title', '料理作成')}</SectionTitle>
+              <SectionTitle>{t('event-craft-section-title', 'クラフト')}</SectionTitle>
               <EventCraftSection items={craftItems} />
             </section>
           )}

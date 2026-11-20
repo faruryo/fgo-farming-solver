@@ -34,15 +34,15 @@ describe('EventListClient', () => {
 
     const box = within(cardOf('ボックスのみ'))
     expect(box.getByText('ボックス計画')).toBeInTheDocument()
-    expect(box.queryByText('料理作成')).not.toBeInTheDocument()
+    expect(box.queryByText('クラフト')).not.toBeInTheDocument()
 
     const craft = within(cardOf('料理のみ'))
-    expect(craft.getByText('料理作成')).toBeInTheDocument()
+    expect(craft.getByText('クラフト')).toBeInTheDocument()
     expect(craft.queryByText('ボックス計画')).not.toBeInTheDocument()
 
     const both = within(cardOf('両方'))
     expect(both.getByText('ボックス計画')).toBeInTheDocument()
-    expect(both.getByText('料理作成')).toBeInTheDocument()
+    expect(both.getByText('クラフト')).toBeInTheDocument()
     expect(cardOf('両方')).toHaveAttribute('href', '/events/3')
   })
 
@@ -51,7 +51,7 @@ describe('EventListClient', () => {
 
     const shop = within(cardOf('交換所のみ'))
     expect(shop.getByText('交換所')).toBeInTheDocument()
-    expect(shop.queryByText('料理作成')).not.toBeInTheDocument()
+    expect(shop.queryByText('クラフト')).not.toBeInTheDocument()
     expect(shop.queryByText('ボックス計画')).not.toBeInTheDocument()
   })
 })
