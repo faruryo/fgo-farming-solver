@@ -7,15 +7,11 @@
 
 import { describe, it, expect } from 'vitest'
 import type { EventPlannerEvent, EventShopItem } from './master-data/types'
-import type { ChaldeaState } from '../hooks/create-chaldea-state'
-import type { MaterialsForServants } from './get-materials'
 import {
   calcBoxLayer,
-  allocateShop,
   buildEventDrops,
   runEventSolver,
   reverseCalcBoxes,
-  computeTotalNeed,
   computeShortfall,
   computeRosterImpact,
   planShopCurrencies,
@@ -120,57 +116,6 @@ describe('calcBoxLayer', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Task 10 — allocateShop（limitNum 上限と overflow 警告）
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('allocateShop', () => {
-  // mocks/events.json のイベント 80586 は shop=[] なのでインライン fixtures を使う
-  const shopItems = [
-    { itemId: 6001, qty: 5, costItemId: 94151101, costAmount: 100, limitNum: 20 },
-    { itemId: 6101, qty: 3, costItemId: 94151101, costAmount: 200, limitNum: 10 },
-  ]
-
-  it('需要 0 のアイテムは allocated=0', () => {
-    const result = allocateShop(shopItems, new Map())
-    expect(result.allocations.every((a) => a.allocated === 0)).toBe(true)
-    expect(result.totalCurrencyUsed).toBe(0)
-    expect(result.hasOverflow).toBe(false)
-  })
-
-  it('limitNum 以内の需要は正確に配分される', () => {
-    const demand = new Map([[6001, 15]])
-    const result = allocateShop(shopItems, demand)
-    const a = result.allocations.find((x) => x.shopItem.itemId === 6001)!
-    // 15 個欲しい / 1回5個 = ceil(15/5)=3 回購入 → 15 個
-    expect(a.allocated).toBe(3)
-    expect(a.totalQty).toBe(15)
-    expect(a.cappedByLimit).toBe(false)
-    expect(result.totalCurrencyUsed).toBe(3 * 100)
-  })
-
-  it('limitNum を超える需要は limitNum でキャップ + overflow 警告', () => {
-    // limitNum=20 → 最大 100 個（20回×5個）。110 個要求 → ceil(110/5)=22回 > 20
-    const demand = new Map([[6001, 110]])
-    const result = allocateShop(shopItems, demand)
-    const a = result.allocations.find((x) => x.shopItem.itemId === 6001)!
-    expect(a.allocated).toBe(20) // limitNum でキャップ
-    expect(a.cappedByLimit).toBe(true)
-    // overflow = (22-20)*5=10 個
-    expect(a.overflow).toBe(10)
-    expect(result.hasOverflow).toBe(true)
-  })
-
-  it('通貨コスト合計が正確に計算される', () => {
-    const demand = new Map([
-      [6001, 10],   // ceil(10/5)=2回 × 100 = 200
-      [6101, 9],    // ceil(9/3)=3回 × 200 = 600
-    ])
-    const result = allocateShop(shopItems, demand)
-    expect(result.totalCurrencyUsed).toBe(200 + 600)
-  })
-})
-
 describe('サーヴァント扱いの交換所の品目（kind=svt）', () => {
   // 9305420 は礼装とイベントアイテムで番号が同じ
   const svtItem: EventShopItem = {
@@ -179,13 +124,6 @@ describe('サーヴァント扱いの交換所の品目（kind=svt）', () => {
   const item: EventShopItem = {
     itemId: 9305420, qty: 1, costItemId: 94151101, costAmount: 10, limitNum: 10, name: 'お正月のアイテム',
   }
-
-  it('需要のある素材と同じ番号でも交換に選ばれず、アイテムの品目に配分される', () => {
-    const result = allocateShop([svtItem, item], new Map([[9305420, 3]]))
-    expect(result.allocations.map((a) => a.shopItem)).toEqual([item])
-    expect(result.allocations[0]?.allocated).toBe(3)
-    expect(result.totalCurrencyUsed).toBe(30)
-  })
 
   it('名前の対応表はアイテムの名前のまま', () => {
     const event: EventPlannerEvent = { ...mockEvent, shop: [item, svtItem] }
@@ -305,9 +243,7 @@ describe('reverseCalcBoxes', () => {
     expect(residualDemand.get(99999)).toBe(1) // 残需要として残る
   })
 
-  it('交換所で limitNum 超過した場合、残余需要が residualDemand に入る', () => {
-    // shop=[] の mockEvent では交換所は何もしない → ボックス報酬以外はすべて residual
-    // ボックスで供給できないケースを作る（itemId を存在しないものに）
+  it('交換所の品目は充当に使わず、箱の確定報酬に無い分はすべて残余需要になる', () => {
     const shop2: EventPlannerEvent = {
       ...mockEvent,
       lotteries: mockEvent.lotteries.map((b) => ({
@@ -326,183 +262,86 @@ describe('reverseCalcBoxes', () => {
       ],
     }
     const demand = new Map([[98765, 10]])
-    const { shopAllocation, residualDemand } = reverseCalcBoxes(shop2, demand)
-    const shopA = shopAllocation.allocations.find((a) => a.shopItem.itemId === 98765)!
-    expect(shopA.cappedByLimit).toBe(true)
-    expect(shopA.allocated).toBe(5) // limitNum=5
-    expect(residualDemand.get(98765)).toBe(5) // 残り5個はフリクエ等で
+    const { minBoxes, boxLayer, residualDemand } = reverseCalcBoxes(shop2, demand)
+    expect(minBoxes).toBe(shop2.lotteries.length)
+    expect(residualDemand.get(98765)).toBe(10)
+    // 交換の対価は必要イベント通貨に足さない。
+    expect(boxLayer.totalCurrencyNeeded).toBe(
+      shop2.lotteries.reduce((sum, b) => sum + b.costPerBox, 0),
+    )
+  })
+
+  it('80549: 対価が箱の通貨と違う交換所の品目は、必要イベント通貨に足されない', () => {
+    const indra = (eventsJson as { events: EventPlannerEvent[] }).events.find((e) => e.id === 80549)!
+    const boxItems = new Set(
+      indra.lotteries.flatMap((b) => [...b.contents, ...b.rareRewards].map((c) => c.itemId)),
+    )
+    const shopOnly = indra.shop.find((s) => s.kind !== 'svt' && !boxItems.has(s.itemId))!
+    expect(shopOnly.costItemId).not.toBe(indra.currency.id)
+
+    const withShopDemand = reverseCalcBoxes(indra, new Map([[shopOnly.itemId, shopOnly.qty]]))
+    const boxesOnly = calcBoxLayer(indra, withShopDemand.minBoxes)
+    expect(withShopDemand.boxLayer.remainingCurrency).toBe(boxesOnly.remainingCurrency)
+    expect(withShopDemand.residualDemand.get(shopOnly.itemId)).toBe(shopOnly.qty)
+
+    // 育成ロスターでも、交換所の品目で充当せず周回ドロップの需要に残す。
+    const impact = computeRosterImpact({ shortfall: new Map([[shopOnly.itemId, 3]]) }, calcBoxLayer(indra, 5))
+    expect(impact.coverage.has(shopOnly.itemId)).toBe(false)
+    expect(impact.solverDemand.get(shopOnly.itemId)).toBe(3)
   })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task 13 — computeRosterImpact
+// computeShortfall / computeRosterImpact
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * テスト用のシンプルな ChaldeaState・MaterialsForServants を構築する。
- * サーヴァント ID 1 のみ。ascension ステップ 0→1 で item 6001 × 10 個必要。
- */
-const buildTestChaldea = (): {
-  chaldeaState: ChaldeaState
-  materialsForServants: MaterialsForServants
-} => {
-  const chaldeaState: ChaldeaState = {
-    '1': {
-      disabled: false,
-      targets: {
-        ascension: { disabled: false, ranges: [{ start: 0, end: 1 }] },
-        skill: { disabled: true, ranges: [{ start: 1, end: 1 }] },
-        appendSkill: { disabled: true, ranges: [{ start: 0, end: 0 }] },
-      },
-    },
-  }
-
-  const materialsForServants: MaterialsForServants = {
-    '1': {
-      ascensionMaterials: {
-        '0': {
-          items: [{ item: { id: 6001 }, amount: 10 }],
-          qp: 100000,
-        },
-      },
-      skillMaterials: {},
-      appendSkillMaterials: {},
-    },
-  }
-
-  return { chaldeaState, materialsForServants }
-}
-
-describe('computeTotalNeed', () => {
-  it('素材と QP（atlasId=1）を所持数を引かずに集計する', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    const need = computeTotalNeed(chaldeaState, materialsForServants)
-    expect(need.get(6001)).toBe(10)
-    expect(need.get(1)).toBe(100000)
-  })
-
-  it('disabled サーヴァントは除外される', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    chaldeaState['1'].disabled = true
-    expect(computeTotalNeed(chaldeaState, materialsForServants).size).toBe(0)
-  })
-
-  it('disabled ターゲットは除外される', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    chaldeaState['1'].targets.ascension.disabled = true
-    expect(computeTotalNeed(chaldeaState, materialsForServants).size).toBe(0)
-  })
-
-  it("'all' キーは除外される", () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    chaldeaState['all'] = chaldeaState['1']
-    materialsForServants['all'] = materialsForServants['1']
-    const need = computeTotalNeed(chaldeaState, materialsForServants)
-    expect(need.get(6001)).toBe(10)
-  })
-})
 
 describe('computeShortfall', () => {
-  it('必要素材から所持数を差し引いた不足を返す', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    const possession = { '6001': 3 }
-    const shortfall = computeShortfall(chaldeaState, materialsForServants, possession)
-    expect(shortfall.get(6001)).toBe(7) // 10 - 3 = 7
-    expect(shortfall.get(1)).toBe(100000) // QP 不足 (所持なし)
-  })
-
-  it('所持が need 以上ならその素材は shortfall に含まれない', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    const possession = { '6001': 10, '1': 200000 }
-    const shortfall = computeShortfall(chaldeaState, materialsForServants, possession)
-    expect(shortfall.has(6001)).toBe(false)
-    expect(shortfall.has(1)).toBe(false)
-  })
-
-  it('disabled サーヴァントはスキップされる', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    chaldeaState['1'].disabled = true
-    const shortfall = computeShortfall(chaldeaState, materialsForServants, {})
-    expect(shortfall.size).toBe(0)
+  it('実効不足のうち 1 以上の素材だけを返す', () => {
+    const shortfall = computeShortfall({ shortfall: new Map([[6001, 7], [6002, 0]]) })
+    expect([...shortfall]).toEqual([[6001, 7]])
   })
 })
 
 describe('computeRosterImpact', () => {
   it('ボックス報酬が不足を充当する（coverage 計算）', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    const possession = { '6001': 0 }
-
     // 5 箱: 6001 は 2個/箱 → 合計 10個。shortfall=10 → coverage=10
     const boxLayer = calcBoxLayer(mockEvent, 5, 0)
-    const shopAllocation = allocateShop(mockEvent.shop, new Map())
+    const impact = computeRosterImpact({ shortfall: new Map([[6001, 10], [1, 100000]]) }, boxLayer)
 
-    const impact = computeRosterImpact(
-      chaldeaState,
-      materialsForServants,
-      possession,
-      boxLayer,
-      shopAllocation,
-    )
-
-    // 6001 は 5 箱 × 2 = 10個。shortfall=10 → coverage=10, residual=0
     expect(impact.shortfall.get(6001)).toBe(10)
     expect(impact.coverage.get(6001)).toBe(10)
     expect(impact.residualShortfall.has(6001)).toBe(false)
   })
 
   it('coverageRate は総充当 / 総不足', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    const possession = {}
-
     // 0 箱: ボックス報酬なし → coverage=0, coverageRate=0
-    const boxLayer = calcBoxLayer(mockEvent, 0)
-    const shopAllocation = allocateShop(mockEvent.shop, new Map())
-
-    const impact = computeRosterImpact(
-      chaldeaState,
-      materialsForServants,
-      possession,
-      boxLayer,
-      shopAllocation,
-    )
-
+    const impact = computeRosterImpact({ shortfall: new Map([[6001, 10]]) }, calcBoxLayer(mockEvent, 0))
     expect(impact.coverageRate).toBe(0)
   })
 
   it('不足ゼロなら coverageRate=1.0', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    // 全素材所持済み
-    const possession = { '6001': 100, '1': 9999999 }
-
-    const boxLayer = calcBoxLayer(mockEvent, 0)
-    const shopAllocation = allocateShop(mockEvent.shop, new Map())
-
-    const impact = computeRosterImpact(
-      chaldeaState,
-      materialsForServants,
-      possession,
-      boxLayer,
-      shopAllocation,
-    )
-
+    const impact = computeRosterImpact({ shortfall: new Map() }, calcBoxLayer(mockEvent, 0))
     expect(impact.shortfall.size).toBe(0)
     expect(impact.coverageRate).toBe(1.0)
   })
 
-  it('solverDemand は residualShortfall と同一オブジェクト', () => {
-    const { chaldeaState, materialsForServants } = buildTestChaldea()
-    const possession = {}
-    const boxLayer = calcBoxLayer(mockEvent, 0)
-    const shopAllocation = allocateShop(mockEvent.shop, new Map())
-
+  it('交換所の品目（80586 の交換所）は充当に含めない', () => {
+    const shopItemId = mockEvent.shop.find((s) => s.kind !== 'svt')!.itemId
+    const lotteries = mockEvent.lotteries.map((b) => ({
+      ...b,
+      contents: b.contents.filter((c) => c.itemId !== shopItemId),
+      rareRewards: b.rareRewards.filter((r) => r.itemId !== shopItemId),
+    }))
     const impact = computeRosterImpact(
-      chaldeaState,
-      materialsForServants,
-      possession,
-      boxLayer,
-      shopAllocation,
+      { shortfall: new Map([[shopItemId, 4]]) },
+      calcBoxLayer({ ...mockEvent, lotteries }, 11),
     )
+    expect(impact.coverage.has(shopItemId)).toBe(false)
+    expect(impact.residualShortfall.get(shopItemId)).toBe(4)
+  })
 
+  it('solverDemand は residualShortfall と同一オブジェクト', () => {
+    const impact = computeRosterImpact({ shortfall: new Map([[6001, 10]]) }, calcBoxLayer(mockEvent, 0))
     expect(impact.solverDemand).toBe(impact.residualShortfall)
   })
 })

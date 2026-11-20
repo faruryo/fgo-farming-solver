@@ -352,14 +352,29 @@ export type ShopItemStatus =
   | { kind: 'unused' }
   /** 育成計画で扱っていない品目。 */
   | { kind: 'outside' }
+  /** 周回目的が「新規サーヴァントに備える」で、所持数を入れていないため不足に数えない素材。 */
+  | { kind: 'unentered' }
 
 /**
  * 品目の状態を決める。QP は状態なし。必要数のある素材は `planItemIds` を見ない。
  * `planItemIds`（育成計画で扱う素材の集合）が undefined なら、必要数 0 の品目は見分けられないので状態なし。
  * ただし番号で扱いが決まる品目は、伝承結晶なら「使わない」、夢火なら「計画の対象外」にする。
  * サーヴァント扱いの品目は育成計画の素材ではないので、番号を突き合わせずに計画の対象外にする。
+ * `unentered`（所持数を入れていないため不足に数えない素材）にある育成計画の素材は「所持数が未入力」にする。
  */
 export const shopItemStatus = (
+  item: Pick<EventShopItem, 'itemId' | 'kind'>,
+  totalNeed: ReadonlyMap<number, number>,
+  shortfall: ReadonlyMap<number, number>,
+  planItemIds: ReadonlySet<number> | undefined,
+  unentered?: ReadonlySet<number>,
+): ShopItemStatus | undefined => {
+  const status = planStatus(item, totalNeed, shortfall, planItemIds)
+  if (!unentered?.has(item.itemId) || item.kind === 'svt') return status
+  return status?.kind === 'enough' || status?.kind === 'unused' ? { kind: 'unentered' } : status
+}
+
+const planStatus = (
   item: Pick<EventShopItem, 'itemId' | 'kind'>,
   totalNeed: ReadonlyMap<number, number>,
   shortfall: ReadonlyMap<number, number>,

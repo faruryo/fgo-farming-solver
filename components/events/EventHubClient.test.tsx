@@ -7,6 +7,7 @@ import type { RosterNeed } from '../../hooks/use-roster-need'
 import type { MaterialCatalogV1 } from '../../lib/material-catalog'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 import { shopItemKeys } from '../../lib/event-shop-summary'
+import eventsJson from '../../mocks/events.json'
 
 type CatalogState = { catalog: MaterialCatalogV1 | null; failed: boolean; reload: () => void }
 
@@ -15,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   roster: undefined as RosterNeed | undefined,
   catalog: undefined as CatalogState | undefined,
   useMaterialCatalog: vi.fn(),
+  // true のときはボックス計画を実物で描く。
+  realPlanner: false,
 }))
 
 vi.mock('../../hooks/use-roster-need', async importOriginal => {
@@ -31,9 +34,13 @@ vi.mock('../../hooks/use-material-catalog', () => ({
 
 vi.mock('react-i18next', async () => (await import('../i18n-test-utils')).translationMock())
 
-vi.mock('./EventPlannerClient', () => ({
-  EventPlannerClient: () => <div data-testid="box-planner" />,
-}))
+vi.mock('./EventPlannerClient', async importOriginal => {
+  const actual = await importOriginal<typeof import('./EventPlannerClient')>()
+  return {
+    EventPlannerClient: (props: React.ComponentProps<typeof actual.EventPlannerClient>) =>
+      mocks.realPlanner ? <actual.EventPlannerClient {...props} /> : <div data-testid="box-planner" />,
+  }
+})
 
 vi.mock('./EventCraftSection', () => ({
   EventCraftSection: () => <div data-testid="craft-section" />,
@@ -114,7 +121,7 @@ describe('EventHubClient', () => {
     expect(screen.getByRole('heading', { name: '名前不明のアイテム（ID 94001）' })).toBeInTheDocument()
   })
 
-  it('ロトのあるイベントではボックス計画を出し、交換所一覧は出さない', () => {
+  it('ロトと交換所のあるイベントでは「ボックス」のタブでボックス計画を開き、交換所の一覧はタブを開くまで描かない', () => {
     const boxEvent = event({
       lotteries: [{ boxIndex: 0, costPerBox: 100, contents: [], rareRewards: [] }],
       shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })],
@@ -122,7 +129,7 @@ describe('EventHubClient', () => {
     render(<EventHubClient summary={summary} boxEvent={boxEvent} features={['box', 'shop']} />)
 
     expect(screen.getByTestId('box-planner')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('shop-item-list')).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '武蔵うどん' })).not.toBeInTheDocument()
   })
 
@@ -214,7 +221,7 @@ describe('EventHubClient', () => {
     expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
   })
 
-  it('ロトの無い交換所イベントでは見出しの下に目的の説明を出し、ロトのあるイベントの見出しは変えない', () => {
+  it('ロトの無い交換所イベントでは見出しの下に目的の説明を出し、ボックスだけのイベントの見出しは変えない', () => {
     const { unmount } = render(
       <EventHubClient summary={summary} boxEvent={event({ shop: [shopEntry(1, 94001)] })} features={['shop']} />,
     )
@@ -224,11 +231,8 @@ describe('EventHubClient', () => {
     ).toBeInTheDocument()
     unmount()
 
-    const boxEvent = event({
-      lotteries: [{ boxIndex: 0, costPerBox: 100, contents: [], rareRewards: [] }],
-      shop: [shopEntry(1, 94001)],
-    })
-    render(<EventHubClient summary={summary} boxEvent={boxEvent} features={['box', 'shop']} />)
+    const boxEvent = event({ lotteries: [{ boxIndex: 0, costPerBox: 100, contents: [], rareRewards: [] }] })
+    render(<EventHubClient summary={summary} boxEvent={boxEvent} features={['box']} />)
     expect(screen.getByRole('heading', { name: 'ロト計画' })).toBeInTheDocument()
     expect(screen.queryByText(/^交換したい数を入れると/)).not.toBeInTheDocument()
   })
@@ -2232,6 +2236,175 @@ describe('EventHubClient', () => {
     it('ボーナス礼装の入力は、開いただけでは保存しない', () => {
       renderShop(ceEvent())
       expect(savedEntry()).toBeUndefined()
+    })
+  })
+})
+
+describe('EventHubClient のタブ', () => {
+  const lottery = { boxIndex: 0, costPerBox: 100, contents: [], rareRewards: [] }
+  const shopEvent = event({ shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })] })
+  const boxShopEvent = event({ lotteries: [lottery], shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })] })
+  const items = [{ id: 6516 }] as unknown as React.ComponentProps<typeof EventHubClient>['items']
+  const tabNames = () => screen.queryAllByRole('tab').map(tab => tab.textContent)
+  const selectedTab = () =>
+    screen.getAllByRole('tab').find(tab => tab.getAttribute('aria-selected') === 'true')?.textContent
+
+  beforeEach(() => {
+    localStorage.clear()
+    window.history.replaceState(null, '', '/events/80632')
+  })
+  afterEach(() => {
+    localStorage.clear()
+    mocks.realPlanner = false
+  })
+
+  it('ボックスと交換所の両方: 「ボックス」「交換所」のタブがこの順に出て、ボックスが開き、タブの中に見出しを重ねない', () => {
+    render(<EventHubClient summary={summary} boxEvent={boxShopEvent} features={['box', 'shop']} />)
+
+    expect(screen.getByRole('tablist')).toBeInTheDocument()
+    expect(tabNames()).toEqual(['ボックス', '交換所'])
+    expect(selectedTab()).toBe('ボックス')
+    expect(screen.queryByRole('heading', { name: 'ロト計画' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: '交換所' }))
+    expect(selectedTab()).toBe('交換所')
+    expect(screen.getByTestId('shop-item-list')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
+    expect(screen.getByText('交換したい数を入れると、要る周回数と AP が出ます')).toBeInTheDocument()
+  })
+
+  it('交換所だけ: タブの列を出さず、「交換所の周回計算」の見出しで出す', () => {
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop']} />)
+
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '交換所の周回計算' })).toBeInTheDocument()
+  })
+
+  it('交換所と料理作成: 「交換所」「クラフト」のタブがこの順に出て、交換所が開く', () => {
+    render(<EventHubClient summary={summary} boxEvent={shopEvent} features={['shop', 'craft']} items={items} />)
+
+    expect(tabNames()).toEqual(['交換所', 'クラフト'])
+    expect(selectedTab()).toBe('交換所')
+    expect(screen.queryByRole('heading', { name: '交換所の周回計算' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('craft-section')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'クラフト' }))
+    expect(screen.getByTestId('craft-section')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'クラフト' })).not.toBeInTheDocument()
+  })
+
+  it('ボックスだけ: タブの列を出さず、「ロト計画」の見出しで出す', () => {
+    render(<EventHubClient summary={summary} boxEvent={event({ lotteries: [lottery] })} features={['box']} />)
+
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'ロト計画' })).toBeInTheDocument()
+    expect(screen.getByTestId('box-planner')).toBeInTheDocument()
+  })
+
+  it('品目がすべてサーヴァント扱いの交換所は、ロトがあっても交換所のタブを品目の一覧にする', () => {
+    const svtShop = event({
+      lotteries: [lottery],
+      shop: [shopEntry(9305420, 94001, { kind: 'svt', costName: '武蔵うどん' })],
+    })
+    render(<EventHubClient summary={summary} boxEvent={svtShop} features={['box', 'shop']} />)
+    fireEvent.click(screen.getByRole('tab', { name: '交換所' }))
+
+    expect(
+      screen.getByText('この交換所には礼装などしか並ばないため、周回数は計算せず、品目と対価だけを並べます'),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/ の交換回数$/)).not.toBeInTheDocument()
+  })
+
+  it('タブを切り替えて戻っても、ボックスの目標箱数は残る', () => {
+    mocks.realPlanner = true
+    const manyBoxes = event({
+      lotteries: Array.from({ length: 12 }, (_, boxIndex) => ({ ...lottery, boxIndex })),
+      shop: [shopEntry(1, 94001, { costName: '武蔵うどん' })],
+    })
+    render(<EventHubClient summary={summary} boxEvent={manyBoxes} features={['box', 'shop']} />)
+    const targetInput = () => screen.getByText('目標箱数').parentElement?.querySelector('input') as HTMLInputElement
+    fireEvent.change(targetInput(), { target: { value: '10' } })
+    expect(targetInput()).toHaveValue(10)
+
+    fireEvent.click(screen.getByRole('tab', { name: '交換所' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'ボックス' }))
+
+    expect(targetInput()).toHaveValue(10)
+  })
+
+  it('クエリで交換所を指定すると交換所のタブが開く', () => {
+    render(
+      <EventHubClient summary={summary} boxEvent={boxShopEvent} features={['box', 'shop']} initialTab="shop" />,
+    )
+
+    expect(selectedTab()).toBe('交換所')
+    expect(screen.getByTestId('shop-item-list')).toBeInTheDocument()
+    expect(screen.queryByTestId('box-planner')).not.toBeInTheDocument()
+  })
+
+  it.each([['craft'], ['points'], ['']])(
+    'そのイベントに無いタブ（%s）の指定ではエラーにせず、並びの最初のタブを開く',
+    tab => {
+      render(
+        <EventHubClient summary={summary} boxEvent={boxShopEvent} features={['box', 'shop']} initialTab={tab} />,
+      )
+
+      expect(selectedTab()).toBe('ボックス')
+    },
+  )
+
+  it('切り替えると、履歴を増やさずにクエリの tab を書き換え、端末には保存しない', () => {
+    window.history.replaceState(null, '', '/events/80632?from=list')
+    render(<EventHubClient summary={summary} boxEvent={boxShopEvent} features={['box', 'shop']} />)
+    const length = window.history.length
+    const storedBefore = Object.keys(localStorage)
+
+    fireEvent.click(screen.getByRole('tab', { name: '交換所' }))
+    expect(new URLSearchParams(window.location.search).get('tab')).toBe('shop')
+    expect(new URLSearchParams(window.location.search).get('from')).toBe('list')
+    expect(window.location.pathname).toBe('/events/80632')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'ボックス' }))
+    expect(new URLSearchParams(window.location.search).get('tab')).toBe('box')
+    expect(window.history).toHaveLength(length)
+    expect(Object.keys(localStorage).filter(key => !storedBefore.includes(key))).toEqual([])
+  })
+
+  describe('80549（ボックスと、箱の通貨と別の通貨の交換所）', () => {
+    const indra = (eventsJson as { events: EventPlannerEvent[] }).events.find(e => e.id === 80549) as EventPlannerEvent
+    const indraSummary = { id: indra.id, name: indra.name, startedAt: indra.startedAt, endedAt: indra.endedAt }
+    const firstItem = indra.shop.find(item => item.kind !== 'svt') as EventShopItem
+    const costName = indra.shop.find(item => item.costItemId === firstItem.costItemId && item.costName)?.costName
+    const requiredCurrency = () =>
+      screen.getByText('必要通貨').parentElement?.querySelector('p.text-xl')?.textContent
+    const shopNeed = () =>
+      within(cardOf(costName ?? `名前不明のアイテム（ID ${firstItem.costItemId}）`)).getByText(/^必要量 /)
+        .textContent
+    const targetInput = () => screen.getByText('目標箱数').parentElement?.querySelector('input') as HTMLInputElement
+    const firstItemName = firstItem.name || '#' + String(firstItem.itemId)
+    const firstItemInput = () => screen.getAllByLabelText(`${firstItemName} の交換回数`)[0] as HTMLInputElement
+
+    beforeEach(() => {
+      mocks.realPlanner = true
+    })
+
+    it('交換所タブの交換回数を変えてもボックス計画の必要通貨は変わらず、目標箱数を変えても交換所タブの必要量は変わらない', () => {
+      render(<EventHubClient summary={indraSummary} boxEvent={indra} features={['box', 'shop']} />)
+      const boxCurrency = requiredCurrency()
+      expect(boxCurrency).toBe(indra.lotteries.reduce((sum, box) => sum + box.costPerBox, 0).toLocaleString())
+
+      fireEvent.click(screen.getByRole('tab', { name: '交換所' }))
+      fireEvent.change(firstItemInput(), { target: { value: '1' } })
+      const need = shopNeed()
+      expect(need).toBe(`必要量 ${firstItem.costAmount.toLocaleString()}`)
+
+      fireEvent.click(screen.getByRole('tab', { name: 'ボックス' }))
+      expect(requiredCurrency()).toBe(boxCurrency)
+      fireEvent.change(targetInput(), { target: { value: '1' } })
+      expect(requiredCurrency()).toBe(indra.lotteries[0]?.costPerBox.toLocaleString())
+
+      fireEvent.click(screen.getByRole('tab', { name: '交換所' }))
+      expect(shopNeed()).toBe(need)
     })
   })
 })

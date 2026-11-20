@@ -5,18 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { EventPlannerEvent } from '../../lib/master-data/types'
-import type {
-  BoxLayerResult,
-  ShopAllocationResult,
-  EventSolverResult,
-} from '../../lib/event-plan'
+import type { BoxLayerResult, EventSolverResult } from '../../lib/event-plan'
 import type { ApBudget } from '../../lib/ap-budget'
 import { ApBudgetBreakdown, StatBlock } from './ApBudget'
 
 interface Props {
   event: EventPlannerEvent
   boxLayer: BoxLayerResult
-  shopAllocation: ShopAllocationResult
   solverResult: EventSolverResult | null
   apBudget: ApBudget
   dropSource: 'atlas' | 'manual' | 'none'
@@ -25,7 +20,6 @@ interface Props {
 export const EventPlanResultCard: React.FC<Props> = ({
   event,
   boxLayer,
-  shopAllocation,
   solverResult,
   apBudget,
   dropSource,
@@ -188,39 +182,6 @@ export const EventPlanResultCard: React.FC<Props> = ({
           <p className="text-[10px]" style={{ color: 'var(--text3)' }}>
             {t('確定ドロップ内訳注記')}
           </p>
-        </div>
-      )}
-
-      {/* Shop allocation */}
-      {shopAllocation.allocations.filter(a => a.allocated > 0).length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold" style={{ color: 'var(--text3)' }}>
-            {t('交換所')} — {t('必要通貨N', { count: shopAllocation.totalCurrencyUsed.toLocaleString() })}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {shopAllocation.allocations
-              .filter(a => a.allocated > 0)
-              .map((a, i) => {
-                const name = a.shopItem.name || ''
-                const icon = a.shopItem.icon
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1 text-xs px-2 py-1 rounded"
-                    style={{ background: 'var(--panel)', color: 'var(--text2)' }}
-                  >
-                    {icon && (
-                      <img src={icon} alt={name} className="w-4 h-4 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                    )}
-                    <span className="text-[10px] opacity-60">{name || `#${a.shopItem.itemId}`}</span>
-                    <span className="font-medium">×{a.totalQty}</span>
-                    {a.cappedByLimit && (
-                      <span style={{ color: 'rgb(202,138,4)' }}>⚠</span>
-                    )}
-                  </div>
-                )
-              })}
-          </div>
         </div>
       )}
     </div>

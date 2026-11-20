@@ -35,11 +35,24 @@ const servantShopEvent = {
     { itemId: 6516, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 10, limitNum: 1 },
   ],
 }
+// ロトと、箱の通貨と別の通貨を対価にする交換所の両方があるイベント。
+const boxShopEvent = {
+  ...boxEvent,
+  id: 80549,
+  shop: [{ itemId: 6516, qty: 1, costItemId: 94002, costAmount: 10, limitNum: 5 }],
+}
+// ロトと、品目がすべてサーヴァント扱いの交換所があるイベント。
+const boxServantShopEvent = {
+  ...boxEvent,
+  id: 80550,
+  shop: [{ itemId: 9305420, kind: 'svt', qty: 1, costItemId: 94001, costAmount: 10, limitNum: 1 }],
+}
 const getEventRewards = vi.fn(async (id: number) =>
-  id === 80700 || id === 80638 ? { eventId: id, pointItemId: 94099 } : undefined,
+  [80700, 80638, 80549, 80550].includes(id) ? { eventId: id, pointItemId: 94099 } : undefined,
 )
 vi.mock('../../../lib/get-events', () => ({
-  getEventById: async (id: number) => [boxEvent, shopEvent, servantShopEvent].find(e => e.id === id) ?? null,
+  getEventById: async (id: number) =>
+    [boxEvent, shopEvent, servantShopEvent, boxShopEvent, boxServantShopEvent].find(e => e.id === id) ?? null,
   getEventRewards: (id: number) => getEventRewards(id),
 }))
 const drops = {
@@ -62,8 +75,11 @@ vi.mock('../../../lib/get-items', () => ({ getItems: () => getItems() }))
 vi.mock('../../../components/events/EventHubClient', () => ({ EventHubClient: () => null }))
 vi.mock('../../../components/events/EventDataMissing', () => ({ EventDataMissing: () => null }))
 
-const renderPage = async (id: string) =>
-  (await EventDetailPage({ params: Promise.resolve({ id }) })) as ReactElement<Record<string, unknown>>
+const renderPage = async (id: string, searchParams?: Record<string, string | string[] | undefined>) =>
+  (await EventDetailPage({
+    params: Promise.resolve({ id }),
+    ...(searchParams ? { searchParams: Promise.resolve(searchParams) } : {}),
+  })) as ReactElement<Record<string, unknown>>
 
 describe('/events/[id]', () => {
   it('レジストリのみ（80614）: craft で items を渡し、meta をヘッダーに使う', async () => {
@@ -73,13 +89,13 @@ describe('/events/[id]', () => {
     expect(el.props.summary).toMatchObject({ id: 80614, startedAt: 1786532400 })
   })
 
-  it('KV のボックスイベント: box のみ、items は取らない', async () => {
+  it('KV のボックスイベント: box のみで、不足の在庫基準に使う素材の分類（items）を渡す', async () => {
     getItems.mockClear()
     const el = await renderPage('80586')
     expect(el.type).toBe(EventHubClient)
-    expect(el.props).toMatchObject({ features: ['box'], boxEvent, items: undefined })
+    expect(el.props).toMatchObject({ features: ['box'], boxEvent, items })
     expect(el.props.summary).toEqual({ id: 80586, name: 'BOX', startedAt: 1, endedAt: 2 })
-    expect(getItems).not.toHaveBeenCalled()
+    expect(getItems).toHaveBeenCalledTimes(1)
   })
 
   it('KV のボックスイベント: ドロップ表を読まない', async () => {
@@ -140,6 +156,48 @@ describe('/events/[id]', () => {
     await renderPage('80700')
     expect(getDrops).toHaveBeenCalledTimes(1)
     expect(getEventRewards).toHaveBeenCalledWith(80700)
+  })
+
+  it('ロトと交換所の両方があるイベント: ロトがあっても交換所の AP 換算値・ポイントの品目・素材の分類を渡す', async () => {
+    getDrops.mockClear()
+    getEventRewards.mockClear()
+    const el = await renderPage('80549')
+    expect(el.props).toMatchObject({ features: ['box', 'shop'], boxEvent: boxShopEvent, items })
+    expect(el.props.shopApPrices).toEqual({ 6516: 80 })
+    expect(el.props.pointItemId).toBe(94099)
+    expect(getDrops).toHaveBeenCalledTimes(1)
+    expect(getEventRewards).toHaveBeenCalledWith(80549)
+  })
+
+  it('ロトがあり品目がすべてサーヴァント扱いの交換所: ドロップ表とポイントの品目を読まない', async () => {
+    getDrops.mockClear()
+    getEventRewards.mockClear()
+    const el = await renderPage('80550')
+    expect(el.props).toMatchObject({ features: ['box', 'shop'], boxEvent: boxServantShopEvent })
+    expect(el.props.shopApPrices).toBeUndefined()
+    expect(el.props.pointItemId).toBeUndefined()
+    expect(getDrops).not.toHaveBeenCalled()
+    expect(getEventRewards).not.toHaveBeenCalled()
+  })
+
+  it('ロトの無い交換所イベント: 素材の分類（items）を渡す', async () => {
+    const el = await renderPage('80700')
+    expect(el.props.items).toBe(items)
+  })
+
+  it.each([
+    [{ tab: 'shop' }, 'shop'],
+    [{ tab: 'craft' }, 'craft'],
+    [{ tab: ['shop', 'box'] }, undefined],
+    [{}, undefined],
+  ])('クエリ %o のタブを initialTab として渡す', async (searchParams, expected) => {
+    const el = await renderPage('80549', searchParams)
+    expect(el.props.initialTab).toBe(expected)
+  })
+
+  it('クエリが無ければ initialTab は undefined', async () => {
+    const el = await renderPage('80549')
+    expect(el.props.initialTab).toBeUndefined()
   })
 
   it.each([['999'], ['abc']])('存在しない ID %s は EventDataMissing', async (id) => {
