@@ -259,7 +259,7 @@
     "event-craft-alias-label": "同じ: {{names}}",
     "event-craft-residual-single": "フリクエで あと{{amount}} {{unit}}",
     "event-craft-residual-reference": "フリクエで あと{{turn}} 周 / {{ap}} AP",
-    "event-craft-advice-prompt": "指令を確認します、先輩。お持ちのイベント食材数（海鮮・お肉・野菜）を入力してください。育成不足素材とフリクエ効率から、最も効率的な料理作成配分を算出します。",
+    "event-craft-advice-prompt": "指令を確認します、先輩。お持ちのイベント食材数（海鮮・お肉・野菜）を入力してください。育成不足素材とフリクエ効率から、最も効率的な料理の配分を算出します。",
     "event-craft-advice-no-shortage": "現在、不足している対象素材がありません、先輩。",
     "event-craft-advice-no-saving": "この配分では周回削減効果がありません、先輩。",
     "event-craft-advice-cannot-craft": "手持ちの食材数では料理を作成できないようです、先輩。もう少しフリクエで食材を集めてみましょう。",
