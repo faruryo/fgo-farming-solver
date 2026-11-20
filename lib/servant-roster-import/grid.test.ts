@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { cardBandRects, clipRect, findRosterHeading, gridFromHeading, gridTopY, readRosterGrid } from './grid'
+import {
+  cardBandRects,
+  clipRect,
+  findRosterHeading,
+  fiveColumnGrid,
+  gridFromHeading,
+  gridTopY,
+  readRosterGrid,
+} from './grid'
 import type { OcrBox } from './types'
 
 const box = (text: string, x: number, y: number, width: number, height: number): OcrBox => ({
@@ -52,11 +60,73 @@ describe('readRosterGrid', () => {
 describe('findRosterHeading', () => {
   it('空白と記号が混じって読めた見出しも当たる', () => {
     expect(findRosterHeading([box(' 強化する サーヴァント を、選択してください。', 10, 20, 30, 40)])).toEqual({
-      x: 10,
-      y: 20,
-      width: 30,
-      height: 40,
+      screen: 'enhance',
+      heading: { x: 10, y: 20, width: 30, height: 40 },
     })
+  })
+})
+
+/** 「スキルを強化するサーヴァントを選択してください」の見出し（サーヴァント強化の見出しより小さく、上にずれる） */
+const SKILL_TEXT = 'スキルを強化するサーヴァントを選択してください'
+const SECOND_LINE = '強化には各種素材アイテムが必要です'
+
+describe('findRosterHeading（サーヴァントスキル強化）', () => {
+  // 1行目の上端 35 と 2行目の上端 83 の間隔は 48。サーヴァント強化の見出しの枠（上端 48・高さ 57）に換算する
+  it.each([
+    ['2行目あり・1行目の高さ 44', 44, true, { y: 48, height: 57 }],
+    ['2行目あり・1行目の高さが 39 にぶれても同じ', 39, true, { y: 48, height: 57 }],
+    ['2行目なし・1行目の高さ 44', 44, false, { y: 48, height: 57 }],
+  ])('%s', (_name, height, withSecond, expected) => {
+    const boxes = [box(SKILL_TEXT, 568, 35, 869, height), ...(withSecond ? [box(SECOND_LINE, 568, 83, 700, height)] : [])]
+    expect(findRosterHeading(boxes)).toEqual({ screen: 'skill', heading: { x: 568, width: 869, ...expected } })
+  })
+
+  it('2行目が読めないときは、1行目の枠の高さから換算する（高さがぶれると誤差が出る）', () => {
+    const found = findRosterHeading([box(SKILL_TEXT, 568, 35, 869, 39)])
+    expect(found?.screen).toBe('skill')
+    expect(found?.heading.height).toBeCloseTo((39 * 57) / 44, 6)
+    expect(found?.heading.y).toBeCloseTo(35 + (39 * 13) / 44, 6)
+  })
+
+  it('1行目の下 3 行分より遠い枠と、1行目より上の枠は2行目に使わない', () => {
+    const far = findRosterHeading([box(SKILL_TEXT, 568, 35, 869, 44), box(SECOND_LINE, 568, 35 + 44 * 3, 700, 44)])
+    const above = findRosterHeading([box(SKILL_TEXT, 568, 35, 869, 44), box(SECOND_LINE, 568, 5, 700, 44)])
+    expect(far?.heading.height).toBeCloseTo(57, 6)
+    expect(above?.heading.height).toBeCloseTo(57, 6)
+    // 2行目に使うと間隔が 132（遠い枠）・負（上の枠）になって高さが変わるはずなので、どちらも使われていない
+    expect(far?.heading.y).toBeCloseTo(48, 6)
+    expect(above?.heading.y).toBeCloseTo(48, 6)
+  })
+
+  it('換算した見出しの枠の格子は、サーヴァント強化の画面と同じ列の位置になる', () => {
+    const skill = readRosterGrid([box(SKILL_TEXT, 568, 35, 869, 44), box(SECOND_LINE, 568, 83, 700, 44)])
+    const enhance = readRosterGrid([HEADING])
+    if (skill === 'unreadable' || enhance === 'unreadable') throw new Error('unreadable')
+    expect(skill.screen).toBe('skill')
+    expect(enhance.screen).toBe('enhance')
+    skill.columnXs.forEach((x, i) => expect(x).toBeCloseTo(enhance.columnXs.at(i) ?? NaN, 6))
+    expect(gridTopY(skill)).toBeCloseTo(gridTopY(enhance), 6)
+  })
+
+  it('2つの枠に分かれた見出しは当たらない', () => {
+    expect(readRosterGrid([box('スキルを強化するサ', 568, 35, 400, 44), box('ーヴァントを選択してください', 970, 35, 460, 44)])).toBe(
+      'unreadable',
+    )
+  })
+})
+
+describe('fiveColumnGrid', () => {
+  it('5列で、いちばん左の列の顔の左端と格子の上の端は7列と同じ、大きさと間隔は 1.41 倍', () => {
+    const grid = gridFromHeading(HEADING, 'skill')
+    const five = fiveColumnGrid(grid)
+    expect(five.columnXs).toHaveLength(5)
+    expect(five.columnXs.at(0)).toBeCloseTo(grid.columnXs.at(0) ?? NaN, 6)
+    expect(gridTopY(five)).toBeCloseTo(gridTopY(grid), 6)
+    expect(five.unit).toBeCloseTo(grid.unit * 1.41, 6)
+    expect(five.side).toBeCloseTo(grid.side * 1.41, 6)
+    const pitch = (g: typeof grid) => (g.columnXs.at(1) ?? NaN) - (g.columnXs.at(0) ?? NaN)
+    expect(pitch(five)).toBeCloseTo(pitch(grid) * 1.41, 6)
+    expect(five.screen).toBe('skill')
   })
 })
 
@@ -82,5 +152,19 @@ describe('cardBandRects', () => {
     expect(Math.abs(bottom.y - (346 + 158))).toBeLessThanOrEqual(2)
     expect(Math.abs(bottom.width - 160)).toBeLessThanOrEqual(2)
     expect(Math.abs(bottom.height - 44)).toBeLessThanOrEqual(2)
+  })
+
+  it('スキル強化の画面では、下の帯がスキルLv の帯（Lv の帯より上）になり、上の帯は同じ', () => {
+    const grid = gridFromHeading(HEADING, 'skill')
+    const face = { x: 389, y: 346, width: grid.side, height: grid.side }
+    const enhance = cardBandRects(face, grid.unit)
+    const skill = cardBandRects(face, grid.unit, 'skill')
+    expect(skill.top).toEqual(enhance.top)
+    // 顔の左上から 右へ 0.95・下へ 2.35、幅 2.5・高さ 0.62（見出しの枠の高さ 57 の倍数）
+    expect(skill.bottom.x).toBeCloseTo(389 + 0.95 * 57, 6)
+    expect(skill.bottom.y).toBeCloseTo(346 + 2.35 * 57, 6)
+    expect(skill.bottom.width).toBeCloseTo(2.5 * 57, 6)
+    expect(skill.bottom.height).toBeCloseTo(0.62 * 57, 6)
+    expect(skill.bottom.y).toBeLessThan(enhance.bottom.y)
   })
 })

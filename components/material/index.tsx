@@ -10,7 +10,7 @@ import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
 import { useServantLevels } from '../../hooks/use-servant-levels'
 import type { ServantLevelImportRow } from '../../lib/servant-levels'
-import { withOwnedServants } from '../../lib/servant-roster-owned'
+import { withCurrentSkills, withOwnedServants } from '../../lib/servant-roster-owned'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
 import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
 import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
@@ -316,11 +316,11 @@ export const Index = ({
     [handleSetServantState]
   )
 
-  // 所持の印は、保存値を補ったあとの状態（一覧にいる全サーヴァントの ID を持つ）を前の値として書く
+  // 所持の印とスキルの「今」は、保存値を補ったあとの状態（一覧にいる全サーヴァントの ID を持つ）を前の値として書く
   const handleRosterConfirm = useCallback(
     (rows: ServantLevelImportRow[]) => {
       importLevels(rows)
-      setChaldeaState(prev => withOwnedServants(prev, rows.map(r => r.id)))
+      setChaldeaState(prev => withCurrentSkills(withOwnedServants(prev, rows.map(r => r.id)), rows))
     },
     [importLevels, setChaldeaState]
   )

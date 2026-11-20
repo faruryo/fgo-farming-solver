@@ -1,12 +1,13 @@
 /**
  * 画像ごとのカードの読みを、サーヴァントごとの確かめの画面の行にまとめる純粋関数。
  * 同じサーヴァントの読みは、検査に通ったもののうち一番強い組（宝具Lv、同じなら Lv が高いもの）を1つ取り込む値にする。
+ * スキルLv（スキル強化の画面だけに出る）は、検査とは別に、読めた読みのうち合計が高いものを使う。
  * 顔が「要確認」のカードは1枚ごとに1つの行にする。
  */
 
 import { isValidServantLv, isValidServantNpLv, type ServantLevel, type ServantLevels } from '../servant-levels'
 import { PASSED_CHECK, readingKey, valueOfKind, type ReadingCheck, type ValueKind } from './checks'
-import type { CardReading, FaceMatch, RosterRow, ValueRange } from './types'
+import type { CardReading, FaceMatch, RosterRow, SkillLevels, ValueRange } from './types'
 
 type Level = { lv: number | null; npLv: number | null }
 type Entry = { reading: CardReading; check: ReadingCheck }
@@ -25,6 +26,15 @@ const hasValue = (level: Level) => level.lv !== null || level.npLv !== null
 /** 宝具Lv が高いほう、同じなら Lv が高いほうが前（無い値はどの値よりも低い） */
 const compareStrength = (a: Level, b: Level): number =>
   (b.npLv ?? -1) - (a.npLv ?? -1) || (b.lv ?? -1) - (a.lv ?? -1)
+
+/** 読めたスキルLv のうち合計が高いもの（同じなら初めに出たもの）。1つも読めなければ null */
+const bestSkills = (entries: readonly Entry[]): SkillLevels | null => {
+  const total = (skills: SkillLevels) => skills.reduce((sum, v) => sum + v, 0)
+  return entries.reduce<SkillLevels | null>((best, { reading }) => {
+    const skills = reading.values.skills
+    return skills && (!best || total(skills) > total(best)) ? skills : best
+  }, null)
+}
 
 const strongest = (entries: readonly Entry[]): Entry =>
   entries.reduce((best, e) => (compareStrength(usableLevel(e), usableLevel(best)) < 0 ? e : best))
@@ -105,10 +115,16 @@ const servantRow = (servantId: number, entries: readonly Entry[], stored: Servan
   const passed = entries.filter((e) => e.check.reasons.length === 0)
   const valued = passed.filter((e) => hasValue(usableLevel(e)))
   const failed = entries.filter((e) => e.check.reasons.length > 0)
-  const base = { key: `servant-${servantId}`, servantId }
+  const base = { key: `servant-${servantId}`, servantId, skills: bestSkills(entries) }
   if (valued.length > 0) {
     const chosen = strongest(valued)
-    const { level, review } = compareWithStored(usableLevel(chosen), stored[String(servantId)])
+    // スキル強化の画面の読みは Lv が無いので、選んだ読みに Lv が無ければほかの読みの Lv を使う
+    const picked = usableLevel(chosen)
+    const lvs = valued.flatMap((e) => usableLevel(e).lv ?? [])
+    const { level, review } = compareWithStored(
+      { ...picked, lv: picked.lv ?? (lvs.length > 0 ? Math.max(...lvs) : null) },
+      stored[String(servantId)],
+    )
     return { ...base, ...level, review, crop: chosen.reading.crop }
   }
   if (failed.length > 0) {
@@ -138,6 +154,7 @@ const faceReviewRow = (entry: Entry, face: ReviewFace): RosterRow => {
   return {
     key: `card-${reading.imageIndex}-${reading.row}-${reading.column}`,
     servantId: null,
+    skills: reading.values.skills,
     ...level,
     review: { ...review, reasons: [face.reason, ...review.reasons], servantCandidates: [...face.nearest] },
     crop: reading.crop,

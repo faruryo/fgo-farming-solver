@@ -11,6 +11,7 @@ import {
   SERVANT_NP_LV_MIN,
   type ServantLevelImportRow,
 } from './servant-levels'
+import { SKILL_LV_RANGE } from './servant-roster-import/constants'
 import type { RosterRow } from './servant-roster-import/types'
 
 export type LevelField = 'lv' | 'npLv'
@@ -24,6 +25,8 @@ export type RosterRowEdit = {
   servantId: number | null
   lv: number | null
   npLv: number | null
+  /** スキル1〜3の欄（読めなかった行は3つとも null） */
+  skills: (number | null)[]
   included: boolean
 }
 
@@ -39,6 +42,13 @@ export const readLevelField = (field: LevelField, value: number | null): FieldVa
   return isValid(field, value) ? { kind: 'value', value } : { kind: 'invalid' }
 }
 
+/** スキルLv の欄の値（空は 'empty'、1〜10 の整数でなければ 'invalid'） */
+export const readSkillField = (value: number | null): FieldValue => {
+  if (value === null) return { kind: 'empty' }
+  const valid = Number.isInteger(value) && value >= SKILL_LV_RANGE.min && value <= SKILL_LV_RANGE.max
+  return valid ? { kind: 'value', value } : { kind: 'invalid' }
+}
+
 /** 欄の値のうち、範囲に入る値だけ（空と範囲に無い値は null） */
 export const levelFieldValue = (field: LevelField, value: number | null): number | null => {
   const read = readLevelField(field, value)
@@ -52,12 +62,15 @@ export const initialRowEdit = (row: RosterRow): RosterRowEdit => ({
   servantId: row.servantId,
   lv: row.lv,
   npLv: row.npLv,
+  skills: row.skills ? [...row.skills] : [null, null, null],
   included: row.review === null,
 })
 
 /** 範囲に無い値が入っている欄があるか */
 export const hasInvalidField = (edit: RosterRowEdit): boolean =>
-  readLevelField('lv', edit.lv).kind === 'invalid' || readLevelField('npLv', edit.npLv).kind === 'invalid'
+  readLevelField('lv', edit.lv).kind === 'invalid' ||
+  readLevelField('npLv', edit.npLv).kind === 'invalid' ||
+  edit.skills.some(value => readSkillField(value).kind === 'invalid')
 
 /**
  * 取り込みに入れられる行か。サーヴァントが決まり、範囲に無い値が無く、「要確認」で空にした欄に値が入っていること。
@@ -95,10 +108,21 @@ export const overlappingServants = (rows: readonly RosterRow[], edits: readonly 
   return new Set([...counts].filter(([, n]) => n > 1).map(([id]) => id))
 }
 
-/** 取り込む行（取り込みに入る行だけ。値が無い種類は null で、保存されている値を残す） */
+/** 取り込む行（取り込みに入る行だけ。値が無い種類は null で、保存されている値を残す。スキルは1つでも値があるときだけ付ける） */
 export const importRows = (rows: readonly RosterRow[], edits: readonly RosterRowEdit[]): ServantLevelImportRow[] =>
   rows.flatMap((row, index) => {
     const edit = edits.at(index)
     if (!edit || edit.servantId === null || !isRowIncluded(row, edit)) return []
-    return [{ id: edit.servantId, lv: levelFieldValue('lv', edit.lv), npLv: levelFieldValue('npLv', edit.npLv) }]
+    const skills = edit.skills.map(value => {
+      const read = readSkillField(value)
+      return read.kind === 'value' ? read.value : null
+    })
+    return [
+      {
+        id: edit.servantId,
+        lv: levelFieldValue('lv', edit.lv),
+        npLv: levelFieldValue('npLv', edit.npLv),
+        ...(skills.some(value => value !== null) ? { skills } : {}),
+      },
+    ]
   })

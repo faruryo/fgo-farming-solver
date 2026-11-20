@@ -8,8 +8,8 @@
  */
 import { cropCells, integralImage, type RgbaImage } from '../shop-screenshot-import/icon-match'
 import { FACE_MATCH, ROSTER_LAYOUT } from './constants'
-import { nearestCandidateDiff } from './face-match'
-import { gridTopY, readRosterGrid } from './grid'
+import { nearestCandidateDiff, type ScreenCandidates } from './face-match'
+import { fiveColumnGrid, gridTopY, readRosterGrid } from './grid'
 import type { FaceCandidate, OcrBox, RosterGrid } from './types'
 
 /** 試す顔の上端の位置（上から順） */
@@ -59,16 +59,46 @@ export const findRowTops = (image: RgbaImage, grid: RosterGrid, candidates: read
   return kept.sort((a, b) => a - b)
 }
 
-export type RosterLocation = { kind: 'unreadable' } | { kind: 'located'; grid: RosterGrid; rowTops: number[] }
-
-/** 画像の格子と段。見出しが無いか、段が1つも見つからなければ読めなかった画像（unreadable） */
-export const locateRoster = (
-  boxes: readonly OcrBox[],
+/** 段と列の決めた位置（位置や一辺は振らない）のうち、どれかのサーヴァントに近い位置の数 */
+export const countFaceHits = (
   image: RgbaImage,
+  grid: RosterGrid,
+  rowTops: readonly number[],
   candidates: readonly FaceCandidate[],
-): RosterLocation => {
+): number => {
+  let hits = 0
+  for (const x of grid.columnXs) {
+    for (const y of rowTops) {
+      if (x < 0 || y < 0 || x + grid.side > image.width || y + grid.side > image.height) continue
+      const integral = integralImage(image, { x, y, width: grid.side, height: grid.side })
+      const crop = cropCells(integral, { x, y, width: grid.side, height: grid.side }, FACE_MATCH.size)
+      if (nearestCandidateDiff(crop, candidates) <= FACE_MATCH.maxDiff) hits += 1
+    }
+  }
+  return hits
+}
+
+export type RosterLocation =
+  | { kind: 'unreadable' }
+  /** スキル強化の画面の5列の表示（読み取らない） */
+  | { kind: 'five-column' }
+  | { kind: 'located'; grid: RosterGrid; rowTops: number[] }
+
+/**
+ * 画像の格子と段。見出しが無いか、段が1つも見つからなければ読めなかった画像（unreadable）。
+ * スキル強化の画面では5列の表示の格子でも段を探し、顔の当たる位置が7列より多ければ5列の表示（five-column）
+ */
+export const locateRoster = (boxes: readonly OcrBox[], image: RgbaImage, screens: ScreenCandidates): RosterLocation => {
   const grid = readRosterGrid(boxes)
   if (grid === 'unreadable') return { kind: 'unreadable' }
+  const candidates = screens[grid.screen]
   const rowTops = findRowTops(image, grid, candidates)
+  if (grid.screen === 'skill') {
+    const five = fiveColumnGrid(grid)
+    const fiveTops = findRowTops(image, five, candidates)
+    if (countFaceHits(image, five, fiveTops, candidates) > countFaceHits(image, grid, rowTops, candidates)) {
+      return { kind: 'five-column' }
+    }
+  }
   return rowTops.length > 0 ? { kind: 'located', grid, rowTops } : { kind: 'unreadable' }
 }

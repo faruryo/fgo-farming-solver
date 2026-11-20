@@ -68,4 +68,46 @@ describe('summarizeRoster', () => {
     const [row] = summarizeRoster([img], { ...ctx, stored: { 1: { lv: 90 } } }).rows
     expect(row.review?.reasons).toEqual(['lower-than-saved'])
   })
+
+  describe('サーヴァントスキル強化の画像', () => {
+    const skillCard = (servant: number, value: number, skills: [number, number, number]): CardSpec => ({
+      servant,
+      np: [value, 5],
+      skills,
+    })
+
+    it('同じ段のサーヴァント強化の画像と重ねる: Lv・宝具Lv は強化の画像から、スキルLv はスキル強化の画像から1つの行にする', () => {
+      const enhance = image(0, [[np(1, 5), np(2, 3)]], { key: 'npLv', order: 'desc', owned: 2 })
+      const skill = image(1, [[skillCard(1, 5, [9, 10, 9]), skillCard(2, 3, [10, 10, 10])]], {
+        key: 'npLv',
+        order: 'desc',
+        owned: 2,
+        screen: 'skill',
+      })
+      const result = summarizeRoster([enhance, skill], ctx)
+      expect(result.rows.map((r) => [r.servantId, r.lv, r.npLv, r.skills, r.review])).toEqual([
+        [1, 80, 5, [9, 10, 9], null],
+        [2, 80, 3, [10, 10, 10], null],
+      ])
+      expect(result).toMatchObject({ unsortedImageCount: 0, shortfall: null })
+    })
+
+    it('スキル強化の画像だけ: Lv が無くても「要確認」にならず、保存済みの Lv は取り込む値にしない', () => {
+      const skill = image(0, [[skillCard(1, 5, [9, 10, 9])]], { key: 'npLv', order: 'desc', owned: 1, screen: 'skill' })
+      const [row] = summarizeRoster([skill], { ...ctx, stored: { '1': { lv: 100, npLv: 5 } } }).rows
+      expect(row).toMatchObject({ servantId: 1, lv: null, npLv: 5, skills: [9, 10, 9], review: null })
+    })
+
+    it('スキル強化の画像の宝具Lv が並び順に合わなければ、その行を「要確認」にしてもスキルLv は残す', () => {
+      const skill = image(0, [[skillCard(1, 5, [9, 10, 9]), skillCard(2, 2, [10, 10, 10]), skillCard(3, 5, [8, 8, 8])]], {
+        key: 'npLv',
+        order: 'desc',
+        owned: 3,
+        screen: 'skill',
+      })
+      const row = summarizeRoster([skill], ctx).rows.find((r) => r.servantId === 2)
+      expect(row).toMatchObject({ npLv: null, skills: [10, 10, 10] })
+      expect(row?.review?.reasons).toEqual(['sort-order'])
+    })
+  })
 })

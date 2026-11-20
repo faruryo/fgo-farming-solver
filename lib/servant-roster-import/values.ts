@@ -4,7 +4,8 @@
  */
 
 import { SERVANT_LV_MAX, SERVANT_LV_MIN, SERVANT_NP_LV_MIN } from '../servant-levels'
-import type { CardValues, OcrBox, ValueFailure, ValueRead } from './types'
+import { SKILL_LV_RANGE } from './constants'
+import type { CardValues, OcrBox, RosterScreen, SkillLevels, ValueFailure, ValueRead } from './types'
 
 /** 宝具Lv の上限 */
 const NP_LV_CAP = 5
@@ -33,6 +34,7 @@ const joinBoxes = (boxes: readonly OcrBox[]): { text: string; spans: { start: nu
 // 「数字/数字」の形は正規表現でなく1文字ずつ見て探す（長い数字の並びで後戻りが増えないように）
 const isDigit = (ch: string) => ch >= '0' && ch <= '9'
 const isSpace = (ch: string) => ch !== '' && ch.trim() === ''
+const isAllDigits = (text: string) => [...text].every(isDigit)
 
 /** 文字の位置 from から step の向きに、空白を飛ばして続く数字の範囲（数字が無ければ null。範囲の外の charAt は空文字） */
 const digitsFrom = (text: string, from: number, step: 1 | -1): { start: number; end: number } | null => {
@@ -99,12 +101,40 @@ const readBand = (boxes: readonly OcrBox[]): (BandValue & { confidence: number }
 }
 
 /**
+ * スキル強化の画面のカードの下の帯から、「数字/数字/数字」の形のスキル1〜3の Lv を読む。
+ * 形が無いか、どれかがスキルLv の範囲（1〜10）の外なら null
+ */
+export const readSkillLevels = (boxes: readonly OcrBox[]): SkillLevels | null => {
+  const plain = joinBoxes(boxes).text.replaceAll('／', '/').replace(/\s+/g, '')
+  const slashes: number[] = []
+  for (let i = 0; i < plain.length; i++) if (plain.charAt(i) === '/') slashes.push(i)
+  for (const [k, a] of slashes.entries()) {
+    const b = slashes.at(k + 1)
+    if (b === undefined) break
+    // 前の区切りの右と後ろの区切りの左だけの数字を使う（「Lv10/10/9」の「Lv」などを除く）
+    const first = digitsFrom(plain, a - 1, -1)
+    const third = digitsFrom(plain, b + 1, 1)
+    const second = plain.slice(a + 1, b)
+    if (!first || !third || second === '' || !isAllDigits(second)) continue
+    const levels = [plain.slice(first.start, first.end), second, plain.slice(third.start, third.end)].map(Number)
+    if (levels.every((v) => inRange(v, SKILL_LV_RANGE.min, SKILL_LV_RANGE.max))) return levels as SkillLevels
+  }
+  return null
+}
+
+/**
  * カードの上と下の帯の読みから Lv と宝具Lv を決める。
+ * スキル強化の画面（screen が skill）では、下の帯はスキルLv だけを読み、Lv は読まない。
  * 「数字/数字」の形が読めた帯は、必ず値（`lv` か `npLv`）か、値を決めなかった読み（`failures`）のどちらかになる。
  * 同じ種類の値が両方の帯から読めたときは、確からしいほうを使う。
  */
-export const readCardValues = (top: readonly OcrBox[], bottom: readonly OcrBox[]): CardValues => {
-  const bands = [readBand(top), readBand(bottom)].filter((b) => b !== null)
+export const readCardValues = (
+  top: readonly OcrBox[],
+  bottom: readonly OcrBox[],
+  screen: RosterScreen = 'enhance',
+): CardValues => {
+  const skill = screen === 'skill'
+  const bands = [readBand(top), skill ? null : readBand(bottom)].filter((b) => b !== null)
   const best = (kind: 'lv' | 'npLv'): ValueRead | null =>
     bands.reduce<{ read: ValueRead; confidence: number } | null>(
       (acc, b) => (b.kind === kind && (!acc || b.confidence > acc.confidence) ? b : acc),
@@ -113,6 +143,7 @@ export const readCardValues = (top: readonly OcrBox[], bottom: readonly OcrBox[]
   return {
     lv: best('lv'),
     npLv: best('npLv'),
+    skills: skill ? readSkillLevels(bottom) : null,
     failures: bands.flatMap((b) => (b.kind === 'failure' ? [b.failure] : [])),
   }
 }
