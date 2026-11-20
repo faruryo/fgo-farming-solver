@@ -23,10 +23,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
-const NAMES = ['アルトリア', 'マシュ', 'マーリン', 'エミヤ']
+const NAMES = ['アルトリア', 'マシュ', 'マーリン', 'エミヤ', 'マシュ']
 const servants = Array.from({ length: 20 }, (_, i) =>
   makeMaterialCatalogServant({ id: i + 1, collectionNo: i + 1, name: NAMES.at(i) ?? `サーヴァント${i + 1}` }),
 )
+/** 同名でクラスだけが違うサーヴァント（玉藻の前のキャスターとランサーのような組） */
+const MASH_CASTER = 5
+servants[MASH_CASTER - 1] = { ...servants[MASH_CASTER - 1], className: 'caster' }
 const ARTORIA = 1
 const MASH = 2
 const MERLIN = 3
@@ -245,7 +248,7 @@ describe('取り込む前の確かめ', () => {
     await importWith(done([needsReview('r1', { npLv: 3 }, { reasons: ['unknown-face'], undecided: ['lv'] })]))
     const row = reviewRowAt(0)
     expect(confirmButton()).toBeDisabled()
-    chooseServant(row, 'マー', 'マーリン')
+    chooseServant(row, 'マー', 'セイバーマーリン')
     const checkbox = within(row).getByRole('checkbox', { name: 'マーリン を取り込みに入れる' })
     expect(checkbox).not.toBeChecked()
     setValue('マーリン の Lv', '90')
@@ -261,9 +264,21 @@ describe('取り込む前の確かめ', () => {
     const row = reviewRowAt(0)
     fireEvent.click(within(row).getByRole('button', { name: 'サーヴァントを選ぶ' }))
     fireEvent.change(within(row).getByRole('textbox', { name: '名前で絞り込む' }), { target: { value: 'マ' } })
-    expect(within(row).getByRole('button', { name: 'マシュ' })).toBeInTheDocument()
-    expect(within(row).getByRole('button', { name: 'マーリン' })).toBeInTheDocument()
-    expect(within(row).queryByRole('button', { name: 'アルトリア' })).not.toBeInTheDocument()
+    expect(within(row).getByRole('button', { name: 'セイバーマシュ' })).toBeInTheDocument()
+    expect(within(row).getByRole('button', { name: 'セイバーマーリン' })).toBeInTheDocument()
+    expect(within(row).queryByRole('button', { name: 'セイバーアルトリア' })).not.toBeInTheDocument()
+  })
+
+  it('同名のサーヴァントは候補と選んだ後の表示でクラスを見分けられる', async () => {
+    renderIndex()
+    await importWith(done([needsReview('r1', {}, { reasons: ['unknown-face'] })]))
+    const row = reviewRowAt(0)
+    chooseServant(row, 'マシュ', 'キャスターマシュ')
+    expect(within(row).getByAltText('キャスター')).toBeInTheDocument()
+    fireEvent.click(within(row).getByRole('button', { name: 'サーヴァントを選ぶ' }))
+    fireEvent.change(within(row).getByRole('textbox', { name: '名前で絞り込む' }), { target: { value: 'マシュ' } })
+    expect(within(row).getByRole('button', { name: 'セイバーマシュ' })).toBeInTheDocument()
+    expect(within(row).getByRole('button', { name: 'キャスターマシュ' })).toBeInTheDocument()
   })
 
   it('要確認のまま確定する: その行は取り込まず、当てた行だけを取り込む', async () => {
@@ -333,7 +348,7 @@ describe('取り込む前の確かめ', () => {
   it('同じサーヴァントに2つの行: 確定できず、重なりを知らせる。片方を外すと確定でき、残した行だけを取り込む', async () => {
     renderIndex()
     await importWith(done([matched(MASH, 80, 1), needsReview('r1', { lv: 90, npLv: 2 }, { reasons: ['ambiguous-face'] })]))
-    chooseServant(reviewRowAt(0), 'マシュ', 'マシュ')
+    chooseServant(reviewRowAt(0), 'マシュ', 'セイバーマシュ')
     expect(within(reviewRowAt(0)).getByRole('checkbox')).toBeChecked()
     expect(confirmButton()).toBeDisabled()
     expect(screen.getByText('同じサーヴァントに決まっている行が2つ以上あるため、確定できません')).toBeInTheDocument()

@@ -4,6 +4,7 @@
  */
 export const translationMock = (messages?: object) => ({
   useTranslation: () => ({
+    i18n: { language: 'ja' },
     t: (key: string, fallback?: string | Record<string, unknown>, options?: Record<string, unknown>) => {
       const translated: unknown = messages ? Reflect.get(messages, key) : undefined
       const untranslated = typeof fallback === 'string' ? fallback : key
