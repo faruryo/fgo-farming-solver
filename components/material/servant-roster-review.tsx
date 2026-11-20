@@ -117,7 +117,7 @@ const ServantPicker: React.FC<{
           />
           <span className="flex flex-wrap gap-1">
             {options.map(s => (
-              <Button key={s.id} size="xs" variant="outline" onClick={() => choose(s.id)}>
+              <Button key={s.id} size="xs" variant="outline" className="h-auto max-w-full whitespace-normal text-left" onClick={() => choose(s.id)}>
                 <ClassIcon servant={s} size={16} />
                 {s.name}
               </Button>
