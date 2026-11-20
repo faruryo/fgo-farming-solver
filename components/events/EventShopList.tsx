@@ -1025,6 +1025,24 @@ const perRunRows = (base: EventPlannerEvent, bonused: EventPlannerEvent, targets
   })
 }
 
+/** 1周の獲得量の通貨の見出し。スマホ幅では列が枠に収まるよう、通貨名の代わりにアイコンを出す。 */
+const PerRunHeading: React.FC<{ target: BonusTarget }> = ({ target }) =>
+  target.icon ? (
+    <>
+      <Image
+        src={target.icon}
+        alt={target.label}
+        title={target.label}
+        width={20}
+        height={20}
+        className="sm:hidden inline-block w-5 h-5 object-contain"
+      />
+      <span className="hidden sm:inline">{target.label}</span>
+    </>
+  ) : (
+    <>{target.label}</>
+  )
+
 /** クエストごとの、通貨とイベントポイントの1周の獲得量（ボーナス込み）。 */
 const PerRunTable: React.FC<{
   base: EventPlannerEvent
@@ -1052,7 +1070,7 @@ const PerRunTable: React.FC<{
               <th className="text-left font-medium py-1 pr-2">{t('event-shop-plan-col-quest', 'クエスト')}</th>
               {targets.map(target => (
                 <th key={target.itemId} className="text-right font-medium py-1 px-1 whitespace-nowrap">
-                  {target.label}
+                  <PerRunHeading target={target} />
                 </th>
               ))}
             </tr>
