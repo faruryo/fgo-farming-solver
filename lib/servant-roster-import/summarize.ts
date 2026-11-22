@@ -16,7 +16,7 @@ import {
   type ReadingCheck,
 } from './checks'
 import { mergeRoster } from './merge'
-import type { ImageReading, RosterRow, SortKey, SortOrder } from './types'
+import type { ImageReading, RosterRow, SortKey, SortOrder, StoredSkills } from './types'
 
 export type RosterSummary = {
   rows: RosterRow[]
@@ -28,13 +28,13 @@ export type RosterSummary = {
 
 type SortGroup = { key: SortKey; order: SortOrder; images: ImageReading[] }
 
-/** 並びの項目と向きが同じ画像の集まり（初めに出た順） */
+/** 並びの項目と向きと画面の種類が同じ画像の集まり（初めに出た順。サーヴァント強化とスキル強化の画像は別々につなぐ） */
 const sortGroups = (images: readonly ImageReading[]): SortGroup[] => {
   const groups = new Map<string, SortGroup>()
   for (const image of images) {
     const { sortKey: key, sortOrder: order } = image
     if (key === null || order === null) continue
-    const id = `${key}:${order}`
+    const id = `${image.screen}:${key}:${order}`
     const group = groups.get(id)
     if (group) group.images.push(image)
     else groups.set(id, { key, order, images: [image] })
@@ -44,7 +44,7 @@ const sortGroups = (images: readonly ImageReading[]): SortGroup[] => {
 
 export const summarizeRoster = (
   images: readonly ImageReading[],
-  ctx: { rarityOf: (servantId: number) => number | undefined; stored: ServantLevels },
+  ctx: { rarityOf: (servantId: number) => number | undefined; stored: ServantLevels; storedSkills?: StoredSkills },
 ): RosterSummary => {
   const readings = images.flatMap((image) => image.rows.flat())
   const valueChecks = new Map<string, ReadingCheck>(
@@ -60,7 +60,7 @@ export const summarizeRoster = (
   }
   const sortedOwned = groups.flatMap((g) => g.images.map((image) => image.ownedCount))
   return {
-    rows: mergeRoster(readings, checks, ctx.stored),
+    rows: mergeRoster(readings, checks, ctx.stored, ctx.storedSkills),
     unsortedImageCount: images.filter((image) => image.sortKey === null || image.sortOrder === null).length,
     shortfall: compareOwnedCount(sortedOwned, readCount),
   }

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { Index } from './index'
 import { makeItem, makeMaterialCatalogServant, makeMaterials } from './test-fixtures'
 import type { ChaldeaState, ServantState } from '../../hooks/create-chaldea-state'
-import type { RosterImportResult, RosterProgress, RosterRow } from '../../lib/servant-roster-import/types'
+import type { RosterImportResult, RosterProgress, RosterRow, SkillLevels } from '../../lib/servant-roster-import/types'
 
 // 一覧をまるごと描くので、全ファイルを同時に流す実行では1件が既定の 5 秒を超えることがある。
 vi.setConfig({ testTimeout: 30_000 })
@@ -39,11 +39,12 @@ const materials = Object.fromEntries(servants.map(s => [String(s.id), makeMateri
 const LEVELS_KEY = 'servantLevels'
 const CROP = 'data:image/png;base64,CROP'
 
-const matched = (servantId: number, lv: number | null, npLv: number | null): RosterRow => ({
+const matched = (servantId: number, lv: number | null, npLv: number | null, skills: SkillLevels | null = null): RosterRow => ({
   key: `svt-${servantId}`,
   servantId,
   lv,
   npLv,
+  skills,
   review: null,
   crop: CROP,
 })
@@ -54,6 +55,7 @@ const needsReview = (key: string, row: Partial<Omit<RosterRow, 'review'>>, revie
   servantId: null,
   lv: null,
   npLv: null,
+  skills: null,
   crop: CROP,
   ...row,
   review: {
@@ -64,6 +66,8 @@ const needsReview = (key: string, row: Partial<Omit<RosterRow, 'review'>>, revie
     npLvCandidates: [],
     lvRange: null,
     npLvRange: null,
+    undecidedSkills: [],
+    skillCandidates: [[], [], []],
     ...review,
   },
 })
@@ -72,6 +76,7 @@ const done = (rows: RosterRow[], overrides: Partial<Extract<RosterImportResult, 
   kind: 'done',
   imageCount: 1,
   unreadableImages: [],
+  fiveColumnImages: [],
   unsortedImageCount: 0,
   shortfall: null,
   rows,
@@ -137,6 +142,9 @@ describe('スクリーンショットから取り込む入口', () => {
     fireEvent.click(openButton())
     expect(screen.getByText(/並びを「宝具Lv.順」にして、上から下まで少しずつ重ねて撮ってください/)).toBeInTheDocument()
     expect(screen.getByText('「Lv.順」の画像も読めますが、その画像からは Lv だけを取り込みます。')).toBeInTheDocument()
+    expect(screen.getByText(/「サーヴァントスキル強化」でサーヴァントを選ぶ画面は、7列の表示で同じように撮ってください。宝具Lv とスキルLv を読み取り/)).toBeInTheDocument()
+    expect(screen.getByText(/5列の表示は読み取れません。$/)).toBeInTheDocument()
+    expect(screen.getByText(/サーヴァント強化・サーヴァントスキル強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv・スキルLv を読み取ります/)).toBeInTheDocument()
     expect(analyzeButton()).toBeDisabled()
     expect(analyzeMock.fn).not.toHaveBeenCalled()
   })
@@ -159,10 +167,16 @@ describe('スクリーンショットから取り込む入口', () => {
     expect(screen.getByText('照合用のデータを読み込んでいます…')).toBeInTheDocument()
     act(() => progress?.({ phase: 'image', current: 2, total: 3 }))
     expect(screen.getByText('画像を読み取っています 2 / 3')).toBeInTheDocument()
-    const [files, options] = analyzeMock.fn.mock.calls[0] as [File[], { servants: unknown[]; stored: unknown }]
+    const [files, options] = analyzeMock.fn.mock.calls[0] as [
+      File[],
+      { servants: unknown[]; stored: unknown; storedSkills: Record<string, number[]> },
+    ]
     expect(files.map(f => f.name)).toEqual(['1.png', '2.png', '3.png'])
     expect(options.servants).toHaveLength(20)
     expect(options.servants[0]).toEqual({ id: 1, rarity: 5 })
+    // 育成計算機のスキルの今の値（一度も操作していないサーヴァントは 1・1・1）を渡す
+    expect(options.storedSkills['1']).toEqual([1, 1, 1])
+    expect(options.storedSkills).not.toHaveProperty('all')
     await act(async () => finish?.(done([matched(MASH, 90, 2)], { imageCount: 3 })))
     expect(screen.getByText('3枚を読みました')).toBeInTheDocument()
     expect(confirmButton()).toBeEnabled()
@@ -216,6 +230,30 @@ describe('取り込む前の確かめ', () => {
     expect(screen.getByText('並びを読めなかった画像: 1枚（この画像は並び順の検査をしていません）')).toBeInTheDocument()
     expect(screen.getByText('所持サーヴァント 554 のうち 546 枚を読みました。撮り漏れがないか確かめてください')).toBeInTheDocument()
     expect(confirmButton()).toBeEnabled()
+  })
+
+  it('5列の表示の画像: 画像の名前を添えて7列の表示で撮るよう赤字で知らせ、読めなかった画像の知らせとは別にする', async () => {
+    renderIndex()
+    await importWith(
+      done([matched(MASH, 80, 1)], { imageCount: 3, fiveColumnImages: ['IMG_1.png', 'IMG_2.png'], unreadableImages: ['IMG_3.png'] }),
+    )
+    const notice = screen.getByText('5列の表示は読み取れません。7列の表示で撮ってください: IMG_1.png、IMG_2.png')
+    expect(notice).toHaveStyle({ color: 'var(--red)' })
+    expect(screen.getByText('読めなかった画像: 1枚（IMG_3.png）')).toBeInTheDocument()
+  })
+
+  it('5列の表示の画像が無いときは知らせない', async () => {
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1)]))
+    expect(screen.queryByText(/5列の表示は読み取れません。7列の表示で撮ってください/)).not.toBeInTheDocument()
+  })
+
+  it('すべて5列の表示の画像: 読み取れたサーヴァントが無い表示と知らせを出し、確定できない', async () => {
+    renderIndex()
+    await importWith(done([], { imageCount: 1, fiveColumnImages: ['a.png'] }))
+    expect(screen.getByText('読み取れたサーヴァントがありません')).toBeInTheDocument()
+    expect(screen.getByText('5列の表示は読み取れません。7列の表示で撮ってください: a.png')).toBeInTheDocument()
+    expect(confirmButton()).toBeDisabled()
   })
 
   it('「要確認」の行を先に出し、理由と切り抜きを添え、当てた行は畳んで件数を出す', async () => {
@@ -448,6 +486,131 @@ describe('取り込む前の確かめ', () => {
     expect(screen.queryByText('1枚を読みました')).not.toBeInTheDocument()
     expect(localStorage.getItem('material')).toBe(before)
     expect(localStorage.getItem(LEVELS_KEY)).toBeNull()
+  })
+})
+
+describe('スキルLv（サーヴァントスキル強化の画面）', () => {
+  const skillStarts = (id: number) => servantOf(storedMaterial(), id)?.targets.skill.ranges.map(r => r.start)
+  const skillEnds = (id: number) => servantOf(storedMaterial(), id)?.targets.skill.ranges.map(r => r.end)
+
+  it('読んだスキルLv を3つの欄に出し、スキルLv の無い行には欄を出さない', async () => {
+    renderIndex()
+    await importWith(done([matched(MASH, null, 3, [9, 10, 9]), matched(MERLIN, 90, 2)]))
+    expandMatched()
+    const mash = rowOf('マシュ を取り込みに入れる')
+    expect(within(mash).getByLabelText('マシュ の スキル1')).toHaveValue('9')
+    expect(within(mash).getByLabelText('マシュ の スキル2')).toHaveValue('10')
+    expect(within(mash).getByLabelText('マシュ の スキル3')).toHaveValue('9')
+    expect(within(rowOf('マーリン を取り込みに入れる')).queryByLabelText(/スキル/)).not.toBeInTheDocument()
+  })
+
+  it('確定すると、育成計算機のスキルの「今」に書き、目標・Lv・宝具Lv の保存値は読んだ値だけ変える', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    localStorage.setItem(LEVELS_KEY, JSON.stringify({ [MASH]: { lv: 80, npLv: 1 } }))
+    renderIndex()
+    await importWith(done([matched(MASH, null, 3, [9, 10, 4])]))
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MASH)).toEqual([9, 10, 4])
+    expect(skillEnds(MASH)).toEqual([10, 10, 10])
+    expect(storedLevels()).toEqual({ [MASH]: { lv: 80, npLv: 3 } })
+  })
+
+  it('欄を直す: 直したスキルLv で書き、空にした欄は前の値のまま', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1, [9, 10, 9])]))
+    expandMatched()
+    setValue('マシュ の スキル1', '10')
+    setValue('マシュ の スキル2', '')
+    fireEvent.click(confirmButton())
+    // planned のスキルの今は 6・7・8
+    expect(skillStarts(MASH)).toEqual([10, 7, 9])
+  })
+
+  it('スキルLv が範囲に無い行は取り込みに入れられず、範囲に無いことが分かる', async () => {
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1, [9, 10, 9]), matched(MERLIN, 90, 2)]))
+    expandMatched()
+    setValue('マシュ の スキル2', '11')
+    expect(screen.getByText('スキルLv は 1〜10 の整数で入れてください')).toBeInTheDocument()
+    expect(screen.getByLabelText('マシュ の スキル2')).toHaveAttribute('aria-invalid', 'true')
+    const checkbox = screen.getByRole('checkbox', { name: 'マシュ を取り込みに入れる' })
+    expect(checkbox).not.toBeChecked()
+    expect(checkbox).toHaveAttribute('data-disabled')
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MASH)).toEqual([1, 1, 1])
+  })
+
+  it('育成計算機のスキルの今の値を欄の横に出し、読み取りにも渡す', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1, [9, 10, 9])]))
+    const options = (analyzeMock.fn.mock.calls[0] as [File[], { storedSkills: Record<string, number[]> }])[1]
+    expect(options.storedSkills[String(MASH)]).toEqual([6, 7, 8])
+    expandMatched()
+    const row = rowOf('マシュ を取り込みに入れる')
+    // planned のスキルの今の値は 6・7・8
+    for (const stored of ['6', '7', '8']) expect(within(row).getByText(stored)).toBeInTheDocument()
+  })
+
+  it('今の値より低く読んだスキル: 欄を空にして「要確認」で出し、候補を押して決めるまで書かない', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(
+      done([
+        needsReview(
+          'r1',
+          { servantId: MASH, npLv: 3, skills: [9, null, 10] },
+          { reasons: ['lower-than-saved'], undecidedSkills: [1], skillCandidates: [[], [3, 7], []] },
+        ),
+      ]),
+    )
+    const row = reviewRowAt(0)
+    expect(within(row).getByText('前に取り込んだ値より低い')).toBeInTheDocument()
+    expect(within(row).getByLabelText('マシュ の スキル2')).toHaveValue('')
+    expect(within(row).getByRole('checkbox')).toHaveAttribute('data-disabled')
+    expect(within(row).getByRole('checkbox')).not.toBeChecked()
+    expect(confirmButton()).toBeDisabled()
+    fireEvent.click(within(row).getByRole('button', { name: '7' }))
+    expect(within(row).getByLabelText('マシュ の スキル2')).toHaveValue('7')
+    expect(within(row).getByRole('checkbox')).toBeChecked()
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MASH)).toEqual([9, 7, 10])
+  })
+
+  it('今の値より低く読んだスキルを決めずに確定する: その行は取り込まず、今の値を変えない', async () => {
+    localStorage.setItem('material', JSON.stringify({ [MASH]: planned(false) }))
+    renderIndex()
+    await importWith(
+      done([
+        matched(MERLIN, 90, 2),
+        needsReview('r1', { servantId: MASH, skills: [9, null, 10] }, { reasons: ['lower-than-saved'], undecidedSkills: [1], skillCandidates: [[], [3, 7], []] }),
+      ]),
+    )
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MASH)).toEqual([6, 7, 8])
+  })
+
+  it('「要確認」の行も、サーヴァントを選んで決めればスキルLv を書く', async () => {
+    renderIndex()
+    await importWith(done([needsReview('r1', { npLv: 2, skills: [10, 10, 10] }, { reasons: ['unknown-face'] })]))
+    const row = reviewRowAt(0)
+    expect(within(row).getByLabelText('サーヴァントを選んでいません の スキル1')).toHaveValue('10')
+    chooseServant(row, 'マー', 'セイバーマーリン')
+    expect(within(row).getByRole('checkbox', { name: 'マーリン を取り込みに入れる' })).toBeChecked()
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MERLIN)).toEqual([10, 10, 10])
+    expect(storedLevels()).toEqual({ [MERLIN]: { npLv: 2 } })
+  })
+
+  it('取り込みに入れない行のスキルLv は書かない', async () => {
+    renderIndex()
+    await importWith(done([matched(MASH, 80, 1, [9, 10, 9]), matched(MERLIN, 90, 2, [10, 10, 10])]))
+    expandMatched()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'マシュ を取り込みに入れる' }))
+    fireEvent.click(confirmButton())
+    expect(skillStarts(MERLIN)).toEqual([10, 10, 10])
+    expect(skillStarts(MASH)).toEqual([1, 1, 1])
   })
 })
 

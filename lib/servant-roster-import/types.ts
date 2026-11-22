@@ -20,9 +20,13 @@ export type FaceIconData = {
 /** 照合の候補の1枚（縮めた画素。比べない升目は透明にしてある） */
 export type FaceCandidate = { servantId: number; pixels: Uint8ClampedArray }
 
+/** 読んだ選択画面（enhance: サーヴァント強化、skill: サーヴァントスキル強化） */
+export type RosterScreen = 'enhance' | 'skill'
+
 /** 見出しの枠から決めた格子の横の位置と大きさ */
 export type RosterGrid = {
-  /** 見出しの枠 */
+  screen: RosterScreen
+  /** 見出しの枠（スキル強化の画面ではサーヴァント強化の見出しの枠に換算したもの） */
   heading: Rect
   /** 長さの単位（見出しの枠の高さ） */
   unit: number
@@ -48,12 +52,19 @@ export type ValueFailure = { kind: 'lv' | 'npLv'; current: number; max: number }
 export type CardValues = {
   lv: ValueRead | null
   npLv: ValueRead | null
+  /** スキル強化の画面のカードの下の「数字/数字/数字」（スキル1〜3の Lv）。読めないか範囲の外なら null */
+  skills: SkillLevels | null
   failures: ValueFailure[]
 }
+
+/** スキル1〜3の Lv */
+export type SkillLevels = [number, number, number]
 
 /** 1枚の画像の1枚のカードの読み */
 export type CardReading = {
   imageIndex: number
+  /** 読んだ選択画面（skill のカードは Lv を読まない） */
+  screen: RosterScreen
   /** 画像の中の段の順（上から 0） */
   row: number
   /** 列（左から 0〜6） */
@@ -71,6 +82,8 @@ export type SortOrder = 'desc' | 'asc'
 export type ImageReading = {
   imageIndex: number
   name: string
+  /** 読んだ選択画面（skill の画像は Lv を読まず、スキルLv を読む） */
+  screen: RosterScreen
   /** 所持数（「所持サーヴァント: N/M」の N）。読めなければ null */
   ownedCount: number | null
   sortKey: SortKey | null
@@ -88,6 +101,9 @@ export type ReviewReason =
   | 'sort-order'
   | 'lower-than-saved'
 
+/** 育成計算機のスキルの今の値（サーヴァントの ID → スキル1〜3） */
+export type StoredSkills = Readonly<Record<string, readonly number[]>>
+
 /** 推定した値の範囲（片側だけのこともある） */
 export type ValueRange = { min?: number; max?: number }
 
@@ -99,6 +115,11 @@ export type RosterRow = {
   /** 取り込む値。「要確認」で空にした欄と、読めなかった種類は null */
   lv: number | null
   npLv: number | null
+  /**
+   * スキル強化の画面から読んだスキル1〜3の Lv。読めなかった行は null。
+   * 育成計算機のスキルの今の値より低かったスキルの欄は、利用者が決めるまで空（null）にする
+   */
+  skills: (number | null)[] | null
   /** 「要確認」でなければ null */
   review: {
     reasons: ReviewReason[]
@@ -110,6 +131,10 @@ export type RosterRow = {
     npLvCandidates: number[]
     lvRange: ValueRange | null
     npLvRange: ValueRange | null
+    /** 育成計算機のスキルの今の値より低いので空にしたスキルの欄（0 始まり。利用者が決めるまで取り込まない） */
+    undecidedSkills: number[]
+    /** スキルごとの候補（空にしたスキルだけ、読んだ値と今の値） */
+    skillCandidates: number[][]
   } | null
   crop: string | null
 }
@@ -126,6 +151,8 @@ export type RosterImportResult =
       imageCount: number
       /** 読めなかった画像の名前 */
       unreadableImages: string[]
+      /** スキル強化の画面の5列の表示の画像の名前（読み取らない） */
+      fiveColumnImages: string[]
       /** 並びの項目か向きを読めなかった画像の数 */
       unsortedImageCount: number
       /** 撮り漏れの知らせ（読めたカードの数が所持数より少ないときだけ） */

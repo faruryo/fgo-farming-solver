@@ -48,10 +48,11 @@ describe('classifyCardPosition', () => {
 })
 
 describe('hasCardValue', () => {
-  it('Lv・宝具Lv・値を決めなかった読みのどれかがあれば値がある', () => {
-    expect(hasCardValue({ lv: null, npLv: null, failures: [] })).toBe(false)
-    expect(hasCardValue({ lv: { current: 1, max: 20 }, npLv: null, failures: [] })).toBe(true)
-    expect(hasCardValue({ lv: null, npLv: { current: 1, max: 5 }, failures: [] })).toBe(true)
-    expect(hasCardValue({ lv: null, npLv: null, failures: [{ kind: 'lv', current: 83, max: 87 }] })).toBe(true)
+  it('Lv・宝具Lv・スキルLv・値を決めなかった読みのどれかがあれば値がある', () => {
+    expect(hasCardValue({ lv: null, npLv: null, skills: null, failures: [] })).toBe(false)
+    expect(hasCardValue({ lv: { current: 1, max: 20 }, npLv: null, skills: null, failures: [] })).toBe(true)
+    expect(hasCardValue({ lv: null, npLv: { current: 1, max: 5 }, skills: null, failures: [] })).toBe(true)
+    expect(hasCardValue({ lv: null, npLv: null, skills: [9, 10, 9], failures: [] })).toBe(true)
+    expect(hasCardValue({ lv: null, npLv: null, skills: null, failures: [{ kind: 'lv', current: 83, max: 87 }] })).toBe(true)
   })
 })
