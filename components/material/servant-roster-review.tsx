@@ -1,5 +1,6 @@
 'use client'
 
+import { WIDE_COLUMN_LAYOUTS } from '@/lib/servant-roster-import/constants'
 import React, { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
@@ -338,7 +339,7 @@ const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: num
           })}
         </p>
       )}
-      {[6, 5].map((columns) => {
+      {WIDE_COLUMN_LAYOUTS.map(({ columns }) => {
         const names = result.wideColumnImages.filter((i) => i.columns === columns).map((i) => i.name)
         return (
           names.length > 0 && (
