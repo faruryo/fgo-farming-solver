@@ -103,13 +103,13 @@ const cardCropUrl = (source: HTMLCanvasElement, rect: Rect): string | null => {
 
 /**
  * 1枚の画像を読む。見出しが無いか段が1つも見つからない画像（画像として読めないファイルを含む）は null、
- * スキル強化の画面の5列の表示は 'five-column'
+ * 6列・5列の表示はその列数
  */
 const readImage = async (
   file: File,
   imageIndex: number,
   screens: ScreenCandidates,
-): Promise<ImageReading | 'five-column' | null> => {
+): Promise<ImageReading | { wideColumns: number } | null> => {
   const img = await loadImage(file)
   if (!img) return null
   const canvas = document.createElement('canvas')
@@ -128,7 +128,7 @@ const readImage = async (
     // 画素の配列は画像ごとに1回だけ読み、この画像を読み終えたら手放す
     const pixels = canvasPixels(canvas)
     const located = locateRoster(boxes, pixels, screens)
-    if (located.kind === 'five-column') return 'five-column'
+    if (located.kind === 'wide-columns') return { wideColumns: located.columns }
     if (located.kind === 'unreadable') return null
     const { grid, rowTops } = located
     const candidates = screens[grid.screen]
@@ -183,11 +183,11 @@ export const analyzeRosterScreenshots = async (
 
   const images: ImageReading[] = []
   const unreadableImages: string[] = []
-  const fiveColumnImages: string[] = []
+  const wideColumnImages: { columns: number; name: string }[] = []
   for (const [index, file] of files.entries()) {
     onProgress?.({ phase: 'image', current: index + 1, total: files.length })
     const reading = await readImage(file, index, screens)
-    if (reading === 'five-column') fiveColumnImages.push(file.name)
+    if (reading && 'wideColumns' in reading) wideColumnImages.push({ columns: reading.wideColumns, name: file.name })
     else if (reading) images.push(reading)
     else unreadableImages.push(file.name)
   }
@@ -198,5 +198,5 @@ export const analyzeRosterScreenshots = async (
     stored,
     storedSkills,
   })
-  return { kind: 'done', imageCount: files.length, unreadableImages, fiveColumnImages, unsortedImageCount, shortfall, rows }
+  return { kind: 'done', imageCount: files.length, unreadableImages, wideColumnImages, unsortedImageCount, shortfall, rows }
 }

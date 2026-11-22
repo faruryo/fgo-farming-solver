@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { RgbaImage } from '../shop-screenshot-import/icon-match'
 import { FACE_MATCH, ROSTER_LAYOUT } from './constants'
 import { faceCandidates, matchFace } from './face-match'
-import { faceRect, fiveColumnGrid, gridFromHeading, gridTopY } from './grid'
+import { faceRect, gridFromHeading, gridTopY, wideColumnGrid } from './grid'
 import { findRowTops, locateRoster, scanFaceTops } from './row-search'
 import type { FaceIconData, OcrBox, RosterGrid } from './types'
 
@@ -232,8 +232,10 @@ describe('locateRoster（サーヴァントスキル強化の画面）', () => {
     { text: '強化には各種素材アイテムが必要です', confidence: 1, x: 70, y: SKILL_Y + GAP, width: 300, height: 15 },
   ]
   const SKILL_GRID: RosterGrid = gridFromHeading(HEADING, 'skill')
-  const FIVE = fiveColumnGrid(SKILL_GRID)
+  const FIVE = wideColumnGrid(SKILL_GRID, { columns: 5, scale: 1.41 })
   const fiveTop = (k: number) => scanFaceTops(FIVE, 10_000).at(k) ?? NaN
+  const SIX = wideColumnGrid(SKILL_GRID, { columns: 6, scale: 1.17 })
+  const sixTop = (k: number) => scanFaceTops(SIX, 10_000).at(k) ?? NaN
 
   /** `grid` の列に、サーヴァント 1 から順のアイコンを貼った段 */
   const pasteGridRow = (image: RgbaImage, grid: RosterGrid, top: number) => {
@@ -252,17 +254,29 @@ describe('locateRoster（サーヴァントスキル強化の画面）', () => {
     expect(located.kind === 'located' && located.grid.screen).toBe('skill')
   })
 
-  it('5列の表示: 同じ見出しでも、5列の格子で顔が当たるなら five-column（読み取らない）', () => {
+  it('5列の表示: 同じ見出しでも、5列の格子で顔が当たるなら5列の表示（読み取らない）', () => {
     const image = blank(520)
     pasteGridRow(image, FIVE, fiveTop(12))
     pasteGridRow(image, FIVE, fiveTop(12 + Math.round(ROW_STEPS * 1.41)))
-    expect(locateRoster(SKILL_BOXES, image, SCREENS)).toEqual({ kind: 'five-column' })
+    expect(locateRoster(SKILL_BOXES, image, SCREENS)).toEqual({ kind: 'wide-columns', columns: 5 })
   })
 
-  it('サーヴァント強化の画面は、5列の位置に顔があっても five-column にしない', () => {
-    const image = blank(520)
-    pasteGridRow(image, FIVE, fiveTop(12))
-    expect(locateRoster([HEADING], image, SCREENS).kind).not.toBe('five-column')
+  it('6列の表示: 6列の格子で顔が当たるなら6列の表示（読み取らない）', () => {
+    const image = blank(440)
+    pasteGridRow(image, SIX, sixTop(12))
+    pasteGridRow(image, SIX, sixTop(12 + Math.round(ROW_STEPS * 1.17)))
+    expect(locateRoster(SKILL_BOXES, image, SCREENS)).toEqual({ kind: 'wide-columns', columns: 6 })
+  })
+
+  it('サーヴァント強化の画面でも、5列・6列の格子で顔が当たるならその列数の表示', () => {
+    const five = wideColumnGrid(gridFromHeading(HEADING), { columns: 5, scale: 1.41 })
+    const six = wideColumnGrid(gridFromHeading(HEADING), { columns: 6, scale: 1.17 })
+    const fiveImage = blank(520)
+    pasteGridRow(fiveImage, five, scanFaceTops(five, 10_000).at(12) ?? NaN)
+    expect(locateRoster([HEADING], fiveImage, SCREENS)).toEqual({ kind: 'wide-columns', columns: 5 })
+    const sixImage = blank(440)
+    pasteGridRow(sixImage, six, scanFaceTops(six, 10_000).at(12) ?? NaN)
+    expect(locateRoster([HEADING], sixImage, SCREENS)).toEqual({ kind: 'wide-columns', columns: 6 })
   })
 
   it('スキル強化の画面で顔がどこにも当たらない画像は読めなかった画像になる', () => {

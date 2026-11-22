@@ -76,7 +76,7 @@ const done = (rows: RosterRow[], overrides: Partial<Extract<RosterImportResult, 
   kind: 'done',
   imageCount: 1,
   unreadableImages: [],
-  fiveColumnImages: [],
+  wideColumnImages: [],
   unsortedImageCount: 0,
   shortfall: null,
   rows,
@@ -143,7 +143,7 @@ describe('スクリーンショットから取り込む入口', () => {
     expect(screen.getByText(/並びを「宝具Lv.順」にして、上から下まで少しずつ重ねて撮ってください/)).toBeInTheDocument()
     expect(screen.getByText('「Lv.順」の画像も読めますが、その画像からは Lv だけを取り込みます。')).toBeInTheDocument()
     expect(screen.getByText(/「サーヴァントスキル強化」でサーヴァントを選ぶ画面は、7列の表示で同じように撮ってください。宝具Lv とスキルLv を読み取り/)).toBeInTheDocument()
-    expect(screen.getByText(/5列の表示は読み取れません。$/)).toBeInTheDocument()
+    expect(screen.getByText(/6列・5列の表示は読み取れません。$/)).toBeInTheDocument()
     expect(screen.getByText(/サーヴァント強化・サーヴァントスキル強化の選択画面のスクリーンショットから、所持サーヴァントと Lv・宝具Lv・スキルLv を読み取ります/)).toBeInTheDocument()
     expect(analyzeButton()).toBeDisabled()
     expect(analyzeMock.fn).not.toHaveBeenCalled()
@@ -232,27 +232,28 @@ describe('取り込む前の確かめ', () => {
     expect(confirmButton()).toBeEnabled()
   })
 
-  it('5列の表示の画像: 画像の名前を添えて7列の表示で撮るよう赤字で知らせ、読めなかった画像の知らせとは別にする', async () => {
+  it('6列・5列の表示の画像: 列数ごとに画像の名前を添えて7列の表示で撮るよう赤字で知らせ、読めなかった画像の知らせとは別にする', async () => {
     renderIndex()
     await importWith(
-      done([matched(MASH, 80, 1)], { imageCount: 3, fiveColumnImages: ['IMG_1.png', 'IMG_2.png'], unreadableImages: ['IMG_3.png'] }),
+      done([matched(MASH, 80, 1)], { imageCount: 4, wideColumnImages: [{ columns: 5, name: 'IMG_1.png' }, { columns: 6, name: 'IMG_4.png' }, { columns: 5, name: 'IMG_2.png' }], unreadableImages: ['IMG_3.png'] }),
     )
     const notice = screen.getByText('5列の表示は読み取れません。7列の表示で撮ってください: IMG_1.png、IMG_2.png')
     expect(notice).toHaveStyle({ color: 'var(--red)' })
+    expect(screen.getByText('6列の表示は読み取れません。7列の表示で撮ってください: IMG_4.png')).toHaveStyle({ color: 'var(--red)' })
     expect(screen.getByText('読めなかった画像: 1枚（IMG_3.png）')).toBeInTheDocument()
   })
 
-  it('5列の表示の画像が無いときは知らせない', async () => {
+  it('6列・5列の表示の画像が無いときは知らせない', async () => {
     renderIndex()
     await importWith(done([matched(MASH, 80, 1)]))
-    expect(screen.queryByText(/5列の表示は読み取れません。7列の表示で撮ってください/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/列の表示は読み取れません。7列の表示で撮ってください/)).not.toBeInTheDocument()
   })
 
-  it('すべて5列の表示の画像: 読み取れたサーヴァントが無い表示と知らせを出し、確定できない', async () => {
+  it('すべて6列・5列の表示の画像: 読み取れたサーヴァントが無い表示と知らせを出し、確定できない', async () => {
     renderIndex()
-    await importWith(done([], { imageCount: 1, fiveColumnImages: ['a.png'] }))
+    await importWith(done([], { imageCount: 1, wideColumnImages: [{ columns: 6, name: 'a.png' }] }))
     expect(screen.getByText('読み取れたサーヴァントがありません')).toBeInTheDocument()
-    expect(screen.getByText('5列の表示は読み取れません。7列の表示で撮ってください: a.png')).toBeInTheDocument()
+    expect(screen.getByText('6列の表示は読み取れません。7列の表示で撮ってください: a.png')).toBeInTheDocument()
     expect(confirmButton()).toBeDisabled()
   })
 

@@ -3,7 +3,7 @@ import {
   cardBandRects,
   clipRect,
   findRosterHeading,
-  fiveColumnGrid,
+  wideColumnGrid,
   gridFromHeading,
   gridTopY,
   readRosterGrid,
@@ -130,10 +130,10 @@ describe('findRosterHeading（サーヴァントスキル強化）', () => {
   })
 })
 
-describe('fiveColumnGrid', () => {
+describe('wideColumnGrid', () => {
   it('5列で、いちばん左の列の顔の左端と格子の上の端は7列と同じ、大きさと間隔は 1.41 倍', () => {
     const grid = gridFromHeading(HEADING, 'skill')
-    const five = fiveColumnGrid(grid)
+    const five = wideColumnGrid(grid, { columns: 5, scale: 1.41 })
     expect(five.columnXs).toHaveLength(5)
     expect(five.columnXs.at(0)).toBeCloseTo(grid.columnXs.at(0) ?? NaN, 6)
     expect(gridTopY(five)).toBeCloseTo(gridTopY(grid), 6)
