@@ -8,7 +8,7 @@ import { recognizeWithBoxes } from '../possession-import/ocr-engine'
 import type { ServantLevels } from '../servant-levels'
 import { canvasPixels } from '../shop-screenshot-import/icon-pixels'
 import { BAND_SCALE, CARD_CROP_WIDTH } from './constants'
-import { faceCandidates, matchFace, type ScreenCandidates } from './face-match'
+import { faceCandidates, faceCrops, matchFaceCrops, type FaceCrop, type ScreenCandidates } from './face-match'
 import { cardBandRects, cardRect, clipRect, faceRect } from './grid'
 import { headerRects, readOwnedCount, readSortKey, readSortOrder } from './header'
 import { classifyCardPosition } from './positions'
@@ -39,6 +39,23 @@ export type AnalyzeRosterOptions = {
 }
 
 const FACE_ICONS_URL = '/api/servant-face-icons'
+
+/** 実画面の fixture を作るスクリプト（scripts/build-roster-fixture.ts）が置く受け口。ふだんは無く、何も渡さない */
+export type RosterFixtureTap = (card: {
+  image: string
+  screen: CardReading['screen']
+  row: number
+  column: number
+  base: Rect
+  crops: readonly FaceCrop[]
+  top: readonly OcrBox[]
+  bottom: readonly OcrBox[]
+  face: CardReading['face']
+  values: CardReading['values']
+  discarded: boolean
+}) => void
+const fixtureTap = (): RosterFixtureTap | undefined =>
+  (globalThis as { __rosterFixtureTap?: RosterFixtureTap }).__rosterFixtureTap
 
 /** 照合用のデータ。取得できないか形が違えば null */
 const fetchFaceIcons = async (): Promise<FaceIconData | null> => {
@@ -137,14 +154,15 @@ const readImage = async (
       const cards: CardReading[] = []
       for (const [column, x] of grid.columnXs.entries()) {
         const square = faceRect(grid, x, top)
-        const face = matchFace(pixels, square, candidates, grid.screen)
+        const crops = faceCrops(pixels, square)
+        const face = matchFaceCrops(crops, square, candidates, grid.screen)
         const bands = cardBandRects(square, grid.unit, grid.screen)
-        const values = readCardValues(
-          await recognizeRect(canvas, bands.top, BAND_SCALE),
-          await recognizeRect(canvas, bands.bottom, BAND_SCALE),
-          grid.screen,
-        )
-        if (classifyCardPosition(face, values) === 'discard') continue
+        const topBoxes = await recognizeRect(canvas, bands.top, BAND_SCALE)
+        const bottomBoxes = await recognizeRect(canvas, bands.bottom, BAND_SCALE)
+        const values = readCardValues(topBoxes, bottomBoxes, grid.screen)
+        const discarded = classifyCardPosition(face, values) === 'discard'
+        fixtureTap()?.({ image: file.name, screen: grid.screen, row, column, base: square, crops, top: topBoxes, bottom: bottomBoxes, face, values, discarded })
+        if (discarded) continue
         cards.push({ imageIndex, screen: grid.screen, row, column, face, values, crop: cardCropUrl(canvas, cardRect(square, grid.unit)) })
       }
       rows.push(cards)

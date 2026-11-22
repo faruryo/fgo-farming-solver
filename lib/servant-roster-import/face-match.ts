@@ -96,7 +96,7 @@ const boundsOf = (rects: readonly Rect[]): Rect => {
 
 /** 27 通りの切り出しを全候補と `diffOf` で比べた、サーヴァントごとの一番近い差 */
 const servantDiffs = (
-  crops: readonly { crop: Uint8ClampedArray; rect: Rect }[],
+  crops: readonly FaceCrop[],
   candidates: readonly FaceCandidate[],
   diffOf: (crop: Uint8ClampedArray, ref: Uint8ClampedArray) => number,
 ): ServantDiffs => {
@@ -122,27 +122,34 @@ const comparedSum = (pixels: Uint8ClampedArray, ref: Uint8ClampedArray): number 
  * 暗く塗られた切り出しの比べ直し。候補が切り出しの darkenedMinGain〜darkenedMaxGain 倍の明るさのときだけ、明るさをそろえて比べる
  * （明るい絵を暗いアイコンに寄せず、空の枠のような真っ暗な切り出しを大きく持ち上げない）
  */
-const darkenedDiff = (crop: Uint8ClampedArray, ref: Uint8ClampedArray): number => {
+export const darkenedDiff = (crop: Uint8ClampedArray, ref: Uint8ClampedArray): number => {
   const gain = comparedSum(ref, ref) / comparedSum(crop, ref)
   return gain >= FACE_MATCH.darkenedMinGain && gain <= FACE_MATCH.darkenedMaxGain ? iconPixelDiff(crop, ref) : Infinity
 }
 
+/** 照合に渡す 16×16 の切り出しと、その矩形 */
+export type FaceCrop = { crop: Uint8ClampedArray; rect: Rect }
+
+/** 画像の顔の正方形 `base` のまわりの 27 通りの切り出し（画像の外は除く） */
+export const faceCrops = (image: RgbaImage, base: Rect): FaceCrop[] => {
+  const rects = coarseRects(base, FACE_MATCH.search, image.width, image.height)
+  if (rects.length === 0) return []
+  const integral = integralImage(image, boundsOf(rects))
+  return rects.map((rect) => ({ crop: cropCells(integral, rect, FACE_MATCH.size), rect }))
+}
+
 /**
- * 画像の顔の正方形 `base` のまわりの 27 通りの切り出し（画像の外は除く）を全候補と比べて、サーヴァントを決める。
+ * 切り出し（faceCrops）を全候補と比べて、サーヴァントを決める。`base` は切り出しが1つも無いときの矩形。
  * スキル強化の画面（`screen` が skill）で、明るさをそろえずに比べてどのサーヴァントにも近くなかったときだけ、切り出しより明るい候補と明るさをそろえて比べ直す。
  * スキルLv.MAX のカードは顔が暗く塗られるため。明るさをそろえると平板なアイコンがどのカードにも近くなるので、
  * 決まったカードには使わず、比べ直しでも上限と次に近いサーヴァントとの比を満たしたときだけ決める
  */
-export const matchFace = (
-  image: RgbaImage,
+export const matchFaceCrops = (
+  crops: readonly FaceCrop[],
   base: Rect,
   candidates: readonly FaceCandidate[],
   screen: RosterScreen = 'enhance',
 ): FaceMatch => {
-  const rects = coarseRects(base, FACE_MATCH.search, image.width, image.height)
-  if (rects.length === 0) return decideFace(new Map(), base)
-  const integral = integralImage(image, boundsOf(rects))
-  const crops = rects.map((rect) => ({ crop: cropCells(integral, rect, FACE_MATCH.size), rect }))
   const raw = decideFace(servantDiffs(crops, candidates, rawPixelDiff), base)
   // 暗く塗られるのはスキル強化の画面のスキルLv.MAX のカードだけ
   if (screen !== 'skill' || raw.kind !== 'review' || raw.reason !== 'unknown-face') return raw
@@ -150,3 +157,11 @@ export const matchFace = (
   // 比べ直せた候補が1騎だけだと次に近い差が Infinity になり比が必ず通るので、2騎以上と比べられたときだけ決める
   return normalized.kind === 'matched' && Number.isFinite(normalized.second) ? normalized : raw
 }
+
+/** 画像の顔の正方形 `base` のまわりを切り出して（faceCrops）サーヴァントを決める（matchFaceCrops） */
+export const matchFace = (
+  image: RgbaImage,
+  base: Rect,
+  candidates: readonly FaceCandidate[],
+  screen: RosterScreen = 'enhance',
+): FaceMatch => matchFaceCrops(faceCrops(image, base), base, candidates, screen)
