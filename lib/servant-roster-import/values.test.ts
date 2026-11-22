@@ -15,6 +15,8 @@ describe('readCardValues', () => {
     ['宝具Lv.5/5', 5, 5],
     ['宝具LV.5/5', 5, 5],
     ['宝具Lv.1/5', 1, 5],
+    // 「Lv.」の「.」を 5 と読んだとき（宝具Lv は1桁なので「/」のすぐ左の1文字だけを使う）
+    ['宝具Lv51/5', 1, 5],
   ])('上の帯の %s を宝具Lv にする', (text, current, max) => {
     expect(readCardValues(band(text), [])).toEqual({ lv: null, npLv: { current, max }, skills: null, failures: [] })
   })
@@ -113,6 +115,8 @@ describe('readCardValues', () => {
     ['Lv.1/4', 'npLv', 1, 4],
     ['宝具Lv.6/5', 'npLv', 6, 5],
     ['宝具Lv.0/5', 'npLv', 0, 5],
+    // 1桁目だけを使うのは「.」を 5 と読んだ 50〜59 のときだけ
+    ['宝具Lv.13/5', 'npLv', 13, 5],
   ])('%s は値を決めず、通らなかった読みにする', (text, kind, current, max) => {
     expect(readCardValues(band(text), [])).toEqual({ lv: null, npLv: null, skills: null, failures: [{ kind, current, max }] })
   })
@@ -202,11 +206,11 @@ describe('readCardValues（サーヴァントスキル強化の画面）', () =>
 
   it('スキルLv が読めなくても宝具Lv は読み、宝具Lv が範囲の外なら値を決めない', () => {
     expect(readCardValues(band('宝具Lv.3/5'), [], 'skill').skills).toBeNull()
-    expect(readCardValues(band('宝具Lv.51/5'), band('9/10/9'), 'skill')).toEqual({
+    expect(readCardValues(band('宝具Lv.0/5'), band('9/10/9'), 'skill')).toEqual({
       lv: null,
       npLv: null,
       skills: [9, 10, 9],
-      failures: [{ kind: 'npLv', current: 51, max: 5 }],
+      failures: [{ kind: 'npLv', current: 0, max: 5 }],
     })
   })
 

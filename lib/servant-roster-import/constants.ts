@@ -83,6 +83,10 @@ export const FACE_MATCH = {
   rowScanStep: 0.02,
   maxDiff: 10,
   maxRatio: 0.5,
+  /** 暗く塗られたカード（スキルLv.MAX）の比べ直しで、候補が切り出しの何倍以上明るければ比べるか */
+  darkenedMinGain: 1.2,
+  /** 比べ直す候補の明るさの上限（切り出しの何倍まで）。サンプルの Lv.MAX のカードは 1.6〜2.6 倍 */
+  darkenedMaxGain: 3,
   /** 「要確認」のカードに添える近いサーヴァントの数 */
   reviewCandidates: 5,
 } as const
