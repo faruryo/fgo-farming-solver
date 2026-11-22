@@ -12,7 +12,12 @@ type Card = (typeof fixture.cards)[number] & { screen: RosterScreen; base: Rect 
 const cards = fixture.cards as Card[]
 const ids = new Set(fixture.icons.map((i) => i.servantId))
 const candidates = { enhance: faceCandidates(fixture, ids, 'enhance'), skill: faceCandidates(fixture, ids, 'skill') }
-const cropsOf = (card: Card) => card.crops.map(({ rect, crop }) => ({ rect, crop: decodeFacePixels(crop) ?? new Uint8ClampedArray() }))
+const cropsOf = (card: Card) =>
+  card.crops.map(({ rect, crop }) => {
+    const pixels = decodeFacePixels(crop)
+    if (!pixels) throw new Error(`fixture の切り出しが壊れています: ${card.image} ${card.row}-${card.column}`)
+    return { rect, crop: pixels }
+  })
 const label = (card: Card) => `${card.image} ${card.row}-${card.column}`
 const bandText = (card: Card) => card.top.map((b) => b.text).join(' ')
 

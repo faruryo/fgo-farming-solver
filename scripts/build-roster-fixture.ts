@@ -18,14 +18,19 @@ import { chromium, expect } from '@playwright/test'
 import { rawPixelDiff } from '../lib/shop-screenshot-import/icon-match'
 import type { RosterFixtureTap } from '../lib/servant-roster-import/analyze'
 import { darkenedDiff, decodeFacePixels, faceCandidates, matchFaceCrops } from '../lib/servant-roster-import/face-match'
+import { FACE_MATCH } from '../lib/servant-roster-import/constants'
 import type { FaceIconData } from '../lib/servant-roster-import/types'
 
 const OUT = 'lib/servant-roster-import/__fixtures__/real-screens.json'
 /** 各カードで残す近いサーヴァントの数（decideFace が見るのは上位 2 騎と、「要確認」に添える FACE_MATCH.reviewCandidates 騎） */
-const TOP_SERVANTS = 5
+const TOP_SERVANTS = Math.max(2, FACE_MATCH.reviewCandidates)
 
 type TappedCard = Omit<Parameters<RosterFixtureTap>[0], 'crops'> & {
   crops: { rect: { x: number; y: number; width: number; height: number }; crop: number[] }[]
+}
+
+const fail = (message: string): never => {
+  throw new Error(message)
 }
 
 const args = process.argv.slice(2)
@@ -37,8 +42,10 @@ const baseUrl = option('--base-url')
 if (!baseUrl) throw new Error('--base-url を渡してください（pnpm dev で起動した dev server）')
 const iconsUrl = option('--icons-url') ?? `${baseUrl}/api/servant-face-icons`
 const images = args.map((arg) => {
-  const [label, path] = arg.split('=')
-  if (!label || !path) throw new Error(`画像は <名前>=<パス> で渡してください: ${arg}`)
+  const at = arg.indexOf('=')
+  const label = arg.slice(0, Math.max(0, at))
+  const path = arg.slice(at + 1)
+  if (at < 0 || !label || !path) throw new Error(`画像は <名前>=<パス> で渡してください: ${arg}`)
   return { label, path }
 })
 if (images.length === 0) throw new Error('画像を1枚以上渡してください')
@@ -47,6 +54,7 @@ const tapCards = async (iconsBody: string): Promise<TappedCard[]> => {
   const browser = await chromium.launch()
   try {
     const page = await browser.newPage()
+    page.on('console', (m) => m.type() === 'error' && console.error(`[page] ${m.text()}`))
     await page.addInitScript(() => {
       const w = window as unknown as { __rosterFixture: unknown[]; __rosterFixtureTap: RosterFixtureTap }
       w.__rosterFixture = []
@@ -62,7 +70,6 @@ const tapCards = async (iconsBody: string): Promise<TappedCard[]> => {
     await expect(analyze).toBeEnabled()
     await analyze.click()
     await expect(page.getByText('照合用のデータ', { exact: false }).or(page.getByText('画像を読み取っています'))).toBeVisible()
-    page.on('console', (m) => m.type() === 'error' && console.error(`[page] ${m.text()}`))
     const progress = setInterval(() => {
       void page
         .evaluate(() => `${(window as unknown as { __rosterFixture: unknown[] }).__rosterFixture.length} 枚 / ${document.querySelector('[role=dialog]')?.textContent?.slice(-60) ?? ''}`)
@@ -118,13 +125,15 @@ const main = async () => {
   const iconsBody = await res.text()
   const data = JSON.parse(iconsBody) as FaceIconData
   const labelOf = new Map(images.map((i) => [basename(i.path), i.label]))
+  if (labelOf.size !== images.length) fail('同じファイル名の画像は渡せません')
   const cards = (await tapCards(iconsBody)).filter((c) => !c.discarded)
 
   const { pruned, icons } = pruneCards(data, cards)
   const fixture = {
     icons,
     cards: pruned.map(({ card, crops }) => ({
-      image: labelOf.get(card.image) ?? card.image,
+      // 元のファイル名は書き出さない
+      image: labelOf.get(card.image) ?? fail(`画像の名前を引けません（同じファイル名の画像は渡せません）`),
       screen: card.screen,
       row: card.row,
       column: card.column,
@@ -144,7 +153,7 @@ const main = async () => {
   // 絞った fixture で照合し直し、全部で比べたときと同じ結果になるかを確かめる
   const keptIds = new Set(icons.map((i) => i.servantId))
   for (const [k, c] of fixture.cards.entries()) {
-    const crops = c.crops.map(({ rect, crop }) => ({ rect, crop: decodeFacePixels(crop) ?? new Uint8ClampedArray() }))
+    const crops = c.crops.map(({ rect, crop }) => ({ rect, crop: decodeFacePixels(crop) ?? fail('切り出しを読めません') }))
     const again = matchFaceCrops(crops, c.base, faceCandidates({ icons }, keptIds, c.screen), c.screen)
     const original = pruned.at(k)?.card.face
     if (JSON.stringify(again) !== JSON.stringify(original)) {
