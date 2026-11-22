@@ -137,7 +137,7 @@ const readImage = async (
       const cards: CardReading[] = []
       for (const [column, x] of grid.columnXs.entries()) {
         const square = faceRect(grid, x, top)
-        const face = matchFace(pixels, square, candidates)
+        const face = matchFace(pixels, square, candidates, grid.screen)
         const bands = cardBandRects(square, grid.unit, grid.screen)
         const values = readCardValues(
           await recognizeRect(canvas, bands.top, BAND_SCALE),

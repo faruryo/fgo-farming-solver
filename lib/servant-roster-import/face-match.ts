@@ -118,23 +118,35 @@ const comparedSum = (pixels: Uint8ClampedArray, ref: Uint8ClampedArray): number 
   return sum
 }
 
-/** 暗く塗られた切り出しの比べ直し。候補が切り出しより十分に明るいときだけ明るさをそろえて比べる（明るい絵を暗いアイコンに寄せない） */
-const darkenedDiff = (crop: Uint8ClampedArray, ref: Uint8ClampedArray): number =>
-  comparedSum(ref, ref) >= comparedSum(crop, ref) * FACE_MATCH.darkenedMinGain ? iconPixelDiff(crop, ref) : Infinity
+/**
+ * 暗く塗られた切り出しの比べ直し。候補が切り出しの darkenedMinGain〜darkenedMaxGain 倍の明るさのときだけ、明るさをそろえて比べる
+ * （明るい絵を暗いアイコンに寄せず、空の枠のような真っ暗な切り出しを大きく持ち上げない）
+ */
+const darkenedDiff = (crop: Uint8ClampedArray, ref: Uint8ClampedArray): number => {
+  const gain = comparedSum(ref, ref) / comparedSum(crop, ref)
+  return gain >= FACE_MATCH.darkenedMinGain && gain <= FACE_MATCH.darkenedMaxGain ? iconPixelDiff(crop, ref) : Infinity
+}
 
 /**
  * 画像の顔の正方形 `base` のまわりの 27 通りの切り出し（画像の外は除く）を全候補と比べて、サーヴァントを決める。
- * 明るさをそろえずに比べてどのサーヴァントにも近くなかったときだけ、切り出しより明るい候補と明るさをそろえて比べ直す。
+ * スキル強化の画面（`screen` が skill）で、明るさをそろえずに比べてどのサーヴァントにも近くなかったときだけ、切り出しより明るい候補と明るさをそろえて比べ直す。
  * スキルLv.MAX のカードは顔が暗く塗られるため。明るさをそろえると平板なアイコンがどのカードにも近くなるので、
  * 決まったカードには使わず、比べ直しでも上限と次に近いサーヴァントとの比を満たしたときだけ決める
  */
-export const matchFace = (image: RgbaImage, base: Rect, candidates: readonly FaceCandidate[]): FaceMatch => {
+export const matchFace = (
+  image: RgbaImage,
+  base: Rect,
+  candidates: readonly FaceCandidate[],
+  screen: RosterScreen = 'enhance',
+): FaceMatch => {
   const rects = coarseRects(base, FACE_MATCH.search, image.width, image.height)
   if (rects.length === 0) return decideFace(new Map(), base)
   const integral = integralImage(image, boundsOf(rects))
   const crops = rects.map((rect) => ({ crop: cropCells(integral, rect, FACE_MATCH.size), rect }))
   const raw = decideFace(servantDiffs(crops, candidates, rawPixelDiff), base)
-  if (raw.kind !== 'review' || raw.reason !== 'unknown-face') return raw
+  // 暗く塗られるのはスキル強化の画面のスキルLv.MAX のカードだけ
+  if (screen !== 'skill' || raw.kind !== 'review' || raw.reason !== 'unknown-face') return raw
   const normalized = decideFace(servantDiffs(crops, candidates, darkenedDiff), base)
-  return normalized.kind === 'matched' ? normalized : raw
+  // 比べ直せた候補が1騎だけだと次に近い差が Infinity になり比が必ず通るので、2騎以上と比べられたときだけ決める
+  return normalized.kind === 'matched' && Number.isFinite(normalized.second) ? normalized : raw
 }

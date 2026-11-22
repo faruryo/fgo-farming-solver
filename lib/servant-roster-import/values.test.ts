@@ -115,6 +115,8 @@ describe('readCardValues', () => {
     ['Lv.1/4', 'npLv', 1, 4],
     ['宝具Lv.6/5', 'npLv', 6, 5],
     ['宝具Lv.0/5', 'npLv', 0, 5],
+    // 1桁目だけを使うのは「.」を 5 と読んだ 50〜59 のときだけ
+    ['宝具Lv.13/5', 'npLv', 13, 5],
   ])('%s は値を決めず、通らなかった読みにする', (text, kind, current, max) => {
     expect(readCardValues(band(text), [])).toEqual({ lv: null, npLv: null, skills: null, failures: [{ kind, current, max }] })
   })
