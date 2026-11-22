@@ -89,10 +89,13 @@ const inRange = (value: number, min: number, max: number) => Number.isInteger(va
 const readBand = (boxes: readonly OcrBox[]): (BandValue & { confidence: number }) | null => {
   const match = bestFraction(boxes)
   if (!match) return null
-  const { current, max, confidence } = match
-  const read = { current, max }
+  const { max, confidence } = match
   const hasNpMark = boxes.some((b) => /[宝具]/.test(b.text))
-  if (max === NP_LV_CAP && hasNpMark) {
+  const npBand = max === NP_LV_CAP && hasNpMark
+  // 宝具Lv は1桁なので「/」のすぐ左の1文字だけを使う（「宝具Lv.1/5」の「.」を 5 と読んで「51/5」になる）
+  const current = npBand ? match.current % 10 : match.current
+  const read = { current, max }
+  if (npBand) {
     if (inRange(current, SERVANT_NP_LV_MIN, NP_LV_CAP)) return { kind: 'npLv', read, confidence }
     return { kind: 'failure', failure: { kind: 'npLv', ...read }, confidence }
   }

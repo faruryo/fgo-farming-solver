@@ -32,6 +32,10 @@ const randomIcon = (seed: number): Uint8ClampedArray => {
 const shifted = (icon: Uint8ClampedArray, delta: number): Uint8ClampedArray =>
   icon.map((v, i) => (i % 4 === 3 ? v : v + delta))
 
+/** 全部の升目の RGB に `factor` を掛けたアイコン（スキルLv.MAX のカードの暗い塗りの代わり） */
+const darkened = (icon: Uint8ClampedArray, factor: number): Uint8ClampedArray =>
+  icon.map((v, i) => (i % 4 === 3 ? v : v * factor))
+
 /** 比べない升目だけを `color` に塗ったアイコン（重なる表示の代わり） */
 const overlaid = (icon: Uint8ClampedArray, color: Rgb): Uint8ClampedArray => {
   const out = new Uint8ClampedArray(icon)
@@ -173,6 +177,21 @@ describe('matchFace', () => {
     expect(withServant).toMatchObject({ kind: 'matched', servantId: SERVANT_C })
     // 明るい絵のサーヴァントが候補に無くても、黒いアイコンには当てない
     const withoutServant = matchFace(screenshot(bright), FACE, candidatesOf([{ servantId: SERVANT_DARK, pixels: DARK }]))
+    expect(withoutServant).toMatchObject({ kind: 'review', reason: 'unknown-face' })
+  })
+
+  it('暗く塗られたカード: 明るさをそろえずに比べて近くなければ、明るさをそろえて比べ直して当てる', () => {
+    const match = matchFace(screenshot(darkened(A_STAGE3, 0.55)), FACE, STANDARD)
+    expect(match).toMatchObject({ kind: 'matched', servantId: SERVANT_A })
+    // 当てたいサーヴァントが候補に無ければ、比べ直しても別のサーヴァントに当てない
+    const withoutServant = matchFace(
+      screenshot(darkened(A_STAGE3, 0.55)),
+      FACE,
+      candidatesOf([
+        { servantId: SERVANT_B, pixels: B },
+        { servantId: SERVANT_DARK, pixels: DARK },
+      ]),
+    )
     expect(withoutServant).toMatchObject({ kind: 'review', reason: 'unknown-face' })
   })
 
