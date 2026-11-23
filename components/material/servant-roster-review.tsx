@@ -1,5 +1,6 @@
 'use client'
 
+import { WIDE_COLUMN_LAYOUTS } from '@/lib/servant-roster-import/constants'
 import React, { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
@@ -308,7 +309,7 @@ const RosterReviewRow: React.FC<{
   )
 }
 
-/** 読み取りのまとめ（読んだ枚数・当てた数・要確認の数・新しく所持になる数・読めなかった画像・5列の表示の画像・撮り漏れ） */
+/** 読み取りのまとめ（読んだ枚数・当てた数・要確認の数・新しく所持になる数・読めなかった画像・6列と5列の表示の画像・撮り漏れ） */
 const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: number; newlyOwned: number }> = ({
   result,
   matched,
@@ -338,13 +339,19 @@ const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: num
           })}
         </p>
       )}
-      {result.fiveColumnImages.length > 0 && (
-        <p style={{ color: 'var(--red)' }}>
-          {t('roster-import-five-column', '5列の表示は読み取れません。7列の表示で撮ってください: {{names}}', {
-            names: result.fiveColumnImages.join(t('list-separator', '、')),
-          })}
-        </p>
-      )}
+      {WIDE_COLUMN_LAYOUTS.map(({ columns }) => {
+        const names = result.wideColumnImages.filter((i) => i.columns === columns).map((i) => i.name)
+        return (
+          names.length > 0 && (
+            <p key={columns} style={{ color: 'var(--red)' }}>
+              {t('roster-import-wide-columns', '{{columns}}列の表示は読み取れません。7列の表示で撮ってください: {{names}}', {
+                columns,
+                names: names.join(t('list-separator', '、')),
+              })}
+            </p>
+          )
+        )
+      })}
       {result.unsortedImageCount > 0 && (
         <p>
           {t('roster-import-unsorted', '並びを読めなかった画像: {{count}}枚（この画像は並び順の検査をしていません）', {

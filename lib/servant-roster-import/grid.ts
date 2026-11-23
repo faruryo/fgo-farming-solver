@@ -2,7 +2,7 @@
  * 見出しの枠から格子の横の位置と大きさを決め、顔の正方形から文字の帯の矩形を決める純粋関数。
  * 長さは見出しの枠の高さを単位にした倍数（constants.ts の ROSTER_LAYOUT）で決める。
  */
-import { FIVE_COLUMN_LAYOUT, ROSTER_HEADING_TEXT, ROSTER_LAYOUT, SKILL_HEADING } from './constants'
+import { ROSTER_HEADING_TEXT, ROSTER_LAYOUT, SKILL_HEADING } from './constants'
 import type { OcrBox, Rect, RosterGrid, RosterScreen } from './types'
 
 /** 空白と記号（句読点・記号の文字）を除く */
@@ -49,11 +49,10 @@ export const gridFromHeading = (heading: Rect, screen: RosterScreen = 'enhance')
 }
 
 /**
- * スキル強化の画面の5列の表示の格子。7列の格子を、いちばん左の列の顔の左端と格子の上の端を軸に広げたもの
+ * 6列・5列の表示の格子。7列の格子を、いちばん左の列の顔の左端と格子の上の端を軸に広げたもの
  * （見出しの枠も同じ軸で広げ、格子の上の端が変わらないようにする）
  */
-export const fiveColumnGrid = (grid: RosterGrid): RosterGrid => {
-  const { scale, columns } = FIVE_COLUMN_LAYOUT
+export const wideColumnGrid = (grid: RosterGrid, { columns, scale }: { columns: number; scale: number }): RosterGrid => {
   const firstLeft = grid.columnXs[0] ?? 0
   const unit = grid.unit * scale
   const top = gridTopY(grid)

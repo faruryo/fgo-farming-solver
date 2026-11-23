@@ -151,8 +151,8 @@ export type RosterImportResult =
       imageCount: number
       /** 読めなかった画像の名前 */
       unreadableImages: string[]
-      /** スキル強化の画面の5列の表示の画像の名前（読み取らない） */
-      fiveColumnImages: string[]
+      /** 6列・5列の表示の画像の列数と名前（読み取らない） */
+      wideColumnImages: { columns: number; name: string }[]
       /** 並びの項目か向きを読めなかった画像の数 */
       unsortedImageCount: number
       /** 撮り漏れの知らせ（読めたカードの数が所持数より少ないときだけ） */

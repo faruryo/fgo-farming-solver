@@ -26,10 +26,14 @@ export const SKILL_HEADING = {
 } as const
 
 /**
- * スキル強化の画面の「5列の表示」（カードが大きい表示）。7列の表示を、いちばん左の列の顔の左端と
+ * 「6列の表示」と「5列の表示」（カードが大きい表示）。どちらの画面でも、7列の表示を、いちばん左の列の顔の左端と
  * 格子の上の端を軸に、この倍率で広げた配置。読み取らず、見分けて案内するためだけに使う。
+ * 倍率は実物の画像（2796×1290）で、両画面とも顔の当たる位置がいちばん多かった値。
  */
-export const FIVE_COLUMN_LAYOUT = { columns: 5, scale: 1.41 } as const
+export const WIDE_COLUMN_LAYOUTS = [
+  { columns: 6, scale: 1.17 },
+  { columns: 5, scale: 1.41 },
+] as const
 
 /** スキルLv の範囲 */
 export const SKILL_LV_RANGE = { min: 1, max: 10 } as const

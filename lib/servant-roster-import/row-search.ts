@@ -7,9 +7,9 @@
  * 2. 差が上限以下の位置を拾い、段の間隔の半分より近い位置どうしは差がいちばん小さい位置だけを残す
  */
 import { cropCells, integralImage, type RgbaImage } from '../shop-screenshot-import/icon-match'
-import { FACE_MATCH, ROSTER_LAYOUT } from './constants'
+import { FACE_MATCH, ROSTER_LAYOUT, WIDE_COLUMN_LAYOUTS } from './constants'
 import { nearestCandidateDiff, type ScreenCandidates } from './face-match'
-import { fiveColumnGrid, gridTopY, readRosterGrid } from './grid'
+import { gridTopY, readRosterGrid, wideColumnGrid } from './grid'
 import type { FaceCandidate, OcrBox, RosterGrid } from './types'
 
 /** 試す顔の上端の位置（上から順） */
@@ -80,25 +80,25 @@ export const countFaceHits = (
 
 export type RosterLocation =
   | { kind: 'unreadable' }
-  /** スキル強化の画面の5列の表示（読み取らない） */
-  | { kind: 'five-column' }
+  /** 6列・5列の表示（読み取らない） */
+  | { kind: 'wide-columns'; columns: number }
   | { kind: 'located'; grid: RosterGrid; rowTops: number[] }
 
 /**
  * 画像の格子と段。見出しが無いか、段が1つも見つからなければ読めなかった画像（unreadable）。
- * スキル強化の画面では5列の表示の格子でも段を探し、顔の当たる位置が7列より多ければ5列の表示（five-column）
+ * 6列・5列の表示の格子でも段を探し、顔の当たる位置が7列より多い列数があれば、そのうちいちばん多い列数の表示（wide-columns）
  */
 export const locateRoster = (boxes: readonly OcrBox[], image: RgbaImage, screens: ScreenCandidates): RosterLocation => {
   const grid = readRosterGrid(boxes)
   if (grid === 'unreadable') return { kind: 'unreadable' }
   const candidates = screens[grid.screen]
   const rowTops = findRowTops(image, grid, candidates)
-  if (grid.screen === 'skill') {
-    const five = fiveColumnGrid(grid)
-    const fiveTops = findRowTops(image, five, candidates)
-    if (countFaceHits(image, five, fiveTops, candidates) > countFaceHits(image, grid, rowTops, candidates)) {
-      return { kind: 'five-column' }
-    }
+  let best: { columns: number; hits: number } = { columns: ROSTER_LAYOUT.columns, hits: countFaceHits(image, grid, rowTops, candidates) }
+  for (const layout of WIDE_COLUMN_LAYOUTS) {
+    const wide = wideColumnGrid(grid, layout)
+    const hits = countFaceHits(image, wide, findRowTops(image, wide, candidates), candidates)
+    if (hits > best.hits) best = { columns: layout.columns, hits }
   }
+  if (best.columns !== ROSTER_LAYOUT.columns) return { kind: 'wide-columns', columns: best.columns }
   return rowTops.length > 0 ? { kind: 'located', grid, rowTops } : { kind: 'unreadable' }
 }
