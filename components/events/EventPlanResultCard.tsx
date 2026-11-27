@@ -54,7 +54,7 @@ export const EventPlanResultCard: React.FC<Props> = ({
       style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {t('計算結果')}
         </p>
         <Badge
@@ -106,7 +106,7 @@ export const EventPlanResultCard: React.FC<Props> = ({
             {solverResult.result.quests.map(q => (
               <div key={q.id} className="flex justify-between items-center text-xs">
                 <span style={{ color: 'var(--text2)' }}>{q.name}</span>
-                <span className="font-medium" style={{ color: 'var(--text1)' }}>
+                <span className="font-medium" style={{ color: 'var(--text)' }}>
                   {q.lap.toLocaleString()} {t('周')} / {(q.lap * q.ap).toLocaleString()} AP
                 </span>
               </div>

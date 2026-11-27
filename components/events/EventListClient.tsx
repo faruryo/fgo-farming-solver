@@ -169,7 +169,7 @@ const EventCard: React.FC<CardProps> = ({ event, nowSec, statusVariant }) => {
             <FaBox size={14} style={{ color: 'var(--gold)' }} />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-sm truncate" style={{ color: 'var(--text1)' }}>
+            <p className="font-semibold text-sm truncate" style={{ color: 'var(--text)' }}>
               {event.name}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>

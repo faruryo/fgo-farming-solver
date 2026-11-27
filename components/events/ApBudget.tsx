@@ -32,7 +32,7 @@ export const StatBlock: React.FC<{ label: string; value: React.ReactNode; sub?: 
     <p className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text3)' }}>
       {label}
     </p>
-    <p className="text-xl font-bold" style={{ color: 'var(--text1)' }}>
+    <p className="text-xl font-bold" style={{ color: 'var(--text)' }}>
       {value}
     </p>
     {sub && (

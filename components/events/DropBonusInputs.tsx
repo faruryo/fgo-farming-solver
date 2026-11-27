@@ -39,7 +39,7 @@ export const DropBonusInputs: React.FC<{
       className="rounded-md flex flex-col gap-2 px-4 py-3"
       style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
     >
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
         {t('event-shop-bonus-title', 'ドロップ増加礼装')}
       </h3>
       <p className="text-xs" style={{ color: 'var(--text2)' }}>

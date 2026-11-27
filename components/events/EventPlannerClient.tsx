@@ -416,7 +416,7 @@ export const EventPlannerClient: React.FC<Props> = ({ event, items }) => {
                   className="rounded-lg p-4 flex flex-col gap-3"
                   style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
                 >
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
                     {t('育成インパクト')}
                   </p>
                   <div className="flex items-center gap-4">

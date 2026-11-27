@@ -60,7 +60,7 @@ export const StockTargetSettings: React.FC = () => {
       }}
     >
       <div className="mb-1">
-        <p className="text-xs font-semibold" style={{ color: 'var(--text1)' }}>
+        <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
           {t('common:inventory-baseline-settings', '在庫基準の設定')}
         </p>
       </div>
@@ -90,7 +90,7 @@ export const StockTargetSettings: React.FC = () => {
           <React.Fragment key={group}>
             <span
               className="text-[11px] font-medium"
-              style={{ color: 'var(--text1)' }}
+              style={{ color: 'var(--text)' }}
             >
               {groupLabel(group)}
             </span>

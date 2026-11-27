@@ -19,7 +19,7 @@ export default function QuestDetailPage() {
   useTranslation(['dashboard'])
   const { quests, isLoading } = useDrops()
 
-  const quest = quests?.find(q => q.id === id) as Quest | undefined
+  const quest = quests?.find(q => q.id === id)
   const { waves, isLoading: isWaveLoading } = useQuestWave(quest?.aaQuestId)
 
   if (isLoading) {
@@ -48,7 +48,7 @@ export default function QuestDetailPage() {
     <div className="min-h-screen pb-10 pt-14" style={{ background: 'var(--bg)' }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-10 py-4 border-b backdrop-blur-[10px]"
+        className="sticky top-14 z-10 py-4 border-b backdrop-blur-[10px]"
         style={{ background: 'var(--panel)', borderColor: 'var(--border)' }}
       >
         <div className="max-w-5xl mx-auto px-4">
@@ -111,7 +111,7 @@ export default function QuestDetailPage() {
                               <div
                                 key={eIdx}
                                 className="p-3 rounded-lg border relative overflow-hidden"
-                                style={{ background: 'var(--panel3)', borderColor: 'var(--border)' }}
+                                style={{ background: 'var(--panel2)', borderColor: 'var(--border)' }}
                               >
                                 <div className="flex flex-col gap-1">
                                   <div className="flex justify-between items-center w-full">

@@ -71,7 +71,7 @@ const Header: React.FC<{ summary: EventSummary; box?: EventPlannerEvent }> = ({ 
 }
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <h2 className="text-base font-semibold" style={{ color: 'var(--text1)' }}>
+  <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
     {children}
   </h2>
 )

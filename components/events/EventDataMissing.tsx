@@ -22,7 +22,7 @@ export const EventDataMissing: React.FC<Props> = ({ eventId }) => {
             style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
           >
             <div className="text-4xl mb-4">📦</div>
-            <p className="font-semibold mb-2" style={{ color: 'var(--text1)' }}>
+            <p className="font-semibold mb-2" style={{ color: 'var(--text)' }}>
               {t('データ未取得')}
             </p>
             <p className="text-sm" style={{ color: 'var(--text3)' }}>
