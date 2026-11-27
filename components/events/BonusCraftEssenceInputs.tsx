@@ -108,7 +108,7 @@ const RarityFieldset: React.FC<{
       style={{ border: '1px solid var(--border)' }}
     >
       <legend className="sr-only">{`☆${rarity} ${ceNames(target)}`}</legend>
-      <div className="font-semibold" style={{ color: 'var(--text1)' }}>
+      <div className="font-semibold" style={{ color: 'var(--text)' }}>
         <CraftEssenceLabel target={target} />
       </div>
       <p className="flex flex-wrap items-center gap-x-1.5">

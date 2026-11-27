@@ -253,7 +253,7 @@ const RemainingRowHeading: React.FC<{
         />
       )}
       <SmallIcon src={item?.icon} alt="" />
-      <span className="font-medium" style={{ color: 'var(--text1)' }}>
+      <span className="font-medium" style={{ color: 'var(--text)' }}>
         {name}
       </span>
       {currency && (
@@ -435,7 +435,7 @@ const OwnedRow: React.FC<{
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="flex flex-col">
-    <h3 className="text-xs font-semibold" style={{ color: 'var(--text1)' }}>
+    <h3 className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
       {title}
     </h3>
     <ul>{children}</ul>

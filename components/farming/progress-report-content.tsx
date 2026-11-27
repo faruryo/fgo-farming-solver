@@ -97,9 +97,6 @@ export const ProgressReportContent: React.FC<ProgressReportContentProps> = ({
         <span className={style.labelClassName ?? 'text-sm font-semibold'}>
           {t(style.labelKey)}
         </span>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          tier: {summary.tier}
-        </span>
       </div>
 
       {showFirstTime && <p className="text-sm">{t('progress-first-time')}</p>}

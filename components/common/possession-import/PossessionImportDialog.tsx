@@ -159,7 +159,7 @@ const ReviewCandidateRow: React.FC<{
     <ReviewRowSurface section={row.section} changeClass={row.changeClass} atlasId={row.atlasId}>
       <Checkbox checked={!isExcluded} onCheckedChange={(checked) => onToggleExcluded(!!checked)} />
       <ItemIdentity icon={item?.icon} name={row.name} size={26} />
-      <span className="flex-1 text-xs truncate" title={row.name} style={{ color: 'var(--text1)' }}>
+      <span className="flex-1 text-xs truncate" title={row.name} style={{ color: 'var(--text)' }}>
         {row.name}
       </span>
       {showSign && (

@@ -42,7 +42,7 @@ const PossessionItemRow: React.FC<{
       <span
         className="flex-1 text-xs truncate"
         title={item.name}
-        style={{ color: 'var(--text1)' }}
+        style={{ color: 'var(--text)' }}
       >
         {item.shortName || item.name}
       </span>

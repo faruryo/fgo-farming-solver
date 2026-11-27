@@ -381,7 +381,7 @@ const RowPlanLabel: React.FC<{ plan: RowPlan; count: number }> = ({ plan, count 
       {/* 375px で品目の列を押し広げないよう折り返しを許す。数と「個」の間は NBSP で、「個」だけが次の行に残らない。 */}
       <span>
         {status.kind === 'short' && (
-          <span style={{ color: 'var(--text1)' }}>
+          <span style={{ color: 'var(--text)' }}>
             {plan.purpose === 'reserve'
               ? t('event-shop-status-short-reserve', 'あと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })
               : t('event-shop-status-short', '育成にあと {{n}}\u00a0個', { n: status.shortfall.toLocaleString() })}
@@ -521,7 +521,7 @@ const GroupLabelRow: React.FC<{ children: React.ReactNode; group?: boolean; inde
         colSpan={COLUMN_COUNT}
         scope="colgroup"
         className={className}
-        style={{ color: group ? 'var(--text1)' : 'var(--text3)', background: 'var(--panel)' }}
+        style={{ color: group ? 'var(--text)' : 'var(--text3)', background: 'var(--panel)' }}
       >
         {children}
       </th>
@@ -781,7 +781,7 @@ const CurrencyNeeds: React.FC<{
         const need = needs.find(n => n.costItemId === group.costItemId)
         return (
           <Card key={group.costItemId} className="px-4 py-3 gap-1.5 text-xs">
-            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text)' }}>
               <Icon src={group.costIcon} />
               {label(group)}
             </h3>
@@ -807,7 +807,7 @@ const CurrencyNeeds: React.FC<{
                   cost: (need?.selectedCost ?? 0).toLocaleString(),
                 })}
               </span>
-              <span className="font-semibold" style={{ color: 'var(--text1)' }}>
+              <span className="font-semibold" style={{ color: 'var(--text)' }}>
                 {t('event-shop-need', '必要量 {{need}}', {
                   need: (need?.need ?? 0).toLocaleString(),
                 })}
@@ -857,7 +857,7 @@ const PlanSummary: React.FC<{ plan: ShopCurrencyPlan }> = ({ plan }) => {
     <p
       data-testid="shop-plan-summary"
       className="text-sm font-semibold px-4 py-2 rounded-md"
-      style={{ color: 'var(--text1)', background: 'var(--panel2)', border: '1px solid var(--border)' }}
+      style={{ color: 'var(--text)', background: 'var(--panel2)', border: '1px solid var(--border)' }}
     >
       {text}
     </p>
@@ -879,7 +879,7 @@ const FarmingPlan: React.FC<{
       className="rounded-md flex flex-col gap-3 px-4 py-3"
       style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
     >
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
         {t('event-shop-plan-title', '周回の内訳')}
       </h3>
       {plan.status === 'none' && <Message>{t('event-shop-plan-none', '周回は不要です。')}</Message>}
@@ -936,7 +936,7 @@ const PlanBreakdown: React.FC<{
           ))}
         </tbody>
       </table>
-      <p className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
         {t('event-shop-plan-total', '合計 {{laps}} 周・AP {{ap}}', {
           laps: result.total_lap.toLocaleString(),
           ap: result.total_ap.toLocaleString(),
@@ -1060,7 +1060,7 @@ const PerRunTable: React.FC<{
       className="rounded-md flex flex-col gap-2 px-4 py-3 min-w-0"
       style={{ background: 'var(--panel2)', border: '1px solid var(--border)' }}
     >
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
         {t('event-shop-per-run-title', '1周の獲得量')}
       </h3>
       <div className="overflow-x-auto">

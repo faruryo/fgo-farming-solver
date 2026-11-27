@@ -102,7 +102,7 @@ const ServantPicker: React.FC<{
       <span className="flex items-center gap-1">
         <SmallIcon src={current?.face} alt={current?.name ?? ''} />
         {current && <ClassIcon servant={current} size={18} />}
-        <span style={{ color: 'var(--text1)' }}>
+        <span style={{ color: 'var(--text)' }}>
           {current?.name ?? t('roster-import-no-servant', 'サーヴァントを選んでいません')}
         </span>
       </span>
@@ -319,7 +319,7 @@ const RosterSummary: React.FC<{ result: DoneResult; matched: number; review: num
   const { t } = useTranslation('material')
   return (
     <div className="flex flex-col gap-1 text-xs" style={{ color: 'var(--text2)' }} data-testid="roster-import-summary">
-      <p className="flex flex-wrap gap-x-3 tabular-nums" style={{ color: 'var(--text1)' }}>
+      <p className="flex flex-wrap gap-x-3 tabular-nums" style={{ color: 'var(--text)' }}>
         <span>{t('roster-import-summary-images', '{{count}}枚を読みました', { count: result.imageCount })}</span>
         <span>{t('roster-import-summary-rows', '読み取れた {{matched}} 騎 / 要確認 {{review}} 件', { matched, review })}</span>
         <span>{t('roster-import-summary-newly-owned', '新しく所持になる {{count}} 騎', { count: newlyOwned })}</span>
@@ -416,7 +416,7 @@ const MatchedSection: React.FC<{ count: number; children: () => React.ReactNode 
       <button
         type="button"
         className="flex items-center gap-1 text-xs font-semibold"
-        style={{ color: 'var(--text1)' }}
+        style={{ color: 'var(--text)' }}
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
       >
@@ -476,7 +476,7 @@ export const RosterReviewStage: React.FC<ReviewProps> = ({ result, servants, lev
       )}
       {review.reviewIndices.length > 0 && (
         <section className="flex flex-col">
-          <h3 className="text-xs font-semibold" style={{ color: 'var(--text1)' }}>
+          <h3 className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
             {t('roster-import-review-heading', '要確認（{{count}}）', { count: review.reviewIndices.length })}
           </h3>
           <ul>{review.reviewIndices.map(renderRow)}</ul>
