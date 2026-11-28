@@ -16,6 +16,7 @@ import userEvent from '@testing-library/user-event'
 import { Index } from './index'
 import { makeMaterialCatalogServant, makeItem, makeMaterials } from './test-fixtures'
 import type { ShowBlockedToastParams, ShowTrackingToastParams } from '../../lib/tracking-toast'
+import { isCloudSyncKey } from '../../lib/constants/storage-keys'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -737,5 +738,35 @@ describe('Index - saved view (material/view)', () => {
     await vi.waitFor(() => expect(document.getElementById('svt-1')).not.toBeNull())
     expect(screen.queryByRole('button', { name: '絞り込みを解除' })).toBeNull()
     expect(localStorage.getItem('material/view')).toBe(saved)
+  })
+})
+
+describe('Index - servant-only need (material/servant-result)', () => {
+  const readServantResult = (): Record<string, number> | null =>
+    JSON.parse(localStorage.getItem('material/servant-result') ?? 'null')
+
+  it('rewrites the servant-only need when the current ascension goes up, without Calculate and without touching material/result', async () => {
+    setLocalStorage('material/result', { '100': 999 })
+    const user = userEvent.setup()
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await makeOwned(user)
+    // 再臨 0→4 は 100 を 4+8+12 個
+    await vi.waitFor(() => expect(readServantResult()?.['100']).toBe(24))
+
+    await user.click(getPips()[0]) // 再臨の今を 0 → 1 にすると step 0 の 4 個が要らなくなる
+    await vi.waitFor(() => expect(readServantResult()?.['100']).toBe(20))
+    expect(readServantResult()?.['200']).toBeUndefined()
+    expect(JSON.parse(localStorage.getItem('material/result') ?? 'null')).toEqual({ '100': 999 })
+  })
+
+  it('on a new device, writing the servant-only need does not mark cloud sync dirty', async () => {
+    const keys: string[] = []
+    const listener = (e: Event) => keys.push(((e as CustomEvent).detail as { key: string }).key)
+    window.addEventListener('ls-sync', listener)
+    render(<Index servants={[servant]} materials={materials} items={items} />)
+    await vi.waitFor(() => expect(readServantResult()).toEqual({}))
+    window.removeEventListener('ls-sync', listener)
+    expect(keys.filter((k) => isCloudSyncKey(k))).toEqual([])
+    expect(localStorage.getItem('material/result')).toBeNull()
   })
 })

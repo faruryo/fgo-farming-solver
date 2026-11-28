@@ -15,12 +15,14 @@ import {
   computeBoardAllTarget,
   computeBoardAllUnlocked,
   computePrunedOnNone,
+  computeRouteRetarget,
   computeRouteTargets,
   computeRouteUnlocked,
   deriveClassStatusFromBoard,
   getBlankSquareIds,
   getPlayableSquareIds,
 } from '../lib/class-score/route-actions'
+import { resolveClassStatuses } from '../lib/class-score/class-status'
 import type {
   ClassBoardData,
   ClassBoardSquareStatus,
@@ -254,6 +256,13 @@ const useClassScoreBoardActions = (
     [setState],
   )
 
+  const setSquareRouteRetarget = useCallback(
+    (key: ClassScoreClassKey, targetSquareId: number) => {
+      setState((prev) => updateRouteInState(prev, key, targetSquareId, computeRouteRetarget))
+    },
+    [setState],
+  )
+
   const resetBoardDetail = useCallback(
     (key: ClassScoreClassKey) => {
       setState((prev) => withRemovedBoard(prev, key))
@@ -265,6 +274,7 @@ const useClassScoreBoardActions = (
     setSquareStatus,
     setSquareRouteTarget,
     setSquareRouteUnlocked,
+    setSquareRouteRetarget,
     resetBoardDetail,
   }
 }
@@ -279,6 +289,7 @@ export const useClassScore = () => {
     setSquareStatus,
     setSquareRouteTarget,
     setSquareRouteUnlocked,
+    setSquareRouteRetarget,
     resetBoardDetail,
   } = useClassScoreBoardActions(setState)
 
@@ -300,16 +311,25 @@ export const useClassScore = () => {
   )
 
   const resetAll = useCallback(() => setAllStatus('none'), [setAllStatus])
-  const targetCount = useMemo(() => countStatus(state?.classes, 'target'), [state])
-  const completedCount = useMemo(() => countStatus(state?.classes, 'completed'), [state])
+  // 盤面のあるクラスのステータスは保存値でなく盤面から読むたびに導出する。
+  const resolvedState = useMemo<ClassScoreState>(() => {
+    const cur = state ?? DEFAULT_CLASS_SCORE_STATE
+    return { ...cur, classes: resolveClassStatuses(cur) }
+  }, [state])
+  const targetCount = useMemo(() => countStatus(resolvedState.classes, 'target'), [resolvedState])
+  const completedCount = useMemo(
+    () => countStatus(resolvedState.classes, 'completed'),
+    [resolvedState],
+  )
 
   return {
-    state: state ?? DEFAULT_CLASS_SCORE_STATE,
+    state: resolvedState,
     setState,
     setClassStatus,
     setSquareStatus,
     setSquareRouteTarget,
     setSquareRouteUnlocked,
+    setSquareRouteRetarget,
     resetBoardDetail,
     setAllStatus,
     resetAll,

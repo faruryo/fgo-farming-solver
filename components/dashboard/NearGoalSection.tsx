@@ -12,8 +12,9 @@ import { useDrops } from '../../hooks/use-drops'
 import { useRecentResult } from '../../hooks/use-recent-result'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
-import { countsOrEmpty, recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
+import { countsOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useStockTarget } from '../../hooks/use-stock-target'
+import { useRequiredMaterials } from '../../hooks/use-required-materials'
 import { useActiveCampaigns } from '../../hooks/use-active-campaigns'
 import { useDashboardMeta } from '../../hooks/use-dashboard-meta'
 import { usePodFreeQuests } from '../../hooks/use-pod-free-quests'
@@ -63,11 +64,8 @@ export const NearGoalSection: React.FC<NearGoalSectionProps> = ({ onOpenPossessi
     {},
     { onGet: countsOrEmpty, repairOnGet: true }
   )
-  const [materialResult] = useLocalStorage<Record<string, number>>(
-    STORAGE_KEYS.MATERIAL_RESULT,
-    {},
-    { onGet: recordOrEmpty, lazyWrite: true }
-  )
+  // 必要数は育成ぶんとクラススコアぶんの合算（育成ぶんがまだ無い端末の移行もここで走る）
+  const { total: materialResult } = useRequiredMaterials()
   const { purpose, stockBuffer } = useStockTarget()
 
   const nearGoalEntries = useMemo(() => {

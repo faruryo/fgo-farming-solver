@@ -6,6 +6,8 @@ import {
 } from './types'
 import { getClassBoardData } from './board-loader'
 import { calculateBoardDiffMaterials } from './calculate-board-diff'
+import { getBoardDetailOf, resolveClassStatus } from './class-status'
+import { getPlayableSquareIds } from './route-actions'
 
 const addAmount = (map: Map<string, number>, id: string, amount: number) => {
   map.set(id, (map.get(id) ?? 0) + amount)
@@ -46,31 +48,71 @@ const addBoardDetailMaterials = (
   diff.materials.forEach(({ id, amount }) => addAmount(sumMap, id, amount))
 }
 
+const addClassMaterials = (
+  sumMap: Map<string, number>,
+  state: ClassScoreState,
+  key: ClassScoreClassKey,
+) => {
+  if (resolveClassStatus(state, key) !== 'target') return
+  const boardDetail = getBoardDetailOf(state, key)
+  if (boardDetail) {
+    addBoardDetailMaterials(
+      sumMap,
+      key,
+      boardDetail.targetSquareIds ?? [],
+      boardDetail.unlockedSquareIds ?? [],
+    )
+  } else {
+    addBoardTotalMaterials(sumMap, key)
+  }
+}
+
+/**
+ * 1クラスぶんの目標必要素材を求める純関数。
+ * ステータスは {@link resolveClassStatus} で求め、`target` のときだけ計上する。
+ * 盤面（boards）があるクラスは目標かつ未解放のマスぶん、ないクラスは全体の全量。
+ */
+export const sumClassScoreClassMaterials = (
+  state: ClassScoreState,
+  key: ClassScoreClassKey,
+): Record<string, number> => {
+  const sumMap = new Map<string, number>()
+  addClassMaterials(sumMap, state, key)
+  return Object.fromEntries(sumMap)
+}
+
+/**
+ * 1クラスを全マス解放するのに、解放済のマスを除いてあと必要な素材を求める純関数。
+ */
+export const sumClassScoreFullUnlockMaterials = (
+  state: ClassScoreState,
+  key: ClassScoreClassKey,
+): Record<string, number> => {
+  const sumMap = new Map<string, number>()
+  const boardData = getClassBoardData(key)
+  if (!boardData) {
+    addBoardTotalMaterials(sumMap, key)
+  } else {
+    addBoardDetailMaterials(
+      sumMap,
+      key,
+      getPlayableSquareIds(boardData),
+      getBoardDetailOf(state, key)?.unlockedSquareIds ?? [],
+    )
+  }
+  return Object.fromEntries(sumMap)
+}
+
 /**
  * クラススコアの全目標必要素材を合算する純関数。
- * マス単位の詳細設定（boards）があるクラスはその差分を、ないクラスは全体目標（'target'）の全量を合算する。
+ * 各クラスのステータスは盤面（boards）があれば盤面から導出し、`target` のクラスだけを計上する。
+ * 盤面があるクラスは目標かつ未解放のマスぶん、ないクラスは全体目標（'target'）の全量を合算する。
  */
 export const sumClassScoreMaterials = (
   state: ClassScoreState,
 ): Record<string, number> => {
   const sumMap = new Map<string, number>()
-
-  CLASS_SCORE_CLASS_KEYS.forEach((key) => {
-    const boardDetail = state.boards ? Reflect.get(state.boards, key) : undefined
-    const hasDetailTargets = (boardDetail?.targetSquareIds?.length ?? 0) > 0
-
-    if (hasDetailTargets && boardDetail) {
-      addBoardDetailMaterials(
-        sumMap,
-        key,
-        boardDetail.targetSquareIds,
-        boardDetail.unlockedSquareIds ?? [],
-      )
-    } else if (Reflect.get(state.classes, key) === 'target') {
-      addBoardTotalMaterials(sumMap, key)
-    }
-  })
-
+  CLASS_SCORE_CLASS_KEYS.forEach((key) => addClassMaterials(sumMap, state, key))
   return Object.fromEntries(sumMap)
 }
 

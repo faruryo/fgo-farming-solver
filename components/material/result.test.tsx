@@ -51,8 +51,22 @@ vi.mock('../../lib/progress/snapshot-client', () => ({
   saveProgressSnapshot: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('../../hooks/use-material-catalog', () => ({ loadMaterialCatalog: vi.fn() }))
+
 import { saveProgressSnapshot } from '../../lib/progress/snapshot-client'
+import { loadMaterialCatalog } from '../../hooks/use-material-catalog'
+import { createChaldeaState } from '../../hooks/create-chaldea-state'
+import type { MaterialsForServants } from '../../lib/get-materials'
+import type { MaterialCatalogV1 } from '../../lib/material-catalog'
+import { catalogOf, seedServantNeed, servantNeedOf } from '../../hooks/required-materials-test-utils'
 import { Result } from './result'
+
+const catalogMock = vi.mocked(loadMaterialCatalog)
+
+/** 移行後の端末: 育成ぶんが amounts になるサーヴァントの状態と育成ぶんを置き、その素材データを返させる。 */
+const seedNeed = (amounts: Record<string, number>) => {
+  catalogMock.mockResolvedValue(seedServantNeed(amounts))
+}
 
 // gold, largeCategory 強化素材(normal group) → DEFAULT_STOCK_BUFFER.normal.gold = 60
 const itemA: EnrichedItem = {
@@ -107,6 +121,8 @@ const submitAndReadUrl = async () => {
 
 beforeEach(() => {
   localStorage.clear()
+  catalogMock.mockReset()
+  catalogMock.mockReturnValue(new Promise(() => {}))
   search.query = ''
   push.mockClear()
   vi.mocked(saveProgressSnapshot).mockClear()
@@ -119,7 +135,7 @@ afterEach(() => {
 describe('goSolver — goal A/B transport (5.1)', () => {
   it('reserveは在庫基準までの単一目標を送る', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    seedNeed({ '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
     const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:60,10:147')
@@ -128,7 +144,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 
   it('reserveでは未入力の対象素材を0個として送らない', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     const fetchMock = stubFetch()
 
@@ -139,7 +155,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 
   it('reserveのカードは育成必要数と在庫基準の最大値を表示する', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '100': 100 })
+    seedNeed({ '100': 100 })
     setLocalStorage('posession', { '100': 0 })
 
     render(<Result items={items} quests={quests} />)
@@ -151,7 +167,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 
   it('reserveでは未入力素材を不足として数えない', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    seedNeed({ '100': 5, '200': 3 })
     setLocalStorage('posession', { '200': 3 })
 
     render(<Result items={items} quests={quests} />)
@@ -162,7 +178,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 
   it('reserveの不足フィルタは有限目標の不足を使う', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '200': 3 })
+    seedNeed({ '200': 3 })
     setLocalStorage('posession', { '200': 3 })
 
     render(<Result items={items} quests={quests} />)
@@ -173,7 +189,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 
   it('stockEnabled OFF: sends items only, no itemsStock', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    seedNeed({ '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
     const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:5')
@@ -184,7 +200,7 @@ describe('goSolver — goal A/B transport (5.1)', () => {
 describe('goSolver — ストック込みの印', () => {
   it('reserveで送った要求には stockIncluded=true が付く', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    seedNeed({ '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
     const url = await submitAndReadUrl()
     expect(url.searchParams.get('stockIncluded')).toBe('true')
@@ -192,7 +208,7 @@ describe('goSolver — ストック込みの印', () => {
 
   it('trainingで送った要求には stockIncluded が付かない', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'training')
-    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    seedNeed({ '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 0, '200': 3 })
     const url = await submitAndReadUrl()
     expect(url.searchParams.get('items')).toBe('20:5')
@@ -203,7 +219,7 @@ describe('goSolver — ストック込みの印', () => {
 describe('goSolver — quest exclusion (5.2)', () => {
   it('sends only the checked (non-excluded) quest ids, as full ids not prefixes', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     setLocalStorage('excludedQuests', ['1A02'])
     const fetchMock = stubFetch()
@@ -220,7 +236,7 @@ describe('goSolver — quest exclusion (5.2)', () => {
 describe('goSolver — boundary cases (5.3)', () => {
   it('(a) reserve目標だけ不足する場合も単一itemsで送る', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '200': 3 })
+    seedNeed({ '200': 3 })
     setLocalStorage('posession', { '200': 3 })
     const fetchMock = stubFetch()
 
@@ -237,7 +253,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
   it('(b) goal A=0 and goal B=0: submission is blocked, fetch is not called, validation message is shown', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', {})
+    seedNeed({})
     setLocalStorage('posession', {})
     const fetchMock = stubFetch()
 
@@ -254,7 +270,7 @@ describe('goSolver — boundary cases (5.3)', () => {
 
   it('(c) zero quests selected: submission is blocked and fetch is not called', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     setLocalStorage('excludedQuests', allQuestIds)
     const fetchMock = stubFetch()
@@ -295,7 +311,7 @@ describe('result sections', () => {
 describe('goSolver — recovers from a failed submission', () => {
   it('clears the loading state after fetch rejects, so the user can retry', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const fetchMock = vi.fn().mockRejectedValue(new Error('network down'))
@@ -321,7 +337,7 @@ describe('goSolver — result visibility', () => {
 
   it('submits isPublic=true when unauthenticated even if defaultPublic=false is in localStorage', async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     localStorage.setItem('farming/defaultPublic', 'false')
 
@@ -335,7 +351,7 @@ describe('goSolver — result visibility', () => {
       status: 'authenticated',
     })
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     localStorage.setItem('farming/defaultPublic', 'false')
 
@@ -346,7 +362,7 @@ describe('goSolver — result visibility', () => {
   it('disables solve button while session status is loading', async () => {
     mockSession.mockReturnValue({ data: null, status: 'loading' })
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
 
     render(<Result items={items} quests={quests} />)
@@ -358,7 +374,7 @@ describe('goSolver — result visibility', () => {
 describe('goSolver — progress snapshot', () => {
   const solveSuccessfully = async () => {
     setLocalStorage('efficiency/stockEnabled', false)
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', {})
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -419,7 +435,7 @@ describe('所持数の保存 — 未入力を0個として書かない (#263)', 
   })
 
   it('未入力の欄を触って離しても保存しない', async () => {
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     render(<Result items={items} quests={quests} />)
     await screen.findByText('金素材A')
     expect(ownedCell()).toHaveTextContent('—')
@@ -428,7 +444,7 @@ describe('所持数の保存 — 未入力を0個として書かない (#263)', 
   })
 
   it('入力済みの欄を空欄にすると品目ごと消える', async () => {
-    setLocalStorage('material/result', { '100': 5, '200': 3 })
+    seedNeed({ '100': 5, '200': 3 })
     setLocalStorage('posession', { '100': 10, '200': 3 })
     render(<Result items={items} quests={quests} />)
     await screen.findByText('10')
@@ -437,7 +453,7 @@ describe('所持数の保存 — 未入力を0個として書かない (#263)', 
   })
 
   it('0 と入力すれば 0 個として保存する', async () => {
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     render(<Result items={items} quests={quests} />)
     await screen.findByText('金素材A')
     await blurWith('0')
@@ -446,7 +462,7 @@ describe('所持数の保存 — 未入力を0個として書かない (#263)', 
 
   it('reserveで空欄にした素材は、その場で不足の対象から外れる', async () => {
     setLocalStorage('efficiency/farmingPurpose', 'reserve')
-    setLocalStorage('material/result', { '100': 5 })
+    seedNeed({ '100': 5 })
     setLocalStorage('posession', { '100': 0 })
     render(<Result items={items} quests={quests} />)
     expect(await screen.findByText('−60')).toBeInTheDocument()
@@ -455,5 +471,128 @@ describe('所持数の保存 — 未入力を0個として書かない (#263)', 
     await user.clear(one(document, '.c-mat-count-input'))
     await user.tab()
     await waitFor(() => expect(screen.queryByText('−60')).toBeNull())
+  })
+})
+
+describe('必要数（育成ぶん + クラススコアぶん）', () => {
+  // セイバーピース。ascension(3xx)・silver の先頭なので API ID は 60。
+  const piece: EnrichedItem = {
+    id: 7001,
+    name: 'セイバーピース',
+    type: 'tdLvUp',
+    uses: 'ascension',
+    detail: '',
+    icon: '',
+    background: 'silver',
+    priority: 301,
+    dropPriority: 0,
+    largeCategory: 'モニュピ',
+    category: 'ピース',
+  }
+  const withPiece = [...items, piece]
+  const saberTarget = {
+    classes: {
+      saber: 'target', archer: 'none', lancer: 'none', rider: 'none', caster: 'none',
+      assassin: 'none', berserker: 'none', extra1: 'none', extra2: 'none',
+    },
+  }
+  const requiredOf = (name: string) => {
+    const card = screen.getByText(name).closest('.c-mat-card')
+    if (!card) throw new Error(`no card for ${name}`)
+    return card.querySelector('.c-mat-count-val.required')?.textContent
+  }
+  const deferredCatalog = () => {
+    let resolve!: (v: MaterialCatalogV1) => void
+    catalogMock.mockReturnValue(new Promise<MaterialCatalogV1>((r) => { resolve = r }))
+    return (materials: MaterialsForServants) => resolve(catalogOf(materials))
+  }
+  const readServantResult = () => JSON.parse(localStorage.getItem('material/servant-result') ?? 'null') as unknown
+
+  it('クラススコアの目標を増やしたあとでも、内訳のクラススコアぶんは全体を上回らない', async () => {
+    seedNeed({ '7001': 10 })
+    setLocalStorage('classScore', saberTarget)
+    render(<Result items={withPiece} quests={quests} />)
+    await waitFor(() => expect(requiredOf('セイバーピース')).toBe('150'))
+    expect(screen.getByText('(内CS: 140)')).toBeInTheDocument()
+  })
+
+  it('移行前の端末でクエリなしに開くと、取得中は旧値を表示し、取得後に移行して合算の値に切り替わる', async () => {
+    const { state, materials } = servantNeedOf({ '7001': 10 })
+    setLocalStorage('material', state)
+    setLocalStorage('material/result', { '7001': 100 })
+    setLocalStorage('classScore', saberTarget)
+    const resolve = deferredCatalog()
+    render(<Result items={withPiece} quests={quests} />)
+
+    await waitFor(() => expect(requiredOf('セイバーピース')).toBe('100'))
+    // 旧値は合算済みなので、クラススコアぶんの内訳を出さない（足しもしない）
+    expect(screen.queryByText(/内CS/)).toBeNull()
+    expect(localStorage.getItem('material/servant-result')).toBeNull()
+
+    resolve(materials)
+    await waitFor(() => expect(requiredOf('セイバーピース')).toBe('150'))
+    expect(screen.getByText('(内CS: 140)')).toBeInTheDocument()
+    expect(readServantResult()).toEqual({ '7001': 10, '1': 0 })
+  })
+
+  it('取得に失敗したら旧値のまま表示し、古い可能性を出す', async () => {
+    const { state } = servantNeedOf({ '7001': 10 })
+    setLocalStorage('material', state)
+    setLocalStorage('material/result', { '7001': 100 })
+    catalogMock.mockRejectedValue(new Error('offline'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(<Result items={withPiece} quests={quests} />)
+    expect(await screen.findByText(/必要数が古い可能性があります/)).toBeInTheDocument()
+    expect(requiredOf('セイバーピース')).toBe('100')
+  })
+
+  it('移行前の端末でクエリ付きに開くと、取得中はクエリの値を使い、求めた育成ぶんが空でなければそれに切り替える', async () => {
+    search.query = '100=7'
+    const { state, materials } = servantNeedOf({ '100': 5 })
+    setLocalStorage('material', state)
+    setLocalStorage('material/result', { '100': 99 })
+    const resolve = deferredCatalog()
+    render(<Result items={items} quests={quests} />)
+
+    await waitFor(() => expect(requiredOf('金素材A')).toBe('7'))
+    resolve(materials)
+    await waitFor(() => expect(requiredOf('金素材A')).toBe('5'))
+    // クエリの値は保存しない
+    expect(readServantResult()).toEqual({ '100': 5, '1': 0 })
+  })
+
+  it('移行後の端末でクエリ付きに開くと、求めた育成ぶんが空ならクエリの値を育成ぶんとして使い、保存しない', async () => {
+    search.query = '7001=7'
+    setLocalStorage('material', createChaldeaState(['1']))
+    setLocalStorage('material/servant-result', {})
+    setLocalStorage('classScore', saberTarget)
+    render(<Result items={withPiece} quests={quests} />)
+
+    await waitFor(() => expect(requiredOf('セイバーピース')).toBe('147'))
+    expect(screen.getByText('(内CS: 140)')).toBeInTheDocument()
+    expect(readServantResult()).toEqual({})
+    expect(catalogMock).not.toHaveBeenCalled()
+  })
+
+  it('移行後の端末でクエリ付きに開いても、求めた育成ぶんが空でなければそれを使う', async () => {
+    search.query = '100=7'
+    seedNeed({ '100': 5 })
+    render(<Result items={items} quests={quests} />)
+    await waitFor(() => expect(requiredOf('金素材A')).toBe('5'))
+    expect(readServantResult()).toEqual({ '100': 5, '1': 0 })
+  })
+
+  it('ソルバー連携のパラメータにも、育成ぶんとクラススコアぶんを合算した値が渡る', async () => {
+    setLocalStorage('efficiency/stockEnabled', false)
+    setLocalStorage('efficiency/farmingPurpose', 'training')
+    seedNeed({ '7001': 10 })
+    setLocalStorage('material/result', { '7001': 999 })
+    setLocalStorage('classScore', saberTarget)
+    const fetchMock = stubFetch()
+    render(<Result items={withPiece} quests={quests} />)
+    await waitFor(() => expect(requiredOf('セイバーピース')).toBe('150'))
+    await userEvent.click(await submitButton())
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+    expect(solveCallUrl(fetchMock).searchParams.get('items')).toBe('60:150')
   })
 })

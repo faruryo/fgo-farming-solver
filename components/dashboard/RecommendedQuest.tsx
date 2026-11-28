@@ -9,8 +9,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { QuestIdentity } from '../common/QuestIdentity'
 import { ItemIdentity } from '../common/ItemIdentity'
 import { useDrops } from '../../hooks/use-drops'
-import { recordOrEmpty, useLocalStorage } from '../../hooks/use-local-storage'
 import { useRecentResult } from '../../hooks/use-recent-result'
+import { useRequiredMaterials } from '../../hooks/use-required-materials'
 import { useSpotIcons } from '../../hooks/use-spot-icons'
 import { useDashboardResult } from '../../hooks/use-dashboard-result'
 import { useDashboardSortMode } from '../../hooks/use-dashboard-sort-mode'
@@ -29,11 +29,8 @@ const SORT_MODE_STORAGE_KEY = STORAGE_KEYS.DASHBOARD_RECOMMENDED_QUEST_SORT_MODE
 
 export const RecommendedQuest: React.FC = () => {
   const { t } = useTranslation(['dashboard'])
-  const [materialResult] = useLocalStorage<Record<string, number>>(
-    STORAGE_KEYS.MATERIAL_RESULT,
-    {},
-    { onGet: recordOrEmpty, lazyWrite: true }
-  )
+  // 必要数は育成ぶんとクラススコアぶんの合算（育成ぶんがまだ無い端末の移行もここで走る）
+  const { total: materialResult } = useRequiredMaterials()
   const drops = useDrops()
   const { items, quests, drop_rates, isLoading: dropsLoading } = drops
   const { result: recentResult, loading: resultLoading } = useRecentResult()

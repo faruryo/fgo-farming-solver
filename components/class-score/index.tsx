@@ -25,10 +25,16 @@ import {
   CLASS_SCORE_CLASS_KEYS,
   ClassScoreBoardDefinition,
   ClassScoreClassKey,
+  ClassScoreState,
   ClassScoreStatus,
 } from '../../lib/class-score/types'
-import { sumClassScoreMaterials } from '../../lib/class-score/sum'
-import { ClassCard } from './class-card'
+import {
+  sumClassScoreClassMaterials,
+  sumClassScoreFullUnlockMaterials,
+  sumClassScoreMaterials,
+} from '../../lib/class-score/sum'
+import { countClassSquares, resolveClassStatus } from '../../lib/class-score/class-status'
+import { ClassCard, type ClassCardMaterialsKind } from './class-card'
 import { ClassScoreSummary } from './summary-card'
 import { ResetAlertDialog } from './reset-alert-dialog'
 
@@ -36,16 +42,26 @@ const BOARD_MAP = new Map<ClassScoreClassKey, ClassScoreBoardDefinition>(
   Object.values(CLASS_SCORE_BOARDS).map((board) => [board.key, board]),
 )
 
-const getClassStatus = (
-  classes: Partial<Record<ClassScoreClassKey, ClassScoreStatus>> | undefined,
-  key: ClassScoreClassKey,
-): ClassScoreStatus => {
-  if (!classes) return 'none'
-  const val: unknown = Reflect.get(classes, key)
-  if (val === 'target' || val === 'completed' || val === 'none') {
-    return val
+type ClassCardView = {
+  status: ClassScoreStatus
+  materials: Record<string, number> | null
+  materialsKind: ClassCardMaterialsKind
+}
+
+/** 目標のクラスは目標ぶん、未設定のクラスは全マス解放ぶん、解放済のクラスは出さない。 */
+const buildClassCardView = (state: ClassScoreState, key: ClassScoreClassKey): ClassCardView => {
+  const status = resolveClassStatus(state, key)
+  if (status === 'target') {
+    return { status, materials: sumClassScoreClassMaterials(state, key), materialsKind: 'target' }
   }
-  return 'none'
+  if (status === 'none') {
+    return {
+      status,
+      materials: sumClassScoreFullUnlockMaterials(state, key),
+      materialsKind: 'full-unlock',
+    }
+  }
+  return { status, materials: null, materialsKind: 'full-unlock' }
 }
 
 type HeaderActionsProps = {
@@ -228,15 +244,16 @@ export const ClassScoreIndex: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {CLASS_SCORE_CLASS_KEYS.map((key: ClassScoreClassKey) => {
             const board = BOARD_MAP.get(key)
-            const status = getClassStatus(state.classes, key)
-            const boardDetail = state.boards ? Reflect.get(state.boards, key) : undefined
             if (!board) return null
+            const view = buildClassCardView(state, key)
             return (
               <ClassCard
                 key={key}
                 board={board}
-                status={status}
-                boardDetail={boardDetail}
+                status={view.status}
+                squareCounts={countClassSquares(state, key)}
+                materials={view.materials}
+                materialsKind={view.materialsKind}
                 onChangeStatus={(newStatus) => setClassStatus(key, newStatus)}
               />
             )

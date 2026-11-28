@@ -6,7 +6,7 @@ import { useLocalStorage } from './use-local-storage'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 import type { MaterialsForServants } from '../lib/get-materials'
 import { loadMaterialCatalog } from './use-material-catalog'
-import { calculateTotalRequiredMaterials } from '../lib/class-score/calculate-total'
+import { computeServantResult, resolveRequiredMaterials } from '../lib/required-materials'
 import { classScoreStateOrDefault } from '../lib/class-score/read-state'
 import { sumClassScoreMaterials } from '../lib/class-score/sum'
 import { DEFAULT_CLASS_SCORE_STATE, type ClassScoreState } from '../lib/class-score/types'
@@ -108,7 +108,7 @@ export const useRosterNeed = (): RosterNeed => {
       status: 'ready',
       chaldeaState,
       materialsForServants,
-      totalNeed: toNeedMap(calculateTotalRequiredMaterials(chaldeaState, materialsForServants, classScoreState)),
+      totalNeed: totalNeedOf(chaldeaState, materialsForServants, classScoreState),
     })
     if (!idsKey) return hasClassScore ? ready(NO_MATERIALS) : { status: 'empty' }
     if (!fetched || fetched.ids !== idsKey) return { status: 'loading' }
@@ -116,6 +116,21 @@ export const useRosterNeed = (): RosterNeed => {
     return ready(fetched.materials)
   }, [loaded, idsKey, fetched, chaldeaState, classScoreState, hasClassScore])
 }
+
+/** 育成ぶん（今の状態から求めた値）とクラススコアぶんを、ほかの画面と同じ合算の手順で足す。 */
+const totalNeedOf = (
+  chaldeaState: ChaldeaState,
+  materials: MaterialsForServants,
+  classScoreState: ClassScoreState,
+): Map<number, number> =>
+  toNeedMap(
+    resolveRequiredMaterials({
+      servantResult: computeServantResult(chaldeaState, materials),
+      servantCurrent: true,
+      legacyResult: null,
+      classScoreState,
+    }).total,
+  )
 
 const toNeedMap = (amounts: Record<string, number>): Map<number, number> =>
   new Map(

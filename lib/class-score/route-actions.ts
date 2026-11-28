@@ -233,10 +233,25 @@ export const computeBoardAllUnlocked = (
 })
 
 /**
+ * 起点から指定マスまでの経路上のマスを、解放済のものも含めて「目標」に戻す純関数
+ * - 経路上の実サインマスを「目標」に追加し、「解放済」から外す（中継点blankマスは除外）。
+ * - 経路の外のマスは変えない。
+ */
+export const computeRouteRetarget = (
+  curBoard: ClassBoardDetailState | undefined,
+  path: number[],
+  blankSquareIds: Set<number> = new Set(),
+): ClassBoardDetailState =>
+  applyRouteAction(curBoard, path, blankSquareIds, (sqId, unlocked, targets) => {
+    unlocked.delete(sqId)
+    targets.add(sqId)
+  })
+
+/**
  * 盤面の状態からクラススコア全体のステータス（'none' | 'target' | 'completed'）を導出する純関数
  * - 全実サインマスが解放済 -> 'completed'
- * - 全実サインマスが解放済または目標（かつ目標が1つ以上） -> 'target'
- * - それ以外（未設定または一部のみ目標） -> 'none'
+ * - 未解放の目標マスが1つ以上 -> 'target'（全マスが目標でなくてもよい）
+ * - それ以外（目標マスが無い、または目標マスがすべて解放済） -> 'none'
  */
 export const deriveClassStatusFromBoard = (
   board: ClassBoardDetailState | undefined,
@@ -244,16 +259,13 @@ export const deriveClassStatusFromBoard = (
 ): ClassScoreStatus => {
   if (!board || playableSquareIds.length === 0) return 'none'
   const unlockedSet = new Set(board.unlockedSquareIds)
-  const targetSet = new Set(board.targetSquareIds)
+  const playableSet = new Set(playableSquareIds)
 
   const allUnlocked = playableSquareIds.every((id) => unlockedSet.has(id))
   if (allUnlocked) return 'completed'
 
-  const allCovered = playableSquareIds.every(
-    (id) => unlockedSet.has(id) || targetSet.has(id),
+  const hasActiveTarget = board.targetSquareIds.some(
+    (id) => playableSet.has(id) && !unlockedSet.has(id),
   )
-  if (allCovered && targetSet.size > 0) return 'target'
-
-  return 'none'
+  return hasActiveTarget ? 'target' : 'none'
 }
-

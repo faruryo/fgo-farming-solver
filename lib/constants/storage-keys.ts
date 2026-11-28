@@ -33,6 +33,12 @@ export const STORAGE_KEYS = {
   SERVANT_LEVELS: 'servantLevels',
 
   // Local/UI-only state and metadata
+  /**
+   * 育成ぶんの必要数（サーヴァント育成だけ。クラススコアぶんは含めない）。
+   * 同期されるサーヴァントの状態から各端末で求め直す導出値なのでクラウド同期しない。
+   * 旧 `material/result` は育成ぶんとクラススコアぶんが混ざった値で、移行前のデータを読むためだけに残す。
+   */
+  MATERIAL_SERVANT_RESULT: 'material/servant-result',
   TRACKING_MODE: 'material/tracking-mode',
   TRACKING_SUGGEST_DISMISSED: 'material/tracking-suggest-dismissed',
   MOCK_CLOUD: 'fgo_mock_cloud_data',

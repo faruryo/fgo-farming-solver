@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChaldeaState } from '../../hooks/create-chaldea-state'
 import { MaterialsForServants } from '../../lib/get-materials'
-import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
+import { computeServantResult } from '../../lib/required-materials'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
 
 export const CalcButton = ({
@@ -23,12 +23,12 @@ export const CalcButton = ({
   const { t } = useTranslation('material')
   const calc = () => {
     setCalculating(true)
-    const result = calculateTotalRequiredMaterials(state, materials)
-    localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify(result))
-    // Notify change tracking (dirty metadata / auto-save) — direct setItem
-    // is invisible to the cloud-sync modification listener otherwise.
+    // 育成ぶんだけを保存する。クラススコアぶんは読むときに足す。
+    const result = computeServantResult(state, materials)
+    localStorage.setItem(STORAGE_KEYS.MATERIAL_SERVANT_RESULT, JSON.stringify(result))
+    // 同じ画面の読み手に知らせる（同期の対象外のキーなので未保存の変更にはならない）
     window.dispatchEvent(
-      new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.MATERIAL_RESULT } })
+      new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.MATERIAL_SERVANT_RESULT } })
     )
     router.push('/material/result')
   }
