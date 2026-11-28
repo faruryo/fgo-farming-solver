@@ -233,6 +233,7 @@
   "material": {
     "class-score-link": "Class Score Settings",
     "class-score-breakdown-note": "(CS: {{amount}})",
+    "required-materials-stale": "Could not load material data, so the required amounts may be out of date. Please reopen this page later.",
     "class-score-materials": "Class Score Materials",
     "class-score-settings-link": "Class Score Settings",
     "catalog-loading": "Loading material data…",
@@ -880,14 +881,20 @@
       "target": "Target",
       "completed": "Completed",
       "none": "None",
-      "detail-target": "{{count}} Signs Targeted"
+      "detail-target": "{{count}} Signs Targeted",
+      "all-target": "All Signs Targeted",
+      "square-counts": "Unlocked {{unlocked}} / Target {{target}} / Remaining {{remaining}}",
+      "class-actions": "Actions for the whole class"
     },
     "action": {
       "target": "Target",
       "completed": "Completed",
       "none": "None",
       "viewResult": "View Results",
-      "open-board-map": "Open Board Map"
+      "open-board-map": "Open Board Map",
+      "all-target": "Target All Signs",
+      "all-completed": "Unlock All Signs",
+      "clear-all": "Clear All"
     },
     "board": {
       "back": "Back to List",
@@ -924,7 +931,8 @@
         "unlocked": "Unlocked",
         "route-target": "Route Target",
         "route-unlocked": "Route Unlocked",
-        "route-help": "※Target & Unlocked apply to the shortest route from the start."
+        "route-help": "※Target & Unlocked apply to the shortest route from the start.",
+        "route-retarget": "Set Route Back to Target (incl. Unlocked)"
       },
       "action": {
         "route-target": "Batch Target Route from Start",
@@ -936,6 +944,13 @@
       "show": "Show Material Details",
       "generic": "Standard Materials",
       "pieces": "Pieces & Monuments"
+    },
+    "card": {
+      "materials-target": "Required for Targets",
+      "materials-full-unlock": "Required to Unlock All",
+      "qp-oku": "{{value}} x 100M",
+      "count-unit": "{{count}}",
+      "torch-total": "{{count}} total"
     },
     "dialog": {
       "cancel": "Cancel",

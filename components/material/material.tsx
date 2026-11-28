@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
+import { useRequiredMaterials } from '../../hooks/use-required-materials'
 import { getClassNode } from '../../hooks/use-servant-tree'
 import { useChecked } from '../../hooks/use-checked-from-chaldea-state'
 import { useCheckboxTree } from '../../hooks/use-checkbox-tree'
@@ -39,6 +40,8 @@ export const Material = ({
 }: MaterialProps) => {
   const ids = useMemo(() => servants.map(({ id }) => id.toString()), [servants])
   const [chaldeaState, setChaldeaState] = useChaldeaState(ids)
+  // サーヴァントの状態が変わるたびに育成ぶんを書き直す（素材計算の実行を待たない）
+  useRequiredMaterials(materials)
   const currentClassServants = useMemo(
     () => servants.filter((servant) => servant.className == className),
     [className, servants]

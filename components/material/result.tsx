@@ -24,8 +24,10 @@ import {
   toStockItemLike,
 } from '../../lib/farming/build-solve-params'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
-import { useClassScore } from '../../hooks/use-class-score'
+import { useRequiredMaterials } from '../../hooks/use-required-materials'
 import { sumClassScoreMaterials } from '../../lib/class-score/sum'
+import { mergeMaterials } from '../../lib/class-score/merge-materials'
+import { servantResultWithQuery } from '../../lib/required-materials'
 import { CheckboxTree } from '../common/checkbox-tree'
 import { CollapsibleSection } from '../common/collapsible-section'
 import { PageHeader } from '../common/page-header'
@@ -188,23 +190,30 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
   const { t } = useTranslation('material')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const query = Object.fromEntries(searchParams?.entries() ?? [])
-  const initialAmounts = Object.fromEntries(
-    Object.entries(query).map(([k, v]) => [
-      k,
-      parseInt(typeof v === 'string' ? v : '0') || 0,
-    ]),
+  const queryString = searchParams?.toString() ?? ''
+  // URL のクエリの必要数。表示に使うだけで保存しない。
+  const queryAmounts = useMemo(
+    () =>
+      Object.fromEntries(
+        Array.from(new URLSearchParams(queryString).entries()).map(([k, v]) => [
+          k,
+          parseInt(v) || 0,
+        ]),
+      ),
+    [queryString],
   )
-  const [amounts] = useLocalStorage<Record<string, number>>(
-    STORAGE_KEYS.MATERIAL_RESULT,
-    initialAmounts,
-  )
-
-  const { state: classScoreState } = useClassScore()
-  const classScoreAmounts = useMemo(
-    () => sumClassScoreMaterials(classScoreState),
-    [classScoreState],
-  )
+  const required = useRequiredMaterials()
+  // クエリ付きで開いたときは、今の状態から求めた育成ぶんが空（または未確定）ならクエリの値を育成ぶんとして使う。
+  const { amounts, classScoreAmounts } = useMemo(() => {
+    if (Object.keys(queryAmounts).length === 0) {
+      return { amounts: required.total, classScoreAmounts: required.classScore }
+    }
+    const cs = sumClassScoreMaterials(required.classScoreState)
+    return {
+      amounts: mergeMaterials(servantResultWithQuery(required.computedServant, queryAmounts), cs),
+      classScoreAmounts: cs,
+    }
+  }, [queryAmounts, required])
 
   const {
     purpose,
@@ -639,6 +648,18 @@ export const Result = ({ items = [], quests = [] }: MaterialResultProps) => {
               </div>
             }
           />
+
+          {required.stale && (
+            <Alert>
+              <AlertCircle />
+              <AlertDescription>
+                {t(
+                  'required-materials-stale',
+                  '素材データを取得できなかったため、必要数が古い可能性があります。時間をおいて開き直してください。',
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {displayedItems.length === 0 ? (
             <div className="c-empty">

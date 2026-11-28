@@ -177,6 +177,7 @@ const useBoardViewSelection = (board: ClassBoardData) => {
     setSquareStatus,
     setSquareRouteTarget,
     setSquareRouteUnlocked,
+    setSquareRouteRetarget,
     resetBoardDetail,
     setClassStatus,
   } = useClassScore()
@@ -221,6 +222,7 @@ const useBoardViewSelection = (board: ClassBoardData) => {
     setSquareStatus,
     setSquareRouteTarget,
     setSquareRouteUnlocked,
+    setSquareRouteRetarget,
     resetBoardDetail,
   }
 }
@@ -236,6 +238,7 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
     setSquareStatus,
     setSquareRouteTarget,
     setSquareRouteUnlocked,
+    setSquareRouteRetarget,
     resetBoardDetail,
   } = useBoardViewSelection(board)
 
@@ -280,6 +283,7 @@ export const BoardView: React.FC<{ board: ClassBoardData }> = ({ board }) => {
         }}
         onSetRouteTarget={(sqId) => setSquareRouteTarget(board.key, sqId)}
         onSetRouteUnlocked={(sqId) => setSquareRouteUnlocked(board.key, sqId)}
+        onSetRouteRetarget={(sqId) => setSquareRouteRetarget(board.key, sqId)}
       />
       </div>
     </div>

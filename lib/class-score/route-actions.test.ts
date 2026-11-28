@@ -3,6 +3,7 @@ import {
   computeBoardAllTarget,
   computeBoardAllUnlocked,
   computePrunedOnNone,
+  computeRouteRetarget,
   computeRouteTargets,
   computeRouteUnlocked,
   deriveClassStatusFromBoard,
@@ -87,7 +88,11 @@ describe('route-actions', () => {
 
     it('パスに含まれる中継点（blankマス）は解放済に追加しない', () => {
       const blankIds = new Set([90, 91])
-      const result = computeRouteUnlocked(undefined, [1, 90, 2, 91, 3], blankIds)
+      const result = computeRouteUnlocked(
+        undefined,
+        [1, 90, 2, 91, 3],
+        blankIds,
+      )
       expect(numSort(result.unlockedSquareIds)).toEqual([1, 2, 3])
       expect(result.targetSquareIds).toEqual([])
     })
@@ -200,8 +205,24 @@ describe('route-actions', () => {
 
     it('board が undefined または空の場合は none を返す', () => {
       expect(deriveClassStatusFromBoard(undefined, playables)).toBe('none')
+      // 同期された壊れた保存値（配列の欠損・object 以外）でも例外を投げない
       expect(
-        deriveClassStatusFromBoard({ unlockedSquareIds: [], targetSquareIds: [] }, playables),
+        deriveClassStatusFromBoard(
+          { unlockedSquareIds: [1] } as unknown as ClassBoardDetailState,
+          playables,
+        ),
+      ).toBe('none')
+      expect(
+        deriveClassStatusFromBoard(
+          'x' as unknown as ClassBoardDetailState,
+          playables,
+        ),
+      ).toBe('none')
+      expect(
+        deriveClassStatusFromBoard(
+          { unlockedSquareIds: [], targetSquareIds: [] },
+          playables,
+        ),
       ).toBe('none')
     })
 
@@ -227,12 +248,68 @@ describe('route-actions', () => {
       expect(deriveClassStatusFromBoard(mixed, playables)).toBe('target')
     })
 
-    it('一部のみ目標で残りが未設定の場合は none を返す（個別指定状態）', () => {
+    it('一部のみ目標で残りが未設定でも、未解放の目標マスがあれば target を返す', () => {
       const partial: ClassBoardDetailState = {
         unlockedSquareIds: [1],
         targetSquareIds: [2],
       }
-      expect(deriveClassStatusFromBoard(partial, playables)).toBe('none')
+      expect(deriveClassStatusFromBoard(partial, playables)).toBe('target')
+    })
+
+    it('目標マスがすべて解放済で、全マス解放済でなければ none を返す', () => {
+      const reached: ClassBoardDetailState = {
+        unlockedSquareIds: [1, 2],
+        targetSquareIds: [2],
+      }
+      expect(deriveClassStatusFromBoard(reached, playables)).toBe('none')
+    })
+
+    it('目標マスがすべて解放済で、全マス解放済なら completed を返す', () => {
+      const all: ClassBoardDetailState = {
+        unlockedSquareIds: [1, 2, 3, 4, 5],
+        targetSquareIds: [5],
+      }
+      expect(deriveClassStatusFromBoard(all, playables)).toBe('completed')
+    })
+
+    it('実サインマスでない目標（中継点など）だけでは target にしない', () => {
+      const blankOnly: ClassBoardDetailState = {
+        unlockedSquareIds: [],
+        targetSquareIds: [99],
+      }
+      expect(deriveClassStatusFromBoard(blankOnly, playables)).toBe('none')
+    })
+  })
+
+  describe('computeRouteRetarget', () => {
+    it('経路上の解放済マスを目標に戻し、経路の外のマスは変えない', () => {
+      const initial: ClassBoardDetailState = {
+        unlockedSquareIds: [1, 2, 7],
+        targetSquareIds: [8],
+      }
+      const result = computeRouteRetarget(initial, [1, 2, 3])
+      expect(numSort(result.unlockedSquareIds)).toEqual([7])
+      expect(numSort(result.targetSquareIds)).toEqual([1, 2, 3, 8])
+    })
+
+    it('経路上の中継点（blankマス）は目標にも解放済にもしない', () => {
+      const initial: ClassBoardDetailState = {
+        unlockedSquareIds: [1],
+        targetSquareIds: [],
+      }
+      const result = computeRouteRetarget(initial, [1, 100, 3], new Set([100]))
+      expect(result.unlockedSquareIds).toEqual([])
+      expect(numSort(result.targetSquareIds)).toEqual([1, 3])
+    })
+
+    it('ふだんのルート目標は経路上の解放済を維持する（戻す操作とは別）', () => {
+      const initial: ClassBoardDetailState = {
+        unlockedSquareIds: [1, 2],
+        targetSquareIds: [],
+      }
+      const result = computeRouteTargets(initial, [1, 2, 3])
+      expect(numSort(result.unlockedSquareIds)).toEqual([1, 2])
+      expect(result.targetSquareIds).toEqual([3])
     })
   })
 })

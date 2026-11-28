@@ -26,6 +26,13 @@ describe('storage-keys', () => {
     expect(isCloudSyncKey(STORAGE_KEYS.SERVANT_LEVELS)).toBe(true)
   })
 
+  it('keeps the servant-only need out of cloud sync while the legacy need stays synced', () => {
+    expect(STORAGE_KEYS.MATERIAL_SERVANT_RESULT).toBe('material/servant-result')
+    expect(isCloudSyncKey(STORAGE_KEYS.MATERIAL_SERVANT_RESULT)).toBe(false)
+    expect((CLOUD_SYNC_KEYS as readonly string[]).includes('material/servant-result')).toBe(false)
+    expect(isCloudSyncKey(STORAGE_KEYS.MATERIAL_RESULT)).toBe(true)
+  })
+
   it('strictly preserves the cloud sync keys in sequence', () => {
     expect(CLOUD_SYNC_KEYS).toEqual([
       'material',

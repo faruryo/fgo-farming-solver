@@ -8,11 +8,12 @@ import { TargetKey } from '../../interfaces/atlas-academy'
 import { MaterialsForServants } from '../../lib/get-materials'
 import { MaterialCatalogItem, MaterialCatalogServant } from '../../lib/material-catalog'
 import { useChaldeaState } from '../../hooks/use-chaldea-state'
+import { useRequiredMaterials } from '../../hooks/use-required-materials'
 import { useServantLevels } from '../../hooks/use-servant-levels'
 import type { ServantLevelImportRow } from '../../lib/servant-levels'
 import { withCurrentSkills, withOwnedServants } from '../../lib/servant-roster-owned'
 import { createServantState, ServantState } from '../../hooks/create-chaldea-state'
-import { calculateTotalRequiredMaterials } from '../../lib/class-score/calculate-total'
+import { computeServantResult } from '../../lib/required-materials'
 import { useTrackingLedger } from '../../hooks/use-tracking-ledger'
 import { groupActiveEventBonuses, nextEventBonusBoundary, type ActiveEventBonuses, type EventBonusGroup } from '../../lib/event-bonus'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
@@ -46,6 +47,8 @@ export const Index = ({
   const { t } = useTranslation('material')
   const ids = useMemo(() => servants.map(s => s.id.toString()), [servants])
   const [chaldeaState, setChaldeaState] = useChaldeaState(ids)
+  // サーヴァントの状態が変わるたびに育成ぶんを書き直す（素材計算の実行を待たない）
+  useRequiredMaterials(materials)
   const { levels, importLevels, setServantLevel } = useServantLevels()
   const levelById = useMemo(() => new Map(Object.entries(levels)), [levels])
   // 小窓の開閉と、直しているサーヴァント・開いたボタンは分けて持つ。後者は閉じ終わるまで残す
@@ -340,12 +343,12 @@ export const Index = ({
   )
 
   const handleCalc = () => {
-    const result = calculateTotalRequiredMaterials(chaldeaState, materials)
-    localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify(result))
-    // Notify change tracking (dirty metadata / auto-save) — direct setItem
-    // is invisible to the cloud-sync modification listener otherwise.
+    // 育成ぶんだけを保存する。クラススコアぶんは読むときに足す。
+    const result = computeServantResult(chaldeaState, materials)
+    localStorage.setItem(STORAGE_KEYS.MATERIAL_SERVANT_RESULT, JSON.stringify(result))
+    // 同じ画面の読み手に知らせる（同期の対象外のキーなので未保存の変更にはならない）
     window.dispatchEvent(
-      new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.MATERIAL_RESULT } })
+      new CustomEvent('ls-sync', { detail: { key: STORAGE_KEYS.MATERIAL_SERVANT_RESULT } })
     )
     router.push('/material/result')
   }

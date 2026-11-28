@@ -3,7 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import { Check, Lock, Sparkles, Target, X } from 'lucide-react'
+import { Check, Lock, RotateCcw, Sparkles, Target, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,7 @@ export type SquareDialogProps = {
   onSetStatus: (status: ClassBoardSquareStatus) => void
   onSetRouteTarget: (squareId: number) => void
   onSetRouteUnlocked: (squareId: number) => void
+  onSetRouteRetarget: (squareId: number) => void
 }
 
 const SquareBadges: React.FC<{ square: ClassBoardSquare }> = ({ square }) => {
@@ -73,7 +74,8 @@ const SquareStatusSelector: React.FC<{
   onSetStatus: (status: ClassBoardSquareStatus) => void
   onSetRouteTarget: () => void
   onSetRouteUnlocked: () => void
-}> = ({ status, onSetStatus, onSetRouteTarget, onSetRouteUnlocked }) => {
+  onSetRouteRetarget: () => void
+}> = ({ status, onSetStatus, onSetRouteTarget, onSetRouteUnlocked, onSetRouteRetarget }) => {
   const { t } = useTranslation('classScore')
   return (
     <div className="space-y-2">
@@ -111,6 +113,17 @@ const SquareStatusSelector: React.FC<{
           {t('square.status.route-unlocked', 'ルート解放済')}
         </Button>
       </div>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="w-full h-8 text-xs cursor-pointer"
+        onClick={onSetRouteRetarget}
+      >
+        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+        {t('square.status.route-retarget', 'ルートの解放済も目標に戻す')}
+      </Button>
 
       <p className="text-[11px] text-muted-foreground/80 px-0.5">
         {t(
@@ -169,6 +182,7 @@ export const SquareDialog: React.FC<SquareDialogProps> = ({
   onSetStatus,
   onSetRouteTarget,
   onSetRouteUnlocked,
+  onSetRouteRetarget,
 }) => {
   const { t } = useTranslation('classScore')
   if (!square) return null
@@ -196,6 +210,7 @@ export const SquareDialog: React.FC<SquareDialogProps> = ({
               onSetStatus={onSetStatus}
               onSetRouteTarget={() => onSetRouteTarget(square.id)}
               onSetRouteUnlocked={() => onSetRouteUnlocked(square.id)}
+              onSetRouteRetarget={() => onSetRouteRetarget(square.id)}
             />
           </div>
         </div>

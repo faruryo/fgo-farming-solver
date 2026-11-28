@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { RecommendedQuest } from './RecommendedQuest'
 import { STORAGE_KEYS } from '../../lib/constants/storage-keys'
+import { loadMaterialCatalog } from '../../hooks/use-material-catalog'
+import { seedServantNeed } from '../../hooks/required-materials-test-utils'
+
+vi.mock('../../hooks/use-material-catalog', () => ({ loadMaterialCatalog: vi.fn() }))
+const catalogMock = vi.mocked(loadMaterialCatalog)
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -41,6 +46,8 @@ describe('RecommendedQuest', () => {
   beforeEach(() => {
     localStorage.clear()
     recent.result = null
+    catalogMock.mockReset()
+    catalogMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('without a farming result or goal, guides to goal input and shows no quest', () => {
@@ -53,13 +60,28 @@ describe('RecommendedQuest', () => {
 
   it('with a goal but no farming result, guides to the solver and shows no quest', () => {
     // 旧フォールバックは material にサーヴァントがあると先頭品目のクエストを出していた
-    localStorage.setItem(STORAGE_KEYS.MATERIAL, JSON.stringify({ '100100': { disabled: false, targets: {} } }))
-    localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify({ '6503': 12 }))
+    catalogMock.mockResolvedValue(seedServantNeed({ '6503': 12 }))
     render(<RecommendedQuest />)
 
     expect(screen.queryByText('ダラス')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /周回数を求める/ })).toHaveAttribute('href', '/material/result')
     expect(screen.queryByRole('link', { name: /育成目標を入れる/ })).not.toBeInTheDocument()
+  })
+
+  it('育成目標が無くクラススコアの目標だけでも、合算した必要数があれば周回計算へ誘導する', () => {
+    localStorage.setItem(
+      STORAGE_KEYS.CLASS_SCORE,
+      JSON.stringify({ classes: { saber: 'target' } }),
+    )
+    render(<RecommendedQuest />)
+    expect(screen.getByRole('link', { name: /周回数を求める/ })).toHaveAttribute('href', '/material/result')
+  })
+
+  it('育成ぶんがまだ無い端末で開くと移行が走り、目標の無い端末では旧値を必要数に使わない', async () => {
+    localStorage.setItem(STORAGE_KEYS.MATERIAL_RESULT, JSON.stringify({ '6503': 12 }))
+    render(<RecommendedQuest />)
+    await waitFor(() => expect(localStorage.getItem(STORAGE_KEYS.MATERIAL_SERVANT_RESULT)).toBe('{}'))
+    expect(screen.getByRole('link', { name: /育成目標を入れる/ })).toHaveAttribute('href', '/material')
   })
 
   it('with a farming result, lists the planned quests as before', () => {

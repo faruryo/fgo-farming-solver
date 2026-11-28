@@ -1,11 +1,13 @@
 import { countsOrEmpty, itemCountsOrEmpty, useLocalStorage } from './use-local-storage'
 import { useStockTarget } from './use-stock-target'
+import { useRequiredMaterials } from './use-required-materials'
 import type { EfficiencyDenominator } from '../lib/quest-efficiency'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
 
 export const useQuestEfficiencyOptions = () => {
   const [possession, setPossession] = useLocalStorage<Record<string, number | undefined>>(STORAGE_KEYS.POSSESSION, {}, { onGet: countsOrEmpty, repairOnGet: true })
-  const [materialResult, setMaterialResult] = useLocalStorage<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT, {})
+  // 必要数は育成ぶんとクラススコアぶんの合算。保存は必要数のフックが行う。
+  const { total: materialResult } = useRequiredMaterials()
   const [itemsRaw, setItemsRaw] = useLocalStorage<Record<string, string | number | undefined>>(STORAGE_KEYS.ITEMS, {}, { onGet: itemCountsOrEmpty, repairOnGet: true })
   const {
     purpose,
@@ -26,7 +28,6 @@ export const useQuestEfficiencyOptions = () => {
     possession,
     setPossession,
     materialResult,
-    setMaterialResult,
     itemsRaw,
     setItemsRaw,
     purpose,

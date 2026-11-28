@@ -24,6 +24,7 @@ import {
   type SurplusThreshold,
 } from '../lib/quest-efficiency'
 import { STORAGE_KEYS } from '../lib/constants/storage-keys'
+import { useRequiredMaterials } from './use-required-materials'
 import { migrateFarmingPurpose } from '../lib/farming-purpose'
 
 const readJson = <T>(key: string): T | null => {
@@ -118,6 +119,7 @@ export const useProgressReport = (
   // 依存配列に含め、値が変わった際の再レンダリングで確実に再計算させる。
   // 所持数モーダルなどは親を再レンダーさせずに ls-sync だけを出すので、通知で読み直す。
   const [, rereadStorage] = useReducer((n: number) => n + 1, 0)
+  const { total: requiredTotal } = useRequiredMaterials()
   useEffect(() => {
     window.addEventListener('ls-sync', rereadStorage)
     window.addEventListener('storage', rereadStorage)
@@ -129,10 +131,6 @@ export const useProgressReport = (
   const rawPosession =
     typeof window !== 'undefined'
       ? localStorage.getItem(STORAGE_KEYS.POSSESSION)
-      : null
-  const rawTargets =
-    typeof window !== 'undefined'
-      ? localStorage.getItem(STORAGE_KEYS.MATERIAL_RESULT)
       : null
   const rawQuests =
     typeof window !== 'undefined'
@@ -164,8 +162,8 @@ export const useProgressReport = (
 
     const posession =
       readJson<Record<string, number>>(STORAGE_KEYS.POSSESSION) ?? {}
-    const targets =
-      readJson<Record<string, number>>(STORAGE_KEYS.MATERIAL_RESULT) ?? {}
+    // 現在の必要数は、ほかの画面と同じく育成ぶんとクラススコアぶんの合算
+    const targets = requiredTotal
     const selectedQuestIds = readJson<string[]>(STORAGE_KEYS.QUESTS) ?? []
     const stockEnabled = readJson<boolean>(STORAGE_KEYS.STOCK_ENABLED) ?? false
     const purpose = resolvePurpose(stockEnabled)
@@ -229,7 +227,7 @@ export const useProgressReport = (
     data,
     drops,
     rawPosession,
-    rawTargets,
+    requiredTotal,
     rawQuests,
     rawStockEnabled,
     rawPurpose,
