@@ -5,11 +5,11 @@
 ## What Changes
 
 - 育成ぶんの必要数を新しい保存先に分けて持つ。育成素材計算機は育成ぶんだけを書き、クラススコアぶんは保存せず、クラススコアの状態からその場で求める
-- 画面に出す必要数は「育成ぶん + クラススコアぶん」とし、素材結果・周回（クエスト効率・ソルバー連携）・ダッシュボード・進捗レポート（サーバー側の比較を含む）は同じ1つの合算の手順を通して読む
+- 画面に出す必要数は「育成ぶん + クラススコアぶん」とし、素材結果・周回（クエスト効率・ソルバー連携）・ダッシュボード・進捗レポートは同じ1つの合算の手順を通して読む
 - 育成ぶんは、サーヴァントの状態（現在値・目標）が変わるたびに書き直し、Calculate を押し直さなくても古くならないようにする
 - 旧 `material/result` は書かなくなる。新しい保存先がまだ無い端末・スナップショットでは、旧値を合算済みの必要数として読む（クラススコアぶんを足さない）
 - **BREAKING**（保存形式）: 新しい保存先をクラウド同期の対象に加える。旧キーは同期対象に残すが更新されなくなる
-- クラススコア: 1マスでも未解放の目標マスがあるクラスは、一覧の集計（目標クラス数・必要素材）に数える
+- クラススコア: 1マスでも未解放の目標マスがあるクラスは、一覧の集計（目標クラス数・必要素材）に数える。保存済みのステータスではなく盤面から読むたびに導出するので、変更前に部分目標を作っていた利用者にも効く
 - クラススコアのカード: 目標のマスがあるクラスは「目標にしたマスぶん」の素材・QP を出し、カードの数の合計が一覧の集計と一致する。未設定のカードは「全マス解放に必要な数」だと分かる見せ方にする
 - 一部だけ目標のクラスで、未設定 / 目標 / 解放済 の切り替えが「未設定」を選んだ表示にならない
 - ルート一括の操作で、経路上の「解放済」のマスを「目標」に戻せる
@@ -29,6 +29,6 @@
 ## Impact
 
 - 対象件数: 実データは取れなかった。部分目標のクラスが集計に加わるかは利用者ごとの盤面の状態（端末の保存値とクラウド上の同期データ）で決まり、どちらも利用者の認証が要るため数えていない。影響は例だけで説明する: 盤面でセイバーの一部のルートだけを目標にした利用者は、変更前は「目標クラス数 0」でサマリーが出ず、変更後は「目標 1 / 9」と目標マスぶんの必要素材が出る。全マスを目標にした利用者、目標マスが無い利用者の数え方は変わらない
-- コード: `components/material/index.tsx`・`material-calc-button.tsx`・`result.tsx`、`hooks/use-quest-efficiency-options.ts`・`use-progress-report.ts`、`components/dashboard/NearGoalSection.tsx`・`RecommendedQuest.tsx`、`lib/progress/*`（スナップショットの比較）、`lib/class-score/*`（状態の導出・ルート操作・合算）、`components/class-score/class-card.tsx`・`summary-card.tsx`、`lib/constants/storage-keys.ts`
-- 同期: クラウド同期のキーが1つ増える。縮小保存の抑止（shrink guard）の対象にも入る
+- コード: `components/material/index.tsx`・`material-calc-button.tsx`・`result.tsx`、`hooks/use-quest-efficiency-options.ts`・`use-progress-report.ts`、`components/dashboard/NearGoalSection.tsx`・`RecommendedQuest.tsx`、`components/material/material.tsx`（クラス別ページ）、`hooks/use-class-score.ts`、`hooks/use-roster-need.ts`、`lib/class-score/*`（状態の導出・ルート操作・合算）、`components/class-score/class-card.tsx`・`summary-card.tsx`、`lib/constants/storage-keys.ts`
+- 同期: クラウド同期のキーが1つ増える。縮小保存の抑止（shrink guard）は欠けたかどうかだけを見る（中身の規模は測らない）
 - 見た目の作り直し（#321）は範囲外
