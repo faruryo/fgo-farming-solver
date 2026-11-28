@@ -1,7 +1,9 @@
 import type { ClassBoardData, ClassBoardLine } from './board-types'
 import type { ClassBoardDetailState, ClassScoreStatus } from './types'
 
-const buildUndirectedAdjacency = (lines: ClassBoardLine[]): Map<number, number[]> => {
+const buildUndirectedAdjacency = (
+  lines: ClassBoardLine[],
+): Map<number, number[]> => {
   const adj = new Map<number, number[]>()
   for (const line of lines) {
     const listPrev = adj.get(line.prev) ?? []
@@ -19,7 +21,11 @@ const applyRouteAction = (
   curBoard: ClassBoardDetailState | undefined,
   path: number[],
   blankSquareIds: Set<number>,
-  applySquare: (sqId: number, unlocked: Set<number>, targets: Set<number>) => void,
+  applySquare: (
+    sqId: number,
+    unlocked: Set<number>,
+    targets: Set<number>,
+  ) => void,
 ): ClassBoardDetailState => {
   const unlocked = new Set(curBoard?.unlockedSquareIds ?? [])
   const targets = new Set(curBoard?.targetSquareIds ?? [])
@@ -44,9 +50,14 @@ export const computeRouteTargets = (
   path: number[],
   blankSquareIds: Set<number> = new Set(),
 ): ClassBoardDetailState =>
-  applyRouteAction(curBoard, path, blankSquareIds, (sqId, unlocked, targets) => {
-    if (!unlocked.has(sqId)) targets.add(sqId)
-  })
+  applyRouteAction(
+    curBoard,
+    path,
+    blankSquareIds,
+    (sqId, unlocked, targets) => {
+      if (!unlocked.has(sqId)) targets.add(sqId)
+    },
+  )
 
 /**
  * 起点から指定マスまでの経路上のマスを「解放済」に一括設定する純関数
@@ -58,10 +69,15 @@ export const computeRouteUnlocked = (
   path: number[],
   blankSquareIds: Set<number> = new Set(),
 ): ClassBoardDetailState =>
-  applyRouteAction(curBoard, path, blankSquareIds, (sqId, unlocked, targets) => {
-    unlocked.add(sqId)
-    targets.delete(sqId)
-  })
+  applyRouteAction(
+    curBoard,
+    path,
+    blankSquareIds,
+    (sqId, unlocked, targets) => {
+      unlocked.add(sqId)
+      targets.delete(sqId)
+    },
+  )
 
 type ReachableContext = {
   active: Set<number>
@@ -75,11 +91,7 @@ const isTraversable = (nodeId: number, ctx: ReachableContext): boolean => {
   return ctx.active.has(nodeId)
 }
 
-const addSeedNode = (
-  nodeId: number,
-  visited: Set<number>,
-  queue: number[],
-) => {
+const addSeedNode = (nodeId: number, visited: Set<number>, queue: number[]) => {
   visited.add(nodeId)
   queue.push(nodeId)
 }
@@ -137,7 +149,9 @@ const findReachableSquares = (
 /**
  * 実サインマス（blankマス以外）の全IDを取得する純関数
  */
-export const getPlayableSquareIds = (boardData: ClassBoardData | undefined): number[] => {
+export const getPlayableSquareIds = (
+  boardData: ClassBoardData | undefined,
+): number[] => {
   if (!boardData) return []
   return boardData.squares
     .filter((sq) => !sq.flags.includes('blank'))
@@ -147,7 +161,9 @@ export const getPlayableSquareIds = (boardData: ClassBoardData | undefined): num
 /**
  * 中継点（blankマス）の全IDを取得する純関数
  */
-export const getBlankSquareIds = (boardData: ClassBoardData | undefined): Set<number> => {
+export const getBlankSquareIds = (
+  boardData: ClassBoardData | undefined,
+): Set<number> => {
   if (!boardData) return new Set()
   return new Set(
     boardData.squares
@@ -180,7 +196,9 @@ export const computePrunedOnNone = (
   ])
   active.delete(removedSquareId)
 
-  const targetSquareIds = curBoard.targetSquareIds.filter((id) => id !== removedSquareId)
+  const targetSquareIds = curBoard.targetSquareIds.filter(
+    (id) => id !== removedSquareId,
+  )
 
   if (active.size === 0) {
     return { unlockedSquareIds: [], targetSquareIds }
@@ -195,7 +213,9 @@ export const computePrunedOnNone = (
   )
 
   return {
-    unlockedSquareIds: curBoard.unlockedSquareIds.filter((id) => reachable.has(id)),
+    unlockedSquareIds: curBoard.unlockedSquareIds.filter((id) =>
+      reachable.has(id),
+    ),
     targetSquareIds,
   }
 }
@@ -242,10 +262,15 @@ export const computeRouteRetarget = (
   path: number[],
   blankSquareIds: Set<number> = new Set(),
 ): ClassBoardDetailState =>
-  applyRouteAction(curBoard, path, blankSquareIds, (sqId, unlocked, targets) => {
-    unlocked.delete(sqId)
-    targets.add(sqId)
-  })
+  applyRouteAction(
+    curBoard,
+    path,
+    blankSquareIds,
+    (sqId, unlocked, targets) => {
+      unlocked.delete(sqId)
+      targets.add(sqId)
+    },
+  )
 
 /**
  * 盤面の状態からクラススコア全体のステータス（'none' | 'target' | 'completed'）を導出する純関数
@@ -257,14 +282,16 @@ export const deriveClassStatusFromBoard = (
   board: ClassBoardDetailState | undefined,
   playableSquareIds: number[],
 ): ClassScoreStatus => {
-  if (!board || playableSquareIds.length === 0) return 'none'
-  const unlockedSet = new Set(board.unlockedSquareIds)
+  // 同期された壊れた保存値でも描画を落とさない
+  if (!board || typeof board !== 'object' || playableSquareIds.length === 0)
+    return 'none'
+  const unlockedSet = new Set(board.unlockedSquareIds ?? [])
   const playableSet = new Set(playableSquareIds)
 
   const allUnlocked = playableSquareIds.every((id) => unlockedSet.has(id))
   if (allUnlocked) return 'completed'
 
-  const hasActiveTarget = board.targetSquareIds.some(
+  const hasActiveTarget = (board.targetSquareIds ?? []).some(
     (id) => playableSet.has(id) && !unlockedSet.has(id),
   )
   return hasActiveTarget ? 'target' : 'none'

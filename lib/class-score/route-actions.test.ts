@@ -88,7 +88,11 @@ describe('route-actions', () => {
 
     it('パスに含まれる中継点（blankマス）は解放済に追加しない', () => {
       const blankIds = new Set([90, 91])
-      const result = computeRouteUnlocked(undefined, [1, 90, 2, 91, 3], blankIds)
+      const result = computeRouteUnlocked(
+        undefined,
+        [1, 90, 2, 91, 3],
+        blankIds,
+      )
       expect(numSort(result.unlockedSquareIds)).toEqual([1, 2, 3])
       expect(result.targetSquareIds).toEqual([])
     })
@@ -201,8 +205,24 @@ describe('route-actions', () => {
 
     it('board が undefined または空の場合は none を返す', () => {
       expect(deriveClassStatusFromBoard(undefined, playables)).toBe('none')
+      // 同期された壊れた保存値（配列の欠損・object 以外）でも例外を投げない
       expect(
-        deriveClassStatusFromBoard({ unlockedSquareIds: [], targetSquareIds: [] }, playables),
+        deriveClassStatusFromBoard(
+          { unlockedSquareIds: [1] } as unknown as ClassBoardDetailState,
+          playables,
+        ),
+      ).toBe('none')
+      expect(
+        deriveClassStatusFromBoard(
+          'x' as unknown as ClassBoardDetailState,
+          playables,
+        ),
+      ).toBe('none')
+      expect(
+        deriveClassStatusFromBoard(
+          { unlockedSquareIds: [], targetSquareIds: [] },
+          playables,
+        ),
       ).toBe('none')
     })
 
