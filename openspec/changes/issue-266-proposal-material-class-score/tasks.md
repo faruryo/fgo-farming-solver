@@ -3,18 +3,18 @@
 ## 1. 育成ぶんの保存先と合算の手順
 
 - [ ] 1.1 `lib/constants/storage-keys.ts` に育成ぶんのキー `material/servant-result` を足し、`CLOUD_SYNC_KEYS` に加える（旧 `material/result` は残す）。`lib/constants/storage-keys.test.ts` の同期キーの一覧を更新し、同期キーを見るテストが通ることで確かめる
-- [ ] 1.2 合算の純関数（育成ぶん・旧値・クラススコアの状態 → 必要数）を `lib/` に作り、「育成ぶんあり」「育成ぶんが `{}`・旧値あり（旧値を使わない）」「育成ぶんのキーなし・旧値あり（旧値をそのまま使い、クラススコアぶんを足さない）」「どちらもなし」「部分目標の盤面」のユニットテストを付けて通す
-- [ ] 1.3 必要数を返すクライアント用のフックを作り、`material/servant-result`・`material/result`・`classScore` の変更（`ls-sync` を含む）で値が更新されることと、キーが無いときに初期値を保存しない（移行前の端末で開いても `material/servant-result` が作られない）ことをテストで確かめる
+- [ ] 1.2 合算の純関数（育成ぶん・旧値・クラススコアの状態 → 必要数）を `lib/` に作り、「育成ぶんあり」「育成ぶんが `{}`・旧値あり（旧値を使わない）」「育成ぶんのキーなし・旧値あり・移行中（旧値をそのまま使い、クラススコアぶんを足さない）」「どちらもなし」「部分目標の盤面」のユニットテストを付けて通す
+- [ ] 1.3 必要数を返すクライアント用のフックを、`hooks/use-roster-need.ts` と同じ素材データの取得の仕方で作り、移行を含める。`material/servant-result`・`material/result`・`material`・`classScore` の変更（`ls-sync` を含む）で値が更新されること、キーが無い端末で開くと素材データの取得後にサーヴァントの状態から求めた育成ぶんが `derived: true` で保存されること、取得中と取得失敗の間は旧値を合算済みとして読みキーを作らないこと、サーヴァントの目標が無ければ取得せずに `{}` で保存すること、`material` の保存値を読み込む前は目標なしと判定せず書かないこと、取得前に初期値を保存しないこと、キーがあっても `material` の変更（復元の `ls-sync` を含む）で求め直して書くこと、読む画面で先に `{}` を作ったあとに移行前のクラウドデータを自動復元すると `/material` を開かずに育成ぶんが求め直されること、取得中に `material` が変わったら古い結果を書かないこと、同じ画面で複数の部品が使っても素材データの取得が1回であることをテストで確かめる
 
 ## 2. 書き手を育成ぶんに切り替える
 
 - [ ] 2.1 `components/material/index.tsx` と `material-calc-button.tsx` の Calculate を、育成ぶんだけを `material/servant-result` に保存する形に変え、旧 `material/result` を書かなくする。`hooks/use-roster-need.ts` の `calculateTotalRequiredMaterials` の呼び出しも合算の関数に揃える。既存のテストを更新して通す
-- [ ] 2.2 `/material`（`components/material/index.tsx`）と `/material/[className]`（`components/material/material.tsx`）が共通で使う hook で、サーヴァント素材のデータを読み込んだ直後と、サーヴァントの状態が変わるたびに値が変わったときだけ育成ぶんを書き直し、`ls-sync` を `derived: true` で出す（Calculate は今のとおりふつうの `ls-sync`）。読み込み前は書かないこと、現在のスキルLvを上げると育成ぶんが減ること、クラス別ページの目標変更でも書き直されること、新しい端末で `/material` を開いても同期が dirty にならないこと、値が変わらなければ書かないこと、キーが無いとき読み込み直後と復元では空の結果で作らないこと、移行前の端末でユーザーが目標を全部終えると空の値でキーが作られ旧値が使われなくなることをテストで確かめる
+- [ ] 2.2 `/material`（`components/material/index.tsx`）と `/material/[className]`（`components/material/material.tsx`）が共通で使う hook で、サーヴァント素材のデータを読み込んだ直後と、サーヴァントの状態が変わるたびに値が変わったときだけ育成ぶんを書き直し、`ls-sync` を `derived: true` で出す（Calculate は今のとおりふつうの `ls-sync`）。読み込み前は書かないこと、現在のスキルLvを上げると育成ぶんが減ること、クラス別ページの目標変更でも書き直されること、新しい端末で `/material` を開いても同期が dirty にならないこと、値が変わらなければ書かないこと、空の値でキーを作ったあとに移行前のクラウドデータを復元すると、復元したサーヴァントの状態から育成ぶんが求め直されることをテストで確かめる
 
 ## 3. 読み手を合算の手順に揃える
 
-- [ ] 3.1 `components/material/result.tsx` の全体の必要数を 1.3 のフックから取り、内訳のクラススコアぶんが全体を上回らないことをテストで確かめる。保存値が無いときに URL のクエリを育成ぶんの初期値にする今の挙動を残す（クエリは保存しない）。移行前の端末でクエリなしに開いても `material/servant-result` が作られず旧値のまま表示されるテストを付けて通す。ソルバー連携のパラメータにも同じ値が渡ることを確かめる
-- [ ] 3.2 `hooks/use-quest-efficiency-options.ts`、`components/dashboard/NearGoalSection.tsx`・`RecommendedQuest.tsx`、`hooks/use-progress-report.ts` を 1.3 のフック（または 1.2 の関数）経由に変え、どれも `material/servant-result` を書かないことを含めて既存のテストを更新して通す
+- [ ] 3.1 `components/material/result.tsx` の全体の必要数を 1.3 のフックから取り、内訳のクラススコアぶんが全体を上回らないことをテストで確かめる。保存値が無いときに URL のクエリを育成ぶんの初期値にする今の挙動を残す（クエリは保存しない）。移行前の端末でクエリなしに開くと、取得中は旧値を表示し、取得後に移行して合算の値に切り替わるテストを付けて通す。ソルバー連携のパラメータにも同じ値が渡ることを確かめる
+- [ ] 3.2 `hooks/use-quest-efficiency-options.ts`、`components/dashboard/NearGoalSection.tsx`・`RecommendedQuest.tsx`、`hooks/use-progress-report.ts` を 1.3 のフック経由に変え、どの画面を開いても移行が走ること（`material/servant-result` を書くのは 1.3 の移行と 2 の書き手だけ）を含めて既存のテストを更新して通す
 
 ## 4. クラススコアの部分目標
 
