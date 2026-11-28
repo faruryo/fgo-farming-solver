@@ -9,7 +9,7 @@
 ## 2. 書き手を育成ぶんに切り替える
 
 - [ ] 2.1 `components/material/index.tsx` と `material-calc-button.tsx` の Calculate を、育成ぶんだけを `material/servant-result` に保存する形に変え、旧 `material/result` を書かなくする。`hooks/use-roster-need.ts` の `calculateTotalRequiredMaterials` の呼び出しも合算の関数に揃える。既存のテストを更新して通す
-- [ ] 2.2 `/material`（`components/material/index.tsx`）と `/material/[className]`（`components/material/material.tsx`）が共通で使う hook で、サーヴァント素材のデータを読み込んだ直後と、サーヴァントの状態が変わるたびに値が変わったときだけ育成ぶんを書き直し、`ls-sync` を `derived: true` で出す（Calculate は今のとおりふつうの `ls-sync`）。読み込み前は書かないこと、現在のスキルLvを上げると育成ぶんが減ること、クラス別ページの目標変更でも書き直されること、新しい端末で `/material` を開いても同期が dirty にならないこと、値が変わらなければ書かないこと、キーが無いときに空の結果では作らないことをテストで確かめる
+- [ ] 2.2 `/material`（`components/material/index.tsx`）と `/material/[className]`（`components/material/material.tsx`）が共通で使う hook で、サーヴァント素材のデータを読み込んだ直後と、サーヴァントの状態が変わるたびに値が変わったときだけ育成ぶんを書き直し、`ls-sync` を `derived: true` で出す（Calculate は今のとおりふつうの `ls-sync`）。読み込み前は書かないこと、現在のスキルLvを上げると育成ぶんが減ること、クラス別ページの目標変更でも書き直されること、新しい端末で `/material` を開いても同期が dirty にならないこと、値が変わらなければ書かないこと、キーが無いとき読み込み直後と復元では空の結果で作らないこと、移行前の端末でユーザーが目標を全部終えると空の値でキーが作られ旧値が使われなくなることをテストで確かめる
 
 ## 3. 読み手を合算の手順に揃える
 
