@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import {
+  sumClassScoreClassMaterials,
   sumClassScoreFarmingMaterials,
+  sumClassScoreFullUnlockMaterials,
   sumClassScoreMaterials,
 } from './sum'
-import { DEFAULT_CLASS_SCORE_STATE, ClassScoreState } from './types'
+import { getClassBoardData } from './board-loader'
+import { calculateBoardDiffMaterials } from './calculate-board-diff'
+import { getPlayableSquareIds } from './route-actions'
+import {
+  CLASS_SCORE_CLASS_KEYS,
+  DEFAULT_CLASS_SCORE_STATE,
+  ClassScoreState,
+} from './types'
+
+const saberBoard = getClassBoardData('saber')
+if (!saberBoard) throw new Error('saber board missing')
+const saberPlayables = getPlayableSquareIds(saberBoard)
 
 describe('sumClassScoreMaterials', () => {
   it('目標が1つもない場合は空オブジェクトを返す', () => {
@@ -87,5 +100,82 @@ describe('sumClassScoreMaterials', () => {
     expect(farming['51']).toBeUndefined()
     expect(farming['52']).toBeUndefined()
     expect(farming['53']).toBeUndefined()
+  })
+
+  it('一部だけ目標の盤面は、目標かつ未解放のマスぶんだけを計上する', () => {
+    const targets = saberPlayables.slice(0, 5)
+    const unlocked = saberPlayables.slice(0, 1)
+    const state: ClassScoreState = {
+      classes: { ...DEFAULT_CLASS_SCORE_STATE.classes, saber: 'target' },
+      boards: { saber: { unlockedSquareIds: unlocked, targetSquareIds: targets } },
+    }
+    const diff = calculateBoardDiffMaterials(saberBoard, targets, unlocked)
+    const res = sumClassScoreMaterials(state)
+    expect(res['1'] ?? 0).toBe(diff.qp)
+    expect(res['1'] ?? 0).toBeLessThan(317_000_000)
+    expect(res['7101']).toBeUndefined()
+  })
+
+  it('部分目標の盤面に none が保存されていても目標として計上する', () => {
+    const targets = saberPlayables.slice(0, 5)
+    const state: ClassScoreState = {
+      classes: { ...DEFAULT_CLASS_SCORE_STATE.classes, saber: 'none' },
+      boards: { saber: { unlockedSquareIds: [], targetSquareIds: targets } },
+    }
+    const diff = calculateBoardDiffMaterials(saberBoard, targets, [])
+    expect(diff.qp).toBeGreaterThan(0)
+    expect(sumClassScoreMaterials(state)['1']).toBe(diff.qp)
+  })
+
+  it('盤面に目標マスが無ければ、target が保存されていても全マスぶんを足さない', () => {
+    const state: ClassScoreState = {
+      classes: { ...DEFAULT_CLASS_SCORE_STATE.classes, saber: 'target' },
+      boards: { saber: { unlockedSquareIds: saberPlayables.slice(0, 2), targetSquareIds: [] } },
+    }
+    expect(sumClassScoreMaterials(state)).toEqual({})
+  })
+
+  it('全マス目標の盤面は、全マス解放に必要な数から解放済のぶんを除いた値になる', () => {
+    const unlocked = saberPlayables.slice(0, 3)
+    const state: ClassScoreState = {
+      classes: { ...DEFAULT_CLASS_SCORE_STATE.classes, saber: 'target' },
+      boards: {
+        saber: {
+          unlockedSquareIds: unlocked,
+          targetSquareIds: saberPlayables.filter((id) => !unlocked.includes(id)),
+        },
+      },
+    }
+    expect(sumClassScoreMaterials(state)).toEqual(sumClassScoreFullUnlockMaterials(state, 'saber'))
+  })
+})
+
+describe('sumClassScoreClassMaterials', () => {
+  it('target の各クラスの値を足すと全体の集計と一致する', () => {
+    const state: ClassScoreState = {
+      classes: { ...DEFAULT_CLASS_SCORE_STATE.classes, archer: 'target', lancer: 'none' },
+      boards: {
+        saber: { unlockedSquareIds: [], targetSquareIds: saberPlayables.slice(0, 7) },
+        lancer: { unlockedSquareIds: [], targetSquareIds: [] },
+      },
+    }
+    const total = sumClassScoreMaterials(state)
+    const summed = new Map<string, number>()
+    for (const key of CLASS_SCORE_CLASS_KEYS) {
+      for (const [id, n] of Object.entries(sumClassScoreClassMaterials(state, key))) {
+        summed.set(id, (summed.get(id) ?? 0) + n)
+      }
+    }
+    expect(Object.fromEntries(summed)).toEqual(total)
+    expect(Object.keys(sumClassScoreClassMaterials(state, 'lancer'))).toHaveLength(0)
+  })
+})
+
+describe('sumClassScoreFullUnlockMaterials', () => {
+  it('目標も解放済も無いクラスは全マス解放に必要な全量になる', () => {
+    const res = sumClassScoreFullUnlockMaterials(DEFAULT_CLASS_SCORE_STATE, 'saber')
+    expect(res['1']).toBe(317_000_000)
+    expect(res['7101']).toBe(500)
+    expect(res['50']).toBe(6680)
   })
 })

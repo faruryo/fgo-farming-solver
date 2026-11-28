@@ -175,6 +175,7 @@
   "material": {
     "class-score-link": "クラススコア目標設定",
     "class-score-breakdown-note": "(内CS: {{amount}})",
+    "required-materials-stale": "素材データを取得できなかったため、必要数が古い可能性があります。時間をおいて開き直してください。",
     "class-score-materials": "クラススコア素材",
     "class-score-settings-link": "クラススコア設定",
     "catalog-loading": "素材データを読み込んでいます…",
@@ -803,14 +804,20 @@
       "target": "目標",
       "completed": "解放済",
       "none": "未設定",
-      "detail-target": "{{count}}マス目標"
+      "detail-target": "{{count}}マス目標",
+      "all-target": "全マス目標",
+      "square-counts": "解放済 {{unlocked}}・目標 {{target}}・残り {{remaining}}",
+      "class-actions": "クラス全体への操作"
     },
     "action": {
       "target": "目標",
       "completed": "解放済",
       "none": "未設定",
       "viewResult": "素材結果を見る",
-      "open-board-map": "盤面マップで個別指定"
+      "open-board-map": "盤面マップで個別指定",
+      "all-target": "全マスを目標に",
+      "all-completed": "全マスを解放済に",
+      "clear-all": "すべて外す"
     },
     "board": {
       "back": "一覧に戻る",
@@ -847,7 +854,8 @@
         "unlocked": "解放済",
         "route-target": "ルート目標",
         "route-unlocked": "ルート解放済",
-        "route-help": "※目標・解放済は起点からの最短ルートを一括設定します"
+        "route-help": "※目標・解放済は起点からの最短ルートを一括設定します",
+        "route-retarget": "ルートの解放済も目標に戻す"
       },
       "action": {
         "route-target": "起点からここまでルート一括目標",
@@ -859,6 +867,13 @@
       "show": "必要素材の内訳を見る",
       "generic": "通常強化素材",
       "pieces": "ピース / モニュメント"
+    },
+    "card": {
+      "materials-target": "目標ぶんに必要",
+      "materials-full-unlock": "全マス解放に必要",
+      "qp-oku": "{{value}}億",
+      "count-unit": "{{count}}個",
+      "torch-total": "計{{count}}個"
     },
     "dialog": {
       "cancel": "キャンセル",

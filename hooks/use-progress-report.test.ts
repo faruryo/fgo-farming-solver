@@ -10,10 +10,14 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { useProgressReport } from './use-progress-report'
 import type { PeriodSummary, ProgressResponse } from '../lib/progress/types'
 import type { Drops } from '../lib/get-drops'
+import { loadMaterialCatalog } from './use-material-catalog'
+import { seedServantNeed } from './required-materials-test-utils'
 
 vi.mock('next-auth/react', () => ({
   useSession: () => ({ data: { user: { id: 'test-user' } } }),
 }))
+vi.mock('./use-material-catalog', () => ({ loadMaterialCatalog: vi.fn() }))
+const catalogMock = vi.mocked(loadMaterialCatalog)
 
 // 単価が扱いやすいよう lapPrice=1/apPrice=1 になる最小構成のドロップ表。
 const drops: Drops = {
@@ -74,7 +78,8 @@ const setLocalStorage = (opts: {
   stockEnabled?: boolean
 }) => {
   if (opts.posession) localStorage.setItem('posession', JSON.stringify(opts.posession))
-  if (opts.targets) localStorage.setItem('material/result', JSON.stringify(opts.targets))
+  // 現在の必要数は育成ぶん（サーヴァントの状態から求めた値）とクラススコアぶんの合算
+  if (opts.targets) catalogMock.mockResolvedValue(seedServantNeed(opts.targets))
   if (opts.quests) localStorage.setItem('quests', JSON.stringify(opts.quests))
   localStorage.setItem('efficiency/stockEnabled', JSON.stringify(opts.stockEnabled ?? false))
 }
@@ -83,6 +88,8 @@ describe('useProgressReport (D2: forwardPerDay/effortPerDay 最大の窓を選�
   beforeEach(() => {
     localStorage.clear()
     vi.unstubAllGlobals()
+    catalogMock.mockReset()
+    catalogMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('直近30日にバースト獲得があれば30日窓の baseline を採用する', async () => {
@@ -127,7 +134,7 @@ describe('useProgressReport (D2: forwardPerDay/effortPerDay 最大の窓を選�
   })
 
   it('全窓で forwardLaps<=0(目標未設定)のときは effortPerDay 最大の候補を採用する', async () => {
-    // targets 未設定(=material/result 無し)なので forwardLaps は常に0。
+    // targets 未設定(=育成ぶん・クラススコアぶん無し)なので forwardLaps は常に0。
     // effortLaps は純増分のみで比較される: d60 の間に最大の純増(+1200)がある。
     stubFetch({
       d30: mkSummary('d30', { pastPosession: { '100': 1000 }, elapsedMinutes: 30 * 1440 }),
@@ -269,5 +276,22 @@ describe('useProgressReport (D2: forwardPerDay/effortPerDay 最大の窓を選�
 
     expect(result.current.current?.period).toBe('d30')
     expect(result.current.current?.fallback).toBe('no_snapshot_for_period')
+  })
+
+  it('開くと育成ぶんの移行が走り、育成ぶんがあれば旧値を現在の必要数に使わない', async () => {
+    stubFetch({
+      d30: mkSummary('d30', { pastPosession: { '100': 900 } }),
+      d60: noSnapshot('d60'),
+      d90: noSnapshot('d90'),
+    })
+    setLocalStorage({ posession: { '100': 1000 }, quests: ['q1'] })
+    // 移行前の端末: 旧値だけがあり、サーヴァントの目標は無い
+    localStorage.setItem('material/result', JSON.stringify({ '100': 100000 }))
+
+    const { result } = renderHook(() => useProgressReport(null, drops))
+    await waitFor(() => expect(localStorage.getItem('material/servant-result')).toBe('{}'))
+    await waitFor(() => expect(result.current.current).not.toBeNull())
+    // 必要数が無いので前進周回は 0（旧値の 100000 を目標にしていない）
+    expect(result.current.current?.forwardLaps ?? 0).toBe(0)
   })
 })
