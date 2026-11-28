@@ -25,5 +25,5 @@
 
 ## 5. 結合の確認
 
-- [ ] 5.1 `pnpm type-check`・`pnpm lint`・`pnpm test` が通ることを確かめる <!-- verify-only -->
+- [x] 5.1 `pnpm type-check`・`pnpm lint`・`pnpm test` が通ることを確かめる <!-- verify-only -->
 - [ ] 5.2 dev server で、クラススコアの目標マスを増やしてから `/material/result` を開き、内訳が全体を上回らないことと、一覧の「目標: n / 9」とカードの値を、変更前後のスクリーンショットで確かめる。あわせて、カードの状態の表示と押したときに出る操作（4.3）、経路を目標に戻す操作（4.4）、`/material` でスキルLvを上げたあとの `/material/result` の値（2.2）も確かめる <!-- verify-only -->

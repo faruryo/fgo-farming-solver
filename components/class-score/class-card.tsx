@@ -4,7 +4,19 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
-import { Check, ChevronDown, ChevronUp, Network, Target, X } from 'lucide-react'
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CircleDashed,
+  Coins,
+  Flame,
+  Landmark,
+  Network,
+  Sparkles,
+  Target,
+  X,
+} from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -162,7 +174,7 @@ const getStatusBadgeClass = (status: ClassScoreStatus): string => {
 const StatusIcon: React.FC<{ status: ClassScoreStatus }> = ({ status }) => {
   if (status === 'target') return <Target className="w-3.5 h-3.5" />
   if (status === 'completed') return <Check className="w-3.5 h-3.5" />
-  return null
+  return <CircleDashed className="w-3.5 h-3.5" />
 }
 
 const ClassCardStatus: React.FC<{
@@ -245,23 +257,27 @@ const ClassCardSummary: React.FC<{
           : t('card.materials-full-unlock', '全マス解放に必要')}
       </span>
       <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 rounded-md p-2.5">
-        <div>
+        <div className="flex items-center gap-1">
+          <Coins className="w-3.5 h-3.5 text-amber-500" aria-hidden />
           <span className="text-muted-foreground">{t('summary.qp', '必要QP')}: </span>
           <span className="font-medium text-foreground" data-testid="class-card-qp" data-value={qp}>
             {t('card.qp-oku', '{{value}}億', { value: (qp / 100000000).toFixed(2) })}
           </span>
         </div>
-        <div>
+        <div className="flex items-center gap-1">
+          <Sparkles className="w-3.5 h-3.5 text-sky-500" aria-hidden />
           <span className="text-muted-foreground">{t('summary.sand', '星光の砂')}: </span>
           <span className="font-medium text-foreground">{sand.toLocaleString()}</span>
         </div>
-        <div>
+        <div className="flex items-center gap-1">
+          <Landmark className="w-3.5 h-3.5 text-violet-500" aria-hidden />
           <span className="text-muted-foreground">{t('summary.monuments', 'モニュメント')}: </span>
           <span className="font-medium text-foreground">
             {t('card.count-unit', '{{count}}個', { count: monuments })}
           </span>
         </div>
-        <div>
+        <div className="flex items-center gap-1">
+          <Flame className="w-3.5 h-3.5 text-orange-500" aria-hidden />
           <span className="text-muted-foreground">{t('summary.torches', 'トーチ')}: </span>
           <span className="font-medium text-foreground">
             {t('card.torch-total', '計{{count}}個', { count: torches })}
