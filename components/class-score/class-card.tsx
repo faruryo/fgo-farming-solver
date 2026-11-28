@@ -296,13 +296,13 @@ const ClassCardActions: React.FC<{
     <div
       role="group"
       aria-label={t('status.class-actions', 'クラス全体への操作')}
-      className="grid grid-cols-3 gap-1 text-xs"
+      className="grid grid-cols-2 gap-2 text-xs"
     >
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 text-xs gap-1"
+        className="h-10 text-xs gap-1"
         onClick={() => onChangeStatus('target')}
       >
         <Target className="w-3.5 h-3.5" />
@@ -312,7 +312,7 @@ const ClassCardActions: React.FC<{
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 text-xs gap-1"
+        className="h-10 text-xs gap-1"
         onClick={() => onChangeStatus('completed')}
       >
         <Check className="w-3.5 h-3.5" />
@@ -322,7 +322,7 @@ const ClassCardActions: React.FC<{
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 text-xs gap-1"
+        className="h-10 text-xs gap-1"
         onClick={() => onChangeStatus('none')}
       >
         <X className="w-3.5 h-3.5" />
